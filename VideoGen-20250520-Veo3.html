@@ -123,6 +123,69 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>Veo 3 架构：</strong>闭源，Google DeepMind 开发，首个原生音频闭源模型</p>
+        <div class="highlight">
+            <strong>已知信息：</strong>
+            <ul>
+                <li><strong>DiT 主干：</strong>大规模 Diffusion Transformer</li>
+                <li><strong>原生音频：</strong>首个闭源模型实现视频+音频同步生成</li>
+                <li><strong>4K 输出 (3.1)：</strong>通过 Google Flow 支持 4K</li>
+                <li><strong>R-Bench T2V 79.1：</strong>闭源最强 T2V 之一</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：首个原生音频闭源模型</strong> — 视频+音频同步生成，开创闭源音频生成先例。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：4K 输出</strong> — Veo 3.1 通过 Google Flow 支持 4K，分辨率领先。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：R-Bench 高分</strong> — T2V 79.1, I2V 82.67, AQA 7.45，多项指标闭源最强。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>影视制作</td><td>4K 电影级视频 + 原生音频</td></tr>
+            <tr><td>YouTube 内容</td><td>创作者视频生成</td></tr>
+            <tr><td>广告</td><td>产品视频 + 配音一站式</td></tr>
+            <tr><td>Google Flow</td><td>创意平台，多镜头叙事</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略 / 📊 数据集 / 📐 损失函数</h2>
+        <p><strong>均未公开。</strong>以下为推断：</p>
+        <ul>
+            <li><strong>训练：</strong>大规模视频+音频数据，Flow Matching + RLHF</li>
+            <li><strong>数据：</strong>互联网视频 + YouTube 等高质量来源</li>
+            <li><strong>损失：</strong>L_diffusion + L_audio + L_RLHF</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>Veo 3</th><th>Veo 3.1</th><th>Sora 2†</th><th>LTX-2 (开源)</th></tr>
+            <tr><td>音频</td><td>✅ 原生</td><td>✅ 原生</td><td>✅ 原生</td><td>✅ 原生</td></tr>
+            <tr><td>4K</td><td>❌</td><td>✅</td><td>未知</td><td>✅ 4K@50fps</td></tr>
+            <tr><td>R-Bench T2V</td><td>79.1</td><td>79.1</td><td>未知</td><td>未知</td></tr>
+            <tr><td>AQA</td><td>7.45</td><td>7.45</td><td>未知</td><td>未知</td></tr>
+            <tr><td>开源</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>Veo 3 是闭源音频生成的标杆，但 LTX-2 作为开源替代正在缩小差距。4K 输出 + 原生音频正在成为旗舰模型的标配。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://deepmind.google/models/veo/" target="_blank">🌐 官方页面</a>

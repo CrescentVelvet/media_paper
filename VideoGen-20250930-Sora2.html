@@ -147,6 +147,91 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>Sora 2 架构：</strong>闭源，从公开信息推断为 DiT 架构 + 世界模型训练</p>
+        <div class="highlight">
+            <strong>已知架构信息：</strong>
+            <ul>
+                <li><strong>DiT 主干：</strong>Diffusion Transformer，从 Sora 1 迭代</li>
+                <li><strong>视频 + 音频原生生成：</strong>同步输出视频和音频</li>
+                <li><strong>物理模拟能力：</strong>世界模型训练，理解物理规律</li>
+                <li><strong>Characters 社交：</strong>多角色交互场景生成</li>
+            </ul>
+        </div>
+        <p><strong>注：</strong>架构细节未公开，以上为基于产品演示和技术博客的推断。</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：原生音频生成</strong> — 视频和音频同步生成，无需后期配音。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：物理模拟</strong> — 世界模型训练使模型理解物理规律（重力、碰撞、流体等）。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：Characters 社交</strong> — 多角色场景，角色之间可以交互。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：产品级质量</strong> — 闭源旗舰，视频质量和美学达到电影级。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>影视制作</td><td>电影级视频片段生成</td></tr>
+            <tr><td>广告创意</td><td>高质量产品广告视频 + 配音</td></tr>
+            <tr><td>游戏资产生成</td><td>过场动画、角色动画</td></tr>
+            <tr><td>世界模拟</td><td>物理模拟、场景预演</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <ul>
+            <li><strong>世界模型训练：</strong>从视频数据中学习物理规律和世界动态</li>
+            <li><strong>大规模数据：</strong>公开和内部大规模视频数据</li>
+            <li><strong>RLHF：</strong>人类反馈强化学习优化质量</li>
+            <li><strong>安全训练：</strong>安全过滤和红队测试</li>
+        </ul>
+        <p><strong>注：</strong>训练细节未公开，以上为推断。</p>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <ul>
+            <li>未公开训练数据细节</li>
+            <li>推断包含大规模互联网视频 + 内部高质量数据</li>
+            <li>音频-视频配对数据用于原生音频生成</li>
+            <li>物理模拟相关场景数据</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <p><strong>未公开。</strong>推断为 Flow Matching / Diffusion 损失 + RLHF 损失。</p>
+        <div class="highlight">
+            <strong>推断：</strong>L = L_diffusion + λ·L_RLHF，其中 L_diffusion 为标准视频/音频扩散损失，L_RLHF 为人类偏好对齐损失。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>Sora 1</th><th>Sora 2</th></tr>
+            <tr><td>音频</td><td>❌</td><td>✅ 原生</td></tr>
+            <tr><td>物理模拟</td><td>初步</td><td>✅ 世界模型</td></tr>
+            <tr><td>角色交互</td><td>❌</td><td>✅ Characters</td></tr>
+            <tr><td>产品状态</td><td>API (Turbo)</td><td>已下线</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>Sora 2 代表了闭源视频生成的最高水平，但已下线表明算力成本和商业化是巨大挑战。开源模型（Wan/Cosmos3/LTX-2）正在快速逼近闭源质量。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://openai.com/index/sora-2/" target="_blank">🌐 官方博客</a>
