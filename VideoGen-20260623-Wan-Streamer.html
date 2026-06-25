@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wan-Streamer v0.1: End-to-end Real-time Interactive Foundation Models</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #76b900; --accent-dim: #5a8f00; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Wan-Streamer v0.1: End-to-end Real-time Interactive Foundation Models</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2606.25041</span>
+        <span>🏢 Alibaba / Wan-AI Team</span>
+        <span>📅 2026-06-23 提交</span>
+        <span>📂 CV / AI / Audio-Visual Interaction</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Real-time Interaction</span>
+        <span class="tag green">End-to-End</span>
+        <span class="tag">Full-Duplex</span>
+        <span class="tag">Audio-Visual</span>
+        <span class="tag">Streaming</span>
+        <span class="tag">Block-Causal Attention</span>
+        <span class="tag">Low Latency</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p><strong>Wan-Streamer</strong> 是一个<strong>原生流式、端到端的交互式基础模型</strong>，从零开始设计用于实时、低延迟、全双工音视频交互。在单一 Transformer 中同时建模语言、音频和视频作为输入和输出，通过 block-causal attention 协调增量式流式生成。</p>
+        <div class="highlight">
+            <strong>核心成就：</strong>模型侧响应延迟约 <strong>200 ms</strong>，总交互延迟约 <strong>550 ms</strong>（含 350 ms 网络延迟），支持亚秒级全双工音视频通信。流式单元最短 <strong>160 ms</strong>（25 fps）。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <h3>统一 Transformer 架构</h3>
+        <p>Wan-Streamer 在<strong>单一 Transformer</strong> 中统一处理所有模态：</p>
+        <table>
+            <tr><th>维度</th><th>设计</th></tr>
+            <tr><td>输入 token</td><td>视觉 + 音频 + 文本（交错排列）</td></tr>
+            <tr><td>输出 token</td><td>视觉 + 音频 + 文本（交错生成）</td></tr>
+            <tr><td>注意力机制</td><td>Block-causal attention（增量式流式）</td></tr>
+            <tr><td>编码器</td><td>因果编码器 (Causal Encoders)</td></tr>
+            <tr><td>解码器</td><td>因果解码器 (Causal Decoders)</td></tr>
+            <tr><td>调度</td><td>低延迟多模态 token 调度</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计：</strong>与级联式交互系统（分离的 VAD → ASR → LLM → TTS → 动画 → 视频生成）不同，Wan-Streamer <strong>不依赖任何外部语言、语音、avatar 或视频生成模块</strong>。感知、推理、生成、响应时机、轮次管理和跨模态同步全部在统一模型中联合学习。
+        </div>
+        <h3>vs 级联系统</h3>
+        <p>传统级联系统在每个模块边界都会累积延迟和错误。Wan-Streamer 的端到端设计消除了这些边界，减少了流水线延迟和错误累积。</p>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <ul>
+            <li><strong>全双工音视频交互：</strong>同时感知和生成，边听边回应</li>
+            <li><strong>亚秒级延迟：</strong>模型侧 ~200ms，总计 ~550ms（含网络）</li>
+            <li><strong>单一 Transformer：</strong>无需外部 ASR/TTS/动画/视频生成模块</li>
+            <li><strong>原生流式设计：</strong>因果编码器、因果解码器、block-causal attention 全栈可流式</li>
+            <li><strong>160ms 流式单元：</strong>25 fps 下最短 160ms 的流式单元，实现细粒度增量生成</li>
+            <li><strong>多角色演示：</strong>同一模型可生成不同人物、声音和场景的交互视频</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ 技术细节</h2>
+        <h3>流式架构设计</h3>
+        <ul>
+            <li><strong>因果编码器：</strong>所有输入编码器都是因果的，确保流式处理时不看未来信息</li>
+            <li><strong>因果解码器：</strong>输出解码器也是因果的，支持增量式生成</li>
+            <li><strong>Block-causal attention：</strong>输入和输出 token 按 block 组织，block 内可见前面的 token，跨 block 通过 causal mask 控制信息流</li>
+            <li><strong>多模态 token 调度：</strong>精心设计的调度策略，确保音视频同步</li>
+        </ul>
+        <h3>当前局限 (v0.1)</h3>
+        <ul>
+            <li>分辨率: 192p（概念验证阶段）</li>
+            <li>更高分辨率" readily scales" 但留待未来工作</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <h3>延迟对比</h3>
+        <table>
+            <tr><th>系统</th><th>类型</th><th>模型侧延迟</th><th>总延迟</th><th>输出视频</th></tr>
+            <tr><td><strong>Wan-Streamer</strong></td><td>端到端</td><td>0.2s</td><td>0.55s</td><td>✓</td></tr>
+            <tr><td>GPT-4o Realtime</td><td>端到端</td><td>0.23s</td><td>~0.8s</td><td>✗</td></tr>
+            <tr><td>Doubao Voice</td><td>端到端</td><td>0.7s</td><td>~1.0s</td><td>✗</td></tr>
+            <tr><td>Gemini Live</td><td>端到端</td><td>1.2-3.6s</td><td>-</td><td>✗</td></tr>
+            <tr><td>LPM 1.0</td><td>仅渲染</td><td>-</td><td>~0.35s</td><td>✓</td></tr>
+            <tr><td>OmniForcing</td><td>仅渲染</td><td>-</td><td>~0.7s</td><td>✓</td></tr>
+            <tr><td>Hallo-Live</td><td>仅渲染</td><td>-</td><td>0.94s</td><td>✓</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键对比：</strong>Wan-Streamer 是唯一同时具备视频感知、同步视频输出、全双工、端到端和一秒内响应的模型。GPT-4o Realtime 虽然延迟相近，但不输出视频。其他音视频系统依赖外部模块，实际延迟更高。
+        </div>
+        <h3>能力覆盖</h3>
+        <table>
+            <tr><th>系统</th><th>感知视频</th><th>输出视频</th><th>全双工</th><th>端到端</th><th>亚秒响应</th></tr>
+            <tr><td>Wan-Streamer</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Doubao Voice</td><td>✓</td><td>✗</td><td>✓</td><td>✗</td><td>~</td></tr>
+            <tr><td>GPT-4o Realtime</td><td>✓</td><td>✗</td><td>~</td><td>✗</td><td>✓</td></tr>
+            <tr><td>StreamAvatar</td><td>~</td><td>✓</td><td>~</td><td>✗</td><td>✗</td></tr>
+            <tr><td>LPM 1.0</td><td>~</td><td>✓</td><td>✓</td><td>✗</td><td>~</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <h3>核心贡献</h3>
+        <ul>
+            <li><strong>端到端统一：</strong>将感知、推理、生成、轮次管理全部统一在单一 Transformer 中，消除了级联系统的延迟和错误累积问题。这是交互式 AI 的架构突破</li>
+            <li><strong>全双工音视频：</strong>同时输出同步的音频和视频，且在亚秒级延迟内完成，这在开源模型中是首次</li>
+            <li><strong>原生流式设计：</strong>从编码器到解码器到注意力机制，全栈围绕可流式性重新设计，为实时交互 AI 提供了新的架构范式</li>
+            <li><strong>vs GPT-4o Realtime：</strong>虽然 GPT-4o 延迟略低，但它是纯语音交互。Wan-Streamer 是唯一在相近延迟下同时输出视频的模型</li>
+        </ul>
+        <h3>技术亮点</h3>
+        <ul>
+            <li>Block-causal attention 的设计巧妙地统一了输入理解和输出生成</li>
+            <li>160ms 流式单元 @ 25fps 实现了细粒度的增量响应</li>
+            <li>多角色 demo 展示了同一模型的泛化能力（不同人物、声音、场景）</li>
+        </ul>
+        <h3>局限</h3>
+        <ul>
+            <li>v0.1 仅支持 192p 分辨率，是概念验证阶段</li>
+            <li>论文较短（3.8MB），可能省略了大量训练细节</li>
+            <li>实时交互场景的评估标准尚不完善</li>
+            <li>作为最新发布（2026-06-23），社区反响和实际效果有待验证</li>
+        </ul>
+        <h3>方向意义</h3>
+        <ul>
+            <li>代表 Wan 系列从视频生成向实时交互的扩展</li>
+            <li>端到端 vs 级联的辩论在交互 AI 领域将持续，Wan-Streamer 为端到端方案提供了有力证据</li>
+            <li>如果分辨率提升到 720P+，将直接影响虚拟人、视频通话、游戏 NPC 等场景</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2606.25041" target="_blank">📄 arXiv 论文</a>
+            <a href="https://arxiv.org/html/2606.25041v1" target="_blank">📖 HTML 全文</a>
+            <a href="https://wan-streamer.com" target="_blank">🌐 项目主页</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 阅读笔记 · 生成于 2026-06-25 · 领域: CV/AI/Real-time Interaction
+</div>
+
+</body>
+</html>

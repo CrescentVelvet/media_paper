@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿里 Wan 系列视频生成模型调研索引</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2em;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: var(--text-dim);
+            font-size: 0.95em;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: var(--accent);
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section h3 {
+            color: #c8c8c8;
+            font-size: 1.05em;
+            margin: 15px 0 8px;
+        }
+        .note-card {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+        }
+        .note-card:hover {
+            border-color: var(--accent);
+        }
+        .note-card h3 {
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .note-card .meta {
+            color: var(--text-dim);
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .note-card .meta span { white-space: nowrap; }
+        .note-card p {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .note-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0;
+        }
+        .tag {
+            background: var(--tag-bg);
+            color: var(--text-dim);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            border: 1px solid var(--border);
+        }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .note-card a {
+            display: inline-block;
+            padding: 5px 12px;
+            background: var(--tag-bg);
+            color: var(--accent);
+            border: 1px solid var(--accent-dim);
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85em;
+            margin-right: 8px;
+        }
+        .note-card a:hover { background: var(--accent-dim); color: #fff; }
+        .highlight {
+            background: rgba(118, 185, 0, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .footer {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8em;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>阿里 Wan 系列视频生成模型调研</h1>
+    <p>Wan2.1 → Wan2.2 → VACE → Wan-Move → Wan-R1 → Wan-Streamer<br>
+    从开源视频生成到运动控制、推理强化、实时交互的完整演进</p>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📋 调研总览</h2>
+        <div class="highlight">
+            <strong>调研结论：</strong>Wan 系列 (2.1→2.2) 是阿里开源的视频生成模型主线，VACE、Wan-Move、Wan-R1、Wan-Streamer 是衍生和扩展工作。<strong>Wan2.3 ~ Wan2.7 不存在</strong>（截至 2026-06-25 搜索 arXiv 无结果）。Wan2.2 共享 Wan2.1 的 arXiv 论文 (2503.20314)，无独立论文。
+        </div>
+        <table>
+            <tr><th>版本</th><th>arXiv</th><th>提交日期</th><th>GitHub</th><th>关键特性</th></tr>
+            <tr><td><strong>Wan2.1</strong></td><td>2503.20314</td><td>2025-03-26</td><td>Wan-Video/Wan2.1</td><td>开源 DiT 视频生成，1.3B+14B，中英文字生成</td></tr>
+            <tr><td><strong>Wan2.2</strong></td><td>(共享 2503.20314)</td><td>2025-07-28</td><td>Wan-Video/Wan2.2</td><td>MoE 架构，720P@24fps，S2V，角色动画</td></tr>
+            <tr><td><strong>VACE</strong></td><td>2503.07598</td><td>2025-03-10</td><td>ali-vilab/VACE</td><td>一体化视频创作与编辑，VCU + Context Adapter</td></tr>
+            <tr><td><strong>Wan-Move</strong></td><td>2512.08765</td><td>2025-12-09</td><td>ali-vilab/Wan-Move</td><td>运动控制，Latent Trajectory Guidance，NeurIPS 2025</td></tr>
+            <tr><td><strong>Wan-R1</strong></td><td>2603.27866</td><td>2026-03-29</td><td>(代码待发布)</td><td>视频推理 RL，可验证奖励，GRPO + Flow Matching</td></tr>
+            <tr><td><strong>Wan-Streamer</strong></td><td>2606.25041</td><td>2026-06-23</td><td>(暂无 GitHub)</td><td>实时交互，端到端全双工音视频，~200ms 延迟</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📖 阅读笔记</h2>
+
+        <div class="note-card">
+            <h3>1. Wan2.1: Open and Advanced Large-Scale Video Generative Models</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2503.20314</span>
+                <span>📅 2025-03-26</span>
+                <span>🏢 Alibaba / Wan-AI Team</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">DiT</span>
+                <span class="tag">T2V</span>
+                <span class="tag">I2V</span>
+                <span class="tag">Wan-VAE</span>
+                <span class="tag">Scaling Law</span>
+                <span class="tag">1.3B/14B</span>
+            </div>
+            <p>开源视频生成基础模型套件，14B 模型在多个基准超越闭源方案。1.3B 模型仅需 8.19GB VRAM，首个支持中英双语文字生成的视频模型。Wan-VAE 的 3D 因果设计成为后续工作的基础（包括 Cosmos 3 也采用）。</p>
+            <a href="VideoGen-20250326-Wan2.1.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2503.20314" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/Wan-Video/Wan2.1" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>2. Wan2.2: Major Upgrade with MoE Architecture</h3>
+            <div class="meta">
+                <span>📄 arXiv: (共享 2503.20314)</span>
+                <span>📅 2025-07-28 发布</span>
+                <span>🏢 Alibaba / Wan-AI Team</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">MoE</span>
+                <span class="tag">720P@24fps</span>
+                <span class="tag">S2V</span>
+                <span class="tag">Animate</span>
+                <span class="tag">A14B/5B</span>
+            </div>
+            <p>Wan2.1 的重大升级：引入 MoE 架构到视频扩散模型（跨时间步专家分离），训练数据增加 65.6%(图像)/83.2%(视频)。扩展到语音驱动视频 (S2V) 和角色动画 (Animate)。TI2V-5B 支持 720P@24fps 在消费级 GPU 运行。</p>
+            <a href="VideoGen-20250728-Wan2.2.html">📖 阅读笔记</a>
+            <a href="https://github.com/Wan-Video/Wan2.2" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>3. VACE: All-in-One Video Creation and Editing</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2503.07598</span>
+                <span>📅 2025-03-10</span>
+                <span>🏢 Alibaba / ali-vilab</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Video Editing</span>
+                <span class="tag">VCU</span>
+                <span class="tag">Context Adapter</span>
+                <span class="tag">Wan2.1 配套</span>
+            </div>
+            <p>一体化视频创作与编辑框架，通过 Video Condition Unit (VCU) 统一接口和 Context Adapter 将多种视频任务整合到一个模型中。支持参考视频生成、视频编辑、遮罩编辑等，性能对标专用模型。</p>
+            <a href="VideoGen-20250310-VACE.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2503.07598" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/ali-vilab/VACE" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>4. Wan-Move: Motion-controllable Video Generation</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2512.08765</span>
+                <span>📅 2025-12-09</span>
+                <span>🏆 NeurIPS 2025</span>
+                <span>🏢 Alibaba / ali-vilab + 清华+港大</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Motion Control</span>
+                <span class="tag">Latent Trajectory Guidance</span>
+                <span class="tag">MoveBench</span>
+                <span class="tag">Wan-I2V-14B</span>
+            </div>
+            <p>运动控制视频生成框架，通过 Latent Trajectory Guidance 实现精细 point-level 运动控制，无需架构修改直接集成到 Wan-I2V-14B。运动可控性媲美 Kling 1.5 Pro Motion Brush。发布 MoveBench 评测基准。</p>
+            <a href="VideoGen-20251209-Wan-Move.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2512.08765" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/ali-vilab/Wan-Move" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>5. Wan-R1: Verifiable-Reinforcement Learning for Video Reasoning</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2603.27866</span>
+                <span>📅 2026-03-29</span>
+                <span>🏢 中科院自动化所</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Video Reasoning</span>
+                <span class="tag">RL / GRPO</span>
+                <span class="tag">Verifiable Rewards</span>
+                <span class="tag">Maze Solving</span>
+            </div>
+            <p>首个系统研究视频生成模型推理能力的工作。将 GRPO 适配到 flow-based 视频模型，发现多模态奖励模型灾难性失败，设计可验证奖励函数实现稳定训练。迷宫求解 +29.1%，避障 +51.4%（vs SFT 基线）。</p>
+            <a href="VideoGen-20260329-Wan-R1.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2603.27866" target="_blank">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h3>6. Wan-Streamer v0.1: End-to-end Real-time Interactive Foundation Models</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2606.25041</span>
+                <span>📅 2026-06-23</span>
+                <span>🏢 Alibaba / Wan-AI Team</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Real-time</span>
+                <span class="tag">Full-Duplex</span>
+                <span class="tag">End-to-End</span>
+                <span class="tag">Audio-Visual</span>
+                <span class="tag">~200ms Latency</span>
+            </div>
+            <p>原生流式端到端交互式基础模型，单一 Transformer 统一处理语言/音频/视频的输入输出。模型侧延迟 ~200ms，总延迟 ~550ms。不依赖外部 ASR/TTS/动画模块。唯一同时具备视频感知、视频输出、全双工、端到端、亚秒响应的模型。</p>
+            <a href="VideoGen-20260623-Wan-Streamer.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2606.25041" target="_blank">📄 arXiv</a>
+            <a href="https://wan-streamer.com" target="_blank">🌐 项目主页</a>
+        </div>
+
+    </div>
+
+    <div class="section">
+        <h2>🔄 演进路线图</h2>
+        <table>
+            <tr><th>时间</th><th>版本</th><th>里程碑</th></tr>
+            <tr><td>2025-03-10</td><td>VACE</td><td>视频创作与编辑统一框架（Wan2.1 配套）</td></tr>
+            <tr><td>2025-03-26</td><td>Wan2.1</td><td>开源 DiT 视频生成，1.3B+14B，SOTA 性能</td></tr>
+            <tr><td>2025-04-19</td><td>Wan2.1 v2</td><td>arXiv 论文修订</td></tr>
+            <tr><td>2025-05-14</td><td>VACE 集成</td><td>VACE 正式作为 Wan2.1 配套发布</td></tr>
+            <tr><td>2025-07-28</td><td>Wan2.2</td><td>MoE 架构升级，TI2V-5B 720P@24fps</td></tr>
+            <tr><td>2025-08-26</td><td>Wan2.2-S2V</td><td>语音驱动电影级视频生成</td></tr>
+            <tr><td>2025-09-19</td><td>Wan2.2-Animate</td><td>角色动画与替换</td></tr>
+            <tr><td>2025-09-18</td><td>Wan-Move</td><td>NeurIPS 2025 接收</td></tr>
+            <tr><td>2025-12-09</td><td>Wan-Move</td><td>论文发布，代码/模型/MoveBench 开源</td></tr>
+            <tr><td>2026-03-29</td><td>Wan-R1</td><td>视频推理 RL，可验证奖励</td></tr>
+            <tr><td>2026-06-23</td><td>Wan-Streamer v0.1</td><td>实时端到端交互，全双工音视频</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 关键对比</h2>
+        <h3>模型规格</h3>
+        <table>
+            <tr><th>模型</th><th>参数量</th><th>架构</th><th>最大分辨率</th><th>VRAM</th></tr>
+            <tr><td>Wan2.1-T2V-1.3B</td><td>1.3B</td><td>Dense DiT</td><td>480P</td><td>8.19 GB</td></tr>
+            <tr><td>Wan2.1-T2V-14B</td><td>14B</td><td>Dense DiT</td><td>720P</td><td>~40 GB</td></tr>
+            <tr><td>Wan2.2-T2V-A14B</td><td>A14B (MoE)</td><td>MoE DiT</td><td>720P</td><td>~80 GB</td></tr>
+            <tr><td>Wan2.2-TI2V-5B</td><td>5B</td><td>Dense DiT</td><td>720P@24fps</td><td>消费级</td></tr>
+            <tr><td>Wan-Move-14B</td><td>14B</td><td>Dense DiT</td><td>480P</td><td>40 GB</td></tr>
+        </table>
+        <h3>能力维度</h3>
+        <table>
+            <tr><th>能力</th><th>Wan2.1</th><th>Wan2.2</th><th>VACE</th><th>Wan-Move</th><th>Wan-R1</th><th>Wan-Streamer</th></tr>
+            <tr><td>文本到视频</td><td>✓</td><td>✓</td><td>~</td><td>-</td><td>-</td><td>-</td></tr>
+            <tr><td>图像到视频</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>-</td><td>-</td></tr>
+            <tr><td>视频编辑</td><td>✓</td><td>-</td><td>✓</td><td>-</td><td>-</td><td>-</td></tr>
+            <tr><td>运动控制</td><td>-</td><td>-</td><td>-</td><td>✓</td><td>-</td><td>-</td></tr>
+            <tr><td>语音驱动</td><td>-</td><td>✓ (S2V)</td><td>-</td><td>-</td><td>-</td><td>✓</td></tr>
+            <tr><td>角色动画</td><td>-</td><td>✓ (Animate)</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+            <tr><td>视频推理</td><td>-</td><td>-</td><td>-</td><td>-</td><td>✓</td><td>-</td></tr>
+            <tr><td>实时交互</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>✓</td></tr>
+            <tr><td>MoE 架构</td><td>-</td><td>✓</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 总结与思考</h2>
+        <ul>
+            <li><strong>开源生态引领：</strong>Wan 系列从 2.1 到 2.2 持续推动视频生成开源生态，已被 NVIDIA Cosmos 3、众多学术论文和社区项目采用</li>
+            <li><strong>架构创新：</strong>Wan-VAE (3D 因果 VAE) → MoE DiT → Block-causal Transformer，每个版本都有实质架构创新</li>
+            <li><strong>能力维度扩展：</strong>从基础 T2V/I2V 扩展到编辑 (VACE)、运动控制 (Move)、推理 (R1)、实时交互 (Streamer)</li>
+            <li><strong>消费级友好：</strong>1.3B 模型 8.19GB VRAM、TI2V-5B 消费级 720P，持续降低使用门槛</li>
+            <li><strong>Wan2.3+ 不存在：</strong>截至 2026-06-25，没有 Wan2.3、Wan2.4、Wan2.5、Wan2.6、Wan2.7 的 arXiv 论文或 GitHub 仓库</li>
+            <li><strong>未来方向：</strong>Wan-Streamer v0.1 (192p) 暗示高分辨率实时交互是下一步；Wan-R1 的视频推理方向有待拓展到自然场景</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 调研索引 · 生成于 2026-06-25 · 领域: CV/AI/Video Generation
+</div>
+
+</body>
+</html>
