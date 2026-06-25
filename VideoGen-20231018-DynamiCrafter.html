@@ -115,6 +115,66 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>DynamiCrafter 架构：</strong>基于视频扩散先验的图像动画化方法</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>输入：</strong>单张图像 + 文本描述（可选）</li>
+                <li><strong>双路径注入：</strong>图像特征通过 visual context 和 spatial blending 两条路径注入视频扩散模型</li>
+                <li><strong>视频扩散：</strong>基于 AnimateDiff 或类似视频扩散先验</li>
+                <li><strong>输出：</strong>从静态图像生成的动态视频</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：双路径图像注入</strong> — visual context (语义级) + spatial blending (像素级) 两条路径，确保图像信息有效保留。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：视频扩散先验复用</strong> — 不从零训练，复用已有视频扩散模型的能力。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：无需深度估计</strong> — 不需要传统的 3D 几何重建，纯 2D 扩散生成运动。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>图像动画化</td><td>静态照片 → 动态视频</td></tr>
+            <tr><td>循环视频</td><td>生成无缝循环的背景视频</td></tr>
+            <tr><td>创意设计</td><td>设计图 → 动态效果展示</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略 / 📊 数据集 / 📐 损失函数</h2>
+        <ul>
+            <li><strong>训练：</strong>在视频数据上微调视频扩散模型，学习图像到视频的映射</li>
+            <li><strong>数据：</strong>WebVid 等公开视频数据集 + 内部数据</li>
+            <li><strong>损失：</strong>标准扩散损失 DDPM/DDIM</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>DynamiCrafter</th><th>Wan2.1 I2V</th><th>LTX-Video I2V</th></tr>
+            <tr><td>方法</td><td>视频扩散先验+双路径注入</td><td>端到端 DiT</td><td>端到端 DiT</td></tr>
+            <tr><td>运动幅度</td><td>受限</td><td>大</td><td>大</td></tr>
+            <tr><td>图像保真</td><td>高 (双路径)</td><td>高</td><td>高</td></tr>
+            <tr><td>时代</td><td>2023 (先驱)</td><td>2025 (主流)</td><td>2025 (轻量)</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>DynamiCrafter 是图像动画化的先驱之一，但 2025 年后的端到端模型（Wan2.1 I2V、LTX）在运动质量和幅度上已大幅超越。视频扩散先验 + 图像注入的范式正在被端到端 DiT 替代。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2310.12190" target="_blank">📄 arXiv</a>

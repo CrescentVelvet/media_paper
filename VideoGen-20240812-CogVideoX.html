@@ -149,6 +149,66 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>CogVideoX 架构：</strong>5B 参数，Expert Transformer + 3D VAE，ICLR 2025</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>文本编码：</strong>多语言文本编码器</li>
+                <li><strong>3D VAE：</strong>时间 + 空间联合压缩</li>
+                <li><strong>Expert Transformer：</strong>专家模块化的 Transformer，不同专家处理不同模态/任务</li>
+                <li><strong>扩散生成：</strong>在潜空间进行扩散去噪</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：Expert Transformer</strong> — 专家模块化设计，不同专家处理不同模态，提升多模态融合效率。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：3D VAE</strong> — 时间+空间联合压缩的高效视频 VAE。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：中国最早系统研究视频生成的团队之一</strong> — 从 CogVideo (ICLR 2023) 一脉相承。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>视频创作</td><td>T2V 视频生成</td></tr>
+            <tr><td>多模态研究</td><td>Expert Transformer 架构研究</td></tr>
+            <tr><td>中文视频</td><td>支持中文 prompt</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略 / 📊 数据集 / 📐 损失函数</h2>
+        <ul>
+            <li><strong>训练：</strong>大规模图像/视频文本对，渐进式分辨率</li>
+            <li><strong>数据：</strong>公开视频数据 + 内部中文视频数据</li>
+            <li><strong>损失：</strong>Flow Matching + 专家负载均衡损失</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>CogVideo (2023)</th><th>CogVideoX (2024)</th><th>Wan2.1 (2025)</th></tr>
+            <tr><td>架构</td><td>Transformer</td><td>Expert Transformer + 3D VAE</td><td>DiT + Wan-VAE</td></tr>
+            <tr><td>参数量</td><td>2B/5B</td><td>5B</td><td>1.3B/14B</td></tr>
+            <tr><td>中文</td><td>✅</td><td>✅</td><td>✅</td></tr>
+            <tr><td>VAE</td><td>2D</td><td>3D</td><td>3D 因果</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>CogVideoX 的 Expert Transformer 与 Wan2.2 的 MoE 有异曲同工之妙——都是通过模块化/专家化提升参数效率。CogVideoX 在 ICLR 2025 发表，是中国视频生成研究的重要学术贡献。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2408.06072" target="_blank">📄 arXiv</a>

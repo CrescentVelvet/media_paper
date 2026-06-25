@@ -114,6 +114,66 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>Mochi 1 架构：</strong>10B 参数，非对称 DiT，Apache 2.0 开源</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>文本编码：</strong>T5 编码器</li>
+                <li><strong>视频 VAE：</strong>视频 VAE 编码/解码</li>
+                <li><strong>非对称 DiT：</strong>编码器和解码器不同深度，更高效</li>
+                <li><strong>Flow Matching：</strong>连续时间生成框架</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：非对称 DiT</strong> — 编码器和解码器使用不同深度，更高效的计算分配。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：Apache 2.0 完全开源</strong> — 10B 模型完全开源，作为研究基线。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：研究导向定位</strong> — Genmo 以研究透明度为核心，代码+权重+训练细节全开放。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>研究基线</td><td>视频生成研究的开源基准</td></tr>
+            <tr><td>视频创作</td><td>T2V 视频生成</td></tr>
+            <tr><td>模型复现</td><td>完全开源，适合复现和改进</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略 / 📊 数据集 / 📐 损失函数</h2>
+        <ul>
+            <li><strong>训练：</strong>大规模图像/视频数据，渐进式分辨率</li>
+            <li><strong>数据：</strong>公开视频数据集 + 内部数据</li>
+            <li><strong>损失：</strong>Flow Matching：L = E || v_θ(z_t, t, c) - v ||²</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>Mochi 1</th><th>Wan2.1</th><th>HunyuanVideo 1.5</th></tr>
+            <tr><td>参数量</td><td>10B</td><td>14B</td><td>8.3B</td></tr>
+            <tr><td>架构</td><td>非对称 DiT</td><td>DiT</td><td>SSTA-DiT</td></tr>
+            <tr><td>开源</td><td>Apache 2.0</td><td>Apache 2.0</td><td>开源</td></tr>
+            <tr><td>定位</td><td>研究基线</td><td>产品级</td><td>产品级</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>Mochi 1 的价值在于作为开源研究基线。随着 Wan2.1/2.2、HunyuanVideo、LTX 等更强开源模型出现，Mochi 1 的位置更多是“可比的参考点”。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://github.com/genmoai/mochi" target="_blank">💻 GitHub</a>
