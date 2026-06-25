@@ -131,9 +131,9 @@
 <div class="header">
     <h1>Cosmos 3: Omnimodal World Models for Physical AI</h1>
     <div class="meta">
-        <span>📄 arXiv: 2606.02800 (v4)</span>
-        <span>🏢 NVIDIA</span>
-        <span>📅 2026-06-01 提交 / 2026-06-23 更新</span>
+        <span>📄 arXiv: 2606.02800 (v4, 2026-06-23)</span>
+        <span>🏢 NVIDIA (200+ 作者)</span>
+        <span>📅 2026-06-01 提交</span>
         <span>📂 CV / AI / ML / Multimedia / Robotics</span>
     </div>
     <div class="tags">
@@ -232,14 +232,81 @@
     </div>
 
     <div class="section">
+        <h2>🎮 两种运行模式与用例</h2>
+        <table>
+            <tr><th>模式</th><th>输入</th><th>输出</th><th>适用场景</th></tr>
+            <tr><td><strong>Reasoner</strong></td><td>文本、视觉</td><td>文本</td><td>世界理解、grounding、物理推理、任务规划、动作预测、embodied agent 推理、自主系统决策</td></tr>
+            <tr><td><strong>Generator</strong></td><td>文本、视觉、声音、动作</td><td>视觉、声音、动作</td><td>世界生成、世界模拟、未来预测、合成数据、策略学习、机器人训练</td></tr>
+        </table>
+
+        <h3>Generator 典型工作流</h3>
+        <table>
+            <tr><th>工作流</th><th>输入</th><th>输出</th><th>说明</th></tr>
+            <tr><td>Text-to-Image</td><td>文本</td><td>视觉</td><td>从文本描述生成场景图像</td></tr>
+            <tr><td>Text-to-Video</td><td>文本</td><td>视觉</td><td>从密集场景描述生成视频</td></tr>
+            <tr><td>Text-to-Video + Sound</td><td>文本</td><td>视觉+声音</td><td>同步视觉和音频生成</td></tr>
+            <tr><td>Image-to-Video</td><td>文本+图像</td><td>视觉</td><td>从起始图像生成机器人操作动画</td></tr>
+            <tr><td>Video-to-Video</td><td>文本+视频</td><td>视觉</td><td>提示引导的视频变换</td></tr>
+            <tr><td>Forward Dynamics</td><td>文本+视觉+动作</td><td>视觉</td><td>从动作和视觉上下文 rollout 未来状态</td></tr>
+            <tr><td>Action Policy</td><td>文本+视觉</td><td>动作+视觉</td><td>从上下文输出动作轨迹和 rollout 视频</td></tr>
+        </table>
+
+        <h3>Reasoner 典型工作流</h3>
+        <table>
+            <tr><th>工作流</th><th>输入</th><th>输出</th><th>说明</th></tr>
+            <tr><td>视频描述</td><td>视频</td><td>文本</td><td>详细视频字幕生成</td></tr>
+            <tr><td>时序定位</td><td>视频+查询</td><td>文本/JSON</td><td>事件检测、时间戳查询</td></tr>
+            <tr><td>Embodied 推理</td><td>视频+问题</td><td>文本</td><td>机器人下一步动作预测</td></tr>
+            <tr><td>常识推理</td><td>视频+问题</td><td>文本</td><td>物理常识判断</td></tr>
+            <tr><td>2D Grounding</td><td>图像+提示</td><td>JSON boxes</td><td>边界框定位</td></tr>
+            <tr><td>Action CoT</td><td>图像/视频+提示</td><td>文本/JSON</td><td>轨迹预测和驾驶场景思维链</td></tr>
+            <tr><td>物理合理性分析</td><td>视频+提示</td><td>标签</td><td>物理合理性分类</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>推理+生成联合 Pipeline：</strong>先对输入场景推理生成动作轨迹，再用该结构化意图驱动物理交互视频生成（Plan first, then bring it to life）。例如：给定"从抽屉拿出方块放到台面上"的任务，模型先推理出 2D 端末执行器轨迹坐标，再据此生成操作视频。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ 采样参数</h2>
+        <h3>Generator Prompt Upsampling</h3>
+        <table>
+            <tr><th>参数</th><th>值</th></tr>
+            <tr><td>max_tokens</td><td>20000</td></tr>
+            <tr><td>temperature</td><td>0.7</td></tr>
+            <tr><td>top_p</td><td>0.8</td></tr>
+            <tr><td>top_k</td><td>20</td></tr>
+            <tr><td>repetition_penalty</td><td>1.0</td></tr>
+            <tr><td>presence_penalty</td><td>1.5</td></tr>
+        </table>
+        <h3>Reasoner 采样</h3>
+        <table>
+            <tr><th>参数</th><th>无推理</th><th>带推理</th></tr>
+            <tr><td>top_p</td><td>0.8</td><td>0.95</td></tr>
+            <tr><td>top_k</td><td>20</td><td>20</td></tr>
+            <tr><td>temperature</td><td>0.7</td><td>0.6</td></tr>
+            <tr><td>presence_penalty</td><td>1.5</td><td>0.0</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
         <h2>🔧 部署方式</h2>
         <table>
             <tr><th>路径</th><th>用途</th><th>框架</th></tr>
-            <tr><td>Diffusers</td><td>研究/训练/开发</td><td>HuggingFace Diffusers (Python)</td></tr>
-            <tr><td>vLLM-Omni</td><td>生产推理 (Generator)</td><td>OpenAI 兼容 API，Docker 部署</td></tr>
-            <tr><td>vLLM</td><td>生产推理 (Reasoner)</td><td>仅加载推理路径，轻量部署</td></tr>
+            <tr><td>Diffusers</td><td>研究/训练/开发</td><td>HuggingFace Diffusers (Python)，加载完整 checkpoint</td></tr>
+            <tr><td>vLLM-Omni</td><td>生产推理 (Generator)</td><td>OpenAI 兼容 API，Docker 部署，支持 TP/CFG 并行/Ulysses</td></tr>
+            <tr><td>vLLM</td><td>生产推理 (Reasoner)</td><td>仅加载推理路径，轻量部署，OpenAI 兼容</td></tr>
             <tr><td>Transformers</td><td>Reasoner 集成</td><td>Qwen3-VL 兼容消息格式</td></tr>
             <tr><td>NIM</td><td>Reasoner 服务</td><td>NVIDIA NIM 微服务</td></tr>
+            <tr><td>Cosmos Framework</td><td>后训练微调</td><td>训练 recipe 和评估工具</td></tr>
+        </table>
+        <h3>并行化选项 (vLLM-Omni)</h3>
+        <table>
+            <tr><th>选项</th><th>用途</th></tr>
+            <tr><td><code>--tensor-parallel-size N</code></td><td>跨 N 个 GPU 分割模型权重</td></tr>
+            <tr><td><code>--cfg-parallel-size 2</code></td><td>正负 CFG 分支并行运行（2 GPU）</td></tr>
+            <tr><td><code>--ulysses-degree N</code></td><td>Ulysses 序列并行，分割序列维度</td></tr>
+            <tr><td><code>--enable-layerwise-offload</code></td><td>CPU-GPU 层间卸载，降低峰值显存</td></tr>
         </table>
         <h3>支持的 GPU 架构</h3>
         <p>NVIDIA Ampere / Hopper / Blackwell，BF16 精度，Linux 系统</p>
