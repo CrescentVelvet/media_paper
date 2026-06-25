@@ -1,0 +1,23 @@
+# PDF files (too large for git)
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Node.js
+node_modules/
+package.json
+package-lock.json
+
+# Temporary extraction files
+paper-text.txt
+extract*.js
+extract*.py
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -151,25 +151,54 @@
 
     <div class="section">
         <h2>📌 论文概要</h2>
-        <p><strong>Cosmos 3</strong> 是 NVIDIA 提出的全模态世界模型家族，能在统一的 Mixture-of-Transformers (MoT) 架构中<strong>联合处理和生成语言、图像、视频、音频和动作序列</strong>。通过灵活的输入输出配置，将视觉语言模型、视频生成器、世界模拟器和世界动作模型统一到单一框架中。</p>
+        <p><strong>Cosmos 3</strong> 是 NVIDIA 提出的全模态世界模型家族,能在统一的 Mixture-of-Transformers (MoT) 架构中<strong>联合处理和生成语言、图像、视频、音频和动作序列</strong>。通过灵活的输入输出配置,将视觉语言模型、视频生成器、世界模拟器和世界动作模型统一到单一框架中。</p>
         <div class="highlight">
-            <strong>核心成就：</strong>后训练模型在 Artificial Analysis 评测中被评为最佳开源 Text-to-Image 和 Image-to-Video 模型，在 RoboArena 中被评为最佳策略模型。在多项理解和生成任务中达到 SOTA。
+            <strong>核心成就:</strong>后训练模型在 Artificial Analysis 评测中被评为最佳开源 Text-to-Image 和 Image-to-Video 模型,在 RoboArena 中被评为最佳策略模型。在多项理解和生成任务中达到 SOTA。
         </div>
     </div>
 
     <div class="section">
-        <h2>🏗️ 模型架构</h2>
-        <p>Cosmos 3 采用统一的 <strong>Mixture-of-Transformers (MoT)</strong> 架构，结合两种核心模式：</p>
+        <h2>🏗️ 模型架构(深入)</h2>
+        <p>Cosmos 3 采用统一的 <strong>Mixture-of-Transformers (MoT)</strong> 架构。输入序列分为两个子序列:</p>
         <table>
-            <tr><th>模式</th><th>机制</th><th>功能</th></tr>
-            <tr><td><strong>Reasoner (推理)</strong></td><td>自回归 (AR) Transformer，因果自注意力</td><td>语言+视觉理解，下一 token 预测，感知/规划/世界推理</td></tr>
-            <tr><td><strong>Generator (生成)</strong></td><td>扩散 (Diffusion) Transformer，全注意力</td><td>图像/视频/音频/动作的去噪生成，多模态联合输出</td></tr>
+            <tr><th>子序列</th><th>包含</th><th>注意力机制</th><th>路由</th></tr>
+            <tr><td><strong>AR 子序列</strong></td><td>语言 token + ViT 编码的视觉 token</td><td>因果自注意力(只能看到前面的 token)</td><td>Reasoner 塔</td></tr>
+            <tr><td><strong>DM 子序列</strong></td><td>VAE 编码的视觉/音频/动作 token(加噪)</td><td>全双向注意力(可看到 AR+DM 所有 token)</td><td>Generator 塔</td></tr>
         </table>
-        <h3>关键设计</h3>
+        <div class="highlight">
+            <strong>关键设计:</strong>AR token 永远不会被 DM token 更新(保持因果完整性),但 DM token 可以自由注意到 AR 的文本提示。两个塔共享同一个注意力层,但有独立的 LayerNorm、MLP 和投影矩阵。两者均从预训练 VLM 权重初始化。
+        </div>
+
+        <h3>编码器</h3>
+        <table>
+            <tr><th>模态</th><th>编码器</th><th>压缩率</th><th>训练状态</th></tr>
+            <tr><td>视觉(理解)</td><td>ViT (16×16 patch + 2×2 merge)</td><td>空间 32×32 压缩</td><td>与主干联合训练</td></tr>
+            <tr><td>视觉(生成)</td><td>Wan2.2 视频 VAE</td><td>时间 4× / 空间 32×32</td><td>冻结</td></tr>
+            <tr><td>音频</td><td>Audio VAE (Lee et al.)</td><td>48kHz → 25 token/s</td><td>冻结</td></tr>
+            <tr><td>动作</td><td>Domain-aware 线性投影</td><td>按 embodiment 维度</td><td>从零初始化,联合训练</td></tr>
+        </table>
+
+        <h3>统一动作表示</h3>
+        <p>所有 embodiment 的动作都映射为 <strong>ego pose (9D) + effector pose (9D) + grasp state</strong> 的组合:</p>
         <ul>
-            <li><strong>共享架构：</strong>两种模式共用相同的 Transformer 结构和多模态注意力层</li>
-            <li><strong>统一位置编码：</strong>3D 多维旋转位置嵌入 (mRoPE)，编码跨模态的空间和时间结构</li>
-            <li><strong>灵活 I/O：</strong>支持文本、图像、视频、音频、动作之间的任意组合输入输出</li>
+            <li><strong>相机运动 (9D):</strong>仅 ego pose</li>
+            <li><strong>自动驾驶 (9D):</strong>仅 ego pose</li>
+            <li><strong>自我中心运动 (57D):</strong>ego(9D) + 双腕 effector(9D×2) + 指尖 grasp(15D×2)</li>
+            <li><strong>单臂机器人 (10D):</strong>ego(9D) + gripper open/close(1D)</li>
+            <li><strong>双臂机器人 (20D):</strong>单臂 × 2</li>
+            <li><strong>人形机器人 (29D):</strong>ego(9D) + 双臂(9D+1D)×2</li>
+        </ul>
+        <p>ego/effector pose 使用 SE(3) 相对变换的 6D 旋转表示(Zhou et al. 2019),grasp state 直接编码当前操作状态。不同 embodiment 使用独立的输入/输出投影矩阵,但共享 MoT 主干。</p>
+
+        <h3>3D 多维旋转位置嵌入 (mRoPE)</h3>
+        <p>扩展 Qwen3-VL 的 3D MRoPE,增加<strong>绝对时间索引</strong>来对齐不同模态的时间轴。原始 MRoPE 的 temporal 分量只记录 token 离散索引,无法处理视频/音频/动作以不同帧率同时生成的情况。Cosmos 3 将所有模态对齐到同一物理时间轴。</p>
+
+        <h3>Token 排列规则</h3>
+        <ul>
+            <li>AR token 在前,DM token 在后</li>
+            <li>DM 内部:clean 条件 token 在前,noisy 生成 token 在后</li>
+            <li>模态顺序:视觉 → 音频 → 动作</li>
+            <li>特殊 token:<code>&lt;EOS&gt;</code> 结束 AR 序列,<code>&lt;BOG&gt;</code> (Begin-of-Generation) 开始 DM 序列</li>
         </ul>
     </div>
 
@@ -177,11 +206,11 @@
         <h2>👨‍👩‍👧‍👦 模型家族</h2>
         <table>
             <tr><th>模型</th><th>参数量</th><th>主要能力</th></tr>
-            <tr><td><strong>Cosmos3-Nano</strong></td><td>16B</td><td>紧凑型全模态世界模型，理解/模拟/预测/动作推理</td></tr>
-            <tr><td><strong>Cosmos3-Super</strong></td><td>64B</td><td>前沿级全模态世界模型，高级理解/模拟/预测/动作推理</td></tr>
+            <tr><td><strong>Cosmos3-Nano</strong></td><td>16B</td><td>紧凑型全模态世界模型,理解/模拟/预测/动作推理</td></tr>
+            <tr><td><strong>Cosmos3-Super</strong></td><td>64B</td><td>前沿级全模态世界模型,高级理解/模拟/预测/动作推理</td></tr>
             <tr><td><strong>Cosmos3-Super-Text2Image</strong></td><td>64B</td><td>高保真文本到图像生成</td></tr>
             <tr><td><strong>Cosmos3-Super-Image2Video</strong></td><td>64B</td><td>时间一致性图像到视频生成</td></tr>
-            <tr><td><strong>Cosmos3-Nano-Policy-DROID</strong></td><td>16B</td><td>视觉语言机器人策略（DROID 操作控制）</td></tr>
+            <tr><td><strong>Cosmos3-Nano-Policy-DROID</strong></td><td>16B</td><td>视觉语言机器人策略(DROID 操作控制)</td></tr>
         </table>
     </div>
 
@@ -194,17 +223,17 @@
         </ul>
         <h3>2. 世界生成 (World Generation)</h3>
         <ul>
-            <li>文本→图像/视频，图像→视频，视频→视频</li>
-            <li>同步音频生成，动作条件视频 rollout</li>
+            <li>文本→图像/视频,图像→视频,视频→视频</li>
+            <li>同步音频生成,动作条件视频 rollout</li>
         </ul>
         <h3>3. 动作建模 (Action Modeling)</h3>
         <ul>
-            <li><strong>前向动力学：</strong>给定观察+动作 → 预测未来视频</li>
-            <li><strong>策略模型：</strong>给定观察+指令 → 输出动作轨迹</li>
-            <li><strong>逆动力学：</strong>给定视频 → 推断动作轨迹</li>
+            <li><strong>前向动力学:</strong>给定观察+动作 → 预测未来视频</li>
+            <li><strong>策略模型:</strong>给定观察+指令 → 输出动作轨迹</li>
+            <li><strong>逆动力学:</strong>给定视频 → 推断动作轨迹</li>
         </ul>
         <h3>4. 推理+生成联合</h3>
-        <p>先对场景推理生成动作轨迹，再用该结构化意图驱动物理交互视频生成（Plan first, then bring it to life）。</p>
+        <p>先对场景推理生成动作轨迹,再用该结构化意图驱动物理交互视频生成(Plan first, then bring it to life)。</p>
     </div>
 
     <div class="section">
@@ -213,21 +242,43 @@
             <tr><th>项目</th><th>规格</th></tr>
             <tr><td>输入类型</td><td>文本 / 文本+图像 / 文本+视频 / 文本+图像+动作</td></tr>
             <tr><td>输出类型</td><td>图像 / 视频 / 音频 / 动作 / 文本</td></tr>
-            <tr><td>分辨率</td><td>256p / 480p / 720p（默认 480p）</td></tr>
+            <tr><td>分辨率</td><td>256p / 480p / 720p(默认 480p)</td></tr>
             <tr><td>宽高比</td><td>16:9 / 4:3 / 1:1 / 3:4 / 9:16</td></tr>
             <tr><td>帧率</td><td>10 / 16 / 24 / 30 FPS</td></tr>
             <tr><td>帧数</td><td>5 ~ 300 帧</td></tr>
             <tr><td>动作维度</td><td>相机运动(9D) / 自动驾驶(9D) / 自我中心运动(57D) / 单臂(10D) / 双臂(20D) / 人形(29D)</td></tr>
-            <tr><td>音频输出</td><td>立体声 AAC 48kHz（与视频同步生成）</td></tr>
+            <tr><td>音频输出</td><td>立体声 AAC 48kHz(与视频同步生成)</td></tr>
         </table>
     </div>
 
     <div class="section">
-        <h2>🏆 基准表现</h2>
+        <h2>🏆 基准表现(详细)</h2>
+        <h3>Reasoner 评测(理解能力)</h3>
+        <table>
+            <tr><th>领域</th><th>Cosmos3-Super</th><th>Cosmos3-Nano</th><th>Qwen3-VL-32B</th><th>Gemini 3.1 Pro†</th></tr>
+            <tr><td><strong>General Avg.</strong> (19 benchmarks)</td><td><strong>73.7</strong></td><td>69.6</td><td>72.8</td><td>77.5</td></tr>
+            <tr><td><strong>Robotics Avg.</strong> (17 benchmarks)</td><td><strong>57.8</strong></td><td>55.1</td><td>52.6</td><td>58.2</td></tr>
+            <tr><td><strong>Smart Infra. Avg.</strong> (9 benchmarks)</td><td><strong>62.6</strong></td><td>61.0</td><td>56.1</td><td>58.6</td></tr>
+            <tr><td><strong>Driving Avg.</strong> (3 benchmarks)</td><td><strong>79.3</strong></td><td>76.0</td><td>40.7</td><td>47.2</td></tr>
+        </table>
         <div class="highlight">
-            <strong>推理：</strong>在 Robotics、Smart Space、Driving 基准平均分上排名开源模型 #1<br>
-            <strong>生成：</strong>在 R-Bench、Artificial Analysis、RoboLab、RoboArena 基准上排名开源模型 #1<br>
-            <strong>荣誉：</strong>Artificial Analysis 最佳开源 T2I 和 I2V 模型；RoboArena 最佳策略模型
+            <strong>关键发现:</strong>在 Driving 领域,Cosmos3-Super (79.3) 大幅领先 Qwen3-VL-32B (40.7) 和 Gemini 3.1 Pro (47.2)。在 Robotics 和 Smart Infrastructure 领域也均排名第一。仅在 General 类别略低于 Gemini 3.1 Pro。
+        </div>
+
+        <h3>Generator 评测(生成能力)</h3>
+        <table>
+            <tr><th>能力</th><th>Cosmos3-Super</th><th>Cosmos3-Nano</th><th>对比模型</th></tr>
+            <tr><td>Text2Image (Artificial Analysis)</td><td><strong>91.36*</strong></td><td>84.61</td><td>Qwen-Image-2512: 84.25, Gemini 3 Pro Image†: 90.85</td></tr>
+            <tr><td>Text2Video (R-Bench)</td><td><strong>80.0</strong></td><td>79.4</td><td>Veo-3.1†: 79.1</td></tr>
+            <tr><td>Image2Video (R-Bench)</td><td><strong>82.8</strong></td><td>82.7</td><td>Veo-3.1†: 82.67, Wan2.2-A14B: 81.3</td></tr>
+            <tr><td>Audio (AQA)</td><td>7.31</td><td>7.34</td><td>Veo-3.1†: 7.45</td></tr>
+            <tr><td>Forward Dynamics (Robot)</td><td>26.0*</td><td>25.5*</td><td>Ctrl-World: 23.0</td></tr>
+            <tr><td>Policy (RoboArena)</td><td>-</td><td><strong>39.7*</strong></td><td>π0.5: 28.1</td></tr>
+        </table>
+        <p>* 表示后训练变体。†表示闭源模型。</p>
+
+        <div class="highlight">
+            <strong>推理:</strong>开源模型 #1(Robotics/Smart Space/Driving 平均);<strong>生成:</strong>开源 T2I 和 I2V #1(Artificial Analysis),最佳策略模型(RoboArena)。
         </div>
     </div>
 
@@ -263,7 +314,7 @@
             <tr><td>物理合理性分析</td><td>视频+提示</td><td>标签</td><td>物理合理性分类</td></tr>
         </table>
         <div class="highlight">
-            <strong>推理+生成联合 Pipeline：</strong>先对输入场景推理生成动作轨迹，再用该结构化意图驱动物理交互视频生成（Plan first, then bring it to life）。例如：给定"从抽屉拿出方块放到台面上"的任务，模型先推理出 2D 端末执行器轨迹坐标，再据此生成操作视频。
+            <strong>推理+生成联合 Pipeline:</strong>先对输入场景推理生成动作轨迹,再用该结构化意图驱动物理交互视频生成(Plan first, then bring it to life)。例如:给定"从抽屉拿出方块放到台面上"的任务,模型先推理出 2D 端末执行器轨迹坐标,再据此生成操作视频。
         </div>
     </div>
 
@@ -293,9 +344,9 @@
         <h2>🔧 部署方式</h2>
         <table>
             <tr><th>路径</th><th>用途</th><th>框架</th></tr>
-            <tr><td>Diffusers</td><td>研究/训练/开发</td><td>HuggingFace Diffusers (Python)，加载完整 checkpoint</td></tr>
-            <tr><td>vLLM-Omni</td><td>生产推理 (Generator)</td><td>OpenAI 兼容 API，Docker 部署，支持 TP/CFG 并行/Ulysses</td></tr>
-            <tr><td>vLLM</td><td>生产推理 (Reasoner)</td><td>仅加载推理路径，轻量部署，OpenAI 兼容</td></tr>
+            <tr><td>Diffusers</td><td>研究/训练/开发</td><td>HuggingFace Diffusers (Python),加载完整 checkpoint</td></tr>
+            <tr><td>vLLM-Omni</td><td>生产推理 (Generator)</td><td>OpenAI 兼容 API,Docker 部署,支持 TP/CFG 并行/Ulysses</td></tr>
+            <tr><td>vLLM</td><td>生产推理 (Reasoner)</td><td>仅加载推理路径,轻量部署,OpenAI 兼容</td></tr>
             <tr><td>Transformers</td><td>Reasoner 集成</td><td>Qwen3-VL 兼容消息格式</td></tr>
             <tr><td>NIM</td><td>Reasoner 服务</td><td>NVIDIA NIM 微服务</td></tr>
             <tr><td>Cosmos Framework</td><td>后训练微调</td><td>训练 recipe 和评估工具</td></tr>
@@ -304,34 +355,47 @@
         <table>
             <tr><th>选项</th><th>用途</th></tr>
             <tr><td><code>--tensor-parallel-size N</code></td><td>跨 N 个 GPU 分割模型权重</td></tr>
-            <tr><td><code>--cfg-parallel-size 2</code></td><td>正负 CFG 分支并行运行（2 GPU）</td></tr>
-            <tr><td><code>--ulysses-degree N</code></td><td>Ulysses 序列并行，分割序列维度</td></tr>
-            <tr><td><code>--enable-layerwise-offload</code></td><td>CPU-GPU 层间卸载，降低峰值显存</td></tr>
+            <tr><td><code>--cfg-parallel-size 2</code></td><td>正负 CFG 分支并行运行(2 GPU)</td></tr>
+            <tr><td><code>--ulysses-degree N</code></td><td>Ulysses 序列并行,分割序列维度</td></tr>
+            <tr><td><code>--enable-layerwise-offload</code></td><td>CPU-GPU 层间卸载,降低峰值显存</td></tr>
         </table>
         <h3>支持的 GPU 架构</h3>
-        <p>NVIDIA Ampere / Hopper / Blackwell，BF16 精度，Linux 系统</p>
+        <p>NVIDIA Ampere / Hopper / Blackwell,BF16 精度,Linux 系统</p>
     </div>
 
     <div class="section">
-        <h2>💡 个人分析</h2>
-        <h3>意义</h3>
+        <h2>💡 深度分析</h2>
+        <h3>核心贡献与意义</h3>
         <ul>
-            <li><strong>架构统一：</strong>用单一 MoT 架构统一了理解(AR)和生成(Diffusion)两大范式，避免了多模型拼装的复杂性</li>
-            <li><strong>Physical AI 范式：</strong>将世界模型从"看"和"说"扩展到"做"，打通了感知→推理→动作→模拟的完整闭环</li>
-            <li><strong>开源生态：</strong>代码、权重、数据集、评测全开放（OpenMDW-1.1 许可），对学术界和初创公司极为友好</li>
+            <li><strong>架构统一：</strong>用单一 MoT 架构统一了理解(AR)和生成(Diffusion)，避免了多模型拼装的复杂性。双塔结构 + 共享注意力让两种范式既能独立训练又能互相增强</li>
+            <li><strong>Physical AI 范式：</strong>将世界模型从“看”和“说”扩展到“做”，打通了感知→推理→动作→模拟的完整闭环</li>
+            <li><strong>动作作为一等公民：</strong>Action token 被设计为连接视觉帧的因果变量 (a_t 连接 v_{t-1} 和 v_t)，统一了 forward dynamics / inverse dynamics / policy 三种模式</li>
+            <li><strong>Embodment 泛化：</strong>通过 domain-aware 投影层，同一主干可以处理从 9D 相机到 29D 人形机器人的各种动作空间</li>
+            <li><strong>开源生态：</strong>代码、权重、5 类合成数据集、评测基准全开放（OpenMDW-1.1 许可），对学术界和初创公司极为友好</li>
+        </ul>
+        <h3>技术亮点</h3>
+        <ul>
+            <li>绝对时间轴 mRoPE：解决了不同模态不同帧率的时间对齐问题</li>
+            <li>Token 排列规则：AR在前 DM在后，条件 token 在前 noisy token 在后，统一支持所有生成模式</li>
+            <li>双塔均从预训练 VLM 初始化：继承语言和视觉推理能力的同时学习生成</li>
+            <li>合成数据集 (SDG)：PhyxSim / RobotSim / DriveSim / SynHuman / Warehouse 五类，消融实验证明有效</li>
+            <li>推理+生成联合 pipeline：先推理生成动作轨迹，再驱动物理交互视频生成</li>
         </ul>
         <h3>值得关注</h3>
         <ul>
-            <li>mRoPE 统一时空编码方案的具体设计细节</li>
-            <li>Generator 和 Reasoner 两个路径的参数共享比例和训练策略</li>
-            <li>动作维度的 embodiment 泛化能力（从 9D 相机到 29D 人形机器人）</li>
-            <li>推理+生成联合 pipeline 的实际效果和延迟</li>
+            <li>Reasoner 对 Generator 的增益（Appendix E.1 消融实验）</li>
+            <li>多动作模式之间的协同效应（Appendix E.4）</li>
+            <li>视频-动作一致性评估（Appendix E.5）</li>
+            <li>Cosmos3-Edge 轻量模型（Appendix D）的训练方法</li>
+            <li>Cosmos-HumanEval (HUE) 评测基准的设计（Appendix F）</li>
         </ul>
         <h3>局限</h3>
         <ul>
             <li>部署门槛高：需要 NVIDIA GPU + Linux，最小 16B 模型也需要可观显存</li>
             <li>Generator 部分功能（video-to-video、action）在 vLLM-Omni 中仍在开发中</li>
-            <li>目前仅支持 BF16，对消费级 GPU 不友好</li>
+            <li>General 类别推理不及 Gemini 3.1 Pro（73.7 vs 77.5），可能在纯文本/通用知识方面有差距</li>
+            <li>音频生成质量略低于 Veo-3.1（7.31 vs 7.45）</li>
+            <li>论文 139 页，200+ 作者，技术细节非常密集，需要分章节深入阅读</li>
         </ul>
     </div>
 
@@ -340,9 +404,11 @@
         <div class="links">
             <a href="https://arxiv.org/abs/2606.02800" target="_blank">📄 arXiv 论文</a>
             <a href="https://github.com/nvidia/cosmos" target="_blank">💻 GitHub 代码</a>
-            <a href="https://huggingface.co/collections/nvidia/cosmos3" target="_blank">🤗 HuggingFace 模型</a>
+            <a href="https://github.com/nvidia/cosmos-framework" target="_blank">🔧 Cosmos Framework</a>
+            <a href="https://huggingface.co/collections/nvidia/cosmos3" target="_blank">🤗 模型权重</a>
             <a href="https://research.nvidia.com/labs/cosmos-lab/cosmos3/" target="_blank">🌐 项目主页</a>
-            <a href="https://research.nvidia.com/labs/cosmos-lab/cosmos3/technical-report.pdf" target="_blank">📋 技术报告 PDF</a>
+            <a href="https://huggingface.co/datasets/nvidia/PhysicalAI-WorldModel-Synthetic-Physical-Interaction-Scenes" target="_blank">📊 SDG-PhyxSim</a>
+            <a href="https://huggingface.co/datasets/nvidia/Cosmos-HumanEval-v1" target="_blank">📝 Cosmos-HUE 评测</a>
         </div>
     </div>
 
