@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kling 2.0 / 2.1: 快手视频生成模型</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #ff6b35; --accent-dim: #cc5528; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(255, 107, 53, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Kling 2.0 / 2.1: 快手视频生成模型</h1>
+    <div class="meta">
+        <span>📄 klingai.com</span>
+        <span>🏢 Kuaishou (快手)</span>
+        <span>📅 2025-06 ~ 2025-11</span>
+        <span>📂 CV / AI / Video Generation</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Video Generation</span>
+        <span class="tag">DiT</span>
+        <span class="tag">Motion Brush</span>
+        <span class="tag">Camera Control</span>
+        <span class="tag">Video-to-Audio</span>
+        <span class="tag">闭源</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 概要</h2>
+        <p><strong>Kling</strong> 是快手推出的视频生成模型系列。Kling 1.0 于 2024 年 6 月发布，<strong>Kling 2.0</strong> 于 2025 年 6 月发布，在运动质量和物理理解方面大幅提升。<strong>Kling 2.1</strong> 进一步改进了提示词遵循和生成稳定性。Kling 系列还包含 <strong>Kling-Foley</strong> 视频到音频生成模型（arXiv: 2506.19774）。</p>
+        <div class="highlight">
+            <strong>核心优势：</strong>Kling 的 Motion Brush 功能允许用户通过涂抹区域指定运动，实现精细的运动控制。在快手短视频生态中大规模落地应用。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <p>快手未公开 Kling 的完整架构论文。基于公开信息：</p>
+        <ul>
+            <li><strong>3D 时空 VAE</strong>：压缩视频到潜在空间</li>
+            <li><strong>扩散 Transformer</strong>：在潜在空间进行去噪</li>
+            <li><strong>文本编码器</strong>：使用多语言 LLM 编码文本提示</li>
+            <li><strong>Motion Brush</strong>：通过用户涂抹的区域 mask 引导特定区域的运动方向</li>
+            <li><strong>Camera Control</strong>：支持摄像机运动参数（平移、旋转、缩放）控制</li>
+            <li><strong>Kling-Foley</strong>：多模态扩散 Transformer，将视频、音频、文本模态交互建模，实现视频到音频生成</li>
+        </ul>
+        <h3>Kling-Foley 架构细节 (arXiv: 2506.19774)</h3>
+        <table>
+            <tr><th>组件</th><th>说明</th></tr>
+            <tr><td>多模态 DiT</td><td>建模视频/音频/文本三模态交互</td></tr>
+            <tr><td>视觉语义模块</td><td>提取视频帧级语义特征</td></tr>
+            <tr><td>音视同步模块</td><td>帧级对齐视频条件和潜在音频元素</td></tr>
+            <tr><td>通用潜在音频编解码器</td><td>支持音效、语音、歌唱、音乐等多种场景</td></tr>
+            <tr><td>立体声渲染</td><td>赋予合成音频空间感</td></tr>
+            <tr><td>Kling-Audio-Eval</td><td>开源的工业级音频评测基准</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <table>
+            <tr><th>特性</th><th>说明</th></tr>
+            <tr><td><strong>Motion Brush</strong></td><td>涂抹区域指定运动，无需复杂3D建模</td></tr>
+            <tr><td><strong>摄像机控制</strong></td><td>360°旋转、平移、缩放等摄像机运动</td></tr>
+            <tr><td><strong>视频延长</strong></td><td>可将已有视频延长，保持一致性</td></tr>
+            <tr><td><strong>图像到视频</strong></td><td>从静态图像生成动态视频</td></tr>
+            <tr><td><strong>文本到视频</strong></td><td>多语言文本提示生成视频</td></tr>
+            <tr><td><strong>视频到音频</strong></td><td>Kling-Foley 同步生成匹配音效</td></tr>
+            <tr><td><strong>高分辨率</strong></td><td>支持 1080p 输出</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 性能对比</h2>
+        <p>根据 Wan-Move 论文中的对比，Kling 1.5 Pro Motion Brush 是运动控制的标杆。Wan-Move 在运动可控性上媲美 Kling 1.5 Pro。</p>
+        <p>Kling 2.0/2.1 未参与公开学术基准评测（如 VBench、R-Bench），主要在产品端展示。</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>产品化最成熟：</strong>Kling 在快手短视频生态中大规模应用，是视频生成模型商业化落地的典范</li>
+            <li><strong>Motion Brush 创新：</strong>通过简单的涂抹交互实现运动控制，比 Trajectory Drawing 更直观，是 UX 创新的典范</li>
+            <li><strong>音视频生态：</strong>Kling-Foley 补齐了音频生成短板，形成完整的"视频+音频"生成能力</li>
+            <li><strong>闭源策略：</strong>快手未公开 Kling 的技术论文，与 Wan 系列的开源策略形成鲜明对比</li>
+            <li><strong>中国市场定位：</strong>Kling 在中国市场与 Wan 系列、HunyuanVideo 形成"闭源 vs 开源"的竞争格局</li>
+            <li><strong>Kling-Audio-Eval 开源：</strong>音频评测基准的开源是贡献社区的重要举措</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://klingai.com" target="_blank">🌐 Kling AI 官网</a>
+            <a href="https://arxiv.org/abs/2506.19774" target="_blank">📄 Kling-Foley arXiv</a>
+            <a href="https://huggingface.co/Kuaishou" target="_blank">🤗 HuggingFace</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 调研笔记 · 生成于 2026-06-25 · 领域: CV/AI/Video Generation
+</div>
+
+</body>
+</html>

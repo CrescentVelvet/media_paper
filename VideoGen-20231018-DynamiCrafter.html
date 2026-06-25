@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DynamiCrafter: 视频扩散先验驱动的图像动画化</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #e67e22; --accent-dim: #cc6f1a; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(230, 126, 34, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>DynamiCrafter: 视频扩散先验驱动的图像动画化</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2310.12190 (v2, 2023-11-27)</span>
+        <span>🏢 腾讯 ARC Lab + CUHK</span>
+        <span>📅 2023-10-18 提交</span>
+        <span>📂 CV / AI / Video Generation</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Image Animation</span>
+        <span class="tag green">Open Source</span>
+        <span class="tag">Video Diffusion Prior</span>
+        <span class="tag">I2V</span>
+        <span class="tag">Query Transformer</span>
+        <span class="tag">Open-domain</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p><strong>DynamiCrafter</strong> 是腾讯 ARC Lab 和香港中文大学提出的开放域图像动画化框架。核心思想是利用文本到视频扩散模型的运动先验，将静态图像转化为动态视频。与传统方法仅能处理自然场景（云、流体）或特定领域（头发、人体）不同，DynamiCrafter 能处理<strong>任意开放域图像</strong>。</p>
+        <div class="highlight">
+            <strong>关键创新：</strong>通过 Query Transformer 将图像投影到文本对齐的丰富上下文表示空间，使视频模型能以兼容方式消化图像内容。同时将完整图像与初始噪声拼接，补充更精确的图像信息。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <h3>双路径图像注入</h3>
+        <table>
+            <tr><th>路径</th><th>机制</th><th>作用</th></tr>
+            <tr><td><strong>语义路径</strong></td><td>Query Transformer 将图像编码为文本对齐的上下文 token</td><td>提供高层语义指导，与文本 prompt 共同条件化</td></tr>
+            <tr><td><strong>像素路径</strong></td><td>将完整图像与初始噪声拼接</td><td>补充精确的像素级信息，保留视觉细节</td></tr>
+        </table>
+        <h3>Query Transformer</h3>
+        <ul>
+            <li>学习将图像特征投影到文本嵌入空间</li>
+            <li>使视频扩散模型能在文本-视频联合空间中处理图像条件</li>
+            <li>无需修改视频扩散模型主干架构</li>
+        </ul>
+        <h3>基础视频扩散模型</h3>
+        <p>基于文本到视频扩散模型作为运动先验。模型学习到的自然运动规律被迁移到图像动画化任务中。</p>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <table>
+            <tr><th>特性</th><th>说明</th></tr>
+            <tr><td><strong>开放域</strong></td><td>不限于特定场景类型，可处理任意图像</td></tr>
+            <tr><td><strong>自然运动</strong></td><td>利用视频扩散先验生成视觉可信、逻辑自然的运动</td></tr>
+            <tr><td><strong>高保真度</strong></td><td>双路径注入保留输入图像的视觉细节</td></tr>
+            <tr><td><strong>文本引导</strong></td><td>可通过文本提示控制动画方向</td></tr>
+            <tr><td><strong>无需领域特定设计</strong></td><td>不需要为每种场景类型设计专门模块</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 技术影响</h2>
+        <ul>
+            <li><strong>开创性工作：</strong>DynamiCrafter 是最早利用视频扩散先验进行开放域图像动画化的工作之一（2023 年 10 月）</li>
+            <li><strong>双路径范式：</strong>语义+像素双路径注入成为后续 I2V 工作的标准范式</li>
+            <li><strong>与 Wan-Move 对比：</strong>DynamiCrafter 关注"从静到动"，Wan-Move 关注"运动控制"。前者解决有无，后者解决精度</li>
+            <li><strong>与 CogVideoX 对比：</strong>DynamiCrafter 专注于 I2V 子任务，CogVideoX 是更全面的 T2V/I2V 模型</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>时序价值：</strong>2023 年 10 月发布时，视频生成还处于早期阶段，DynamiCrafter 的图像动画化方案具有开创意义</li>
+            <li><strong>双路径影响：</strong>Query Transformer + 像素拼接的双路径设计影响了后续众多 I2V 模型</li>
+            <li><strong>从动画化到生成：</strong>DynamiCrafter 代表了从"图像动画化"到"视频生成"的技术演进路径——先利用视频先验做 I2V，再做端到端 T2V</li>
+            <li><strong>腾讯 ARC 贡献：</strong>腾讯在视频生成领域布局较早，从 DynamiCrafter 到 HunyuanVideo 形成完整技术路线</li>
+            <li><strong>局限性：</strong>基于视频扩散先验，运动幅度和多样性受限于基础模型的能力。2025 年后的端到端模型在运动质量上已大幅超越</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2310.12190" target="_blank">📄 arXiv</a>
+            <a href="https://doubiiu.github.io/projects/DynamiCrafter" target="_blank">🌐 项目主页</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 调研笔记 · 生成于 2026-06-25 · 领域: CV/AI/Video Generation
+</div>
+
+</body>
+</html>

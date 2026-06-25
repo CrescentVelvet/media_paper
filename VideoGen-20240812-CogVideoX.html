@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CogVideoX: 智谱文本到视频扩散模型</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #3498db; --accent-dim: #2980b9; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(52, 152, 219, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>CogVideoX: 智谱文本到视频扩散模型</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2408.06072 (v3, 2025-03-26)</span>
+        <span>🏢 智谱 AI / THUDM</span>
+        <span>📅 2024-08-12 提交</span>
+        <span>🏆 ICLR 2025</span>
+        <span>📂 CV / AI / Video Generation</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Video Generation</span>
+        <span class="tag green">Open Source</span>
+        <span class="tag">Expert Transformer</span>
+        <span class="tag">3D VAE</span>
+        <span class="tag">T2V / I2V</span>
+        <span class="tag">2B / 5B</span>
+        <span class="tag">CogVideoX1.5</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p><strong>CogVideoX</strong> 是智谱 AI (THUDM) 提出的基于扩散 Transformer 的大规模文本到视频生成模型，能生成 10 秒连续视频，帧率 16fps，分辨率 768×1360。被 <strong>ICLR 2025</strong> 接收。</p>
+        <div class="highlight">
+            <strong>三大核心创新：</strong>(1) 3D VAE 压缩视频时空维度；(2) Expert Transformer 实现 text-video 深度融合；(3) 渐进式训练 + 多分辨率帧打包实现长时长、大运动视频生成。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构（深入）</h2>
+        <h3>3D Variational Autoencoder (VAE)</h3>
+        <p>同时沿空间和时间维度压缩视频，提高压缩率和视频保真度。与传统 2D VAE 只在空间压缩不同，3D VAE 的时间压缩使得长视频成为可能。</p>
+        
+        <h3>Expert Transformer</h3>
+        <table>
+            <tr><th>组件</th><th>说明</th></tr>
+            <tr><td>Expert Adaptive LayerNorm</td><td>根据输入模态动态调整归一化参数，实现文本和视频模态的深度融合</td></tr>
+            <tr><td>专家路由</td><td>不同模态的 token 由不同专家处理，提高模态特异性</td></tr>
+            <tr><td>共享注意力</td><td>文本和视频 token 在注意力层共享，实现跨模态交互</td></tr>
+        </table>
+        
+        <h3>渐进式训练 & 多分辨率帧打包</h3>
+        <ul>
+            <li><strong>渐进式训练：</strong>从低分辨率短时长开始，逐步增加分辨率和时长</li>
+            <li><strong>帧打包：</strong>将多帧打包到一个序列中，支持不同形状和长度的视频</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>👨‍👩‍👧‍👦 模型家族</h2>
+        <table>
+            <tr><th>模型</th><th>参数量</th><th>能力</th><th>备注</th></tr>
+            <tr><td>CogVideoX-2B</td><td>2B</td><td>T2V</td><td>基础模型</td></tr>
+            <tr><td>CogVideoX-5B</td><td>5B</td><td>T2V / I2V</td><td>更高质量</td></tr>
+            <tr><td><strong>CogVideoX1.5-5B</strong></td><td>5B</td><td>T2V / I2V</td><td>2024-11 升级版，支持 10 秒视频，多分辨率</td></tr>
+            <tr><td>3D Causal VAE</td><td>-</td><td>视频编码/解码</td><td>独立公开</td></tr>
+            <tr><td>Video Caption Model</td><td>-</td><td>视频描述</td><td>独立公开</td></tr>
+        </table>
+        <h3>CogVideoX1.5 升级</h3>
+        <ul>
+            <li>支持 10 秒视频生成</li>
+            <li>多分辨率支持（横屏/竖屏/方形）</li>
+            <li>DDIM Inverse 支持（2025-02 新增）</li>
+            <li>diffusers 版本兼容</li>
+            <li>CogKit 微调框架（2025-03 发布）</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <table>
+            <tr><th>特性</th><th>说明</th></tr>
+            <tr><td><strong>10 秒连续视频</strong></td><td>16fps，768×1360 分辨率</td></tr>
+            <tr><td><strong>Expert Transformer</strong></td><td>专家自适应 LayerNorm 实现深度文视融合</td></tr>
+            <tr><td><strong>3D VAE</strong></td><td>时空联合压缩，提高压缩率和保真度</td></tr>
+            <tr><td><strong>多分辨率</strong></td><td>1.5 版本支持横屏/竖屏/方形</td></tr>
+            <tr><td><strong>开源完整</strong></td><td>VAE + caption 模型 + 主模型全部开源</td></tr>
+            <tr><td><strong>DDIM Inverse</strong></td><td>支持图像到视频的精确控制</td></tr>
+            <tr><td><strong>LoRA 微调</strong></td><td>diffusers 版本支持低显存微调</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 学术影响</h2>
+        <p>CogVideoX 被多项后续工作作为基线模型：</p>
+        <ul>
+            <li><strong>LaMo (arXiv: 2605.23878)</strong>：在 CogVideoX 上添加运动先验改善物理真实性</li>
+            <li><strong>TeDiO (arXiv: 2605.14136)</strong>：在 CogVideoX 上添加时间对角优化改善一致性</li>
+            <li><strong>SAMG (arXiv: 2604.26503)</strong>：在 CogVideoX 上测试空间自适应多引导</li>
+            <li><strong>AdaCluster (arXiv: 2604.18348)</strong>：在 CogVideoX-2B 上实现 1.67-4.31x 加速</li>
+            <li><strong>Early Failure Detection (arXiv: 2603.14320)</strong>：在 CogVideoX-5B 上实现早期失败检测</li>
+            <li><strong>CalibAtt (arXiv: 2603.05503)</strong>：在 CogVideoX 上实现稀疏注意力加速</li>
+        </ul>
+        <div class="highlight">
+            <strong>学术标准模型：</strong>CogVideoX 是 2024-2025 年视频生成领域被引用最多的开源基线模型之一，几乎所有视频扩散加速和优化工作都在 CogVideoX 上验证。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>Expert Transformer 是创新核心：</strong>通过专家自适应 LayerNorm 实现跨模态深度融合，比简单的 cross-attention 更有效</li>
+            <li><strong>数据管道价值：</strong>论文中描述的文本-视频数据处理管道（视频描述方法等）对社区贡献不亚于模型本身</li>
+            <li><strong>学术影响巨大：</strong>被 6+ 篇后续论文作为基线，是开源视频生成研究的标准平台</li>
+            <li><strong>与 Wan 2.1 对比：</strong>Wan 2.1 (14B) 在性能上超越 CogVideoX-5B，但 CogVideoX 的 2B 版本在轻量化方面有优势</li>
+            <li><strong>ICLR 2025 认可：</strong>被 ICLR 2025 接收，证明了其学术质量</li>
+            <li><strong>持续迭代：</strong>从 CogVideoX → CogVideoX1.5 → CogKit，团队持续更新</li>
+            <li><strong>智谱路线：</strong>与 CogVideo (ICLR 2023) 一脉相承，是中国最早系统研究视频生成的团队之一</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2408.06072" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/THUDM/CogVideo" target="_blank">💻 GitHub</a>
+            <a href="https://huggingface.co/spaces/THUDM/CogVideoX-5B" target="_blank">🤗 HuggingFace Space</a>
+            <a href="https://zhipu-ai.feishu.cn/wiki/DHCjw1TrJiTyeukfc9RceoSRnCh" target="_blank">📖 用户指南</a>
+            <a href="https://github.com/THUDM/CogKit" target="_blank">🔧 CogKit</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 调研笔记 · 生成于 2026-06-25 · 领域: CV/AI/Video Generation
+</div>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mochi 1: Genmo 开源视频生成模型</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #9b59b6; --accent-dim: #7e4496; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(155, 89, 182, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Mochi 1: Genmo 开源视频生成模型</h1>
+    <div class="meta">
+        <span>📄 GitHub: genmoai/mochi</span>
+        <span>🏢 Genmo</span>
+        <span>📅 2024-10 ~ 2024-11</span>
+        <span>📂 CV / AI / Video Generation</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Video Generation</span>
+        <span class="tag green">Open Source</span>
+        <span class="tag">Apache 2.0</span>
+        <span class="tag">Asymmetric Diffusion</span>
+        <span class="tag">T2V</span>
+        <span class="tag">LoRA</span>
+        <span class="tag">ComfyUI</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 概要</h2>
+        <p><strong>Mochi 1</strong> 是 Genmo 于 2024 年 10 月发布的开源视频生成模型，在初步评测中展示了高保真运动和强 prompt 遵循能力。该模型"显著缩小了闭源和开源视频生成系统之间的差距"，以 <strong>Apache 2.0</strong> 许可证发布。</p>
+        <div class="highlight">
+            <strong>核心价值：</strong>在当时是最佳的开源视频生成模型之一，支持 ComfyUI 原生集成和消费级 GPU 运行（通过 CPU offload）。2024 年 11 月新增 LoRA 微调支持。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <p>基于 GitHub README 和 Genmo 博客公开的信息：</p>
+        <ul>
+            <li><strong>非对称扩散 Transformer (Asymmetric Diffusion DiT)</strong>：Genmo 的核心架构创新</li>
+            <li><strong>潜在视频扩散</strong>：在压缩的潜在空间进行扩散</li>
+            <li><strong>大规模参数</strong>：约 10B 参数级别</li>
+            <li><strong>Flow Matching 目标</strong>：使用 flow matching 训练目标替代传统 ε-prediction</li>
+            <li><strong>多分辨率</strong>：支持多种分辨率和宽高比</li>
+        </ul>
+        <h3>非对称架构设计</h3>
+        <p>非对称设计允许模型在处理空间和时间维度时使用不同的计算分配。空间维度（单帧）可以使用更多计算资源，而时间维度（帧间关系）使用更轻量的计算。这种设计在保持质量的同时提高了效率。</p>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <table>
+            <tr><th>特性</th><th>说明</th></tr>
+            <tr><td><strong>开源许可</strong></td><td>Apache 2.0，允许商业使用</td></tr>
+            <tr><td><strong>ComfyUI 集成</strong></td><td>原生支持 ComfyUI，消费级 GPU 可运行</td></tr>
+            <tr><td><strong>LoRA 微调</strong></td><td>2024-11 新增支持，可自定义模型</td></tr>
+            <tr><td><strong>Gradio UI</strong></td><td>内置 Web UI，方便交互式生成</td></tr>
+            <tr><td><strong>CLI 生成</strong></td><td>命令行批量生成视频</td></tr>
+            <tr><td><strong>CPU Offload</strong></td><td>支持将模型部分卸载到 CPU，降低 GPU 需求</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 技术影响</h2>
+        <p>Mochi 1 在学术研究中被广泛引用作为基线和加速目标：</p>
+        <ul>
+            <li><strong>CalibAtt (arXiv: 2603.05503)</strong>：在 Mochi 1 上实现 1.58x 端到端加速</li>
+            <li>被多项稀疏注意力加速工作作为测试模型</li>
+            <li>与 Wan 2.1 14B、CogVideoX 并列为开源视频生成的代表性模型</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>开源先锋：</strong>Mochi 1 是 2024 年最重要的开源视频生成模型之一，与 CogVideoX、HunyuanVideo 并列</li>
+            <li><strong>非对称设计创新：</strong>非对称 DiT 架构是效率导向的创新，影响了后续模型设计</li>
+            <li><strong>生态友好：</strong>Apache 2.0 + ComfyUI + LoRA + Gradio，完整的开源生态</li>
+            <li><strong>竞争定位变化：</strong>2025 年 Wan 2.1 发布后，Mochi 1 的性能优势被超越，但其开源贡献价值持久</li>
+            <li><strong>加速研究价值：</strong>作为开源模型被多项加速工作（CalibAtt、AdaCluster）用于验证，说明其在社区中的标准地位</li>
+            <li><strong>Genmo 路线：</strong>Genmo 专注于开源模型，与快手 Kling、Runway 等闭源路线形成对比</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://github.com/genmoai/mochi" target="_blank">💻 GitHub</a>
+            <a href="https://huggingface.co/genmo/mochi-1-preview" target="_blank">🤗 HuggingFace</a>
+            <a href="https://www.genmo.ai/blog" target="_blank">📝 博客</a>
+            <a href="https://www.genmo.ai/play" target="_blank">🎮 Playground</a>
+            <a href="https://weights.genmo.dev/weights.zip" target="_blank">⬇️ 直接下载</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 调研笔记 · 生成于 2026-06-25 · 领域: CV/AI/Video Generation
+</div>
+
+</body>
+</html>

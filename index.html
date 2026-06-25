@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>视频生成模型调研索引 — Wan 系列 + 横向对比</title>
+    <title>视频生成模型调研索引 — Wan 系列 + 业界全景对比</title>
     <style>
         :root {
             --bg: #0f1117;
@@ -150,8 +150,8 @@
 
 <div class="header">
     <h1>视频生成模型调研索引</h1>
-    <p>Wan 系列 (2.1→2.2→VACE→Move→R1→Streamer) + 横向对比 (Kandinsky 5 / HunyuanVideo 1.5 / LTX-2)<br>
-    含相机可控性与几何一致性技术方向综述</p>
+    <p>Wan 系列 (2.1→2.2→VACE→Move→R1→Streamer) + 业界全景 (Sora 2 / Veo 3.1 / Kling 2.1 / Runway Gen-4 / Mochi 1 / CogVideoX / DynamiCrafter / Cosmos 3)<br>
+    含相机可控性、几何一致性技术方向综述与业界全景对比表</p>
 </div>
 
 <div class="container">
@@ -452,23 +452,265 @@
     </div>
 
     <div class="section">
-        <h2>💡 总结与思考</h2>
+        <h2>📖 业界最新视频生成模型调研 (2026-06-25 新增)</h2>
+
+        <div class="note-card">
+            <h3>12. Cosmos 3: NVIDIA 全模态世界模型</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2606.02800 (v4, 2026-06-23)</span>
+                <span>📅 2026-06-01</span>
+                <span>🏢 NVIDIA (200+ 作者)</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">World Model</span>
+                <span class="tag green">Omnimodal</span>
+                <span class="tag">Mixture-of-Transformers</span>
+                <span class="tag">Physical AI</span>
+                <span class="tag">16B / 64B</span>
+            </div>
+            <p>NVIDIA 全模态世界模型家族，统一语言/图像/视频/音频/动作于单一 MoT 架构。R-Bench T2V 80.0 / I2V 82.8，Artificial Analysis 最佳开源 T2I/I2V。开源模型已超越所有闭源模型。</p>
+            <a href="CV-AI-20260625-Cosmos3.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2606.02800" target="_blank">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h3>13. Sora 2: OpenAI 旗舰视频与音频生成模型</h3>
+            <div class="meta">
+                <span>📄 博客: openai.com/index/sora-2/</span>
+                <span>📅 2025-09-30</span>
+                <span>🏢 OpenAI</span>
+                <span>🔒 闭源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Video+Audio</span>
+                <span class="tag">World Simulator</span>
+                <span class="tag">Physics</span>
+                <span class="tag">Characters</span>
+            </div>
+            <p>视频生成"GPT-3.5 时刻"。原生音频生成、物理建模（含失败模拟）、Characters 社交功能。2026-04 产品下线，Sora 1 Turbo 仍以 API 提供。</p>
+            <a href="VideoGen-20250930-Sora2.html">📖 阅读笔记</a>
+            <a href="https://openai.com/index/sora-2/" target="_blank">🌐 官方</a>
+        </div>
+
+        <div class="note-card">
+            <h3>14. Veo 3 / 3.1: Google DeepMind 视频生成模型</h3>
+            <div class="meta">
+                <span>📄 deepmind.google/models/veo/</span>
+                <span>📅 2025-05 ~ 2025-08</span>
+                <span>🏢 Google DeepMind</span>
+                <span>🔒 闭源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Video+Audio</span>
+                <span class="tag">Physics</span>
+                <span class="tag">Prompt Adherence</span>
+                <span class="tag">4K</span>
+                <span class="tag">Gemini 集成</span>
+            </div>
+            <p>首个原生音频生成的闭源模型。R-Bench T2V 79.1 / I2V 82.67。Veo 3.1 专为电影制作者设计，支持 4K 输出（Google Flow 平台）。</p>
+            <a href="VideoGen-20250520-Veo3.html">📖 阅读笔记</a>
+            <a href="https://deepmind.google/models/veo/" target="_blank">🌐 官方</a>
+        </div>
+
+        <div class="note-card">
+            <h3>15. Kling 2.0 / 2.1: 快手视频生成模型</h3>
+            <div class="meta">
+                <span>📄 klingai.com</span>
+                <span>📅 2025-06 ~ 2025-11</span>
+                <span>🏢 Kuaishou (快手)</span>
+                <span>🔒 闭源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Video Generation</span>
+                <span class="tag">Motion Brush</span>
+                <span class="tag">Camera Control</span>
+                <span class="tag">Kling-Foley (V2A)</span>
+                <span class="tag">1080p</span>
+            </div>
+            <p>Motion Brush 涂抹区域指定运动是 UX 创新典范。Kling-Foley (arXiv: 2506.19774) 补齐音频短板，开源 Kling-Audio-Eval 评测基准。在快手短视频生态大规模落地。</p>
+            <a href="VideoGen-20250620-Kling2.html">📖 阅读笔记</a>
+            <a href="https://klingai.com" target="_blank">🌐 官网</a>
+            <a href="https://arxiv.org/abs/2506.19774" target="_blank">📄 Kling-Foley arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h3>16. Runway Gen-4: 下一代视频生成模型</h3>
+            <div class="meta">
+                <span>📄 runwayml.com/blog/gen-4</span>
+                <span>📅 2025-03</span>
+                <span>🏢 Runway</span>
+                <span>🔒 闭源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Character Consistency</span>
+                <span class="tag">Scene Consistency</span>
+                <span class="tag">Style Transfer</span>
+                <span class="tag">电影制作</span>
+            </div>
+            <p>核心突破：跨镜头角色和场景一致性。不追求单次最高质量，而是专注"叙事一致性"——视频生成从炫技走向实用的关键一步。无 arXiv 论文。</p>
+            <a href="VideoGen-20250331-RunwayGen4.html">📖 阅读笔记</a>
+            <a href="https://runwayml.com/blog/gen-4" target="_blank">🌐 官方</a>
+        </div>
+
+        <div class="note-card">
+            <h3>17. Mochi 1: Genmo 开源视频生成模型</h3>
+            <div class="meta">
+                <span>📄 GitHub: genmoai/mochi</span>
+                <span>📅 2024-10 ~ 2024-11</span>
+                <span>🏢 Genmo</span>
+                <span>✅ Apache 2.0</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Open Source</span>
+                <span class="tag">Asymmetric DiT</span>
+                <span class="tag">Flow Matching</span>
+                <span class="tag">LoRA</span>
+                <span class="tag">ComfyUI</span>
+            </div>
+            <p>2024 年最重要的开源视频生成模型之一。非对称扩散 Transformer 设计，Apache 2.0 许可。被 CalibAtt、AdaCluster 等多项加速工作作为标准基线。2025 年 Wan 2.1 发布后性能被超越。</p>
+            <a href="VideoGen-20241015-Mochi1.html">📖 阅读笔记</a>
+            <a href="https://github.com/genmoai/mochi" target="_blank">💻 GitHub</a>
+            <a href="https://huggingface.co/genmo/mochi-1-preview" target="_blank">🤗 HuggingFace</a>
+        </div>
+
+        <div class="note-card">
+            <h3>18. CogVideoX: 智谱文本到视频扩散模型</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2408.06072 (v3, 2025-03)</span>
+                <span>📅 2024-08-12</span>
+                <span>🏢 智谱 AI / THUDM</span>
+                <span>🏆 ICLR 2025</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Expert Transformer</span>
+                <span class="tag">3D VAE</span>
+                <span class="tag">T2V / I2V</span>
+                <span class="tag">2B / 5B</span>
+                <span class="tag">CogVideoX1.5</span>
+                <span class="tag">CogKit</span>
+            </div>
+            <p>三大创新：3D VAE 时空压缩 + Expert Transformer 深度文视融合 + 渐进式训练。ICLR 2025 接收。被 6+ 篇后续论文作为基线，是开源视频生成研究的标准平台。CogVideoX1.5 支持 10 秒视频。</p>
+            <a href="VideoGen-20240812-CogVideoX.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2408.06072" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/THUDm/CogVideo" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>19. DynamiCrafter: 视频扩散先验驱动的图像动画化</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2310.12190 (v2)</span>
+                <span>📅 2023-10-18</span>
+                <span>🏢 腾讯 ARC Lab + CUHK</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Image Animation</span>
+                <span class="tag">Video Diffusion Prior</span>
+                <span class="tag">Query Transformer</span>
+                <span class="tag">Open-domain I2V</span>
+            </div>
+            <p>利用视频扩散先验将任意开放域静态图像动画化。双路径注入（Query Transformer 语义路径 + 像素拼接路径）成为后续 I2V 工作的标准范式。腾讯视频生成路线的早期里程碑。</p>
+            <a href="VideoGen-20231018-DynamiCrafter.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2310.12190" target="_blank">📄 arXiv</a>
+            <a href="https://doubiiu.github.io/projects/DynamiCrafter" target="_blank">🌐 项目主页</a>
+        </div>
+
+    </div>
+
+    <div class="section">
+        <h2>🌍 业界全景对比 (2026-06-25)</h2>
+        <h3>按厂商/团队分类</h3>
+        <table>
+            <tr><th>厂商/团队</th><th>模型</th><th>参数量</th><th>最大分辨率</th><th>帧率</th><th>开源</th><th>原生音频</th><th>备注</th></tr>
+            <tr><td rowspan="2"><strong>OpenAI</strong></td><td>Sora 1</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>❌</td><td>❌</td><td>GPT-1 时刻, 世界模拟器路线起点</td></tr>
+            <tr><td>Sora 2 / 2 Pro</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>❌</td><td>✅</td><td>GPT-3.5 时刻, Characters, 2026-04 下线</td></tr>
+            <tr><td rowspan="2"><strong>Google</strong></td><td>Veo 3</td><td>未公开</td><td>4K</td><td>~30fps</td><td>❌</td><td>✅</td><td>首个原生音频闭源模型, Flow 平台</td></tr>
+            <tr><td>Veo 3.1</td><td>未公开</td><td>4K</td><td>~30fps</td><td>❌</td><td>✅</td><td>R-Bench T2V 79.1 / I2V 82.67</td></tr>
+            <tr><td rowspan="2"><strong>快手</strong></td><td>Kling 2.0</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>❌</td><td>❌</td><td>Motion Brush, 大规模产品化</td></tr>
+            <tr><td>Kling 2.1 + Foley</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>部分</td><td>✅</td><td>Kling-Foley V2A, Audio-Eval 开源</td></tr>
+            <tr><td><strong>Runway</strong></td><td>Gen-4</td><td>未公开</td><td>1080p</td><td>~24fps</td><td>❌</td><td>❌</td><td>角色/场景一致性, 专业创作定位</td></tr>
+            <tr><td rowspan="3"><strong>NVIDIA</strong></td><td>Cosmos 3 Nano</td><td>16B</td><td>720p</td><td>10-30fps</td><td>✅</td><td>✅</td><td>全模态世界模型, MoT 架构</td></tr>
+            <tr><td>Cosmos 3 Super</td><td>64B</td><td>720p</td><td>10-30fps</td><td>✅</td><td>✅</td><td>R-Bench T2V 80.0 / I2V 82.8, 最佳开源</td></tr>
+            <tr><td>Cosmos 3 Super T2I/I2V</td><td>64B</td><td>720p</td><td>-</td><td>✅</td><td>-</td><td>Artificial Analysis 最佳开源 T2I/I2V</td></tr>
+            <tr><td rowspan="4"><strong>Alibaba/Wan</strong></td><td>Wan2.1</td><td>1.3B/14B</td><td>720p</td><td>16/24fps</td><td>✅</td><td>❌</td><td>开源 SOTA, 中英文字生成, Wan-VAE</td></tr>
+            <tr><td>Wan2.2</td><td>A14B/5B</td><td>720p</td><td>24fps</td><td>✅</td><td>❌</td><td>MoE 架构, S2V, Animate</td></tr>
+            <tr><td>Wan-Move</td><td>14B</td><td>480p</td><td>16fps</td><td>✅</td><td>❌</td><td>运动控制, NeurIPS 2025</td></tr>
+            <tr><td>Wan-Streamer</td><td>未公开</td><td>192p</td><td>实时</td><td>✅</td><td>✅</td><td>端到端实时交互, ~200ms 延迟</td></tr>
+            <tr><td rowspan="2"><strong>智谱 AI</strong></td><td>CogVideoX</td><td>2B/5B</td><td>768×1360</td><td>16fps</td><td>✅</td><td>❌</td><td>Expert Transformer, ICLR 2025</td></tr>
+            <tr><td>CogVideoX1.5</td><td>5B</td><td>多分辨率</td><td>16fps</td><td>✅</td><td>❌</td><td>10秒视频, DDIM Inverse, CogKit</td></tr>
+            <tr><td><strong>腾讯</strong></td><td>HunyuanVideo 1.5</td><td>8.3B</td><td>720p</td><td>~24fps</td><td>✅</td><td>❌</td><td>SSTA 注意力, 消费级 GPU, Muon 优化器</td></tr>
+            <tr><td rowspan="2"><strong>腾讯 ARC</strong></td><td>DynamiCrafter</td><td>未公开</td><td>-</td><td>-</td><td>✅</td><td>❌</td><td>图像动画化, 双路径注入范式</td></tr>
+            <tr><td>HunyuanVideo</td><td>13B</td><td>720p</td><td>16fps</td><td>✅</td><td>❌</td><td>开源 DiT, 早期版本</td></tr>
+            <tr><td><strong>Genmo</strong></td><td>Mochi 1</td><td>~10B</td><td>~720p</td><td>~24fps</td><td>✅</td><td>❌</td><td>Apache 2.0, 非对称 DiT, 加速研究标准</td></tr>
+            <tr><td rowspan="3"><strong>Kandinsky Lab</strong></td><td>K5 Video Lite</td><td>2B</td><td>~720p</td><td>-</td><td>❌</td><td>❌</td><td>轻量级, 数据策展披露</td></tr>
+            <tr><td>K5 Image Lite</td><td>6B</td><td>-</td><td>-</td><td>❌</td><td>❌</td><td>图像生成</td></tr>
+            <tr><td>K5 Video Pro</td><td>19B</td><td>~720p</td><td>-</td><td>❌</td><td>❌</td><td>专业级, RL 后训练</td></tr>
+            <tr><td rowspan="2"><strong>Lightricks</strong></td><td>LTX-Video</td><td>~2B</td><td>768×512</td><td>24fps</td><td>✅</td><td>❌</td><td>1:192 压缩率, 2秒生成5秒视频</td></tr>
+            <tr><td>LTX-2</td><td>19B (14+5)</td><td>4K</td><td>50fps</td><td>✅</td><td>✅</td><td>首个开源音视频联合 DiT, 双流</td></tr>
+        </table>
+
+        <h3>关键指标总结</h3>
+        <table>
+            <tr><th>指标</th><th>闭源最佳</th><th>开源最佳</th><th>差距</th></tr>
+            <tr><td>R-Bench T2V</td><td>Veo 3.1: 79.1</td><td>Cosmos3-Super: 80.0</td><td>开源已超越 ✅</td></tr>
+            <tr><td>R-Bench I2V</td><td>Veo 3.1: 82.67</td><td>Cosmos3-Super: 82.8</td><td>开源已超越 ✅</td></tr>
+            <tr><td>Artificial Analysis T2I</td><td>Gemini 3 Pro: 90.85</td><td>Cosmos3-Super: 91.36</td><td>开源已超越 ✅</td></tr>
+            <tr><td>音频质量 (AQA)</td><td>Veo 3.1: 7.45</td><td>Cosmos3-Super: 7.31</td><td>闭源略优</td></tr>
+            <tr><td>最大分辨率</td><td>Veo 3.1: 4K</td><td>LTX-2: 4K@50fps</td><td>持平 ✅</td></tr>
+            <tr><td>最小 VRAM</td><td>-</td><td>Wan2.1-1.3B: 8.19GB</td><td>仅开源有轻量方案</td></tr>
+            <tr><td>实时交互延迟</td><td>-</td><td>Wan-Streamer: ~200ms</td><td>仅开源有实时方案</td></tr>
+        </table>
+
+        <div class="highlight">
+            <strong>关键发现：</strong>截至 2026-06-25，开源模型（Cosmos 3 Super）已在 R-Bench T2V/I2V 和 Artificial Analysis 上超越所有闭源模型。闭源模型仅在音频质量和社交产品化方面保持优势。开源生态已从追赶者变为引领者。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 业界演进时间线 (2023-2026)</h2>
+        <table>
+            <tr><th>时间</th><th>模型</th><th>里程碑</th><th>开源</th></tr>
+            <tr><td>2023-10</td><td>DynamiCrafter</td><td>视频扩散先验图像动画化</td><td>✅</td></tr>
+            <tr><td>2024-02</td><td>Sora 1</td><td>视频生成 GPT-1 时刻</td><td>❌</td></tr>
+            <tr><td>2024-06</td><td>Kling 1.0</td><td>快手进入视频生成</td><td>❌</td></tr>
+            <tr><td>2024-08</td><td>CogVideoX</td><td>Expert Transformer, ICLR 2025</td><td>✅</td></tr>
+            <tr><td>2024-10</td><td>Mochi 1</td><td>Apache 2.0 开源, 非对称 DiT</td><td>✅</td></tr>
+            <tr><td>2024-11</td><td>CogVideoX1.5</td><td>10秒视频, 多分辨率</td><td>✅</td></tr>
+            <tr><td>2024-12</td><td>LTX-Video</td><td>1:192 压缩, 实时生成</td><td>✅</td></tr>
+            <tr><td>2025-03</td><td>Runway Gen-4</td><td>角色/场景一致性</td><td>❌</td></tr>
+            <tr><td>2025-03</td><td>Wan2.1</td><td>开源 SOTA, 1.3B+14B</td><td>✅</td></tr>
+            <tr><td>2025-05</td><td>Veo 3</td><td>首个原生音频闭源模型</td><td>❌</td></tr>
+            <tr><td>2025-06</td><td>Kling 2.0</td><td>Motion Brush 升级</td><td>❌</td></tr>
+            <tr><td>2025-07</td><td>Wan2.2</td><td>MoE 架构, S2V</td><td>✅</td></tr>
+            <tr><td>2025-09</td><td>Sora 2</td><td>视频 GPT-3.5 时刻, Characters</td><td>❌</td></tr>
+            <tr><td>2025-11</td><td>HunyuanVideo 1.5</td><td>8.3B SSTA, 消费级</td><td>✅</td></tr>
+            <tr><td>2025-11</td><td>Kandinsky 5.0</td><td>2B~19B 谱系, RL 后训练</td><td>❌</td></tr>
+            <tr><td>2026-01</td><td>LTX-2</td><td>首个开源音视频联合 DiT, 4K@50fps</td><td>✅</td></tr>
+            <tr><td>2026-04</td><td>Sora 产品下线</td><td>OpenAI 视频社交尝试结束</td><td>-</td></tr>
+            <tr><td>2026-06</td><td>Cosmos 3</td><td>全模态世界模型, 开源超越闭源</td><td>✅</td></tr>
+            <tr><td>2026-06</td><td>Wan-Streamer v0.1</td><td>端到端实时交互, 全双工</td><td>✅</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 总结与思考（更新 2026-06-25）</h2>
         <ul>
-            <li><strong>开源生态引领：</strong>Wan 系列从 2.1 到 2.2 持续推动视频生成开源生态，已被 NVIDIA Cosmos 3、众多学术论文和社区项目采用</li>
-            <li><strong>架构创新：</strong>Wan-VAE (3D 因果 VAE) → MoE DiT → Block-causal Transformer，每个版本都有实质架构创新</li>
-            <li><strong>能力维度扩展：</strong>从基础 T2V/I2V 扩展到编辑 (VACE)、运动控制 (Move)、推理 (R1)、实时交互 (Streamer)</li>
-            <li><strong>消费级友好：</strong>1.3B 模型 8.19GB VRAM、TI2V-5B 消费级 720P，持续降低使用门槛</li>
-            <li><strong>Wan2.3+ 不存在：</strong>截至 2026-06-25，没有 Wan2.3、Wan2.4、Wan2.5、Wan2.6、Wan2.7 的 arXiv 论文或 GitHub 仓库</li>
-            <li><strong>横向对比结论：</strong>HunyuanVideo 1.5 (8.3B SSTA) 在轻量+质量间取得最佳平衡；LTX-2 在音视频联合和 4K 方面领先；Kandinsky 5.0 提供最宽谱系 (2B~19B)</li>
-            <li><strong>技术方向趋势：</strong>RL 后训练正在成为通用优化工具（Wan-R1 推理、Geo-Align 相机控制、World-R1 几何一致性）；潜空间优化（LTX 1:192 压缩、Robust Dreamer 潜空间高斯记忆）是效率关键</li>
-            <li><strong>未来方向：</strong>Wan-Streamer v0.1 (192p) 暗示高分辨率实时交互是下一步；Wan-R1 的视频推理方向有待拓展到自然场景；相机可控性+几何一致性融合是世界模拟的基础</li>
+            <li><strong>开源超越闭源：</strong>截至 2026-06-25，Cosmos 3 Super 在 R-Bench 和 Artificial Analysis 上已超越 Veo 3.1 和 Gemini 3 Pro，开源生态从追赶者变为引领者</li>
+            <li><strong>音频原生成标配：</strong>2025 年 Sora 2 和 Veo 3 同时推出原生音频生成，2026 年 LTX-2 和 Wan-Streamer 将此能力带入开源，音频原生已成标配</li>
+            <li><strong>世界模拟器路线：</strong>OpenAI (Sora) 和 Google (Veo) 都将视频生成定位为世界模拟器训练路径，NVIDIA (Cosmos 3) 更进一步实现全模态世界模型</li>
+            <li><strong>开源生态分层：</strong>Wan 系列 (Alibaba) = 生态最全; Cosmos 3 (NVIDIA) = 性能最强; CogVideoX (智谱) = 学术标准; Mochi 1 (Genmo) = 加速基线; HunyuanVideo (腾讯) = 轻量高效</li>
+            <li><strong>闭源独特价值：</strong>Sora 2 Characters 社交、Veo 3.1 4K + Gemini 集成、Kling Motion Brush 产品化、Runway 叙事一致性——各有不可替代的产品化优势</li>
+            <li><strong>RL 后训练趋势：</strong>从 Wan-R1 推理到 Kandinsky 5 人类偏好对齐再到 World-R1 几何一致性，RL 后训练在视频生成中的角色与 LLM 领域一致</li>
+            <li><strong>未来方向：</strong>(1) 高分辨率实时交互 (Wan-Streamer 192p → 更高); (2) 视频推理拓展到自然场景 (Wan-R1); (3) 全模态统一 (Cosmos 3 MoT); (4) 物理世界模拟 (Sora/Veo/Cosmos 3 共同方向)</li>
         </ul>
     </div>
 
 </div>
 
 <div class="footer">
-    📝 调研索引 · 生成于 2026-06-25 · 领域: CV/AI/Video Generation
+    📝 调研索引 · 更新于 2026-06-25 · 领域: CV/AI/Video Generation · 涵盖 19 篇笔记 + 业界全景对比
 </div>
 
 </body>
