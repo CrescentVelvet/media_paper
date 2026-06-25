@@ -306,6 +306,110 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>Wan2.2 架构概览：</strong>在 Wan2.1 的 DiT 基础上引入 MoE（Mixture of Experts）机制</p>
+        <div class="highlight">
+            <strong>核心变化：</strong>
+            <ul>
+                <li><strong>MoE FFN：</strong>将 DiT 中的 FFN 替换为 MoE 层，每个 token 路由到 top-k 专家</li>
+                <li><strong>跨时间步专家分离：</strong>不同去噪时间步激活不同专家，实现时间步特化</li>
+                <li><strong>共享 Wan-VAE：</strong>与 Wan2.1 共享 VAE 编码/解码器</li>
+                <li><strong>S2V / Animate：</strong>新增声音到视频和角色动画能力</li>
+            </ul>
+        </div>
+        <p><strong>MoE 路由设计：</strong>router 根据 token 特征和时间步 embedding 选择专家，实现计算效率提升。总参数量保持 14B，但每次推理只激活部分参数。</p>
+        <p><strong>跨时间步专家分离：</strong>早期时间步（粗粒度结构生成）和后期时间步（细节精修）激活不同专家子集，自然实现粗到细的生成过程。</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：MoE 视频生成</strong> — 首次将 MoE 成功应用于视频扩散模型，在保持参数量的同时提升质量和效率。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：跨时间步专家分离</strong> — 不同去噪阶段激活不同专家，自然实现粗到细的生成过程，无需显式调度。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：S2V 声音到视频</strong> — 从音频输入直接生成人物说话/动作视频，端到端音频驱动。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：Animate 角色动画</strong> — 给定角色图 + 动作参考，生成角色动画视频。
+        </div>
+        <div class="highlight">
+            <strong>创新 5：Wan-VAE 行业标准化</strong> — 被 NVIDIA Cosmos 3 直接采用作为视觉编码器，成为事实标准。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>视频创作</td><td>T2V/I2V 高质量视频生成，比 Wan2.1 更高效</td></tr>
+            <tr><td>数字人</td><td>S2V：音频驱动的人物说话视频生成</td></tr>
+            <tr><td>角色动画</td><td>Animate：角色图 + 动作参考 → 动画</td></tr>
+            <tr><td>视频编辑</td><td>VACE 兼容，视频创建与编辑</td></tr>
+            <tr><td>作为基座模型</td><td>被 Cosmos 3 采用 VAE，被社区大量二次开发</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>从 Wan2.1 迁移</h3>
+        <ul>
+            <li><strong>初始化：</strong>从 Wan2.1 Dense 模型权重迁移，MoE 专家从 FFN 权重复制初始化</li>
+            <li><strong>继续预训练：</strong>在大规模数据上继续训练，学习 MoE 路由</li>
+            <li><strong>专家分化：</strong>训练过程中自然出现时间步特化，无需显式约束</li>
+        </ul>
+        <h3>S2V / Animate 后训练</h3>
+        <ul>
+            <li><strong>S2V：</strong>在音频-视频配对数据上微调，学习音频到视觉的映射</li>
+            <li><strong>Animate：</strong>在角色动画数据上微调，学习身份保持 + 动作迁移</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <ul>
+            <li>共享 Wan2.1 的大规模图像/视频训练数据</li>
+            <li><strong>S2V 数据：</strong>音频-视频配对数据，人物说话/表演视频</li>
+            <li><strong>Animate 数据：</strong>角色图 + 动作参考视频配对</li>
+            <li>数据清洗与 Wan2.1 一致：美学评分 + 运动评分 + 文本质量</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>MoE 负载均衡损失</h3>
+        <ul>
+            <li><strong>辅助损失：</strong>L_aux = α·f·N·Σᵢ (nᵢ/N)²，鼓励专家均匀使用</li>
+            <li>f 为路由概率均值，nᵢ 为分配到专家 i 的 token 数</li>
+        </ul>
+        <h3>Flow Matching 损失</h3>
+        <ul>
+            <li>与 Wan2.1 相同的 Flow Matching 目标：L = E || v_θ(z_t, t, c) - (z1 - z0) ||²</li>
+            <li>但 v_θ 现在通过 MoE FFN 计算，每次只激活 top-k 专家</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计：</strong>MoE 的引入不改变 Flow Matching 目标，而是改变了模型的计算路径。负载均衡损失确保所有专家都被有效利用，避免路由坍塌。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>Wan2.1</th><th>Wan2.2</th><th>改进方向</th></tr>
+            <tr><td>FFN</td><td>Dense FFN</td><td>MoE FFN (top-k)</td><td>参数效率</td></tr>
+            <tr><td>时间步处理</td><td>统一参数</td><td>专家分化</td><td>粗到细自然实现</td></tr>
+            <tr><td>音频</td><td>无 (后续加 V2A)</td><td>S2V 原生</td><td>音频驱动</td></tr>
+            <tr><td>角色动画</td><td>无</td><td>Animate</td><td>身份保持+动作</td></tr>
+            <tr><td>VAE</td><td>Wan-VAE</td><td>共享</td><td>标准化</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>演进趋势：</strong>Dense → MoE 是大语言模型的成功路径，Wan2.2 将其成功迁移到视频生成。跨时间步专家分离是意外发现——无需显式设计，训练过程自然涌现。这一发现影响了后续视频扩散模型的设计范式。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2503.20314" target="_blank">📄 arXiv 论文 (共享)</a>

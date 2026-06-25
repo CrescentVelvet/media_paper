@@ -176,6 +176,98 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>HunyuanVideo 1.5 架构：</strong>基于 DiT 的视频生成模型，核心创新是 SSTA（Sparse-Scan Telescopic Attention）</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>文本编码：</strong>多语言 LLM 提取文本特征</li>
+                <li><strong>视频 VAE：</strong>3D VAE 编码视频到潜空间</li>
+                <li><strong>SSTA-DiT：</strong>稀疏扫描望远镜注意力 + DiT 主干，兼顾全局和局部</li>
+                <li><strong>Flow Matching：</strong>连续时间生成框架</li>
+            </ul>
+        </div>
+        <p><strong>SSTA 设计：</strong>通过稀疏扫描模式在空间和时间维度进行多尺度注意力，"望远镜"机制允许模型在粗粒度看全局、细粒度看局部，避免了全注意力的 O(n²) 计算开销。</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：反向缩参</strong> — 从 1.0 的 13B 降到 8.3B（减少 36%），但质量不降反升，证明架构效率比堆参数更重要。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：SSTA 注意力</strong> — Sparse-Scan Telescopic Attention，稀疏扫描+望远镜多尺度注意力，兼顾效率和质量。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：消费级 GPU 友好</strong> — 8.3B 参数可在 RTX 4090 等消费级 GPU 上运行。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：Prompt 上采样</strong> — 内置 prompt 增强机制，用户简短描述 → 模型自动扩写为详细描述。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>视频创作</td><td>T2V/I2V 高质量视频生成</td></tr>
+            <tr><td>广告营销</td><td>快速生成产品宣传视频</td></tr>
+            <tr><td>影视预演</td><td>从分镜/概念图生成视频片段</td></tr>
+            <tr><td>教育内容</td><td>生成教学演示动画</td></tr>
+            <tr><td>本地部署</td><td>消费级 GPU 可跑，适合个人/小团队</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <ul>
+            <li><strong>从 1.0 迁移：</strong>从 HunyuanVideo 1.0 权重初始化，重新设计架构后继续训练</li>
+            <li><strong>渐进式训练：</strong>低分辨率 → 高分辨率，短视频 → 长视频</li>
+            <li><strong>SSTA 预训练：</strong>在大规模数据上学习稀疏扫描模式</li>
+            <li><strong>后训练：</strong>美学优化、prompt 跟随能力提升</li>
+            <li><strong>Prompt 上采样训练：</strong>训练模型自动扩写用户简短描述</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <ul>
+            <li>大规模图像/视频文本对数据</li>
+            <li>多分辨率、多长宽比训练数据</li>
+            <li>美学评分模型筛选高质量数据</li>
+            <li>运动质量评分过滤</li>
+            <li>Prompt 上采样训练数据：简短 prompt → 详细描述配对</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <ul>
+            <li><strong>Flow Matching 损失：</strong>L = E || v_θ(z_t, t, c) - (z1 - z0) ||²</li>
+            <li><strong>VAE 损失：</strong>L1 + LPIPS + KL + 对抗损失</li>
+            <li><strong>Prompt 上采样损失：</strong>交叉熵损失，训练模型扩写描述</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计：</strong>SSTA 的稀疏扫描不改变损失函数，而是改变了注意力的计算路径。通过减少不必要的长程注意力，在保持质量的前提下大幅降低计算量。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>HunyuanVideo 1.0</th><th>HunyuanVideo 1.5</th></tr>
+            <tr><td>参数量</td><td>13B</td><td>8.3B (-36%)</td></tr>
+            <tr><td>注意力</td><td>Full Attention</td><td>SSTA (稀疏扫描)</td></tr>
+            <tr><td>消费级 GPU</td><td>困难</td><td>✅ RTX 4090</td></tr>
+            <tr><td>Prompt 上采样</td><td>无</td><td>✅ 内置</td></tr>
+            <tr><td>质量</td><td>高</td><td>更高 (反直觉)</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>"更大不一定更好" — HunyuanVideo 1.5 证明了架构创新（SSTA）可以替代参数堆叠。这与 LLM 领域的 MoE 趋势类似：不增加总参数，而是提升参数效率。消费级可部署是重要方向，Wan2.1 (1.3B) 和 HunyuanVideo 1.5 (8.3B) 都在这条路上。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2511.18870" target="_blank">📄 arXiv: 2511.18870</a>

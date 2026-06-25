@@ -183,6 +183,101 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>Kandinsky 5 架构：</strong>三档模型（2B/6B/19B），基于 Diffusion Transformer</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>文本编码：</strong>多语言文本编码器</li>
+                <li><strong>视频 VAE：</strong>3D VAE 编码/解码</li>
+                <li><strong>DiT 主干：</strong>Diffusion Transformer，全注意力</li>
+                <li><strong>RL 后训练：</strong>强化学习优化美学和 prompt 跟随</li>
+            </ul>
+        </div>
+        <p><strong>三档模型定位：</strong>2B (轻量/快速) / 6B (均衡) / 19B (旗舰/最高质量)</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：完整数据策展披露</strong> — 论文详细披露了数据筛选、清洗、标注的完整流程，在业界很少见。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：RL 后训练</strong> — 使用强化学习（如 DPO）在美学质量和 prompt 跟随上优化，超越纯 SFT。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：三档模型</strong> — 2B/6B/19B 覆盖从边缘部署到旗舰质量的不同需求。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：非中美视角</strong> — 俄罗斯团队，提供了独立于中美两国的技术路线和数据策略。</n        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>创意视频</td><td>T2V 高质量艺术风格视频生成</td></tr>
+            <tr><td>广告</td><td>快速产品宣传视频</td></tr>
+            <tr><td>边缘部署</td><td>2B 模型适合移动端/边缘设备</td></tr>
+            <tr><td>研究基线</td><td>完整数据策展披露，适合学术复现</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>训练阶段</h3>
+        <ul>
+            <li><strong>预训练：</strong>大规模图像/视频数据，渐进式分辨率提升</li>
+            <li><strong>SFT：</strong>高质量数据微调</li>
+            <li><strong>RL 后训练：</strong>DPO/RLHF 优化美学和 prompt 跟随</li>
+        </ul>
+        <h3>数据策展（论文亮点）</h3>
+        <ul>
+            <li>详细的数据来源、质量评分、去重策略披露</li>
+            <li>多阶段数据过滤 pipeline</li>
+            <li>美学评分模型 + 运动质量模型 + OCR/人脸检测过滤</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <ul>
+            <li>大规模公开 + 内部视频数据</li>
+            <li>多语言文本描述</li>
+            <li>详细的数据清洗流程（去重、质量过滤、安全过滤）</li>
+            <li>美学标注模型 + 人类标注团队</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <ul>
+            <li><strong>Flow Matching 损失：</strong>L = E || v_θ(z_t, t, c) - v ||²</li>
+            <li><strong>RL 损失（DPO）：</strong>L_DPO = -log σ(β·(log p_θ(y_w|x) - log p_θ(y_l|x) - log p_ref(y_w|x) + log p_ref(y_l|x)))</li>
+            <li>y_w 为偏好样本，y_l 为非偏好样本</li>
+            <li><strong>VAE 损失：</strong>L1 + LPIPS + KL + 对抗损失</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计：</strong>RL 后训练是 Kandinsky 5 的差异化亮点。Flow Matching 阶段学习基础生成能力，DPO 阶段对齐人类偏好。这与 LLM 领域的 SFT→DPO 范式一致。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>Kandinsky 5</th><th>Wan2.1</th><th>HunyuanVideo 1.5</th></tr>
+            <tr><td>参数量</td><td>2B/6B/19B</td><td>1.3B/14B</td><td>8.3B</td></tr>
+            <tr><td>架构</td><td>DiT</td><td>DiT</td><td>SSTA-DiT</td></tr>
+            <tr><td>后训练</td><td>RL (DPO)</td><td>SFT</td><td>SFT+Prompt上采样</td></tr>
+            <tr><td>数据披露</td><td>✅ 完整</td><td>部分</td><td>部分</td></tr>
+            <tr><td>地理</td><td>俄罗斯</td><td>中国</td><td>中国</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>视频生成模型的后训练正在从纯 SFT 向 SFT+RL 演进，与 LLM 路径一致。Kandinsky 5 的完整数据披露是业界标杆，其他团队应跟进。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2511.14993" target="_blank">📄 arXiv: 2511.14993</a>

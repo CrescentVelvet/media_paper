@@ -199,6 +199,111 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>LTX-Video 架构：</strong>2B 参数，超实时视频生成，DiT + 高效 VAE</p>
+        <div class="highlight">
+            <strong>LTX-Video Pipeline：</strong>
+            <ul>
+                <li><strong>文本编码：</strong>文本编码器提取 prompt 特征</li>
+                <li><strong>视频 VAE：</strong>高效 3D VAE，高压缩率</li>
+                <li><strong>DiT 主干：</strong>轻量 Diffusion Transformer</li>
+                <li><strong>实时推理：</strong>生成速度 >1x 实时（比播放还快）</li>
+            </ul>
+        </div>
+        <p><strong>LTX-2 架构：</strong>19B 参数，双流 DiT（Dual-Stream DiT），首个开源音视频联合生成</p>
+        <div class="highlight">
+            <strong>LTX-2 Pipeline：</strong>
+            <ul>
+                <li><strong>双流 DiT：</strong>视频流和音频流并行生成，通过 cross-attention 交互</li>
+                <li><strong>4K@50fps：</strong>支持 4K 分辨率 50 帧输出</li>
+                <li><strong>音视频同步：</strong>原生音视频联合生成，无需后处理对齐</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：超实时生成 (LTX-Video)</strong> — 2B 模型生成速度超过 1x 实时，比播放还快，实现真正的实时交互。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：首个开源音视频联合生成 (LTX-2)</strong> — 双流 DiT 架构，视频和音频原生同步生成，首个开源方案。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：4K@50fps (LTX-2)</strong> — 开源模型中首个支持 4K 50帧输出的。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：双流 DiT (LTX-2)</strong> — 视频流和音频流独立处理但通过 cross-attention 同步，比单流更高效。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>实时交互</td><td>LTX-Video 超实时，适合对话式视频生成</td></tr>
+            <tr><td>影视制作</td><td>LTX-2 4K 输出，达到制作级质量</td></tr>
+            <tr><td>音视频创作</td><td>LTX-2 原生音视频联合生成，无需分开制作</td></tr>
+            <tr><td>移动端</td><td>LTX-Video 2B 轻量，适合移动部署</td></tr>
+            <tr><td>游戏资产生成</td><td>快速生成游戏过场动画</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>LTX-Video</h3>
+        <ul>
+            <li>轻量 DiT 设计，2B 参数优化实时推理</li>
+            <li>高效 VAE 压缩，减少 latent 空间维度</li>
+            <li>渐进式分辨率训练</li>
+        </ul>
+        <h3>LTX-2</h3>
+        <ul>
+            <li>19B 参数，双流 DiT 架构</li>
+            <li>视频流和音频流分别预训练，再联合微调</li>
+            <li>大规模音视频配对数据训练</li>
+            <li>4K 高分辨率后训练</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <ul>
+            <li>LTX-Video：大规模图像/视频文本对</li>
+            <li>LTX-2：音视频配对数据，4K 高分辨率数据</li>
+            <li>数据清洗：质量评分 + 运动过滤 + 安全过滤</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <ul>
+            <li><strong>视频 Flow Matching：</strong>L_video = E || v_θ^v(z_t^v, t, c) - v^v ||²</li>
+            <li><strong>音频 Flow Matching (LTX-2)：</strong>L_audio = E || v_θ^a(z_t^a, t, c) - v^a ||²</li>
+            <li><strong>联合损失：</strong>L = L_video + λ·L_audio</li>
+            <li><strong>同步损失：</strong>音视频对齐的辅助损失</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计：</strong>双流 DiT 的核心是视频和音频各自有独立的去噪路径，通过 cross-attention 共享信息。这比将音频 token 拼接到视频 token 序列更高效，避免了序列长度爆炸。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <table>
+            <tr><th>维度</th><th>LTX-Video</th><th>LTX-2</th><th>Wan2.2</th><th>Veo 3.1†</th></tr>
+            <tr><td>参数量</td><td>2B</td><td>19B</td><td>14B</td><td>闭源</td></tr>
+            <tr><td>速度</td><td>超实时</td><td>标准</td><td>标准</td><td>标准</td></tr>
+            <tr><td>分辨率</td><td>720p</td><td>4K@50fps</td><td>720p</td><td>4K</td></tr>
+            <tr><td>音频</td><td>❌</td><td>✅ 原生</td><td>❌</td><td>✅ 原生</td></tr>
+            <tr><td>开源</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>趋势：</strong>LTX 走了与 Wan/HunyuanVideo 不同的路线——先用极小模型 (2B) 实现超实时，再用双流架构 (19B) 实现音视频联合。双流 DiT 是首个开源的音视频联合生成方案，填补了 Veo 3 闭源留下的空白。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <h3>LTX-Video</h3>
         <div class="links">
