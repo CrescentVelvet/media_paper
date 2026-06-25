@@ -179,6 +179,41 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
+        <h3>LRM 架构</h3>
+        <ul>
+            <li><strong>输入：</strong>单张图像</li>
+            <li><strong>编码：</strong>ViT 提取图像 patch 特征</li>
+            <li><strong>生成：</strong>Transformer decoder → NeRF/Triplane</li>
+            <li><strong>输出：</strong>Triplane NeRF 表示</li>
+            <li><strong>问题：</strong>需要 per-object 优化</li>
+        </ul>
+        <h3>GS-LRM 架构</h3>
+        <ul>
+            <li><strong>输入：</strong>多视角图像</li>
+            <li><strong>编码：</strong>DINOv2 提取多视角特征</li>
+            <li><strong>生成：</strong>多头 Transformer → 直接预测高斯参数</li>
+            <li><strong>输出：</strong>3D 高斯，无需优化</li>
+        </ul>
+        <h3>核心创新</h3>
+        <ul>
+            <li><strong>LRM：</strong>首次证明单图前馈 3D 重建可行</li>
+            <li><strong>GS-LRM：</strong>多视角前馈 → 直接预测高斯，无需优化</li>
+            <li><strong>Long-LRM：</strong>扩展输入视角数量</li>
+            <li><strong>Instant3R：</strong>DINOv2 + 交叉注意力，点云输出</li>
+        </ul>
+        <h3>损失函数</h3>
+        <ul>
+            <li><strong>渲染损失：</strong>L_render = L1 + LPIPS（多视角渲染一致性）</li>
+            <li><strong>参数损失：</strong>L_param = ||θ_pred - θ_gt||²（高斯参数回归）</li>
+            <li><strong>感知损失：</strong>在 ImageNet 预训练特征空间计算</li>
+        </ul>
+        <div class="highlight">
+            <strong>演进：</strong>SfM+MVS (迭代优化) → LRM (单图前馈) → GS-LRM (多视角前馈) → VGGT (任意数量前馈)。从“优化”到“预测”的范式转变。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2311.06214" target="_blank">📄 Instant3D</a>

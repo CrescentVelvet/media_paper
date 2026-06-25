@@ -119,6 +119,42 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
+        <div class="highlight">
+            <strong>Hunyuan3D 架构：</strong>双阶段 — 3D-DiT (形状生成) + 3D-Paint (纹理生成)
+        </div>
+        <h3>核心创新</h3>
+        <ul>
+            <li><strong>3D-DiT：</strong>大规模 3D 扩散 Transformer，文本/图像 → 3D 形状</li>
+            <li><strong>3D-Paint：</strong>给定 3D 形状 + 文本/图像 → 纹理贴图</li>
+            <li><strong>双阶段解耦：</strong>形状和纹理分开生成，各自优化</li>
+            <li><strong>大规模训练：</strong>在 Objaverse-XL 等大规模 3D 数据上训练</li>
+        </ul>
+        <h3>训练策略</h3>
+        <ul>
+            <li>阶段 1：3D-DiT 在大规模 3D 数据上训练形状生成</li>
+            <li>阶段 2：3D-Paint 在形状+纹理配对数据上训练纹理生成</li>
+            <li>Flow Matching 损失</li>
+        </ul>
+        <h3>损失函数</h3>
+        <ul>
+            <li><strong>形状生成：</strong>L_shape = Flow Matching 损失</li>
+            <li><strong>纹理生成：</strong>L_texture = L1 + LPIPS + 对抗损失</li>
+        </ul>
+        <h3>应用场景</h3>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>游戏开发</td><td>3D 游戏资产生成</td></tr>
+            <tr><td>电商</td><td>商品 3D 模型</td></tr>
+            <tr><td>3D 打印</td><td>可打印 mesh</td></tr>
+            <tr><td>AR/VR</td><td>3D 内容创建</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>演进：</strong>与 TRELLIS 相比，Hunyuan3D 的双阶段设计更模块化（形状+纹理分开），而 TRELLIS 的 SLAT 表示更统一。两者代表了 3D 生成的两条路线：解耦 vs 统一。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2501.12202" target="_blank">📄 Hunyuan3D 2.0 arXiv</a>

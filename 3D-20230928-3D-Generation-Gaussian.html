@@ -129,6 +129,33 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
+        <h3>DreamGaussian 架构</h3>
+        <ul>
+            <li><strong>3D 高斯 + SDS：</strong>从文本/图像生成 3D 高斯，使用 Score Distillation Sampling</li>
+            <li><strong>两阶段：</strong>粗粒度高斯优化 → 精细纹理 mesh 提取</li>
+        </ul>
+        <h3>GaussianDreamer 架构</h3>
+        <ul>
+            <li><strong>3D 高斯 + 扩散先验：</strong>利用 2D 扩散模型作为先验，引导 3D 高斯生成</li>
+        </ul>
+        <h3>核心创新</h3>
+        <ul>
+            <li>将 3DGS 表示引入 3D 生成，避免 NeRF 的隐式表示</li>
+            <li>比基于 NeRF 的 SDS 方法快 10×以上</li>
+            <li>直接输出可编辑的 3D 高斯/Mesh</li>
+        </ul>
+        <h3>损失函数</h3>
+        <ul>
+            <li><strong>SDS 损失：</strong>∇θ L_SDS = E[ε(t)·(ε_φ(z_t; y) - ε)]，φ 为预训练扩散模型</li>
+            <li><strong>参考图像损失：</strong>L_ref = ||R(θ) - I_ref||</li>
+        </ul>
+        <div class="highlight">
+            <strong>演进：</strong>NeRF+SDS (DreamFusion) → 3DGS+SDS (DreamGaussian) → 前馈生成 (GS-LRM) → Latent 生成 (TRELLIS)。从“优化”到“生成”的效率飞跃。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2309.16653" target="_blank">📄 DreamGaussian arXiv</a>
