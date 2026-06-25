@@ -162,6 +162,144 @@
     </div>
 
     <div class="section">
+        <h2>🖼️ 算法框图</h2>
+        <p><em>注: 架构图请参考论文原文 Figure 1-3</em></p>
+        <p>VGGT 的核心架构流程:</p>
+        <ul>
+            <li><strong>输入:</strong> N 张图像 → DINOv2 backbone → patch tokens + Plücker 坐标接地</li>
+            <li><strong>交替注意力:</strong> 帧内自注意力(捕获单帧细节) ↔ 帧间交叉注意力(融合多视角信息), 多层交替</li>
+            <li><strong>多任务头:</strong> 并行输出相机参数(焦距+位姿), 点图, 深度图, 3D 点轨迹</li>
+            <li><strong>接地设计:</strong> Plücker 射线参数化嵌入到每个 token, 使网络对 3D 几何有显式感知</li>
+            <li><strong>输出:</strong> 统一的 3D 场景表征, 可用于下游任务(渲染, 追踪, SLAM)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1: 多任务统一前馈模型</strong><br>
+            首次在单一前馈模型中同时解决相机估计、多视角深度、密集点云重建和 3D 点追踪四大任务, 以前这些任务需要各自的专用模型和后处理优化。
+        </div>
+        <div class="highlight">
+            <strong>创新 2: Plücker 坐标接地</strong><br>
+            将相机位姿信息以 Plücker 射线参数化嵌入到 token 中, 使网络对 3D 几何有显式感知。这是一种几何先验注入, 区别于纯数据驱动的隐式学习。
+        </div>
+        <div class="highlight">
+            <strong>创新 3: 可变视角数量</strong><br>
+            无需固定视角数量, 从 1 张到数百张图像均可输入。全注意力机制天然支持任意序列长度, 通过交替帧内/帧间注意力高效处理。
+        </div>
+        <div class="highlight">
+            <strong>创新 4: 亚秒级速度</strong><br>
+            重建数百张图像不到 1 秒, 比传统 SfM+MVS (COLMAP, 需要数小时) 快 4-5 个数量级, 使实时 3D 感知成为可能。
+        </div>
+        <div class="highlight">
+            <strong>创新 5: backbone 特征可迁移</strong><br>
+            VGGT 的预训练特征可增强下游任务(非刚性追踪、前馈新视角合成), 作为 3D 基础模型的特征提取器使用, 类似 2D 领域的 DINOv2。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>优势</th></tr>
+            <tr><td>AR/VR</td><td>实时场景理解、虚拟物体放置</td><td>亚秒级速度, 无需标定</td></tr>
+            <tr><td>机器人感知</td><td>导航、抓取、场景理解</td><td>单次前向即得 3D 几何</td></tr>
+            <tr><td>SLAM</td><td>VGGT-SLAM 2.0: 实时单目 SLAM</td><td>无需特征匹配, 端到端</td></tr>
+            <tr><td>航测/测绘</td><td>无人机图像→3D 地图</td><td>低分辨率场景表现优异</td></tr>
+            <tr><td>3D 重建</td><td>从照片重建场景 3D 模型</td><td>无需后处理优化</td></tr>
+            <tr><td>点追踪</td><td>视频中物体追踪、运动分析</td><td>3D 点轨迹直接输出</td></tr>
+            <tr><td>深度估计</td><td>多视角深度图生成</td><td>超越 MASt3R 等前馈方法</td></tr>
+            <tr><td>3DGS 初始化</td><td>为 3DGS 提供初始点云和位姿</td><td>解决 3DGS 依赖 SfM 痛点</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>预训练阶段</h3>
+        <ul>
+            <li><strong>视觉 backbone:</strong> 使用预训练 DINOv2 作为图像编码器, 继承 2D 视觉理解能力</li>
+            <li><strong>多任务联合训练:</strong> 相机估计 + 深度 + 点云 + 点追踪同时训练, 共享 backbone</li>
+            <li><strong>几何接地:</strong> Plücker 坐标在训练中嵌入, 使模型学习几何先验而非纯模式匹配</li>
+            <li><strong>数据多样性:</strong> 合成数据(CO3D, Objaverse 渲染) + 真实数据(ScanNet, MegaDepth)混合训练</li>
+        </ul>
+        <h3>训练细节</h3>
+        <ul>
+            <li><strong>交替注意力训练:</strong> 帧内和帧间注意力层交替堆叠, 逐层加深多视角融合</li>
+            <li><strong>任务权重:</strong> 多个任务头的损失按一定权重组合, 自动平衡各任务</li>
+            <li><strong>大规模训练:</strong> 在大规模 3D 数据集上训练, 学习通用 3D 几何先验而非场景特定优化</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <table>
+            <tr><th>数据类型</th><th>来源</th><th>用途</th></tr>
+            <tr><td>合成数据</td><td>CO3D, Objaverse 渲染</td><td>多视角 3D 物体</td></tr>
+            <tr><td>室内扫描</td><td>ScanNet, Matterport</td><td>室内场景 3D</td></tr>
+            <tr><td>室外场景</td><td>MegaDepth, BlendedMVS</td><td>大规模室外多视角</td></tr>
+            <tr><td>动态场景</td><td>Dynamic Stereo, KITTI</td><td>动态/驾驶场景</td></tr>
+            <tr><td>点追踪</td><td>TAP-Vid, Kubric</td><td>3D 点轨迹标注</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计:</strong>混合合成和真实数据训练, 让模型学习通用的 3D 几何先验。合成数据提供完美标注(深度、位姿), 真实数据提供真实世界的纹理和噪声分布。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔬 损失函数</h2>
+        <h3>相机参数损失</h3>
+        <ul>
+            <li><strong>位姿损失:</strong> <code>L_pose = ||R_pred - R_gt||_F² + ||t_pred - t_gt||²</code></li>
+            <li><strong>焦距损失:</strong> <code>L_focal = |f_pred - f_gt| / f_gt</code></li>
+        </ul>
+        <h3>深度损失</h3>
+        <ul>
+            <li><strong>Scale-invariant L1:</strong> <code>L_depth = ||d_pred / s - d_gt||_1</code>, s 是尺度因子</li>
+            <li>尺度不变设计使模型不依赖绝对尺度标注</li>
+        </ul>
+        <h3>点云损失</h3>
+        <ul>
+            <li><strong>3D 点 L1:</strong> <code>L_point = ||P_pred - P_gt||_1</code></li>
+            <li><strong>多视角一致性:</strong> 不同视角预测的点图应一致</li>
+        </ul>
+        <h3>点追踪损失</h3>
+        <ul>
+            <li><strong>轨迹 L2:</strong> <code>L_track = ||T_pred - T_gt||²</code></li>
+            <li><strong>可见性分类:</strong> 二元交叉熵判断点是否可见</li>
+        </ul>
+        <h3>总损失</h3>
+        <ul>
+            <li><code>L_total = λ_pose·L_pose + λ_focal·L_focal + λ_depth·L_depth + λ_point·L_point + λ_track·L_track</code></li>
+        </ul>
+        <div class="highlight">
+            <strong>Plücker 接地的作用:</strong>后续研究(arXiv 2605.18599)发现语义信息与空间信息混合可能引入干扰, 催生了语义-空间解耦的改进方案。这表明几何接地虽然有效但仍有优化空间。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>前馈 3D 重建演进</h3>
+        <table>
+            <tr><th>方法</th><th>输入</th><th>输出</th><th>特点</th><th>年份</th></tr>
+            <tr><td>DUSt3R</td><td>2 视角</td><td>点图 + 深度</td><td>首个前馈 3D 重建</td><td>2024</td></tr>
+            <tr><td>MASt3R</td><td>2 视角</td><td>点图 + 匹配 + 3D</td><td>增加匹配能力</td><td>2024</td></tr>
+            <tr><td><strong>VGGT</strong></td><td><strong>N 视角</strong></td><td><strong>全 3D 属性</strong></td><td><strong>多任务统一, 任意视角数</strong></td><td><strong>2025</strong></td></tr>
+            <tr><td>GS-LRM</td><td>N 视角</td><td>3D 高斯参数</td><td>渲染导向的前馈</td><td>2024</td></tr>
+            <tr><td>MERG3R</td><td>N 视角</td><td>分治 3D</td><td>解决大规模内存瓶颈</td><td>2026</td></tr>
+        </table>
+        <h3>VGGT 衍生生态</h3>
+        <ul>
+            <li><strong>QuantVGGT</strong> (ICLR 2026): 4-bit 量化, 3.7× 内存压缩 + 2.5× 加速</li>
+            <li><strong>4DLangVGGT</strong>: 扩展到 4D 语言-视觉几何, 动态场景理解</li>
+            <li><strong>VGGT-SLAM 2.0</strong>: 实时单目 SLAM 系统</li>
+            <li><strong>MERG3R</strong>: 分治框架解决大规模场景内存瓶颈</li>
+        </ul>
+        <div class="highlight">
+            <strong>路线对比:</strong>VGGT(几何导向, 预测点图) vs GS-LRM(渲染导向, 预测高斯参数)。VGGT 的优势在于特征可迁移性和通用性, GS-LRM 的优势在于直接用于渲染。两者互补。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2503.11651" target="_blank">📄 arXiv: 2503.11651</a>

@@ -173,6 +173,139 @@
     </div>
 
     <div class="section">
+        <h2>🖼️ 算法框图</h2>
+        <p><em>注: 架构图请参考 Wan2.2 GitHub README 和技术博客</em></p>
+        <p>Wan2.2 的核心架构与 Wan2.1 的主要差异在于 MoE 引入:</p>
+        <ul>
+            <li><strong>MoE 路由:</strong> 不同去噪时间步分配给不同专家, 每个专家专注于特定去噪阶段(早期/中期/晚期)</li>
+            <li><strong>Wan2.2-VAE:</strong> 升级的 VAE, 压缩比 16×16×4, 比 Wan2.1 更高效</li>
+            <li><strong>共享主干:</strong> MoE 层替换部分 FFN 层, 注意力层保持共享, 减少参数冗余</li>
+            <li><strong>推理路由:</strong> 给定时间步 t, 路由器选择对应的专家, 其他专家不被激活</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1: MoE 引入视频扩散模型</strong><br>
+            首创性地将 Mixture-of-Experts 架构引入视频扩散模型, 通过跨时间步的去噪专家分离, 在不增加推理计算成本的前提下大幅提升模型容量, 为视频生成模型的规模化提供了新路径。
+        </div>
+        <div class="highlight">
+            <strong>创新 2: 电影级美学可控生成</strong><br>
+            精心筛选美学数据, 带光照、构图、对比度、色调等详细标签, 支持可定制的美学风格, 这是区别于其他模型的差异化能力。
+        </div>
+        <div class="highlight">
+            <strong>创新 3: 高效 720P 生成 (TI2V-5B)</strong><br>
+            5B Dense 模型使用 Wan2.2-VAE (16×16×4 压缩), 在 RTX 4090 上实现 720P@24fps, 是最快的 720P@24fps 模型之一。
+        </div>
+        <div class="highlight">
+            <strong>创新 4: 语音驱动视频 (S2V)</strong><br>
+            Wan2.2-S2V-14B 支持音频驱动的电影级视频生成, 将语音信号直接映射到角色表情和动作, 集成 CosyVoice TTS。
+        </div>
+        <div class="highlight">
+            <strong>创新 5: 角色动画 (Animate)</strong><br>
+            Wan2.2-Animate-14B 统一角色动画与替换, 支持整体运动和表情复制, 拓展了视频生成的创意应用边界。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>对应模型</th></tr>
+            <tr><td>电影制作</td><td>电影预可视化、特效原型</td><td>T2V-A14B (美学风格)</td></tr>
+            <tr><td>广告创意</td><td>720P 高清广告视频生成</td><td>TI2V-5B</td></tr>
+            <tr><td>角色动画</td><td>参考角色→目标角色动作迁移</td><td>Animate-14B</td></tr>
+            <tr><td>语音驱动视频</td><td>语音→角色表情和动作同步</td><td>S2V-14B + CosyVoice</td></tr>
+            <tr><td>短视频创作</td><td>高清短视频快速生成</td><td>TI2V-5B (消费级)</td></tr>
+            <tr><td>虚拟人生成</td><td>语音驱动虚拟人演讲/对话</td><td>S2V-14B</td></tr>
+            <tr><td>视频后期</td><td>风格转换、角色替换</td><td>Animate-14B</td></tr>
+            <tr><td>研究和量化</td><td>MoE 视频扩散研究、量化实验</td><td>A14B (开源)</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>预训练阶段</h3>
+        <ul>
+            <li><strong>基础继承:</strong> 从 Wan2.1 预训练权重初始化, 平滑升级到 MoE 架构</li>
+            <li><strong>MoE 训练:</strong> 专家路由器从零训练, 专家权重从 Wan2.1 FFN 权重复制后分化</li>
+            <li><strong>渐进式容量增长:</strong> 先训练少量专家(2-4), 逐步增加到更多专家</li>
+            <li><strong>负载均衡:</strong> 使用 auxiliary loss 确保各专家负载均衡, 避免专家退化</li>
+            <li><strong>美学数据注入:</strong> 带详细美学标签的电影数据在后训练阶段注入</li>
+        </ul>
+        <h3>后训练阶段</h3>
+        <ul>
+            <li><strong>SFT:</strong> 任务特定微调(T2V, I2V, S2V, Animate)</li>
+            <li><strong>美学偏好对齐:</strong> 使用带美学标签的数据进行 DPO/偏好对齐</li>
+            <li><strong>音频对齐 (S2V):</strong> 音频特征与视频帧的时序对齐训练</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <table>
+            <tr><th>维度</th><th>相比 Wan2.1</th><th>新增内容</th></tr>
+            <tr><td>图像数据</td><td>+65.6%</td><td>电影美学场景、高分辨率摄影</td></tr>
+            <tr><td>视频数据</td><td>+83.2%</td><td>电影片段、专业摄影、运动视频</td></tr>
+            <tr><td>美学标签</td><td>新增</td><td>光照/构图/对比度/色调/景深</td></tr>
+            <tr><td>音频-视频对</td><td>新增</td><td>用于 S2V 训练的同步音视频数据</td></tr>
+            <tr><td>角色动画数据</td><td>新增</td><td>同一角色不同动作、多角色替换</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>美学数据策略:</strong>Wan2.2 的美学标签体系覆盖光照(自然/人工/逆光)、构图(三分法/对称/引导线)、对比度(高/低/柔和)、色调(暖/冷/中性/胶片)等维度, 使模型能按用户偏好生成不同风格。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔬 损失函数</h2>
+        <h3>Flow Matching 损失 (继承 Wan2.1)</h3>
+        <ul>
+            <li><code>L_FM = E_{t,x0,ε} ||v_θ^{expert(t)}(x_t, t, c) - u_t||²</code></li>
+            <li>区别: <code>v_θ^{expert(t)}</code> 根据时间步 t 路由到不同专家, 每个专家专精特定去噪阶段</li>
+        </ul>
+        <h3>MoE 辅助损失</h3>
+        <ul>
+            <li><strong>负载均衡损失:</strong> <code>L_balance = N · Σ f_i · P_i</code>, 鼓励各专家均匀使用</li>
+            <li>其中 f_i 是专家 i 的输入比例, P_i 是路由器对专家 i 的平均概率</li>
+            <li><strong>总损失:</strong> <code>L = L_FM + α · L_balance</code></li>
+        </ul>
+        <h3>VAE 损失 (Wan2.2-VAE)</h3>
+        <ul>
+            <li>重建 L1 + LPIPS + 对抗损失 + KL 散度</li>
+            <li>相比 Wan-VAE, 压缩率提升到 16×16×4, 减少了 token 数量</li>
+        </ul>
+        <div class="highlight">
+            <strong>MoE 在视频扩散中的核心优势:</strong>视频生成的去噪过程天然具有阶段差异(早期去噪结构, 晚期去噪细节), MoE 让不同专家专精不同阶段, 提升整体质量而不增加推理成本。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>Wan 系列技术演进</h3>
+        <table>
+            <tr><th>版本</th><th>架构创新</th><th>VAE</th><th>核心突破</th></tr>
+            <tr><td>Wan2.1</td><td>Dense DiT</td><td>Wan-VAE (4×16×16)</td><td>开源 SOTA, 消费级 GPU</td></tr>
+            <tr><td><strong>Wan2.2</strong></td><td><strong>MoE DiT</strong></td><td><strong>Wan2.2-VAE (4×16×16)</strong></td><td><strong>容量增大成本不变, 美学可控</strong></td></tr>
+            <tr><td>S2V</td><td>MoE + Audio Encoder</td><td>Wan2.2-VAE</td><td>语音驱动电影级视频</td></tr>
+            <tr><td>Animate</td><td>MoE + 角色控制</td><td>Wan2.2-VAE</td><td>角色动画与替换</td></tr>
+        </table>
+        <h3>与竞品对比 (2025年7月)</h3>
+        <table>
+            <tr><th>维度</th><th>Wan2.2</th><th>Sora 2</th><th>Kling 2</th><th>Veo 3.1</th></tr>
+            <tr><td>架构</td><td>MoE DiT</td><td>未知</td><td>未知</td><td>未知</td></tr>
+            <tr><td>开源</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td>720P@24fps</td><td>✅ (5B 消费级)</td><td>✅</td><td>✅</td><td>✅</td></tr>
+            <tr><td>MoE</td><td>✅ (首创)</td><td>未知</td><td>❌</td><td>❌</td></tr>
+            <tr><td>语音驱动</td><td>✅ (S2V)</td><td>未知</td><td>❌</td><td>❌</td></tr>
+            <tr><td>角色动画</td><td>✅ (Animate)</td><td>未知</td><td>部分</td><td>❌</td></tr>
+            <tr><td>R-Bench I2V</td><td>81.3</td><td>未知</td><td>未知</td><td>82.67</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>行业影响:</strong>Wan2.2 已成为视频生成领域的事实标准之一。大量社区工作围绕 Wan2.2 展开: 量化加速(HiFloat4)、缓存优化(Cache-dit)、稀疏注意力(LVSA)等。Wan2.2-VAE 被 NVIDIA Cosmos 3 直接采用。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2503.20314" target="_blank">📄 arXiv 论文 (共享)</a>

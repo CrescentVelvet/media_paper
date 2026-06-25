@@ -247,6 +247,135 @@
     </div>
 
     <div class="section">
+        <h2>🖼️ 算法框图</h2>
+        <p><em>注: 架构图请参考论文原文 Figure 1-4</em></p>
+        <p>Wan2.1 的核心架构流程:</p>
+        <ul>
+            <li><strong>输入:</strong> 文本→umT5-XXL 编码器, 视频/图像→Wan-VAE 编码器(3D 因果卷积)</li>
+            <li><strong>条件注入:</strong> 文本特征通过交叉注意力注入 DiT 主干</li>
+            <li><strong>DiT 主干:</strong> Full-attention Transformer + 3D RoPE, 处理时空联合 token 序列</li>
+            <li><strong>Flow Matching:</strong> 从高斯噪声到视频数据的连续时间生成, 使用 Rectified Flow</li>
+            <li><strong>输出:</strong> DiT 预测速度场→积分→Wan-VAE 解码→像素视频</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1: Wan-VAE (3D 因果 VAE)</strong><br>
+            时间 4× / 空间 16×16 压缩率, 支持 1080P 任意长度视频编解码。采用因果卷积确保时序因果性, 保留完整的时序信息。这一设计被后续 Wan2.2 和 Cosmos 3 直接采用。
+        </div>
+        <div class="highlight">
+            <strong>创新 2: 中英双语文字生成</strong><br>
+            首个支持中英文双语文字渲染的视频生成模型, 通过大规模双语标注数据和特定的文字渲染训练策略实现。
+        </div>
+        <div class="highlight">
+            <strong>创新 3: 消费级 GPU 兼容</strong><br>
+            1.3B 模型仅需 8.19 GB VRAM, 在 RTX 4090 上约 4 分钟生成 5 秒 480P 视频, 极大降低了视频生成的应用门槛。
+        </div>
+        <div class="highlight">
+            <strong>创新 4: Scaling Law 验证</strong><br>
+            系统性地验证了视频生成的数据和模型规模 scaling law, 14B 模型在数十亿规模数据上训练, 性能持续提升未饱和。
+        </div>
+        <div class="highlight">
+            <strong>创新 5: 多任务统一</strong><br>
+            T2V, I2V, 视频编辑, T2I, V2A 等 8 种任务统一到同一 DiT 框架, 通过任务特定条件注入实现多任务能力。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>对应模型</th></tr>
+            <tr><td>广告制作</td><td>商品展示视频、广告创意生成</td><td>T2V-14B</td></tr>
+            <tr><td>影视预可视化</td><td>分镜脚本→视频草稿, 快速迭代</td><td>T2V-14B / I2V-14B</td></tr>
+            <tr><td>教育内容</td><td>教学动画、科普视频生成</td><td>T2V-1.3B</td></tr>
+            <tr><td>社交媒体</td><td>短视频创作、个人视频生成</td><td>T2V-1.3B (消费级)</td></tr>
+            <tr><td>视频编辑</td><td>风格转换、内容扩展、局部重绘</td><td>视频编辑模型</td></tr>
+            <tr><td>文字渲染</td><td>视频中的中英文标题、字幕</td><td>T2V-14B (双语能力)</td></tr>
+            <tr><td>创意设计</td><td>从参考图像生成动画视频</td><td>I2V-14B</td></tr>
+            <tr><td>研究原型</td><td>视频生成研究、LoRA 训练</td><td>全系列 (开源)</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>预训练阶段</h3>
+        <ul>
+            <li><strong>渐进式训练:</strong> 从低分辨率(256p)到高分辨率(720p/1080p), 逐步增加帧数</li>
+            <li><strong>Flow Matching:</strong> 使用 Rectified Flow 作为训练目标, 从噪声到数据的连续时间生成</li>
+            <li><strong>3D RoPE:</strong> 旋转位置嵌入扩展到 3D(时间+空间行+空间列), 处理时空联合注意力</li>
+            <li><strong>umT5-XXL 文本编码器:</strong> 多语言支持的文本理解, 提供丰富的语义条件</li>
+            <li><strong>数据配比:</strong> 图像和视频按一定比例混合训练, 确保图像生成质量不退化</li>
+        </ul>
+        <h3>后训练阶段</h3>
+        <ul>
+            <li><strong>任务微调:</strong> 针对特定任务(I2V, 视频编辑等)使用高质量数据进行微调</li>
+            <li><strong>美学对齐:</strong> 通过美学评分数据集进行偏好对齐</li>
+            <li><strong>量化加速:</strong> 支持 FP8, INT8 量化, 降低推理成本</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <table>
+            <tr><th>数据类型</th><th>规模</th><th>处理方式</th></tr>
+            <tr><td>图像数据</td><td>数十亿</td><td>去重、美学评分、OCR 标注(双语)</td></tr>
+            <tr><td>视频数据</td><td>数亿</td><td>场景分类、运动幅度评分、时序切片</td></tr>
+            <tr><td>文本标注</td><td>数十亿条</td><td>中英文双语, 密集描述 + 简短标题</td></tr>
+            <tr><td>质量过滤</td><td>-</td><td>NSFW 过滤、水印检测、美学阈值</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计:</strong>大规模数据清洗流程包括去重(LSH)、质量过滤(美学模型)、运动评分(光流幅度)和 OCR 文字提取, 确保训练数据的高质量和多样性。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔬 损失函数</h2>
+        <h3>Flow Matching 损失</h3>
+        <ul>
+            <li><strong>训练目标:</strong> <code>L_FM = E_{t,x0,ε} ||v_θ(x_t, t, c) - u_t(x0, x1)||²</code></li>
+            <li>其中 <code>v_θ</code> 是模型预测的速度场, <code>u_t</code> 是目标速度(从 x0 到 x1 的线性插值方向)</li>
+            <li><code>x_t = (1-t)·x0 + t·x1</code>, t ∈ [0,1], x0 是噪声, x1 是真实数据</li>
+            <li><code>c</code> 是文本条件, 通过 umT5-XXL 编码后注入 DiT 交叉注意力</li>
+        </ul>
+        <h3>VAE 损失</h3>
+        <ul>
+            <li><strong>重建损失:</strong> L1 + LPIPS 感知损失</li>
+            <li><strong>KL 散度:</strong> 约束潜在空间分布接近标准正态</li>
+            <li><strong>对抗损失:</strong> 判别器约束解码质量, 保证 1080P 视频的高保真重建</li>
+        </ul>
+        <div class="highlight">
+            <strong>Rectified Flow 选择原因:</strong>相比标准 DDPM, Rectified Flow 在推理时可用更少的步数(10-30步)生成高质量结果, 且训练更稳定, 这对于视频生成的高计算成本尤为重要。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>Wan 系列演进</h3>
+        <table>
+            <tr><th>版本</th><th>架构</th><th>核心突破</th><th>时间</th></tr>
+            <tr><td><strong>Wan2.1</strong></td><td>DiT + Wan-VAE</td><td>开源 SOTA, 消费级 GPU, 双语文字</td><td>2025-03</td></tr>
+            <tr><td>Wan2.2</td><td>MoE DiT + Wan2.2-VAE</td><td>MoE 架构, 720P, 电影级美学</td><td>2025-07</td></tr>
+            <tr><td>VACE</td><td>Wan2.1 + 控制模块</td><td>多模态控制视频生成</td><td>2025-03</td></tr>
+            <tr><td>Wan-Move</td><td>Wan2.1 + 运动控制</td><td>精细运动控制</td><td>2025-12</td></tr>
+            <tr><td>Wan-R1</td><td>Wan + RL</td><td>强化学习优化</td><td>2026-03</td></tr>
+        </table>
+        <h3>与竞品对比 (2025年3月)</h3>
+        <table>
+            <tr><th>维度</th><th>Wan2.1-14B</th><th>Sora</th><th>Kling 1.0</th><th>HunyuanVideo</th></tr>
+            <tr><td>开源</td><td>✅</td><td>❌</td><td>❌</td><td>✅</td></tr>
+            <tr><td>消费级 GPU</td><td>✅ (1.3B: 8.19GB)</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td>双语文字</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td>VAE</td><td>Wan-VAE (3D 因果)</td><td>未知</td><td>未知</td><td>3D VAE</td></tr>
+            <tr><td>文本编码器</td><td>umT5-XXL</td><td>未知</td><td>未知</td><td>多语言 T5</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>历史意义:</strong>Wan2.1 是视频生成开源的里程碑, 首次证明开源模型可以全面对标甚至超越闭源模型, 同时保持消费级可用性。其 Wan-VAE 设计被 NVIDIA Cosmos 3 直接采用, 成为事实标准。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2503.20314" target="_blank">📄 arXiv 论文</a>

@@ -159,6 +159,135 @@
     </div>
 
     <div class="section">
+        <h2>🖼️ 算法框图</h2>
+        <p><em>注: 架构图请参考 3DGS 原始论文 Figure 1-4</em></p>
+        <p>3DGS 的核心渲染管线:</p>
+        <ul>
+            <li><strong>初始化:</strong> 从 SfM 稀疏点云初始化 3D 高斯椭球体(位置=点云点, 协方差=SfM 不确定性)</li>
+            <li><strong>可微光栅化:</strong> 3D 高斯→2D 投影→alpha 混合→像素颜色</li>
+            <li><strong>优化:</strong> 反向传播渲染损失→更新高斯参数(位置、协方差、不透明度、球谐系数)</li>
+            <li><strong>密度控制:</strong> 基于梯度大小自动克隆/分裂/删除高斯</li>
+            <li><strong>渲染:</strong> 按深度排序→可见性剔除→分块光栅化</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1: 实时可微光栅化</strong><br>
+            首次为 3D 高斯设计了可微光栅化算法, 支持各向异性 splatting, 既加速训练又允许实时渲染。这是区别于 NeRF 的核心突破——NeRF 需要逐点 MLP 前向传播, 而 3DGS 直接光栅化。
+        </div>
+        <div class="highlight">
+            <strong>创新 2: 自适应密度控制</strong><br>
+            基于位置梯度的大小自动克隆(小梯度+高位置不确定性)或分裂(大梯度+大尺寸), 删除低不透明度的高斯。这种自适应策略使场景表示在需要的地方密集, 不需要的地方稀疏。
+        </div>
+        <div class="highlight">
+            <strong>创新 3: 各向异性 3D 高斯</strong><br>
+            每个高斯有独立的 3D 协方差矩阵(3 个缩放参数 + 4 个四元数参数), 可以退化为各向异性的椭球体, 精确拟合场景几何, 比各向同性的 NeRF 点表示更高效。
+        </div>
+        <div class="highlight">
+            <strong>创新 4: 球谐系数颜色表示</strong><br>
+            使用球谐函数(SH)表示视角相关颜色, 每个 Gaussian 存储 SH 系数(通常到 3 阶), 实现视角相关的颜色变化, 处理镜面反射和透明材质。
+        </div>
+        <div class="highlight">
+            <strong>创新 5: 显式表示 vs 隐式表示</strong><br>
+            3DGS 用显式的高斯参数(位置、大小、颜色)表示场景, 天然支持编辑(移动、删除、融合高斯), 而 NeRF 的隐式表示难以定位和修改特定区域。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>对应技术</th></tr>
+            <tr><td>新视角合成</td><td>从少量照片生成任意视角图像</td><td>3DGS 原始</td></tr>
+            <tr><td>VR/AR</td><td>实时沉浸式场景渲染</td><td>3DGS (实时性)</td></tr>
+            <tr><td>3D 扫描</td><td>室内外场景数字化</td><td>3DGS + SfM</td></tr>
+            <tr><td>自动驾驶仿真</td><td>大规模场景重建和仿真</td><td>GaussianPro</td></tr>
+            <tr><td>表面重建</td><td>从多视角图像提取网格</td><td>2DGS / SuGaR</td></tr>
+            <tr><td>动态场景重建</td><td>4D 视频重建、运动追踪</td><td>4D Gaussians</td></tr>
+            <tr><td>3D 编辑</td><td>场景局部修改、物体移除</td><td>3DGS (显式表示)</td></tr>
+            <tr><td>数字孪生</td><td>物理场景的精确数字复刻</td><td>3DGS + MCMC</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>3DGS 优化流程</h3>
+        <ul>
+            <li><strong>初始化:</strong> 从 SfM (COLMAP) 稀疏点云初始化高斯位置, 协方差从 SfM 不确定性估计</li>
+            <li><strong>交错优化:</strong> 每个迭代: 渲染→计算损失→反向传播→更新参数→密度控制</li>
+            <li><strong>渐进式训练:</strong> 初始高斯少(~100K), 逐步增加到数百万</li>
+            <li><strong>学习率调度:</strong> 位置使用指数衰减学习率, 其他参数使用常数学习率</li>
+        </ul>
+        <h3>改进训练策略</h3>
+        <ul>
+            <li><strong>3DGS-MCMC:</strong> 将位置优化重新表述为 MCMC 采样, 使用 Metropolis-Hastings 准则控制高斯增减, 更 principled</li>
+            <li><strong>GaussianPro:</strong> 渐进传播策略, 受 MVS 启发, 用 patch matching 生成新高斯</li>
+            <li><strong>Scaffold-GS:</strong> 锚点引导, 先训练锚点再生成高斯, 更有组织</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <table>
+            <tr><th>数据集</th><th>用途</th><th>特点</th></tr>
+            <tr><td>Mip-NeRF 360</td><td>标准评测</td><td>360° 室内外场景, 50+ 视角</td></tr>
+            <tr><td>Tanks &amp; Temples</td><td>大规模评测</td><td>室外大场景, SfM 友好</td></tr>
+            <tr><td>Waymo Open</td><td>自动驾驶</td><td>大规模街景, 前后左右相机</td></tr>
+            <tr><td>ScanNet</td><td>室内场景</td><td>RGB-D 扫描, 1500+ 场景</td></tr>
+            <tr><td>Deep Blending</td><td>高质量评测</td><td>复杂光影, 高分辨率</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>评测指标:</strong>PSNR(dB, 像素保真度), SSIM(结构相似性), LPIPS(感知差异), 渲染速度(FPS), 训练时间, 内存占用。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔬 损失函数</h2>
+        <h3>3DGS 标准损失</h3>
+        <ul>
+            <li><strong>渲染损失:</strong> <code>L_render = L1(I_render, I_gt) + λ · L_D-SSIM(I_render, I_gt)</code></li>
+            <li>L1 距离提供像素级保真, D-SSIM 提供结构相似性</li>
+            <li>λ 通常设为 0.2, 平衡像素和结构损失</li>
+        </ul>
+        <h3>正则化项 (改进工作)</h3>
+        <ul>
+            <li><strong>Mip-Splatting:</strong> 2D 滤波正则化, 防止高斯在不同尺度下的锯齿</li>
+            <li><strong>Scaffold-GS:</strong> 锚点正则化, 约束高斯与锚点的偏移</li>
+            <li><strong>3DGS-MCMC:</strong> 无显式正则化, 通过 MCMC 接受/拒绝准则隐式约束</li>
+            <li><strong>2DGS:</strong> 表面法向量一致性正则化</li>
+        </ul>
+        <div class="highlight">
+            <strong>3DGS 训练的关键特点:</strong>没有预训练阶段, 完全从 SfM 点云开始场景级优化(~30分钟)。这与前馈方法(VGGT, GS-LRM)形成对比, 后者通过大规模预训练实现秒级重建但质量稍低。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>新视角合成技术演进</h3>
+        <table>
+            <tr><th>方法</th><th>表示</th><th>渲染速度</th><th>训练时间</th><th>年份</th></tr>
+            <tr><td>NeRF</td><td>隐式 MLP</td><td>慢 (&lt;1 FPS)</td><td>数小时</td><td>2020</td></tr>
+            <tr><td>Instant-NGP</td><td>哈希网格 + MLP</td><td>中等 (~10 FPS)</td><td>~5 分钟</td><td>2022</td></tr>
+            <tr><td><strong>3DGS</strong></td><td><strong>显式高斯</strong></td><td><strong>实时 (30+ FPS)</strong></td><td><strong>~30 分钟</strong></td><td><strong>2023</strong></td></tr>
+            <tr><td>GS-LRM</td><td>前馈高斯预测</td><td>秒级重建</td><td>大规模预训练</td><td>2024</td></tr>
+            <tr><td>VGGT</td><td>前馈点图预测</td><td>亚秒级</td><td>大规模预训练</td><td>2025</td></tr>
+        </table>
+        <h3>3DGS 改进方向脉络</h3>
+        <ul>
+            <li><strong>密度控制脉络:</strong> 3DGS → GaussianPro → 3DGS-MCMC (从启发式到 principled)</li>
+            <li><strong>锯齿/尺度脉络:</strong> 3DGS → Mip-Splatting (多尺度一致性)</li>
+            <li><strong>几何/表面脉络:</strong> 3DGS → 2DGS → SuGaR (从体素到表面)</li>
+            <li><strong>结构化脉络:</strong> 3DGS → Scaffold-GS (从自由增长到锚点引导)</li>
+            <li><strong>压缩脉络:</strong> 3DGS → 3DGS.zip → Dictionary Learning (减少存储)</li>
+            <li><strong>前馈脉络:</strong> 3DGS → GS-LRM → Long-LRM (从优化到前馈)</li>
+        </ul>
+        <div class="highlight">
+            <strong>与 VGGT 的关系:</strong>VGGT 可以为 3DGS 提供高质量的初始化点云和位姿, 解决 3DGS 依赖 SfM 的痛点。两者结合是自然的方向——VGGT 秒级定位, 3DGS 分钟级精修。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2308.04079" target="_blank">📄 3DGS 原始论文</a>
