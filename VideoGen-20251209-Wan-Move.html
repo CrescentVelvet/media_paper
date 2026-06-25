@@ -154,6 +154,36 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
+        <div class="highlight">
+            <strong>Wan-Move 架构：</strong>密集点轨迹 → 潜空间投影 → 首帧特征传播 → 运动引导条件</li>
+        </div>
+        <h3>核心创新</h3>
+        <ul>
+            <li><strong>密集点轨迹表示：</strong>用密集点轨迹表示物体运动，细粒度控制</li>
+            <li><strong>潜空间特征传播：</strong>将首帧特征沿轨迹传播，生成时空对齐的特征图</li>
+            <li><strong>无架构修改：</strong>直接作为条件注入 Wan-I2V-14B，无需额外编码器</li>
+            <li><strong>MoveBench 评测：</strong>自建基准，数据量大、视频长、标注高质量</li>
+        </ul>
+        <h3>训练与损失</h3>
+        <ul>
+            <li>基于 Wan2.1-I2V-14B 微调，在运动控制数据上训练</li>
+            <li>Flow Matching 损失 + 轨迹对齐损失</li>
+            <li>数据：合成运动数据 + 真实视频运动标注</li>
+        </ul>
+        <h3>应用场景</h3>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>精细运动控制</td><td>指定物体运动轨迹生成视频</td></tr>
+            <tr><td>广告</td><td>产品运动轨迹控制</td></tr>
+            <tr><td>影视特效</td><td>精确控制角色/物体运动</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>演进：</strong>Wan-Move 代表了运动控制从粗粒度（prompt 级）到细粒度（点级）的演进。与 Kling 2 的 Motion Brush 相比，Wan-Move 的点轨迹更精细，且完全开源。NeurIPS 2025 收录。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2512.08765" target="_blank">📄 arXiv 论文</a>

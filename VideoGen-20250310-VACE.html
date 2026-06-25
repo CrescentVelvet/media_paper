@@ -138,6 +138,35 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
+        <div class="highlight">
+            <strong>VACE 架构：</strong>Video Condition Unit (VCU) + Context Adapter，统一视频创建与编辑
+        </div>
+        <h3>核心创新</h3>
+        <ul>
+            <li><strong>VCU (Video Condition Unit)：</strong>将编辑、参考、遮罩等多种任务输入统一为一个接口</li>
+            <li><strong>Context Adapter：</strong>通过时间和空间维度的形式化表示注入任务概念</li>
+            <li><strong>多任务统一：</strong>参考到视频生成、视频到视频编辑、遮罩视频编辑三合一</li>
+        </ul>
+        <h3>应用场景</h3>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>视频编辑</td><td>视频风格转换、局部替换</td></tr>
+            <tr><td>参考生成</td><td>从参考图像生成视频</td></tr>
+            <tr><td>遮罩编辑</td><td>指定区域重新生成</td></tr>
+        </table>
+        <h3>训练策略与损失</h3>
+        <ul>
+            <li>基于 Wan2.1 基座微调，多任务联合训练</li>
+            <li>Flow Matching 损失 + 任务一致性损失</li>
+            <li>数据：视频编辑配对数据 + 参考生成数据</li>
+        </ul>
+        <div class="highlight">
+            <strong>演进：</strong>VACE 代表了从“单一生成”到“多任务统一”的趋势。与 Cosmos 3 的多任务统一不同，VACE 聚焦于编辑场景，通过 VCU 统一接口实现灵活组合。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2503.07598" target="_blank">📄 arXiv 论文</a>
