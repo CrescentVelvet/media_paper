@@ -288,6 +288,152 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>3DGS Pipeline 概览：</strong>从 SfM 点云初始化 → 高斯参数优化 → 实时可微渲染</p>
+        <div class="highlight">
+            <strong>核心 Pipeline：</strong>
+            <ul>
+                <li><strong>输入：</strong>多视角图像 + SfM 点云（COLMAP）</li>
+                <li><strong>初始化：</strong>SfM 稀疏点云 → 初始化 3D 高斯（位置=点坐标，颜色=SH 初始化）</li>
+                <li><strong>优化：</strong>可微光栅化渲染 → 与 GT 图像比 L1 + D-SSIM → 反向传播更新高斯参数</li>
+                <li><strong>自适应密度控制：</strong>梯度大的区域分裂/克隆，小的高斯删除，周期性密集化和剪枝</li>
+                <li><strong>输出：</strong>百万级 3D 高斯 → 实时渲染（>100 FPS @ 1080p）</li>
+            </ul>
+        </div>
+        <p><strong>高斯参数（每个高斯 59 维）：</strong></p>
+        <ul>
+            <li>位置 μ ∈ R³ (3D)</li>
+            <li>不透明度 α ∈ [0,1] (1D)</li>
+            <li>协方差 Σ ∈ R^{3×3} (分解为缩放 S ∈ R³ + 旋转 R ∈ SO(3)，共 6D)</li>
+            <li>球谐系数 SH (3阶 = 48D，用于视角依赖颜色)</li>
+        </ul>
+        <p><strong>渲染公式：</strong>C(x) = Σᵢ αᵢ · cᵢ · Tᵢ，其中 Tᵢ = ∏ⱼ₍ⱼ<i₎ (1 - αⱼ)，前端到后端高斯混合</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：3D 高斯场景表示</strong> — 用各向异性 3D 高斯椭球体作为场景表示，兼具显式（可编辑）和隐式（高质量）的优点，超越 NeRF 的隐式表示。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：可微光栅化</strong> — 将 3D 高斯投影到 2D 后进行 tile-based 排序和 alpha 混合，全流程可微，支持端到端梯度优化。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：自适应密度控制</strong> — 根据位置梯度动态分裂/克隆/删除高斯，高梯度区域密集化，低贡献区域剪枝，自动调节场景表示密度。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：实时渲染</strong> — >100 FPS @ 1080p，比 NeRF 快 100×以上，达到实时应用标准。
+        </div>
+        <div class="highlight">
+            <strong>创新 5：球谐颜色表示</strong> — 用球谐函数表示视角依赖颜色，从不同角度看到不同颜色，提升真实感。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>实时渲染</td><td>VR/AR 全景视频，6-DoF 自由视角</td></tr>
+            <tr><td>数字孪生</td><td>城市/工厂/室内 3D 建模与可视化</td></tr>
+            <tr><td>机器人仿真</td><td>高保真场景重建用于机器人训练</td></tr>
+            <tr><td>影视特效</td><td>场景重建 + 后期合成</td></tr>
+            <tr><td>电商展示</td><td>商品 3D 展示，自由旋转查看</td></tr>
+            <tr><td>自动驾驶</td><td>街景重建，仿真测试环境</td></tr>
+            <tr><td>SLAM</td><td>Photo-SLAM 等实时建图系统</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>3DGS 优化流程</h3>
+        <ul>
+            <li><strong>初始化：</strong>SfM 稀疏点云初始化高斯位置（每个点 = 一个高斯）</li>
+            <li><strong>优化循环：</strong>每次迭代 → 随机选视角 → 可微渲染 → 计算 loss → 反向传播 → 更新高斯参数</li>
+            <li><strong>密度控制周期：</strong>每 100 次迭代执行一次自适应密集化/剪枝</li>
+            <li><strong>训练时长：</strong>约 30-60 分钟/场景（30k 次迭代）</li>
+        </ul>
+        <h3>改进工作的训练策略</h3>
+        <ul>
+            <li><strong>Mip-Splatting：</strong>引入抗锯齿滤波器，解决不同分辨率下的 aliasing</li>
+            <li><strong>Scaffold-GS：</strong>Anchor-based 结构，从锚点生长高斯，更结构化</li>
+            <li><strong>3DGS-MCMC：</strong>将优化视为 MCMC 采样，避免自适应控制的超参敏感性</li>
+            <li><strong>2DGS：</strong>退化为 2D 盘片，更好的表面几何质量</li>
+            <li><strong>SuGaR：</strong>提取网格，高斯贴合表面</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <h3>常用训练与评测数据集</h3>
+        <table>
+            <tr><th>数据集</th><th>类型</th><th>场景</th></tr>
+            <tr><td>Mip-NeRF 360</td><td>真实</td><td>室内外复杂场景，3DGS 标准基准</td></tr>
+            <tr><td>DeepBlending</td><td>真实</td><td>大面积场景，多视角混合</td></tr>
+            <tr><td>Tanks & Temples</td><td>真实</td><td>大尺度室外场景</td></tr>
+            <tr><td>Blender</td><td>合成</td><td>物体级合成场景</td></tr>
+            <tr><td>DL3DV</td><td>真实</td><td>密集视角视频</td></tr>
+            <tr><td>ScanNet</td><td>真实</td><td>室内场景 RGB-D</td></tr>
+        </table>
+        <h3>评测指标</h3>
+        <ul>
+            <li>PSNR（峰值信噪比）— 重建质量</li>
+            <li>SSIM（结构相似性）— 感知质量</li>
+            <li>LPIPS（感知损失）— 深度感知质量</li>
+            <li>渲染速度（FPS）— 实时性</li>
+            <li>显存占用 — 可部署性</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>3DGS 原始损失</h3>
+        <ul>
+            <li><strong>组合损失：</strong>L = (1 - λ)·L1 + λ·L_D-SSIM，默认 λ=0.2</li>
+            <li>L1：像素级绝对误差，保证基础重建质量</li>
+            <li>D-SSIM：结构不相似性，提升感知质量</li>
+        </ul>
+        <h3>改进工作的损失设计</h3>
+        <table>
+            <tr><th>方法</th><th>额外损失</th><th>目的</th></tr>
+            <tr><td>Mip-Splatting</td><td>抗锯齿滤波</td><td>多分辨率一致性</td></tr>
+            <tr><td>Scaffold-GS</td><td>Anchor 正则化</td><td>结构化约束</td></tr>
+            <tr><td>2DGS</td><td>深度正则化 + 法向一致</td><td>表面几何质量</td></tr>
+            <tr><td>SuGaR</td><td>表面贴合损失</td><td>网格提取质量</td></tr>
+            <tr><td>GaussianPro</td><td> propagation 梯度引导</td><td>渐进式密集化</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计：</strong>3DGS 的损失非常简单（L1 + D-SSIM），其核心创新不在损失函数而在场景表示和可微渲染。改进工作主要通过添加正则化项解决特定问题（aliasing、表面质量、结构化等）。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>表示方法对比</h3>
+        <table>
+            <tr><th>维度</th><th>NeRF</th><th>3DGS</th><th>Voxel/Point</th></tr>
+            <tr><td>表示类型</td><td>隐式 (MLP)</td><td>显式 (高斯)</td><td>显式</td></tr>
+            <tr><td>渲染速度</td><td>慢 (~1 FPS)</td><td>快 (>100 FPS)</td><td>快</td></tr>
+            <tr><td>训练时间</td><td>数小时</td><td>30-60 分钟</td><td>分钟级</td></tr>
+            <tr><td>可编辑性</td><td>❌</td><td>✅</td><td>✅</td></tr>
+            <tr><td>表面质量</td><td>中</td><td>中-高 (2DGS 更好)</td><td>高</td></tr>
+            <tr><td>显存</td><td>低 (MLP)</td><td>高 (百万高斯)</td><td>中</td></tr>
+        </table>
+        <h3>演进脉络</h3>
+        <ul>
+            <li><strong>NeRF (2020)：</strong>隐式神经辐射场，质量高但慢</li>
+            <li><strong>Instant-NGP (2022)：</strong>哈希网格加速，训练秒级</li>
+            <li><strong>3DGS (2023.08)：</strong>显式高斯 + 可微光栅化，实时渲染</li>
+            <li><strong>改进潮 (2023-2024)：</strong>Mip-Splatting/Scaffold-GS/2DGS/3DGS-MCMC/SuGaR</li>
+            <li><strong>前馈重建 (2024)：</strong>GS-LRM/Long-LRM，无需 per-scene 优化</li>
+            <li><strong>动态扩展 (2023+)：</strong>4DGS/Dynamic Gaussians，时间维度</li>
+            <li><strong>生成扩展 (2023+)：</strong>DreamGaussian/GaussianDreamer，3D 生成</li>
+        </ul>
+        <div class="highlight">
+            <strong>趋势：</strong>从“隐式优化”→“显式优化”→“前馈预测”→“动态+生成”的四个方向同时演进。3DGS 是 3D 重建领域的 NeRF 之后最重要的大跳跃，催生了一个完整的研究生态。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2308.04079" target="_blank">📄 3DGS 原始论文</a>

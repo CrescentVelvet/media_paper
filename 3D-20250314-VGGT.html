@@ -414,6 +414,146 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>VGGT 架构概览：</strong>给定任意数量的输入图像，通过单次前向传播生成 3D 几何表示。</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>输入：</strong>N 张图像 + 相机参数（可选）</li>
+                <li><strong>图像编码：</strong>DINOv2 提取每张图像的 patch 特征</li>
+                <li><strong>Plücker 坐标接地：</strong>将相机射线方向编码为 Plücker 参数，注入到 token 中</li>
+                <li><strong>交替注意力：</strong>帧内 self-attention + 帧间 cross-attention 交替进行</li>
+                <li><strong>输出：</strong>点图（Point Map）+ 深度图 + 相机位姿 + 3D 高斯参数（可选）</li>
+            </ul>
+        </div>
+        <p><strong>核心设计图：</strong>多视角图像 → DINOv2 编码 → Plücker 接地 → 交替 Transformer → 多头输出（点图/深度/位姿/高斯）</p>
+        <p><strong>关键创新：</strong>用点图（Point Map）替代直接预测高斯参数，不绑定渲染管线，更通用。</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：单前向 3D 重建</strong> — 无需 per-scene 优化，单次前向传播即可从任意数量图像重建 3D 几何，颠覆传统 SfM+MVS pipeline。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：可变数量输入</strong> — 不限制输入图像数量，1 张到 100+ 张均可处理，通过交替注意力机制实现可扩展性。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：Plücker 坐标接地</strong> — 将相机位姿以射线参数化嵌入 token，让网络显式感知几何。后续研究发现语义-空间混合可能干扰，催生了解耦改进。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：点图表示</strong> — 预测与视角对齐的 3D 坐标图，比直接预测高斯参数更通用，不绑定渲染管线。
+        </div>
+        <div class="highlight">
+            <strong>创新 5：多头输出统一</strong> — 点图 + 深度 + 位姿 + 高斯参数，一个模型同时输出多种 3D 表示。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>航测重建</td><td>无人机航拍图像 → 3D 地形/城市模型（已有专门评估论文）</td></tr>
+            <tr><td>AR/VR</td><td>实时环境理解，SLAM 替代方案</td></tr>
+            <tr><td>机器人导航</td><td>快速环境重建，路径规划</td>
+            <tr><td>文化遗存数字化</td><td>多视角拍照 → 3D 文物模型</td></tr>
+            <tr><td>室内场景重建</td><td>手机拍照 → 房间 3D 模型</td></tr>
+            <tr><td>3D 生成基座</td><td>作为 3D 生成模型的空间理解组件</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>训练阶段</h3>
+        <ul>
+            <li><strong>骨干初始化：</strong>从 DINOv2 预训练权重初始化图像编码器</li>
+            <li><strong>多数据集联合训练：</strong>合成数据（CO3D、Objaverse 渲染）+ 真实数据（ScanNet、MegaDepth、BlendedMVS 等）</li>
+            <li><strong>课程学习：</strong>从 2 视角逐步增加到多视角</li>
+            <li><strong>数据增强：</strong>随机裁剪、颜色抖动、相机扰动</li>
+        </ul>
+        <h3>关键设计</h3>
+        <ul>
+            <li><strong>交替注意力：</strong>帧内 self-attention 提取单帧特征，帧间 cross-attention 融合多视角信息，交替堆叠</li>
+            <li><strong>可变视角数：</strong>不固定输入数量，通过 attention mask 实现任意数量输入</li>
+            <li><strong>端到端训练：</strong>从图像到 3D 输出全流程可微，无中间手工模块</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <h3>训练数据</h3>
+        <table>
+            <tr><th>类型</th><th>数据集</th><th>内容</th></tr>
+            <tr><td>合成</td><td>CO3D</td><td>多视角物体渲染</td></tr>
+            <tr><td>合成</td><td>Objaverse</td><td>大规模 3D 物体模型渲染</td></tr>
+            <tr><td>真实</td><td>ScanNet</td><td>室内场景 RGB-D 扫描</td></tr>
+            <tr><td>真实</td><td>MegaDepth</td><td>互联网图像 + SfM 重建</td></tr>
+            <tr><td>真实</td><td>BlendedMVS</td><td>合成+真实混合多视角</td></tr>
+            <tr><td>真实</td><td>DL3DV</td><td>密集视角视频</td></tr>
+        </table>
+        <h3>评测基准</h3>
+        <ul>
+            <li>DTU（多视角立体匹配标准基准）</li>
+            <li>Eth3D（高精度真实场景）</li>
+            <li>ScanNet（室内场景）</li>
+            <li>航测场景专门评估（arXiv 2507.14798）</li>
+            <li>QuantVGGT 量化评估（ICLR 2026, arXiv 2509.21302）</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>点图损失</h3>
+        <ul>
+            <li><strong>L1 回归损失：</strong>L_point = || M_pred - M_gt ||₁，M 为点图坐标</li>
+            <li><strong>尺度不变损失：</strong>对预测和 GT 点图做归一化后计算，消除尺度歧义</li>
+        </ul>
+        <h3>深度损失</h3>
+        <ul>
+            <li><strong>SILog（Scale-Invariant Log Loss）：</strong>L_depth = || d - d̂ ||² - λ·(|| d - d̂ ||₁)²</li>
+            <li>在 log 空间计算，对尺度不敏感</li>
+        </ul>
+        <h3>相机位姿损失</h3>
+        <ul>
+            <li><strong>位姿回归损失：</strong>L_pose = || R_pred - R_gt ||² + || t_pred - t_gt ||²</li>
+            <li>旋转用四元数表示避免欧拉角奇异性</li>
+        </ul>
+        <h3>高斯参数损失（可选）</h3>
+        <ul>
+            <li><strong>高斯属性回归：</strong>位置 + 不透明度 + 协方差 + 球谐系数，各子项加权 L2</li>
+        </ul>
+        <div class="highlight">
+            <strong>总损失：</strong>L = λ₁·L_point + λ₂·L_depth + λ₃·L_pose + λ₄·L_gaussian，各权重通过实验调优。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>前馈重建路线对比</h3>
+        <table>
+            <tr><th>方法</th><th>输入</th><th>输出</th><th>骨干</th><th>是否需要优化</th></tr>
+            <tr><td><strong>VGGT</strong></td><td>任意数量图像</td><td>点图+深度+位姿+高斯</td><td>DINOv2+交替Attn</td><td>❌ 单前向</td></tr>
+            <tr><td>GS-LRM</td><td>多视角图像</td><td>3D 高斯</td><td>ViT+多头</td><td>❌ 单前向</td></tr>
+            <tr><td>LRM</td><td>单张图像</td><td>NeRF/Triplane</td><td>Transformer</td><td>需 per-object 优化</td></tr>
+            <tr><td>Instant3R</td><td>多视角图像</td><td>3D 点云</td><td>DINOv2+交叉Attn</td><td>❌ 单前向</td></tr>
+            <tr><td>Long-LRM</td><td>多视角图像</td><td>3D 高斯</td><td>ViT</td><td>❌ 单前向</td></tr>
+            <tr><td>传统 SfM+MVS</td><td>多视角图像</td><td>点云+位姿</td><td>手工 pipeline</td><td>✅ 迭代优化</td></tr>
+        </table>
+        <h3>演进脉络</h3>
+        <ul>
+            <li><strong>SfM+MVS（2010s）：</strong>手工特征匹配 + 迭代优化，慢但精确</li>
+            <li><strong>LRM（2023）：</strong>单图前馈重建，但需要 per-object 优化</li>
+            <li><strong>GS-LRM / Long-LRM（2024）：</strong>多视角前馈 → 直接预测高斯参数</li>
+            <li><strong>VGGT（2025）：</strong>任意数量图像 → 多头输出，点图表示更通用</li>
+            <li><strong>QuantVGGT（2026）：</strong>量化部署优化，ICLR 2026</li>
+            <li><strong>语义-空间解耦（2026）：</strong>解决 Plücker 接地的语义干扰问题</li>
+        </ul>
+        <div class="highlight">
+            <strong>趋势：</strong>从“迭代优化”→“单前向预测”→“任意数量输入+多头输出”→“量化部署+解耦改进”。VGGT 是前馈重建的里程碑，标志着 3D 重建从优化范式转向预测范式。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2503.11651" target="_blank">📄 arXiv: 2503.11651</a>

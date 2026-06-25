@@ -249,6 +249,134 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p><strong>TRELLIS 架构概览：</strong>文本/图像 → 结构化 3D Latent (SLAT) → 3D 资产输出</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>输入：</strong>文本描述 或 单张图像</li>
+                <li><strong>条件编码：</strong>文本 → T5 编码器；图像 → DINOv2 编码器</li>
+                <li><strong>生成：</strong>条件特征 → DiT (Diffusion Transformer) → 生成 3D Latent (SLAT)</li>
+                <li><strong>解码：</strong>SLAT → 多格式输出（3DGS / Mesh / Voxel / Radiance Field）</li>
+            </ul>
+        </div>
+        <p><strong>SLAT (Structured Latent) 表示：</strong>稀疏 3D 网格 + 每个占用体素的局部 Latent 特征向量。结合了体素的空间结构性和 Latent 的表达力。</p>
+        <p><strong>关键设计：</strong>使用稀疏 Voxel 结构作为骨架，每个体素关联一个 Latent 向量，通过注意力机制从条件生成。最终通过不同的 VAE 解码器输出多种 3D 格式。</p>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：SLAT 表示</strong> — Structured Latent 3D 表示，结合稀疏体素的结构性和 Latent 特征的表达力，统一支持多种输出格式。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：多格式统一输出</strong> — 一个模型生成 SLAT 后，通过不同解码器输出 3DGS / Mesh / Voxel / Radiance Field，无需重新训练。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：文本+图像双模态输入</strong> — 支持文本到 3D 和图像到 3D，使用 T5/DINOv2 编码器分别处理。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：大规模数据训练</strong> — 在 500K+ 高质量 3D 资产上训练，覆盖多样物体类别。
+        </div>
+        <div class="highlight">
+            <strong>创新 5：高质量 + 可编辑</strong> — 生成质量超越前代方法（Instant3D、Shape-E 等），且 SLAT 支持局部编辑。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>具体应用</th></tr>
+            <tr><td>游戏开发</td><td>快速生成 3D 游戏资产（道具、角色、场景）</td></tr>
+            <tr><td>影视特效</td><td>从概念图生成 3D 模型</td></tr>
+            <tr><td>电商展示</td><td>商品 3D 模型自动生成</td></tr>
+            <tr><td>AR/VR 内容</td><td>快速创建 AR 场景中的 3D 物体</td></tr>
+            <tr><td>3D 打印</td><td>生成可打印的 Mesh 模型</td></tr>
+            <tr><td>设计辅助</td><td>设计师快速原型生成</td></tr>
+            <tr><td>世界模拟</td><td>与 Cosmos 3 结合，生成 3D 资产 → 放入世界模拟</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>训练阶段</h3>
+        <ul>
+            <li><strong>阶段 1 — VAE 训练：</strong>训练 3D VAE 将 3D 资产编码为 SLAT 表示，并解码回多种格式</li>
+            <li><strong>阶段 2 — Latent 扩散训练：</strong>在 SLAT 空间训练 DiT（Diffusion Transformer），以文本/图像为条件</li>
+            <li><strong>阶段 3 — 后训练：</strong>美学质量优化、细节提升</li>
+        </ul>
+        <h3>关键设计</h3>
+        <ul>
+            <li><strong>稀疏 Voxel 结构：</strong>只在物体表面区域分配体素，避免空区域浪费</li>
+            <li><strong>流匹配：</strong>使用 Flow Matching 而非 DDPM，训练更稳定</li>
+            <li><strong>多分辨率训练：</strong>从低分辨率 Latent 逐步提升</li>
+            <li><strong>条件注入：</strong>cross-attention 将文本/图像特征注入 DiT</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <h3>训练数据</h3>
+        <ul>
+            <li><strong>Objaverse：</strong>大规模 3D 物体数据集，提供高质量网格 + 纹理</li>
+            <li><strong>内部数据集：</strong>500K+ 经过清洗的 3D 资产</li>
+            <li><strong>数据增强：</strong>多视角渲染、随机旋转/缩放、背景变化</li>
+        </ul>
+        <h3>评测基准</h3>
+        <ul>
+            <li>Objaverse 子集（物体级生成质量）</li>
+            <li>Google Scanned Objects（GSO）</li>
+            <li>CLIP 分数（文本-3D 一致性）</li>
+            <li>人类评估（美学质量、几何质量、纹理质量）</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>VAE 训练损失</h3>
+        <ul>
+            <li><strong>重建损失：</strong>L_recon = L1 + LPIPS（感知损失）</li>
+            <li><strong>KL 正则化：</strong>L_KL = D_KL(q(z|x) || N(0,1))，约束潜空间</li>
+            <li><strong>对抗损失：</strong>判别器约束渲染质量</li>
+        </ul>
+        <h3>DiT 训练损失</h3>
+        <ul>
+            <li><strong>Flow Matching 损失：</strong>L = E_{t,x0,ε} || v_θ(z_t, t, c) - (z1 - z0) ||²</li>
+            <li>z_t 为 SLAT 潜在表示的中间状态</li>
+            <li>c 为文本/图像条件</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计：</strong>两阶段训练 — 先训练 VAE 确立 SLAT 空间，再在 Latent 空间训练扩散模型。这避免了直接在像素空间训练的高计算成本。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>3D 生成路线对比</h3>
+        <table>
+            <tr><th>方法</th><th>表示</th><th>输入</th><th>输出格式</th><th>质量</th></tr>
+            <tr><td><strong>TRELLIS</strong></td><td>SLAT (稀疏 Latent)</td><td>文本/图像</td><td>3DGS/Mesh/Voxel/RF</td><td>高</td></tr>
+            <tr><td>Instant3D</td><td>Triplane</td><td>文本</td><td>NeRF</td><td>中</td></tr>
+            <tr><td>Shape-E</td><td>隐式函数</td><td>文本</td><td>Mesh/Voxel</td><td>中-低</td></tr>
+            <tr><td>Point-E</td><td>点云</td><td>文本</td><td>点云</td><td>低</td></tr>
+            <tr><td>DreamGaussian</td><td>3D 高斯</td><td>文本</td><td>3DGS/Mesh</td><td>中</td></tr>
+            <tr><td>Hunyuan3D</td><td>3D-DiT</td><td>文本/图像</td><td>Mesh</td><td>高</td></tr>
+        </table>
+        <h3>演进脉络</h3>
+        <ul>
+            <li><strong>NeRF 优化（2020-2022）：</strong>SDS loss + per-scene 优化，慢但质量高</li>
+            <li><strong>隐式生成（2022-2023）：</strong>Shape-E/Point-E，快速但质量受限</li>
+            <li><strong>Triplane 生成（2023）：</strong>Instant3D，三平面表示，质量提升</li>
+            <li><strong>高斯生成（2023-2024）：</strong>DreamGaussian/GaussianDreamer，直接生成高斯</li>
+            <li><strong>SLAT 生成（2024）：</strong>TRELLIS，结构化 Latent，多格式输出</li>
+            <li><strong>3D-DiT（2025）：</strong>Hunyuan3D，大规模 DiT 直接生成 3D</li>
+        </ul>
+        <div class="highlight">
+            <strong>趋势：</strong>从“per-scene 优化”→“隐式生成”→“显式表示生成”→“结构化 Latent 生成”的演进。表示方法从隐式 (NeRF) → 显式 (点云/高斯) → 混合 (SLAT) 的方向收敛，兼顾质量和灵活性。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="resource-links">
             <a href="https://arxiv.org/abs/2412.01506" target="_blank">📄 arXiv: 2412.01506</a>
