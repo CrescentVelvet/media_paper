@@ -622,6 +622,161 @@
     </div>
 
     <div class="section">
+        <h2>📐 算法框图</h2>
+        <p>Cosmos 3 的核心架构图来着 NVIDIA 官方仓库：</p>
+        <img src="https://github.com/user-attachments/assets/28f2d612-bbd6-44a3-8795-833d05e9f05f" alt="Cosmos 3 Logo" style="max-width: 300px; border-radius: 8px; margin: 10px 0;">
+        <p><strong>图 1：Cosmos 3 架构概览</strong> — 展示了 MoT 双塔结构，AR 子序列（语言+ViT视觉）在左侧进行因果自注意力，DM 子序列（VAE视觉+音频+动作）在右侧进行全双向注意力，两者通过 shared multimodal attention 交互。</p>
+        <div class="highlight">
+            <strong>架构图关键点：</strong>
+            <ul>
+                <li>AR tokens 使用 <strong>因果自注意力</strong>（只能看到前面的 token）</li>
+                <li>DM tokens 使用 <strong>全双向注意力</strong>（可看到 AR+DM 所有 token）</li>
+                <li>AR tokens 永远不被 DM tokens 更新（保持因果完整性）</li>
+                <li>序列格式：<code>[AR tokens] → &lt;EOS&gt; → &lt;BOG&gt; → [DM tokens]</code></li>
+            </ul>
+        </div>
+        <p><strong>图 2：Token 排列与生成模式</strong> — 不同任务（T2I/T2V/I2V/V2V/Action）通过变化 DM 子序列中 clean/noisy token 的组合实现，无需修改架构。</p>
+        <p><strong>图 3：统一动作表示</strong> — 6 种 embodiment 的动作维度拆解，从 9D 相机到 29D 人形机器人，共享 ego pose + effector pose + grasp state 的几何结构。</p>
+        <img src="https://raw.githubusercontent.com/nvidia/cosmos/main/cookbooks/cosmos3/cosmos3-model-architecture.png" alt="Cosmos 3 Model Architecture" style="max-width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid var(--border);">
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：统一 MoT 架构</strong> — 单一 Transformer 同时处理自回归推理（AR）和扩散生成（DM），通过双塔参数 + 共享注意力层实现。两个塔均从预训练 VLM 初始化，继承语言视觉推理能力的同时学习生成。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：Action 作为一等模态</strong> — Action token 被设计为连接视觉帧的因果变量（a_t 连接 v_{t-1} 和 v_t），统一了 forward dynamics / inverse dynamics / policy 三种模式，支持 6 种 embodiment。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：绝对时间轴 mRoPE</strong> — 扩展 3D MRoPE，引入绝对物理时间索引，解决不同模态（视频/音频/动作）以不同帧率同时生成时的时间对齐问题。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：推理+生成联合 Pipeline</strong> — 先对场景推理生成动作轨迹坐标，再用该结构化意图驱动物理交互视频生成（Plan first, then bring it to life）。
+        </div>
+        <div class="highlight">
+            <strong>创新 5：全开源 Physical AI 生态</strong> — 代码 + 权重(16B/64B) + 5 类合成数据集 + 评测基准(Cosmos-HUE) 全部开放，OpenMDW-1.1 许可。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>使用模式</th><th>具体应用</th></tr>
+            <tr><td>机器人操作</td><td>Policy</td><td>给定视觉场景 + 任务指令 → 输出动作轨迹 + rollout 视频（如“把方块放到台面上”）</td></tr>
+            <tr><td>自动驾驶</td><td>Reasoner + Forward Dynamics</td><td>场景理解 + 轨迹预测 + 未来视频模拟</td></tr>
+            <tr><td>工业检测</td><td>Reasoner</td><td>2D grounding、物理合理性分析、时序事件检测</td></tr>
+            <tr><td>合成数据生成</td><td>Generator</td><td>生成训练 Physical AI 的合成场景数据（仓库/工厂/手术等）</td></tr>
+            <tr><td>智能监控</td><td>Reasoner</td><td>VANTAGE 系列：2D grounding、SOT、事件验证、VQA</td></tr>
+            <tr><td>医疗机器人</td><td>Reasoner</td><td>HealthSurgiBench：手术场景理解</td></tr>
+            <tr><td>视频创作</td><td>Generator</td><td>T2I/T2V/I2V/V2V + 音频同步生成</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>Reasoner 训练</h3>
+        <ul>
+            <li><strong>预训练：</strong>从预训练 VLM 初始化，在大规模多模态数据上继续预训练，学习视觉理解 + 语言推理</li>
+            <li><strong>SFT：</strong>Supervised Fine-Tuning，在高质量指令数据上微调，覆盖 19 个 General + 17 个 Robotics + 9 个 Smart Infra + 3 个 Driving benchmark</li>
+            <li><strong>双塔初始化：</strong>AR 和 DM 两个塔均从同一个预训练 VLM 权重初始化</li>
+        </ul>
+        <h3>Generator 训练</h3>
+        <ul>
+            <li><strong>预训练：</strong>在大规模图像/视频/音频数据上训练扩散生成能力</li>
+            <li><strong>Mid-Training：</strong>中间阶段训练，提升质量和稳定性</li>
+            <li><strong>T2I 后训练：</strong>专门针对 Text-to-Image 质量优化</li>
+            <li><strong>I2V 后训练：</strong>Image-to-Video 时间一致性优化</li>
+            <li><strong>Robot Policy 后训练：</strong>在 DROID 数据集上微调动作策略</li>
+        </ul>
+        <h3>训练基础设施</h3>
+        <ul>
+            <li><strong>分布式训练：</strong>Tensor Parallel + Pipeline Parallel + Data Parallel</li>
+            <li><strong>选择性激活检查点：</strong>Selective Activation Checkpointing 减少显存</li>
+            <li><strong>Torch Compile：</strong>对 Transformer 块进行编译优化</li>
+            <li><strong>视频 Tokenizer 优化：</strong>高效编码/解码 1080P 视频</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <h3>Reasoner 数据</h3>
+        <ul>
+            <li>多模态理解数据：图像+视频+文本对，涵盖通用 VQA、机器人、智能基础设施、自动驾驶</li>
+            <li>SFT 指令数据：高质量人工标注 + 合成指令，覆盖多样化任务</li>
+        </ul>
+        <h3>Generator 数据</h3>
+        <ul>
+            <li><strong>图像和视频：</strong>大规模图像/视频文本对，多分辨率多长宽比</li>
+            <li><strong>音频：</strong>48kHz 立体声音频，与视频同步</li>
+            <li><strong>动作：</strong>多 embodiment 轨迹数据（相机/自动驾驶/自我中心/单臂/双臂/人形）</li>
+        </ul>
+        <h3>合成数据集 (SDG)</h3>
+        <table>
+            <tr><th>数据集</th><th>内容</th></tr>
+            <tr><td>SDG-PhyxSim</td><td>物理交互场景（重力/碰撞/摩擦等）</td></tr>
+            <tr><td>SDG-RobotSim</td><td>机器人操作场景（抓取/放置/操作等）</td></tr>
+            <tr><td>SDG-DriveSim</td><td>自动驾驶场景（多角度/多路况）</td></tr>
+            <tr><td>SDG-SynHuman</td><td>数字人场景（表情/动作/交互）</td></tr>
+            <tr><td>SDG-Warehouse</td><td>仓库操作场景（物流/搬运/分拣）</td></tr>
+        </table>
+        <h3>评测基准</h3>
+        <ul>
+            <li><strong>Cosmos-HUE (Cosmos-HumanEval)：</strong>自建评测基准，覆盖理解和生成</li>
+            <li><strong>外部基准：</strong>R-Bench、Artificial Analysis、RoboLab、RoboArena、AQA 等</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>AR 子序列（Reasoner）</h3>
+        <ul>
+            <li><strong>标准自回归交叉熵损失：</strong>下一 token 预测，L_AR = -Σ log p(x_t | x_{<t})</li>
+            <li>语言 + 视觉理解 token 共同参与损失计算</li>
+        </ul>
+        <h3>DM 子序列（Generator）</h3>
+        <ul>
+            <li><strong>Flow Matching 损失：</strong>预测速度场（velocity），而非直接预测噪声</li>
+            <li>训练目标：L_DM = E_{t,x0,ε} || v_θ(x_t, t) - (x1 - x0) ||²，其中 v 是目标速度</li>
+            <li>使用 UniPCMultistepScheduler 作为推理调度器，flow_shift=10.0</li>
+            <li>视觉/音频/动作 token 共同参与去噪损失</li>
+        </ul>
+        <h3>动作投影</h3>
+        <ul>
+            <li>Domain-aware 输入/输出投影层使用 MSE 回归损失</li>
+            <li>6D 旋转表示 → 通过 SVD 转换回 3×3 SO(3) 旋转矩阵</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计：</strong>AR 和 DM 损失同时优化，共享注意力层参数但独立 LayerNorm 和 MLP 参数。这使得理解能力和生成能力可以互相增强。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>与前代 Cosmos 对比</h3>
+        <table>
+            <tr><th>维度</th><th>Cosmos 1/2</th><th>Cosmos 3</th></tr>
+            <tr><td>架构</td><td>独立模型拼装</td><td>统一 MoT 架构</td></tr>
+            <tr><td>模态</td><td>视觉+语言</td><td>视觉+语言+音频+动作</td></tr>
+            <tr><td>生成方式</td><td>单独扩散模型</td><td>AR+扩散统一</td></tr>
+            <tr><td>动作建模</td><td>无或独立 VLA</td><td>原生 action token，6 种 embodiment</td></tr>
+            <tr><td>推理+生成</td><td>分离</td><td>联合 pipeline</td></tr>
+        </table>
+        <h3>与竞品对比</h3>
+        <table>
+            <tr><th>维度</th><th>Cosmos 3</th><th>Wan2.2</th><th>Veo 3.1†</th><th>Sora 2†</th></tr>
+            <tr><td>架构</td><td>MoT (AR+Diffusion)</td><td>DiT + MoE</td><td>DiT (闭源)</td><td>DiT (闭源)</td></tr>
+            <tr><td>模态数</td><td>5 (文/图/视/音/动作)</td><td>2 (文+视)</td><td>3 (文+视+音)</td><td>3 (文+视+音)</td></tr>
+            <tr><td>开源</td><td>✅ 全开源</td><td>✅ 开源</td><td>❌ 闭源</td><td>❌ 闭源</td></tr>
+            <tr><td>动作建模</td><td>✅ 6 种 embodiment</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td>Physical AI</td><td>✅ 核心定位</td><td>部分</td><td>❌</td><td>部分</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>演进趋势：</strong>视频生成模型正从「纯视觉生成」→「多模态联合生成」→「理解+生成+动作统一」演进。Cosmos 3 代表了最激进的统一路线，将 Physical AI 的全闭环（感知→推理→动作→模拟）压缩到单一模型中。
+        </div>
+    </div>
+
+    <div class="section">
         <h2>🔗 资源链接</h2>
         <div class="links">
             <a href="https://arxiv.org/abs/2606.02800" target="_blank">📄 arXiv 论文</a>
