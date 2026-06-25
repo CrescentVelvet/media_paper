@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HunyuanVideo 1.5: 轻量级高性能视频生成模型</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>HunyuanVideo 1.5: 轻量级高性能视频生成模型</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2511.18870 (v2, 2025-11-25)</span>
+        <span>🏢 Tencent Hunyuan</span>
+        <span>📅 2025-11-24 提交</span>
+        <span>📂 CV</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Video Generation</span>
+        <span class="tag green">8.3B Parameters</span>
+        <span class="tag">DiT</span>
+        <span class="tag">SSTA</span>
+        <span class="tag">T2V</span>
+        <span class="tag">I2V</span>
+        <span class="tag">Consumer GPU</span>
+        <span class="tag">Open Source</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p><strong>HunyuanVideo 1.5</strong> 是腾讯混元团队推出的轻量级开源视频生成模型，仅用 <strong>8.3B 参数</strong>即可在消费级 GPU 上实现 SOTA 级别的视觉质量和运动连贯性。这是对初代 HunyuanVideo (13B+) 的重大升级——参数更少、质量更高、部署更友好。</p>
+        <div class="highlight">
+            <strong>核心成就：</strong>8.3B 参数达到开源视频生成模型新 SOTA，支持消费级 GPU 推理，统一 T2V + I2V 框架，多时长多分辨率生成。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构（深入）</h2>
+        <h3>DiT 架构核心创新</h3>
+        <table>
+            <tr><th>组件</th><th>设计</th><th>作用</th></tr>
+            <tr><td><strong>SSTA (Selective & Sliding Tile Attention)</strong></td><td>选择性注意力 + 滑动窗口分块注意力</td><td>降低长序列注意力开销，支持高分辨率长视频</td></tr>
+            <tr><td><strong>Glyph-aware Text Encoding</strong></td><td>字形感知的文本编码器</td><td>增强中英双语理解，改善文字渲染</td></tr>
+            <tr><td><strong>Video Super-Resolution</strong></td><td>高效视频超分网络</td><td>从低分辨率生成高分辨率视频</td></tr>
+        </table>
+        <h3>架构对比：HunyuanVideo 1.0 → 1.5</h3>
+        <table>
+            <tr><th>维度</th><th>HunyuanVideo 1.0</th><th>HunyuanVideo 1.5</th></tr>
+            <tr><td>参数量</td><td>13B+</td><td><strong>8.3B</strong> (↓36%)</td></tr>
+            <tr><td>注意力机制</td><td>标准 full attention</td><td>SSTA (选择性 + 滑动窗口)</td></tr>
+            <tr><td>文本编码</td><td>标准文本编码</td><td>Glyph-aware 字形感知</td></tr>
+            <tr><td>超分辨率</td><td>外部超分模块</td><td>集成视频超分网络</td></tr>
+            <tr><td>GPU 要求</td><td>专业级 GPU</td><td>消费级 GPU</td></tr>
+            <tr><td>训练方法</td><td>预训练</td><td>渐进预训练 + 后训练</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>SSTA 是核心架构创新：</strong>选择性注意力减少不相关 token 的计算，滑动窗口分块注意力 (Sliding Tile Attention) 在局部窗口内做密集注意力，兼顾全局视野和局部细节，显著降低长序列的计算复杂度。
+        </div>
+        <h3>渐进预训练与后训练</h3>
+        <ul>
+            <li><strong>渐进预训练：</strong>从低分辨率/短时长逐步扩展到高分辨率/长时长，降低训练成本</li>
+            <li><strong>后训练：</strong>在预训练基础上进行质量增强微调，提升视觉质量和运动连贯性</li>
+            <li><strong>统一框架：</strong>T2V 和 I2V 在同一模型中支持，多时长 (秒级) 多分辨率 (480P/720P)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔑 关键特性</h2>
+        <ul>
+            <li><strong>极致轻量：</strong>8.3B 参数，显著小于 HunyuanVideo 1.0 (13B) 和 Kandinsky 5.0 Video Pro (19B)</li>
+            <li><strong>消费级 GPU 推理：</strong>可在 RTX 4090 等消费级显卡上运行</li>
+            <li><strong>Step Distillation：</strong>480p I2V 步数蒸馏模型，8-12 步生成，RTX 4090 上 75 秒完成</li>
+            <li><strong>缓存推理加速：</strong>支持 DeepCache、TeaCache、TaylorCache 三种缓存策略</li>
+            <li><strong>FP8 GEMM：</strong>支持 FP8 矩阵乘法推理，进一步加速</li>
+            <li><strong>ComfyUI 集成：</strong>原生支持 ComfyUI 工作流</li>
+            <li><strong>训练代码开源：</strong>提供完整训练脚本 (train.py)，支持 FSDP、Context Parallel、梯度检查点</li>
+            <li><strong>Muon 优化器：</strong>使用 Muon 优化器训练，已开源</li>
+            <li><strong>Diffusers 支持：</strong>集成到 HuggingFace Diffusers</li>
+            <li><strong>多语言文字：</strong>通过 glyph-aware 编码支持中英双语文字生成</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔬 技术细节</h2>
+        <h3>Step Distillation (步数蒸馏)</h3>
+        <p>HunyuanVideo 1.5 提供步数蒸馏模型，将推理步数大幅缩减：</p>
+        <table>
+            <tr><th>配置</th><th>步数</th><th>RTX 4090 端到端时间</th><th>质量</th></tr>
+            <tr><td>原始模型</td><td>~50 步</td><td>~300 秒</td><td>基线</td></tr>
+            <tr><td>Step Distill (推荐)</td><td>8-12 步</td><td><strong>~75 秒</strong></td><td>与原始相当</td></tr>
+            <tr><td>Step Distill (极速)</td><td>4 步</td><td>~40 秒</td><td>略有降低</td></tr>
+        </table>
+        <p>端到端时间减少 <strong>75%</strong>，单张 RTX 4090 可在 75 秒内完成视频生成。</p>
+        <h3>缓存推理</h3>
+        <ul>
+            <li><strong>DeepCache：</strong>跨去噪步骤缓存中间特征，跳过冗余计算</li>
+            <li><strong>TeaCache：</strong>时间感知缓存策略</li>
+            <li><strong>TaylorCache：</strong>基于泰勒展开的缓存近似</li>
+        </ul>
+        <h3>训练基础设施</h3>
+        <ul>
+            <li>FSDP (Fully Sharded Data Parallel) 分布式训练</li>
+            <li>Context Parallel 支持长序列</li>
+            <li>梯度检查点 (Gradient Checkpointing) 节省显存</li>
+            <li>Muon 优化器（区别于 AdamW）</li>
+            <li>开放 LoRA 微调脚本</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <p>论文声称在开源视频生成模型中达到新 SOTA。主要对比对象：</p>
+        <ul>
+            <li>超越初代 HunyuanVideo (13B)，参数量减少 36%</li>
+            <li>与 Kandinsky 5.0 Video Pro (19B)、Wan2.1 (14B) 等更大模型竞争</li>
+            <li>在视觉质量、运动连贯性、文本对齐等维度表现优异</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键指标：</strong>8.3B 参数 + 消费级 GPU + 75 秒 (step distill) = 高质量视频生成。这是开源视频生成模型在<strong>效率-质量权衡</strong>上的新标杆。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>轻量化路线：</strong>HunyuanVideo 1.5 走的是与 Kandinsky 5.0 Video Pro (19B) 相反的路线——更小参数、更高效率。8.3B 在消费级 GPU 上可运行，极大降低使用门槛</li>
+            <li><strong>SSTA 架构创新：</strong>选择性 + 滑动窗口注意力是视频 DiT 的重要优化方向，类似思路在图像生成 (Sliding Tile Attention) 和长上下文 LLM 中也有应用。SSTA 让 8.3B 模型达到 13B+ 的质量</li>
+            <li><strong>工程成熟度高：</strong>Step distillation、3 种缓存策略、FP8、ComfyUI 集成、训练代码、LoRA 脚手架、Diffusers 支持——工程完备度在开源视频模型中首屈一指</li>
+            <li><strong>Muon 优化器：</strong>使用 Muon 而非 AdamW，是视频生成领域少见的优化器选择。Muon 在某些场景下收敛更快、最终质量更好</li>
+            <li><strong>Glyph-aware 编码：</strong>字形感知文本编码对中文/英文文字生成有重要意义，这是许多视频模型忽略的维度</li>
+            <li><strong>与 HunyuanVideo 1.0 的关系：</strong>1.5 不是简单升级，而是架构重新设计。参数减少 36% 但质量提升，说明 1.0 的架构效率有优化空间</li>
+            <li><strong>竞争定位：</strong>在 Wan2.1 (14B) 和 LTX-Video (2B) 之间，HunyuanVideo 1.5 (8.3B) 找到了中间定位——比 Wan2.1 更轻量，比 LTX 质量更高</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2511.18870" target="_blank">📄 arXiv: 2511.18870</a>
+            <a href="https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5" target="_blank">💻 GitHub</a>
+            <a href="https://huggingface.co/tencent/HunyuanVideo-1.5" target="_blank">🤗 HuggingFace</a>
+            <a href="https://hunyuan.tencent.com/video/zh?tabIndex=0" target="_blank">🌐 官方试用</a>
+            <a href="https://arxiv.org/pdf/2511.18870" target="_blank">📑 PDF</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 VideoGen-20251124-HunyuanVideo1.5 · 生成于 2026-06-25 · 领域: CV/Video Generation
+</div>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>阿里 Wan 系列视频生成模型调研索引</title>
+    <title>视频生成模型调研索引 — Wan 系列 + 横向对比</title>
     <style>
         :root {
             --bg: #0f1117;
@@ -149,9 +149,9 @@
 <body>
 
 <div class="header">
-    <h1>阿里 Wan 系列视频生成模型调研</h1>
-    <p>Wan2.1 → Wan2.2 → VACE → Wan-Move → Wan-R1 → Wan-Streamer<br>
-    从开源视频生成到运动控制、推理强化、实时交互的完整演进</p>
+    <h1>视频生成模型调研索引</h1>
+    <p>Wan 系列 (2.1→2.2→VACE→Move→R1→Streamer) + 横向对比 (Kandinsky 5 / HunyuanVideo 1.5 / LTX-2)<br>
+    含相机可控性与几何一致性技术方向综述</p>
 </div>
 
 <div class="container">
@@ -295,6 +295,114 @@
     </div>
 
     <div class="section">
+        <h2>📖 横向对比: 其他视频生成模型 + 技术方向 (2026-06-25 新增)</h2>
+
+        <div class="note-card">
+            <h3>7. Kandinsky 5.0: 图像与视频生成基础模型家族</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2511.14993</span>
+                <span>📅 2025-11-19</span>
+                <span>🏢 Kandinsky Lab AI (俄罗斯)</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Video Generation</span>
+                <span class="tag">DiT</span>
+                <span class="tag">T2V / I2V</span>
+                <span class="tag">SFT + RL 后训练</span>
+                <span class="tag">2B / 6B / 19B</span>
+            </div>
+            <p>三档模型家族 (Video Lite 2B / Image Lite 6B / Video Pro 19B)，支持 10 秒视频生成。完整数据策展生命周期披露，引入 RL 后训练对齐人类偏好。来自俄罗斯团队的差异化路线。</p>
+            <a href="VideoGen-20251119-Kandinsky5.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2511.14993" target="_blank">📄 arXiv</a>
+            <a href="https://kandinskylab.ai/" target="_blank">🌐 项目主页</a>
+        </div>
+
+        <div class="note-card">
+            <h3>8. HunyuanVideo 1.5: 轻量级高性能视频生成模型</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2511.18870</span>
+                <span>📅 2025-11-24</span>
+                <span>🏢 Tencent Hunyuan</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">8.3B Parameters</span>
+                <span class="tag">SSTA</span>
+                <span class="tag">Consumer GPU</span>
+                <span class="tag">Step Distillation</span>
+                <span class="tag">Muon Optimizer</span>
+            </div>
+            <p>仅 8.3B 参数达到开源视频生成 SOTA，消费级 GPU 可运行。SSTA (选择性+滑动窗口注意力) 是核心架构创新。Step Distillation 实现 RTX 4090 上 75 秒生成。工程完备度首屈一指。</p>
+            <a href="VideoGen-20251124-HunyuanVideo1.5.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2511.18870" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>9. LTX-Video / LTX-2: 实时视频与音视频联合生成</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2501.00103 / 2601.03233</span>
+                <span>📅 2024-12 ~ 2026-01</span>
+                <span>🏢 Lightricks</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Realtime Video</span>
+                <span class="tag green">Audio-Visual</span>
+                <span class="tag">1:192 Compression</span>
+                <span class="tag">4K@50fps</span>
+                <span class="tag">Modality-CFG</span>
+            </div>
+            <p>LTX-Video: 1:192 极高压缩率 + VAE 解码器去噪，2 秒生成 5 秒视频 (H100)。LTX-2: 首个开源 DiT 音视频联合基础模型，14B 视频 + 5B 音频双流，支持 4K@50fps + 同步音频。</p>
+            <a href="VideoGen-20241230-LTX.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2501.00103" target="_blank">📄 LTX-Video arXiv</a>
+            <a href="https://arxiv.org/abs/2601.03233" target="_blank">📄 LTX-2 arXiv</a>
+            <a href="https://github.com/Lightricks/LTX-Video" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>10. 视频生成中的相机可控性技术方向</h3>
+            <div class="meta">
+                <span>📄 综述: TriMotion / Track2View / Geo-Align</span>
+                <span>📅 2026-05 ~ 2026-06</span>
+                <span>📂 Camera Control</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Camera Control</span>
+                <span class="tag">Multi-Modal</span>
+                <span class="tag">3D Point Tracks</span>
+                <span class="tag">RL Alignment</span>
+                <span class="tag">ECCV 2026</span>
+            </div>
+            <p>从单一模态向多模态统一演进（TriMotion 三模态），从隐式对应向显式 3D 点轨迹升级（Track2View），从 SFT 向 RL 对齐发展（Geo-Align）。旋转误差降低 30-65%，平移误差降低 61-72%。</p>
+            <a href="VideoGen-20260618-CameraControl.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2606.20774" target="_blank">📄 TriMotion</a>
+            <a href="https://arxiv.org/abs/2606.15534" target="_blank">📄 Track2View</a>
+            <a href="https://arxiv.org/abs/2605.23903" target="_blank">📄 Geo-Align</a>
+        </div>
+
+        <div class="note-card">
+            <h3>11. 视频生成中的几何一致性技术方向</h3>
+            <div class="meta">
+                <span>📄 综述: World-R1 / Robust Dreamer / MVTrack4Gen</span>
+                <span>📅 2026-04 ~ 2026-06</span>
+                <span>📂 3D Consistency</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3D Consistency</span>
+                <span class="tag">RL Constraints</span>
+                <span class="tag">Gaussian Splatting</span>
+                <span class="tag">Deviation Learning</span>
+                <span class="tag">ICML 2026</span>
+            </div>
+            <p>从架构修改注入 3D 先验转向 RL 强化 3D 约束（World-R1, ICML 2026），从 RGB 空间循环转向潜空间 3D 高斯记忆（Robust Dreamer），从外部 3D 重建转向注意力层内点追踪监督（MVTrack4Gen）。</p>
+            <a href="VideoGen-20260427-GeometricConsistency.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2604.24764" target="_blank">📄 World-R1</a>
+            <a href="https://arxiv.org/abs/2605.30855" target="_blank">📄 Robust Dreamer</a>
+            <a href="https://arxiv.org/abs/2606.26087" target="_blank">📄 MVTrack4Gen</a>
+        </div>
+
+    </div>
+
+    <div class="section">
         <h2>🔄 演进路线图</h2>
         <table>
             <tr><th>时间</th><th>版本</th><th>里程碑</th></tr>
@@ -322,6 +430,11 @@
             <tr><td>Wan2.2-T2V-A14B</td><td>A14B (MoE)</td><td>MoE DiT</td><td>720P</td><td>~80 GB</td></tr>
             <tr><td>Wan2.2-TI2V-5B</td><td>5B</td><td>Dense DiT</td><td>720P@24fps</td><td>消费级</td></tr>
             <tr><td>Wan-Move-14B</td><td>14B</td><td>Dense DiT</td><td>480P</td><td>40 GB</td></tr>
+            <tr><td>HunyuanVideo 1.5</td><td>8.3B</td><td>DiT + SSTA</td><td>720P</td><td>消费级</td></tr>
+            <tr><td>Kandinsky 5.0 Video Lite</td><td>2B</td><td>DiT</td><td>~720P</td><td>轻量</td></tr>
+            <tr><td>Kandinsky 5.0 Video Pro</td><td>19B</td><td>DiT</td><td>~720P</td><td>专业级</td></tr>
+            <tr><td>LTX-Video</td><td>~2B</td><td>DiT + VAE联合</td><td>768×512</td><td>轻量</td></tr>
+            <tr><td>LTX-2</td><td>19B (14+5)</td><td>双流 DiT</td><td>4K@50fps</td><td>专业级</td></tr>
         </table>
         <h3>能力维度</h3>
         <table>
@@ -346,7 +459,9 @@
             <li><strong>能力维度扩展：</strong>从基础 T2V/I2V 扩展到编辑 (VACE)、运动控制 (Move)、推理 (R1)、实时交互 (Streamer)</li>
             <li><strong>消费级友好：</strong>1.3B 模型 8.19GB VRAM、TI2V-5B 消费级 720P，持续降低使用门槛</li>
             <li><strong>Wan2.3+ 不存在：</strong>截至 2026-06-25，没有 Wan2.3、Wan2.4、Wan2.5、Wan2.6、Wan2.7 的 arXiv 论文或 GitHub 仓库</li>
-            <li><strong>未来方向：</strong>Wan-Streamer v0.1 (192p) 暗示高分辨率实时交互是下一步；Wan-R1 的视频推理方向有待拓展到自然场景</li>
+            <li><strong>横向对比结论：</strong>HunyuanVideo 1.5 (8.3B SSTA) 在轻量+质量间取得最佳平衡；LTX-2 在音视频联合和 4K 方面领先；Kandinsky 5.0 提供最宽谱系 (2B~19B)</li>
+            <li><strong>技术方向趋势：</strong>RL 后训练正在成为通用优化工具（Wan-R1 推理、Geo-Align 相机控制、World-R1 几何一致性）；潜空间优化（LTX 1:192 压缩、Robust Dreamer 潜空间高斯记忆）是效率关键</li>
+            <li><strong>未来方向：</strong>Wan-Streamer v0.1 (192p) 暗示高分辨率实时交互是下一步；Wan-R1 的视频推理方向有待拓展到自然场景；相机可控性+几何一致性融合是世界模拟的基础</li>
         </ul>
     </div>
 

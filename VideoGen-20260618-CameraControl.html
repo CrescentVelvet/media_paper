@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频生成中的相机可控性技术方向调研</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>视频生成中的相机可控性技术方向调研</h1>
+    <div class="meta">
+        <span>📄 综述 (3 篇核心论文)</span>
+        <span>📅 2026-05 ~ 2026-06</span>
+        <span>📂 CV / Video Generation</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Camera Control</span>
+        <span class="tag green">Video Generation</span>
+        <span class="tag">Pose Trajectory</span>
+        <span class="tag">Reference Video</span>
+        <span class="tag">Text Description</span>
+        <span class="tag">RL Alignment</span>
+        <span class="tag">3D Point Tracks</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 技术方向概要</h2>
+        <p>相机可控视频生成 (Camera-Controllable Video Generation) 是视频生成领域的关键技术方向。用户通过指定相机运动轨迹（如平移、旋转、推拉、环绕）来控制生成视频中视角的变化方式。核心挑战在于：如何让生成视频<strong>精确遵循指定的相机轨迹</strong>，同时保持场景的视觉质量和几何一致性。</p>
+        <div class="highlight">
+            <strong>调研发现：</strong>该方向正从<strong>单一模态控制</strong>（仅支持轨迹/参考视频/文本中的一种）向<strong>多模态统一控制</strong>演进，从<strong>纯监督微调</strong>向<strong>强化学习对齐</strong>发展，从<strong>隐式对应</strong>向<strong>显式几何对应</strong>升级。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📋 核心论文</h2>
+        <table>
+            <tr><th>论文</th><th>arXiv</th><th>日期</th><th>核心贡献</th></tr>
+            <tr><td><strong>TriMotion</strong></td><td>2606.20774</td><td>2026-06-18</td><td>模态无关的相机控制框架（视频/姿态/文本三模态统一）</td></tr>
+            <tr><td><strong>Track2View</strong></td><td>2606.15534</td><td>2026-06-14</td><td>3D 点轨迹对的 4D 一致性相机控制</td></tr>
+            <tr><td><strong>Geo-Align</strong></td><td>2605.23903</td><td>2026-05-22</td><td>首个用于相机控制视频再渲染的 RL 框架</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 技术方案详解</h2>
+        <h3>1. TriMotion: 模态无关的相机控制</h3>
+        <p><strong>来源：</strong>arXiv 2606.20774, ECCV Accepted, 2026-06-18</p>
+        <p><strong>核心问题：</strong>现有方法通常只支持单一模态输入（姿态轨迹或参考视频），无法灵活适配异构用户输入。</p>
+        <p><strong>方案：</strong></p>
+        <ul>
+            <li><strong>三模态统一：</strong>将视频 (Video)、姿态 (Pose)、文本 (Text) 三种描述同一相机轨迹的输入映射到<strong>共享运动嵌入空间</strong></li>
+            <li><strong>Motion Triplet Dataset：</strong>基于 Multi-Cam 视频数据集扩展，添加从相机外参导出的几何运动描述</li>
+            <li><strong>Latent Motion Consistency：</strong>在潜空间直接鼓励生成视频遵循目标相机轨迹，避免像素空间解码的成本</li>
+            <li><strong>应用扩展：</strong>支持运动组合（串联）和跨模态运动插值</li>
+        </ul>
+        <div class="highlight">
+            <strong>创新点：</strong>第一个在统一框架中支持三种模态输入的相机控制方法。共享嵌入空间的设计使不同模态可以互换使用，甚至混合插值。
+        </div>
+
+        <h3>2. Track2View: 3D 点轨迹对的显式对应</h3>
+        <p><strong>来源：</strong>arXiv 2606.15534, 2026-06-14</p>
+        <p><strong>核心问题：</strong>现有方法依赖逐帧姿态嵌入、噪声点云渲染或隐式学习的对应关系，缺乏源/目标像素间显式的时间连续链接。</p>
+        <p><strong>方案：</strong></p>
+        <ul>
+            <li><strong>Paired 3D Point Tracks：</strong>用稀疏场景点在源视图和目标视图中的投影轨迹作为条件</li>
+            <li><strong>Dual-View Track Conditioner：</strong>通过无参数几何操作从源视图向目标视图转移视觉上下文</li>
+            <li><strong>时间连续性：</strong>点轨迹天然具有时间连续性，编码"什么内容应出现在何时何地"</li>
+            <li><strong>数据流水线：</strong>在多相机视图对上运行 3D 点追踪器，提取一一对应轨迹</li>
+        </ul>
+        <div class="highlight">
+            <strong>量化结果：</strong>400 视频基准上，旋转误差降低 30-65%，平移误差降低 61-72%，在视觉质量、视图同步和相机精度三方面达到 SOTA。
+        </div>
+
+        <h3>3. Geo-Align: 强化学习几何对齐</h3>
+        <p><strong>来源：</strong>arXiv 2605.23903, 2026-05-22</p>
+        <p><strong>核心问题：</strong>现有 video-to-video 再渲染方法依赖监督微调 (SFT) 和合成数据集，真实多视角同步视频数据极度稀缺，导致泛化性不足。</p>
+        <p><strong>方案：</strong></p>
+        <ul>
+            <li><strong>首个 RL 框架：</strong>首个专为相机控制视频再渲染设计的强化学习框架</li>
+            <li><strong>Scale-Aware Perceptual Reward：</strong>引入度量 3D 估计器，从生成视频中提取精确相机轨迹，显式惩罚旋转和平移偏差</li>
+            <li><strong>数据流水线：</strong>基于真实条件视频 + 合成数据派生的目标相机轨迹，消除对配对数据的依赖</li>
+        </ul>
+        <div class="highlight">
+            <strong>突破：</strong>从 SFT 范式转向 RL 范式，利用 3D 基础模型的反馈作为奖励信号，绕开了配对数据稀缺的瓶颈。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔑 技术演进趋势</h2>
+        <table>
+            <tr><th>维度</th><th>早期方法</th><th>当前方向</th></tr>
+            <tr><td>控制模态</td><td>单一（仅姿态/仅参考视频）</td><td>多模态统一（视频+姿态+文本）</td></tr>
+            <tr><td>对应关系</td><td>隐式学习 / 逐帧姿态嵌入</td><td>显式 3D 点轨迹 / 几何操作</td></tr>
+            <tr><td>训练范式</td><td>监督微调 (SFT) + 合成数据</td><td>强化学习 + 3D 基础模型反馈</td></tr>
+            <tr><td>一致性目标</td><td>逐帧对齐</td><td>潜空间运动一致性 / 4D 一致性</td></tr>
+            <tr><td>数据依赖</td><td>配对多视角真实视频</td><td>无配对数据 (RL) / 多视角合成</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔬 关键技术对比</h2>
+        <table>
+            <tr><th>维度</th><th>TriMotion</th><th>Track2View</th><th>Geo-Align</th></tr>
+            <tr><td>输入模态</td><td>视频 + 姿态 + 文本</td><td>3D 点轨迹对</td><td>条件视频 + 目标轨迹</td></tr>
+            <tr><td>核心创新</td><td>共享运动嵌入空间</td><td>双视图轨迹条件器</td><td>RL + 度量 3D 奖励</td></tr>
+            <tr><td>训练方法</td><td>监督 + 潜空间一致性</td><td>监督 + 点追踪监督</td><td>强化学习 (Flow-GRPO 类)</td></tr>
+            <tr><td>配对数据需求</td><td>需要（Motion Triplet）</td><td>需要（多视角对）</td><td>不需要</td></tr>
+            <tr><td>显式几何</td><td>中等（嵌入空间）</td><td>强（3D 点轨迹）</td><td>强（3D 估计器）</td></tr>
+            <tr><td>应用场景</td><td>通用相机控制</td><td>视频再渲染</td><td>视频再渲染</td></tr>
+            <tr><td>会议/状态</td><td>ECCV Accepted</td><td>预印本</td><td>预印本</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>多模态统一是明确趋势：</strong>TriMotion 的三模态统一设计表明，未来的相机控制系统需要支持灵活的输入方式——用户可能用文字描述"镜头向左平移"，也可能提供参考视频或精确的姿态序列</li>
+            <li><strong>显式几何优于隐式学习：</strong>Track2View 用 3D 点轨迹提供显式时空对应，比隐式学习的对应关系泛化性更强。这与 3D 一致性方向的 Robust Dreamer 用 Latent Gaussian Memory 提供显式几何锚定的思路类似</li>
+            <li><strong>RL 范式迁移：</strong>Geo-Align 将 RL 引入相机控制领域，与 Wan-R1 在视频推理中使用 RL 的趋势一致。RL 的优势在于可以利用 3D 基础模型的反馈作为奖励，绕开配对数据稀缺</li>
+            <li><strong>潜空间一致性优化：</strong>TriMotion 在潜空间直接约束运动一致性，避免像素空间解码。这与 Cosmos 3 在潜空间联合训练的思路呼应，潜空间优化正在成为标准做法</li>
+            <li><strong>数据瓶颈：</strong>多视角同步真实视频数据仍然稀缺，Geo-Align 的无配对数据流水线和 TriMotion 的 Motion Triplet Dataset 分别代表了两种解决路径</li>
+            <li><strong>与 Wan-Move 的区别：</strong>Wan-Move 控制的是场景中物体/点的运动 (Latent Trajectory Guidance)，而相机可控性控制的是观察视角的运动。两者互补，未来可能融合为统一的"视角+物体运动"控制</li>
+            <li><strong>落地价值：</strong>相机可控视频生成对电影制作、虚拟旅游、游戏过场动画等场景有直接应用价值。精确的相机控制是视频生成从"demo 可用"到"生产可用"的关键一步</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2606.20774" target="_blank">📄 TriMotion (arXiv)</a>
+            <a href="https://arxiv.org/abs/2606.15534" target="_blank">📄 Track2View (arXiv)</a>
+            <a href="https://qjizhi.github.io/track2view" target="_blank">🌐 Track2View 项目页</a>
+            <a href="https://arxiv.org/abs/2605.23903" target="_blank">📄 Geo-Align (arXiv)</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 VideoGen-20260618-CameraControl · 生成于 2026-06-25 · 领域: CV/Video Generation/Camera Control
+</div>
+
+</body>
+</html>

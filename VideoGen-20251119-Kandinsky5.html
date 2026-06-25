@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kandinsky 5.0: 图像与视频生成基础模型家族</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Kandinsky 5.0: 图像与视频生成基础模型家族</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2511.14993 (v3, 2026-05-26)</span>
+        <span>🏢 Kandinsky Lab AI (俄罗斯)</span>
+        <span>📅 2025-11-19 提交</span>
+        <span>📂 CV / AI / ML</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Video Generation</span>
+        <span class="tag green">Image Generation</span>
+        <span class="tag">DiT</span>
+        <span class="tag">T2V</span>
+        <span class="tag">I2V</span>
+        <span class="tag">SFT</span>
+        <span class="tag">RL Post-training</span>
+        <span class="tag">Open Source</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p><strong>Kandinsky 5.0</strong> 是 Kandinsky Lab AI 推出的基础模型家族，覆盖高分辨率图像和 10 秒视频合成。框架包含三个核心模型系列：</p>
+        <table>
+            <tr><th>模型</th><th>参数量</th><th>任务</th><th>定位</th></tr>
+            <tr><td><strong>Kandinsky 5.0 Image Lite</strong></td><td>6B</td><td>图像生成</td><td>高质量图像生成</td></tr>
+            <tr><td><strong>Kandinsky 5.0 Video Lite</strong></td><td>2B</td><td>T2V + I2V</td><td>快速轻量视频生成</td></tr>
+            <tr><td><strong>Kandinsky 5.0 Video Pro</strong></td><td>19B</td><td>T2V + I2V</td><td>顶级视频生成质量</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>核心亮点：</strong>多阶段训练流水线（预训练 → SFT → RL 后训练），完整数据策展生命周期，架构/训练/推理三重优化，人类评估达到 SOTA。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构与技术方案</h2>
+        <h3>架构设计</h3>
+        <ul>
+            <li><strong>DiT (Diffusion Transformer)</strong> 架构，支持图像和视频统一生成</li>
+            <li>Video Lite (2B) 定位快速推理，Video Pro (19B) 追求极致质量</li>
+            <li>从 Kandinsky 3 → 4 → 5 的迭代演进，架构持续优化</li>
+        </ul>
+        <h3>数据策展生命周期</h3>
+        <p>论文提供了完整的数据策展流程，这是区别于其他视频生成论文的显著特点：</p>
+        <ul>
+            <li><strong>收集 (Collection)：</strong>大规模多源数据采集</li>
+            <li><strong>处理 (Processing)：</strong>格式标准化、质量过滤</li>
+            <li><strong>过滤 (Filtering)：</strong>低质量、重复、不安全内容清除</li>
+            <li><strong>聚类 (Clustering)：</strong>语义聚类用于多阶段训练的数据配比</li>
+        </ul>
+        <h3>多阶段训练流水线</h3>
+        <table>
+            <tr><th>阶段</th><th>方法</th><th>目标</th></tr>
+            <tr><td>预训练</td><td>大规模数据训练</td><td>建立通用生成能力</td></tr>
+            <tr><td>自监督微调 (SFT)</td><td>高质量数据精调</td><td>提升视觉质量和文本对齐</td></tr>
+            <tr><td>强化学习后训练 (RL)</td><td>RL-based post-training</td><td>人类偏好对齐、质量增强</td></tr>
+        </table>
+        <h3>推理优化</h3>
+        <ul>
+            <li>架构级优化：减少冗余计算</li>
+            <li>训练级优化：蒸馏、步数缩减</li>
+            <li>推理级优化：缓存策略、量化</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔑 关键特性</h2>
+        <ul>
+            <li><strong>三档模型覆盖：</strong>从 2B 轻量到 19B 旗舰，满足不同部署场景</li>
+            <li><strong>10 秒视频生成：</strong>支持较长时长的视频合成</li>
+            <li><strong>高分辨率图像：</strong>Image Lite 6B 参数实现高质量图像生成</li>
+            <li><strong>RL 后训练：</strong>在视频生成领域引入强化学习后训练，区别于多数仅用 SFT 的工作</li>
+            <li><strong>完整开源：</strong>代码和训练检查点公开</li>
+            <li><strong>数据策展透明：</strong>详细披露数据流水线，对社区研究有重要参考价值</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔬 技术细节</h2>
+        <h3>与 Kandinsky 3 的对比</h3>
+        <table>
+            <tr><th>维度</th><th>Kandinsky 3</th><th>Kandinsky 5.0</th></tr>
+            <tr><td>参数量</td><td>~3B (T2I)</td><td>2B~19B (Video) / 6B (Image)</td></tr>
+            <tr><td>任务</td><td>T2I + I2V + T2V</td><td>T2V + I2V + T2I (统一)</td></tr>
+            <tr><td>训练方法</td><td>预训练 + 蒸馏</td><td>预训练 + SFT + RL 后训练</td></tr>
+            <tr><td>视频时长</td><td>短片段</td><td>10 秒</td></tr>
+            <tr><td>数据流程</td><td>未详细披露</td><td>完整策展生命周期</td></tr>
+        </table>
+        <h3>RL 后训练</h3>
+        <p>Kandinsky 5.0 在视频生成领域引入 RL 后训练是一大亮点。与 Wan-R1 使用可验证奖励不同，Kandinsky 的 RL 更可能是基于人类偏好反馈的 RLHF 或类似方法，用于在 SFT 基础上进一步提升生成质量和用户满意度。具体 RL 算法和奖励设计细节需要参考论文全文。</p>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <p>论文报告了人类评估结果，声称在多种任务上达到 SOTA。具体量化指标需参考论文全文。关键结论：</p>
+        <ul>
+            <li>Video Pro (19B) 在视频生成质量上达到顶级水平</li>
+            <li>Video Lite (2B) 在速度和质量间取得良好平衡</li>
+            <li>Image Lite (6B) 在图像生成任务上表现优异</li>
+            <li>通过人类评估验证，不仅仅是自动指标</li>
+        </ul>
+        <div class="highlight">
+            <strong>注意：</strong>截至调研日期，Kandinsky 5.0 在 arXiv 上的版本为 v3 (2026-05-26 修订)，说明论文经过了多轮更新。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>差异化定位：</strong>Kandinsky 5.0 的独特之处在于提供三档模型 (2B/6B/19B)，覆盖从轻量到旗舰的全谱系，而 HunyuanVideo (8.3B/13B) 和 LTX (2B) 通常只有一到两个规格</li>
+            <li><strong>RL 后训练先行：</strong>在视频生成领域引入 RL 后训练是前沿方向。与 Wan-R1 的可验证奖励不同，Kandinsky 的 RL 可能更侧重人类偏好对齐</li>
+            <li><strong>数据策展透明度：</strong>完整披露数据生命周期是重要贡献，多数视频生成论文仅简略提及数据。Kandinsky 5.0 的数据流程对社区构建自己的训练流水线有实际指导意义</li>
+            <li><strong>10 秒视频：</strong>在轻量模型 (2B) 上实现 10 秒视频生成，在时长参数比上具有竞争力</li>
+            <li><strong>地理多样性：</strong>来自俄罗斯团队，为视频生成研究提供了非中美视角的技术路线</li>
+            <li><strong>潜在不足：</strong>19B 参数量较大，推理成本可能较高；缺少明确的量化基准对比数据（如 VBench、EvalCrafter 等）</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2511.14993" target="_blank">📄 arXiv: 2511.14993</a>
+            <a href="https://arxiv.org/html/2511.14993v3" target="_blank">📖 HTML 全文</a>
+            <a href="https://kandinskylab.ai/" target="_blank">🌐 项目主页</a>
+            <a href="https://arxiv.org/pdf/2511.14993" target="_blank">📑 PDF</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 VideoGen-20251119-Kandinsky5 · 生成于 2026-06-25 · 领域: CV/Video Generation
+</div>
+
+</body>
+</html>

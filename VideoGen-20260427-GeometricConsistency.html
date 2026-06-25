@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频生成中的几何一致性技术方向调研</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>视频生成中的几何一致性技术方向调研</h1>
+    <div class="meta">
+        <span>📄 综述 (3 篇核心论文)</span>
+        <span>📅 2026-04 ~ 2026-06</span>
+        <span>📂 CV / Video Generation / 3D Consistency</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">3D Consistency</span>
+        <span class="tag green">Geometric Consistency</span>
+        <span class="tag">RL Constraints</span>
+        <span class="tag">Gaussian Splatting</span>
+        <span class="tag">Multi-View Tracking</span>
+        <span class="tag">Deviation Learning</span>
+        <span class="tag">World Simulation</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 技术方向概要</h2>
+        <p><strong>几何一致性 (Geometric Consistency)</strong> 是视频生成中的核心挑战：生成视频在时间维度上应保持 3D 场景结构的稳定性——物体不应变形或闪烁、透视关系应正确、运动应符合物理规律。当前视频扩散模型常出现<strong>几何不一致</strong>问题：物体在帧间闪烁/变形、透视错误、运动不自然。</p>
+        <div class="highlight">
+            <strong>调研发现：</strong>该方向正从<strong>架构修改注入 3D 先验</strong>转向<strong>强化学习约束 3D 一致性</strong>，从<strong>RGB 空间循环</strong>转向<strong>潜空间 3D 记忆</strong>，从<strong>单视角独立生成</strong>转向<strong>多视角点追踪监督</strong>。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📋 核心论文</h2>
+        <table>
+            <tr><th>论文</th><th>arXiv</th><th>日期</th><th>核心贡献</th></tr>
+            <tr><td><strong>World-R1</strong></td><td>2604.24764</td><td>2026-04-27</td><td>RL 强化 3D 约束，ICML 2026</td></tr>
+            <tr><td><strong>Robust Dreamer</strong></td><td>2605.30855</td><td>2026-05-29</td><td>Latent Gaussian Memory + 偏差学习</td></tr>
+            <tr><td><strong>MVTrack4Gen</strong></td><td>2606.26087</td><td>2026-06-24</td><td>多视角点追踪作为几何监督</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 技术方案详解</h2>
+        <h3>1. World-R1: RL 强化 3D 约束</h3>
+        <p><strong>来源：</strong>arXiv 2604.24764, ICML 2026, Microsoft, 2026-04-27</p>
+        <p><strong>核心问题：</strong>视频基础模型视觉合成能力强，但频繁出现几何不一致。现有方法通过架构修改注入 3D 先验，计算成本高且限制可扩展性。</p>
+        <p><strong>方案：</strong></p>
+        <ul>
+            <li><strong>RL 框架：</strong>使用 Flow-GRPO（强化学习策略梯度方法适配 flow matching 模型）优化 3D 一致性</li>
+            <li><strong>3D 基础模型反馈：</strong>使用预训练 3D 基础模型提供反馈，惩罚几何不一致</li>
+            <li><strong>VLM 反馈：</strong>视觉语言模型 (VLM) 评估结构连贯性</li>
+            <li><strong>纯文本数据集：</strong>引入专为世界模拟设计的纯文本数据集</li>
+            <li><strong>周期解耦训练：</strong>交替训练刚性几何一致性和动态场景流动性，平衡两者</li>
+            <li><strong>无架构修改：</strong>不改变基础模型架构，仅通过 RL 后训练对齐</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>首个将 RL 用于 3D 一致性约束的工作。不修改架构 → 可在任何视频扩散模型上应用。周期解耦训练解决了"刚性几何 vs 动态运动"的矛盾。
+        </div>
+
+        <h3>2. Robust Dreamer: 潜空间 3D 高斯记忆</h3>
+        <p><strong>来源：</strong>arXiv 2605.30855, 2026-05-29</p>
+        <p><strong>核心问题：</strong>自回归 (AR) 视频生成中长序列 rollout 出现灾难性漂移，原因有二：</p>
+        <ul>
+            <li><strong>Latent-RGB Cycling：</strong>生成的潜空间表示被反复解码为 RGB 再编码回来用于未来条件，每步都丢失信息</li>
+            <li><strong>Error-free Hypothesis：</strong>训练时用干净记忆，推理时用预测（有误差）记忆，导致训练-推理差距</li>
+        </ul>
+        <p><strong>方案：</strong></p>
+        <ul>
+            <li><strong>Latent Gaussian Memory：</strong>将扩散过程中的潜空间表示锚定到 3D 高斯原语 (Gaussian Primitives)，通过潜空间高斯泼溅 (Gaussian Splatting) 回忆——避免 RGB 中转的信息损失</li>
+            <li><strong>Deviation Learning：</strong>通过一步近似合成 rollout 引起的潜空间偏差，按自回归阶段和去噪时间步存储到 Dynamic Deviation Archive，训练时注入到历史记忆中</li>
+            <li><strong>训练-推理对齐：</strong>让模型在训练时就面对"被污染"的记忆状态，学会内部纠错</li>
+        </ul>
+        <div class="highlight">
+            <strong>核心贡献：</strong>在潜空间而非 RGB 空间维护 3D 记忆，从根源上解决了 Latent-RGB Cycling 的信息损失。偏差学习是首个显式处理训练-推理记忆差距的方法。
+        </div>
+
+        <h3>3. MVTrack4Gen: 多视角点追踪监督</h3>
+        <p><strong>来源：</strong>arXiv 2606.26087, KAIST + Sony, 2026-06-24</p>
+        <p><strong>核心问题：</strong>仅依赖相机条件的方法视觉质量高但几何/运动一致性差；基于显式 3D 表示的方法受限于重建模块精度。</p>
+        <p><strong>方案：</strong></p>
+        <ul>
+            <li><strong>关键发现：</strong>特定注意力层的 query-key 特征在几何对应位置跨视图跨时间形成强对应信号，这些对应的不对齐导致运动不一致</li>
+            <li><strong>Auxiliary Multi-View Tracking Head：</strong>将这些注意力特征路由到辅助多视角追踪头，与扩散模型联合训练点追踪目标</li>
+            <li><strong>显式强化对应：</strong>通过点追踪目标显式强化跨视图运动对应</li>
+            <li><strong>即插即用：</strong>可增强现有相机条件模型，不需要重建模块</li>
+        </ul>
+        <div class="highlight">
+            <strong>创新点：</strong>利用注意力层中已存在的几何对应信号，通过辅助任务 (点追踪) 显式强化。这是"发现-利用"而非"注入"外部 3D 先验的新范式。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔑 技术演进趋势</h2>
+        <table>
+            <tr><th>维度</th><th>早期方法</th><th>当前方向</th></tr>
+            <tr><td>3D 先验注入</td><td>架构修改（3D 感知模块）</td><td>RL 后训练 / 辅助监督（不改架构）</td></tr>
+            <tr><td>记忆表示</td><td>RGB 空间循环（编码-解码）</td><td>潜空间 3D 高斯记忆</td></tr>
+            <tr><td>训练-推理对齐</td><td>假设训练=推理（error-free）</td><td>显式偏差学习</td></tr>
+            <tr><td>几何监督</td><td>外部 3D 重建</td><td>注意力层内点追踪监督</td></tr>
+            <tr><td>一致性-动态性平衡</td><td>静态一致性优先</td><td>周期解耦训练平衡</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔬 关键技术对比</h2>
+        <table>
+            <tr><th>维度</th><th>World-R1</th><th>Robust Dreamer</th><th>MVTrack4Gen</th></tr>
+            <tr><td>核心方法</td><td>RL (Flow-GRPO) + 3D/VLM 奖励</td><td>Latent Gaussian Memory + 偏差学习</td><td>辅助多视角追踪头</td></tr>
+            <tr><td>架构修改</td><td>无</td><td>添加 3D 记忆模块</td><td>添加辅助追踪头</td></tr>
+            <tr><td>训练数据</td><td>纯文本世界模拟数据</td><td>AR rollout + 偏差注入</td><td>多视角点追踪标注</td></tr>
+            <tr><td>适用场景</td><td>T2V 通用生成</td><td>AR 动作控制生成</td><td>相机条件新视角生成</td></tr>
+            <tr><td>3D 反馈来源</td><td>预训练 3D 基础模型</td><td>高斯原语（内置）</td><td>注意力特征（内置）</td></tr>
+            <tr><td>会议/状态</td><td>ICML 2026</td><td>预印本</td><td>预印本</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 与相机可控性的交叉</h2>
+        <p>几何一致性与相机可控性密切相关——相机控制要求生成视频遵循指定轨迹，而几何一致性确保在轨迹变化时场景结构稳定。几个交叉点：</p>
+        <ul>
+            <li><strong>Track2View (相机控制) + MVTrack4Gen (几何一致)：</strong>两者都使用点追踪，前者用作条件信号，后者用作监督信号</li>
+            <li><strong>Geo-Align (相机控制) + World-R1 (几何一致)：</strong>两者都使用 RL 和 3D 基础模型反馈，前者约束相机轨迹准确性，后者约束 3D 结构一致性</li>
+            <li><strong>Robust Dreamer 的 Latent Gaussian Memory：</strong>同时服务几何一致性（3D 锚定）和自回归稳定性（避免 RGB 循环），对 AR 视频生成场景（如世界模拟）有重要意义</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>RL 范式双重应用：</strong>World-R1 和 Geo-Align 都在用 RL 解决视频生成问题——前者约束 3D 一致性，后者约束相机轨迹精度。RL 后训练正在成为视频生成的通用优化工具，类似 LLM 中的 RLHF 范式</li>
+            <li><strong>潜空间 3D 记忆的突破：</strong>Robust Dreamer 的 Latent Gaussian Memory 是重要创新。传统方法在 RGB 空间维护记忆，每步 VAE 编解码都损失信息。在潜空间直接用高斯原语表示和回忆，避免了这一衰减，对长序列 AR 视频生成尤为关键</li>
+            <li><strong>注意力层中已蕴含几何信号：</strong>MVTrack4Gen 发现注意力层特征已包含几何对应信号，这是重要洞察。不需要从外部注入 3D 先验，而是发现并强化模型内部已存在的几何理解能力</li>
+            <li><strong>训练-推理差距是被忽视的问题：</strong>Robust Dreamer 的 error-free hypothesis 分析指出了一个被忽视的训练-推理差距。在 AR 视频生成中，训练时记忆是干净的，推理时记忆是模型自己生成的（有误差）。偏差学习显式处理这一问题</li>
+            <li><strong>世界模拟愿景：</strong>World-R1 引入"世界模拟纯文本数据集"，Robust Dreamer 在 ScanNet/DL3DV/OmniWorldGame 上测试，都指向视频生成 → 世界模拟的长期愿景。几何一致性是世界模拟的基础能力</li>
+            <li><strong>刚性 vs 动态的矛盾：</strong>World-R1 的周期解耦训练显式处理这一矛盾——过于强调几何一致性会导致场景僵硬，过于强调动态性会导致结构不稳定。这是视频生成中独有的挑战</li>
+            <li><strong>与 Cosmos 3 的关系：</strong>Cosmos 3 作为全模态世界模型，其 3D 一致性通过统一 MoT 架构和大规模数据隐式实现。而本调研的三篇论文提供了更显式、更有针对性的 3D 一致性方案</li>
+            <li><strong>开源生态：</strong>World-R1 有 Microsoft 开源代码 (github.com/microsoft/World-R1)，Robust Dreamer 和 MVTrack4Gen 提供项目页面。这些工作为社区提供了可直接使用的工具</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2604.24764" target="_blank">📄 World-R1 (arXiv)</a>
+            <a href="https://aka.ms/world-r1" target="_blank">🌐 World-R1 项目页</a>
+            <a href="https://github.com/microsoft/World-R1" target="_blank">💻 World-R1 GitHub</a>
+            <a href="https://arxiv.org/abs/2605.30855" target="_blank">📄 Robust Dreamer (arXiv)</a>
+            <a href="https://arxiv.org/abs/2606.26087" target="_blank">📄 MVTrack4Gen (arXiv)</a>
+            <a href="https://cvlab-kaist.github.io/MVTrack4Gen/" target="_blank">🌐 MVTrack4Gen 项目页</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 VideoGen-20260427-GeometricConsistency · 生成于 2026-06-25 · 领域: CV/Video Generation/3D Consistency
+</div>
+
+</body>
+</html>

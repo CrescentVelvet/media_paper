@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTX-Video / LTX-2: 实时视频与音视频联合生成</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>LTX-Video / LTX-2: 实时视频与音视频联合生成</h1>
+    <div class="meta">
+        <span>📄 LTX-Video: arXiv 2501.00103 (2024-12-30)</span>
+        <span>📄 LTX-2: arXiv 2601.03233 (2026-01-06)</span>
+        <span>🏢 Lightricks</span>
+        <span>📅 2024-12 ~ 2026-01</span>
+        <span>📂 CV</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">Realtime Video</span>
+        <span class="tag green">Audio-Visual</span>
+        <span class="tag">DiT</span>
+        <span class="tag">Latent Diffusion</span>
+        <span class="tag">1:192 Compression</span>
+        <span class="tag">4K@50fps</span>
+        <span class="tag">Open Source</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p>本笔记覆盖 Lightricks 的两代视频生成模型：</p>
+        <table>
+            <tr><th>模型</th><th>arXiv</th><th>参数</th><th>核心特点</th></tr>
+            <tr><td><strong>LTX-Video</strong></td><td>2501.00103</td><td>~2B</td><td>实时视频生成，5s 768×512@24fps 仅需 2s (H100)</td></tr>
+            <tr><td><strong>LTX-2</strong></td><td>2601.03233</td><td>14B+5B</td><td>首个开源 DiT 音视频联合基础模型，同步音视频生成</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>演进关键：</strong>LTX-Video 是纯视频模型，主打超快推理速度。LTX-2 升级为音视频联合模型，14B 视频流 + 5B 音频流，支持原生 4K@50fps + 同步音频。LTX-2 已在 GitHub Lightricks/LTX-2 发布。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构（深入）</h2>
+        <h3>LTX-Video: VAE-DiT 联合优化</h3>
+        <p>LTX-Video 的核心创新是<strong>不将 Video-VAE 和去噪 Transformer 视为独立组件</strong>，而是联合优化它们的交互：</p>
+        <table>
+            <tr><th>组件</th><th>设计</th><th>创新点</th></tr>
+            <tr><td>Video-VAE</td><td>压缩率 1:192，时空下采样 32×32×8 像素/token</td><td>Patchify 从 Transformer 输入移到 VAE 输入</td></tr>
+            <tr><td>DiT Transformer</td><td>全时空自注意力</td><td>在高压缩潜空间做 full attention</td></tr>
+            <tr><td>VAE Decoder</td><td>潜空间→像素 + 最后一步去噪</td><td>解码器兼任去噪，保留细节无需额外上采样</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计逻辑：</strong>高压缩率 (1:192) 让 Transformer 可以做全时空自注意力（计算量可控），但高压缩会丢失细节。解决方案：让 VAE 解码器同时负责最后一步去噪，直接在像素空间输出干净结果，避免额外上采样模块。
+        </div>
+        <h3>LTX-2: 非对称双流 Transformer</h3>
+        <p>LTX-2 从纯视频模型升级为<strong>音视频联合基础模型</strong>：</p>
+        <table>
+            <tr><th>组件</th><th>参数</th><th>设计</th></tr>
+            <tr><td>视频流</td><td>14B</td><td>主 Transformer，负责视频生成</td></tr>
+            <tr><td>音频流</td><td>5B</td><td>辅助 Transformer，负责音频生成</td></tr>
+            <tr><td>耦合方式</td><td>-</td><td>双向 Audio-Video Cross-Attention + 时间位置嵌入</td></tr>
+            <tr><td>共享条件</td><td>-</td><td>Cross-modality AdaLN 共享时间步条件</td></tr>
+        </table>
+        <h3>非对称设计的理由</h3>
+        <ul>
+            <li>视频生成比音频生成更复杂，需要更多容量</li>
+            <li>14B : 5B 的比例分配反映了两者的建模难度差异</li>
+            <li>双向 cross-attention 确保音视频在内容/时间上对齐</li>
+        </ul>
+        <h3>文本编码与控制</h3>
+        <ul>
+            <li><strong>多语言文本编码器：</strong>支持更广泛的语言理解</li>
+            <li><strong>Modality-Aware CFG (modality-CFG)：</strong>模态感知的无分类器引导，改善音视频对齐和可控性</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔑 关键特性</h2>
+        <h3>LTX-Video</h3>
+        <ul>
+            <li><strong>超实时生成：</strong>5 秒 768×512@24fps 视频仅需 2 秒 (H100)，比实时更快</li>
+            <li><strong>极高压缩率：</strong>1:192 压缩率，32×32×8 像素/token，在同类模型中领先</li>
+            <li><strong>统一训练：</strong>T2V 和 I2V 同时训练，两种能力兼有</li>
+            <li><strong>ComfyUI 集成：</strong>核心支持 ComfyUI 工作流</li>
+        </ul>
+        <h3>LTX-2</h3>
+        <ul>
+            <li><strong>音视频同步生成：</strong>单一模型一次性生成视频 + 同步音频</li>
+            <li><strong>4K@50fps：</strong>支持原生 4K 分辨率、50fps 高帧率</li>
+            <li><strong>丰富音频：</strong>不止语音，还包含背景声、拟音 (foley)、环境音</li>
+            <li><strong>多关键帧条件：</strong>支持多关键帧条件控制</li>
+            <li><strong>IC-LoRA 控制模型：</strong>精确生成控制</li>
+            <li><strong>标准 LoRA：</strong>风格定制</li>
+            <li><strong>Latent Upsampler：</strong>多尺度生成流水线</li>
+            <li><strong>训练工具：</strong>提供 LoRA 训练能力 (LTX-Video-Trainer)</li>
+            <li><strong>全面文档：</strong>https://docs.ltx.video</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔬 技术细节</h2>
+        <h3>1:192 压缩率的意义</h3>
+        <p>传统视频 VAE 压缩率通常在 1:16 ~ 1:64 范围。LTX-Video 的 1:192 (时空 32×32×8) 是极高的压缩率：</p>
+        <ul>
+            <li><strong>优势：</strong>Transformer 在潜空间做 full attention 的计算量大幅降低，不需要稀疏注意力或窗口注意力</li>
+            <li><strong>代价：</strong>高压缩率丢失细节</li>
+            <li><strong>补偿：</strong>VAE 解码器做最后一步去噪，在像素空间恢复细节</li>
+        </ul>
+        <h3>与其他模型的压缩率对比</h3>
+        <table>
+            <tr><th>模型</th><th>VAE 压缩率</th><th>注意力策略</th></tr>
+            <tr><td>LTX-Video</td><td>1:192 (32×32×8)</td><td>Full spatiotemporal attention</td></tr>
+            <tr><td>HunyuanVideo 1.5</td><td>~1:64 (典型)</td><td>SSTA (选择性 + 滑动窗口)</td></tr>
+            <tr><td>Wan2.1</td><td>Wan-VAE (1:16~1:32)</td><td>窗口/稀疏注意力</td></tr>
+        </table>
+        <h3>从 LTX-Video 到 LTX-2 的架构演进</h3>
+        <ul>
+            <li>参数量：~2B → 14B+5B (19B total)，大幅扩容</li>
+            <li>模态：纯视频 → 音视频联合</li>
+            <li>分辨率：768×512 → 4K 原生</li>
+            <li>帧率：24fps → 50fps</li>
+            <li>音频能力：无 → 语音 + 背景 + 拟音</li>
+            <li>控制方式：基础 T2V/I2V → 多关键帧 + IC-LoRA + LoRA + Latent Upsampler</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <h3>LTX-Video</h3>
+        <ul>
+            <li>在相似规模模型中推理速度最快（超实时）</li>
+            <li>H100 上 2 秒生成 5 秒视频，在开源 2B 级别模型中领先</li>
+        </ul>
+        <h3>LTX-2</h3>
+        <ul>
+            <li>开源系统中 SOTA 的音视频质量和提示对齐</li>
+            <li>结果可与闭源模型媲美，计算成本和推理时间仅为后者的一小部分</li>
+            <li>作为评估对象被多篇论文引用（如 CultureScore、FlowBlending、ParetoSlider）</li>
+        </ul>
+        <div class="highlight">
+            <strong>LTX-2 在生态中的定位：</strong>首个开源 DiT 音视频联合基础模型。与 Wan-Streamer (阿里端到端实时交互) 不同，LTX-2 侧重于<strong>高质量音视频内容生成</strong>而非实时交互。与 Cosmos 3 (NVIDIA 全模态) 相比，LTX-2 更专注于音视频双模态。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>压缩率创新的启示：</strong>LTX-Video 的 1:192 压缩率 + VAE 解码器去噪是一个优雅设计。它避开了一个核心矛盾——要么用高压缩率但丢失细节，要么用低压缩率但注意力计算量大。LTX-Video 两全其美</li>
+            <li><strong>音视频联合是趋势：</strong>LTX-2 (2026-01) 和 Wan-Streamer (2026-06) 都在做音视频联合生成，说明这是视频生成模型的明确演进方向。LTX-2 的非对称双流设计 (14B:5B) 为音视频比例分配提供了参考</li>
+            <li><strong>4K@50fps 的突破：</strong>LTX-2 支持原生 4K 分辨率和 50fps 帧率，这在开源模型中是领先的。多数开源视频模型仍停留在 720P@24fps</li>
+            <li><strong>从 2B 到 19B：</strong>LTX 系列的参数跨度极大——LTX-Video ~2B、LTX-2 19B。说明 Lightricks 在探索从轻量到旗舰的全谱系</li>
+            <li><strong>Modality-CFG：</strong>模态感知的无分类器引导是一个有趣创新，解决音视频联合生成中不同模态的引导强度问题</li>
+            <li><strong>工程生态：</strong>ComfyUI 集成、LoRA 训练器、IC-LoRA 控制模型、Latent Upsampler——LTX 的工程生态非常完整</li>
+            <li><strong>与 HunyuanVideo 1.5 的对比：</strong>LTX-Video (2B) 比 HunyuanVideo 1.5 (8.3B) 更轻量、更快，但质量和能力维度可能不如后者。LTX-2 (19B) 则比 HunyuanVideo 1.5 更大且多了音频</li>
+            <li><strong>LTX-2.3 不存在：</strong>截至调研日期，arXiv 和 GitHub 上没有 "LTX-2.3" 这个版本号。LTX 系列为 LTX-Video → LTX-2</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <h3>LTX-Video</h3>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2501.00103" target="_blank">📄 arXiv: 2501.00103</a>
+            <a href="https://github.com/Lightricks/LTX-Video" target="_blank">💻 GitHub (LTX-Video)</a>
+            <a href="https://huggingface.co/Lightricks/LTX-Video" target="_blank">🤗 HuggingFace</a>
+            <a href="https://ltx.video" target="_blank">🌐 项目主页</a>
+        </div>
+        <h3>LTX-2</h3>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2601.03233" target="_blank">📄 arXiv: 2601.03233</a>
+            <a href="https://github.com/Lightricks/LTX-2" target="_blank">💻 GitHub (LTX-2)</a>
+            <a href="https://docs.ltx.video" target="_blank">📚 文档</a>
+            <a href="https://app.ltx.studio/ltx-2-playground/t2v" target="_blank">🎮 在线试用</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 VideoGen-20241230-LTX · 生成于 2026-06-25 · 领域: CV/Video Generation
+</div>
+
+</body>
+</html>
