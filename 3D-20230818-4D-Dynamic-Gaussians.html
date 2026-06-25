@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D / 动态 3D 高斯: 动态场景重建与追踪</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #76b900; --accent-dim: #5a8f00; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>4D / 动态 3D 高斯: 动态场景重建与追踪</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2308.09713 及后续</span>
+        <span>📅 2023-08 ~ 2026</span>
+        <span>📂 动态场景</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📋 领域概要</h2>
+        <div class="tags">
+            <span class="tag green">Dynamic Scene</span>
+            <span class="tag">4D Reconstruction</span>
+            <span class="tag">6-DOF Tracking</span>
+            <span class="tag">Novel View Synthesis</span>
+            <span class="tag">Video-based</span>
+        </div>
+        <p>4D 高斯（动态 3D 高斯）是 3DGS 向时间维度的自然扩展。在 3DGS 中，高斯是静态的；在 4D 高斯中，高斯可以随时间移动和旋转，同时保持颜色、不透明度和大小不变。这使模型能同时进行动态场景的新视角合成和密集 6-DOF 追踪。</p>
+        <div class="highlight">
+            <strong>核心问题：</strong>动态场景重建需要同时建模空间和时间维度。3D 高斯的显式表示天然适合这一任务——每个高斯可以有一个时间轨迹，而 NeRF 的隐式表示很难扩展到动态场景。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>1. Dynamic 3D Gaussians: 追踪与持久动态视图合成 (arXiv: 2308.09713)</h2>
+        <div class="tags">
+            <span class="tag green">Analysis-by-Synthesis</span>
+            <span class="tag">6-DOF Tracking</span>
+            <span class="tag">Local Rigidity</span>
+            <span class="tag">Persistent Appearance</span>
+        </div>
+        <p><strong>作者:</strong> Luiten, Kopanas, Leibe, Ramanan (CMU + INRIA) | <strong>发表:</strong> 2023-08</p>
+        <p><strong>方法：</strong>遵循 analysis-by-synthesis 框架，灵感来自 3DGS。为建模动态场景，允许高斯随时间移动和旋转，同时正则化使其保持持久的颜色、不透明度和大小。</p>
+        <p><strong>关键约束——局部刚性：</strong>用局部刚性约束正则化高斯的运动和旋转，确保同一个高斯正确建模同一物理空间区域随时间的运动（包括旋转）。</p>
+        <div class="highlight">
+            <strong>核心突破：</strong>密集 6-DOF 追踪和动态重建从持久动态视图合成中自然涌现——不需要任何对应关系或光流作为输入。这一特性使该方法具有独特的优雅性。
+        </div>
+        <p><strong>应用：</strong>第一人称视角合成、动态组合场景合成、4D 视频编辑。</p>
+    </div>
+
+    <div class="section">
+        <h2>2. 后续发展</h2>
+        
+        <h3>SA4D: Segment Any 4D Gaussians (arXiv: 2407.04504)</h3>
+        <div class="tags">
+            <span class="tag">4D Segmentation</span>
+            <span class="tag">Identity Feature Field</span>
+            <span class="tag">XR/VR</span>
+        </div>
+        <p>首批在 4D 表示中进行分割的框架之一。引入高效的时间身份特征场处理高斯漂移问题，能在 4D 高斯中实现秒级精确分割。支持移除、重着色、组合和渲染高质量 anything masks。</p>
+        
+        <h3>DGD: Dynamic 3D Gaussians Distillation (arXiv: 2405.19321)</h3>
+        <div class="tags">
+            <span class="tag">Semantic Radiance Field</span>
+            <span class="tag">Monocular Video</span>
+            <span class="tag">Text-prompt Segmentation</span>
+        </div>
+        <p>从单目视频学习动态 3D 语义辐射场。统一表示动态 3D 场景的外观和语义信息，支持通过用户点击或文本提示指定 3D 语义实体的分割和追踪。关键在于外观和语义属性的联合优化。</p>
+    </div>
+
+    <div class="section">
+        <h2>📊 4D 高斯方法分类</h2>
+        <table>
+            <tr><th>方向</th><th>代表工作</th><th>核心问题</th><th>年份</th></tr>
+            <tr><td>动态重建 + 追踪</td><td>Dynamic 3D Gaussians</td><td>从视频同时重建和追踪</td><td>2023</td></tr>
+            <tr><td>4D 分割</td><td>SA4D</td><td>在 4D 表示中分割物体</td><td>2024</td></tr>
+            <tr><td>语义理解</td><td>DGD</td><td>动态场景的语义理解</td><td>2024</td></tr>
+            <tr><td>单图→4D</td><td>优化 4D Gaussians (arXiv 2504.05458)</td><td>从单张风景图生成动态</td><td>2025</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>4D 是 3D 的自然扩展但挑战倍增：</strong>3DGS 的核心优势——显式表示和实时渲染——在 4D 中同样成立。但动态场景引入了时间一致性、运动估计和遮挡处理等新挑战，使问题复杂度显著增加。</li>
+            <li><strong>局部刚性约束的优雅性：</strong>Dynamic 3D Gaussians 不需要对应关系或光流输入，仅通过局部刚性约束就实现了 6-DOF 追踪。这种"从渲染中涌现追踪"的思路非常优雅，体现了 analysis-by-synthesis 范式的威力。</li>
+            <li><strong>与视频生成的关联：</strong>4D 高斯和视频生成模型都在建模动态场景，但路线不同——4D 高斯是显式 3D 表示+时间轨迹，视频生成是隐式 2D 像素生成。未来两者可能融合：4D 高斯提供 3D 一致性先验，视频生成提供纹理和细节。</li>
+            <li><strong>AR/VR/XR 应用潜力：</strong>4D 高斯的实时渲染和动态场景建模能力使其非常适合 AR/VR 场景。SA4D 的 4D 分割能力特别有价值——在 AR 中需要理解和操作动态场景中的特定物体。</li>
+            <li><strong>与 VGGT 的互补：</strong>VGGT 可以提供每帧的 3D 几何先验，4D 高斯在此基础上建模时间动态。两者结合可能实现更鲁棒的动态场景重建。VGGT 团队已推出 4DLangVGGT，探索动态场景的语言-视觉几何。</li>
+            <li><strong>未来方向：</strong>(1) 前馈 4D 重建（从视频直接预测 4D 高斯）; (2) 文本/图像到 4D 生成; (3) 长时序一致性（分钟级到小时级）; (4) 与 SLAM 系统结合实现实时 4D 建图。</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2308.09713" target="_blank">📄 Dynamic 3D Gaussians</a>
+            <a href="https://arxiv.org/abs/2407.04504" target="_blank">📄 SA4D</a>
+            <a href="https://arxiv.org/abs/2405.19321" target="_blank">📄 DGD</a>
+            <a href="https://arxiv.org/abs/2504.05458" target="_blank">📄 Optimizing 4D Gaussians</a>
+            <a href="https://arxiv.org/abs/2512.05060" target="_blank">📄 4DLangVGGT</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 重建与生成调研 · 4D 动态高斯 · 动态场景重建
+</div>
+
+</body>
+</html>

@@ -151,7 +151,8 @@
 <div class="header">
     <h1>视频生成模型调研索引</h1>
     <p>Wan 系列 (2.1→2.2→VACE→Move→R1→Streamer) + 业界全景 (Sora 2 / Veo 3.1 / Kling 2.1 / Runway Gen-4 / Mochi 1 / CogVideoX / DynamiCrafter / Cosmos 3)<br>
-    含相机可控性、几何一致性技术方向综述与业界全景对比表</p>
+    三维重建与生成方向 (VGGT / 3DGS / LRM / TRELLIS / Hunyuan3D / 4D Gaussians)<br>
+    含相机可控性、几何一致性、3D 前馈重建、4D 动态场景综述与业界全景对比表</p>
 </div>
 
 <div class="container">
@@ -695,6 +696,216 @@
     </div>
 
     <div class="section">
+        <h2>📖 三维重建与生成 (2026-06-25 新增)</h2>
+
+        <div class="note-card">
+            <h3>20. VGGT: Visual Geometry Grounded Transformer</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2503.11651</span>
+                <span>📅 2025-03-14</span>
+                <span>🏢 Meta FAIR / Oxford VGG</span>
+                <span>🏆 CVPR 2025 Best Paper</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Feed-Forward 3D</span>
+                <span class="tag">Multi-task</span>
+                <span class="tag">Camera Pose</span>
+                <span class="tag">Point Map</span>
+                <span class="tag">Point Tracking</span>
+            </div>
+            <p>单一前馈 Transformer 同时解决相机估计、多视角深度、密集点云和 3D 点追踪四大任务，不到 1 秒重建，超越需要后处理优化的传统方法。CVPR 2025 最佳论文。QuantVGGT (ICLR 2026) 4-bit 量化实现 3.7× 内存压缩。</p>
+            <a href="3D-20250314-VGGT.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2503.11651" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/facebookresearch/vggt" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>21. 3D Gaussian Splatting: 基础技术与改进综述 (2023-2026)</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2308.04079 及后续</span>
+                <span>📅 2023-08 ~ 2026</span>
+                <span>🏢 INRIA / 多机构</span>
+                <span>🏆 SIGGRAPH 2023</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Novel View Synthesis</span>
+                <span class="tag">Explicit Representation</span>
+                <span class="tag">Real-Time</span>
+                <span class="tag">Survey</span>
+            </div>
+            <p>3DGS 用可学习高斯椭球体显式表示场景，实现 1080p 30+ FPS 实时新视角合成。改进工作涵盖：GaussianPro (MVS 启发的密度化)、3DGS-MCMC (MCMC 采样)、Mip-Splatting (抗锯齿)、2DGS (表面重建)、SuGaR (表面对齐)、Scaffold-GS (锚点引导)。</p>
+            <a href="3D-20230808-3DGS-Survey.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2308.04079" target="_blank">📄 3DGS 原始</a>
+            <a href="https://arxiv.org/abs/2402.14650" target="_blank">📄 GaussianPro</a>
+        </div>
+
+        <div class="note-card">
+            <h3>22. 前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D</h3>
+            <div class="meta">
+                <span>📄 综述: 2311.06214 → 2404.19702 → 2410.12781 → 2512.10267</span>
+                <span>📅 2023-11 ~ 2026-03</span>
+                <span>📂 Feed-Forward</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Feed-Forward</span>
+                <span class="tag">Transformer</span>
+                <span class="tag">Triplane → Gaussians</span>
+                <span class="tag">0.1s ~ 1s</span>
+            </div>
+            <p>前馈重建是最重要趋势：LRM (Triplane NeRF) → GRM (像素对齐高斯) → GS-LRM (每像素高斯, 场景级) → Long-LRM (32 视角 360°) → Long-LRM++ (14 FPS 实时)。从仅物体到场景级，从 2-4 张到 32-64 张输入。</p>
+            <a href="3D-20231110-FeedForward-Reconstruction.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2404.19702" target="_blank">📄 GS-LRM</a>
+            <a href="https://arxiv.org/abs/2410.12781" target="_blank">📄 Long-LRM</a>
+        </div>
+
+        <div class="note-card">
+            <h3>23. TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2412.01506</span>
+                <span>📅 2024-12-02</span>
+                <span>🏢 Microsoft Research</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3D Generation</span>
+                <span class="tag">SLAT</span>
+                <span class="tag">Rectified Flow</span>
+                <span class="tag">2B Params</span>
+                <span class="tag">Multi-format</span>
+            </div>
+            <p>统一 SLAT (Structured LATent) 表示，稀疏 3D 网格 + DINOv2 多视角特征，可解码为辐射场/高斯/网格三种格式。Rectified Flow Transformer, 2B 参数, 500K 物体训练。支持局部 3D 编辑。</p>
+            <a href="3D-20241202-TRELLIS.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2412.01506" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/Microsoft/TRELLIS" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>24. Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2501.12202 / 2506.15442 / 2509.21245</span>
+                <span>📅 2025-01 ~ 2025-09</span>
+                <span>🏢 Tencent Hunyuan</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3D Generation</span>
+                <span class="tag">DiT</span>
+                <span class="tag">PBR Material</span>
+                <span class="tag">Multi-modal Control</span>
+            </div>
+            <p>两阶段管线: Hunyuan3D-DiT (形状生成) + Hunyuan3D-Paint (纹理合成)。2.1 加入 PBR 材质支持，Hunyuan3D-Omni 扩展支持点云/体素/边界框/骨骼姿态多模态控制。号称填补开源 3D 大模型空白。</p>
+            <a href="3D-20250121-Hunyuan3D.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2501.12202" target="_blank">📄 2.0 arXiv</a>
+            <a href="https://github.com/Tencent/Hunyuan3D-2" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>25. 3D 生成: DreamGaussian / GaussianDreamer</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2309.16653 / 2310.08529</span>
+                <span>📅 2023-09 / 2023-10</span>
+                <span>🏢 上交+NTU / 腾讯+清华</span>
+                <span>🏆 CVPR 2024 (GaussianDreamer)</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Text/Image-to-3D</span>
+                <span class="tag">SDS</span>
+                <span class="tag">Gaussian Splatting</span>
+                <span class="tag">2D+3D Diffusion</span>
+            </div>
+            <p>DreamGaussian: 渐进密度化高斯 + 网格提取 + UV 精调, 2 分钟图生 3D (10× 加速)。GaussianDreamer: 3D 扩散先验初始化 + 2D 扩散精化, 15 分钟文生 3D, CVPR 2024。验证了高斯是 3D 生成的正确表示。</p>
+            <a href="3D-20230928-3D-Generation-Gaussian.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2309.16653" target="_blank">📄 DreamGaussian</a>
+            <a href="https://arxiv.org/abs/2310.08529" target="_blank">📄 GaussianDreamer</a>
+        </div>
+
+        <div class="note-card">
+            <h3>26. 4D / 动态 3D 高斯: 动态场景重建与追踪</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2308.09713 及后续</span>
+                <span>📅 2023-08 ~ 2026</span>
+                <span>📂 Dynamic Scene</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">4D Reconstruction</span>
+                <span class="tag">6-DOF Tracking</span>
+                <span class="tag">Local Rigidity</span>
+                <span class="tag">4D Segmentation</span>
+            </div>
+            <p>Dynamic 3D Gaussians: 高斯随时间移动旋转, 局部刚性约束, 从持久视图合成涌现 6-DOF 追踪 (无需对应/光流输入)。SA4D: 4D 分割框架。DGD: 单目视频语义动态场。4DLangVGGT: 动态场景语言-几何统一。</p>
+            <a href="3D-20230818-4D-Dynamic-Gaussians.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2308.09713" target="_blank">📄 Dynamic 3D Gaussians</a>
+        </div>
+
+    </div>
+
+    <div class="section">
+        <h2>📊 三维重建与生成横向对比表 (2026-06-25)</h2>
+        <h3>方法特性对比</h3>
+        <table>
+            <tr><th>模型/方法</th><th>类型</th><th>前馈</th><th>需要优化</th><th>动态/静态</th><th>输出表示</th><th>场景/物体</th><th>年份</th></tr>
+            <tr><td><strong>3DGS</strong></td><td>重建</td><td>❌</td><td>✅ (~30min)</td><td>静态</td><td>3D 高斯</td><td>场景+物体</td><td>2023</td></tr>
+            <tr><td><strong>GaussianPro</strong></td><td>重建</td><td>❌</td><td>✅</td><td>静态</td><td>3D 高斯</td><td>大规模场景</td><td>2024</td></tr>
+            <tr><td><strong>2DGS / SuGaR</strong></td><td>重建</td><td>❌</td><td>✅</td><td>静态</td><td>2D 高斯/网格</td><td>场景+物体</td><td>2024</td></tr>
+            <tr><td><strong>VGGT</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>点图</td><td>场景+物体</td><td>2025</td></tr>
+            <tr><td><strong>LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>Triplane NeRF</td><td>物体</td><td>2023</td></tr>
+            <tr><td><strong>GS-LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>场景+物体</td><td>2024</td></tr>
+            <tr><td><strong>Long-LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>场景 360°</td><td>2024</td></tr>
+            <tr><td><strong>CRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>Flexicubes 网格</td><td>物体</td><td>2024</td></tr>
+            <tr><td><strong>GRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>物体</td><td>2024</td></tr>
+            <tr><td><strong>TRELLIS</strong></td><td>生成</td><td>✅</td><td>❌</td><td>静态</td><td>SLAT (多格式)</td><td>物体</td><td>2024</td></tr>
+            <tr><td><strong>Hunyuan3D 2.0</strong></td><td>生成</td><td>✅</td><td>❌</td><td>静态</td><td>形状+PBR纹理</td><td>物体</td><td>2025</td></tr>
+            <tr><td><strong>DreamGaussian</strong></td><td>生成</td><td>半 (SDS)</td><td>✅ (~2min)</td><td>静态</td><td>纹理网格</td><td>物体</td><td>2023</td></tr>
+            <tr><td><strong>GaussianDreamer</strong></td><td>生成</td><td>半 (SDS)</td><td>✅ (~15min)</td><td>静态</td><td>3D 高斯</td><td>物体</td><td>2023</td></tr>
+            <tr><td><strong>Instant3D</strong></td><td>生成</td><td>✅</td><td>❌</td><td>静态</td><td>Triplane NeRF</td><td>物体</td><td>2023</td></tr>
+            <tr><td><strong>Dynamic 3D Gaussians</strong></td><td>重建</td><td>❌</td><td>✅</td><td><strong>动态 (4D)</strong></td><td>4D 高斯</td><td>场景</td><td>2023</td></tr>
+            <tr><td><strong>SA4D</strong></td><td>分割</td><td>❌</td><td>✅</td><td><strong>动态 (4D)</strong></td><td>4D 高斯</td><td>场景</td><td>2024</td></tr>
+            <tr><td><strong>4DLangVGGT</strong></td><td>理解</td><td>✅</td><td>❌</td><td><strong>动态 (4D)</strong></td><td>4D 几何+语义</td><td>场景</td><td>2025</td></tr>
+        </table>
+
+        <h3>速度与规模对比</h3>
+        <table>
+            <tr><th>模型</th><th>推理速度</th><th>输入视角数</th><th>输入分辨率</th><th>训练数据规模</th></tr>
+            <tr><td>3DGS</td><td>实时渲染 (训练~30min)</td><td>数十~数百</td><td>原始分辨率</td><td>每场景</td></tr>
+            <tr><td>VGGT</td><td>&lt;1 秒</td><td>1~数百</td><td>≤518px (限制)</td><td>大规模</td></tr>
+            <tr><td>GS-LRM</td><td>0.23 秒</td><td>2~4</td><td>中等</td><td>Objaverse/RE10K</td></tr>
+            <tr><td>Long-LRM</td><td>~1 秒</td><td>32</td><td>960×540</td><td>DL3DV</td></tr>
+            <tr><td>Long-LRM++</td><td>14 FPS 渲染</td><td>32~64</td><td>950×540</td><td>DL3DV</td></tr>
+            <tr><td>CRM</td><td>~10 秒</td><td>1</td><td>单图</td><td>大规模</td></tr>
+            <tr><td>TRELLIS</td><td>秒级</td><td>文本/图像</td><td>-</td><td>500K 物体</td></tr>
+            <tr><td>Hunyuan3D 2.0</td><td>秒级</td><td>文本/图像</td><td>-</td><td>大规模</td></tr>
+            <tr><td>DreamGaussian</td><td>~2 分钟</td><td>1</td><td>单图</td><td>SDS 蒸馏</td></tr>
+            <tr><td>GaussianDreamer</td><td>~15 分钟</td><td>文本</td><td>-</td><td>SDS 蒸馏</td></tr>
+        </table>
+
+        <div class="highlight">
+            <strong>关键发现：</strong>(1) 前馈模型已实现亚秒到秒级重建，速度比优化方法快 100-800×; (2) 3D 生成正从 SDS 优化转向前馈生成; (3) VGGT (CVPR 2025 Best Paper) 统一多任务范式代表 3D 基础模型方向; (4) 4D 动态高斯是下一个前沿; (5) Pi3 作为 VGGT 同类几何基础模型在近期论文中被广泛引用，V2FUN 在 arXiv 上未找到明确的 3D 模型对应。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 三维重建与生成演进时间线 (2023-2026)</h2>
+        <table>
+            <tr><th>时间</th><th>模型</th><th>里程碑</th><th>类型</th></tr>
+            <tr><td>2023-08</td><td>3DGS</td><td>实时新视角合成, 显式高斯表示</td><td>重建</td></tr>
+            <tr><td>2023-08</td><td>Dynamic 3D Gaussians</td><td>4D 重建 + 6-DOF 追踪</td><td>动态</td></tr>
+            <tr><td>2023-09</td><td>DreamGaussian</td><td>2 分钟图生 3D, 高斯+SDS</td><td>生成</td></tr>
+            <tr><td>2023-10</td><td>GaussianDreamer</td><td>2D+3D 扩散桥接, CVPR 2024</td><td>生成</td></tr>
+            <tr><td>2023-11</td><td>Instant3D / DMV3D</td><td>多视角扩散 + 前馈重建</td><td>生成</td></tr>
+            <tr><td>2024-02</td><td>GaussianPro</td><td>MVS 启发渐进传播密度化</td><td>重建</td></tr>
+            <tr><td>2024-03</td><td>CRM / GRM</td><td>卷积重建 / 像素对齐高斯</td><td>重建</td></tr>
+            <tr><td>2024-04</td><td>GS-LRM</td><td>每像素高斯, 场景级, 0.23s</td><td>重建</td></tr>
+            <tr><td>2024-10</td><td>Long-LRM</td><td>32 视角 360°, Mamba2+Transformer</td><td>重建</td></tr>
+            <tr><td>2024-12</td><td>TRELLIS</td><td>SLAT 统一表示, 多格式输出</td><td>生成</td></tr>
+            <tr><td>2025-01</td><td>Hunyuan3D 2.0</td><td>DiT+Paint, 开源 3D 大模型</td><td>生成</td></tr>
+            <tr><td>2025-03</td><td>VGGT</td><td>CVPR 2025 Best Paper, 多任务统一</td><td>重建</td></tr>
+            <tr><td>2025-06</td><td>Hunyuan3D 2.1</td><td>PBR 材质, 生产就绪</td><td>生成</td></tr>
+            <tr><td>2025-09</td><td>Hunyuan3D-Omni</td><td>多模态控制 (点云/骨骼等)</td><td>生成</td></tr>
+            <tr><td>2025-12</td><td>Long-LRM++</td><td>半显式表示, 14 FPS 实时, CVPRF 2026</td><td>重建</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
         <h2>💡 总结与思考（更新 2026-06-25）</h2>
         <ul>
             <li><strong>开源超越闭源：</strong>截至 2026-06-25，Cosmos 3 Super 在 R-Bench 和 Artificial Analysis 上已超越 Veo 3.1 和 Gemini 3 Pro，开源生态从追赶者变为引领者</li>
@@ -704,13 +915,16 @@
             <li><strong>闭源独特价值：</strong>Sora 2 Characters 社交、Veo 3.1 4K + Gemini 集成、Kling Motion Brush 产品化、Runway 叙事一致性——各有不可替代的产品化优势</li>
             <li><strong>RL 后训练趋势：</strong>从 Wan-R1 推理到 Kandinsky 5 人类偏好对齐再到 World-R1 几何一致性，RL 后训练在视频生成中的角色与 LLM 领域一致</li>
             <li><strong>未来方向：</strong>(1) 高分辨率实时交互 (Wan-Streamer 192p → 更高); (2) 视频推理拓展到自然场景 (Wan-R1); (3) 全模态统一 (Cosmos 3 MoT); (4) 物理世界模拟 (Sora/Veo/Cosmos 3 共同方向)</li>
+            <li><strong>三维重建前馈化：</strong>从 3DGS 的 30 分钟优化到 VGGT/GS-LRM 的亚秒级前馈重建，Long-LRM++ 达到 14 FPS 实时渲染。VGGT (CVPR 2025 Best Paper) 统一多任务范式标志着 3D 基础模型方向。</li>
+            <li><strong>3D 生成从 SDS 到前馈：</strong>DreamGaussian/GaussianDreamer (2023, SDS 路线) → TRELLIS/Hunyuan3D (2024-2025, 前馈生成)。TRELLIS 的 SLAT 多格式表示和 Hunyuan3D 的 PBR 材质支持使 3D 生成走向生产。</li>
+            <li><strong>4D 动态高斯是下一个前沿：</strong>Dynamic 3D Gaussians 实现从渲染涌现追踪，4DLangVGGT 融合语言-几何。前馈 4D 重建是重要研究机会。</li>
         </ul>
     </div>
 
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-06-25 · 领域: CV/AI/Video Generation · 涵盖 19 篇笔记 + 业界全景对比
+    📝 调研索引 · 更新于 2026-06-25 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation · 涵盖 26 篇笔记 + 3D 方向横向对比表
 </div>
 
 </body>
