@@ -400,14 +400,50 @@
     </div>
 
     <div class="section">
-        <h2>🖼️ 算法框图</h2>
-        <p><em>注: PDF 图片提取因网络限制暂未完成, 架构图请参考论文原文 Figure 2-4</em></p>
-        <p>Cosmos 3 的核心架构可概括为以下流程:</p>
+        <h2>🖼️ 算法框图与架构详解</h2>
+        <p><em>注: arxiv PDF 下载因网络中断导致文件截断, 图片提取失败。架构图请参考论文原文 Figure 2-4, 或访问 <a href="https://research.nvidia.com/labs/cosmos-lab/cosmos3/" target="_blank" style="color: var(--accent);">项目主页</a> 查看交互式示例。</em></p>
+
+        <h3>Figure 2: 整体架构概览</h3>
+        <div class="highlight">
+            <strong>架构流水线:</strong>
+            <ul>
+                <li><strong>Step 1 — 多模态编码:</strong> 文本→LLM tokenizer (Qwen3-VL 词表), 图像/视频(理解)→ViT 16×16 patch + 2×2 merge → 32×32 空间压缩, 图像/视频(生成)→Wan2.2 视频 VAE (时间4× / 空间32×32), 音频→Audio VAE (48kHz → 25 token/s), 动作→Domain-aware 线性投影 (按 embodiment 维度)</li>
+                <li><strong>Step 2 — Token 排列:</strong> AR token (语言 + 视觉理解) 在前 → <code>&lt;EOS&gt;</code> 结束 AR 序列 → <code>&lt;BOG&gt;</code> 开始 DM 序列 → DM clean 条件 token → DM noisy 生成 token → 模态顺序: 视觉 → 音频 → 动作</li>
+                <li><strong>Step 3 — 双塔 MoT 处理:</strong> Reasoner 塔 (因果自注意力, 只看前方) + Generator 塔 (全双向注意力, 可见 AR + DM), 共享注意力层但独立 LayerNorm/MLP/投影矩阵</li>
+                <li><strong>Step 4 — 输出解码:</strong> AR→文本 token 自回归生成; DM→Flow Matching 速度场预测 → 积分去噪 → VAE 解码 → 视觉/音频/动作输出</li>
+            </ul>
+        </div>
+
+        <h3>Figure 3: Mixture-of-Transformers (MoT) 双塔结构</h3>
+        <div class="highlight">
+            <strong>双塔信息流:</strong>
+            <ul>
+                <li><strong>Reasoner 塔 (AR):</strong> 处理语言 token + ViT 编码的视觉 token, 使用因果掩码 (causal mask), 只能看到前面的 token。从预训练 VLM (Qwen3-VL) 权重初始化。输出: 文本回复、2D grounding 坐标、动作轨迹预测</li>
+                <li><strong>Generator 塔 (DM):</strong> 处理 VAE 编码的视觉/音频/动作 token (加噪), 使用全双向注意力 (可见 AR + DM 所有 token)。同样从 VLM 权重初始化。输出: Flow Matching 速度场 → 去噪生成</li>
+                <li><strong>关键约束:</strong> AR token 永远不会被 DM token 更新 (因果掩码保证梯度隔离), 但 DM token 可以自由注意到 AR 的文本提示, 实现条件生成</li>
+                <li><strong>共享 vs 独立:</strong> Self-Attention 层共享 (同一矩阵), 但 LayerNorm、MLP、Input/Output 投影矩阵独立, 两塔有不同的学习动态</li>
+            </ul>
+        </div>
+
+        <h3>Figure 4: 统一动作表示与多 Embodiment 映射</h3>
+        <div class="highlight">
+            <strong>动作统一编码:</strong> 所有 embodiment 的动作都映射为 ego pose (9D) + effector pose (9D) + grasp state 的组合, 使用 SE(3) 6D 旋转表示 (Zhou et al. 2019)。不同 embodiment 使用独立的输入/输出投影矩阵, 但共享 MoT 主干。
+            <ul>
+                <li>相机运动 (9D): 仅 ego pose [R(6D) + t(3D)]</li>
+                <li>自动驾驶 (9D): 仅 ego pose [R(6D) + t(3D)]</li>
+                <li>自我中心运动 (57D): ego(9D) + 双腕 effector(9D×2) + 指尖 grasp(15D×2)</li>
+                <li>单臂机器人 (10D): ego(9D) + gripper open/close(1D)</li>
+                <li>双臂机器人 (20D): 单臂 × 2</li>
+                <li>人形机器人 (29D): ego(9D) + 双臂(9D+1D)×2</li>
+            </ul>
+        </div>
+
+        <h3>3D 多维旋转位置嵌入 (mRoPE) 详解</h3>
+        <p>Cosmos 3 扩展 Qwen3-VL 的 3D MRoPE, 增加<strong>绝对时间索引</strong>来对齐不同模态的时间轴:</p>
         <ul>
-            <li><strong>输入编码:</strong> 文本→LLM tokenizer, 图像/视频→ViT(理解)或Wan2.2 VAE(生成), 音频→Audio VAE, 动作→Domain-aware 线性投影</li>
-            <li><strong>序列排列:</strong> AR token (语言+视觉理解) 在前 → DM token (视觉/音频/动作生成) 在后, 中间用 &lt;BOG&gt; 分隔</li>
-            <li><strong>双塔 MoT:</strong> Reasoner 塔(因果注意力) + Generator 塔(双向注意力), 共享注意力层但独立 LayerNorm/MLP/投影</li>
-            <li><strong>输出解码:</strong> AR→文本生成, DM→Flow Matching 去噪→VAE 解码→视觉/音频/动作输出</li>
+            <li>原始 MRoPE: temporal 分量只记录 token 离散索引 (第 1 帧、第 2 帧...), 无法处理视频 24FPS + 音频 25 token/s + 动作 10Hz 的不同帧率</li>
+            <li>Cosmos 3 mRoPE: 所有模态对齐到同一物理时间轴 (秒), 例如 t=2.5s 时, 视频对应第 60 帧, 音频对应第 62 个 token, 动作对应第 25 步</li>
+            <li>位置编码维度分配: temporal (时间) + spatial_h (空间行) + spatial_w (空间列), 每个维度独立旋转</li>
         </ul>
     </div>
 
@@ -451,27 +487,46 @@
     </div>
 
     <div class="section">
-        <h2>🏋️ 训练策略</h2>
-        <h3>预训练阶段</h3>
+        <h2>🏋️ 训练策略（深入）</h2>
+        <h3>阶段 1: 预训练 — 大规模多模态学习</h3>
         <ul>
-            <li><strong>主干初始化:</strong> Reasoner 和 Generator 塔均从预训练 VLM (Qwen3-VL 系列) 权重初始化, 继承语言和视觉推理能力</li>
-            <li><strong>渐进式训练:</strong> 从低分辨率(256p)到高分辨率(720p), 从短视频(5帧)到长视频(300帧)</li>
-            <li><strong>多模态逐步加入:</strong> 文本+图像 → 视频 → 音频 → 动作</li>
-            <li><strong>Flow Matching:</strong> DM 子序列使用 Rectified Flow Matching 进行训练, 从噪声到数据的连续时间生成</li>
+            <li><strong>主干初始化:</strong> Reasoner 和 Generator 塔均从预训练 VLM (Qwen3-VL 系列) 权重初始化, 继承语言和视觉推理能力。这是关键设计 — 让生成塔也能"理解"文本语义</li>
+            <li><strong>渐进式训练:</strong> 从低分辨率(256p)到高分辨率(720p), 从短视频(5帧)到长视频(300帧), 逐步增加上下文窗口</li>
+            <li><strong>多模态逐步加入:</strong> 文本+图像 → 视频 → 音频 → 动作, 每个阶段引入新模态时使用较小的学习率</li>
+            <li><strong>Flow Matching:</strong> DM 子序列使用 Rectified Flow Matching 进行训练, 从噪声到数据的连续时间生成, 训练时 t ~ U[0,1]</li>
+            <li><strong>数据配比:</strong> 图像和视频按一定比例混合训练, 确保图像生成质量不退化; 动作数据与视觉数据按 embodiment 类型分组训练</li>
         </ul>
-        <h3>后训练阶段</h3>
+        <h3>阶段 2: 后训练 — 任务对齐与能力强化</h3>
         <ul>
-            <li><strong>SFT (监督微调):</strong> 针对特定任务(T2I, I2V, Policy 等)使用高质量标注数据进行微调</li>
-            <li><strong>RL (强化学习):</strong> 使用 RLHF/RLAIF 对 Reasoner 进行对齐, 提升推理质量和安全性</li>
-            <li><strong>合成数据增强:</strong> 五类 SDG 数据集在后训练阶段注入, 显著提升 Physical AI 能力</li>
-            <li><strong>能力解耦:</strong> 通过选择性激活路径实现 Reasoner(理解)和 Generator(生成)的独立部署</li>
+            <li><strong>SFT (监督微调):</strong> 针对特定任务(T2I, I2V, Policy 等)使用高质量标注数据进行微调, 包括美学评分数据、机器人示教数据、驾驶场景数据</li>
+            <li><strong>RL (强化学习):</strong> 使用 RLHF/RLAIF 对 Reasoner 进行对齐, 提升推理质量和安全性; 对 Generator 使用人类偏好反馈优化生成质量</li>
+            <li><strong>合成数据增强 (SDG):</strong> 五类 SDG 数据集在后训练阶段注入, 消融实验证明对 Physical AI 能力有显著贡献:
+                <ul>
+                    <li><strong>PhyxSim:</strong> 物理交互场景 (拼图、堆叠、倒水等)</li>
+                    <li><strong>RobotSim:</strong> 机器人操作仿真 (DROID 风格任务)</li>
+                    <li><strong>DriveSim:</strong> 自动驾驶多场景仿真</li>
+                    <li><strong>SynHuman:</strong> 人类日常活动场景</li>
+                    <li><strong>Warehouse:</strong> 仓储物流场景</li>
+                </ul>
+            </li>
+            <li><strong>能力解耦:</strong> 通过选择性激活路径实现 Reasoner(理解)和 Generator(生成)的独立部署, 支持 vLLM 和 vLLM-Omni 两种推理模式</li>
         </ul>
         <h3>训练基础设施</h3>
         <ul>
             <li>NVIDIA DGX 集群, 大规模 GPU 并行训练</li>
             <li>支持 Tensor Parallelism + Sequence Parallelism (Ulysses)</li>
-            <li>BF16 混合精度训练</li>
+            <li>BF16 混合精度训练, 梯度检查点 (gradient checkpointing) 降低显存</li>
+            <li>预计训练规模: 数万 GPU·时, 与 Llama 3 / Qwen3 等大模型训练量级相当</li>
         </ul>
+        <div class="highlight">
+            <strong>消融实验关键发现 (论文 Appendix E):</strong>
+            <ul>
+                <li>Reasoner 对 Generator 的增益: 共享主干训练的理解能力显著提升生成质量 (Appendix E.1)</li>
+                <li>多动作模式协同: Forward Dynamics / Policy / Inverse Dynamics 三种动作模式联合训练有正向迁移效应 (Appendix E.4)</li>
+                <li>视频-动作一致性: 生成视频中的动作轨迹与真实轨迹高度一致 (Appendix E.5)</li>
+                <li>Cosmos3-Edge: 轻量模型可通过蒸馏从大模型获得, 性能接近但显存大幅降低 (Appendix D)</li>
+            </ul>
+        </div>
     </div>
 
     <div class="section">
@@ -490,34 +545,44 @@
     </div>
 
     <div class="section">
-        <h2>🔬 损失函数</h2>
-        <h3>AR 子序列 (Reasoner)</h3>
+        <h2>🔬 损失函数（深入）</h2>
+        <h3>AR 子序列 (Reasoner) — 自回归语言建模</h3>
         <ul>
-            <li><strong>标准语言建模损失:</strong> <code>L_AR = -Σ log P(x_t | x_{&lt;t})</code>, 对语言和视觉理解 token 使用标准交叉熵</li>
+            <li><strong>标准语言建模损失:</strong> <code>L_AR = -Σ log P(x_t | x_{<t})</code>, 对语言和视觉理解 token 使用标准交叉熵</li>
             <li><strong>视觉 token:</strong> ViT 编码的视觉特征也参与 AR 损失, 但使用蒸馏目标(与教师模型对齐)</li>
+            <li><strong>动作策略损失:</strong> 当 AR 子序列包含动作 token 时, 使用行为克隆损失 <code>L_policy = -Σ log π(a_t | s_{<t})</code>, 其中 s 是视觉+文本观察</li>
         </ul>
-        <h3>DM 子序列 (Generator)</h3>
+        <h3>DM 子序列 (Generator) — Flow Matching</h3>
         <ul>
-            <li><strong>Flow Matching 损失:</strong> <code>L_FM = E_{t,x0,ε} ||v_θ(x_t, t, c) - (x1 - x0)||²</code>, 其中 v_θ 是模型预测的速度场, x_t 是插值样本, c 是条件(AR token)</li>
-            <li><strong>条件注入:</strong> AR token 作为条件通过交叉注意力(共享注意力层)注入 DM token, 无需额外编码器</li>
-            <li><strong>CFG (Classifier-Free Guidance):</strong> 训练时随机丢弃条件(10% 概率), 推理时使用正负 CFG 分支并行加速</li>
+            <li><strong>Rectified Flow Matching 损失:</strong> <code>L_FM = E_{t,x0,ε} ||v_θ(x_t, t, c) - (x1 - x0)||²</code></li>
+            <li><code>v_θ</code> 是模型预测的速度场 (velocity field), 参数化为 MoT 的 Generator 塔</li>
+            <li><code>x_t = (1-t)·x0 + t·x1</code>, t ∈ [0,1], x0 ~ N(0,I) 是高斯噪声, x1 是真实数据 (VAE 编码后的潜在表示)</li>
+            <li><code>c</code> 是条件 (AR token 的输出), 通过共享注意力层注入 DM token — 无需额外交叉注意力编码器</li>
+            <li><strong>Rectified Flow 优势:</strong> 相比标准 DDPM, 推理时可用更少步数 (10-30 步) 生成高质量结果, 且训练更稳定</li>
+        </ul>
+        <h3>CFG (Classifier-Free Guidance)</h3>
+        <ul>
+            <li><strong>训练时:</strong> 随机丢弃条件 (10% 概率将 AR 条件置为零), 学习无条件分布</li>
+            <li><strong>推理时:</strong> 使用正负 CFG 分支并行加速: <code>v_guided = v_uncond + s·(v_cond - v_uncond)</code>, s 为引导尺度</li>
+            <li><strong>vLLM-Omni 实现:</strong> 支持 <code>--cfg-parallel-size 2</code> 在 2 个 GPU 上并行运行正负 CFG 分支</li>
         </ul>
         <h3>联合训练</h3>
         <ul>
             <li><strong>总损失:</strong> <code>L_total = λ_AR · L_AR + λ_DM · L_FM</code>, 两个损失同时反向传播</li>
-            <li><strong>梯度隔离:</strong> AR token 永远不被 DM token 更新(因果掩码保证), 但 DM token 可以自由注意到 AR 的文本提示</li>
-            <li><strong>动作损失:</strong> 动作 token 同时参与 AR(策略)和 DM(动力学)损失, 实现双向约束</li>
+            <li><strong>梯度隔离:</strong> AR token 永远不被 DM token 更新 (因果掩码保证), 但 DM token 可以自由注意到 AR 的文本提示</li>
+            <li><strong>动作双向约束:</strong> 动作 token 同时参与 AR (策略: 观察→动作) 和 DM (动力学: 观察+动作→未来视觉) 损失, 实现双向约束</li>
+            <li><strong>多任务权重调度:</strong> λ_AR 和 λ_DM 在不同训练阶段动态调整, 预训练阶段以 AR 为主, 后训练阶段增加 DM 权重</li>
         </ul>
     </div>
 
     <div class="section">
-        <h2>🔄 技术路线对比与演进</h2>
+        <h2>🔄 技术路线对比与演进（深入）</h2>
         <h3>Cosmos 系列演进</h3>
         <table>
-            <tr><th>版本</th><th>核心能力</th><th>架构</th><th>关键突破</th></tr>
-            <tr><td>Cosmos 1</td><td>世界模型基础</td><td>DiT</td><td>首次提出 Physical AI 概念</td></tr>
-            <tr><td>Cosmos 2</td><td>多模态扩展</td><td>DiT + VLM</td><td>增加动作建模能力</td></tr>
-            <tr><td><strong>Cosmos 3</strong></td><td>全模态统一</td><td><strong>MoT (双塔)</strong></td><td><strong>AR+DM 统一, 理解+生成联合训练</strong></td></tr>
+            <tr><th>版本</th><th>核心能力</th><th>架构</th><th>关键突破</th><th>时间</th></tr>
+            <tr><td>Cosmos 1</td><td>世界模型基础</td><td>DiT</td><td>首次提出 Physical AI 概念, 世界基础模型</td><td>2025-01</td></tr>
+            <tr><td>Cosmos 2</td><td>多模态扩展</td><td>DiT + VLM</td><td>增加动作建模能力, 改进生成质量</td><td>2025-06</td></tr>
+            <tr><td><strong>Cosmos 3</strong></td><td>全模态统一</td><td><strong>MoT (双塔)</strong></td><td><strong>AR+DM 统一, 理解+生成联合训练, 5 类 SDG</strong></td><td><strong>2026-06</strong></td></tr>
         </table>
         <h3>与竞品对比</h3>
         <table>
@@ -528,10 +593,32 @@
             <tr><td>开源</td><td>✅ 完全开源</td><td>❌ 闭源</td><td>❌ 闭源</td><td>✅ 开源</td></tr>
             <tr><td>音频生成</td><td>✅ 同步</td><td>✅</td><td>❌</td><td>❌</td></tr>
             <tr><td>Physical AI</td><td>✅ 核心定位</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td>Reasoner 排名</td><td>开源 #1 (Robotics/Smart/Driving)</td><td>未评测</td><td>General #1</td><td>N/A</td></tr>
+            <tr><td>Generator 排名</td><td>开源 #1 (T2I/I2V)</td><td>N/A</td><td>T2I #2</td><td>I2V #3</td></tr>
+        </table>
+        <h3>NVIDIA Physical AI 生态</h3>
+        <table>
+            <tr><th>组件</th><th>说明</th></tr>
+            <tr><td>Cosmos 3 模型</td><td>核心世界模型 (Nano 16B / Super 64B)</td></tr>
+            <tr><td>Cosmos Framework</td><td>后训练微调 recipe + 评估工具</td></tr>
+            <tr><td>SDG 数据集</td><td>5 类合成数据 (PhyxSim/RobotSim/DriveSim/SynHuman/Warehouse)</td></tr>
+            <tr><td>Cosmos-HUE 评测</td><td>人形机器人评测基准</td></tr>
+            <tr><td>vLLM-Omni</td><td>生产推理引擎 (Generator, TP/CFG/Ulysses)</td></tr>
+            <tr><td>NIM 微服务</td><td>Reasoner 部署服务</td></tr>
+            <tr><td>Omniverse 集成</td><td>仿真环境数据生成</td></tr>
         </table>
         <div class="highlight">
-            <strong>定位独特性:</strong>Cosmos 3 是目前唯一将"理解-生成-动作-模拟"四合一的开源模型, 其他竞品要么只做理解(GPT/Gemini), 要么只做生成(Wan), 没有打通 Physical AI 的完整闭环。
+            <strong>定位独特性:</strong>Cosmos 3 是目前唯一将"理解-生成-动作-模拟"四合一的开源模型, 其他竞品要么只做理解 (GPT/Gemini), 要么只做生成 (Wan), 没有打通 Physical AI 的完整闭环。其核心优势在于: ① 动作作为一等公民, 连接视觉帧的因果变量; ② 双塔 MoT 统一理解和生成; ③ 5 类 SDG 数据增强 Physical AI 能力; ④ 推理+生成联合 pipeline ("Plan first, then bring it to life")。
         </div>
+        <h3>Cosmos 3 vs 传统机器人方案</h3>
+        <table>
+            <tr><th>维度</th><th>Cosmos 3</th><th>传统机器人方案</th></tr>
+            <tr><td>架构</td><td>统一世界模型</td><td>感知、规划、控制分立模块</td></tr>
+            <tr><td>训练数据</td><td>自然 + 合成 (SDG)</td><td>主要为真实示教数据</td></tr>
+            <tr><td>泛化能力</td><td>跨 embodiment 共享主干</td><td>每个 embodiment 独立训练</td></tr>
+            <tr><td>模拟</td><td>Forward Dynamics rollout</td><td>物理引擎 (MuJoCo 等)</td></tr>
+            <tr><td>推理+生成</td><td>联合 pipeline</td><td>分离的规划+执行</td></tr>
+        </table>
     </div>
 
     <div class="section">

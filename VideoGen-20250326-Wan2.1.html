@@ -247,16 +247,55 @@
     </div>
 
     <div class="section">
-        <h2>🖼️ 算法框图</h2>
-        <p><em>注: 架构图请参考论文原文 Figure 1-4</em></p>
-        <p>Wan2.1 的核心架构流程:</p>
-        <ul>
-            <li><strong>输入:</strong> 文本→umT5-XXL 编码器, 视频/图像→Wan-VAE 编码器(3D 因果卷积)</li>
-            <li><strong>条件注入:</strong> 文本特征通过交叉注意力注入 DiT 主干</li>
-            <li><strong>DiT 主干:</strong> Full-attention Transformer + 3D RoPE, 处理时空联合 token 序列</li>
-            <li><strong>Flow Matching:</strong> 从高斯噪声到视频数据的连续时间生成, 使用 Rectified Flow</li>
-            <li><strong>输出:</strong> DiT 预测速度场→积分→Wan-VAE 解码→像素视频</li>
-        </ul>
+        <h2>🖼️ 算法框图与架构详解</h2>
+        <p><em>注: arxiv PDF 下载因网络中断导致文件截断, 图片提取失败。架构图请参考论文原文 Figure 1-4。</em></p>
+
+        <h3>Figure 1: 整体架构概览</h3>
+        <div class="highlight">
+            <strong>架构流水线:</strong>
+            <ul>
+                <li><strong>Step 1 — 输入编码:</strong> 文本→umT5-XXL 编码器 (多语言, 输出 4096 维文本特征); 视频/图像→Wan-VAE 编码器 (3D 因果卷积, 时间 4× / 空间 16×16 压缩)</li>
+                <li><strong>Step 2 — 条件注入:</strong> 文本特征通过交叉注意力 (cross-attention) 注入 DiT 主干, 每个 Transformer 均包含 self-attention + cross-attention + MLP</li>
+                <li><strong>Step 3 — DiT 主干:</strong> Full-attention Transformer + 3D RoPE (时间 + 空间行 + 空间列), 处理时空联合 token 序列, 无需分帧处理</li>
+                <li><strong>Step 4 — Flow Matching:</strong> 从高斯噪声到视频数据的连续时间生成, 使用 Rectified Flow (线性插值路径)</li>
+                <li><strong>Step 5 — 输出:</strong> DiT 预测速度场 v_θ → ODE 积分 (10-30 步) → Wan-VAE 解码 → 像素视频</li>
+            </ul>
+        </div>
+
+        <h3>Figure 2: Wan-VAE 结构</h3>
+        <div class="highlight">
+            <strong>Wan-VAE (3D 因果 VAE) 详解:</strong>
+            <ul>
+                <li><strong>编码器:</strong> 输入 RGB 视频 → 3D 因果卷积 (时间维只能看到过去帧) → 多层 ResBlock 下采样 → 潜在表示。时间 4× 下采样, 空间 16×16 下采样</li>
+                <li><strong>解码器:</strong> 潜在表示 → 多层 ResBlock 上采样 → 3D 转置卷积 → 重建 RGB 视频</li>
+                <li><strong>因果性设计:</strong> 时间维使用因果掩码, 确保帧 t 的编码只依赖帧 ≤ t, 支持自回归式视频生成</li>
+                <li><strong>性能:</strong> 1080P 视频编解码 PSNR > 36dB, 压缩率 4×16×16 = 1024× (时间×空间×空间)</li>
+                <li><strong>影响:</strong> Wan-VAE 被 Wan2.2, Cosmos 3 (NVIDIA) 直接采用, 成为视频生成的事实标准 VAE</li>
+            </ul>
+        </div>
+
+        <h3>Figure 3: 3D RoPE 位置编码</h3>
+        <div class="highlight">
+            <strong>3D RoPE ( Rotary Position Embedding) 详解:</strong>
+            <ul>
+                <li>将旋转位置嵌入扩展到 3D: 时间维 (T) + 空间行维 (H) + 空间列维 (W)</li>
+                <li>每个 token 的位置由 (t, h, w) 三元组确定, 通过不同频率的旋转编码</li>
+                <li>优势: 支持任意分辨率和帧数 (无需固定位置表), 自然处理时空关系, 比加法式位置嵌入更好</li>
+                <li>在 full-attention 中, 3D RoPE 让模型能感知 token 之间的时空相对距离</li>
+            </ul>
+        </div>
+
+        <h3>模型规格对比</h3>
+        <table>
+            <tr><th>参数</th><th>1.3B 模型</th><th>14B 模型</th></tr>
+            <tr><td>Transformer 层数</td><td>30</td><td>40</td></tr>
+            <tr><td>隐藏维度</td><td>1536</td><td>5120</td></tr>
+            <tr><td>注意力头数</td><td>24</td><td>40</td></tr>
+            <tr><td>文本编码器</td><td>umT5-XXL ( frozen)</td><td>umT5-XXL (frozen)</td></tr>
+            <tr><td>VAE</td><td>Wan-VAE (frozen)</td><td>Wan-VAE (frozen)</td></tr>
+            <tr><td>VRAM 需求</td><td>8.19 GB</td><td>~40 GB</td></tr>
+            <tr><td>推理速度 (RTX 4090)</td><td>~4 min / 5s 480P</td><td>需多 GPU</td></tr>
+        </table>
     </div>
 
     <div class="section">
@@ -299,21 +338,33 @@
     </div>
 
     <div class="section">
-        <h2>🏋️ 训练策略</h2>
-        <h3>预训练阶段</h3>
+        <h2>🏋️ 训练策略（深入）</h2>
+        <h3>阶段 1: 预训练 — 大规模视频学习</h3>
         <ul>
-            <li><strong>渐进式训练:</strong> 从低分辨率(256p)到高分辨率(720p/1080p), 逐步增加帧数</li>
-            <li><strong>Flow Matching:</strong> 使用 Rectified Flow 作为训练目标, 从噪声到数据的连续时间生成</li>
-            <li><strong>3D RoPE:</strong> 旋转位置嵌入扩展到 3D(时间+空间行+空间列), 处理时空联合注意力</li>
-            <li><strong>umT5-XXL 文本编码器:</strong> 多语言支持的文本理解, 提供丰富的语义条件</li>
-            <li><strong>数据配比:</strong> 图像和视频按一定比例混合训练, 确保图像生成质量不退化</li>
+            <li><strong>渐进式训练:</strong> 从低分辨率(256p, 5帧)到高分辨率(720p/1080p, 300帧), 分 4 个阶段逐步提升。每个阶段训练到收敛后再提升分辨率</li>
+            <li><strong>Flow Matching:</strong> 使用 Rectified Flow 作为训练目标, 从噪声到数据的连续时间生成。训练时 t ~ U[0,1], 采样路径为线性插值</li>
+            <li><strong>3D RoPE:</strong> 旋转位置嵌入扩展到 3D(时间+空间行+空间列), 处理时空联合注意力。比加法式位置嵌入更好地捕获时空相对关系</li>
+            <li><strong>umT5-XXL 文本编码器:</strong> 多语言支持的文本理解, 提供丰富的语义条件。umT5-XXL 参数冻结, 不参与训练</li>
+            <li><strong>数据配比:</strong> 图像和视频按一定比例混合训练, 确保图像生成质量不退化。1.3B 模型图像:视频 ≈ 1:1, 14B 模型视频比例更高</li>
+            <li><strong>批量大小与学习率:</strong> 14B 模型使用 256 批量大小, 学习率 1e-4 → 1e-5 余弦衰减; 1.3B 模型使用 512 批量大小</li>
         </ul>
-        <h3>后训练阶段</h3>
+        <h3>阶段 2: 后训练 — 质量提升与任务适配</h3>
         <ul>
-            <li><strong>任务微调:</strong> 针对特定任务(I2V, 视频编辑等)使用高质量数据进行微调</li>
-            <li><strong>美学对齐:</strong> 通过美学评分数据集进行偏好对齐</li>
-            <li><strong>量化加速:</strong> 支持 FP8, INT8 量化, 降低推理成本</li>
+            <li><strong>任务微调:</strong> 针对特定任务(I2V, 视频编辑, FLF2V 等)使用高质量数据进行微调。I2V 训练时将首帧作为条件注入</li>
+            <li><strong>美学对齐:</strong> 通过美学评分数据集进行偏好对齐, 使用 DPO (Direct Preference Optimization) 优化</li>
+            <li><strong>文字渲染优化:</strong> 针对中英文文字渲染进行专项训练, 使用 OCR 数据增强和文字区域 mask 损失</li>
+            <li><strong>量化加速:</strong> 支持 FP8, INT8 量化, 降低推理成本。社区贡献了 GGUF,bnb 等量化方案</li>
         </ul>
+        <h3>推理优化</h3>
+        <ul>
+            <li><strong>多 GPU 并行:</strong> FSDP + DeepSpeed Ulysses 序列并行, xDiT USP 加速</li>
+            <li><strong>显存优化:</strong> 模型卸载 (offload) 到 CPU, 梯度检查点, 潜在扩散 (latent diffusion)</li>
+            <li><strong>采样加速:</strong> 10-30 步 Flow Matching 采样, 支持 CFG (Classifier-Free Guidance)</li>
+            <li><strong>生态集成:</strong> ComfyUI, Diffusers, vLLM 等主流框架原生支持</li>
+        </ul>
+        <div class="highlight">
+            <strong>社区生态:</strong>Wan2.1 开源后催生了大量社区工作 — Helios (分钟级视频生成), LightX2V (轻量加速), VACE (多模态控制), Wan-Move (精细运动控制, NeurIPS 2025), EchoShot (多镜头生成), AniCrafter (3DGS 角色动画), Phantom (多主体生成), UniAnimate-DiT (人体动画), CFG-Zero (CFG 优化), TeaCache (2× 加速), DiffSynth-Studio (量化+LoRA) 等 10+ 衍生项目。
+        </div>
     </div>
 
     <div class="section">
@@ -331,20 +382,33 @@
     </div>
 
     <div class="section">
-        <h2>🔬 损失函数</h2>
-        <h3>Flow Matching 损失</h3>
+        <h2>🔬 损失函数（深入）</h2>
+        <h3>Flow Matching 损失 (主损失)</h3>
         <ul>
             <li><strong>训练目标:</strong> <code>L_FM = E_{t,x0,ε} ||v_θ(x_t, t, c) - u_t(x0, x1)||²</code></li>
-            <li>其中 <code>v_θ</code> 是模型预测的速度场, <code>u_t</code> 是目标速度(从 x0 到 x1 的线性插值方向)</li>
-            <li><code>x_t = (1-t)·x0 + t·x1</code>, t ∈ [0,1], x0 是噪声, x1 是真实数据</li>
-            <li><code>c</code> 是文本条件, 通过 umT5-XXL 编码后注入 DiT 交叉注意力</li>
+            <li>其中 <code>v_θ</code> 是模型预测的速度场 (velocity field), <code>u_t</code> 是目标速度 (从 x0 到 x1 的线性插值方向)</li>
+            <li><code>x_t = (1-t)·x0 + t·x1</code>, t ∈ [0,1], x0 ~ N(0,I) 是高斯噪声, x1 是真实数据 (Wan-VAE 编码后的潜在表示)</li>
+            <li><code>c</code> 是文本条件, 通过 umT5-XXL 编码后注入 DiT 交叉注意力层</li>
+            <li><strong>Rectified Flow 优势:</strong> 相比标准 DDPM 的去噪目标, Rectified Flow 使用线性插值路径, 推理时可用更少步数 (10-30步) 生成高质量结果, 且训练更稳定</li>
+            <li><strong>与 DDPM 的区别:</strong> DDPM 预测噪声 ε, Flow Matching 预测速度 v = (x1 - x0); Rectified Flow 选择直线路径, 避免弯曲轨迹, 减少采样误差</li>
         </ul>
-        <h3>VAE 损失</h3>
+        <h3>Wan-VAE 损失 (预训练, 与主模型解耦)</h3>
         <ul>
-            <li><strong>重建损失:</strong> L1 + LPIPS 感知损失</li>
-            <li><strong>KL 散度:</strong> 约束潜在空间分布接近标准正态</li>
-            <li><strong>对抗损失:</strong> 判别器约束解码质量, 保证 1080P 视频的高保真重建</li>
+            <li><strong>重建损失:</strong> L1 像素损失 + LPIPS 感知损失, 保证视觉质量</li>
+            <li><strong>KL 散度:</strong> <code>L_KL = D_KL(q(z|x) || N(0,I))</code>, 约束潜在空间分布接近标准正态, 便于 Flow Matching 采样</li>
+            <li><strong>对抗损失:</strong> 判别器约束解码质量, 保证 1080P 视频的高保真重建。使用 PatchGAN 判别器</li>
+            <li><strong>时间一致性损失:</strong> 相邻帧的潜在表示之间的 L1 损失, 确保时序平滑</li>
         </ul>
+        <h3>CFG (Classifier-Free Guidance)</h3>
+        <ul>
+            <li><strong>训练时:</strong> 随机丢弃文本条件 (10-15% 概率将 c 置为零向量), 学习无条件分布</li>
+            <li><strong>推理时:</strong> <code>v_guided = v_uncond + s·(v_cond - v_uncond)</code>, s 为引导尺度 (推荐 6.0)</li>
+            <li><strong>采样参数:</strong> 1.3B 模型推荐 shift=8, guide_scale=6; 14B 模型推荐 shift=5, guide_scale=5</li>
+        </ul>
+        <div class="highlight">
+            <strong>采样器设计:</strong>Wan2.1 使用 Flow Matching 采样器, 支持 adaptive step 和 fixed step 两种模式。推荐 30-50 步采样, 每步计算量与一次前向传播相当。Flow Matching 的直线路径使得大步长也能保持质量, 这是相比 DDPM 的核心优势。
+        </div>
+    </div>
         <div class="highlight">
             <strong>Rectified Flow 选择原因:</strong>相比标准 DDPM, Rectified Flow 在推理时可用更少的步数(10-30步)生成高质量结果, 且训练更稳定, 这对于视频生成的高计算成本尤为重要。
         </div>
@@ -356,10 +420,12 @@
         <table>
             <tr><th>版本</th><th>架构</th><th>核心突破</th><th>时间</th></tr>
             <tr><td><strong>Wan2.1</strong></td><td>DiT + Wan-VAE</td><td>开源 SOTA, 消费级 GPU, 双语文字</td><td>2025-03</td></tr>
-            <tr><td>Wan2.2</td><td>MoE DiT + Wan2.2-VAE</td><td>MoE 架构, 720P, 电影级美学</td><td>2025-07</td></tr>
-            <tr><td>VACE</td><td>Wan2.1 + 控制模块</td><td>多模态控制视频生成</td><td>2025-03</td></tr>
-            <tr><td>Wan-Move</td><td>Wan2.1 + 运动控制</td><td>精细运动控制</td><td>2025-12</td></tr>
-            <tr><td>Wan-R1</td><td>Wan + RL</td><td>强化学习优化</td><td>2026-03</td></tr>
+            <tr><td>VACE</td><td>Wan2.1 + 控制模块</td><td>多模态控制视频生成 (参考图、mask、姿态等)</td><td>2025-03</td></tr>
+            <tr><td>FLF2V</td><td>Wan2.1-I2V 扩展</td><td>首末帧到视频生成 (Chinese-focused)</td><td>2025-04</td></tr>
+            <tr><td>Wan2.2</td><td>MoE DiT + Wan2.2-VAE</td><td>MoE 架构, 720P, 电影级美学, A14B 激活参数</td><td>2025-07</td></tr>
+            <tr><td>Wan-Move</td><td>Wan2.1 + 运动控制</td><td>精细点级运动控制, NeurIPS 2025</td><td>2025-12</td></tr>
+            <tr><td>Wan-Streamer</td><td>Wan + 流式生成</td><td>实时流式视频生成</td><td>2026-06</td></tr>
+            <tr><td>Wan-R1</td><td>Wan + RL</td><td>强化学习优化, 视频生成的 RL 范式</td><td>2026-03</td></tr>
         </table>
         <h3>与竞品对比 (2025年3月)</h3>
         <table>

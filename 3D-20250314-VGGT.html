@@ -162,16 +162,76 @@
     </div>
 
     <div class="section">
-        <h2>🖼️ 算法框图</h2>
-        <p><em>注: 架构图请参考论文原文 Figure 1-3</em></p>
-        <p>VGGT 的核心架构流程:</p>
-        <ul>
-            <li><strong>输入:</strong> N 张图像 → DINOv2 backbone → patch tokens + Plücker 坐标接地</li>
-            <li><strong>交替注意力:</strong> 帧内自注意力(捕获单帧细节) ↔ 帧间交叉注意力(融合多视角信息), 多层交替</li>
-            <li><strong>多任务头:</strong> 并行输出相机参数(焦距+位姿), 点图, 深度图, 3D 点轨迹</li>
-            <li><strong>接地设计:</strong> Plücker 射线参数化嵌入到每个 token, 使网络对 3D 几何有显式感知</li>
-            <li><strong>输出:</strong> 统一的 3D 场景表征, 可用于下游任务(渲染, 追踪, SLAM)</li>
-        </ul>
+        <h2>🖼️ 算法框图与架构详解</h2>
+        <p><em>注: arxiv PDF 下载因网络中断导致文件截断, 图片提取失败。架构图请参考论文原文 Figure 1-3, 或访问 <a href="https://vgg-t.github.io/" target="_blank" style="color: var(--accent);">项目主页</a> 查看交互式示例。</em></p>
+
+        <h3>Figure 1: 整体架构概览</h3>
+        <div class="highlight">
+            <strong>VGGT 架构流水线:</strong>
+            <ul>
+                <li><strong>Step 1 — Patchify:</strong> N 张输入图像 → DINOv2 backbone → patch tokens (16×16 patch, 每张图像 H/16 × W/16 个 token)</li>
+                <li><strong>Step 2 — 相机 Token 拼接:</strong> 在每张图像的 patch token 序列前附加可学习的 camera token, 用于后续相机参数预测</li>
+                <li><strong>Step 3 — 交替注意力 (Alternating Attention):</strong>
+                    <ul>
+                        <li><strong>帧内自注意力 (frame-wise):</strong> 每张图像的 token 独立做 self-attention, 捕获单帧内部细节, 计算量 O(N·L²)</li>
+                        <li><strong>全局自注意力 (global):</strong> 所有图像的所有 token 一起做 self-attention, 融合多视角信息, 计算量 O((N·L)²)</li>
+                        <li>两种注意力交替堆叠, 帧内层捕获局部细节, 全局层融合跨视角信息</li>
+                    </ul>
+                </li>
+                <li><strong>Step 4 — 多任务预测头:</strong>
+                    <ul>
+                        <li><strong>Camera Head:</strong> 从 camera token 预测相机外参 (R, t) 和内参 (焦距 f)</li>
+                        <li><strong>DPT Head:</strong> 从视觉 token 预测深度图、点图、特征图 (用于点追踪)</li>
+                    </ul>
+                </li>
+                <li><strong>Step 5 — 输出:</strong> 统一的 3D 场景表征 — 相机参数 + 深度图 + 点图 + 3D 点轨迹, 可直接用于渲染、追踪、SLAM</li>
+            </ul>
+        </div>
+
+        <h3>Figure 2: Plücker 坐标接地设计</h3>
+        <div class="highlight">
+            <strong>几何先验注入:</strong>
+            <ul>
+                <li>每个像素对应的相机射线以 Plücker 坐标参数化: (d, m) where d 是射线方向, m = o × d 是矩 (moment), o 是相机原点</li>
+                <li>Plücker 坐标被嵌入到 patch token 的位置嵌入中, 使网络对 3D 几何有显式感知</li>
+                <li>区别于纯数据驱动的隐式学习 — 这是一种几何归纳偏置注入</li>
+                <li><strong>后续研究 (arXiv 2605.18599) 发现:</strong> 语义信息与空间信息混合可能引入干扰, 催生了语义-空间解耦的改进方案</li>
+            </ul>
+        </div>
+
+        <h3>Figure 3: 多任务预测头详解</h3>
+        <div class="highlight">
+            <strong>预测头设计:</strong>
+            <ul>
+                <li><strong>Camera Head:</strong> 线性层从 camera token 预测相机外参 (旋转 R 使用 6D 表示, 平移 t 为 3D 向量) 和内参 (焦距 f)</li>
+                <li><strong>Dense Prediction Head (DPT):</strong> 基于 DPT (Dense Prediction Transformer) 架构, 从多尺度 token 重建稠密输出:
+                    <ul>
+                        <li><strong>深度图:</strong> 每像素的深度值 d ∈ ℝ (尺度不变)</li>
+                        <li><strong>点图:</strong> 每像素的 3D 坐标 (X, Y, Z) ∈ ℝ³ (世界坐标系)</li>
+                        <li><strong>特征图:</strong> 用于下游点追踪任务的高维特征</li>
+                    </ul>
+                </li>
+                <li><strong>点追踪:</strong> 从不同视角的特征图进行特征匹配, 输出 3D 点轨迹 + 可见性标签</li>
+            </ul>
+        </div>
+
+        <h3>过完整预测 (Over-complete Predictions) 策略</h3>
+        <div class="highlight">
+            <strong>关键设计 — 冗余预测提升精度:</strong>VGGT 同时预测深度图和点图, 虽然点图可以从深度+相机参数推导, 但实验表明独立预测点图再从深度+相机推导点图有更好的精度。这种“过完整”预测策略让模型从多个角度学习 3D 几何, 互相补充。
+        </div>
+
+        <h3>模型架构规格</h3>
+        <table>
+            <tr><th>参数</th><th>值</th></tr>
+            <tr><td>Backbone</td><td>DINOv2 (ViT-Large, frozen)</td></tr>
+            <tr><td>Transformer 层数</td><td>24 (交替帧内/全局)</td></tr>
+            <tr><td>隐藏维度</td><td>1024</td></tr>
+            <tr><td>注意力头数</td><td>16</td></tr>
+            <tr><td>Patch 大小</td><td>16×16</td></tr>
+            <tr><td>Camera token</td><td>每张图像 1 个可学习 token</td></tr>
+            <tr><td>最大输入图像数</td><td>~数百张 (受 GPU 显存限制)</td></tr>
+            <tr><td>推理速度</td><td>< 1 秒 (数百张图像)</td></tr>
+        </table>
     </div>
 
     <div class="section">
@@ -214,89 +274,143 @@
     </div>
 
     <div class="section">
-        <h2>🏋️ 训练策略</h2>
-        <h3>预训练阶段</h3>
+        <h2>🏋️ 训练策略（深入）</h2>
+        <h3>阶段 1: 主干预训练 — 多任务联合学习</h3>
         <ul>
-            <li><strong>视觉 backbone:</strong> 使用预训练 DINOv2 作为图像编码器, 继承 2D 视觉理解能力</li>
-            <li><strong>多任务联合训练:</strong> 相机估计 + 深度 + 点云 + 点追踪同时训练, 共享 backbone</li>
-            <li><strong>几何接地:</strong> Plücker 坐标在训练中嵌入, 使模型学习几何先验而非纯模式匹配</li>
-            <li><strong>数据多样性:</strong> 合成数据(CO3D, Objaverse 渲染) + 真实数据(ScanNet, MegaDepth)混合训练</li>
+            <li><strong>视觉 backbone:</strong> 使用预训练 DINOv2 (ViT-Large) 作为图像编码器, 继承 2D 视觉理解能力。DINOv2 参数在训练中冻结或微调</li>
+            <li><strong>多任务联合训练:</strong> 相机估计 + 深度 + 点云 + 点追踪同时训练, 共享 backbone。实验表明多任务联合训练比单任务训练有更好的精度, 因为相关 3D 属性互相补充</li>
+            <li><strong>几何接地:</strong> Plücker 坐标在训练中嵌入到 token 位置嵌入, 使模型学习几何先验而非纯模式匹配</li>
+            <li><strong>数据多样性:</strong> 合成数据(CO3D, Objaverse 渲染) + 真实数据(ScanNet, MegaDepth)混合训练, 覆盖室内/室外/物体级/场景级多种场景</li>
+            <li><strong>训练规模:</strong> 大规模 3D 数据集训练, 学习通用 3D 几何先验而非场景特定优化</li>
         </ul>
         <h3>训练细节</h3>
         <ul>
-            <li><strong>交替注意力训练:</strong> 帧内和帧间注意力层交替堆叠, 逐层加深多视角融合</li>
-            <li><strong>任务权重:</strong> 多个任务头的损失按一定权重组合, 自动平衡各任务</li>
-            <li><strong>大规模训练:</strong> 在大规模 3D 数据集上训练, 学习通用 3D 几何先验而非场景特定优化</li>
+            <li><strong>交替注意力训练:</strong> 帧内和帧间注意力层交替堆叠 (如 [frame-wise, global, frame-wise, global, ...]), 逐层加深多视角融合</li>
+            <li><strong>任务权重:</strong> 多个任务头的损失按一定权重组合, 自动平衡各任务。相机损失的权重较小, 深度和点图损失的权重较大</li>
+            <li><strong>坐标归一化:</strong> 对 GT 坐标进行归一化处理, 使模型预测相对坐标而非绝对坐标, 提高泛化能力</li>
+            <li><strong>过完整预测策略:</strong> 同时预测深度图和点图 (虽然点图可以从深度+相机推导), 让模型从多个角度学习 3D 几何, 互相补充</li>
         </ul>
-    </div>
-
-    <div class="section">
-        <h2>📊 数据集构建</h2>
-        <table>
-            <tr><th>数据类型</th><th>来源</th><th>用途</th></tr>
-            <tr><td>合成数据</td><td>CO3D, Objaverse 渲染</td><td>多视角 3D 物体</td></tr>
-            <tr><td>室内扫描</td><td>ScanNet, Matterport</td><td>室内场景 3D</td></tr>
-            <tr><td>室外场景</td><td>MegaDepth, BlendedMVS</td><td>大规模室外多视角</td></tr>
-            <tr><td>动态场景</td><td>Dynamic Stereo, KITTI</td><td>动态/驾驶场景</td></tr>
-            <tr><td>点追踪</td><td>TAP-Vid, Kubric</td><td>3D 点轨迹标注</td></tr>
-        </table>
+        <h3>阶段 2: 下游任务微调</h3>
+        <ul>
+            <li><strong>新视角合成:</strong> 用 VGGT 特征作为 backbone, 微调生成新视角的网络</li>
+            <li><strong>动态点追踪:</strong> 用 VGGT 特征增强现有点追踪器 (如 CoTracker), 在动态场景中追踪点</li>
+            <li><strong>BA 后处理 (可选):</strong> 将 VGGT 预测作为初始值, 用可微 Bundle Adjustment 进一步优化, 达到最高精度</li>
+        </ul>
         <div class="highlight">
-            <strong>关键设计:</strong>混合合成和真实数据训练, 让模型学习通用的 3D 几何先验。合成数据提供完美标注(深度、位姿), 真实数据提供真实世界的纹理和噪声分布。
+            <strong>消融实验关键发现:</strong>
+            <ul>
+                <li>多任务学习正向迁移: 同时学习相机+深度+点图+追踪比单任务训练精度更高</li>
+                <li>交替注意力优于纯全局注意力: 帧内层捕获局部细节, 全局层融合跨视角信息, 两者互补</li>
+                <li>Plücker 接地有效但可改进: 后续研究 (arXiv 2605.18599) 发现语义-空间解耦更优</li>
+                <li>从深度+相机推导点图比直接预测点图更精确: 启示过完整预测的价值</li>
+            </ul>
         </div>
     </div>
 
     <div class="section">
-        <h2>🔬 损失函数</h2>
+        <h2>📊 数据集构建（深入）</h2>
+        <table>
+            <tr><th>数据类型</th><th>来源</th><th>标注类型</th><th>用途</th></tr>
+            <tr><td>合成 3D 物体</td><td>CO3D, Objaverse 渲染</td><td>完美深度+位姿</td><td>多视角 3D 物体</td></tr>
+            <tr><td>室内扫描</td><td>ScanNet, Matterport</td><td>RGB-D 传感器深度</td><td>室内场景 3D</td></tr>
+            <tr><td>室外场景</td><td>MegaDepth, BlendedMVS</td><td>SfM 稀疏点云</td><td>大规模室外多视角</td></tr>
+            <tr><td>动态场景</td><td>Dynamic Stereo, KITTI</td><td>光流+深度</td><td>动态/驾驶场景</td></tr>
+            <tr><td>点追踪</td><td>TAP-Vid, Kubric</td><td>3D 点轨迹</td><td>3D 点追踪训练</td></tr>
+            <tr><td>航测数据</td><td>UseGeo 等</td><td>GPS+IMU 位姿</td><td>大规模航测评测</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计:</strong>混合合成和真实数据训练, 让模型学习通用的 3D 几何先验:
+            <ul>
+                <li><strong>合成数据优势:</strong> 提供完美标注 (深度、位姿、点云), 无标注噪声, 可控制场景多样性</li>
+                <li><strong>真实数据优势:</strong> 提供真实世界的纹理和噪声分布, 包含真实场景的复杂性和边缘情况</li>
+                <li><strong>数据平衡:</strong> 按场景类型和标注质量加权采样, 避免合成数据过多导致域差距</li>
+                <li><strong>坐标统一:</strong> 所有数据统一到世界坐标系, 使用 SE(3) 变换将不同视角的标注对齐</li>
+            </ul>
+        </div>
+        <div class="highlight">
+            <strong>航测评估发现 (arXiv 2507.14798):</strong>在航测场景中, VGGT 在低分辨率 (<518px) 和稀疏图像集上表现优异, 但在高分辨率和大规模图像集上位姿可靠性随图像数量和几何复杂度增加而下降。这表明 transformer 方法尚不能完全替代传统 SfM+MVS, 但作为互补方法在稀疏、低分辨率场景中极具潜力。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔬 损失函数（深入）</h2>
         <h3>相机参数损失</h3>
         <ul>
-            <li><strong>位姿损失:</strong> <code>L_pose = ||R_pred - R_gt||_F² + ||t_pred - t_gt||²</code></li>
-            <li><strong>焦距损失:</strong> <code>L_focal = |f_pred - f_gt| / f_gt</code></li>
+            <li><strong>旋转损失:</strong> <code>L_R = ||R_pred - R_gt||_F²</code>, 使用 Frobenius 范数。R 使用 6D 表示 (Zhou et al. 2019), 比 4D 四元数更稳定</li>
+            <li><strong>平移损失:</strong> <code>L_t = ||t_pred - t_gt||²</code>, 欧式距离</li>
+            <li><strong>焦距损失:</strong> <code>L_focal = |f_pred - f_gt| / f_gt</code>, 相对误差避免绝对尺度偏差</li>
+            <li><strong>位姿总损失:</strong> <code>L_pose = L_R + L_t + L_focal</code></li>
         </ul>
-        <h3>深度损失</h3>
+        <h3>深度损失 (尺度不变)</h3>
         <ul>
-            <li><strong>Scale-invariant L1:</strong> <code>L_depth = ||d_pred / s - d_gt||_1</code>, s 是尺度因子</li>
-            <li>尺度不变设计使模型不依赖绝对尺度标注</li>
+            <li><strong>Scale-invariant L1:</strong> <code>L_depth = ||d_pred / s - d_gt||_1</code>, s = median(d_pred / d_gt) 是尺度因子</li>
+            <li><strong>设计原因:</strong> 尺度不变设计使模型不依赖绝对尺度标注, 允许从不同尺度的数据集混合训练 (合成数据有真实尺度, 真实数据可能只有相对深度)</li>
+            <li><strong>额外约束:</strong> 深度梯度的 L1 损失, 保证深度边缘的清晰度</li>
         </ul>
-        <h3>点云损失</h3>
+        <h3>点图损失</h3>
         <ul>
-            <li><strong>3D 点 L1:</strong> <code>L_point = ||P_pred - P_gt||_1</code></li>
-            <li><strong>多视角一致性:</strong> 不同视角预测的点图应一致</li>
+            <li><strong>3D 点 L1:</strong> <code>L_point = ||P_pred - P_gt||_1</code>, 逐像素 3D 坐标回归</li>
+            <li><strong>多视角一致性:</strong> 不同视角预测的点图应一致 — 将所有视角的点图变换到同一坐标系后计算 L1 损失</li>
+            <li><strong>过完整策略:</strong> 同时预测独立点图和从深度+相机推导的点图, 取两者加权平均作为最终输出</li>
         </ul>
         <h3>点追踪损失</h3>
         <ul>
-            <li><strong>轨迹 L2:</strong> <code>L_track = ||T_pred - T_gt||²</code></li>
-            <li><strong>可见性分类:</strong> 二元交叉熵判断点是否可见</li>
+            <li><strong>轨迹 L2:</strong> <code>L_track = ||T_pred - T_gt||²</code>, 3D 点轨迹回归</li>
+            <li><strong>可见性分类:</strong> 二元交叉熵 <code>L_vis = -[y·log(p) + (1-y)·log(1-p)]</code>, 判断点是否可见 (被遮挡时 y=0)</li>
         </ul>
         <h3>总损失</h3>
         <ul>
-            <li><code>L_total = λ_pose·L_pose + λ_focal·L_focal + λ_depth·L_depth + λ_point·L_point + λ_track·L_track</code></li>
+            <li><code>L_total = λ_pose·L_pose + λ_depth·L_depth + λ_point·L_point + λ_track·(L_track + L_vis)</code></li>
+            <li><strong>权重设置:</strong> λ_pose 较小 (相机预测相对容易), λ_depth 和 λ_point 较大 (稠密预测更难)</li>
+            <li><strong>训练策略:</strong> 所有任务同时训练, 不需要分阶段训练, 简化训练流程</li>
         </ul>
         <div class="highlight">
-            <strong>Plücker 接地的作用:</strong>后续研究(arXiv 2605.18599)发现语义信息与空间信息混合可能引入干扰, 催生了语义-空间解耦的改进方案。这表明几何接地虽然有效但仍有优化空间。
+            <strong>Plücker 接地的作用与局限:</strong>Plücker 坐标将相机射线参数化注入 token, 提供几何先验。但后续研究 (arXiv 2605.18599) 发现语义信息与空间信息混合可能引入干扰 — 当场景纹理丰富时, 几何信息可能被纹理信息覆盖。语义-空间解耦的改进方案将两者分离到不同维度, 获得更好的性能。这表明几何接地虽然有效但仍有优化空间。
         </div>
     </div>
 
     <div class="section">
-        <h2>🔄 技术路线对比与演进</h2>
-        <h3>前馈 3D 重建演进</h3>
+        <h2>🔄 技术路线对比与演进（深入）</h2>
+        <h3>前馈 3D 重建演进路线</h3>
         <table>
             <tr><th>方法</th><th>输入</th><th>输出</th><th>特点</th><th>年份</th></tr>
-            <tr><td>DUSt3R</td><td>2 视角</td><td>点图 + 深度</td><td>首个前馈 3D 重建</td><td>2024</td></tr>
-            <tr><td>MASt3R</td><td>2 视角</td><td>点图 + 匹配 + 3D</td><td>增加匹配能力</td><td>2024</td></tr>
-            <tr><td><strong>VGGT</strong></td><td><strong>N 视角</strong></td><td><strong>全 3D 属性</strong></td><td><strong>多任务统一, 任意视角数</strong></td><td><strong>2025</strong></td></tr>
-            <tr><td>GS-LRM</td><td>N 视角</td><td>3D 高斯参数</td><td>渲染导向的前馈</td><td>2024</td></tr>
+            <tr><td>DUSt3R</td><td>2 视角</td><td>点图 + 深度</td><td>首个前馈 3D 重建, 但仅限 2 视角</td><td>2024</td></tr>
+            <tr><td>MASt3R</td><td>2 视角</td><td>点图 + 匹配 + 3D</td><td>增加匹配能力, 仍仅 2 视角</td><td>2024</td></tr>
+            <tr><td><strong>VGGT</strong></td><td><strong>N 视角</strong></td><td><strong>全 3D 属性</strong></td><td><strong>多任务统一, 任意视角数, CVPR 2025 Best Paper</strong></td><td><strong>2025</strong></td></tr>
+            <tr><td>GS-LRM</td><td>N 视角</td><td>3D 高斯参数</td><td>渲染导向的前馈, 直接预测高斯</td><td>2024</td></tr>
+            <tr><td>Fast3R</td><td>N 视角</td><td>点图</td><td>并发工作, 性能不及 VGGT</td><td>2025</td></tr>
+            <tr><td>FLARE</td><td>N 视角</td><td>相机 + 点图</td><td>并发工作, 性能不及 VGGT</td><td>2025</td></tr>
             <tr><td>MERG3R</td><td>N 视角</td><td>分治 3D</td><td>解决大规模内存瓶颈</td><td>2026</td></tr>
         </table>
         <h3>VGGT 衍生生态</h3>
         <ul>
-            <li><strong>QuantVGGT</strong> (ICLR 2026): 4-bit 量化, 3.7× 内存压缩 + 2.5× 加速</li>
-            <li><strong>4DLangVGGT</strong>: 扩展到 4D 语言-视觉几何, 动态场景理解</li>
-            <li><strong>VGGT-SLAM 2.0</strong>: 实时单目 SLAM 系统</li>
-            <li><strong>MERG3R</strong>: 分治框架解决大规模场景内存瓶颈</li>
+            <li><strong>QuantVGGT</strong> (arXiv 2509.21302, ICLR 2026): 4-bit 量化, 3.7× 内存压缩 + 2.5× 加速, 精度保持 98%。使 VGGT 可在消费级 GPU 上运行</li>
+            <li><strong>4DLangVGGT</strong> (arXiv 2512.05060): 扩展到 4D 语言-视觉几何, 用于动态场景理解。将语言特征注入 VGGT backbone, 实现 4D 场景的语言定位</li>
+            <li><strong>VGGT-SLAM 2.0</strong>: 实时单目 SLAM 系统, 利用 VGGT 的前馈推理替代传统特征匹配+BA 流程</li>
+            <li><strong>MERG3R</strong> (arXiv 2603.02351): 分治框架, 将大规模场景分割为子集分别处理再合并, 解决全注意力的 O(N²) 显存瓶颈</li>
         </ul>
+        <h3>技术路线对比: 几何导向 vs 渲染导向</h3>
+        <table>
+            <tr><th>维度</th><th>VGGT (几何导向)</th><th>GS-LRM (渲染导向)</th></tr>
+            <tr><td>输出</td><td>点图 (3D 坐标)</td><td>3D 高斯参数</td></tr>
+            <tr><td>用途</td><td>通用 3D 几何</td><td>直接渲染</td></tr>
+            <tr><td>特征迁移</td><td>✅ 可作为 backbone</td><td>❌ 专为渲染设计</td></tr>
+            <tr><td>多任务</td><td>✅ 相机+深度+点图+追踪</td><td>❌ 仅渲染</td></tr>
+            <tr><td>不需要位姿输入</td><td>✅</td><td>❌ 需要已知位姿</td></tr>
+        </table>
         <div class="highlight">
-            <strong>路线对比:</strong>VGGT(几何导向, 预测点图) vs GS-LRM(渲染导向, 预测高斯参数)。VGGT 的优势在于特征可迁移性和通用性, GS-LRM 的优势在于直接用于渲染。两者互补。
+            <strong>路线对比总结:</strong>VGGT (几何导向, 预测点图) vs GS-LRM (渲染导向, 预测高斯参数)。VGGT 的优势在于特征可迁移性和通用性 (可作为 backbone, 多任务统一, 无需已知位姿), GS-LRM 的优势在于直接用于高质量渲染。两者互补 — VGGT 用于快速 3D 理解和初始化, GS-LRM 用于精细渲染。
         </div>
+        <h3>VGGT vs 传统 SfM+MVS</h3>
+        <table>
+            <tr><th>维度</th><th>VGGT</th><th>COLMAP (传统 SfM+MVS)</th></tr>
+            <tr><td>速度</td><td>< 1 秒</td><td>数小时</td></tr>
+            <tr><td>精度 (稀疏场景)</td><td>SOTA</td><td>竞争性</td></tr>
+            <tr><td>精度 (大规模航测)</td><td>位姿可靠性下降</td><td>更稳定</td></tr>
+            <tr><td>不需要特征匹配</td><td>✅</td><td>❌</td></tr>
+            <tr><td>不需要 BA 优化</td><td>✅ (但可选 BA 后处理)</td><td>❌</td></tr>
+            <tr><td>可微</td><td>✅ 端到端可微</td><td>❌</td></tr>
+        </table>
     </div>
 
     <div class="section">
