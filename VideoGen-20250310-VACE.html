@@ -68,6 +68,10 @@
     <div class="section">
         <h2>🏗️ 模型架构</h2>
         <h3>Video Condition Unit (VCU)</h3>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2503.07598/x1.png" alt="VACE Task Categories" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 1:</strong> VACE 覆盖的任务类别。四个基本任务可以组合创造出大量可能性，实现 reference-, move-, animate-, swap-, expand-anything。</p>
+        </div>
         <p>VACE 的核心创新是 <strong>Video Condition Unit (VCU)</strong> —— 将不同任务的输入（编辑、参考、遮罩等）组织成统一的接口格式：</p>
         <ul>
             <li>将各种任务输入（编辑条件、参考帧、遮罩等）统一编码为结构化的时空表示</li>
@@ -142,6 +146,10 @@
         <div class="highlight">
             <strong>VACE 架构：</strong>Video Condition Unit (VCU) + Context Adapter，统一视频创建与编辑
         </div>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2503.07598/x3.png" alt="VACE Framework Overview" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 2:</strong> VACE Framework 概览。Frames 和 masks 通过 Concept Decoupling、Context Latent Encode 和 Context Embedder 进行 token化。两种训练策略：(a) Fully Fine-tuning 和 (b) Context Adapter。</p>
+        </div>
         <h3>核心创新</h3>
         <ul>
             <li><strong>VCU (Video Condition Unit)：</strong>将编辑、参考、遮罩等多种任务输入统一为一个接口</li>
@@ -184,23 +192,19 @@
 
 <!-- arXiv HTML figures (from https://arxiv.org/html/2503.07598) -->
 <div class="arxiv-figures" style="border-top: 2px solid #333; margin-top: 30px; padding-top: 20px;">
-<h2 style="color: #4ecca3;">arXiv Paper Figures</h2>
-<p style="color: #888; font-size: 0.9em;">Figures from arXiv HTML version</p>
+<h2 style="color: #4ecca3;">arXiv Paper Figures (Local)</h2>
+<p style="color: #888; font-size: 0.9em;">Figures downloaded from arXiv HTML version</p>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2503.07598/x1.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 1: Task categories covered by VACE. Four basic tasks can be combined to create a vast number of possibilities.</div>
+  <img src="images/2503.07598/x1.png" alt="VACE Task Categories" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Figure 1:</strong> Task categories covered by VACE. Four basic tasks can be combined to create a vast number of possibilities. VACE 创造性地支持 reference-, move-, animate-, swap-, expand-anything 等组合任务。</div>
 </div>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2503.07598/x2.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Table 1: The formal representation of frames (F饾惞Fitalic_Fs) and masks (M饾憖Mitalic_Ms) under the four basic tasks. Frames and masks are aligned spatially and temporally.</div>
+  <img src="images/2503.07598/x2.png" alt="VACE Task Formal Representation" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Table 1:</strong> The formal representation of frames (Fs) and masks (Ms) under the four basic tasks. Frames and masks are aligned spatially and temporally.</div>
 </div>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2503.07598/x3.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 2: Overview of VACE Framework. Frames and masks are tokenized through Concept Decoupling, Context Latent Encode and Context Embedder. To achieve training with VCU as input, we employ two strategies, (a) Fully Fine-tuning and (b) Context Adapte...</div>
-</div>
-<div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2503.07598/extracted/6269873/figures/ablation_1.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Table 2: Quantitative evaluations on VACE-Benchmark. We compare the automated score metrics of the unified VACE based on LTX-Video and the proprietary model on the dimensions of video quality and video consistency, as well as results of human user st...</div>
+  <img src="images/2503.07598/x3.png" alt="VACE Framework Overview" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Figure 2:</strong> Overview of VACE Framework. Frames and masks are tokenized through Concept Decoupling, Context Latent Encode and Context Embedder. Two training strategies: (a) Fully Fine-tuning and (b) Context Adapter.</div>
 </div>
 </div>
 </body>

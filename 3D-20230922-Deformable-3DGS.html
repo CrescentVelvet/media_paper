@@ -94,6 +94,14 @@
             <tr><td><strong>可微光栅化器</strong></td><td>渲染变形后的高斯到 2D 图像</td><td>变形后的 3D 高斯 + 相机参数</td><td>渲染图像</td></tr>
         </table>
         <h3>变形场网络设计</h3>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2309.13101/x1.png" alt="Deformable 3DGS Figure 1: 方法概览" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 1:</strong> 给定一组单目多视角图像和相机位姿 (a)，本文方法可重建精确的动态 3D 模型 (b)，并支持实时渲染和新视角合成。</p>
+        </div>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2309.13101/x2.png" alt="Deformable 3DGS Figure 2: Pipeline 概览" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 2:</strong> Pipeline 概览。优化过程从 COLMAP SfM 点云开始，作为 3D 高斯的初始状态。使用高斯位置 γ(x) (detached) 和时间编码 γ(t) 作为变形场网络的输入，输出位置偏移和旋转偏移。</p>
+        </div>
         <ul>
             <li><strong>输入：</strong>时间步编码 γ(t) + 高斯位置编码 γ(x)</li>
             <li><strong>网络结构：</strong>轻量 MLP（多层全连接 + ReLU）</li>
@@ -159,6 +167,21 @@
             <tr><td><strong>Deformable-3DGS</strong></td><td><strong>~29-31</strong></td><td><strong>~0.88-0.90</strong></td><td><strong>实时</strong></td></tr>
         </table>
         <p>在 8 个合成场景上全面领先，PSNR 提升 3-5 dB。</p>
+        <div style="text-align:center;margin:20px 0;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+                <img src="images/2309.13101/_html_2309.13101_assets_images_Ours_D-NeRF_trex-5.png" alt="Ours trex" style="max-width:30%;border-radius:6px;border:1px solid var(--border);" />
+                <img src="images/2309.13101/_html_2309.13101_assets_images_Tineuvox_trex-5.png" alt="TiNeuVox trex" style="max-width:30%;border-radius:6px;border:1px solid var(--border);" />
+                <img src="images/2309.13101/_html_2309.13101_assets_images_D-NeRF_trex-5.png" alt="D-NeRF trex" style="max-width:30%;border-radius:6px;border:1px solid var(--border);" />
+            </div>
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 3 (部分):</strong> D-NeRF 合成数据集 trex 场景定性对比。从左到右：Ours / TiNeuVox / D-NeRF。Deformable-3DGS 在纹理和几何细节上明显优于基线方法。</p>
+        </div>
+        <div style="text-align:center;margin:20px 0;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+                <img src="images/2309.13101/_html_2309.13101_assets_images_Ours_D-NeRF_stand-18.png" alt="Ours stand" style="max-width:30%;border-radius:6px;border:1px solid var(--border);" />
+                <img src="images/2309.13101/_html_2309.13101_assets_images_D-NeRF_stand-18.png" alt="D-NeRF stand" style="max-width:30%;border-radius:6px;border:1px solid var(--border);" />
+            </div>
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 3 (部分):</strong> stand 场景对比。左：Ours，右：D-NeRF。显式高斯表示在边缘清晰度和表面平滑性上均有优势。</p>
+        </div>
         <h3>HyperNeRI 真实数据集</h3>
         <p>在真实世界动态场景上同样优于 HyperNeRF 和其他基线方法，同时保持实时渲染速度。退火平滑训练机制在真实数据上发挥了关键作用。</p>
         <h3>Plenoptic 数据集</h3>

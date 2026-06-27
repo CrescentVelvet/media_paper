@@ -66,6 +66,10 @@
     <div class="section">
         <h2>🏗️ 模型架构</h2>
         <h3>双路径图像注入</h3>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2310.12190v1/x1.png" alt="DynamiCrafter 架构概览" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 1:</strong> 视频扩散模型概览。去噪 U-Net 的每个 block 包含四个基本模块，文本 prompt 通过 cross-attention 层在空间注意力模块中处理。</p>
+        </div>
         <table>
             <tr><th>路径</th><th>机制</th><th>作用</th></tr>
             <tr><td><strong>语义路径</strong></td><td>Query Transformer 将图像编码为文本对齐的上下文 token</td><td>提供高层语义指导，与文本 prompt 共同条件化</td></tr>
@@ -191,23 +195,23 @@
 
 <!-- arXiv HTML figures (from https://arxiv.org/html/2310.12190) -->
 <div class="arxiv-figures" style="border-top: 2px solid #333; margin-top: 30px; padding-top: 20px;">
-<h2 style="color: #4ecca3;">arXiv Paper Figures</h2>
-<p style="color: #888; font-size: 0.9em;">Figures from arXiv HTML version</p>
+<h2 style="color: #4ecca3;">arXiv Paper Figures (Local)</h2>
+<p style="color: #888; font-size: 0.9em;">Figures downloaded from arXiv HTML version</p>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2310.12190v1/x1.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 1: Overview of video diffusion model with text prompts. Each block of the denoising U-Net consists of four basic modules, where the text prompts are taken by the spatial attention modules via cross-attention layers. Given a text prompt, the mo...</div>
+  <img src="images/2310.12190v1/x1.png" alt="DynamiCrafter Figure 1: 视频扩散模型概览" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Figure 1:</strong> Overview of video diffusion model with text prompts. Each block of the denoising U-Net consists of four basic modules, where the text prompts are taken by the spatial attention modules via cross-attention layers. Given a text prompt, the model generates video frames through iterative denoising.</div>
 </div>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2310.12190v1/x2.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 2: Image-conditioned text-to-video generation comparison. (a) Conditional image input. (b) Generation with the global semantic token conditioned. (c) Generation with the full patch visual tokens conditioned. The used text prompt is 鈥漚 beautifu...</div>
+  <img src="images/2310.12190v1/x2.png" alt="DynamiCrafter Figure 2: 图像条件对比" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Figure 2:</strong> Image-conditioned text-to-video generation comparison. (a) Conditional image input. (b) Generation with the global semantic token conditioned. (c) Generation with the full patch visual tokens conditioned. The full patch visual tokens provide richer information for better generation quality.</div>
 </div>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2310.12190v1/x3.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 3: Visual comparison on image animation results from VideoComposer, I2VGen-XL, and our DynamiCrafter.</div>
+  <img src="images/2310.12190v1/x3.png" alt="DynamiCrafter Figure 3: 对比结果" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Figure 3:</strong> Visual comparison on image animation results from VideoComposer, I2VGen-XL, and our DynamiCrafter. DynamiCrafter 生成更自然的运动和更高的视觉质量。</div>
 </div>
 <div style="margin: 20px 0; text-align: center;">
-  <img src="https://arxiv.org/html/2310.12190v1/x4.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
-  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 4: Image animation results at a resolution of 320脳512320512320\times 512320 脳 512. Each row demonstrates multiple frames of a generated video conditioned on a given image as well as a given text prompt.</div>
+  <img src="images/2310.12190v1/x4.png" alt="DynamiCrafter Figure 4: 动画结果" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;"><strong>Figure 4:</strong> Image animation results at a resolution of 320×512. Each row demonstrates multiple frames of a generated video conditioned on a given image as well as a given text prompt.</div>
 </div>
 </div>
 </body>

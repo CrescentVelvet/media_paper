@@ -131,6 +131,22 @@
     <div class="section">
         <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
         <h3>DreamGaussian 架构</h3>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2309.16653/x1.png" alt="DreamGaussian Figure 1: 加速 3D 生成" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 1:</strong> DreamGaussian 旨在加速图像到 3D 和文本到 3D 的优化过程，可在数分钟内生成高质量纹理网格。</p>
+        </div>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2309.16653/x3.png" alt="DreamGaussian Figure 3: 纹理微调目标对比" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 3:</strong> 不同纹理微调目标对比。SDS 损失在 UV 空间纹理优化中产生伪影，而提出的 MSE 损失避免了这一问题。</p>
+        </div>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2309.16653/x4.png" alt="DreamGaussian Figure 4: Image-to-3D 对比" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 4:</strong> Image-to-3D 对比结果。DreamGaussian 在生成速度和网格质量之间取得了更好的平衡。</p>
+        </div>
+        <div style="text-align:center;margin:20px 0;">
+            <img src="images/2309.16653/x5.png" alt="DreamGaussian Figure 5: Text-to-3D 对比" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" />
+            <p style="color:var(--text-dim);font-size:0.85em;margin-top:8px;"><strong>Figure 5:</strong> Text-to-3D 对比结果。与 DreamFusion 等方法相比，DreamGaussian 使用 Stable-Diffusion 作为 2D 先验，生成质量有竞争力且速度大幅提升。</p>
+        </div>
         <ul>
             <li><strong>3D 高斯 + SDS：</strong>从文本/图像生成 3D 高斯，使用 Score Distillation Sampling</li>
             <li><strong>两阶段：</strong>粗粒度高斯优化 → 精细纹理 mesh 提取</li>
