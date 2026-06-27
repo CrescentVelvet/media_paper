@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+<title>HunyuanVideo 1.5 Technical Report</title>
+<!--Generated on Tue Nov 25 02:51:00 2025 by LaTeXML (version 0.8.8) http://dlmf.nist.gov/LaTeXML/.-->
+<meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport"/>
+<link href="/static/browse/0.3.4/css/arxiv-html-papers-20250916.css" rel="stylesheet" type="text/css"/>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.3/html2canvas.min.js"></script>
+<script src="/static/browse/0.3.4/js/addons_new.js"></script>
+<script src="/static/browse/0.3.4/js/feedbackOverlay.js"></script>
+<base href="/html/2511.18870v2/"/></head>
+<body>
+<nav class="ltx_page_navbar">
+<nav class="ltx_TOC">
+<ol class="ltx_toclist">
+<li class="ltx_tocentry ltx_tocentry_section"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S1" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">1 </span>Introduction</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S2" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2 </span>Data Preparation</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S2.SS1" title="In 2 Data Preparation ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2.1 </span>Data Acquisition and Filtering</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S2.SS2" title="In 2 Data Preparation ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2.2 </span>Captioning</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S3" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3 </span>Model Design</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S3.SS1" title="In 3 Model Design ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.1 </span>Unified Diffusion Transformer</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S3.SS2" title="In 3 Model Design ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.2 </span>Video Super-Resolution</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4 </span>Model Training</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.SS1" title="In 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.1 </span>Pre-training</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.SS2" title="In 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.2 </span>Post-training</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.SS3" title="In 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.3 </span>Video Super-Resolution.</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5 </span>Model Performance</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5.SS1" title="In 5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.1 </span>Rating</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5.SS2" title="In 5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.2 </span>GSB</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">6 </span>Inference Speed and GPU Memory Requirements</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6.SS0.SSS0.Px1" title="In 6 Inference Speed and GPU Memory Requirements ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title">Inference Speed without Engineering Acceleration.</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6.SS0.SSS0.Px2" title="In 6 Inference Speed and GPU Memory Requirements ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title">Inference Speed with Engineering Acceleration.</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6.SS0.SSS0.Px3" title="In 6 Inference Speed and GPU Memory Requirements ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title">GPU Memory Requirements.</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S7" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">7 </span>Conclusion</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section"><a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S8" title="In HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">8 </span>Project Contributors</span></a></li>
+</ol></nav>
+</nav>
+<div class="ltx_page_main">
+<div class="ltx_page_content">
+<article class="ltx_document ltx_authors_1line">
+<h1 class="ltx_title ltx_title_document">HunyuanVideo 1.5 Technical Report</h1>
+<div class="ltx_authors">
+<span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Tencent Hunyuan Foundation Model Team
+</span></span>
+</div>
+<div class="ltx_abstract">
+<h6 class="ltx_title ltx_title_abstract">Abstract</h6>
+<p class="ltx_p">We present HunyuanVideo 1.5, a lightweight yet powerful open-source video generation model that achieves state-of-the-art visual quality and motion coherence with only 8.3 billion parameters, enabling efficient inference on consumer-grade GPUs.
+This achievement is built upon several key components, including meticulous data curation, an advanced DiT architecture featuring selective and sliding tile attention (SSTA), enhanced bilingual understanding through glyph-aware text encoding, progressive pre-training and post-training, and an efficient video super-resolution network.
+Leveraging these designs, we developed a unified framework capable of high-quality text-to-video and image-to-video generation across multiple durations and resolutions.
+Extensive experiments demonstrate that this compact and proficient model establishes a new state-of-the-art among open-source video generation models.
+By releasing the code and model weights, we provide the community with a high-performance foundation that lowers the barrier to video creation and research, making advanced video generation accessible to a broader audience.
+All open-source assets are publicly available at <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5" title="">https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5</a>.</p>
+</div>
+<section class="ltx_section" id="S1">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">1 </span>Introduction</h2>
+<div class="ltx_para" id="S1.p1">
+<p class="ltx_p">Recent years have witnessed remarkable advancements in video generation models, with closed-source systems like Kling2.5 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib1" title="">1</a>]</cite>, Veo3.1 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib2" title="">2</a>]</cite>, and Sora2 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib3" title="">3</a>]</cite> achieving state-of-the-art (SOTA) performance. In the open-source domain, models such as HunyuanVideo <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib4" title="">4</a>]</cite>, StepVideo <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib5" title="">5</a>]</cite>, and Wan2.2 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib6" title="">6</a>]</cite> have emerged as notable contenders. However, despite these strides, most SOTA models remain proprietary, limiting accessibility and community-driven innovation. Wan2.2 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib6" title="">6</a>]</cite> employs a hybrid Mixture of Experts (MoE) architecture that leverages two 14-billion-parameter expert models to enhance video quality. Although this MoE architecture enhances visual fidelity by leveraging specialized experts for different denoising stages, it inherently introduces computational inefficiencies, as the model must manage multiple large parameter sets (totaling 27B parameters with 14B activated), leading to significant resource demands. While Wan2.2 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib6" title="">6</a>]</cite> has attempted to address this with a more compact 5-billion-parameter variant, which utilizes a high-compression 3D VAE to reduce memory footprint, this lightweight model still exhibits limitations. Specifically, its generative capabilities, particularly in maintaining motion stability across frames and achieving the nuanced aesthetic quality required for professional applications, continue to fall short of practical demands. This situation underscores a critical gap: the absence of an open-source model that successfully balances high-quality output with efficient inference.</p>
+</div>
+<div class="ltx_para" id="S1.p2">
+<p class="ltx_p">To address these challenges, we introduce HunyuanVideo 1.5, an open-source 8.3B video generation model designed to achieve state-of-the-art visual quality while maintaining high inference efficiency. Our framework is built on a two-stage pipeline for high-fidelity video synthesis. The first stage employs a Unified Diffusion Transformer (DiT) that supports both text-to-video and image-to-video generation, producing initial video sequences with resolutions from 480p to 720p and durations of 5 to 10 seconds. The second stage utilizes a dedicated Video Super-Resolution Network to upscale the outputs to 1080p, significantly enhancing the final visual fidelity. The main contributions of this report are summarized as follows:</p>
+<ul class="ltx_itemize" id="S1.I1">
+<li class="ltx_item" id="S1.I1.i1" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S1.I1.i1.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Lightweight High-Performance Architecture:</span> We propose an efficient architecture that integrates an 8.3B-parameter Diffusion Transformer (DiT) with a 3D causal VAE, achieving compression ratios of 16× in spatial dimensions and 4× along the temporal axis. This design minimizes parameter count while fully leveraging the potential of the model, yielding performance comparable to state-of-the-art video generation models.</p>
+</div>
+</li>
+<li class="ltx_item" id="S1.I1.i2" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S1.I1.i2.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Video Super-Resolution Enhancement:</span> We develop an efficient few-step super-resolution network that upscales outputs to 1080p. It enhances sharpness while correcting distortions, thereby refining details and overall visual texture.</p>
+</div>
+</li>
+<li class="ltx_item" id="S1.I1.i3" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S1.I1.i3.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Sparse Attention Optimization:</span> We introduce a novel Selective and Sliding Tile Attention (SSTA) mechanism that dynamically prunes redundant spatiotemporal tokens. This significantly reduces computational overhead for long video sequences and accelerates inference, achieving an end-to-end speedup of <math alttext="1.87\times" class="ltx_math_unparsed" display="inline" id="S1.I1.i3.p1.m1" intent=":literal"><semantics><mrow><mn>1.87</mn><mo lspace="0.222em">×</mo></mrow><annotation encoding="application/x-tex">1.87\times</annotation></semantics></math> in 10-second 720p video synthesis compared to FlashAttention-3 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib7" title="">7</a>]</cite>.</p>
+</div>
+</li>
+<li class="ltx_item" id="S1.I1.i4" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S1.I1.i4.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Enhanced Multimodal Understanding:</span> Our framework utilizes a large multimodal model for precise bilingual (Chinese-English) understanding, combined with ByT5 for dedicated glyph encoding to enhance text generation accuracy in videos. Additionally, detailed bilingual captions are generated for both images and videos.</p>
+</div>
+</li>
+<li class="ltx_item" id="S1.I1.i5" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S1.I1.i5.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">End-to-End Training Optimization:</span> We demonstrate that the Muon optimizer <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib8" title="">8</a>]</cite> significantly accelerates convergence in video generation model training, while the multi-phase progressive training strategy—spanning from pre-training to post-training stages—enhances motion coherence, aesthetic quality, and alignment with human preferences, thereby enabling the production of professional-grade content.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="ltx_para" id="S1.p3">
+<p class="ltx_p">This report presents a comprehensive pipeline, beginning with meticulous data preparation—including curation, filtering, and captioning, as detailed in <span class="ltx_text ltx_font_bold">Section <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S2" title="2 Data Preparation ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">2</span></a></span>. <span class="ltx_text ltx_font_bold">Section <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S3" title="3 Model Design ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">3</span></a></span> introduces the core architecture and key algorithms, such as the unified diffusion transformer, the video super-resolution network, and the mechanisms of sparse attention. <span class="ltx_text ltx_font_bold">Section <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4" title="4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">4</span></a></span> describes training strategies for text-to-video and image-to-video tasks, covering both pre-training and post-training methodologies. Finally, <span class="ltx_text ltx_font_bold">Section <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5" title="5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">5</span></a></span> provides a rigorous evaluation of the model’s performance against state-of-the-art models using quantitative metrics and qualitative benchmarks.</p>
+</div>
+</section>
+<section class="ltx_section" id="S2">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">2 </span>Data Preparation</h2>
+<section class="ltx_subsection" id="S2.SS1">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">2.1 </span>Data Acquisition and Filtering</h3>
+<div class="ltx_para" id="S2.SS1.p1">
+<p class="ltx_p">Our training dataset comprises both image and video data. For image data, we adopted the acquisition and processing pipeline outlined in <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib9" title="">9</a>]</cite>, curating 5 billion images from a pool of over 10 billion for pre-training, with 1 billion reserved for subsequent stages.
+For video data, building upon the pipeline in <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib4" title="">4</a>]</cite>, we significantly expanded the data volume while refining the filtering mechanisms to enhance quality.
+The specifics of these processes are detailed below.</p>
+</div>
+<div class="ltx_para" id="S2.SS1.p2">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Data Acquisition.</span>
+To continuously improve the model’s performance, we prioritized diversity and quality during data acquisition. We sourced raw videos from a variety of channels, ensuring comprehensive coverage across diverse content, filming techniques, camera movements, styles, and scenarios. After basic deduplication and the removal of corrupted files, we obtained more than 10 million hours of raw video data.</p>
+</div>
+<div class="ltx_para" id="S2.SS1.p3">
+<p class="ltx_p">To address the high variance in raw video lengths and optimize training efficiency, we segmented the videos into consistent clips ranging from 2 to 10 seconds. Specifically, we utilized PySceneDetect <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib10" title="">10</a>]</cite> combined with a custom segmentation operator to detect scene boundaries. To eliminate any remaining clips containing transition effects, we applied a secondary filtering stage using a specialized transition classifier.</p>
+</div>
+<div class="ltx_para" id="S2.SS1.p4">
+<p class="ltx_p">To mitigate artifacts such as subtitles, logos, and watermarks, we applied spatial cropping to exclude affected regions. To maintain compositional integrity, we discarded clips where the cropped area retained less than 60% of the original frame.</p>
+</div>
+<div class="ltx_para" id="S2.SS1.p5">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Data Curation.</span>
+To guarantee the high quality of our training data, we implemented a rigorous, multi-stage filtering pipeline. This pipeline consists of three distinct levels:</p>
+<ul class="ltx_itemize" id="S2.I1">
+<li class="ltx_item" id="S2.I1.i1" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S2.I1.i1.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Basic Filtering</span>: We employed specialized filters to remove videos with padding borders, stitching artifacts, grid layouts (collages), and static or low-motion scenes.</p>
+</div>
+</li>
+<li class="ltx_item" id="S2.I1.i2" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S2.I1.i2.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Visual Quality Filtering</span>: We developed a comprehensive quality assessment operator that evaluates videos across four dimensions: sharpness, detail retention, noise &amp; artifacts, and dynamic range. This allows us to discard clips with poor visual quality.</p>
+</div>
+</li>
+<li class="ltx_item" id="S2.I1.i3" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S2.I1.i3.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Aesthetic Filtering</span>: We applied an aesthetic scoring operator based on <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib11" title="">11</a>]</cite> to evaluate the aesthetic quality of the videos, filtering out those with low aesthetic scores.</p>
+</div>
+</li>
+</ul>
+<p class="ltx_p">Upon completion of these filtering stages, approximately 800 million high-quality video segments remained for pre-training.</p>
+</div>
+</section>
+<section class="ltx_subsection" id="S2.SS2">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">2.2 </span>Captioning</h3>
+<div class="ltx_para" id="S2.SS2.p1">
+<p class="ltx_p">High-quality captions play a crucial role in video generation, significantly influencing precise instruction following and generation quality. To generate precise and comprehensive descriptions across diverse data modalities, we developed three specialized captioning models, each tailored for a specific function:</p>
+<ul class="ltx_itemize" id="S2.I2">
+<li class="ltx_item" id="S2.I2.i1" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S2.I2.i1.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Image Captioning</span>: Generates descriptions for static images, leveraging the same methodology in HunyuanImage-3.0 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib9" title="">9</a>]</cite>.</p>
+</div>
+</li>
+<li class="ltx_item" id="S2.I2.i2" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S2.I2.i2.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Video Captioning</span>: Produces a highly structured, multi-component description. These encompass multi-level textual narratives alongside a detailed set of cinematic and aesthetic properties (e.g., shot type, shot angle, composition, lighting, style, color palette, atmosphere).</p>
+</div>
+</li>
+<li class="ltx_item" id="S2.I2.i3" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S2.I2.i3.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Image-to-Video (I2V) Instructional Captioning</span>: This novel module generates text describing the temporal evolution or transformation from the initial frame, detailing changes in both foreground subjects and the background environment.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="ltx_para" id="S2.SS2.p2">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Addressing the Richness-Hallucination Trade-off.</span>
+A significant and persistent challenge in this domain is the inherent trade-off between descriptive richness and factual accuracy. Specifically, attempts to generate greater detail often increase the propensity for hallucination or factual inconsistencies. To overcome this, we integrate Reinforcement Learning (RL), specifically OPA-DPO <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib12" title="">12</a>]</cite>, into our caption model post-training pipeline, as shown in Figure <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S2.F1" title="Figure 1 ‣ 2.2 Captioning ‣ 2 Data Preparation ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">1</span></a>. This approach is designed to strike an optimal balance, maximizing descriptive detail while simultaneously minimizing hallucinations and factual errors.</p>
+</div>
+<figure class="ltx_figure" id="S2.F1"><img alt="Refer to caption" class="ltx_graphics ltx_centering ltx_img_landscape" height="385" id="S2.F1.g1" src="x1.png" width="830"/>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span class="ltx_text" style="font-size:90%;">Figure 1</span>: </span><span class="ltx_text" style="font-size:90%;"> Caption Model Post-training Pipeline.</span></figcaption>
+</figure>
+<div class="ltx_para" id="S2.SS2.p3">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Camera Movement Description.</span> We developed a specialized recognition model to analyze camera dynamics. This model is capable of identifying multiple camera movement types, operating at both a clip-level (for the whole video) and a sequential (over time) level. High-confidence predictions are converted into natural language descriptions and subsequently integrated into the structured video captions. The objective of this integration is to empower generative models with controllable camera movement.</p>
+</div>
+</section>
+</section>
+<section class="ltx_section" id="S3">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">3 </span>Model Design</h2>
+<div class="ltx_para" id="S3.p1">
+<p class="ltx_p">We propose a two-stage framework for high-fidelity video synthesis. In the first stage, we employ a diffusion transformer (DiT) model with 8.3 billion parameters, designed for multi-task learning. The architectural hyperparameters of HunyuanVideo 1.5 are detailed in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S3.T1" title="Table 1 ‣ 3 Model Design ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">1</span></a>. Subsequently, a video super-resolution network is utilized to further enhance visual quality. Comprehensive elaborations are provided in the following subsection.</p>
+</div>
+<figure class="ltx_table" id="S3.T1">
+<figcaption class="ltx_caption ltx_centering" style="font-size:80%;"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:113%;">Table 1</span>: </span><span class="ltx_text" style="font-size:113%;">Architecture hyperparameters for the HunyuanVideo 1.5.</span></figcaption>
+<table class="ltx_tabular ltx_centering ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_tt"><span class="ltx_text ltx_font_bold" style="font-size:80%;">
+<span class="ltx_tabular ltx_align_middle">
+<span class="ltx_tr">
+<span class="ltx_td ltx_nopad_r ltx_align_center">Dual-stream Blocks</span></span>
+</span></span></td>
+<td class="ltx_td ltx_align_center ltx_border_tt"><span class="ltx_text ltx_font_bold" style="font-size:80%;">
+<span class="ltx_tabular ltx_align_middle">
+<span class="ltx_tr">
+<span class="ltx_td ltx_nopad_r ltx_align_center">Model Dimension</span></span>
+</span></span></td>
+<td class="ltx_td ltx_align_center ltx_border_tt"><span class="ltx_text ltx_font_bold" style="font-size:80%;">
+<span class="ltx_tabular ltx_align_middle">
+<span class="ltx_tr">
+<span class="ltx_td ltx_nopad_r ltx_align_center">FFN Dimension</span></span>
+</span></span></td>
+<td class="ltx_td ltx_align_center ltx_border_tt"><span class="ltx_text ltx_font_bold" style="font-size:80%;">
+<span class="ltx_tabular ltx_align_middle">
+<span class="ltx_tr">
+<span class="ltx_td ltx_nopad_r ltx_align_center">Attention Heads</span></span>
+</span></span></td>
+<td class="ltx_td ltx_align_center ltx_border_tt"><span class="ltx_text ltx_font_bold" style="font-size:80%;">
+<span class="ltx_tabular ltx_align_middle">
+<span class="ltx_tr">
+<span class="ltx_td ltx_nopad_r ltx_align_center">Head dim</span></span>
+</span></span></td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t"><span class="ltx_text" style="font-size:80%;">54</span></td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t"><span class="ltx_text" style="font-size:80%;">2048</span></td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t"><span class="ltx_text" style="font-size:80%;">8192</span></td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t"><span class="ltx_text" style="font-size:80%;">16</span></td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t"><span class="ltx_text" style="font-size:80%;">128</span></td>
+</tr>
+</table>
+</figure>
+<figure class="ltx_figure" id="S3.F2"><img alt="Refer to caption" class="ltx_graphics ltx_centering ltx_img_landscape" height="559" id="S3.F2.g1" src="x2.png" width="830"/>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span class="ltx_text" style="font-size:90%;">Figure 2</span>: </span><span class="ltx_text" style="font-size:90%;">Architecture of the Unified Diffusion Transformer.</span></figcaption>
+</figure>
+<section class="ltx_subsection" id="S3.SS1">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.1 </span>Unified Diffusion Transformer</h3>
+<div class="ltx_para" id="S3.SS1.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Multi-Task Training.</span> We developed a unified architecture for jointly training text-to-image (T2I), text-to-video (T2V), and image-to-video (I2V) tasks. For the I2V task, the reference image is integrated into the model via two complementary strategies: (1) VAE-based encoding, where the image latent is concatenated with the noisy latent along the channel dimension to leverage its exceptional detail reconstruction capacity; and (2) SigLip-based feature extraction, where semantic embeddings are concatenated sequentially to enhance semantic alignment and strengthen instruction adherence in I2V generation. A learnable type embedding is introduced to explicitly distinguish between different types of conditions.</p>
+</div>
+<div class="ltx_para" id="S3.SS1.p2">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">VAE.</span> We introduce a causal 3D transformer architecture designed for joint image-video encoding, which achieves a spatial compression ratio of 16<math alttext="\times" class="ltx_Math" display="inline" id="S3.SS1.p2.m1" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> and a temporal compression ratio of 4<math alttext="\times" class="ltx_Math" display="inline" id="S3.SS1.p2.m2" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>, with a latent channel dimension of 32.</p>
+</div>
+<div class="ltx_para" id="S3.SS1.p3">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Text encoder.</span> The model employs a dual-channel text encoder, combining a general textual encoder. This design leverages a visual-language multimodal encoder Qwen2.5-VL <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib13" title="">13</a>]</cite> to achieve a deeper understanding of scene descriptions, character actions, and specific requirements. Additionally, the incorporation of a multilingual Glyph-ByT5 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib14" title="">14</a>]</cite> text encoder further strengthens the model’s ability to render text accurately across various languages. This synergistic design enables the model to learn from both high-level semantic representations and fine-grained language-specific features, leading to a more comprehensive and robust text comprehension capability.</p>
+</div>
+<div class="ltx_para" id="S3.SS1.p4">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Sparse Attention.</span> The computational complexity of standard self-attention scales quadratically with sequence length, posing significant efficiency bottlenecks for transformer-based video generation models. Given the inherent spatiotemporal redundancy in video data, replacing full attention with sparse attention presents a well-motivated optimization strategy. To synergistically combine the benefits of static local window priors and dynamic global adaptive selection, we propose a novel sparse attention method termed SSTA (Selective and Sliding Tile Attention). SSTA features a parameter-free design, enabling seamless integration at any training stage. In our implementation, sparse training is incorporated during the distillation phase, which more effectively preserves output quality while maintaining high computational efficiency. The SSTA algorithm comprises four key steps, as described in Algorithm  <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#alg1" title="In 3.1 Unified Diffusion Transformer ‣ 3 Model Design ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">1</span></a>: 3D Block Partition, Selective Mask Generation, STA <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib15" title="">15</a>]</cite> Mask Generation and Block-Sparse Attention. We propose an engineered acceleration toolkit <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib16" title="">16</a>]</cite> for sparse attention mechanisms, utilizing the ThunderKittens <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib17" title="">17</a>]</cite> framework to efficiently implement the flex_block_attention algorithm.</p>
+</div>
+<figure class="ltx_float ltx_algorithm" id="alg1">
+<div class="ltx_listing ltx_lst_numbers_left ltx_listing">
+<div class="ltx_listingline">
+<div class="ltx_listing ltx_listing">
+<div class="ltx_listingline" id="alg1.l0">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">0:</span></span> Query/Key/Value tensor <math alttext="Q," class="ltx_Math" display="inline" id="alg1.l0.m1" intent=":literal"><semantics><mrow><mi>Q</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">Q,</annotation></semantics></math>K, <math alttext="V\in\mathbb{R}^{h\times F\times H\times W\times D}" class="ltx_Math" display="inline" id="alg1.l0.m2" intent=":literal"><semantics><mrow><mi>V</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>h</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>F</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>H</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>W</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>D</mi></mrow></msup></mrow><annotation encoding="application/x-tex">V\in\mathbb{R}^{h\times F\times H\times W\times D}</annotation></semantics></math>, 
+</div>
+<div class="ltx_listingline">Block size <math alttext="N=tile_{t}\times tile_{h}\times tile_{w}" class="ltx_Math" display="inline" id="alg1.m1" intent=":literal"><semantics><mrow><mi>N</mi><mo>=</mo><mrow><mrow><mrow><mrow><mrow><mi>t</mi><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>e</mi><mi>t</mi></msub></mrow><mo lspace="0.222em" rspace="0.222em">×</mo><mi>t</mi></mrow><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>e</mi><mi>h</mi></msub></mrow><mo lspace="0.222em" rspace="0.222em">×</mo><mi>t</mi></mrow><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>e</mi><mi>w</mi></msub></mrow></mrow><annotation encoding="application/x-tex">N=tile_{t}\times tile_{h}\times tile_{w}</annotation></semantics></math>, 
+</div>
+<div class="ltx_listingline">Block num <math alttext="B=(F/tile_{t})\times(H/tile_{h})\times(W/tile_{w})" class="ltx_Math" display="inline" id="alg1.m2" intent=":literal"><semantics><mrow><mi>B</mi><mo>=</mo><mrow><mrow><mo stretchy="false">(</mo><mrow><mrow><mi>F</mi><mo>/</mo><mi>t</mi></mrow><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>e</mi><mi>t</mi></msub></mrow><mo rspace="0.055em" stretchy="false">)</mo></mrow><mo rspace="0.222em">×</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mi>H</mi><mo>/</mo><mi>t</mi></mrow><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>e</mi><mi>h</mi></msub></mrow><mo rspace="0.055em" stretchy="false">)</mo></mrow><mo rspace="0.222em">×</mo><mrow><mo stretchy="false">(</mo><mrow><mrow><mi>W</mi><mo>/</mo><mi>t</mi></mrow><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi><mo lspace="0em" rspace="0em">​</mo><msub><mi>e</mi><mi>w</mi></msub></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">B=(F/tile_{t})\times(H/tile_{h})\times(W/tile_{w})</annotation></semantics></math>, 
+</div>
+<div class="ltx_listingline">Window size <math alttext="WS=(w_{t},w_{h},w_{w})" class="ltx_Math" display="inline" id="alg1.m3" intent=":literal"><semantics><mrow><mrow><mi>W</mi><mo lspace="0em" rspace="0em">​</mo><mi>S</mi></mrow><mo>=</mo><mrow><mo stretchy="false">(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>,</mo><msub><mi>w</mi><mi>h</mi></msub><mo>,</mo><msub><mi>w</mi><mi>w</mi></msub><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">WS=(w_{t},w_{h},w_{w})</annotation></semantics></math>, 
+</div>
+<div class="ltx_listingline">Top-<math alttext="k" class="ltx_Math" display="inline" id="alg1.m4" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>.
+
+</div>
+<div class="ltx_listingline">
+</div>
+<div class="ltx_listingline" id="alg1.l1">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">1:</span></span> <span class="ltx_text ltx_font_bold">(1) 3D Block Partition</span>
+</div>
+<div class="ltx_listingline" id="alg1.l2">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">2:</span></span> Partition <math alttext="Q" class="ltx_Math" display="inline" id="alg1.l2.m1" intent=":literal"><semantics><mi>Q</mi><annotation encoding="application/x-tex">Q</annotation></semantics></math> and <math alttext="K" class="ltx_Math" display="inline" id="alg1.l2.m2" intent=":literal"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math> into blocks of size <math alttext="N" class="ltx_Math" display="inline" id="alg1.l2.m3" intent=":literal"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+</div>
+<div class="ltx_listingline" id="alg1.l3">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">3:</span></span> <math alttext="Q_{b},K_{b}\leftarrow\text{split\_blocks}(Q,K,N)" class="ltx_Math" display="inline" id="alg1.l3.m1" intent=":literal"><semantics><mrow><mrow><msub><mi>Q</mi><mi>b</mi></msub><mo>,</mo><msub><mi>K</mi><mi>b</mi></msub></mrow><mo stretchy="false">←</mo><mrow><mtext>split_blocks</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>Q</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>N</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">Q_{b},K_{b}\leftarrow\text{split\_blocks}(Q,K,N)</annotation></semantics></math>
+</div>
+<div class="ltx_listingline">
+</div>
+<div class="ltx_listingline" id="alg1.l4">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">4:</span></span> <span class="ltx_text ltx_font_bold">(2) Selective Mask Generation</span>
+</div>
+<div class="ltx_listingline" id="alg1.l5">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">5:</span></span> <math alttext="\bar{Q}_{b},\bar{K}_{b}\leftarrow\text{adaptive\_pool}(Q_{b}),\text{adaptive\_pool}(K_{b})" class="ltx_Math" display="inline" id="alg1.l5.m1" intent=":literal"><semantics><mrow><mrow><mrow><msub><mover accent="true"><mi>Q</mi><mo>¯</mo></mover><mi>b</mi></msub><mo>,</mo><msub><mover accent="true"><mi>K</mi><mo>¯</mo></mover><mi>b</mi></msub></mrow><mo stretchy="false">←</mo><mrow><mtext>adaptive_pool</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><msub><mi>Q</mi><mi>b</mi></msub><mo stretchy="false">)</mo></mrow></mrow></mrow><mo>,</mo><mrow><mtext>adaptive_pool</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><msub><mi>K</mi><mi>b</mi></msub><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\bar{Q}_{b},\bar{K}_{b}\leftarrow\text{adaptive\_pool}(Q_{b}),\text{adaptive\_pool}(K_{b})</annotation></semantics></math>
+</div>
+<div class="ltx_listingline" id="alg1.l6">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">6:</span></span> <math alttext="\mathrm{Score}_{s}=\bar{Q}_{b}\bar{K}_{b}^{\top}\in\mathbb{R}^{h\times B\times B}" class="ltx_Math" display="inline" id="alg1.l6.m1" intent=":literal"><semantics><mrow><msub><mi>Score</mi><mi>s</mi></msub><mo>=</mo><mrow><msub><mover accent="true"><mi>Q</mi><mo>¯</mo></mover><mi>b</mi></msub><mo lspace="0em" rspace="0em">​</mo><msubsup><mover accent="true"><mi>K</mi><mo>¯</mo></mover><mi>b</mi><mo>⊤</mo></msubsup></mrow><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>h</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>B</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>B</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\mathrm{Score}_{s}=\bar{Q}_{b}\bar{K}_{b}^{\top}\in\mathbb{R}^{h\times B\times B}</annotation></semantics></math> {Q-K block-wise similarity}
+
+</div>
+<div class="ltx_listingline" id="alg1.l7">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">7:</span></span> <math alttext="\mathrm{Score}_{r}=\frac{1}{N-1}\sum_{\begin{subarray}{c}i=1\\
+j\neq i\end{subarray}}^{N}[\bar{K}_{b}\bar{K}_{b}^{\top}]_{ij}\in\mathbb{R}^{h\times 1\times B}" class="ltx_Math" display="inline" id="alg1.l7.m1" intent=":literal"><semantics><mrow><msub><mi>Score</mi><mi>r</mi></msub><mo>=</mo><mrow><mfrac><mn>1</mn><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo lspace="0em" rspace="0em">​</mo><mrow><msubsup><mo rspace="0em">∑</mo><mtable rowspacing="0pt"><mtr><mtd><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow></mtd></mtr><mtr><mtd><mrow><mi>j</mi><mo>≠</mo><mi>i</mi></mrow></mtd></mtr></mtable><mi>N</mi></msubsup><msub><mrow><mo stretchy="false">[</mo><mrow><msub><mover accent="true"><mi>K</mi><mo>¯</mo></mover><mi>b</mi></msub><mo lspace="0em" rspace="0em">​</mo><msubsup><mover accent="true"><mi>K</mi><mo>¯</mo></mover><mi>b</mi><mo>⊤</mo></msubsup></mrow><mo stretchy="false">]</mo></mrow><mrow><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>j</mi></mrow></msub></mrow></mrow><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>h</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mn>1</mn><mo lspace="0.222em" rspace="0.222em">×</mo><mi>B</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\mathrm{Score}_{r}=\frac{1}{N-1}\sum_{\begin{subarray}{c}i=1\\
+j\neq i\end{subarray}}^{N}[\bar{K}_{b}\bar{K}_{b}^{\top}]_{ij}\in\mathbb{R}^{h\times 1\times B}</annotation></semantics></math> {K-K block-wise redundancy}
+
+</div>
+<div class="ltx_listingline" id="alg1.l8">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">8:</span></span> <math alttext="\mathrm{Score}_{i}=\lambda\cdot\mathrm{Score}_{s}-\beta\cdot\mathrm{Score}_{r}" class="ltx_Math" display="inline" id="alg1.l8.m1" intent=":literal"><semantics><mrow><msub><mi>Score</mi><mi>i</mi></msub><mo>=</mo><mrow><mrow><mi>λ</mi><mo lspace="0.222em" rspace="0.222em">⋅</mo><msub><mi>Score</mi><mi>s</mi></msub></mrow><mo>−</mo><mrow><mi>β</mi><mo lspace="0.222em" rspace="0.222em">⋅</mo><msub><mi>Score</mi><mi>r</mi></msub></mrow></mrow></mrow><annotation encoding="application/x-tex">\mathrm{Score}_{i}=\lambda\cdot\mathrm{Score}_{s}-\beta\cdot\mathrm{Score}_{r}</annotation></semantics></math> {Block importance}
+
+</div>
+<div class="ltx_listingline" id="alg1.l9">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">9:</span></span> <math alttext="\mathrm{Selected\_indexes}\leftarrow\text{Topk}(\mathrm{Score_{i}},k)" class="ltx_Math" display="inline" id="alg1.l9.m1" intent=":literal"><semantics><mrow><mrow><mi>Selected</mi><mo lspace="0em" rspace="0em">​</mo><mi mathvariant="normal">_</mi><mo lspace="0em" rspace="0em">​</mo><mi>indexes</mi></mrow><mo stretchy="false">←</mo><mrow><mtext>Topk</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><msub><mi>Score</mi><mi mathvariant="normal">i</mi></msub><mo>,</mo><mi>k</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\mathrm{Selected\_indexes}\leftarrow\text{Topk}(\mathrm{Score_{i}},k)</annotation></semantics></math>
+</div>
+<div class="ltx_listingline" id="alg1.l10">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">10:</span></span> <math alttext="M_{sel}\leftarrow\text{Indexes2mask}(\mathrm{Selected\_indexes})" class="ltx_Math" display="inline" id="alg1.l10.m1" intent=":literal"><semantics><mrow><msub><mi>M</mi><mrow><mi>s</mi><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi></mrow></msub><mo stretchy="false">←</mo><mrow><mtext>Indexes2mask</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mrow><mi>Selected</mi><mo lspace="0em" rspace="0em">​</mo><mi mathvariant="normal">_</mi><mo lspace="0em" rspace="0em">​</mo><mi>indexes</mi></mrow><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">M_{sel}\leftarrow\text{Indexes2mask}(\mathrm{Selected\_indexes})</annotation></semantics></math>
+</div>
+<div class="ltx_listingline">
+</div>
+<div class="ltx_listingline" id="alg1.l11">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">11:</span></span> <span class="ltx_text ltx_font_bold">(3) STA (Sliding Tile Attention) Mask Generation</span>
+</div>
+<div class="ltx_listingline" id="alg1.l12">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">12:</span></span> <span class="ltx_text ltx_font_bold">for</span> each block pair <math alttext="(i,j)" class="ltx_Math" display="inline" id="alg1.l12.m1" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(i,j)</annotation></semantics></math> <span class="ltx_text ltx_font_bold">do</span>
+</div>
+<div class="ltx_listingline" id="alg1.l13">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">13:</span></span>  <span class="ltx_text ltx_font_bold">if</span> <math alttext="j" class="ltx_Math" display="inline" id="alg1.l13.m1" intent=":literal"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math> within local window of <math alttext="i" class="ltx_Math" display="inline" id="alg1.l13.m2" intent=":literal"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math> defined by <math alttext="WS=(w_{t},w_{h},w_{w})" class="ltx_Math" display="inline" id="alg1.l13.m3" intent=":literal"><semantics><mrow><mrow><mi>W</mi><mo lspace="0em" rspace="0em">​</mo><mi>S</mi></mrow><mo>=</mo><mrow><mo stretchy="false">(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>,</mo><msub><mi>w</mi><mi>h</mi></msub><mo>,</mo><msub><mi>w</mi><mi>w</mi></msub><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">WS=(w_{t},w_{h},w_{w})</annotation></semantics></math> <span class="ltx_text ltx_font_bold">then</span>
+</div>
+<div class="ltx_listingline" id="alg1.l14">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">14:</span></span>   <math alttext="M_{\mathrm{sta}}[i,j]\leftarrow 1" class="ltx_Math" display="inline" id="alg1.l14.m1" intent=":literal"><semantics><mrow><mrow><msub><mi>M</mi><mi>sta</mi></msub><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">[</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo stretchy="false">]</mo></mrow></mrow><mo stretchy="false">←</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">M_{\mathrm{sta}}[i,j]\leftarrow 1</annotation></semantics></math>
+</div>
+<div class="ltx_listingline" id="alg1.l15">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">15:</span></span>  <span class="ltx_text ltx_font_bold">else</span>
+</div>
+<div class="ltx_listingline" id="alg1.l16">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">16:</span></span>   <math alttext="M_{\mathrm{sta}}[i,j]\leftarrow 0" class="ltx_Math" display="inline" id="alg1.l16.m1" intent=":literal"><semantics><mrow><mrow><msub><mi>M</mi><mi>sta</mi></msub><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">[</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo stretchy="false">]</mo></mrow></mrow><mo stretchy="false">←</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">M_{\mathrm{sta}}[i,j]\leftarrow 0</annotation></semantics></math>
+</div>
+<div class="ltx_listingline" id="alg1.l17">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">17:</span></span>  <span class="ltx_text ltx_font_bold">end</span> <span class="ltx_text ltx_font_bold">if</span>
+</div>
+<div class="ltx_listingline" id="alg1.l18">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">18:</span></span> <span class="ltx_text ltx_font_bold">end</span> <span class="ltx_text ltx_font_bold">for</span>
+</div>
+<div class="ltx_listingline">
+</div>
+<div class="ltx_listingline" id="alg1.l19">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">19:</span></span> <span class="ltx_text ltx_font_bold">(4) Combine Masks &amp; Perform Block-Sparse Attention</span>
+</div>
+<div class="ltx_listingline" id="alg1.l20">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">20:</span></span> <math alttext="M_{combined}\leftarrow M_{sel}\land M_{sta}" class="ltx_Math" display="inline" id="alg1.l20.m1" intent=":literal"><semantics><mrow><msub><mi>M</mi><mrow><mi>c</mi><mo lspace="0em" rspace="0em">​</mo><mi>o</mi><mo lspace="0em" rspace="0em">​</mo><mi>m</mi><mo lspace="0em" rspace="0em">​</mo><mi>b</mi><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>n</mi><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mi>d</mi></mrow></msub><mo stretchy="false">←</mo><mrow><msub><mi>M</mi><mrow><mi>s</mi><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi></mrow></msub><mo>∧</mo><msub><mi>M</mi><mrow><mi>s</mi><mo lspace="0em" rspace="0em">​</mo><mi>t</mi><mo lspace="0em" rspace="0em">​</mo><mi>a</mi></mrow></msub></mrow></mrow><annotation encoding="application/x-tex">M_{combined}\leftarrow M_{sel}\land M_{sta}</annotation></semantics></math> {Combine <math alttext="M_{sel}\in\mathbb{R}^{h\times B\times B}" class="ltx_Math" display="inline" id="alg1.l20.m2" intent=":literal"><semantics><mrow><msub><mi>M</mi><mrow><mi>s</mi><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mi>l</mi></mrow></msub><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>h</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>B</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>B</mi></mrow></msup></mrow><annotation encoding="application/x-tex">M_{sel}\in\mathbb{R}^{h\times B\times B}</annotation></semantics></math> and <math alttext="M_{sta}\in\mathbb{R}^{B\times B}" class="ltx_Math" display="inline" id="alg1.l20.m3" intent=":literal"><semantics><mrow><msub><mi>M</mi><mrow><mi>s</mi><mo lspace="0em" rspace="0em">​</mo><mi>t</mi><mo lspace="0em" rspace="0em">​</mo><mi>a</mi></mrow></msub><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>B</mi><mo lspace="0.222em" rspace="0.222em">×</mo><mi>B</mi></mrow></msup></mrow><annotation encoding="application/x-tex">M_{sta}\in\mathbb{R}^{B\times B}</annotation></semantics></math>}
+
+</div>
+<div class="ltx_listingline" id="alg1.l21">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">21:</span></span> <math alttext="O\leftarrow\text{flex\_block\_attention}(Q,K,V,M_{combined})" class="ltx_Math" display="inline" id="alg1.l21.m1" intent=":literal"><semantics><mrow><mi>O</mi><mo stretchy="false">←</mo><mrow><mtext>flex_block_attention</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>Q</mi><mo>,</mo><mi>K</mi><mo>,</mo><mi>V</mi><mo>,</mo><msub><mi>M</mi><mrow><mi>c</mi><mo lspace="0em" rspace="0em">​</mo><mi>o</mi><mo lspace="0em" rspace="0em">​</mo><mi>m</mi><mo lspace="0em" rspace="0em">​</mo><mi>b</mi><mo lspace="0em" rspace="0em">​</mo><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>n</mi><mo lspace="0em" rspace="0em">​</mo><mi>e</mi><mo lspace="0em" rspace="0em">​</mo><mi>d</mi></mrow></msub><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">O\leftarrow\text{flex\_block\_attention}(Q,K,V,M_{combined})</annotation></semantics></math>
+</div>
+<div class="ltx_listingline">
+</div>
+<div class="ltx_listingline" id="alg1.l22">
+<span class="ltx_tag ltx_tag_listingline"><span class="ltx_text" style="font-size:80%;">22:</span></span> <span class="ltx_text ltx_font_bold">return</span> <math alttext="O" class="ltx_Math" display="inline" id="alg1.l22.m1" intent=":literal"><semantics><mi>O</mi><annotation encoding="application/x-tex">O</annotation></semantics></math>
+</div>
+<div class="ltx_listingline">
+</div>
+</div>
+</div>
+</div>
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_float"><span class="ltx_text ltx_font_bold">Algorithm 1</span> </span>Selective and Sliding Tile Attention</figcaption>
+</figure>
+<div class="ltx_para" id="S3.SS1.p5">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Optimizer.</span> The Muon optimizer <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib8" title="">8</a>]</cite> is used in this work to achieve faster convergence. We observe that it attains a lower training loss than AdamW in only half the number of training steps, while also yielding superior performance across multiple text-to-image benchmarks. To ensure training stability, a weight decay of 0.01 is applied.</p>
+</div>
+<figure class="ltx_figure" id="S3.F3"><img alt="Refer to caption" class="ltx_graphics ltx_centering ltx_img_landscape" height="235" id="S3.F3.g1" src="x3.png" width="830"/>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span class="ltx_text" style="font-size:90%;">Figure 3</span>: </span><span class="ltx_text" style="font-size:90%;">The pipeline of a cascaded video super-resolution model.</span></figcaption>
+</figure>
+</section>
+<section class="ltx_subsection" id="S3.SS2">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.2 </span>Video Super-Resolution</h3>
+<div class="ltx_para" id="S3.SS2.p1">
+<p class="ltx_p">To further improve training and inference efficiency while meeting the demand for high-resolution video generation, we introduce a cascaded Video Super-Resolution (VSR) model that enhances fine-grained visual details and textures in videos generated by text-to-video and image-to-video based models. We follow the architecture of the main model—an 8.3B Video Diffusion Transformer—and perform super-resolution in the latent space. We inject the LR latents using a channel concatenation approach. To spatially align the LR and HR latents, we separately train a latent upsample block. The final high-quality 1080p video is obtained by decoding these HR latents through the VAE decoder, as shown in Figure <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S3.F3" title="Figure 3 ‣ 3.1 Unified Diffusion Transformer ‣ 3 Model Design ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">3</span></a>.</p>
+</div>
+</section>
+</section>
+<section class="ltx_section" id="S4">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">4 </span>Model Training</h2>
+<section class="ltx_subsection" id="S4.SS1">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.1 </span>Pre-training</h3>
+<div class="ltx_para" id="S4.SS1.p1">
+<p class="ltx_p">We establish a robust and versatile foundation for HunyuanVideo 1.5 through a structured pre-training strategy that systematically develops core generative capabilities across multiple modalities. This phase employs a progressive, multi-stage approach encompassing text-to-image (T2I), text-to-video (T2V), and image-to-video (I2V) tasks. By scaling spatial resolution, temporal length, and frame rate progressively and leveraging mixed-task training with carefully balanced data ratios, we equip the model with strong semantic alignment, visual diversity, and temporal coherence, forming a solid base for subsequent specialization and refinement.</p>
+</div>
+<div class="ltx_para" id="S4.SS1.p2">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">T2I.</span> We begin by training the T2I task, which includes two resolution stages (Stage I &amp; II in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.T2" title="Table 2 ‣ 4.1 Pre-training ‣ 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">2</span></a>): 256p and 512p. For each stage, we utilize training images with various aspect ratios and organize them into buckets to ensure efficient data sampling. The T2I task enables the model to learn robust semantic alignment between text and images, which we find significantly accelerates the convergence and performance of subsequent T2V &amp; I2V training.</p>
+</div>
+<div class="ltx_para" id="S4.SS1.p3">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">T2V &amp; I2V.</span> Throughout the pretraining phase, we employ a mixed training regimen combining T2I, T2V, and I2V tasks, with a task ratio of 1:6:3. This configuration leverages large-scale T2I data to enhance semantic understanding and generative diversity, while ensuring sufficient video-specific modeling through T2V and I2V tasks. We adopt a progressive multi-stage strategy (Stages III to VI in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.T2" title="Table 2 ‣ 4.1 Pre-training ‣ 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">2</span></a>), starting from 256p resolution at 16 fps and progressively advancing to 480p and 720p at 24 fps, with video durations ranging from 2 to 10 seconds. This structured scaling of spatiotemporal resolution facilitates stable convergence and strengthens the model’s capacity for detailed, coherent video synthesis. Similar to prior studies <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib18" title="">18</a>]</cite>, we observe that flow matching-based training is particularly sensitive to the shift hyper-parameter when video token lengths vary across stages. To maintain training stability under such varying sequence conditions, we carefully design a series of shift scheduling strategies that adapt to different token lengths during the progressive training process.</p>
+</div>
+<figure class="ltx_table" id="S4.T2">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 2</span>: </span><span class="ltx_text" style="font-size:90%;">The training process for the three tasks: T2I, T2V, I2V. In the "Data volume" column, the number before the "/" indicates the amount of video data, and the number after the "/" indicates the amount of image data. "M" stands for million.</span></figcaption>
+<table class="ltx_tabular ltx_centering ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_tt" style="padding-left:13.0pt;padding-right:13.0pt;">Stage</td>
+<td class="ltx_td ltx_align_center ltx_border_tt" style="padding-left:13.0pt;padding-right:13.0pt;">Stage</td>
+<td class="ltx_td ltx_align_center ltx_border_tt" style="padding-left:13.0pt;padding-right:13.0pt;">Training Resolution</td>
+<td class="ltx_td ltx_align_center ltx_border_tt" style="padding-left:13.0pt;padding-right:13.0pt;">Data Volumn</td>
+<td class="ltx_td ltx_align_center ltx_border_tt" style="padding-left:13.0pt;padding-right:13.0pt;">Task</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">I</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">Pretrain</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">256p</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">5 billion</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">T2I</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r" style="padding-left:13.0pt;padding-right:13.0pt;">II</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">Pretrain</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">512p</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">1 billion</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">T2I</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">III</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">Pretrain</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">256p 16fps 2<math alttext="\sim" class="ltx_Math" display="inline" id="S4.T2.m1" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10s</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">800M</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">T2V/I2V/T2I</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r" style="padding-left:13.0pt;padding-right:13.0pt;">IV</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">Pretrain</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">480p 16fps 2<math alttext="\sim" class="ltx_Math" display="inline" id="S4.T2.m2" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10s</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">200M</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">T2V/I2V/T2I</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r" style="padding-left:13.0pt;padding-right:13.0pt;">V</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">Pretrain</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">720p 16fps 2<math alttext="\sim" class="ltx_Math" display="inline" id="S4.T2.m3" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10s</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">100M</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">T2V/I2V/T2I</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r" style="padding-left:13.0pt;padding-right:13.0pt;">VI</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">Pretrain</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">720p 24fps 2<math alttext="\sim" class="ltx_Math" display="inline" id="S4.T2.m4" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10s</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">100M</td>
+<td class="ltx_td ltx_align_center" style="padding-left:13.0pt;padding-right:13.0pt;">T2V/I2V/T2I</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">VII</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">CT</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">480p/720p 24fps 2<math alttext="\sim" class="ltx_Math" display="inline" id="S4.T2.m5" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10s</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">1M</td>
+<td class="ltx_td ltx_align_center ltx_border_t" style="padding-left:13.0pt;padding-right:13.0pt;">T2V</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_bb ltx_border_r" style="padding-left:13.0pt;padding-right:13.0pt;">VIII</td>
+<td class="ltx_td ltx_align_center ltx_border_bb" style="padding-left:13.0pt;padding-right:13.0pt;">CT</td>
+<td class="ltx_td ltx_align_center ltx_border_bb" style="padding-left:13.0pt;padding-right:13.0pt;">480p/720p 24fps 2<math alttext="\sim" class="ltx_Math" display="inline" id="S4.T2.m6" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math>10s</td>
+<td class="ltx_td ltx_align_center ltx_border_bb" style="padding-left:13.0pt;padding-right:13.0pt;">1M</td>
+<td class="ltx_td ltx_align_center ltx_border_bb" style="padding-left:13.0pt;padding-right:13.0pt;">I2V</td>
+</tr>
+</table>
+</figure>
+</section>
+<section class="ltx_subsection" id="S4.SS2">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.2 </span>Post-training</h3>
+<div class="ltx_para" id="S4.SS2.p1">
+<p class="ltx_p">We conduct a comprehensive post-training pipeline to further enhance the generative quality and task-specific performance of HunyuanVideo 1.5. This multi-stage process consists of continuing training (CT), supervised fine-tuning (SFT), and human feedback alignment (RLHF), applied separately for text-to-video (T2V) and image-to-video (I2V) tasks. As shown in Figure <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.F4" title="Figure 4 ‣ 4.2 Post-training ‣ 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">4</span></a>, we present the visualization results during different post-training stages. By progressively refining the model distribution through these dedicated stages, we systematically steer the model toward the optimal output distribution for each task, significantly improving motion coherence, visual fidelity, and alignment with human preferences.</p>
+</div>
+<div class="ltx_para" id="S4.SS2.p2">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">CT.</span>
+We conduct both CT and SFT stage in 480p and 720p resolution. In the CT stage, we leverage 1 million high-quality video clips per task (as detailed in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.T2" title="Table 2 ‣ 4.1 Pre-training ‣ 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">2</span></a>, Stages VII &amp; VIII), balanced across diverse categories and sourced from premium datasets. For T2V, we further prioritize clips with high dynamic motion to strengthen temporal modeling. For I2V, we introduce instructional captions that focus exclusively on describing motion and transformations compared to the first frame, thereby enhancing action fidelity. Both T2V and I2V CT processes are initialized from the same optimally pre-trained checkpoint, enabling both tasks to build upon a shared high-quality foundation.</p>
+</div>
+<div class="ltx_para" id="S4.SS2.p3">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">SFT.</span>
+During SFT, we utilize rigorously selected clips per task, filtered strictly considering aesthetic appeal, clarity, and motion smoothness. Through CT and SFT, we observe evident improvements in output stability, visual quality, aesthetic appeal, and temporal consistency for both generation tasks.</p>
+</div>
+<div class="ltx_para" id="S4.SS2.p4">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">RLHF.</span>
+We employ Reinforcement Learning from Human Feedback (RLHF) strategies tailored for our I2V and T2V tasks, both mainly aimed at correcting artifacts and enhancing motion quality.</p>
+</div>
+<div class="ltx_para" id="S4.SS2.p5">
+<p class="ltx_p">For the I2V task, we apply <span class="ltx_text ltx_font_bold">online reinforcement learning (RL)</span> during post-training to correct structural and motion artifacts. Our approach begins with a curated prompt set spanning 100+ categories, constructed from high-aesthetic images. Candidate prompts are first generated via a vision-language model (VLM), then manually verified to ensure strict text-image consistency. We fine-tune a VLM-based reward model to evaluate videos across four key dimensions: text alignment, image alignment, visual quality, and motion dynamics. During RL training, we employ mixed sampling strategies by varying both random seeds and CFG scales, and adopt a hybrid ODE–SDE solver (MixGRPO <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib19" title="">19</a>]</cite>) to enrich exploration while maintaining sampling quality. This RLHF process yields consistent improvements across all evaluation metrics, with particularly notable gains in motion realism.</p>
+</div>
+<div class="ltx_para" id="S4.SS2.p6">
+<p class="ltx_p">Building on this, our T2V alignment strategy uses a more comprehensive <span class="ltx_text ltx_font_bold">hybrid offline-then-online</span> approach, designed to address the increased complexity of T2V motion artifacts. We found that existing reward models struggle to effectively differentiate fine-grained motion quality. Therefore, we first conduct an offline optimization stage using Direct Preference Optimization (DPO). For this, we curate a balanced <math alttext="O(10K)" class="ltx_Math" display="inline" id="S4.SS2.p6.m1" intent=":literal"><semantics><mrow><mi>O</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mrow><mn>10</mn><mo lspace="0em" rspace="0em">​</mo><mi>K</mi></mrow><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">O(10K)</annotation></semantics></math> prompt set (from LLMs-generated prompts and training video captions) covering diverse dimensions (motion, scene, subject, etc.). Using a selected high-quality SFT checkpoint, we generate N video candidates per prompt to create non-repetitive pairs. These pairs are manually annotated (GSB) for semantic fidelity, motion quality, and aesthetics. Applying Direct Preference Optimization (DPO) <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib20" title="">20</a>]</cite> to this high-quality paired data significantly reduces motion artifacts and establishes a superior policy starting point. Finally, we conduct an online optimization stage, adopting the exact same online RL framework developed for I2V to further enhance the model’s visual quality and semantic-text alignment.</p>
+</div>
+<figure class="ltx_figure" id="S4.F4"><img alt="Refer to caption" class="ltx_graphics ltx_centering ltx_img_landscape" height="462" id="S4.F4.g1" src="assets/performance/ct_sft-rlhf-1.png" width="598"/>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span class="ltx_text" style="font-size:90%;">Figure 4</span>: </span><span class="ltx_text" style="font-size:90%;">Visualization during different post-training stages</span></figcaption>
+</figure>
+</section>
+<section class="ltx_subsection" id="S4.SS3">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.3 </span>Video Super-Resolution.</h3>
+<div class="ltx_para" id="S4.SS3.p1">
+<p class="ltx_p">We begin by initializing the weights of our video super-resolution model with a pretrained T2V video model to ensure effective training. For dataset construction, a diverse collection comprising 1 million high-quality video clips is curated. These clips span a wide range of scenarios and resolutions from 1K to 4K, each lasting between 3 and 10 seconds at 24 frames per second. In addition to video data, a set of high-resolution images is incorporated during training to enhance the model’s capability to generate fine visual details.</p>
+</div>
+<div class="ltx_para" id="S4.SS3.p2">
+<p class="ltx_p">For input preparation, we concatenate the low-resolution latents and noise along the channel dimension as input to the DiT model. All weights of the video super-resolution model are fully trainable throughout the training process, following the flow matching paradigm. As shown in Figure <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S4.F5" title="Figure 5 ‣ 4.3 Video Super-Resolution. ‣ 4 Model Training ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">5</span></a>, our method significantly enhances visual quality, motion stability, and overall temporal coherence.</p>
+</div>
+<figure class="ltx_figure" id="S4.F5"><img alt="Refer to caption" class="ltx_graphics ltx_centering ltx_img_square" height="757" id="S4.F5.g1" src="x4.png" width="830"/>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span class="ltx_text" style="font-size:90%;">Figure 5</span>: </span><span class="ltx_text" style="font-size:90%;">Visualization results of the cascaded video super-resolution model.</span></figcaption>
+</figure>
+</section>
+</section>
+<section class="ltx_section" id="S5">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">5 </span>Model Performance</h2>
+<div class="ltx_para" id="S5.p1">
+<p class="ltx_p">We adopt two evaluation methods: Rating and GSB (Good/Same/Bad). The Rating method provides a comprehensive assessment of the model from multiple perspectives, enabling us to better diagnose its shortcomings. The GSB approach is widely used to evaluate the relative performance of two models based on overall video perception quality.</p>
+</div>
+<section class="ltx_subsection" id="S5.SS1">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.1 </span>Rating</h3>
+<div class="ltx_para" id="S5.SS1.p1">
+<p class="ltx_p">As shown in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5.T3" title="Table 3 ‣ 5.1 Rating ‣ 5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">3</span></a> and Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5.T4" title="Table 4 ‣ 5.1 Rating ‣ 5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">4</span></a>, we assess text-to-video generation using a comprehensive rating methodology that considers five key dimensions: text-video consistency, aesthetic quality of individual frames, visual quality, structural stability, and motion effects. For image-to-video generation, the evaluation encompasses image-video consistency, instruction responsiveness, visual quality, structural stability, and motion effects.</p>
+</div>
+<div class="ltx_para" id="S5.SS1.p2">
+<p class="ltx_p">This systematic evaluation framework enables us to quickly diagnose model shortcomings and identify specific areas for improvement. By analyzing performance across these dimensions, we can effectively guide optimization efforts to enhance overall model quality and ensure the generated videos better fulfill task requirements.</p>
+</div>
+<figure class="ltx_table" id="S5.T3">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 3</span>: </span><span class="ltx_text" style="font-size:90%;">The rating of HunyuanVideo 1.5 T2V model and its competitors</span></figcaption>
+<table class="ltx_tabular ltx_centering ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_tt">Dimension</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">HY1.5 720p</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Wan2.2</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Kling2.1 Master</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Seedance Pro</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Veo3</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t">Instruction following</td>
+<td class="ltx_td ltx_align_center ltx_border_t">61.57</td>
+<td class="ltx_td ltx_align_center ltx_border_t">44.07</td>
+<td class="ltx_td ltx_align_center ltx_border_t">50.03</td>
+<td class="ltx_td ltx_align_center ltx_border_t">53.19</td>
+<td class="ltx_td ltx_align_center ltx_border_t">73.77</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Aesthetic quality</td>
+<td class="ltx_td ltx_align_center">63.30</td>
+<td class="ltx_td ltx_align_center">65.98</td>
+<td class="ltx_td ltx_align_center">68.00</td>
+<td class="ltx_td ltx_align_center">68.22</td>
+<td class="ltx_td ltx_align_center">67.98</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Visual quality</td>
+<td class="ltx_td ltx_align_center">57.35</td>
+<td class="ltx_td ltx_align_center">56.37</td>
+<td class="ltx_td ltx_align_center">59.68</td>
+<td class="ltx_td ltx_align_center">60.20</td>
+<td class="ltx_td ltx_align_center">58.64</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Structural stability</td>
+<td class="ltx_td ltx_align_center">79.75</td>
+<td class="ltx_td ltx_align_center">73.75</td>
+<td class="ltx_td ltx_align_center">66.74</td>
+<td class="ltx_td ltx_align_center">68.69</td>
+<td class="ltx_td ltx_align_center">75.62</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_bb ltx_border_r">Motion effects</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">57.67</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">53.08</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">58.59</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">55.17</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">60.81</td>
+</tr>
+</table>
+</figure>
+<figure class="ltx_table" id="S5.T4">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 4</span>: </span><span class="ltx_text" style="font-size:90%;">The rating of HunyuanVideo 1.5 I2V model and its competitors. "HY1.5 480pSR" means we first generate 480p video and upscale it to 720p using our video super-resolution model.</span></figcaption>
+<div class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:345.0pt;height:52.4pt;vertical-align:-24.4pt;"><span class="ltx_transformed_inner" style="transform:translate(-68.3pt,10.4pt) scale(0.716220380492077,0.716220380492077) ;">
+<table class="ltx_tabular ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_tt">Dimension</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">HY1.5 480pSR</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">HY1.5 720p</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Wan2.2</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Kling2.1 Master</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Seedance Pro</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Veo3</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t">Instruction following</td>
+<td class="ltx_td ltx_align_center ltx_border_t">63.11</td>
+<td class="ltx_td ltx_align_center ltx_border_t">63.05</td>
+<td class="ltx_td ltx_align_center ltx_border_t">56.19</td>
+<td class="ltx_td ltx_align_center ltx_border_t">68.43</td>
+<td class="ltx_td ltx_align_center ltx_border_t">62.90</td>
+<td class="ltx_td ltx_align_center ltx_border_t">67.86</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Image consistency</td>
+<td class="ltx_td ltx_align_center">68.82</td>
+<td class="ltx_td ltx_align_center">72.07</td>
+<td class="ltx_td ltx_align_center">73.53</td>
+<td class="ltx_td ltx_align_center">64.09</td>
+<td class="ltx_td ltx_align_center">73.06</td>
+<td class="ltx_td ltx_align_center">72.19</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Visual quality</td>
+<td class="ltx_td ltx_align_center">59.87</td>
+<td class="ltx_td ltx_align_center">60.33</td>
+<td class="ltx_td ltx_align_center">58.31</td>
+<td class="ltx_td ltx_align_center">59.28</td>
+<td class="ltx_td ltx_align_center">58.95</td>
+<td class="ltx_td ltx_align_center">59.29</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Structural stability</td>
+<td class="ltx_td ltx_align_center">70.13</td>
+<td class="ltx_td ltx_align_center">66.67</td>
+<td class="ltx_td ltx_align_center">69.03</td>
+<td class="ltx_td ltx_align_center">59.71</td>
+<td class="ltx_td ltx_align_center">68.01</td>
+<td class="ltx_td ltx_align_center">69.25</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_bb ltx_border_r">Motion effects</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">57.60</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">58.62</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">57.41</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">57.36</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">60.47</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">60.91</td>
+</tr>
+</table>
+</span></div>
+</figure>
+</section>
+<section class="ltx_subsection" id="S5.SS2">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.2 </span>GSB</h3>
+<div class="ltx_para" id="S5.SS2.p1">
+<p class="ltx_p">In our experiments, we carefully construct 300 diverse text prompts and 300 image samples to cover balanced application scenarios for both text-to-video and image-to-video tasks. For each prompt or image input, an equal number of video samples are generated by each model in a single run to ensure comparability. To maintain fairness, inference is performed only once per input without any cherry-picking of results. All competing models are evaluated using their default configurations. The evaluation is conducted by over 100 professional assessors. The results are shown in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5.T5" title="Table 5 ‣ 5.2 GSB ‣ 5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">5</span></a> and <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S5.T6" title="Table 6 ‣ 5.2 GSB ‣ 5 Model Performance ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">6</span></a>.</p>
+</div>
+<figure class="ltx_table" id="S5.T5">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 5</span>: </span><span class="ltx_text" style="font-size:90%;">GSB of HunyuanVideo 1.5 720P T2V model and its competitors</span></figcaption>
+<div class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:241.5pt;height:52.6pt;vertical-align:-24.5pt;"><span class="ltx_transformed_inner" style="transform:translate(-48.4pt,10.5pt) scale(0.713788779000238,0.713788779000238) ;">
+<table class="ltx_tabular ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_tt">Compared Model</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Wan2.2</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Kling2.1 Master</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Seedance Pro</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Veo3</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t">HY Better</td>
+<td class="ltx_td ltx_align_center ltx_border_t">34.90%</td>
+<td class="ltx_td ltx_align_center ltx_border_t">31.55%</td>
+<td class="ltx_td ltx_align_center ltx_border_t">31.67%</td>
+<td class="ltx_td ltx_align_center ltx_border_t">24.64%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Other better</td>
+<td class="ltx_td ltx_align_center">17.78%</td>
+<td class="ltx_td ltx_align_center">18.95%</td>
+<td class="ltx_td ltx_align_center">20.65%</td>
+<td class="ltx_td ltx_align_center">34.96%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Equally Bad</td>
+<td class="ltx_td ltx_align_center">40.70%</td>
+<td class="ltx_td ltx_align_center">42.76 %</td>
+<td class="ltx_td ltx_align_center">38.61 %</td>
+<td class="ltx_td ltx_align_center">30.71%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Equally good</td>
+<td class="ltx_td ltx_align_center">6.62%</td>
+<td class="ltx_td ltx_align_center">6.75%</td>
+<td class="ltx_td ltx_align_center">9.06%</td>
+<td class="ltx_td ltx_align_center">9.69%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_bb ltx_border_r ltx_border_t">HY Win Rate</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">17.12%</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">12.6%</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">11.02%</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">-10.32%</td>
+</tr>
+</table>
+</span></div>
+</figure>
+<figure class="ltx_table" id="S5.T6">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 6</span>: </span><span class="ltx_text" style="font-size:90%;">GSB of HunyuanVideo 1.5 720P I2V model and its competitors</span></figcaption>
+<div class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:241.5pt;height:53pt;vertical-align:-24.7pt;"><span class="ltx_transformed_inner" style="transform:translate(-46.8pt,10.3pt) scale(0.720891131780231,0.720891131780231) ;">
+<table class="ltx_tabular ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_tt">Compared Model</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Wan2.2</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Kling2.1 Master</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Seedance Pro</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Veo3</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r ltx_border_t">HY Better</td>
+<td class="ltx_td ltx_align_center ltx_border_t">45.60%</td>
+<td class="ltx_td ltx_align_center ltx_border_t">40.60%</td>
+<td class="ltx_td ltx_align_center ltx_border_t">30.62%</td>
+<td class="ltx_td ltx_align_center ltx_border_t">37.44%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">other better</td>
+<td class="ltx_td ltx_align_center">32.95%</td>
+<td class="ltx_td ltx_align_center">30.88%</td>
+<td class="ltx_td ltx_align_center">36.39%</td>
+<td class="ltx_td ltx_align_center">41.05%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Equally Bad</td>
+<td class="ltx_td ltx_align_center">18.60%</td>
+<td class="ltx_td ltx_align_center">22.73%</td>
+<td class="ltx_td ltx_align_center">26.61%</td>
+<td class="ltx_td ltx_align_center">18.44%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_r">Equally good</td>
+<td class="ltx_td ltx_align_center">2.85%</td>
+<td class="ltx_td ltx_align_center">5.79%</td>
+<td class="ltx_td ltx_align_center">6.38%</td>
+<td class="ltx_td ltx_align_center">3.07%</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_left ltx_border_bb ltx_border_r ltx_border_t">HY Win Rate</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">12.65%</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">9.72%</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">-5.77%</td>
+<td class="ltx_td ltx_align_center ltx_border_bb ltx_border_t">-3.61%</td>
+</tr>
+</table>
+</span></div>
+</figure>
+</section>
+</section>
+<section class="ltx_section" id="S6">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">6 </span>Inference Speed and GPU Memory Requirements</h2>
+<div class="ltx_para" id="S6.p1">
+<p class="ltx_p">This section presents a comprehensive analysis of the inference speed and memory requirements for HunyuanVideo 1.5 under various configurations.
+All speed measurements are conducted on the classifier-free guidance (CFG) distilled model using 8 NVIDIA H800 GPUs with context parallelism enabled across all devices.</p>
+</div>
+<section class="ltx_paragraph" id="S6.SS0.SSS0.Px1">
+<h4 class="ltx_title ltx_title_paragraph">Inference Speed without Engineering Acceleration.</h4>
+<div class="ltx_para" id="S6.SS0.SSS0.Px1.p1">
+<p class="ltx_p">To better demonstrate the effectiveness of the proposed sparse attention mechanism, we evaluate inference speed without engineering-level acceleration.
+No engineering-level acceleration or custom optimization is applied beyond the described model methods and standard distributed inference. All reported results reflect unoptimized, out-of-the-box research code performance.
+For configurations without sparse attention, Flash Attention v3 <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib7" title="">7</a>]</cite> is adopted as the attention backend.
+Inference speed is measured as the wall-clock time per diffusion step, averaged across multiple runs.
+Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6.T7" title="Table 7 ‣ Inference Speed without Engineering Acceleration. ‣ 6 Inference Speed and GPU Memory Requirements ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">7</span></a> presents the inference speed results under different configurations.
+It can be observed that without engineering acceleration, the model already achieves competitive inference speeds.
+This is attributed to the compact 8.3B-parameter architecture that is intrinsically efficient and the high VAE compression rate that significantly reduces the number of tokens required for computation.
+In addition, sparse attention effectively reduces inference time for long-context sequences, particularly evident in the configurations of 241 frames in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6.T7" title="Table 7 ‣ Inference Speed without Engineering Acceleration. ‣ 6 Inference Speed and GPU Memory Requirements ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">7</span></a>.</p>
+</div>
+<figure class="ltx_table" id="S6.T7">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 7</span>: </span><span class="ltx_text" style="font-size:90%;">Inference speed per diffusion step for HunyuanVideo 1.5 pipeline without engineering-level acceleration.</span></figcaption>
+<table class="ltx_tabular ltx_centering ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_tt">Task Type</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Resolution</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Total Frames</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Sparse Attention</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Time/Step (s)</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_t">T2V</td>
+<td class="ltx_td ltx_align_center ltx_border_t">480p (480 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T7.m1" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 848)</td>
+<td class="ltx_td ltx_align_center ltx_border_t">121</td>
+<td class="ltx_td ltx_align_center ltx_border_t">✗</td>
+<td class="ltx_td ltx_align_center ltx_border_t"><math alttext="0.9064\pm 0.0062" class="ltx_Math" display="inline" id="S6.T7.m2" intent=":literal"><semantics><mrow><mn>0.9064</mn><mo>±</mo><mn>0.0062</mn></mrow><annotation encoding="application/x-tex">0.9064\pm 0.0062</annotation></semantics></math></td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center">T2V</td>
+<td class="ltx_td ltx_align_center">480p (480 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T7.m3" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 848)</td>
+<td class="ltx_td ltx_align_center">241</td>
+<td class="ltx_td ltx_align_center">✗</td>
+<td class="ltx_td ltx_align_center"><math alttext="1.7015\pm 0.0203" class="ltx_Math" display="inline" id="S6.T7.m4" intent=":literal"><semantics><mrow><mn>1.7015</mn><mo>±</mo><mn>0.0203</mn></mrow><annotation encoding="application/x-tex">1.7015\pm 0.0203</annotation></semantics></math></td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_t">T2V</td>
+<td class="ltx_td ltx_align_center ltx_border_t">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T7.m5" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center ltx_border_t">121</td>
+<td class="ltx_td ltx_align_center ltx_border_t">✗</td>
+<td class="ltx_td ltx_align_center ltx_border_t"><math alttext="2.0084\pm 0.0229" class="ltx_Math" display="inline" id="S6.T7.m6" intent=":literal"><semantics><mrow><mn>2.0084</mn><mo>±</mo><mn>0.0229</mn></mrow><annotation encoding="application/x-tex">2.0084\pm 0.0229</annotation></semantics></math></td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center">T2V</td>
+<td class="ltx_td ltx_align_center">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T7.m7" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center">121</td>
+<td class="ltx_td ltx_align_center">✓</td>
+<td class="ltx_td ltx_align_center"><math alttext="1.5638\pm 0.0150" class="ltx_Math" display="inline" id="S6.T7.m8" intent=":literal"><semantics><mrow><mn>1.5638</mn><mo>±</mo><mn>0.0150</mn></mrow><annotation encoding="application/x-tex">1.5638\pm 0.0150</annotation></semantics></math></td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center">T2V</td>
+<td class="ltx_td ltx_align_center">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T7.m9" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center">241</td>
+<td class="ltx_td ltx_align_center">✗</td>
+<td class="ltx_td ltx_align_center"><math alttext="5.5070\pm 0.0284" class="ltx_Math" display="inline" id="S6.T7.m10" intent=":literal"><semantics><mrow><mn>5.5070</mn><mo>±</mo><mn>0.0284</mn></mrow><annotation encoding="application/x-tex">5.5070\pm 0.0284</annotation></semantics></math></td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_bb">T2V</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T7.m11" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">241</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">✓</td>
+<td class="ltx_td ltx_align_center ltx_border_bb"><math alttext="2.9475\pm 0.0206" class="ltx_Math" display="inline" id="S6.T7.m12" intent=":literal"><semantics><mrow><mn>2.9475</mn><mo>±</mo><mn>0.0206</mn></mrow><annotation encoding="application/x-tex">2.9475\pm 0.0206</annotation></semantics></math></td>
+</tr>
+</table>
+</figure>
+</section>
+<section class="ltx_paragraph" id="S6.SS0.SSS0.Px2">
+<h4 class="ltx_title ltx_title_paragraph">Inference Speed with Engineering Acceleration.</h4>
+<div class="ltx_para" id="S6.SS0.SSS0.Px2.p1">
+<p class="ltx_p">We also evaluate inference speed with basic engineering-level acceleration techniques enabled to demonstrate practical performance achievable in real-world deployment scenarios.
+Please note that in this experiment, we do not pursue the most extreme acceleration at the cost of generation quality, but rather to achieve notable speed improvements while maintaining nearly identical output quality.
+Several acceleration techniques are employed in this experiment: SageAttention <cite class="ltx_cite ltx_citemacro_cite">[<a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#bib.bib21" title="">21</a>]</cite> is adopted for attention operations to reduce memory complexity and improve computational efficiency; the DiT is compiled using PyTorch’s <span class="ltx_text ltx_font_typewriter">torch.compile</span> to enable kernel fusion and operator optimization; a feature caching mechanism is implemented during diffusion sampling to reuse cached intermediate features for non-critical steps, reducing redundant computations.
+To better reflect practical performance, we report the total inference time for 50 diffusion steps.
+The results are presented in Table <a class="ltx_ref" href="https://arxiv.org/html/2511.18870v2#S6.T8" title="Table 8 ‣ Inference Speed with Engineering Acceleration. ‣ 6 Inference Speed and GPU Memory Requirements ‣ HunyuanVideo 1.5 Technical Report"><span class="ltx_text ltx_ref_tag">8</span></a>.
+It can be observed that even with engineering acceleration techniques enabled, sparse attention further reduces the inference time for long-context sequences, demonstrating its effectiveness in complementing engineering optimizations.</p>
+</div>
+<figure class="ltx_table" id="S6.T8">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span class="ltx_text" style="font-size:90%;">Table 8</span>: </span><span class="ltx_text" style="font-size:90%;">Total inference time for 50 diffusion steps for HunyuanVideo 1.5 with acceleration techniques enabled.</span></figcaption>
+<div class="ltx_inline-block ltx_align_center ltx_transformed_outer" style="width:433.6pt;height:86.6pt;vertical-align:-40.8pt;"><span class="ltx_transformed_inner" style="transform:translate(2.4pt,-0.5pt) scale(1.0113568615214,1.0113568615214) ;">
+<table class="ltx_tabular ltx_align_middle">
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_tt">Task Type</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Resolution</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Total Frames</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Sparse Attention</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Time</td>
+<td class="ltx_td ltx_align_center ltx_border_tt">Avg Time/Step</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_t">T2V</td>
+<td class="ltx_td ltx_align_center ltx_border_t">480p (480 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T8.m1" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 848)</td>
+<td class="ltx_td ltx_align_center ltx_border_t">121</td>
+<td class="ltx_td ltx_align_center ltx_border_t">✗</td>
+<td class="ltx_td ltx_align_center ltx_border_t">13.90</td>
+<td class="ltx_td ltx_align_center ltx_border_t">0.2781</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center">T2V</td>
+<td class="ltx_td ltx_align_center">480p (480 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T8.m2" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 848)</td>
+<td class="ltx_td ltx_align_center">241</td>
+<td class="ltx_td ltx_align_center">✗</td>
+<td class="ltx_td ltx_align_center">27.08</td>
+<td class="ltx_td ltx_align_center">0.5418</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_t">T2V</td>
+<td class="ltx_td ltx_align_center ltx_border_t">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T8.m3" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center ltx_border_t">121</td>
+<td class="ltx_td ltx_align_center ltx_border_t">✗</td>
+<td class="ltx_td ltx_align_center ltx_border_t">28.33</td>
+<td class="ltx_td ltx_align_center ltx_border_t">0.5667</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center">T2V</td>
+<td class="ltx_td ltx_align_center">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T8.m4" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center">121</td>
+<td class="ltx_td ltx_align_center">✓</td>
+<td class="ltx_td ltx_align_center">26.41</td>
+<td class="ltx_td ltx_align_center">0.5283</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center">T2V</td>
+<td class="ltx_td ltx_align_center">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T8.m5" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center">241</td>
+<td class="ltx_td ltx_align_center">✗</td>
+<td class="ltx_td ltx_align_center">96.78</td>
+<td class="ltx_td ltx_align_center">1.9356</td>
+</tr>
+<tr class="ltx_tr">
+<td class="ltx_td ltx_align_center ltx_border_bb">T2V</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">720p (720 <math alttext="\times" class="ltx_Math" display="inline" id="S6.T8.m6" intent=":literal"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math> 1280)</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">241</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">✓</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">58.39</td>
+<td class="ltx_td ltx_align_center ltx_border_bb">1.1679</td>
+</tr>
+</table>
+</span></div>
+</figure>
+</section>
+<section class="ltx_paragraph" id="S6.SS0.SSS0.Px3">
+<h4 class="ltx_title ltx_title_paragraph">GPU Memory Requirements.</h4>
+<div class="ltx_para" id="S6.SS0.SSS0.Px3.p1">
+<p class="ltx_p">The GPU memory requirements are contingent upon the hardware configuration and the employment of offloading techniques.
+All memory measurements reported herein are conducted on a single GPU configuration.
+When pipeline offloading, group offloading, and VAE tiling are enabled, the entire pipeline can complete end-to-end inference for 720p 121-frame T2V/I2V generation with a peak memory of 13.6 GB, thereby enabling inference on a single consumer-grade GPU (e.g., RTX 4090).</p>
+</div>
+</section>
+</section>
+<section class="ltx_section" id="S7">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">7 </span>Conclusion</h2>
+<div class="ltx_para" id="S7.p1">
+<p class="ltx_p">In this report, we present HunyuanVideo 1.5, a compact 8.3B-parameter Diffusion Transformer (DiT) for open-source video generation that competes with leading proprietary systems. Built via progressive training from a text-to-image model, it achieves high-quality text-to-video and image-to-video synthesis through meticulous data curation and a multi-stage pipeline. The efficient DiT framework integrates SSTA for accelerated inference and a dedicated video super-resolution network for high-resolution output, ensuring state-of-the-art visual quality, motion coherence, and strong multimodal alignment. HunyuanVideo 1.5 exhibits exceptional bilingual prompt understanding, accurate text rendering, and reliable instruction-following. Comprehensive evaluations confirm it sets a new standard among open-source video generators. By releasing this high-performance, lightweight model, we provide an accessible foundation to lower barriers for creative and research applications, fostering broader exploration and innovation.</p>
+</div>
+<div class="ltx_pagination ltx_role_newpage"></div>
+</section>
+<section class="ltx_section" id="S8">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">8 </span>Project Contributors</h2>
+<div class="ltx_para" id="S8.p1">
+<ul class="ltx_itemize" id="S8.I1">
+<li class="ltx_item" id="S8.I1.i1" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S8.I1.i1.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Project Sponsors:</span> Jie Jiang, Linus, Yuhong Liu, Peng Chen</p>
+</div>
+</li>
+<li class="ltx_item" id="S8.I1.i2" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S8.I1.i2.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Project Leader:</span> Zhao Zhong</p>
+</div>
+</li>
+<li class="ltx_item" id="S8.I1.i3" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S8.I1.i3.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Core Contributors:</span> (Authors in bolds are project leaders, others are listed alphabetically)</p>
+<ul class="ltx_itemize" id="S8.I1.i3.I1">
+<li class="ltx_item" id="S8.I1.i3.I1.i1" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item"><span class="ltx_text ltx_font_bold">–</span></span>
+<div class="ltx_para" id="S8.I1.i3.I1.i1.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Captioner &amp; Data:</span> <span class="ltx_text ltx_font_bold">Xin Li, Bing Wu</span>, Duojun Huang, Hao Tan, Xinchi Deng, Xuefei Zhe, Zhenyu Wang</p>
+</div>
+</li>
+<li class="ltx_item" id="S8.I1.i3.I1.i2" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item"><span class="ltx_text ltx_font_bold">–</span></span>
+<div class="ltx_para" id="S8.I1.i3.I1.i2.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">VAE &amp; Model Accleration:</span> <span class="ltx_text ltx_font_bold">Songtao Liu</span>, Changlin Li, Chang Zou, Fang Yang, Jianbing Wu, Jack Peng, Patrol, Peizhen Zhang, Penghao Zhao, Weiyan Wang, Xiao He, Yang Li, Yuanbo Peng</p>
+</div>
+</li>
+<li class="ltx_item" id="S8.I1.i3.I1.i3" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item"><span class="ltx_text ltx_font_bold">–</span></span>
+<div class="ltx_para" id="S8.I1.i3.I1.i3.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Pretraining &amp; Post Training:</span> <span class="ltx_text ltx_font_bold">Yue Wu</span>, Jiangfeng Xiong, Qi Tian, Weijie Kong, Yanxin Long, Zuozhuo Dai</p>
+</div>
+</li>
+</ul>
+</div>
+</li>
+<li class="ltx_item" id="S8.I1.i4" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span>
+<div class="ltx_para" id="S8.I1.i4.p1">
+<p class="ltx_p"><span class="ltx_text ltx_font_bold">Contributors (Listed alphabetically):</span> Bo Peng, Coopers Li, Gu Gong, Guojian Xiao, Jiahe Tian, Jiaxin Lin, Jie Liu, Jihong Zhang, Jiesong Lian, Kaihang Pan, Lei Wang, Lin Niu, Mingtao Chen, Mingyang Chen, Mingzhe Zheng, Miles Yang, Qiangqiang Hu, Qi Yang, Qiuyong Xiao, Runzhou Wu, Ryan Xu, Rui Yuan, Shanshan Sang, Shisheng Huang, Siruis Gong, Shuo Huang, Weiting Guo, Xiang Yuan, Xiaojia Chen, Xiawei Hu, Wenzhi Sun, Xiele Wu, Xianshun Ren, Xiaoyan Yuan, Xiaoyue Mi, Yepeng Zhang, Yifu Sun, Yiting Lu, Yitong Li, You Huang, Yu Tang, Yixuan Li, Yuhang Deng, Yuan Zhou, Zhichao Hu, Zhiguang Liu, Zhihe Yang, Zilin Yang, Zhenzhi Lu, Zixiang Zhou</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="ltx_pagination ltx_role_newpage"></div>
+</section>
+<section class="ltx_bibliography" id="bib">
+<h2 class="ltx_title ltx_title_bibliography">References</h2>
+<ul class="ltx_biblist">
+<li class="ltx_bibitem" id="bib.bib1">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Kuaishou Technology [2025]</span>
+<span class="ltx_bibblock">
+Kuaishou Technology.
+
+</span>
+<span class="ltx_bibblock">Kling 2.5 turbo.
+
+</span>
+<span class="ltx_bibblock"><a class="ltx_ref ltx_url ltx_font_typewriter" href="https://app.klingai.com/cn/release-notes/2025-09-19" title="">https://app.klingai.com/cn/release-notes/2025-09-19</a>, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib2">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Google DeepMind [2025]</span>
+<span class="ltx_bibblock">
+Google DeepMind.
+
+</span>
+<span class="ltx_bibblock">Veo 3.1.
+
+</span>
+<span class="ltx_bibblock"><a class="ltx_ref ltx_url ltx_font_typewriter" href="https://deepmind.google/technologies/veo/" title="">https://deepmind.google/technologies/veo/</a>, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib3">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">OpenAI [2025]</span>
+<span class="ltx_bibblock">
+OpenAI.
+
+</span>
+<span class="ltx_bibblock">Sora 2.
+
+</span>
+<span class="ltx_bibblock"><a class="ltx_ref ltx_url ltx_font_typewriter" href="https://openai.com/sora" title="">https://openai.com/sora</a>, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib4">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Team [2025]</span>
+<span class="ltx_bibblock">
+Tencent Hunyuan Foundation Model Team.
+
+</span>
+<span class="ltx_bibblock">Hunyuanvideo: A systematic framework for large video generative models, 2025.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2412.03603" title="">https://arxiv.org/abs/2412.03603</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib5">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Ma et al. [2025]</span>
+<span class="ltx_bibblock">
+Guoqing Ma, Haoyang Huang, Kun Yan, Liangyu Chen, Nan Duan, Shengming Yin, Changyi Wan, Ranchen Ming, Xiaoniu Song, Xing Chen, Yu Zhou, and Deshan Sun et al.
+
+</span>
+<span class="ltx_bibblock">Step-video-t2v technical report: The practice, challenges, and future of video foundation model, 2025.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2502.10248" title="">https://arxiv.org/abs/2502.10248</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib6">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Wan et al. [2025]</span>
+<span class="ltx_bibblock">
+Team Wan, Ang Wang, Baole Ai, Bin Wen, Chaojie Mao, Chen-Wei Xie, Di Chen, Feiwu Yu, Haiming Zhao, Jianxiao Yang, Jianyuan Zeng, Jiayu Wang, and Jingfeng Zhang et al.
+
+</span>
+<span class="ltx_bibblock">Wan: Open and advanced large-scale video generative models.
+
+</span>
+<span class="ltx_bibblock"><em class="ltx_emph ltx_font_italic">arXiv preprint arXiv:2503.20314</em>, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib7">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Shah et al. [2024]</span>
+<span class="ltx_bibblock">
+Jay Shah, Ganesh Bikshandi, Ying Zhang, Vijay Thakkar, Pradeep Ramani, and Tri Dao.
+
+</span>
+<span class="ltx_bibblock">Flashattention-3: Fast and accurate attention with asynchrony and low-precision, 2024.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2407.08608" title="">https://arxiv.org/abs/2407.08608</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib8">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Team et al. [2025]</span>
+<span class="ltx_bibblock">
+Kimi Team, Yifan Bai, Yiping Bao, Guanduo Chen, Jiahao Chen, Ningxin Chen, Ruijue Chen, Yanru Chen, Yuankun Chen, Yutian Chen, Zhuofu Chen, and Jialei Cui et al.
+
+</span>
+<span class="ltx_bibblock">Kimi k2: Open agentic intelligence, 2025.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2507.20534" title="">https://arxiv.org/abs/2507.20534</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib9">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Cao et al. [2025]</span>
+<span class="ltx_bibblock">
+Siyu Cao, Hangting Chen, Peng Chen, Yiji Cheng, Yutao Cui, Xinchi Deng, Ying Dong, Kipper Gong, Tianpeng Gu, Xiusen Gu, et al.
+
+</span>
+<span class="ltx_bibblock">Hunyuanimage 3.0 technical report.
+
+</span>
+<span class="ltx_bibblock"><em class="ltx_emph ltx_font_italic">arXiv preprint arXiv:2509.23951</em>, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib10">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Contributors [2020]</span>
+<span class="ltx_bibblock">
+PySceneDetect Contributors.
+
+</span>
+<span class="ltx_bibblock">Pyscenedetect: A python library for video scene detection, 2020.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://github.com/Breakthrough/PySceneDetect" title="">https://github.com/Breakthrough/PySceneDetect</a>.
+
+</span>
+<span class="ltx_bibblock">Accessed: 2023-11-20.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib11">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Wu et al. [2023]</span>
+<span class="ltx_bibblock">
+Haoning Wu, Erli Zhang, Liang Liao, Chaofeng Chen, Jingwen Hou, Annan Wang, Wenxiu Sun, Qiong Yan, and Weisi Lin.
+
+</span>
+<span class="ltx_bibblock">Exploring video quality assessment on user generated contents from aesthetic and technical perspectives.
+
+</span>
+<span class="ltx_bibblock">In <em class="ltx_emph ltx_font_italic">Proceedings of the IEEE/CVF International Conference on Computer Vision</em>, pages 20144–20154, 2023.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib12">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Yang et al. [2025]</span>
+<span class="ltx_bibblock">
+Zhihe Yang, Xufang Luo, Dongqi Han, Yunjian Xu, and Dongsheng Li.
+
+</span>
+<span class="ltx_bibblock">Mitigating hallucinations in large vision-language models via dpo: On-policy data hold the key.
+
+</span>
+<span class="ltx_bibblock">In <em class="ltx_emph ltx_font_italic">Proceedings of the Computer Vision and Pattern Recognition Conference</em>, pages 10610–10620, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib13">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Bai et al. [2025]</span>
+<span class="ltx_bibblock">
+Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhaohai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Junyang Lin.
+
+</span>
+<span class="ltx_bibblock">Qwen2.5-vl technical report, 2025.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2502.13923" title="">https://arxiv.org/abs/2502.13923</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib14">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Liu et al. [2024]</span>
+<span class="ltx_bibblock">
+Zeyu Liu, Weicong Liang, Zhanhao Liang, Chong Luo, Ji Li, Gao Huang, and Yuhui Yuan.
+
+</span>
+<span class="ltx_bibblock">Glyph-byt5: A customized text encoder for accurate visual text rendering, 2024.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2403.09622" title="">https://arxiv.org/abs/2403.09622</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib15">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Zhang et al. [2025a]</span>
+<span class="ltx_bibblock">
+Peiyuan Zhang, Yongqi Chen, Runlong Su, Hangliang Ding, Ion Stoica, Zhengzhong Liu, and Hao Zhang.
+
+</span>
+<span class="ltx_bibblock">Fast video generation with sliding tile attention, 2025a.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2502.04507" title="">https://arxiv.org/abs/2502.04507</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib16">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Peng et al. [2025]</span>
+<span class="ltx_bibblock">
+Yuanbo Peng, Penghao Zhao, Jiangfeng Xiong, Songtao Liu Fang Yang, Jianbing Wu, Zhao Zhong, Key, Linus, Peng Chen, and Jie Jiang.
+
+</span>
+<span class="ltx_bibblock">flex-block-attn: an efficient block sparse attention communication library.
+
+</span>
+<span class="ltx_bibblock"><a class="ltx_ref ltx_url ltx_font_typewriter" href="https://github.com/Tencent-Hunyuan/flex-block-attn" title="">https://github.com/Tencent-Hunyuan/flex-block-attn</a>, 2025.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib17">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Spector et al. [2024]</span>
+<span class="ltx_bibblock">
+Benjamin F. Spector, Simran Arora, Aaryan Singhal, Daniel Y. Fu, and Christopher Ré.
+
+</span>
+<span class="ltx_bibblock">Thunderkittens: Simple, fast, and adorable ai kernels, 2024.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2410.20399" title="">https://arxiv.org/abs/2410.20399</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib18">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Esser et al. [2024]</span>
+<span class="ltx_bibblock">
+Patrick Esser, Sumith Kulal, Andreas Blattmann, Rahim Entezari, Jonas Müller, Harry Saini, Yam Levi, Dominik Lorenz, Axel Sauer, Frederic Boesel, et al.
+
+</span>
+<span class="ltx_bibblock">Scaling rectified flow transformers for high-resolution image synthesis.
+
+</span>
+<span class="ltx_bibblock">In <em class="ltx_emph ltx_font_italic">Forty-first international conference on machine learning</em>, 2024.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib19">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Li et al. [2025]</span>
+<span class="ltx_bibblock">
+Junzhe Li, Yutao Cui, Tao Huang, Yinping Ma, Chun Fan, Miles Yang, and Zhao Zhong.
+
+</span>
+<span class="ltx_bibblock">Mixgrpo: Unlocking flow-based grpo efficiency with mixed ode-sde, 2025.
+
+</span>
+<span class="ltx_bibblock">URL <a class="ltx_ref ltx_url ltx_font_typewriter" href="https://arxiv.org/abs/2507.21802" title="">https://arxiv.org/abs/2507.21802</a>.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib20">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Wallace et al. [2024]</span>
+<span class="ltx_bibblock">
+Bram Wallace, Meihua Dang, Rafael Rafailov, Linqi Zhou, Aaron Lou, Senthil Purushwalkam, Stefano Ermon, Caiming Xiong, Shafiq Joty, and Nikhil Naik.
+
+</span>
+<span class="ltx_bibblock">Diffusion model alignment using direct preference optimization.
+
+</span>
+<span class="ltx_bibblock">In <em class="ltx_emph ltx_font_italic">Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition</em>, pages 8228–8238, 2024.
+
+</span>
+</li>
+<li class="ltx_bibitem" id="bib.bib21">
+<span class="ltx_tag ltx_role_refnum ltx_tag_bibitem">Zhang et al. [2025b]</span>
+<span class="ltx_bibblock">
+Jintao Zhang, Haofeng Huang, Pengle Zhang, Jia Wei, Jun Zhu, and Jianfei Chen.
+
+</span>
+<span class="ltx_bibblock">Sageattention2: Efficient attention with thorough outlier smoothing and per-thread int4 quantization.
+
+</span>
+<span class="ltx_bibblock">In <em class="ltx_emph ltx_font_italic">International Conference on Machine Learning (ICML)</em>, 2025b.
+
+</span>
+</li>
+</ul>
+</section>
+</article>
+</div>
+<footer class="ltx_page_footer">
+<div class="ltx_page_logo">Generated  on Tue Nov 25 02:51:00 2025 by <a class="ltx_LaTeXML_logo" href="http://dlmf.nist.gov/LaTeXML/"><span style="letter-spacing:-0.2em; margin-right:0.1em;">L<span class="ltx_font_smallcaps" style="position:relative; bottom:2.2pt;">a</span>T<span class="ltx_font_smallcaps" style="font-size:120%;position:relative; bottom:-0.2ex;">e</span></span><span style="font-size:90%; position:relative; bottom:-0.2ex;">XML</span><img alt="Mascot Sammy" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAOCAYAAAD5YeaVAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9wKExQZLWTEaOUAAAAddEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIFRoZSBHSU1Q72QlbgAAAdpJREFUKM9tkL+L2nAARz9fPZNCKFapUn8kyI0e4iRHSR1Kb8ng0lJw6FYHFwv2LwhOpcWxTjeUunYqOmqd6hEoRDhtDWdA8ApRYsSUCDHNt5ul13vz4w0vWCgUnnEc975arX6ORqN3VqtVZbfbTQC4uEHANM3jSqXymFI6yWazP2KxWAXAL9zCUa1Wy2tXVxheKA9YNoR8Pt+aTqe4FVVVvz05O6MBhqUIBGk8Hn8HAOVy+T+XLJfLS4ZhTiRJgqIoVBRFIoric47jPnmeB1mW/9rr9ZpSSn3Lsmir1fJZlqWlUonKsvwWwD8ymc/nXwVBeLjf7xEKhdBut9Hr9WgmkyGEkJwsy5eHG5vN5g0AKIoCAEgkEkin0wQAfN9/cXPdheu6P33fBwB4ngcAcByHJpPJl+fn54mD3Gg0NrquXxeLRQAAwzAYj8cwTZPwPH9/sVg8PXweDAauqqr2cDjEer1GJBLBZDJBs9mE4zjwfZ85lAGg2+06hmGgXq+j3+/DsixYlgVN03a9Xu8jgCNCyIegIAgx13Vfd7vdu+FweG8YRkjXdWy329+dTgeSJD3ieZ7RNO0VAXAPwDEAO5VKndi2fWrb9jWl9Esul6PZbDY9Go1OZ7PZ9z/lyuD3OozU2wAAAABJRU5ErkJggg=="/></a>
+</div></footer>
+</div>
+</body>
+</html>

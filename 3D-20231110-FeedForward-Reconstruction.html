@@ -178,6 +178,36 @@
         </ul>
     </div>
 
+<div class="section">
+        <h2>🖼️ arXiv HTML 论文原图 (Instant3D)</h2>
+        <p><em>以下图片从 arXiv HTML 版本直接提取，展示 Instant3D (arXiv: 2311.06214) 原始架构图和结果对比。</em></p>
+
+        <h3>Figure 1: Instant3D 文本到 3D NeRF 生成示例</h3>
+        <img src="images/2311.06214/x1.png" alt="Instant3D Figure 1: Text-to-3D Results" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 1: 从文本提示在 20 秒内生成高质量 3D NeRF 资产。展示新视角渲染和从密度场提取的网格。</p>
+
+        <h3>Figure 2: Instant3D 方法概览 — 两阶段管线</h3>
+        <img src="images/2311.06214/x2.png" alt="Instant3D Figure 2: Method Overview" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 2: 给定文本提示，(1) 微调 2D 扩散模型一次性生成 4 视角图像（2×2 网格），使用高斯斑块作为初始化；(2) Transformer 稀疏视角重建器从 4 视角图像生成最终 NeRF。</p>
+
+        <h3>Figure 3: 稀疏视角重建器架构</h3>
+        <img src="images/2311.06214/x3.png" alt="Instant3D Figure 3: Sparse-view Reconstructor" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 3: 模型使用预训练 ViT 编码多视角图像为位姿感知 token，通过 Transformer 解码器生成场景的三平面表示，最后通过体积渲染生成新视角。</p>
+
+        <h3>Figure 4: 文本到 3D 定性对比</h3>
+        <img src="images/2311.06214/x4.png" alt="Instant3D Figure 4: Qualitative Comparison" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 4: 文本到 3D 的定性对比，与之前方法的比较。</p>
+
+        <h3>Figure 5: 高斯斑块初始化消融</h3>
+        <img src="images/2311.06214/x5.png" alt="Instant3D Figure 5: Gaussian Blob Ablation" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 5: 使用和不使用高斯斑块初始化生成的结果对比。</p>
+
+        <h3>Figure 6: 多样性生成结果</h3>
+        <img src="images/2311.06214/x6.png" alt="Instant3D Figure 6: Diversity" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 6: 同一文本提示生成多样化结果。</p>
+
+    </div>
+
     <div class="section">
         <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
         <h3>LRM 架构</h3>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripoSplat: Generative 3D Gaussians with Learned Density Control</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>TripoSplat: Generative 3D Gaussians with Learned Density Control</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2605.16355 (2026-05-08)</span>
+        <span>🏢 清华大学 / VAST AI Research</span>
+        <span>📅 2026-05-08</span>
+        <span>🏆 SIGGRAPH 2026 Conference Papers</span>
+        <span>📂 Graphics / 3D Generation</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">3D Gaussian Splatting</span>
+        <span class="tag green">Learned Density Control</span>
+        <span class="tag green">Generative Model</span>
+        <span class="tag">Latent Diffusion</span>
+        <span class="tag">Octree</span>
+        <span class="tag">VecSeq</span>
+        <span class="tag">Sobol Sequence</span>
+        <span class="tag">Optimal Transport</span>
+        <span class="tag">DINOv3</span>
+        <span class="tag">FLUX.2</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📌 论文概要</h2>
+        <p><strong>TripoSplat</strong> 提出了 <strong>Density-Sampled Gaussians (DeG)</strong>——一种专为生成式建模设计的 3D 表示。核心解决一个关键矛盾：<strong>3DGS 的密度控制（densification/pruning）是非可微的，无法直接用于生成模型训练</strong>。</p>
+        <div class="highlight">
+            <strong>核心成就：</strong>首次将 3DGS 的自适应密度控制能力引入生成式建模框架。高斯中心从可学习的概率密度函数（PDF）中采样，密度自动集中在几何复杂区域。单个潜码可解码出任意数量的高斯——从轻量移动端到超高精度渲染，一套模型搞定。
+        </div>
+        <table>
+            <tr><th>属性</th><th>详情</th></tr>
+            <tr><td>机构</td><td>清华大学 (IIIS) / VAST AI Research</td></tr>
+            <tr><td>作者</td><td>Runjie Yan, Yan-Pei Cao, Peng Wang, Ding Liang, Yuan-Chen Guo</td></tr>
+            <tr><td>会议</td><td>SIGGRAPH 2026 Conference Papers</td></tr>
+            <tr><td>开源</td><td>✅ GitHub: VAST-AI-Research/TripoSplat</td></tr>
+            <tr><td>核心组件</td><td>DeG-VAE（密度采样高斯变分自编码器）+ VecSeq Diffusion（序列化扩散 Transformer）</td></tr>
+            <tr><td>任务</td><td>单图→3D 高斯生成（SOTA）</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <p>TripoSplat 由两大核心组件构成：</p>
+        <table>
+            <tr><th>组件</th><th>功能</th><th>核心创新</th></tr>
+            <tr><td><strong>DeG-VAE</strong></td><td>编码 3D 资产→潜空间→解码为自适应密度的高斯</td><td>高斯中心从可学习 PDF 采样，密度可微优化</td></tr>
+            <tr><td><strong>VecSeq Diffusion</strong></td><td>在潜空间上训练扩散模型，条件为单张图像</td><td>Sobol 序列重排序，消除集合生成的排列歧义</td></tr>
+        </table>
+        <h3>DeG-VAE 详细架构</h3>
+        <p>DeG-VAE 分为编码器、密度解码器、高斯解码器三部分：</p>
+        <p><strong>1. Set Encoder（集合编码器）</strong></p>
+        <ul>
+            <li>输入：3D 资产的多视角渲染图（K 个视角）</li>
+            <li>特征提取：DINOv3（语义一致性）+ FLUX.2 VAE（高频纹理细节）双路特征</li>
+            <li>从资产表面采样密集点云，投影到多视角特征图获取特征</li>
+            <li>Farthest Point Sampling (FPS) 选 M 个代表点作为 transformer 注意力种子</li>
+            <li>输出：固定大小的潜码集合 Z = {z_i ∈ R^C}_{i=1}^M</li>
+        </ul>
+        <p><strong>2. Spatial Density Decoder（空间密度解码器）</strong></p>
+        <ul>
+            <li>输入：潜码集合 Z</li>
+            <li>输出：定义在 Octree 上的 3D 概率密度函数 (PDF)</li>
+            <li>逐级预测：从最粗层开始，迭代预测每个 occupied voxel 的密度值，直到最细层</li>
+            <li>采样：从 PDF 中采样 N 个高斯中心点，N 可任意调整</li>
+        </ul>
+        <p><strong>3. Gaussian Decoder（高斯属性解码器）</strong></p>
+        <ul>
+            <li>输入：采样点位置 + 潜码 + 图像特征</li>
+            <li>输出：每个点的 3D 高斯属性（位置偏移、旋转、缩放、颜色、不透明度）</li>
+            <li>Local Expansion：每个采样点生成 1-4 个高斯（子点偏移），增加局部密度</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键设计——解耦分布与属性：</strong>高斯"在哪里"（空间分布/密度）和高斯"长什么样"（颜色/大小/不透明度）被分开建模。密度由 PDF 采样决定，属性由 MLP 解码。这使得同一潜码可以通过调整采样数量输出不同精度的 3D 模型。
+        </div>
+        <h3>VecSeq Diffusion Transformer</h3>
+        <p>解决在无序集合潜码上训练扩散模型的核心难题：</p>
+        <ul>
+            <li><strong>问题：</strong>潜码集合 {z_i} 是无序的（permutation invariant），但扩散模型需要序列化输入。排列歧义导致梯度信号冲突，严重拖慢收敛</li>
+            <li><strong>VecSeq 方案：</strong>用 Optimal Transport 将无序 token 映射到确定的 3D Sobol 低差异序列上，赋予每个 token 一个确定的空间位置</li>
+            <li><strong>效果：</strong>把困难的"集合生成"问题转化为稳定的"序列生成"问题，大幅加速收敛并提升生成质量</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <ul>
+            <li><strong>可变分辨率输出：</strong>单个潜码 → 采样不同数量的高斯 → 从轻量到超密集，一套模型搞定</li>
+            <li><strong>学习式密度控制：</strong>高斯自动集中在几何复杂区域（如细节丰富的表面），简单区域分配更少高斯</li>
+            <li><strong>可微密度优化：</strong>render loss contribution gradient 让密度函数可端到端优化，不需要离散的 densify/prune</li>
+            <li><strong>VecSeq 稳定训练：</strong>Sobol 序列 + 最优传输解决集合扩散的排列歧义，收敛更快</li>
+            <li><strong>双路特征编码：</strong>DINOv3 语义 + FLUX.2 VAE 纹理，兼顾结构和细节</li>
+            <li><strong>SOTA 质量：</strong>单图→3D 生成达到当时最优</li>
+            <li><strong>SIGGRAPH 2026：</strong>学术认可度高</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔬 技术细节</h2>
+        <h3>Octree-Based Density Sampling（八叉树密度采样）</h3>
+        <ul>
+            <li>PDF 定义在八叉树上，分层表示空间密度分布</li>
+            <li>从最粗层开始，网络为每个 occupied voxel 预测密度值</li>
+            <li>根据密度值分配采样点数量：高密度 voxel 分配更多点</li>
+            <li>递归到最细层，最终得到 N 个 3D 采样点</li>
+            <li>效率：八叉树结构避免在空旷区域浪费采样点</li>
+        </ul>
+        <h3>Render Loss Contribution Gradient（渲染损失贡献梯度）</h3>
+        <p>这是本文最核心的技术创新——让密度函数可微：</p>
+        <ul>
+            <li><strong>灵感：</strong>difference reward（Wolpert & Tumer, 2001）——衡量单个智能体对全局奖励的边际贡献</li>
+            <li><strong>定义：</strong>移除某个采样点后渲染损失的变化量 = 该点对渲染的边际贡献</li>
+            <li><strong>计算：</strong> fused CUDA 实现高效计算每个 primitive 的 render loss contribution</li>
+            <li><strong>reward clamping：</strong>限制梯度信号范围，防止极端值</li>
+            <li><strong>效果：</strong>贡献大的区域（移除后渲染变差多）→ 密度增加；贡献小的区域 → 密度减少</li>
+        </ul>
+        <div class="highlight">
+            <strong>本质：</strong>这是 3DGS 离散 densify/prune 的可微软件版。原始 3DGS：梯度大→split/clone；贡献小→prune。DeG：贡献梯度大→增强该区域 PDF 密度；贡献小→减弱。全程可微，端到端训练。
+        </div>
+        <h3>Local Expansion（局部展开）</h3>
+        <ul>
+            <li>每个采样点不只生成一个高斯，而是 1-4 个（通过学习的偏移）</li>
+            <li>类似 3DGS 中 split 操作的效果——一个父高斯分裂为多个子高斯</li>
+            <li>增加局部表达力，同时保持采样点的全局结构</li>
+        </ul>
+        <h3>VecSeq 详解</h3>
+        <ul>
+            <li><strong>Sobol 序列：</strong>低差异准随机序列，在 3D 空间中均匀分布</li>
+            <li><strong>最优传输映射：</strong>用 OT 将无序潜码 token 映射到 Sobol 序列点，每个 token 获得确定的空间锚点</li>
+            <li><strong>序列化：</strong>按 Sobol 序列顺序排列 token，变成有序序列</li>
+            <li><strong>扩散建模：</strong>在序列化后的 token 上训练 DiT (Diffusion Transformer)</li>
+            <li><strong>对比 VecSet（无序集合）：</strong>VecSeq 收敛速度显著更快，生成质量更高</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <h3>单图→3D 生成</h3>
+        <p>在 Objaverse 大规模 3D 数据集上训练，在多个评测数据集上达到 SOTA：</p>
+        <ul>
+            <li>对比方法：GaussianCube, Structured-latent 方法, Pixel-aligned 方法, TRELLIS 等</li>
+            <li>评测指标：CLIP-Score, FD (Fréchet Distance), KD (Kullback-Leibler Distance), User Study</li>
+            <li><strong>定量结果：</strong>在多个指标上超越所有对比方法</li>
+            <li><strong>定性结果：</strong>生成质量明显优于固定高斯数量的方法，尤其在细节区域</li>
+        </ul>
+        <h3>消融实验</h3>
+        <ul>
+            <li><strong>Variable-Sized Gaussians：</strong>不同采样数量（如 5K, 20K, 80K）下质量稳步提升，证明可变分辨率有效性</li>
+            <li><strong>Learned Density Control：</strong>密度可视化显示高斯集中在高复杂度区域，与人工直觉一致</li>
+            <li><strong>VecSeq vs VecSet：</strong>VecSeq 在相同训练步数下收敛更快、质量更好</li>
+            <li><strong>Token Length：</strong>潜码数量 M 的影响，更多 token → 更精细重建</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <h3>核心贡献定位</h3>
+        <p>TripoSplat 解决的是 3D 生成领域中一个长期存在的痛点：<strong>3DGS 的密度控制是它高质量的秘密，但这个秘密是非可微的，无法直接用于生成模型</strong>。之前所有生成式 3DGS 方法（GaussianCube、Structured-latent、Pixel-aligned）都在回避这个问题——用固定数量/固定结构的高斯，牺牲了 3DGS 最核心的自适应能力。TripoSplat 用 PDF 采样 + render loss contribution gradient 把密度控制变成可微操作，补上了这块拼图。</p>
+        <h3>三大创新的技术深度</h3>
+        <table>
+            <tr><th>创新</th><th>解决的问题</th><th>技术优雅度</th></tr>
+            <tr><td>DeG（PDF 采样高斯）</td><td>固定数量→自适应数量</td><td>★★★★★ 解耦分布与属性</td></tr>
+            <tr><td>Render Loss Contribution Gradient</td><td>密度控制不可微</td><td>★★★★★ difference reward 的巧妙应用</td></tr>
+            <tr><td>VecSeq</td><td>集合扩散的排列歧义</td><td>★★★★ OT + Sobol 的组合</td></tr>
+        </table>
+        <h3>优势</h3>
+        <ul>
+            <li><strong>恢复了 3DGS 的核心优势：</strong>自适应密度分配——复杂区域多分配，简单区域少分配</li>
+            <li><strong>可变分辨率：</strong>一个模型出多精度资产，实用性强</li>
+            <li><strong>端到端可微：</strong>不需要 per-scene 的 densify/prune 后处理</li>
+            <li><strong>生成质量 SOTA：</strong>在 SIGGRAPH 2026 发表，经过严格学术验证</li>
+            <li><strong>架构可扩展：</strong>基于 transformer + diffusion，可受益于更大模型/更多数据</li>
+        </ul>
+        <h3>局限</h3>
+        <ul>
+            <li><strong>Octree 分辨率上限：</strong>最细层决定了密度分布的最大分辨率，极细节可能丢失</li>
+            <li><strong>Local Expansion 固定数量：</strong>每个采样点 1-4 个高斯，不如 per-scene 3DGS 的无限 densify 灵活</li>
+            <li><strong>render loss contribution gradient 近似：</strong>是 difference reward 的近似，reward clamping 可能影响精度</li>
+            <li><strong>生成 vs 重建：</strong>主要面向生成任务，直接用于多视图重建可能不如专门的重建方法</li>
+            <li><strong>计算开销：</strong>OT 重排序 + 八叉树采样在训练时增加开销</li>
+        </ul>
+        <h3>与"围绕人物转圈"场景的关系</h3>
+        <p>TripoSplat 是生成模型而非重建方法，不直接用于你的拍摄重建场景。但它的<strong>学习式密度控制</strong>思路有启发价值：</p>
+        <ul>
+            <li>Deformable-3DGS (p28) 的变形场 + 学习式密度控制 → 动态场景中自动调整高斯密度</li>
+            <li>render loss contribution gradient 可用于动态重建中判断哪些区域需要更多高斯</li>
+            <li>VecSeq 的排列问题解决思路对 4D 高斯生成也有参考价值</li>
+        </ul>
+    </div>
+
+<div class="section">
+        <h2>🖼️ arXiv HTML 论文原图</h2>
+        <p><em>以下图片从 arXiv HTML 版本直接提取，展示论文原始架构图和结果对比。</em></p>
+
+        <h3>Figure 1: Teaser — 可变高斯数量的生成示例</h3>
+        <img src="images/2605.16355/x1.png" alt="TripoSplat Figure 1: Teaser" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 1: 最佳生成样本，展示可变数量的 3D 高斯 — 单个潜表示可解码出任意数量的 3D 高斯。</p>
+
+        <h3>Figure 2: DeG-VAE 概览 — 密度采样高斯变分自编码器</h3>
+        <img src="images/2605.16355/x2.png" alt="TripoSplat Figure 2: DeG-VAE Overview" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 2: DeG-VAE 概览。多视角渲染通过特征提取器编码，特征投影到随机采样的表面点。空间密度解码器建模高斯的空间分布，高斯解码器预测属性用于可微渲染。渲染损失可反传到密度解码器实现自适应密度控制。</p>
+
+        <h3>Figure 3: 点采样过程 — 2D 示意图</h3>
+        <img src="images/2605.16355/x3.png" alt="TripoSplat Figure 3: Point Sampling" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 3: 点采样过程的 2D 示意。从最粗层开始，网络迭代预测每个 occupied voxel 的密度值直到最细层。格中数字表示在 1000 点目标下各 voxel 分配的点数。</p>
+
+        <h3>Figure 4: 编码、解码和生成的详细架构</h3>
+        <img src="images/2605.16355/x4.png" alt="TripoSplat Figure 4: Detailed Architecture" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 4: (a) 编码器、(b) 解码器、(c) 生成模型的详细架构。Refiners 用于处理不同模态输入，DiT 中使用轻量头预测 3D 索引以支持 RoPE。</p>
+
+        <h3>Figure 5: VecSeq 重排序 — 将无序集合转为有序序列</h3>
+        <img src="images/2605.16355/x5.png" alt="TripoSplat Figure 5: VecSeq Re-indexing" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 5: VecSeq 重排序。潜 token 在编码时关联 3D 位置，通过匹配 3D Sobol 锚点进行规范排序，将无序潜集合转化为稳定向量序列用于扩散去噪。</p>
+
+        <h3>Figure 6: 3D 重建定性对比</h3>
+        <img src="images/2605.16355/x6.png" alt="TripoSplat Figure 6: Reconstruction Comparison" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 6: 3D 重建定性对比。在匹配高斯预算下（DeG-VAE 262K vs 基线~310K），DeG-VAE 实现更高视觉保真度，细节保留显著优于基线。</p>
+
+        <h3>Figure 7: 生成对比 — 与纹理 3D 生成模型比较</h3>
+        <img src="images/2605.16355/x7.png" alt="TripoSplat Figure 7: Generation Comparison" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 7: 生成对比。与代表性纹理 3D 生成模型在相同渲染设置下的比较。TripoSplat 生成结构准确、外观细节丰富的高斯资产。</p>
+
+    </div>
+
+    <div class="section">
+        <h2>📐 算法框图</h2>
+        <p>请参考论文原文 Figure 2 (DeG-VAE Overview) 和 Figure 4 (Detailed Architecture)。</p>
+        <div class="highlight">
+            <strong>DeG-VAE Pipeline:</strong> 多视角渲染 → DINOv3 + FLUX.2 VAE 双路特征 → 表面点云投影 → FPS + Set Encoder → 潜码集合 Z → Spatial Density Decoder (Octree PDF) → 采样 N 个高斯中心 → Gaussian Decoder (属性) → Local Expansion → 3D 高斯 → 可微光栅化渲染 → 渲染损失 ↺ 反传到密度解码器（通过 render loss contribution gradient）
+        </div>
+        <div class="highlight">
+            <strong>VecSeq Diffusion Pipeline:</strong> 单张输入图像 → 图像编码 → 条件嵌入 → VecSeq DiT (在 Sobol 序列化的潜码上做去噪扩散) → 生成潜码集合 Z → DeG-VAE Decoder → 自适应密度 3D 高斯
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <ol style="margin-left: 20px; margin-bottom: 12px;">
+            <li><strong>Density-Sampled Gaussians (DeG)：</strong>高斯中心从可学习 PDF 采样，解耦空间分布与属性，支持可变分辨率输出。首次让生成式 3DGS 拥有自适应密度能力</li>
+            <li><strong>Render Loss Contribution Gradient：</strong>基于 difference reward 的可微密度优化信号，是 3DGS 离散 densify/prune 的连续可微等价物。fused CUDA 实现保证效率</li>
+            <li><strong>VecSeq Canonical Re-indexing：</strong>用 OT + Sobol 序列将无序集合潜码转化为有序序列，解决扩散模型在集合数据上的排列歧义，大幅加速收敛</li>
+            <li><strong>Octree-Based Adaptive Sampling：</strong>分层八叉树密度表示，避免空旷区域浪费采样点，高效分配高斯</li>
+            <li><strong>双路特征编码：</strong>DINOv3 语义 + FLUX.2 VAE 纹理，兼顾全局结构和局部细节</li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>场景</th><th>输入</th><th>输出</th><th>说明</th></tr>
+            <tr><td>单图→3D 生成</td><td>1 张图像</td><td>3D 高斯模型</td><td>核心应用，SOTA 质量</td></tr>
+            <tr><td>多精度资产输出</td><td>同一潜码</td><td>不同精度 3D 模型</td><td>移动端轻量 → 高保真渲染，一套模型</td></tr>
+            <tr><td>3D 内容创作</td><td>概念图/照片/生成图</td><td>可渲染 3D 资产</td><td>游戏/影视/电商</td></tr>
+            <tr><td>AR/VR 内容</td><td>参考图像</td><td>实时可渲染 3D</td><td>高斯光栅化天然支持实时</td></tr>
+            <tr><td>3D 资产数据库</td><td>批量图像</td><td>批量 3D 模型</td><td>规模化 3D 内容生产</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>DeG-VAE 训练</h3>
+        <ul>
+            <li><strong>数据：</strong>Objaverse 大规模 3D 物体数据集</li>
+            <li><strong>编码器特征提取器：</strong>DINOv3 + FLUX.2 VAE（均预训练，冻结或微调）</li>
+            <li><strong>渲染监督：</strong>从 3D 资产渲染多视角图像作为 GT</li>
+            <li><strong>密度优化：</strong>render loss contribution gradient 端到端优化 PDF</li>
+            <li><strong>Structural Initialization：</strong>用 SfM 点云初始化八叉树密度，提供合理起点</li>
+        </ul>
+        <h3>VecSeq Diffusion 训练</h3>
+        <ul>
+            <li><strong>架构：</strong>Diffusion Transformer (DiT)</li>
+            <li><strong>条件：</strong>单张输入图像的 CLIP/DINOv3 特征</li>
+            <li><strong>训练范式：</strong>标准 latent diffusion（加噪→去噪）</li>
+            <li><strong>重排序：</strong>每个训练样本先用 OT 将潜码映射到 Sobol 序列</li>
+            <li><strong>可扩展性：</strong>Transformer 架构，可通过增大模型/数据持续提升</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <table>
+            <tr><th>数据集</th><th>类型</th><th>用途</th></tr>
+            <tr><td>Objaverse</td><td>合成（大规模 3D 物体）</td><td>训练数据主要来源</td></tr>
+            <tr><td>GSO (Google Scanned Objects)</td><td>真实扫描</td><td>评测基准</td></tr>
+            <tr><td>OmniObject3D</td><td>合成+扫描</td><td>补充评测</td></tr>
+            <tr><td>真实照片/生成图像</td><td>真实</td><td>泛化能力测试</td></tr>
+        </table>
+        <p><strong>训练数据构建：</strong>从 3D 模型渲染多视角图像 → 编码为潜码 → 训练 VAE 重建 → 训练扩散模型生成潜码。单图条件生成：图像→CLIP/DINOv3 特征→条件扩散→潜码→DeG 解码→3D 高斯。</p>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>DeG-VAE 损失</h3>
+        <ul>
+            <li><strong>多视角渲染损失：</strong>L_render = Σ_k L1(I_render^k, I_gt^k) + λ · LPIPS(I_render^k, I_gt^k)</li>
+            <li><strong>密度优化信号：</strong>render loss contribution gradient（非传统损失，是梯度信号）</li>
+            <li><strong>KL 正则化：</strong>VAE 的标准 KL 散度损失，约束潜空间分布</li>
+            <li><strong>总损失：</strong>L_VAE = L_render + λ_KL · L_KL + λ_reg · L_reg</li>
+        </ul>
+        <h3>VecSeq Diffusion 损失</h3>
+        <ul>
+            <li><strong>标准去噪扩散损失：</strong>L_diff = E_{t,ε} ||ε - ε_θ(z_t, t, c)||²</li>
+            <li>z_t：加噪的序列化潜码，t：时间步，c：图像条件</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>3D 高斯生成方法对比</h3>
+        <table>
+            <tr><th>方法</th><th>高斯数量</th><th>密度控制</th><th>表示结构</th><th>自适应</th></tr>
+            <tr><td>GaussianCube</td><td>固定 N³</td><td>无（预拟合）</td><td>体素网格</td><td>❌</td></tr>
+            <tr><td>Structured-latent (TRELLIS等)</td><td>每体素固定</td><td>无</td><td>稀疏体素</td><td>❌</td></tr>
+            <tr><td>Pixel-aligned (LGM等)</td><td>每像素/patch固定</td><td>无</td><td>图像对齐</td><td>❌</td></tr>
+            <tr><td>MaskGaussian</td><td>固定 scaffold</td><td>mask 预测</td><td>固定空间框架</td><td>有限</td></tr>
+            <tr><td>F4Splat</td><td>前馈+学习分数</td><td>启发式分数</td><td>前馈</td><td>部分</td></tr>
+            <tr><td><strong>TripoSplat (DeG)</strong></td><td><strong>可变</strong></td><td><strong>学习式 PDF</strong></td><td><strong>八叉树 PDF</strong></td><td><strong>✅ 强</strong></td></tr>
+        </table>
+        <h3>技术演进脉络</h3>
+        <ul>
+            <li><strong>3DGS 密度控制演进：</strong>3DGS（离散 densify/prune）→ 3DGS-MCMC（MCMC 采样）→ F4Splat（前馈学习分数）→ <strong>TripoSplat（可微 PDF 采样）</strong></li>
+            <li><strong>3D 高斯生成演进：</strong>DreamGaussian（SDS+3DGS）→ GaussianCube（固定网格）→ Structured-latent（稀疏体素）→ <strong>TripoSplat（自适应 PDF）</strong></li>
+            <li><strong>潜空间 3D 生成演进：</strong>3DShape2VecSet（无序集合）→ CLAY/TripoSG（大规模）→ TRELLIS（结构化潜在）→ <strong>TripoSplat（VecSeq 序列化）</strong></li>
+        </ul>
+        <h3>与知识库相关论文的关系</h3>
+        <ul>
+            <li><strong>→ 3DGS Survey (p20)：</strong>TripoSplat 是 3DGS 密度控制从"离散启发式"到"可微学习式"的终极进化</li>
+            <li><strong>→ TRELLIS (p24)：</strong>TRELLIS 的 SLAT 是结构化潜在表示，TripoSplat 的 DeG 可视为"密度自适应的 SLAT"——在 SLAT 基础上恢复了高斯的自适应分配能力</li>
+            <li><strong>→ TriplaneGaussian/TGS (p29)：</strong>TGS 用 Triplane 提供结构化特征空间，TripoSplat 用 PDF 采样提供自适应结构——两种解决"高斯非结构化"问题的不同路线</li>
+            <li><strong>→ 3D Generation (p22)：</strong>DreamGaussian 用 SDS+3DGS 生成，TripoSplat 用 latent diffusion + DeG 生成，范式升级</li>
+            <li><strong>→ VGGT (p26)：</strong>VGGT 的前馈重建是"重建"路线，TripoSplat 是"生成"路线，两者互补</li>
+            <li><strong>→ Deformable-3DGS (p28)：</strong>Deformable 的变形场 + TripoSplat 的学习式密度控制 → 可实现"自适应密度 + 时间变形"的 4D 生成</li>
+            <li><strong>→ Hunyuan3D (p25)：</strong>Hunyuan3D 用 DiT 做 3D 生成，TripoSplat 也用 DiT 但在 DeG 潜空间上操作</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="links">
+            <a href="https://arxiv.org/abs/2605.16355">📄 arXiv 论文</a>
+            <a href="https://arxiv.org/pdf/2605.16355">📥 PDF 下载</a>
+            <a href="https://arxiv.org/html/2605.16355v1">🌐 HTML 全文</a>
+            <a href="https://github.com/VAST-AI-Research/TripoSplat">💻 GitHub 代码</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    TripoSplat: Generative 3D Gaussians with Learned Density Control · 清华/VAST AI · SIGGRAPH 2026 · arXiv 2605.16355<br>
+    笔记创建: 2026-06-26 · 知识库索引: p29
+</div>
+
+</body>
+</html>

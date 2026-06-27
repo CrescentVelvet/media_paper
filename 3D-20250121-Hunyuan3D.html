@@ -118,6 +118,48 @@
         </ul>
     </div>
 
+<div class="section">
+        <h2>🖼️ arXiv HTML 论文原图</h2>
+        <p><em>以下图片从 arXiv HTML 版本直接提取，展示论文原始架构图和结果对比。</em></p>
+
+        <h3>Figure 1: Hunyuan3D 2.0 系统总览</h3>
+        <img src="images/2501.12202/x1.png" alt="Hunyuan3D Figure 1: System Overview" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 1: Hunyuan3D 2.0 系统总览，展示从输入图像到高质量纹理 3D 资产的完整流程。</p>
+
+        <h3>Figure 2: 整体架构 — DiT 形状生成 + Paint 纹理合成</h3>
+        <img src="images/2501.12202/x2.png" alt="Hunyuan3D Figure 2: Architecture" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 2: 3D 生成整体架构。包含两大组件：Hunyuan3D-DiT 从输入图像生成裸网格，Hunyuan3D-Paint 生成纹理贴图。Paint 接受法线图和位置图作为几何条件，生成多视角图像用于纹理烘焙。</p>
+
+        <h3>Figure 3: Hunyuan3D-ShapeVAE 架构</h3>
+        <img src="images/2501.12202/x3.png" alt="Hunyuan3D Figure 3: ShapeVAE" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 3: ShapeVAE 架构。采用重要性采样策略从网格表面提取高频细节信息（如边缘和角落）。对均匀点云和重要性采样点云分别进行最远点采样 (FPS)。</p>
+
+        <h3>Figure 4: Hunyuan3D-DiT 详细架构</h3>
+        <img src="images/2501.12202/x4.png" alt="Hunyuan3D Figure 4: DiT Architecture" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 4: DiT 采用双流和单流 Transformer 块的架构，促进形状和图像模态间的交互。橙色块无可学习参数，蓝色块含可训练参数，灰色块为更详细的模块。</p>
+
+        <h3>Figure 5: Hunyuan3D-Paint 纹理合成架构</h3>
+        <img src="images/2501.12202/x5.png" alt="Hunyuan3D Figure 5: Paint Architecture" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 5: Paint 架构。使用图像去光模块将输入转为无光状态生成光不变纹理。双流图像条件参考网络提供条件图像特征，多任务注意力模块确保多视角一致性。</p>
+
+        <h3>Figure 6: ShapeVAE 重建质量对比</h3>
+        <img src="images/2501.12202/x6.png" alt="Hunyuan3D Figure 6: Reconstruction Quality" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 6: 重建网格的视觉对比，Hunyuan3D-ShapeVAE 重建出具有细粒度表面细节和整洁空间的网格。</p>
+
+        <h3>Figure 7: DiT 形状生成对比</h3>
+        <img src="images/2501.12202/x7.png" alt="Hunyuan3D Figure 7: Shape Generation" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 7: 输入图像和各方法生成的裸网格对比。人脸和钢琴键显示 DiT 能合成精细表面凹凸，场景和徽标展示细节生成能力。</p>
+
+        <h3>Figure 8: Paint 纹理合成对比</h3>
+        <img src="images/2501.12202/x8.png" alt="Hunyuan3D Figure 8: Texture Synthesis" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 8: 不同裸网格上的纹理贴图对比。鱼和兔子展示 Paint 产生最符合文本的纹理，足球展示无缝纹理合成。</p>
+
+        <h3>Figure 9: 纹理换肤结果</h3>
+        <img src="images/2501.12202/x9.png" alt="Hunyuan3D Figure 9: Texture Reskinning" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 9: 为两个网格生成不同纹理贴图的结果，验证 Paint 的纹理换肤能力。</p>
+
+    </div>
+
     <div class="section">
         <h2>📐 算法框图 / 💡 创新 / 🎯 应用 / 🏋️ 训练 / 📊 数据 / 📐 损失 / 🔄 演进</h2>
         <div class="highlight">
