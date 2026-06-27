@@ -1,0 +1,30 @@
+﻿[
+    {
+        "idx":  0,
+        "file":  "fig1.png",
+        "size":  2617226,
+        "caption":  "Figure 1: Camera-controlled video generation results of TriMotion. (a) TriMotion enables precise camera control from three reference modalities. (b) It also supports cross-modal camera control, allowi...",
+        "src":  "2606.20774v1/x1.png"
+    },
+    {
+        "idx":  1,
+        "file":  "fig2.png",
+        "size":  768361,
+        "caption":  "Figure 2: Overview of TriMotion. TriMotion maps video, pose, and text motion inputs into a unified motion embedding space and uses the resulting embedding to condition the latent video diffusion backb...",
+        "src":  "2606.20774v1/x2.png"
+    },
+    {
+        "idx":  2,
+        "file":  "fig3.png",
+        "size":  2249353,
+        "caption":  "Table 1: Quantitative results for I2V \u0026amp;\\\u0026amp; V2V tasks. (Best: Bold, Second best: Underline)",
+        "src":  "2606.20774v1/x3.png"
+    },
+    {
+        "idx":  3,
+        "file":  "fig4.png",
+        "size":  2849137,
+        "caption":  "Figure 3: Qualitative comparison for Camera-controlled I2V generation results.",
+        "src":  "2606.20774v1/x4.png"
+    }
+]

@@ -1,0 +1,26 @@
+﻿{
+    "arxivId":  "2310.12190",
+    "noteFile":  "VideoGen-20231018-DynamiCrafter.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2310.12190v1/x1.png",
+                        "caption":  "Figure 1: Overview of video diffusion model with text prompts. Each block of the denoising U-Net consists of four basic modules, where the text prompts are taken by the spatial attention modules via cross-attention layers. Given a text prompt, the model generates the target video 饾悧0subscript饾悧0\\mat..."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2310.12190v1/x2.png",
+                        "caption":  "Figure 2: Image-conditioned text-to-video generation comparison. (a) Conditional image input. (b) Generation with the global semantic token conditioned. (c) Generation with the full patch visual tokens conditioned. The used text prompt is 鈥漚 beautiful girl with colorful hair鈥?"
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2310.12190v1/x3.png",
+                        "caption":  "Figure 3: Visual comparison on image animation results from VideoComposer, I2VGen-XL, and our DynamiCrafter."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2310.12190v1/x4.png",
+                        "caption":  "Figure 4: Image animation results at a resolution of 320脳512320512320\\times 512320 脳 512. Each row demonstrates multiple frames of a generated video conditioned on a given image as well as a given text prompt."
+                    }
+                ]
+}

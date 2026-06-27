@@ -1,0 +1,26 @@
+﻿{
+    "arxivId":  "2512.08765",
+    "noteFile":  "VideoGen-20251209-Wan-Move.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2512.08765/figures/logo.png",
+                        "caption":  "Figure 1: Wan-Move聽is a image-to-video generation framework that supports diverse motion control applications. The generated samples (832脳\\times480p, 5s) exhibits high visual fidelity and accurate motion."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2512.08765/x1.png",
+                        "caption":  "Figure 2: (a) To inject motion guidance, we transfer point trajectories from videos to latent space, then replicate the first frame feature into subsequent zero-padded frames along each latent trajectory. (b) Wan-Move聽is trained upon an existing image-to-video generation model (e.g., work聽wan; bar20..."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2512.08765/x2.png",
+                        "caption":  "Figure 3: Construction pipeline of MoveBench to obtain high-quality samples with rich annotations."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2512.08765/x3.png",
+                        "caption":  "Figure 4: Balanced sample number per class."
+                    }
+                ]
+}

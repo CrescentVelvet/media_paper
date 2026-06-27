@@ -1,0 +1,26 @@
+﻿{
+    "arxivId":  "2503.07598",
+    "noteFile":  "VideoGen-20250310-VACE.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2503.07598/x1.png",
+                        "caption":  "Figure 1: Task categories covered by VACE. Four basic tasks can be combined to create a vast number of possibilities."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2503.07598/x2.png",
+                        "caption":  "Table 1: The formal representation of frames (F饾惞Fitalic_Fs) and masks (M饾憖Mitalic_Ms) under the four basic tasks. Frames and masks are aligned spatially and temporally."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2503.07598/x3.png",
+                        "caption":  "Figure 2: Overview of VACE Framework. Frames and masks are tokenized through Concept Decoupling, Context Latent Encode and Context Embedder. To achieve training with VCU as input, we employ two strategies, (a) Fully Fine-tuning and (b) Context Adapter Tuning. The latter converges faster and supports..."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2503.07598/extracted/6269873/figures/ablation_1.png",
+                        "caption":  "Table 2: Quantitative evaluations on VACE-Benchmark. We compare the automated score metrics of the unified VACE based on LTX-Video and the proprietary model on the dimensions of video quality and video consistency, as well as results of human user studies."
+                    }
+                ]
+}

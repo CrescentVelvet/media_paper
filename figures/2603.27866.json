@@ -1,0 +1,26 @@
+﻿{
+    "arxivId":  "2603.27866",
+    "noteFile":  "VideoGen-20260329-Wan-R1.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2603.27866v1/x1.png",
+                        "caption":  "Figure 1: VLLM fails to provide reliable reward, verified rewards can guarantee correct supervision."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2603.27866v1/Figure/method_new.png",
+                        "caption":  "Figure 2: Flow-GRPO with verified reward."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2603.27866v1/Figure/model_comparison_20260304_140004.png",
+                        "caption":  "Algorithm 1 Video-GRPO Training"
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2603.27866v1/x2.png",
+                        "caption":  "Table 1: VR-Bench comprises five tasks: Base (Regular Maze), Irreg (Irregular Maze), Trap (TrapField), 3D (3D Maze), and Soko (Sokoban). Last row shows the performance gain compared with Wan2.2-TI2V base model."
+                    }
+                ]
+}

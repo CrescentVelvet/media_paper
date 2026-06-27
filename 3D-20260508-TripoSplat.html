@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -400,5 +400,32 @@
     笔记创建: 2026-06-26 · 知识库索引: p29
 </div>
 
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2605.16355) -->
+<div class="arxiv-figures" style="border-top: 2px solid #333; margin-top: 30px; padding-top: 20px;">
+<h2 style="color: #4ecca3;">arXiv Paper Figures</h2>
+<p style="color: #888; font-size: 0.9em;">Figures from arXiv HTML version</p>
+<div style="margin: 20px 0; text-align: center;">
+  <img src="https://arxiv.org/html/2605.16355v1/x1.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 1. Teaser. Best generation samples with variable Gaussian counts, demonstrating that our model can decode an arbitrary number of 3D Gaussian splats from a single latent representation.</div>
+</div>
+<div style="margin: 20px 0; text-align: center;">
+  <img src="https://arxiv.org/html/2605.16355v1/x2.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 2. Overview of the DeG-VAE. Multi-view renderings are encoded using off-the-shelf feature extractors, and the features are projected to randomly sampled surface points. Points with features are encoded into latent tokens following 3DShape2VecS...</div>
+</div>
+<div style="margin: 20px 0; text-align: center;">
+  <img src="https://arxiv.org/html/2605.16355v1/x3.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 3. A 2D illustration of the point sampling process. Starting from the coarsest level, the network iteratively predicts the density value for each occupied voxel at the current level until the finest level is reached. Integers in the grid denot...</div>
+</div>
+<div style="margin: 20px 0; text-align: center;">
+  <img src="https://arxiv.org/html/2605.16355v1/figures/architecture/architecture_encoder.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 4. Detailed architecture for encoding, decoding, and generation. The refiners in (d) are transformer layers used for processing inputs from different modalities following S3-DiT聽(Cai et al., 2025a). To enable RoPE聽(Su et al., 2024) for multi-m...</div>
+</div>
+<div style="margin: 20px 0; text-align: center;">
+  <img src="https://arxiv.org/html/2605.16355v1/figures/architecture/architecture_points_decoder.png" alt="figure" style="max-width: 100%; border-radius: 8px; border: 1px solid #333;" loading="lazy" />
+  <div style="color: #aaa; font-size: 0.85em; margin-top: 8px; text-align: left; padding: 0 10px;">Figure 5. VecSeq re-indexing. Latent tokens are associated with 3D positions during encoding and then canonically ordered by matching them to deterministic 3D Sobol anchors, turning an unordered latent set into a stable vector sequence for diffusion ...</div>
+</div>
+</div>
 </body>
 </html>
+

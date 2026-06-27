@@ -1,0 +1,31 @@
+﻿{
+    "arxivId":  "2511.14993",
+    "noteFile":  "VideoGen-20251119-Kandinsky5.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2511.14993v3/images/title.png",
+                        "caption":  "Figure 1: Kandinsky 5.0 Models Family"
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2511.14993v3/images/kandinsky5_family.jpg",
+                        "caption":  "Figure 2: The evolution of Kandinsky models."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2511.14993v3/images/kandinsky_evolution.jpg",
+                        "caption":  "Figure 3: Data processing pipeline for Kandinsky T2V (text-to-video) and Kandinsky T2I (text-to-image) datasets. The workflow begins with raw image and video data, followed by initial filtering and deduplication it processed through advanced filtering (including watermark detection, quality assessme..."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2511.14993v3/images/Data_1.jpg",
+                        "caption":  "Figure 4: Distribution of key data categories across the curated Kandinsky T2I dataset by Location, Main object and Picture style."
+                    },
+                    {
+                        "figure":  "Figure 5",
+                        "url":  "https://arxiv.org/html/2511.14993v3/images/T2I_distribution.jpg",
+                        "caption":  "Figure 5: Instructive dataset processing pipeline. Initial image data (left) is processed through a set of similarity and exclusion criteria 鈥?including CLIP and DINO embeddings, face similarity, duplicate removal, and custom overlap heuristics 鈥?to produce filtered image-instruction pairs (right). ..."
+                    }
+                ]
+}

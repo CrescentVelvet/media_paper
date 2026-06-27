@@ -1,0 +1,16 @@
+﻿{
+    "arxivId":  "2606.25041",
+    "noteFile":  "VideoGen-20260623-Wan-Streamer.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2606.25041v2/x1.png",
+                        "caption":  "Figure 1: Overview of Wan-Streamer. It models language, audio, and video as both input and output within a single Transformer, using block-causal attention for incremental streaming generation."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2606.25041v2/x2.png",
+                        "caption":  "Figure 2: Thinker-performer overlap during streaming inference. At unit kk, the thinker encodes the current user observations uku_{k}, updates the KV cache, and decodes the previous response latents yk鈭?/mo\u003e1y_{k-1} for immediate emission. The performer receives the current KV slice and runs only th..."
+                    }
+                ]
+}

@@ -1,0 +1,31 @@
+﻿{
+    "arxivId":  "2503.11651",
+    "noteFile":  "3D-20250314-VGGT.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2503.11651/x1.png",
+                        "caption":  "Figure 1: VGGT is a large feed-forward transformer with minimal 3D-inductive biases trained on a trove of 3D-annotated data. It accepts up to hundreds of images and predicts cameras, point maps, depth maps, and point tracks for all images at once in less than a second, which often outperforms optimi..."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2503.11651/x2.png",
+                        "caption":  "Figure 2: Architecture Overview. Our model first patchifies the input images into tokens by DINO, and appends camera tokens for camera prediction. It then alternates between frame-wise and global self attention layers. A camera head makes the final prediction for camera extrinsics and intrinsics, an..."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2503.11651/x3.png",
+                        "caption":  "Figure 3: Qualitative comparison of our predicted 3D points to DUSt3R on in-the-wild images. As shown in the top row, our method successfully predicts the geometric structure of an oil painting, while DUSt3R predicts a slightly distorted plane. In the second row, our method correctly recovers a 3D s..."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2503.11651/x4.png",
+                        "caption":  "Figure 4: Additional Visualizations of Point Map Estimation. Camera frustums illustrate the estimated camera poses. Explore our interactive demo for better visualization quality."
+                    },
+                    {
+                        "figure":  "Figure 5",
+                        "url":  "https://arxiv.org/html/2503.11651/x5.png",
+                        "caption":  "Table 1: Camera Pose Estimation on RealEstate10K聽[161] and CO3Dv2聽[88] with 10 random frames. All metrics the higher the better. None of the methods were trained on the Re10K dataset. Runtime were measured using one H100 GPU. Methods marked with 鈥?/span\u003e represent concurrent work."
+                    }
+                ]
+}

@@ -1,0 +1,26 @@
+﻿{
+    "arxivId":  "2604.24764",
+    "noteFile":  "VideoGen-20260427-GeometricConsistency.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2604.24764v4/x1.png",
+                        "caption":  "Figure 1: World-R1 enables geometrically consistent world modeling in video foundation models via reinforcement learning. It accepts text input and generates high-quality 3D consistent videos. We visualize the reconstruction results alongside the video frames. Video results are in our supplementary ..."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2604.24764v4/x2.png",
+                        "caption":  "Figure 2: Overview of World-R1. Left: Given a text prompt, we synthesize a camera trajectory and embed it into the latent space via noise wrapping聽[9] to achieve implicit camera conditioning. Middle: The foundation model聽[41] generates candidate video clips. Right: We employ an comprehensive reward ..."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2604.24764v4/x3.png",
+                        "caption":  "Figure 3: Qualitative Comparison. We visualize the generated video frames and the corresponding 3D reconstruction for diverse scenes involving different camera motions. Compared to the video foundation models聽[41, 55], World-R1 demonstrates superior 3D consistency. Our model preserves strict scene p..."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2604.24764v4/x4.png",
+                        "caption":  "Table 1: Evaluation of general video generation quality on VBench聽[18]. Due to resource constraints, we did not test the performance of World-R1-Large. Best scores are in blue, second-best in green, third-best in yellow."
+                    }
+                ]
+}

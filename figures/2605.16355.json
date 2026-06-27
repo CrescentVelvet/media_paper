@@ -1,0 +1,31 @@
+﻿{
+    "arxivId":  "2605.16355",
+    "noteFile":  "3D-20260508-TripoSplat.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2605.16355v1/x1.png",
+                        "caption":  "Figure 1. Teaser. Best generation samples with variable Gaussian counts, demonstrating that our model can decode an arbitrary number of 3D Gaussian splats from a single latent representation."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2605.16355v1/x2.png",
+                        "caption":  "Figure 2. Overview of the DeG-VAE. Multi-view renderings are encoded using off-the-shelf feature extractors, and the features are projected to randomly sampled surface points. Points with features are encoded into latent tokens following 3DShape2VecSet聽(Zhang et al., 2023). Taking the latent tokens ..."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2605.16355v1/x3.png",
+                        "caption":  "Figure 3. A 2D illustration of the point sampling process. Starting from the coarsest level, the network iteratively predicts the density value for each occupied voxel at the current level until the finest level is reached. Integers in the grid denote the number of points allocated to each voxel, gi..."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2605.16355v1/figures/architecture/architecture_encoder.png",
+                        "caption":  "Figure 4. Detailed architecture for encoding, decoding, and generation. The refiners in (d) are transformer layers used for processing inputs from different modalities following S3-DiT聽(Cai et al., 2025a). To enable RoPE聽(Su et al., 2024) for multi-modal input in the DiT, we use a lightweight head t..."
+                    },
+                    {
+                        "figure":  "Figure 5",
+                        "url":  "https://arxiv.org/html/2605.16355v1/figures/architecture/architecture_points_decoder.png",
+                        "caption":  "Figure 5. VecSeq re-indexing. Latent tokens are associated with 3D positions during encoding and then canonically ordered by matching them to deterministic 3D Sobol anchors, turning an unordered latent set into a stable vector sequence for diffusion denoising."
+                    }
+                ]
+}

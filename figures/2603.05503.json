@@ -1,0 +1,21 @@
+﻿{
+    "arxivId":  "2603.05503",
+    "noteFile":  "VideoGen-20241015-Mochi1.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2603.05503v1/images/video_comp/Full/Panda/frame_0000.jpg",
+                        "caption":  "Figure 1: Comparison of two prompts and resolutions generated with the same seed on Wan2.1 14B text-to-video. CalibAtt achieves higher attention sparsity and lower end-to-end latency while maintaining visual quality and prompt alignment."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2603.05503v1/images/video_comp/Full/Panda/frame_0020.jpg",
+                        "caption":  "(a) t=0t{=}0"
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2603.05503v1/images/video_comp/Full/Panda/frame_0040.jpg",
+                        "caption":  "(b) t=49t{=}49"
+                    }
+                ]
+}
