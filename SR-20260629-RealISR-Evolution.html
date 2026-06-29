@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-ISR 技术演进调研 — 从 ESRGAN 到 OSEDiff 及未来方向</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h1>
+    <div class="meta">
+        <span>📅 2018-2026</span>
+        <span>🔬 GAN → Diffusion → One-Step</span>
+        <span>📄 7+ 篇核心论文</span>
+        <span>📅 2026-06-29 整理</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 概述 -->
+    <div class="section">
+        <h2>📋 概述</h2>
+        <div class="tags">
+            <span class="tag green">Real-ISR</span>
+            <span class="tag">Super-Resolution</span>
+            <span class="tag">GAN</span>
+            <span class="tag">Diffusion</span>
+            <span class="tag">One-Step</span>
+            <span class="tag">Blind SR</span>
+        </div>
+        <p><strong>Real-ISR（Real-world Image Super-Resolution）</strong>旨在从未知、复杂的真实世界退化过程中恢复高质量图像。与早期假设简单双三次下采样的超分方法不同，Real-ISR 需要处理模糊、噪声、JPEG 压缩、传感器噪声等多种退化叠加的复杂情况，是计算机视觉中一个重要的开放问题。</p>
+        <p>本调研覆盖从 2018 年到 2026 年的 Real-ISR 技术演进，梳理了从 <strong>GAN 范式</strong>（ESRGAN → BSRGAN → Real-ESRGAN）到 <strong>扩散模型范式</strong>（StableSR → DiffBIR → SeeSR）再到 <strong>单步扩散</strong>（OSEDiff）及最新方法（TEASR、SANA-SR、ODTSR、FRAMER）的完整技术路线。</p>
+        <div class="highlight">
+            <strong>核心演进脉络：</strong>① 退化建模从简单到复杂（双三次 → 高阶退化 → 随机打乱）→ ② 生成先验从 GAN 到预训练 T2I 扩散模型 → ③ 推理效率从多步（10-200 步）到单步 → ④ 语义理解从无到有（DAPE 提示提取器）→ ⑤ 架构从 U-Net 到 DiT。
+        </div>
+    </div>
+
+    <!-- 时间线 -->
+    <div class="section">
+        <h2>📅 技术演进时间线</h2>
+        <table>
+            <tr><th>年份</th><th>方法</th><th>范式</th><th>关键贡献</th><th>arXiv</th></tr>
+            <tr><td>2018</td><td><strong>ESRGAN</strong></td><td>CNN+GAN</td><td>RRDB 无 BN、相对判别器、激活前感知损失</td><td>1809.00219</td></tr>
+            <tr><td>2021-03</td><td><strong>BSRGAN</strong></td><td>CNN+GAN</td><td>随机打乱退化建模、各向异性模糊、相机传感器噪声</td><td>2103.14006</td></tr>
+            <tr><td>2021-07</td><td><strong>Real-ESRGAN</strong></td><td>CNN+GAN</td><td>二阶退化建模、U-Net 判别器+谱归一化、纯合成数据训练</td><td>2107.10833</td></tr>
+            <tr><td>2023-05</td><td><strong>StableSR</strong></td><td>Diffusion (多步)</td><td>利用 T2I 扩散先验、time-aware encoder、controllable feature wrapping</td><td>2305.07015</td></tr>
+            <tr><td>2023-08</td><td><strong>DiffBIR</strong></td><td>Diffusion (多步)</td><td>两阶段恢复（退化去除+信息再生）、IRControlNet、region-adaptive guidance</td><td>2308.15070</td></tr>
+            <tr><td>2023-11</td><td><strong>SeeSR</strong></td><td>Diffusion (多步)</td><td>语义感知、DAPE 退化感知提示提取器、软/硬语义提示</td><td>2311.16518</td></tr>
+            <tr><td>2024-06</td><td><strong>OSEDiff</strong></td><td>Diffusion (单步)</td><td>LQ 图像作起点、LoRA 微调、变分分数蒸馏 (VSD)、单步推理</td><td>2406.08177</td></tr>
+            <tr><td>2025-11</td><td><strong>ODTSR</strong></td><td>Diffusion (单步 DiT)</td><td>基于 Qwen-Image 的 DiT、Noise-hybrid Visual Stream、Fidelity-aware 对抗训练</td><td>2511.17138</td></tr>
+            <tr><td>2025-12</td><td><strong>FRAMER</strong></td><td>Diffusion (训练方案)</td><td>频率对齐自蒸馏、FFT 分解 LF/HF、自适应调制、CVPR 2026</td><td>2512.01390</td></tr>
+            <tr><td>2026-05</td><td><strong>SANA-SR</strong></td><td>Diffusion (单步)</td><td>32× 深度压缩自编码器、线性注意力 DiT、0.019s 推理、移动端部署</td><td>2605.23451</td></tr>
+            <tr><td>2026-06</td><td><strong>TEASR</strong></td><td>Diffusion (任意步)</td><td>自对抗蒸馏、无辅助教师、20B 参数单 GPU 蒸馏、双分支 DiT</td><td>2606.16188</td></tr>
+        </table>
+    </div>
+
+    <!-- 各方法详解 -->
+    <div class="section">
+        <h2>🔬 各方法详解</h2>
+
+        <!-- ESRGAN -->
+        <h3>1. ESRGAN (2018) — Enhanced Super-Resolution Generative Adversarial Networks</h3>
+        <div class="tags">
+            <span class="tag green">GAN</span>
+            <span class="tag">RRDB</span>
+            <span class="tag">Relativistic Discriminator</span>
+            <span class="tag">Perceptual Loss</span>
+        </div>
+        <p><strong>核心思想：</strong>在 SRGAN 的基础上，从网络架构、对抗损失和感知损失三个方面进行全面改进，生成更真实、自然的纹理。</p>
+        <p><strong>架构设计：</strong></p>
+        <ul>
+            <li><strong>RRDB (Residual-in-Residual Dense Block)：</strong>移除 Batch Normalization，采用残差密集块嵌套结构。无 BN 设计减少了伪影，密集连接增强了特征复用</li>
+            <li><strong>相对判别器 (Relativistic Discriminator)：</strong>判别器预测"真实图像比假图像更真实"的相对值，而非绝对真伪。这使判别器不仅学习判断真实分布，还学习判断假分布</li>
+            <li><strong>激活前感知损失 (VGG before activation)：</strong>使用 VGG 网络激活层之前的特征计算感知损失，比激活后特征提供更强的亮度一致性和纹理恢复监督</li>
+        </ul>
+        <p><strong>关键创新：</strong>RRDB 无 BN 设计成为后续大量 SR 网络的基础模块；相对判别器思想被广泛采用。</p>
+        <div class="highlight">
+            <strong>性能特点：</strong>在 PIRM2018-SR Challenge Region 3 中获得第一名。视觉效果显著优于 SRGAN，纹理更真实自然。但存在过度生成伪影问题。
+        </div>
+        <img src="images/1809.00219/x1.png" alt="ESRGAN Figure 1" />
+        <img src="images/1809.00219/x2.png" alt="ESRGAN Figure 2" />
+
+        <!-- BSRGAN -->
+        <h3>2. BSRGAN (2021) — Designing a Practical Degradation Model for Deep Blind SR</h3>
+        <div class="tags">
+            <span class="tag green">Degradation Model</span>
+            <span class="tag">Blind SR</span>
+            <span class="tag">Isotropic/Anisotropic Blur</span>
+            <span class="tag">Camera ISP Noise</span>
+        </div>
+        <p><strong>核心思想：</strong>设计更复杂、更实用的退化模型来训练盲超分网络，使其能处理真实世界多样退化。</p>
+        <p><strong>退化模型设计：</strong></p>
+        <ul>
+            <li><strong>随机打乱退化顺序：</strong>模糊 + 下采样 + 噪声的组合顺序随机排列，覆盖更多退化空间</li>
+            <li><strong>各向同性/各向异性高斯模糊：</strong>不仅使用圆形高斯核，还使用椭圆高斯核模拟方向性模糊</li>
+            <li><strong>多种下采样：</strong>最近邻、双线性、双三次插值随机选择</li>
+            <li><strong>复合噪声：</strong>高斯噪声 + JPEG 压缩（不同质量因子）+ 相机传感器噪声（通过逆正向 ISP 管道模型生成）</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>首次系统性地设计实用的退化模型，随机打乱退化顺序使模型覆盖更广的退化空间。相机 ISP 噪声模拟是突破性设计。ICCV 2021 发表。
+        </div>
+        <p><strong>性能特点：</strong>在合成和真实图像上都显著优于使用简单退化模型训练的 ESRGAN，验证了退化模型设计对盲 SR 的重要性。</p>
+        <img src="images/2103.14006/x1.png" alt="BSRGAN Figure 1" />
+
+        <!-- Real-ESRGAN -->
+        <h3>3. Real-ESRGAN (2021) — Training Real-World Blind SR with Pure Synthetic Data</h3>
+        <div class="tags">
+            <span class="tag green">Second-order Degradation</span>
+            <span class="tag">U-Net Discriminator</span>
+            <span class="tag">Spectral Normalization</span>
+            <span class="tag">Pure Synthetic Data</span>
+        </div>
+        <p><strong>核心思想：</strong>将 ESRGAN 扩展为实用化工具，通过高阶退化建模和改进的判别器，仅用纯合成数据训练即可处理真实世界复杂退化。</p>
+        <p><strong>架构设计：</strong></p>
+        <ul>
+            <li><strong>二阶退化建模 (High-order Degradation)：</strong>将退化过程建模为两阶串联，每阶包含模糊+下采样+噪声+JPEG 压缩。二阶建模更好地模拟真实世界复杂退化链</li>
+            <li><strong>振铃和过冲伪影模拟：</strong>在合成过程中考虑振铃 (ringing) 和过冲 (overshoot) 伪影，使训练数据更贴近真实</li>
+            <li><strong>U-Net 判别器 + 谱归一化：</strong>U-Net 结构提供像素级判别反馈，谱归一化稳定训练动态。比传统 PatchGAN 判别器更强大</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>二阶退化建模是核心突破——通过串联两个退化阶段，模拟真实世界退化链（如先模糊再压缩再噪声）。纯合成数据训练消除了对真实配对数据的依赖。
+        </div>
+        <p><strong>性能特点：</strong>在各种真实数据集上视觉表现优于先前方法。提供高效实时合成训练对的实现。成为广泛使用的实用 SR 工具。</p>
+        <img src="images/2107.10833/x2.png" alt="Real-ESRGAN Figure 2" />
+
+        <!-- StableSR -->
+        <h3>4. StableSR (2023) — Exploiting Diffusion Prior for Real-World SR</h3>
+        <div class="tags">
+            <span class="tag green">Diffusion Prior</span>
+            <span class="tag">T2I Model</span>
+            <span class="tag">Time-aware Encoder</span>
+            <span class="tag">Controllable Feature Wrapping</span>
+            <span class="tag">Progressive Aggregation</span>
+        </div>
+        <p><strong>核心思想：</strong>利用预训练的文本到图像 (T2I) 扩散模型中蕴含的丰富图像先验，用于盲超分任务。</p>
+        <p><strong>架构设计：</strong></p>
+        <ul>
+            <li><strong>Time-aware Encoder：</strong>将 LQ 图像编码为时间步感知的条件特征，注入扩散模型。不修改预训练 T2I 模型权重，保留其生成能力</li>
+            <li><strong>Controllable Feature Wrapping：</strong>通过一个标量值控制质量和保真度的平衡——用户可在推理时调整，无需重训模型</li>
+            <li><strong>Progressive Aggregation Sampling：</strong>渐进式聚合采样策略，克服预训练扩散模型固定分辨率限制，适应任意尺寸输入</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>首次成功利用预训练 T2I 扩散模型先验做盲 SR，不修改预训练模型（保留生成先验），通过 time-aware encoder 注入条件。可控特征包装模块解决了扩散模型随机性与图像恢复确定性之间的矛盾。IJCV 2024 发表。
+        </div>
+        <p><strong>性能特点：</strong>在合成和真实基准上超越当时 SOTA。但需要多步采样（~50-200 步），推理速度慢。</p>
+
+        <!-- DiffBIR -->
+        <h3>5. DiffBIR (2023) — Towards Blind Image Restoration with Generative Diffusion Prior</h3>
+        <div class="tags">
+            <span class="tag green">Two-stage</span>
+            <span class="tag">IRControlNet</span>
+            <span class="tag">Region-adaptive Guidance</span>
+            <span class="tag">LDM</span>
+        </div>
+        <p><strong>核心思想：</strong>将盲图像恢复解耦为两阶段：1) 退化去除（去除与图像无关的退化内容）；2) 信息再生（用扩散先验生成丢失的图像内容）。</p>
+        <p><strong>架构设计：</strong></p>
+        <ul>
+            <li><strong>Stage 1 - 退化去除：</strong>使用恢复模块去除退化，获得高保真（但可能缺乏细节）的中间结果</li>
+            <li><strong>Stage 2 - 信息再生：</strong>提出 <code>IRControlNet</code>，利用 LDM (Latent Diffusion Model) 的生成能力。基于特殊制作的条件图像（去除干扰噪声内容）训练，保证稳定生成</li>
+            <li><strong>Region-adaptive Restoration Guidance：</strong>推理时可调节的去噪引导，无需重训模型即可平衡真实感和保真度</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>两阶段解耦是核心设计——退化去除和信息再生各司其职，避免单阶段方法中保真度与真实感的冲突。IRControlNet 基于 ControlNet 思想但专为图像恢复设计。ECCV 2024 发表。
+        </div>
+        <p><strong>性能特点：</strong>在盲 SR、盲人脸恢复和盲图像去噪三个任务上均超越 SOTA。统一框架处理多种恢复任务是重要优势。</p>
+        <img src="images/2308.15070/x1.png" alt="DiffBIR Figure 1" />
+
+        <!-- SeeSR -->
+        <h3>6. SeeSR (2023) — Towards Semantics-Aware Real-World Image SR</h3>
+        <div class="tags">
+            <span class="tag green">Semantics-Aware</span>
+            <span class="tag">DAPE</span>
+            <span class="tag">Soft/Hard Prompts</span>
+            <span class="tag">LR-to-Noise</span>
+        </div>
+        <p><strong>核心思想：</strong>强退化会导致局部结构破坏，进而引发语义歧义。SeeSR 通过语义感知方法保持恢复图像的语义保真度。</p>
+        <p><strong>架构设计：</strong></p>
+        <ul>
+            <li><strong>DAPE (Degradation-Aware Prompt Extractor)：</strong>训练一个退化感知提示提取器，即使在高强退化下也能生成准确的语义提示
+                <ul>
+                    <li><strong>硬语义提示 (Hard Prompts)：</strong>图像标签 (tags)，增强 T2I 模型的局部感知能力</li>
+                    <li><strong>软语义提示 (Soft Prompts)：</strong>补充硬提示，提供额外的表征信息</li>
+                </ul>
+            </li>
+            <li><strong>LR 图像融入初始采样噪声：</strong>将 LQ 图像信息融入扩散采样的初始噪声中，减轻扩散模型生成过度随机细节的倾向</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>首次在 Real-ISR 中显式引入语义理解——DAPE 提取的软/硬语义提示解决了退化导致语义歧义的问题。LR 融入初始噪声是减少扩散随机性的巧妙设计。CVPR 2024 发表。
+        </div>
+        <p><strong>性能特点：</strong>在语义保真度和细节真实感上优于先前方法。DAPE 的退化感知能力使其在强退化场景下仍能正确理解图像内容。</p>
+
+        <!-- OSEDiff -->
+        <h3>7. OSEDiff (2024) — One-Step Effective Diffusion Network for Real-ISR</h3>
+        <div class="tags">
+            <span class="tag green">One-Step</span>
+            <span class="tag">LQ-as-Starting-Point</span>
+            <span class="tag">LoRA</span>
+            <span class="tag">VSD</span>
+            <span class="tag">NeurIPS 2024</span>
+        </div>
+        <p><strong>核心思想：</strong>LQ 图像本身包含丰富的恢复信息，可直接作为扩散起点，无需从随机噪声开始，从而实现单步推理。</p>
+        <p><strong>架构设计：</strong></p>
+        <ul>
+            <li><strong>LQ 图像作扩散起点：</strong>不同于从随机噪声开始的标准扩散，OSEDiff 直接将 LQ 图像（加噪）作为起点，消除随机性引入的不确定性</li>
+            <li><strong>LoRA 微调：</strong>用可训练的 LoRA 层微调预训练扩散网络，适应复杂图像退化，不修改原始权重</li>
+            <li><strong>变分分数蒸馏 (VSD)：</strong>在潜空间进行 KL 散度正则化，确保单步扩散模型输出质量。使用预训练的多步扩散模型作为教师</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>三个设计协同实现单步推理：① LQ 作起点消除不确定性；② LoRA 高效微调；③ VSD 潜空间蒸馏保证质量。单步推理达到多步方法（~50步）的质量。NeurIPS 2024 发表。
+        </div>
+        <p><strong>性能特点：</strong>客观指标和主观评价均可比或超越需要数十/数百步的方法。推理速度提升 50-200×。</p>
+
+        <!-- 最新方法 -->
+        <h3>8. 最新方法 (2025-2026)</h3>
+
+        <h4>8.1 ODTSR (2025-11) — One-Step Diffusion Transformer for Controllable Real-ISR</h4>
+        <div class="tags">
+            <span class="tag green">One-Step</span>
+            <span class="tag">DiT</span>
+            <span class="tag">Qwen-Image</span>
+            <span class="tag">Noise-hybrid Visual Stream</span>
+        </div>
+        <p><strong>核心思想：</strong>基于 Qwen-Image 的单步扩散 Transformer，同时兼顾保真度和可控性。引入双视觉流设计：一个流接收可调噪声的 LQ 图像（Control Noise），另一个接收一致噪声的 LQ 图像（Prior Noise），形成 Noise-hybrid Visual Stream (NVS)。通过 Fidelity-aware Adversarial Training (FAA) 增强可控性并实现单步推理。</p>
+        <div class="highlight">
+            <strong>关键创新：</strong>双流 NVS 设计将"控制信号"和"先验信号"分离，使模型既能控制保真度又能利用扩散先验。还能实现中文场景文字图像超分（STISR）的零样本可控性。
+        </div>
+
+        <h4>8.2 FRAMER (2025-12) — Frequency-Aligned Self-Distillation with Adaptive Modulation</h4>
+        <div class="tags">
+            <span class="tag green">Frequency-Aware</span>
+            <span class="tag">Self-Distillation</span>
+            <span class="tag">FFT</span>
+            <span class="tag">CVPR 2026</span>
+        </div>
+        <p><strong>核心思想：</strong>扩散模型在高频细节重建上不足，存在低频偏置和"先低频后高频"的层级结构。FRAMER 是一种即插即用的训练方案，通过频率对齐自蒸馏增强高频细节恢复。</p>
+        <ul>
+            <li><strong>自蒸馏：</strong>最终层特征图作为教师，指导所有中间层（学生）</li>
+            <li><strong>FFT 频率分解：</strong>将特征图通过 FFT mask 分解为低频 (LF) 和高频 (HF) 频段</li>
+            <li><strong>对比损失：</strong>低频用 Intra Contrastive Loss 稳定全局结构，高频用 Inter Contrastive Loss 锐化实例特定细节</li>
+            <li><strong>自适应调制：</strong>FAW 和 FAM 两个调制器重新加权每层 LF/HF 信号</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>从频域视角理解和改进扩散 SR 模型，不改变骨干网络和推理流程。适用于 U-Net 和 DiT 架构（SD2、SD3）。CVPR 2026 接收。
+        </div>
+
+        <h4>8.3 SANA-SR (2026-05) — Efficient One-Step Diffusion with Compact Token Compression</h4>
+        <div class="tags">
+            <span class="tag green">One-Step</span>
+            <span class="tag">Linear Attention</span>
+            <span class="tag">32× Compression</span>
+            <span class="tag">Mobile Deployment</span>
+        </div>
+        <p><strong>核心思想：</strong>Real-ISR 的瓶颈不在恢复先验不足，而在 token 冗余和高分辨率下昂贵的 token 交互。通过紧凑潜在表示和线性复杂度建模实现高效部署。</p>
+        <ul>
+            <li><strong>32× 深度压缩自编码器：</strong>将压缩比提升到 32×，大幅减少 latent tokens，同时保留恢复相关结构和纹理</li>
+            <li><strong>线性注意力 DiT + LoRA：</strong>在线性复杂度下做 token 混合，LoRA 微调适配恢复任务</li>
+            <li><strong>部署指标：</strong>剪枝后 0.019s 推理，407.95G MACs，344M 参数——具备移动端部署潜力</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>从部署效率角度重新思考 Real-ISR 架构。32× 压缩比 + 线性注意力 = 移动级实时 SR。证明了 token 冗余是核心瓶颈而非先验不足。
+        </div>
+
+        <h4>8.4 TEASR (2026-06) — Training-Efficient Any-Step Diffusion Transformer for Real-ISR</h4>
+        <div class="tags">
+            <span class="tag green">Any-Step</span>
+            <span class="tag">Self-Adversarial Distillation</span>
+            <span class="tag">20B Parameters</span>
+            <span class="tag">Single GPU</span>
+        </div>
+        <p><strong>核心思想：</strong>在单一扩散模型内进行自对抗蒸馏，无需辅助教师模型或判别器，支持任意步数采样（1步到多步无缝切换）。</p>
+        <ul>
+            <li><strong>自对抗蒸馏 (Self-Adversarial Distillation)：</strong>单一模型内的自蒸馏，消除对辅助教师和判别器的依赖</li>
+            <li><strong>时间步感知矫正策略：</strong>稳定跨噪声水平的单步生成</li>
+            <li><strong>双分支 DiT：</strong>解耦时间步条件，分离当前噪声状态和去噪目标</li>
+            <li><strong>20B 参数蒸馏：</strong>上述设计使 20B 参数扩散模型可在单 GPU 上蒸馏</li>
+        </ul>
+        <div class="highlight">
+            <strong>关键创新：</strong>自对抗蒸馏消除了大模型蒸馏的内存瓶颈——20B 模型单 GPU 蒸馏是训练效率的突破。任意步数采样提供了速度与质量的灵活权衡。
+        </div>
+    </div>
+
+    <!-- 横向对比表 -->
+    <div class="section">
+        <h2>📊 横向对比表</h2>
+        <table>
+            <tr>
+                <th>方法</th>
+                <th>年份</th>
+                <th>范式</th>
+                <th>推理步数</th>
+                <th>需要文本提示</th>
+                <th>关键特点</th>
+            </tr>
+            <tr><td>ESRGAN</td><td>2018</td><td>CNN+GAN</td><td>1 (前向)</td><td>❌</td><td>RRDB 无 BN、相对判别器</td></tr>
+            <tr><td>BSRGAN</td><td>2021</td><td>CNN+GAN</td><td>1 (前向)</td><td>❌</td><td>随机打乱退化建模、相机 ISP 噪声</td></tr>
+            <tr><td>Real-ESRGAN</td><td>2021</td><td>CNN+GAN</td><td>1 (前向)</td><td>❌</td><td>二阶退化、U-Net 判别器+谱归一化</td></tr>
+            <tr><td>StableSR</td><td>2023</td><td>Diffusion</td><td>~50-200</td><td>❌</td><td>T2I 扩散先验、不修改预训练模型</td></tr>
+            <tr><td>DiffBIR</td><td>2023</td><td>Diffusion</td><td>~50</td><td>❌</td><td>两阶段解耦、IRControlNet</td></tr>
+            <tr><td>SeeSR</td><td>2023</td><td>Diffusion</td><td>~50</td><td>✅ (DAPE 自动)</td><td>语义感知、软/硬提示、LR 融入噪声</td></tr>
+            <tr><td>OSEDiff</td><td>2024</td><td>Diffusion (单步)</td><td><strong>1</strong></td><td>❌</td><td>LQ 作起点、LoRA+VSD 蒸馏</td></tr>
+            <tr><td>ODTSR</td><td>2025</td><td>Diffusion (单步 DiT)</td><td><strong>1</strong></td><td>可选</td><td>双流 NVS、基于 Qwen-Image DiT</td></tr>
+            <tr><td>FRAMER</td><td>2025</td><td>训练方案</td><td>不改推理</td><td>-</td><td>频率对齐自蒸馏、FFT 分解 LF/HF</td></tr>
+            <tr><td>SANA-SR</td><td>2026</td><td>Diffusion (单步)</td><td><strong>1</strong></td><td>❌</td><td>32× 压缩、线性注意力、0.019s</td></tr>
+            <tr><td>TEASR</td><td>2026</td><td>Diffusion (任意步)</td><td><strong>1~N</strong></td><td>❌</td><td>自对抗蒸馏、20B 单 GPU 蒸馏</td></tr>
+        </table>
+    </div>
+
+    <!-- 范式转变分析 -->
+    <div class="section">
+        <h2>🔄 范式转变分析</h2>
+
+        <h3>转变 1：GAN → Diffusion (2023)</h3>
+        <div class="highlight">
+            <strong>驱动力：</strong>预训练 T2I 扩散模型（Stable Diffusion）蕴含丰富的自然图像先验，远超 GAN 的生成能力。
+        </div>
+        <table>
+            <tr><th>维度</th><th>GAN 范式 (ESRGAN/Real-ESRGAN)</th><th>Diffusion 范式 (StableSR/DiffBIR/SeeSR)</th></tr>
+            <tr><td>生成先验</td><td>判别器学习的局部分布</td><td>预训练 T2I 模型的全局自然图像先验</td></tr>
+            <tr><td>纹理质量</td><td>较好但易出现伪影</td><td>更真实自然的纹理</td></tr>
+            <tr><td>推理速度</td><td>快 (单次前向)</td><td>慢 (50-200 步采样)</td></tr>
+            <tr><td>保真度</td><td>较高 (确定性映射)</td><td>较低 (扩散随机性)</td></tr>
+            <tr><td>语义理解</td><td>无</td><td>SeeSR 引入语义提示</td></tr>
+        </table>
+
+        <h3>转变 2：多步 → 单步 (2024)</h3>
+        <div class="highlight">
+            <strong>驱动力：</strong>多步扩散推理慢且存在随机性，与图像恢复的确定性需求矛盾。OSEDiff 开创单步 Real-ISR。
+        </div>
+        <table>
+            <tr><th>维度</th><th>多步扩散 (StableSR/DiffBIR/SeeSR)</th><th>单步扩散 (OSEDiff/SANA-SR)</th></tr>
+            <tr><td>推理步数</td><td>50-200 步</td><td>1 步</td></tr>
+            <tr><td>推理速度</td><td>慢 (秒级)</td><td>快 (0.019s ~ 0.1s)</td></tr>
+            <tr><td>随机性</td><td>高 (从随机噪声开始)</td><td>低 (LQ 作起点)</td></tr>
+            <tr><td>保真度</td><td>较低</td><td>较高</td></tr>
+            <tr><td>训练方式</td><td>微调预训练模型</td><td>蒸馏 + LoRA 微调</td></tr>
+        </table>
+
+        <h3>转变 3：U-Net → DiT (2025-2026)</h3>
+        <div class="highlight">
+            <strong>驱动力：</strong>Diffusion Transformer (DiT) 架构在图像生成领域取代 U-Net，Real-ISR 也跟随这一趋势。
+        </div>
+        <ul>
+            <li><strong>ODTSR</strong>：基于 Qwen-Image 的 DiT 架构，双流视觉设计</li>
+            <li><strong>SANA-SR</strong>：线性注意力 DiT + 32× 压缩，面向移动端</li>
+            <li><strong>TEASR</strong>：双分支 DiT，解耦时间步条件，支持 20B 参数</li>
+            <li><strong>FRAMER</strong>：适用于 U-Net 和 DiT 的频率对齐训练方案</li>
+        </ul>
+
+        <h3>趋势 4：RL 后训练引入 (2025-2026)</h3>
+        <p>FinPercep-RM (CVPR 2026, arXiv 2512.22647) 将 RLHF 引入 Real-ISR，设计细粒度奖励模型和协同进化课程，表明强化学习后训练正从视频生成/LLM 领域向图像恢复领域扩展。</p>
+    </div>
+
+    <!-- 个人分析 -->
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>退化建模是 GAN 时代的核心竞争点：</strong>从 ESRGAN 的简单退化到 BSRGAN 的随机打乱退化再到 Real-ESRGAN 的二阶退化，退化建模的复杂度和真实性直接决定了模型的实用性。但退化建模存在天花板——真实世界退化是无限多样的，任何显式建模都无法完全覆盖。</li>
+            <li><strong>扩散先验是范式转变的关键：</strong>StableSR 首次利用预训练 T2I 扩散模型先验做 SR，这是从"学习退化映射"到"利用自然图像先验"的根本转变。扩散模型在数亿图像上学习到的先验远比 GAN 判别器学习到的局部分布丰富。DiffBIR 的两阶段解耦和 SeeSR 的语义感知进一步细化了这一范式。</li>
+            <li><strong>单步推理是实际落地的必须条件：</strong>OSEDiff 的突破性在于认识到"LQ 图像本身是最好的起点"——不需要从随机噪声开始，从而消除随机性并实现单步推理。SANA-SR (0.019s) 和 TEASR (任意步) 进一步推动效率边界。单步方法的成熟标志着 Real-ISR 从研究走向部署。</li>
+            <li><strong>语义理解是被低估的方向：</strong>SeeSR 的 DAPE 是唯一显式引入语义理解的工作。但 ODTSR 在中文 STISR 上的零样本能力表明，语义可控性是未来重要方向。结合多模态大模型的语义理解可能是下一步突破点。</li>
+            <li><strong>频率视角是新的优化角度：</strong>FRAMER 从频域视角分析扩散模型的不足（低频偏置、先低后高层级），并用 FFT 分解做自蒸馏。这是一个不改变架构即可提升性能的通用方案，可能被广泛采用。</li>
+            <li><strong>DiT 架构迁移正在进行：</strong>2025-2026 年的新方法（ODTSR、SANA-SR、TEASR）全部采用 DiT 架构而非 U-Net。这与图像生成领域 DiT 取代 U-Net 的趋势一致。DiT 的扩展性更好，能支持更大模型（TEASR 的 20B 参数）。</li>
+            <li><strong>未来方向预测：</strong>
+                <ul>
+                    <li><strong>Flow Matching + SR：</strong>Flow Matching 在图像生成中已展现出优于 ODE-based diffusion 的潜力，但目前在 SR 领域应用还很少（arxiv 搜索结果多为不相关），是重要研究机会</li>
+                    <li><strong>RL 后训练：</strong>FinPercep-RM (CVPR 2026) 的出现表明 RL 后训练开始进入 Real-ISR，与视频生成和 LLM 领域趋势一致</li>
+                    <li><strong>更大模型 + 更高效推理：</strong>TEASR 的 20B 参数蒸馏和 SANA-SR 的移动端部署代表了两个方向——更大模型提供更强先验，更高效推理实现部署</li>
+                    <li><strong>视频 Real-ISR：</strong>DiffST (arXiv 2605.13182) 和 LiteVSR (arXiv 2606.09250) 开始将扩散 Real-ISR 扩展到视频领域，时空一致性是新的挑战</li>
+                    <li><strong>任意尺度 SR：</strong>OmniScaleSR (arXiv 2512.04699) 和 OP4KSR (arXiv 2605.13457) 探索任意尺度和 4K SR，扩展应用场景</li>
+                </ul>
+            </li>
+            <li><strong>GAN 范式并未过时：</strong>Real-ESRGAN 至今仍是使用最广泛的实用 SR 工具——单次前向、速度快、部署简单。扩散方法在质量上更优但在速度上仍落后。未来的方向可能是 GAN 和 Diffusion 的融合——用扩散先验指导 GAN 训练，或用 GAN 做快速初始化再用扩散精化。</li>
+        </ul>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+
+        <h3>核心论文</h3>
+        <table>
+            <tr><th>方法</th><th>arXiv</th><th>GitHub</th><th>发表</th></tr>
+            <tr><td>ESRGAN</td><td><a href="https://arxiv.org/abs/1809.00219" style="color:var(--accent);">1809.00219</a></td><td><a href="https://github.com/xinntao/ESRGAN" style="color:var(--accent);">xinntao/ESRGAN</a></td><td>ECCV 2018 Workshop</td></tr>
+            <tr><td>BSRGAN</td><td><a href="https://arxiv.org/abs/2103.14006" style="color:var(--accent);">2103.14006</a></td><td><a href="https://github.com/cszn/BSRGAN" style="color:var(--accent);">cszn/BSRGAN</a></td><td>ICCV 2021</td></tr>
+            <tr><td>Real-ESRGAN</td><td><a href="https://arxiv.org/abs/2107.10833" style="color:var(--accent);">2107.10833</a></td><td><a href="https://github.com/xinntao/Real-ESRGAN" style="color:var(--accent);">xinntao/Real-ESRGAN</a></td><td>Tech Report 2021</td></tr>
+            <tr><td>StableSR</td><td><a href="https://arxiv.org/abs/2305.07015" style="color:var(--accent);">2305.07015</a></td><td><a href="https://github.com/IceClear/StableSR" style="color:var(--accent);">IceClear/StableSR</a></td><td>IJCV 2024</td></tr>
+            <tr><td>DiffBIR</td><td><a href="https://arxiv.org/abs/2308.15070" style="color:var(--accent);">2308.15070</a></td><td><a href="https://github.com/XPixelGroup/DiffBIR" style="color:var(--accent);">XPixelGroup/DiffBIR</a></td><td>ECCV 2024</td></tr>
+            <tr><td>SeeSR</td><td><a href="https://arxiv.org/abs/2311.16518" style="color:var(--accent);">2311.16518</a></td><td><a href="https://github.com/cswry/SeeSR" style="color:var(--accent);">cswry/SeeSR</a></td><td>CVPR 2024</td></tr>
+            <tr><td>OSEDiff</td><td><a href="https://arxiv.org/abs/2406.08177" style="color:var(--accent);">2406.08177</a></td><td><a href="https://github.com/cswry/OSEDiff" style="color:var(--accent);">cswry/OSEDiff</a></td><td>NeurIPS 2024</td></tr>
+        </table>
+
+        <h3>最新方法 (2025-2026)</h3>
+        <table>
+            <tr><th>方法</th><th>arXiv</th><th>发表</th></tr>
+            <tr><td>ODTSR</td><td><a href="https://arxiv.org/abs/2511.17138" style="color:var(--accent);">2511.17138</a></td><td>2025-11</td></tr>
+            <tr><td>FRAMER</td><td><a href="https://arxiv.org/abs/2512.01390" style="color:var(--accent);">2512.01390</a></td><td>CVPR 2026</td></tr>
+            <tr><td>SANA-SR</td><td><a href="https://arxiv.org/abs/2605.23451" style="color:var(--accent);">2605.23451</a></td><td>2026-05</td></tr>
+            <tr><td>TEASR</td><td><a href="https://arxiv.org/abs/2606.16188" style="color:var(--accent);">2606.16188</a></td><td>2026-06</td></tr>
+            <tr><td>FinPercep-RM</td><td><a href="https://arxiv.org/abs/2512.22647" style="color:var(--accent);">2512.22647</a></td><td>CVPR 2026</td></tr>
+            <tr><td>OP4KSR</td><td><a href="https://arxiv.org/abs/2605.13457" style="color:var(--accent);">2605.13457</a></td><td>2026-05</td></tr>
+            <tr><td>OmniScaleSR</td><td><a href="https://arxiv.org/abs/2512.04699" style="color:var(--accent);">2512.04699</a></td><td>TCSVT 2025</td></tr>
+        </table>
+
+        <div class="resource-links">
+            <a href="https://github.com/xinntao/ESRGAN" target="_blank">💻 ESRGAN</a>
+            <a href="https://github.com/cszn/BSRGAN" target="_blank">💻 BSRGAN</a>
+            <a href="https://github.com/xinntao/Real-ESRGAN" target="_blank">💻 Real-ESRGAN</a>
+            <a href="https://github.com/IceClear/StableSR" target="_blank">💻 StableSR</a>
+            <a href="https://github.com/XPixelGroup/DiffBIR" target="_blank">💻 DiffBIR</a>
+            <a href="https://github.com/cswry/SeeSR" target="_blank">💻 SeeSR</a>
+            <a href="https://github.com/cswry/OSEDiff" target="_blank">💻 OSEDiff</a>
+            <a href="https://github.com/RedMediaTech/ODTSR" target="_blank">💻 ODTSR</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 Real-ISR 技术演进调研 · 2018-2026 · 从 ESRGAN 到 OSEDiff 及最新方向 · 2026-06-29 整理
+</div>
+
+</body>
+</html>
