@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>π³: Permutation-Equivariant Visual Geometry Learning — 排列等变视觉几何学习</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .figure-caption { color: var(--text-dim); font-size: 0.85em; margin: 8px 0 15px; line-height: 1.5; }
+        .figure-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>π³: Permutation-Equivariant Visual Geometry Learning</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2507.13347</span>
+        <span>📅 2025-07-17</span>
+        <span>🏢 上海交大 + 上海AI实验室 + 浙大 + 中科大 + 复旦</span>
+        <span>✅ 开源</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📋 论文概要</h2>
+        <div class="tags">
+            <span class="tag green">Feed-Forward 3D</span>
+            <span class="tag">Permutation Equivariance</span>
+            <span class="tag">Camera Pose</span>
+            <span class="tag">Depth Estimation</span>
+            <span class="tag">Point Map</span>
+            <span class="tag">Foundation Model</span>
+        </div>
+        <p>π³ 是一个<strong>前馈神经网络</strong>，提出了一种全新的视觉几何重建范式——打破传统方法对固定参考视角(reference view)的依赖。此前的方法（包括 VGGT、DUSt3R 等）都需要指定一个参考帧作为全局坐标系锚点，这个归纳偏置在参考帧选择不当时会导致重建质量急剧下降。π³ 采用<strong>全排列等变架构</strong>（fully permutation-equivariant architecture），预测仿射不变的相机位姿和尺度不变的局部点图，完全不需要参考帧。</p>
+        <p>这一设计使模型对输入图像的排列顺序天然鲁棒，同时在相机位姿估计、单目/视频深度估计、密集点图重建等多个任务上达到 SOTA。在 Sintel 基准上，相机位姿 ATE 从 VGGT 的 0.167 降到 0.074，视频深度绝对相对误差从 0.299 改善到 0.233。推理速度 57.4 FPS（VGGT 43.2 FPS, DUSt3R 1.25 FPS）。</p>
+        <div class="highlight">
+            <strong>核心贡献：</strong>首次系统性地识别并挑战视觉几何重建中对固定参考视角的依赖，提出全排列等变架构消除这一归纳偏置，在不引入额外复杂性的前提下实现了更高的精度和鲁棒性。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <h3>排列等变架构设计 (Section 3.1)</h3>
+        <p>π³ 的核心设计目标是实现真正的排列等变性：对于任意排列 π，网络 ϕ 满足 <code>ϕ(P_π(S)) = P_π(ϕ(S))</code>，即打乱输入图像的顺序只会同样打乱输出结果的顺序，而不会改变每个图像对应的重建结果。</p>
+        <ul>
+            <li><strong>DINOv2 Backbone 编码：</strong>每张输入图像通过冻结的 DINOv2 ViT-Large 编码为 patch token 序列</li>
+            <li><strong>交替注意力机制：</strong>类似 VGGT，交替使用 view-wise self-attention（帧内，捕获单帧细节）和 global self-attention（全局，融合多视角信息）</li>
+            <li><strong>关键区别——去除所有顺序依赖组件：</strong>
+                <ul>
+                    <li>移除了 VGGT 中的 <strong>camera token</strong>（用于指定参考视角的可学习 token）</li>
+                    <li>移除了<strong>帧索引位置编码</strong>（frame index positional embedding）</li>
+                    <li>不使用任何区分帧顺序的组件</li>
+                </ul>
+            </li>
+            <li><strong>输出：</strong>每个视角的相机位姿 T_i ∈ SE(3)、局部点图 X_i ∈ ℝ^{H×W×3}（在自身相机坐标系中）、置信度图 C_i</li>
+        </ul>
+        <h3>与 VGGT 的架构对比</h3>
+        <p>VGGT 使用两种方式指定参考视角：(Type A) 在 token 序列前拼接特殊的 camera token；(Type B) 添加可学习的帧索引 embedding。这两种方式都破坏了排列等变性。π³ 完全移除这些组件，仅依靠相对位姿监督实现排列等变。</p>
+        <div class="highlight">
+            <strong>架构核心：</strong>π³ 的排列等变性不是通过特殊的数据增强（如随机打乱输入顺序）来近似实现的，而是通过架构设计<strong>从根本上保证</strong>的。这意味着无论输入顺序如何，每个图像的重建结果完全一致。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 关键特性</h2>
+        <table>
+            <tr><th>特性</th><th>说明</th></tr>
+            <tr><td>全排列等变</td><td>输入图像的排列顺序不影响重建结果，数学保证的一致性</td></tr>
+            <tr><td>无参考帧</td><td>不需要指定任何参考视角，消除参考帧选择带来的偏差</td></tr>
+            <tr><td>仿射不变位姿</td><td>预测的相机位姿只定义到相似变换（刚体+全局尺度），用相对位姿监督</td></tr>
+            <tr><td>尺度不变局部几何</td><td>每个视角的点图在自身相机坐标系中，用 ROE solver 对齐全局尺度</td></tr>
+            <tr><td>多任务统一</td><td>相机位姿 + 单目/视频深度 + 密集点图重建，一个模型搞定</td></tr>
+            <tr><td>轻量高速</td><td>57.4 FPS 推理速度，超过 VGGT (43.2 FPS) 和 DUSt3R (1.25 FPS)</td></tr>
+            <tr><td>动态+静态场景</td><td>支持静态和动态场景重建，适用范围广</td></tr>
+            <tr><td>输入灵活性</td><td>支持单张图像、视频序列、无序图像集等多种输入形式</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔬 技术细节</h2>
+        <h3>训练数据</h3>
+        <p>在大规模 3D 数据集上训练，涵盖合成数据和真实世界数据，包括室内/室外/物体级/场景级多种场景。模型学习了通用的 3D 几何先验，而非场景特定优化。</p>
+        <h3>排列等变设计的关键实现</h3>
+        <ul>
+            <li><strong>去除 Camera Token：</strong>VGGT 在每张图像的 patch token 前附加可学习的 camera token，用于指定参考视角和预测相机参数。π³ 完全移除这一设计</li>
+            <li><strong>去除帧索引位置编码：</strong>传统方法使用帧索引（第1帧、第2帧...）的位置编码来区分不同图像的顺序。π³ 不使用任何帧顺序编码</li>
+            <li><strong>交替注意力保留：</strong>帧内 self-attention 和全局 self-attention 的交替堆叠保留，因为帧内注意力天然排列等变（每帧独立处理），全局注意力也排列等变（所有 token 共同参与）</li>
+            <li><strong>相对监督：</strong>相机位姿使用相对位姿 T̂_{i←j} = T̂_i^{-1} · T̂_j 进行监督，避免了全局坐标系的依赖</li>
+        </ul>
+        <h3>与 VGGT 的架构差异 (Appendix A.4)</h3>
+        <table>
+            <tr><th>组件</th><th>VGGT</th><th>π³</th></tr>
+            <tr><td>Camera Token</td><td>有 (Type A: 拼接, Type B: learnable embedding)</td><td>无</td></tr>
+            <tr><td>帧索引位置编码</td><td>有</td><td>无</td></tr>
+            <tr><td>排列等变性</td><td>❌ 不满足</td><td>✅ 数学保证</td></tr>
+            <tr><td>参考帧依赖</td><td>强依赖（参考帧选择影响性能）</td><td>无依赖</td></tr>
+            <tr><td>位姿预测方式</td><td>绝对位姿（在参考帧坐标系中）</td><td>仿射不变位姿（相对位姿监督）</td></tr>
+            <tr><td>点图表示</td><td>全局点图（参考帧坐标系）</td><td>局部点图（各自相机坐标系）+ 尺度对齐</td></tr>
+            <tr><td>Backbone</td><td>DINOv2 (ViT-Large)</td><td>DINOv2 (ViT-Large)</td></tr>
+            <tr><td>交替注意力</td><td>✅ frame-wise + global</td><td>✅ view-wise + global</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <h3>相机位姿估计</h3>
+        <table>
+            <tr><th>基准</th><th>指标</th><th>π³</th><th>VGGT</th><th>对比</th></tr>
+            <tr><td>Sintel</td><td>ATE ↓</td><td><strong>0.074</strong></td><td>0.167</td><td>↓ 55.7%</td></tr>
+            <tr><td>RealEstate10K</td><td>ATE ↓</td><td>SOTA</td><td>-</td><td>显著提升</td></tr>
+            <tr><td>CO3Dv2</td><td>ATE ↓</td><td>SOTA</td><td>-</td><td>显著提升</td></tr>
+        </table>
+        <h3>深度估计</h3>
+        <table>
+            <tr><th>基准</th><th>指标</th><th>π³</th><th>VGGT</th><th>对比</th></tr>
+            <tr><td>Sintel (视频深度)</td><td>Abs Rel ↓</td><td><strong>0.233</strong></td><td>0.299</td><td>↓ 22.1%</td></tr>
+            <tr><td>单目深度</td><td>Abs Rel</td><td>≈ MoGe</td><td>-</td><td>与 MoGe 相当</td></tr>
+        </table>
+        <h3>点图重建</h3>
+        <table>
+            <tr><th>基准</th><th>指标</th><th>π³</th><th>对比</th></tr>
+            <tr><td>多视角点图</td><td>accuracy</td><td>SOTA</td><td>超越 VGGT/DUSt3R</td></tr>
+            <tr><td>密集重建</td><td>completeness</td><td>SOTA</td><td>无需后处理优化</td></tr>
+        </table>
+        <h3>推理速度对比</h3>
+        <table>
+            <tr><th>方法</th><th>FPS</th><th>相对速度</th></tr>
+            <tr><td><strong>π³</strong></td><td><strong>57.4</strong></td><td><strong>1.0×</strong></td></tr>
+            <tr><td>VGGT</td><td>43.2</td><td>0.75×</td></tr>
+            <tr><td>DUSt3R</td><td>1.25</td><td>0.02×</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>鲁棒性表现：</strong>π³ 在不同参考帧选择下的性能方差极小（标准差低），而 VGGT 即使使用 DINO-based 参考帧选择策略，性能仍有显著波动。这证明了排列等变设计从根本上解决了参考帧依赖问题。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>VGGT 的直接改进与继承者：</strong>π³ 可以看作 VGGT 的"去偏置"版本——继承了 VGGT 的 DINOv2 backbone、交替注意力机制和多任务统一框架，但移除了导致排列不等变的关键组件（camera token + 帧索引位置编码）。这种"减法设计"反而带来了性能提升，说明 VGGT 的参考帧依赖确实是一个有害的归纳偏置。</li>
+            <li><strong>与 DUSt3R/MASt3R 的关系：</strong>DUSt3R 开创了前馈 3D 重建的范式（两视角点图），MASt3R 增加了匹配能力，VGGT 扩展到任意视角，π³ 则进一步消除了参考帧依赖。四者构成了一条清晰的技术演进线：DUSt3R → MASt3R → VGGT → π³，每一步都在减少不必要的归纳偏置。</li>
+            <li><strong>相对 vs 绝对表示的哲学转变：</strong>π³ 预测的位姿和点图都是"相对"的（位姿定义到相似变换，点图在自身坐标系中），需要后处理对齐才能得到全局一致的重建。这种"先局部后全局"的设计避免了将所有信息压缩到一个参考帧的坐标系中，更符合多视角几何的本质。</li>
+            <li><strong>速度优势的来源：</strong>π³ (57.4 FPS) 比 VGGT (43.2 FPS) 更快，可能因为移除了 camera token 减少了序列长度和计算量。同时移除了帧索引位置编码也简化了模型。这说明"更简单的设计"不仅更鲁棒，还可以更高效。</li>
+            <li><strong>对 3D 基础模型路线的启示：</strong>π³ 证明了一个重要的原则：好的基础模型应该对输入的排列不变（或等变）。这与 NLP 领域 Transformer 的排列不变性（在无位置编码时）形成类比。未来的 3D 基础模型可能都会采纳这一设计原则。</li>
+            <li><strong>实际应用定位：</strong>π³ 的高速度 + 高精度 + 无参考帧依赖，使其特别适合需要从无序图像集快速重建 3D 场景的应用（如手机拍照重建、机器人感知、AR/VR）。对于需要极致精度的场景，仍可结合 BA 后处理进一步优化。</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🖼️ arXiv HTML 论文原图</h2>
+        <p><em>以下图片从 arXiv HTML 版本直接提取，展示论文原始架构图和结果对比。</em></p>
+
+        <h3>Figure 1: π³ 重建结果展示</h3>
+        <img src="images/2507.13347/x1.png" alt="π³ Figure 1: Reconstruction Results" class="figure-img" />
+        <p class="figure-caption">Figure 1: π³ 有效地以前馈方式重建各种开放域图像，涵盖室内、室外、航拍视角及卡通等多种场景，同时支持动态和静态内容。</p>
+
+        <h3>Figure 2: 不同参考帧下的性能对比</h3>
+        <img src="images/2507.13347/x2.png" alt="π³ Figure 2: Reference Frame Comparison" class="figure-img" />
+        <p class="figure-caption">Figure 2: 不同参考帧下的性能对比。此前的方法（即使使用 DINO-based 选择）显示不一致的结果，而 π³ 持续提供优越且稳定的性能，展示了其鲁棒性。</p>
+
+        <h3>Figure 3: 与 VGGT 的架构对比 — 排列等变设计</h3>
+        <img src="images/2507.13347/x3.png" alt="π³ Figure 3: Architecture Comparison with VGGT" class="figure-img" />
+        <p class="figure-caption">Figure 3: 与此前方法不同，π³ 不通过拼接特殊 token（Type A）或添加可学习 embedding（Type B）来指定参考视角。π³ 通过完全移除这一需求实现排列等变，采用相对监督使模型本质上对输入视角顺序鲁棒。</p>
+
+        <h3>Figure 4: 定性重建结果</h3>
+        <img src="images/2507.13347/x4.png" alt="π³ Figure 4: Qualitative Results" class="figure-img" />
+        <p class="figure-caption">Figure 4: π³ 在多种场景下的定性重建结果，展示密集点图和相机位姿估计的质量。</p>
+
+        <h3>Figure 5: 额外可视化</h3>
+        <img src="images/2507.13347/x5.png" alt="π³ Figure 5: Additional Visualization" class="figure-img" />
+        <p class="figure-caption">Figure 5: π³ 额外的点图估计可视化，展示了模型在不同场景类型下的重建质量。</p>
+
+        <h3>Figure 6: 消融实验可视化</h3>
+        <img src="images/2507.13347/x6.png" alt="π³ Figure 6: Ablation Visualization" class="figure-img" />
+        <p class="figure-caption">Figure 6: 消融实验结果可视化，展示各设计组件对最终性能的贡献。</p>
+
+        <h3>Figure 7: 鲁棒性评估</h3>
+        <img src="images/2507.13347/x7.png" alt="π³ Figure 7: Robustness Evaluation" class="figure-img" />
+        <p class="figure-caption">Figure 7: 鲁棒性评估结果，展示 π³ 在不同输入条件和扰动下的稳定表现。</p>
+
+    </div>
+
+    <div class="section">
+        <h2>📐 算法框图与架构详解</h2>
+        <p><strong>π³ 架构流水线：</strong>给定任意数量、任意顺序的输入图像，通过单次前向传播生成排列等变的 3D 几何表示。</p>
+        <div class="highlight">
+            <strong>Pipeline：</strong>
+            <ul>
+                <li><strong>Step 1 — Patchify (DINOv2)：</strong>N 张输入图像 → 冻结的 DINOv2 ViT-Large backbone → patch tokens (16×16 patch, 每张图像 H/16 × W/16 个 token)</li>
+                <li><strong>Step 2 — 无 Camera Token：</strong>不附加任何特殊 token，不添加帧索引位置编码。所有视角的 token 直接进入 Transformer</li>
+                <li><strong>Step 3 — 交替注意力 (Alternating Attention)：</strong>
+                    <ul>
+                        <li><strong>View-wise Self-Attention：</strong>每张图像的 token 独立做 self-attention，捕获单帧内部细节，计算量 O(N·L²)，天然排列等变</li>
+                        <li><strong>Global Self-Attention：</strong>所有图像的所有 token 一起做 self-attention，融合多视角信息，计算量 O((N·L)²)，天然排列等变</li>
+                        <li>两种注意力交替堆叠，view-wise 层捕获局部细节，global 层融合跨视角信息</li>
+                    </ul>
+                </li>
+                <li><strong>Step 4 — Decoder 输出：</strong>
+                    <ul>
+                        <li><strong>局部点图 X_i：</strong>每个视角的像素对齐 3D 坐标图，定义在<strong>自身相机坐标系</strong>中（非全局坐标系）</li>
+                        <li><strong>相机位姿 T_i：</strong>仿射不变的位姿，只定义到相似变换（刚体变换+全局尺度）</li>
+                        <li><strong>置信度图 C_i：</strong>每个像素的重建置信度</li>
+                    </ul>
+                </li>
+                <li><strong>Step 5 — 后处理对齐（推理时）：</strong>
+                    <ul>
+                        <li>使用 ROE solver 求解全局最优尺度因子 s*，对齐所有视角的局部点图</li>
+                        <li>用 s* 校准相机平移，得到尺度一致的重建</li>
+                        <li>可选择 BA 后处理进一步优化</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <h3>模型架构规格</h3>
+        <table>
+            <tr><th>参数</th><th>值</th></tr>
+            <tr><td>Backbone</td><td>DINOv2 (ViT-Large, frozen)</td></tr>
+            <tr><td>Transformer 层数</td><td>交替 view-wise / global</td></tr>
+            <tr><td>Camera Token</td><td>❌ 无（区别于 VGGT）</td></tr>
+            <tr><td>帧索引位置编码</td><td>❌ 无（区别于 VGGT）</td></tr>
+            <tr><td>Patch 大小</td><td>16×16</td></tr>
+            <tr><td>推理速度</td><td>57.4 FPS</td></tr>
+            <tr><td>排列等变性</td><td>✅ 数学保证</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1: 识别并消除参考帧偏置</strong><br>
+            首次系统性地识别了视觉几何重建中固定参考视角这一被忽视的归纳偏置，通过实验证明其导致现有方法（包括 VGGT）对参考帧选择高度敏感，并提出解决方案。
+        </div>
+        <div class="highlight">
+            <strong>创新 2: 全排列等变架构</strong><br>
+            通过移除 camera token 和帧索引位置编码，从架构层面保证排列等变性，而非通过数据增强近似。数学证明：ϕ(P_π(S)) = P_π(ϕ(S))，打乱输入顺序只导致输出同步打乱。
+        </div>
+        <div class="highlight">
+            <strong>创新 3: 仿射不变相机位姿 + 尺度不变局部点图</strong><br>
+            预测的位姿只定义到相似变换（刚体+全局尺度），点图在各自相机坐标系中。使用相对位姿监督和 ROE solver 尺度对齐，巧妙化解了全局坐标系依赖。
+        </div>
+        <div class="highlight">
+            <strong>创新 4: 更高精度 + 更高速度</strong><br>
+            "减法设计"带来性能提升：移除 camera token 减少了序列长度和计算量，速度从 VGGT 的 43.2 FPS 提升到 57.4 FPS，同时精度显著提高（Sintel ATE 降低 55.7%）。
+        </div>
+        <div class="highlight">
+            <strong>创新 5: 鲁棒性保证</strong><br>
+            排列等变性从数学上保证了不同输入顺序下重建结果的一致性，标准差极低。不需要任何参考帧选择策略（如 DINO-based selection），简化了使用流程。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>优势</th></tr>
+            <tr><td>手机 3D 重建</td><td>无序照片集 → 3D 模型</td><td>无需参考帧选择，用户随意拍照即可</td></tr>
+            <tr><td>机器人感知</td><td>导航、抓取、场景理解</td><td>57.4 FPS 实时推理，排列无关输入</td></tr>
+            <tr><td>AR/VR</td><td>实时环境理解、虚拟物体放置</td><td>高速 + 无需标定 + 无参考帧</td></tr>
+            <tr><td>视频深度估计</td><td>视频序列深度图生成</td><td>Sintel Abs Rel 0.233，超越 VGGT</td></tr>
+            <tr><td>无人机航测</td><td>航拍图像 → 3D 地形模型</td><td>无序输入 + 高速度 + 鲁棒性</td></tr>
+            <tr><td>动态场景重建</td><td>含动态物体的场景 3D 重建</td><td>支持动态+静态场景</td></tr>
+            <tr><td>3DGS 初始化</td><td>为 3DGS 提供初始点云和位姿</td><td>解决 3DGS 依赖 SfM 的痛点</td></tr>
+            <tr><td>SLAM</td><td>前端追踪替代特征匹配</td><td>端到端前馈，无需特征匹配+BA</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🏋️ 训练策略</h2>
+        <h3>阶段 1: 主干预训练 — 多任务联合学习</h3>
+        <ul>
+            <li><strong>视觉 backbone：</strong>使用预训练 DINOv2 (ViT-Large) 作为图像编码器，继承 2D 视觉理解能力。DINOv2 参数在训练中冻结</li>
+            <li><strong>多任务联合训练：</strong>相机位姿估计 + 点图重建 + 深度估计同时训练，共享 backbone。多任务联合训练比单任务训练精度更高</li>
+            <li><strong>排列等变保证：</strong>架构本身保证排列等变，不需要数据增强（如随机打乱输入顺序）来近似</li>
+            <li><strong>相对监督策略：</strong>相机位姿使用相对位姿 T̂_{i←j} = T̂_i^{-1} · T̂_j 监督，避免全局坐标系依赖</li>
+        </ul>
+        <h3>渐进式训练</h3>
+        <ul>
+            <li><strong>数据多样性：</strong>合成数据 + 真实数据混合训练，覆盖室内/室外/物体级/场景级</li>
+            <li><strong>课程学习：</strong>从简单场景逐步过渡到复杂场景</li>
+            <li><strong>尺度对齐训练：</strong>训练过程中使用 ROE solver 在线求解最优尺度因子 s*，实现端到端训练</li>
+        </ul>
+        <h3>训练细节</h3>
+        <ul>
+            <li><strong>交替注意力训练：</strong>view-wise 和 global self-attention 层交替堆叠</li>
+            <li><strong>深度加权损失：</strong>点图损失使用 1/z_{i,j} 深度加权，使远距离点的误差不被过度惩罚</li>
+            <li><strong>置信度学习：</strong>模型同时学习置信度图，用于加权下游任务输出</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 数据集构建</h2>
+        <table>
+            <tr><th>数据类型</th><th>来源</th><th>标注类型</th><th>用途</th></tr>
+            <tr><td>合成 3D 物体</td><td>CO3D, Objaverse 渲染</td><td>完美深度+位姿</td><td>多视角 3D 物体</td></tr>
+            <tr><td>室内扫描</td><td>ScanNet, Matterport</td><td>RGB-D 传感器深度</td><td>室内场景 3D</td></tr>
+            <tr><td>室外场景</td><td>MegaDepth, BlendedMVS</td><td>SfM 稀疏点云</td><td>大规模室外多视角</td></tr>
+            <tr><td>视频序列</td><td>Sintel, RealEstate10K</td><td>深度+位姿</td><td>视频深度估计</td></tr>
+            <tr><td>动态场景</td><td>动态场景数据集</td><td>深度+光流</td><td>动态场景重建</td></tr>
+            <tr><td>航测数据</td><td>航拍数据集</td><td>GPS+IMU 位姿</td><td>大规模航测重建</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>关键设计：</strong>混合合成和真实数据训练，让模型学习通用的 3D 几何先验。由于排列等变设计，训练时不需要特殊的数据排列增强策略。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📐 损失函数</h2>
+        <h3>点图重建损失 (Section 3.2)</h3>
+        <ul>
+            <li><strong>深度加权 L1 损失：</strong><code>L_points = (1/3NHW) Σ 1/z_{i,j} · ||s* x̂_{i,j} - x_{i,j}||_1</code></li>
+            <li><strong>尺度对齐：</strong>使用 ROE solver 求解最优尺度因子 <code>s* = argmin_s Σ 1/z_{i,j} ||s x̂_{i,j} - x_{i,j}||_1</code></li>
+            <li><strong>深度加权设计：</strong>1/z_{i,j} 权重使远距离点（z 大）的误差贡献更小，更符合视觉几何的误差特性</li>
+        </ul>
+        <h3>法向量损失 (Normal Loss)</h3>
+        <ul>
+            <li><code>L_normal = (1/NHW) Σ arccos(n̂_{i,j} · n_{i,j})</code></li>
+            <li>从点图的相邻像素点通过叉积计算法向量，监督局部表面平滑性</li>
+        </ul>
+        <h3>置信度损失 (Confidence Loss)</h3>
+        <ul>
+            <li><code>L_conf = BCE(C_i, target)</code>，二元交叉熵</li>
+            <li>GT target：重建误差低于阈值 ε 的点为 1（高置信度），否则为 0</li>
+            <li>模型学习预测每个像素的重建可靠性</li>
+        </ul>
+        <h3>相机位姿损失 (Section 3.3)</h3>
+        <ul>
+            <li><strong>相对位姿计算：</strong><code>T̂_{i←j} = T̂_i^{-1} · T̂_j</code>，对所有有序对 (i≠j) 计算</li>
+            <li><strong>旋转损失：</strong><code>L_rot(i,j)</code>，旋转分量回归损失</li>
+            <li><strong>平移损失：</strong><code>L_trans(i,j)</code>，使用 s* 校准后的平移分量</li>
+            <li><strong>位姿总损失：</strong><code>L_cam = (1/N(N-1)) Σ_{i≠j} (L_rot(i,j) + λ_trans · L_trans(i,j))</code></li>
+        </ul>
+        <h3>总损失</h3>
+        <div class="highlight">
+            <code>L_total = L_points + L_normal + L_conf + L_cam</code><br><br>
+            所有任务同时训练，不需要分阶段训练。尺度因子 s* 在训练中通过 ROE solver 在线求解，实现端到端可微训练。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 技术路线对比与演进</h2>
+        <h3>前馈 3D 重建演进路线</h3>
+        <table>
+            <tr><th>方法</th><th>输入</th><th>输出</th><th>参考帧依赖</th><th>排列等变</th><th>年份</th></tr>
+            <tr><td>DUSt3R</td><td>2 视角</td><td>点图 + 深度</td><td>✅ 依赖（第1帧坐标系）</td><td>❌</td><td>2024</td></tr>
+            <tr><td>MASt3R</td><td>2 视角</td><td>点图 + 匹配 + 3D</td><td>✅ 依赖</td><td>❌</td><td>2024</td></tr>
+            <tr><td>VGGT</td><td>N 视角</td><td>全 3D 属性</td><td>✅ 依赖（camera token）</td><td>❌</td><td>2025</td></tr>
+            <tr><td><strong>π³</strong></td><td><strong>N 视角</strong></td><td><strong>位姿+点图+深度</strong></td><td><strong>❌ 无依赖</strong></td><td><strong>✅</strong></td><td><strong>2025</strong></td></tr>
+            <tr><td>Fast3R</td><td>N 视角</td><td>点图</td><td>✅ 依赖</td><td>❌</td><td>2025</td></tr>
+            <tr><td>FLARE</td><td>N 视角</td><td>相机 + 点图</td><td>✅ 依赖</td><td>❌</td><td>2025</td></tr>
+        </table>
+        <h3>π³ vs VGGT 深度对比</h3>
+        <table>
+            <tr><th>维度</th><th>VGGT</th><th>π³</th></tr>
+            <tr><td>参考帧依赖</td><td>需要指定参考帧（camera token）</td><td>无需参考帧</td></tr>
+            <tr><td>排列等变性</td><td>❌ 不满足</td><td>✅ 数学保证</td></tr>
+            <tr><td>鲁棒性</td><td>参考帧选择敏感</td><td>输入顺序无关</td></tr>
+            <tr><td>位姿表示</td><td>绝对位姿（参考帧坐标系）</td><td>仿射不变位姿（相对监督）</td></tr>
+            <tr><td>点图表示</td><td>全局点图</td><td>局部点图 + 尺度对齐</td></tr>
+            <tr><td>Sintel ATE</td><td>0.167</td><td>0.074 (↓55.7%)</td></tr>
+            <tr><td>Sintel Abs Rel (视频深度)</td><td>0.299</td><td>0.233 (↓22.1%)</td></tr>
+            <tr><td>推理速度</td><td>43.2 FPS</td><td>57.4 FPS (↑33%)</td></tr>
+            <tr><td>Backbone</td><td>DINOv2</td><td>DINOv2（相同）</td></tr>
+            <tr><td>交替注意力</td><td>✅</td><td>✅（相同）</td></tr>
+            <tr><td>多任务</td><td>相机+深度+点图+追踪</td><td>相机+深度+点图</td></tr>
+        </table>
+        <h3>技术路线定位</h3>
+        <table>
+            <tr><th>维度</th><th>π³ (排列等变)</th><th>VGGT (参考帧)</th><th>DUSt3R (两视角)</th></tr>
+            <tr><td>输入视角数</td><td>1~N</td><td>1~N</td><td>2</td></tr>
+            <tr><td>全局对齐</td><td>ROE solver (训练时)</td><td>隐式（参考帧）</td><td>需要后处理</td></tr>
+            <tr><td>动态场景</td><td>✅ 支持</td><td>❌ 仅静态</td><td>❌ 仅静态</td></tr>
+            <tr><td>点追踪</td><td>❌</td><td>✅</td><td>❌</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>演进趋势：</strong>DUSt3R → MASt3R → VGGT → π³ 的演进线展示了一个清晰趋势——<strong>减少不必要的归纳偏置</strong>。DUSt3R 限制为 2 视角，VGGT 依赖参考帧，π³ 彻底消除参考帧依赖。每一步"减法"都带来了性能提升和泛化能力增强。这暗示 3D 基础模型的设计原则应该是：尽可能少地引入人为偏置，让模型从数据中学习几何先验。
+        </div>
+        <h3>π³ vs 传统 SfM+MVS</h3>
+        <table>
+            <tr><th>维度</th><th>π³</th><th>COLMAP (传统 SfM+MVS)</th></tr>
+            <tr><td>速度</td><td>57.4 FPS</td><td>数小时</td></tr>
+            <tr><td>排列无关</td><td>✅</td><td>✅ (但需要特征匹配)</td></tr>
+            <tr><td>不需要特征匹配</td><td>✅</td><td>❌</td></tr>
+            <tr><td>不需要 BA 优化</td><td>✅ (可选后处理)</td><td>❌</td></tr>
+            <tr><td>动态场景</td><td>✅</td><td>❌</td></tr>
+            <tr><td>可微</td><td>✅ 端到端可微</td><td>❌</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2507.13347" target="_blank">📄 arXiv: 2507.13347</a>
+            <a href="https://arxiv.org/html/2507.13347v3" target="_blank">📄 arXiv HTML</a>
+            <a href="https://github.com/yyfz/Pi3" target="_blank">💻 GitHub (yyfz/Pi3)</a>
+            <a href="https://yyfz.github.io/pi3/" target="_blank">🌐 项目主页</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 重建与生成调研 · π³ · 排列等变视觉几何学习 · 前馈 3D 基础模型 · 2025-07-17
+</div>
+
+</body>
+</html>

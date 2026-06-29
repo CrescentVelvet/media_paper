@@ -1,0 +1,23 @@
+﻿[
+    {
+        "idx":  0,
+        "file":  "fig1.png",
+        "size":  211224,
+        "caption":  "Figure 1: Caption Model Post-training Pipeline.",
+        "url":  "https://arxiv.org/html/2511.18870/x1.png"
+    },
+    {
+        "idx":  1,
+        "file":  "fig2.png",
+        "size":  272745,
+        "caption":  "Table 1: Architecture hyperparameters for the HunyuanVideo 1.5.",
+        "url":  "https://arxiv.org/html/2511.18870/x2.png"
+    },
+    {
+        "idx":  2,
+        "file":  "fig3.png",
+        "size":  298241,
+        "caption":  "Figure 2: Architecture of the Unified Diffusion Transformer.",
+        "url":  "https://arxiv.org/html/2511.18870/x3.png"
+    }
+]

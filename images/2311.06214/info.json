@@ -1,0 +1,37 @@
+﻿[
+    {
+        "idx":  0,
+        "file":  "fig1.png",
+        "size":  2306497,
+        "caption":  "Figure 1: Our method generates high-quality 3D NeRF assets from the given text prompts within 20 seconds. Here we show novel view renderings from our generated NeRFs as well as the renderings of the extracted meshes from their density field.",
+        "url":  "https://arxiv.org/html/2311.06214/x1.png"
+    },
+    {
+        "idx":  1,
+        "file":  "fig2.png",
+        "size":  498164,
+        "caption":  "Figure 2: Overview of our method. Given a text prompt (鈥榓 car made out of sushi鈥?, we perform multi-view generation with Gaussian blobs as initialization using fine-tuned 2D diffusion model, producing a 4-view image in the form of a 2脳2222\\times 22 脳...",
+        "url":  "https://arxiv.org/html/2311.06214/x2.png"
+    },
+    {
+        "idx":  2,
+        "file":  "fig3.png",
+        "size":  583586,
+        "caption":  "Figure 3: Architecture of our sparse-view reconstructor. The model applies a pretrained ViT to encode multi-view images into pose-aware image tokens, from which we decode a triplane representation of the scene using a transformer-based decoder. Final...",
+        "url":  "https://arxiv.org/html/2311.06214/x3.png"
+    },
+    {
+        "idx":  3,
+        "file":  "fig4.png",
+        "size":  2513369,
+        "caption":  "Figure 4: Qualitative comparisons on text-to-3D against previous methods. We include more uncurated comparisons in the supplementary material.",
+        "url":  "https://arxiv.org/html/2311.06214/extracted/5251711/figures/text_to_3d_qualitative.png"
+    },
+    {
+        "idx":  4,
+        "file":  "fig5.png",
+        "size":  1777182,
+        "caption":  "Table 1: Quantitative comparisons on CLIP scores against baseline methods. Our method outperforms previous feed-forward method Shap-E and optimization-based method DreamFusion, and achieves competitive performance compared to ProlificDreamer while be...",
+        "url":  "https://arxiv.org/html/2311.06214/x4.png"
+    }
+]

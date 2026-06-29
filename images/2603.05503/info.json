@@ -1,0 +1,23 @@
+﻿[
+    {
+        "idx":  0,
+        "file":  "fig1.jpg",
+        "size":  36977,
+        "caption":  "Figure 1: Comparison of two prompts and resolutions generated with the same seed on Wan2.1 14B text-to-video. CalibAtt achieves higher attention sparsity and lower end-to-end latency while maintaining visual quality and prompt alignment.",
+        "url":  "https://arxiv.org/html/2603.05503v1/images/video_comp/Full/Panda/frame_0000.jpg"
+    },
+    {
+        "idx":  1,
+        "file":  "fig2.jpg",
+        "size":  38176,
+        "caption":  "(a) t=0t{=}0",
+        "url":  "https://arxiv.org/html/2603.05503v1/images/video_comp/Full/Panda/frame_0020.jpg"
+    },
+    {
+        "idx":  2,
+        "file":  "fig3.jpg",
+        "size":  38264,
+        "caption":  "(b) t=49t{=}49",
+        "url":  "https://arxiv.org/html/2603.05503v1/images/video_comp/Full/Panda/frame_0040.jpg"
+    }
+]

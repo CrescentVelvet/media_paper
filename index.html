@@ -837,6 +837,28 @@
             <a href="https://arxiv.org/abs/2308.09713" target="_blank">📄 Dynamic 3D Gaussians</a>
         </div>
 
+        <div class="note-card">
+            <h3>27. π³: Permutation-Equivariant Visual Geometry Learning</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2507.13347</span>
+                <span>📅 2025-07-17</span>
+                <span>🏢 上海交大 + 上海AI实验室 + 浙大 + 中科大 + 复旦</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Permutation Equivariance</span>
+                <span class="tag">Feed-Forward 3D</span>
+                <span class="tag">Camera Pose</span>
+                <span class="tag">Depth</span>
+                <span class="tag">Point Map</span>
+            </div>
+            <p>打破前馈 3D 重建对固定参考视角的依赖，采用全排列等变架构（移除 camera token 和帧索引位置编码），预测仿射不变位姿和尺度不变局部点图。Sintel ATE 从 VGGT 的 0.167 降到 0.074，推理速度 57.4 FPS（VGGT 43.2 FPS）。VGGT 的直接改进者。</p>
+            <a href="3D-20250717-Pi3.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2507.13347" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/yyfz/Pi3" target="_blank">💻 GitHub</a>
+            <a href="https://yyfz.github.io/pi3/" target="_blank">🌐 项目主页</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -848,6 +870,7 @@
             <tr><td><strong>GaussianPro</strong></td><td>重建</td><td>❌</td><td>✅</td><td>静态</td><td>3D 高斯</td><td>大规模场景</td><td>2024</td></tr>
             <tr><td><strong>2DGS / SuGaR</strong></td><td>重建</td><td>❌</td><td>✅</td><td>静态</td><td>2D 高斯/网格</td><td>场景+物体</td><td>2024</td></tr>
             <tr><td><strong>VGGT</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>点图</td><td>场景+物体</td><td>2025</td></tr>
+            <tr><td><strong>π³</strong></td><td>重建</td><td>✅</td><td>❌</td><td>动态+静态</td><td>局部点图+位姿</td><td>场景+物体</td><td>2025</td></tr>
             <tr><td><strong>LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>Triplane NeRF</td><td>物体</td><td>2023</td></tr>
             <tr><td><strong>GS-LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>场景+物体</td><td>2024</td></tr>
             <tr><td><strong>Long-LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>场景 360°</td><td>2024</td></tr>
@@ -868,6 +891,7 @@
             <tr><th>模型</th><th>推理速度</th><th>输入视角数</th><th>输入分辨率</th><th>训练数据规模</th></tr>
             <tr><td>3DGS</td><td>实时渲染 (训练~30min)</td><td>数十~数百</td><td>原始分辨率</td><td>每场景</td></tr>
             <tr><td>VGGT</td><td>&lt;1 秒</td><td>1~数百</td><td>≤518px (限制)</td><td>大规模</td></tr>
+            <tr><td>π³</td><td>57.4 FPS</td><td>1~N</td><td>-</td><td>大规模</td></tr>
             <tr><td>GS-LRM</td><td>0.23 秒</td><td>2~4</td><td>中等</td><td>Objaverse/RE10K</td></tr>
             <tr><td>Long-LRM</td><td>~1 秒</td><td>32</td><td>960×540</td><td>DL3DV</td></tr>
             <tr><td>Long-LRM++</td><td>14 FPS 渲染</td><td>32~64</td><td>950×540</td><td>DL3DV</td></tr>
@@ -899,6 +923,7 @@
             <tr><td>2024-12</td><td>TRELLIS</td><td>SLAT 统一表示, 多格式输出</td><td>生成</td></tr>
             <tr><td>2025-01</td><td>Hunyuan3D 2.0</td><td>DiT+Paint, 开源 3D 大模型</td><td>生成</td></tr>
             <tr><td>2025-03</td><td>VGGT</td><td>CVPR 2025 Best Paper, 多任务统一</td><td>重建</td></tr>
+            <tr><td>2025-07</td><td>π³</td><td>排列等变架构, 消除参考帧依赖, 57.4 FPS</td><td>重建</td></tr>
             <tr><td>2025-06</td><td>Hunyuan3D 2.1</td><td>PBR 材质, 生产就绪</td><td>生成</td></tr>
             <tr><td>2025-09</td><td>Hunyuan3D-Omni</td><td>多模态控制 (点云/骨骼等)</td><td>生成</td></tr>
             <tr><td>2025-12</td><td>Long-LRM++</td><td>半显式表示, 14 FPS 实时, CVPRF 2026</td><td>重建</td></tr>
@@ -915,7 +940,7 @@
             <li><strong>闭源独特价值：</strong>Sora 2 Characters 社交、Veo 3.1 4K + Gemini 集成、Kling Motion Brush 产品化、Runway 叙事一致性——各有不可替代的产品化优势</li>
             <li><strong>RL 后训练趋势：</strong>从 Wan-R1 推理到 Kandinsky 5 人类偏好对齐再到 World-R1 几何一致性，RL 后训练在视频生成中的角色与 LLM 领域一致</li>
             <li><strong>未来方向：</strong>(1) 高分辨率实时交互 (Wan-Streamer 192p → 更高); (2) 视频推理拓展到自然场景 (Wan-R1); (3) 全模态统一 (Cosmos 3 MoT); (4) 物理世界模拟 (Sora/Veo/Cosmos 3 共同方向)</li>
-            <li><strong>三维重建前馈化：</strong>从 3DGS 的 30 分钟优化到 VGGT/GS-LRM 的亚秒级前馈重建，Long-LRM++ 达到 14 FPS 实时渲染。VGGT (CVPR 2025 Best Paper) 统一多任务范式标志着 3D 基础模型方向。</li>
+            <li><strong>三维重建前馈化：</strong>从 3DGS 的 30 分钟优化到 VGGT/GS-LRM 的亚秒级前馈重建，Long-LRM++ 达到 14 FPS 实时渲染。VGGT (CVPR 2025 Best Paper) 统一多任务范式标志着 3D 基础模型方向。π³ 进一步消除参考帧依赖，实现全排列等变架构，57.4 FPS + Sintel ATE 降低 55.7%，证明"减少归纳偏置"是 3D 基础模型的关键设计原则。</li>
             <li><strong>3D 生成从 SDS 到前馈：</strong>DreamGaussian/GaussianDreamer (2023, SDS 路线) → TRELLIS/Hunyuan3D (2024-2025, 前馈生成)。TRELLIS 的 SLAT 多格式表示和 Hunyuan3D 的 PBR 材质支持使 3D 生成走向生产。</li>
             <li><strong>4D 动态高斯是下一个前沿：</strong>Dynamic 3D Gaussians 实现从渲染涌现追踪，4DLangVGGT 融合语言-几何。前馈 4D 重建是重要研究机会。</li>
         </ul>
@@ -924,7 +949,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-06-25 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation · 涵盖 26 篇笔记 + 3D 方向横向对比表
+    📝 调研索引 · 更新于 2026-06-29 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation · 涵盖 27 篇笔记 + 3D 方向横向对比表
 </div>
 
 </body>
