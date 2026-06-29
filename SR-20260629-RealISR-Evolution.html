@@ -129,8 +129,7 @@
         <div class="highlight">
             <strong>性能特点：</strong>在 PIRM2018-SR Challenge Region 3 中获得第一名。视觉效果显著优于 SRGAN，纹理更真实自然。但存在过度生成伪影问题。
         </div>
-        <img src="images/1809.00219/x1.png" alt="ESRGAN Figure 1" />
-        <img src="images/1809.00219/x2.png" alt="ESRGAN Figure 2" />
+        <p><em>⚠️ ESRGAN 论文为 2018 年发表，arXiv 无 HTML 版本，图片仅见于 PDF。请参阅 <a href="https://arxiv.org/pdf/1809.00219" target="_blank">PDF 原文 Figure 1-3</a> 查看 RRDB 架构图和重建结果对比。</em></p>
 
         <!-- BSRGAN -->
         <h3>2. BSRGAN (2021) — Designing a Practical Degradation Model for Deep Blind SR</h3>
@@ -152,7 +151,7 @@
             <strong>关键创新：</strong>首次系统性地设计实用的退化模型，随机打乱退化顺序使模型覆盖更广的退化空间。相机 ISP 噪声模拟是突破性设计。ICCV 2021 发表。
         </div>
         <p><strong>性能特点：</strong>在合成和真实图像上都显著优于使用简单退化模型训练的 ESRGAN，验证了退化模型设计对盲 SR 的重要性。</p>
-        <img src="images/2103.14006/x1.png" alt="BSRGAN Figure 1" />
+        <p><em>⚠️ BSRGAN 论文为 ICCV 2021，arXiv 无 HTML 版本。请参阅 <a href="https://arxiv.org/pdf/2103.14006" target="_blank">PDF 原文 Figure 1</a> 查看退化模型对比图。</em></p>
 
         <!-- Real-ESRGAN -->
         <h3>3. Real-ESRGAN (2021) — Training Real-World Blind SR with Pure Synthetic Data</h3>
@@ -173,7 +172,7 @@
             <strong>关键创新：</strong>二阶退化建模是核心突破——通过串联两个退化阶段，模拟真实世界退化链（如先模糊再压缩再噪声）。纯合成数据训练消除了对真实配对数据的依赖。
         </div>
         <p><strong>性能特点：</strong>在各种真实数据集上视觉表现优于先前方法。提供高效实时合成训练对的实现。成为广泛使用的实用 SR 工具。</p>
-        <img src="images/2107.10833/x2.png" alt="Real-ESRGAN Figure 2" />
+        <p><em>⚠️ Real-ESRGAN 为 Tech Report，arXiv 无 HTML 版本。请参阅 <a href="https://arxiv.org/pdf/2107.10833" target="_blank">PDF 原文 Figure 2</a> 查看高阶退化流程图。</em></p>
 
         <!-- StableSR -->
         <h3>4. StableSR (2023) — Exploiting Diffusion Prior for Real-World SR</h3>
@@ -215,7 +214,7 @@
             <strong>关键创新：</strong>两阶段解耦是核心设计——退化去除和信息再生各司其职，避免单阶段方法中保真度与真实感的冲突。IRControlNet 基于 ControlNet 思想但专为图像恢复设计。ECCV 2024 发表。
         </div>
         <p><strong>性能特点：</strong>在盲 SR、盲人脸恢复和盲图像去噪三个任务上均超越 SOTA。统一框架处理多种恢复任务是重要优势。</p>
-        <img src="images/2308.15070/x1.png" alt="DiffBIR Figure 1" />
+        <p><em>⚠️ DiffBIR 论文 arXiv HTML 图片不可直接下载。请参阅 <a href="https://arxiv.org/html/2308.15070v3" target="_blank">arXiv HTML 版</a> 或 <a href="https://github.com/XPixelGroup/DiffBIR" target="_blank">GitHub 项目页</a> 查看架构图。</em></p>
 
         <!-- SeeSR -->
         <h3>6. SeeSR (2023) — Towards Semantics-Aware Real-World Image SR</h3>
