@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenRecon: 桥接生成式先验的多视角3D场景重建</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #76b900; --accent-dim: #5a8f00; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GenRecon: 桥接生成式先验的多视角3D场景重建</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2605.23888</span>
+        <span>📅 2026-05-22</span>
+        <span>🏢 TUM + 华为</span>
+        <span>🔗 基于 TRELLIS.2</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="section">
+        <h2>📋 论文概要</h2>
+        <div class="tags">
+            <span class="tag green">Scene Reconstruction</span>
+            <span class="tag">Generative Prior</span>
+            <span class="tag">Multi-View</span>
+            <span class="tag">PBR Mesh</span>
+            <span class="tag">Conditional 3D Generation</span>
+        </div>
+        <p>GenRecon 由慕尼黑工大 (TUM) Matthias Nießner 组和华为联合提出，核心创新是将<strong>物体级 3D 生成先验（TRELLIS.2）桥接到多视角场景级重建</strong>。将场景重建重新定义为条件 3D 生成——把场景切分为空间重叠的 chunks，每个 chunk 用 TRELLIS.2 的生成先验产生高保真几何和 PBR 材质，拼合得到完整场景。</p>
+        <div class="highlight">
+            <strong>核心贡献：</strong>提出投影式多视角条件机制 (projection-based conditioning)，将 posed 多视角图像特征提升到与生成模型对齐的 3D 表示中，视角顺序无关、空间锚定，保持多视角一致性。比 2DGS、MonoSDF、FineRecon 等最先进重建方法高出 <strong>16%</strong>。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🖼️ arXiv 论文原图</h2>
+
+        <h3>Figure 1: GenRecon 整体流程</h3>
+        <img src="images/2605.23888/x1.png" alt="GenRecon Figure 1" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 1: 给定稀疏多视角 RGB 图像 (左)，GenRecon 重建完整高保真 PBR mesh (中)，支持重新打光和编辑 (右)。</p>
+
+        <h3>Figure 2: 与重建方法对比</h3>
+        <img src="images/2605.23888/x2.png" alt="GenRecon Figure 2" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 2: 与 2DGS、MonoSDF、FineRecon 等方法的重建结果对比。</p>
+
+        <h3>Figure 3: 方法架构</h3>
+        <img src="images/2605.23888/x3.png" alt="GenRecon Figure 3" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 3: GenRecon 架构图——场景分块、投影式条件注入、联合 chunk 生成。</p>
+
+        <h3>Figure 4: PBR 材质与重新打光</h3>
+        <img src="images/2605.23888/x4.png" alt="GenRecon Figure 4" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 4: 重建的 PBR 材质属性和不同光照条件下的重新打光效果。</p>
+
+        <h3>Figure 7: 额外场景重建结果</h3>
+        <img src="images/2605.23888/x7.png" alt="GenRecon Figure 7" style="width:100%; border-radius:8px; margin:10px 0;" />
+        <p style="color:var(--text-dim); font-size:0.85em; margin-bottom:15px;">Figure 7: 更多室内场景重建结果展示。</p>
+    </div>
+
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <h3>整体设计</h3>
+        <p>GenRecon 的核心思路是<strong>把场景重建转化为条件 3D 生成</strong>。流程如下：</p>
+        <ul>
+            <li><strong>Step 1 — 场景标定与分块 (Scene Calibration & Chunking)：</strong>输入 posed 多视角 RGB 图像，将场景空间划分为重叠的 3D chunks，每个 chunk 覆盖场景的一个局部区域</li>
+            <li><strong>Step 2 — 全局 3D 条件提取 (Global 3D Conditioning)：</strong>用投影式条件机制，将多视角图像特征通过相机投影提升到 3D 空间，与 TRELLIS.2 的生成模型空间对齐。关键：视角顺序无关 (permutation-invariant)、空间锚定 (spatially anchored)</li>
+            <li><strong>Step 3 — 联合 Chunk 生成 (Joint Chunk Generation)：</strong>所有 chunk 在生成模型中联合生成，利用 TRELLIS.2 的强 3D 先验保证几何完整性和材质高保真。重叠区域自然融合</li>
+            <li><strong>Step 4 — PBR Mesh 输出：</strong>生成的 3D 表示通过 TRELLIS.2 的解码器输出为 PBR mesh (Base Color, Metallic, Roughness, Alpha)</li>
+        </ul>
+        <h3>关键设计：投影式条件机制</h3>
+        <div class="highlight">
+            <strong>核心创新：</strong>不是简单把图像特征 concat 到生成模型输入，而是通过<strong>相机投影</strong>将 2D 图像特征映射到 3D 空间中对应位置。这保证了：
+            <ul>
+                <li><strong>视角顺序无关：</strong>打乱输入视角顺序不影响结果（类似 π³ 的排列等变思想）</li>
+                <li><strong>空间锚定：</strong>每个特征都锚定到场景坐标系中的具体位置，不依赖视角编号</li>
+                <li><strong>多视角一致：</strong>不同视角的特征在 3D 空间中自然对齐</li>
+            </ul>
+        </div>
+        <h3>参数高效微调</h3>
+        <p>不破坏 TRELLIS.2 预训练先验，使用参数高效微调 (PEFT) 方式在合成场景数据上训练。物体级先验保持完整，同时适配场景级条件生成任务。</p>
+    </div>
+
+    <div class="section">
+        <h2>⭐ 关键特性</h2>
+        <table>
+            <tr><th>特性</th><th>说明</th></tr>
+            <tr><td>场景级重建</td><td>从物体级扩展到场景级，支持室内环境完整重建</td></tr>
+            <tr><td>多视角条件</td><td>投影式条件机制，视角顺序无关、空间锚定</td></tr>
+            <tr><td>生成先验桥接</td><td>复用 TRELLIS.2 的强 3D 生成先验，补全欠约束区域</td></tr>
+            <tr><td>PBR 材质</td><td>输出完整 PBR mesh，支持重新打光和编辑</td></tr>
+            <tr><td>空间分块</td><td>重叠 chunk 策略，扩展到大规模场景</td></tr>
+            <tr><td>参数高效</td><td>PEFT 微调，不破坏预训练先验</td></tr>
+            <tr><td>可编辑 mesh</td><td>输出标准 mesh 格式，可直接用于游戏引擎/渲染管线</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 与 TRELLIS / TRELLIS.2 对比</h2>
+        <table>
+            <tr><th>维度</th><th>TRELLIS (v1)</th><th>TRELLIS.2</th><th>GenRecon</th></tr>
+            <tr><td>定位</td><td>物体级 3D 生成</td><td>物体级 3D 生成（升级版）</td><td><strong>场景级 3D 重建</strong></td></tr>
+            <tr><td>输入</td><td>单张图像</td><td>单张图像</td><td><strong>多视角 RGB 图像</strong></td></tr>
+            <tr><td>输出</td><td>NeRF/高斯/Mesh</td><td>PBR Mesh (最高 1536³)</td><td><strong>场景级 PBR Mesh</strong></td></tr>
+            <tr><td>核心表示</td><td>SLAT (稀疏体素+特征反投影)</td><td>O-Voxel (Dual Grids + PBR)</td><td>复用 TRELLIS.2 表示，扩展到场景</td></tr>
+            <tr><td>范式</td><td>生成</td><td>生成</td><td><strong>重建 = 条件生成</strong></td></tr>
+            <tr><td>几何表示</td><td>稀疏体素网格</td><td>Dual Grids (任意拓扑)</td><td>继承 TRELLIS.2 的 Dual Grids</td></tr>
+            <tr><td>压缩</td><td>无显式压缩</td><td>SC-VAE 16× 下采样</td><td>继承 TRELLIS.2 的 SC-VAE</td></tr>
+            <tr><td>模型规模</td><td>最大 2B</td><td>4B</td><td>基于 TRELLIS.2 (4B) + PEFT</td></tr>
+            <tr><td>分辨率</td><td>≤512³</td><td>最高 1536³</td><td>场景级 (chunk 拼合)</td></tr>
+            <tr><td>时间</td><td>2024-12</td><td>2025-12</td><td>2026-05</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔄 TRELLIS → TRELLIS.2 → GenRecon 演进分析</h2>
+        <h3>TRELLIS → TRELLIS.2: 物体级生成的自我进化</h3>
+        <ul>
+            <li><strong>表示升级：</strong>SLAT → O-Voxel。几何用 Dual Grids 支持任意拓扑（开放面、非流形、内部结构），突破 v1 iso-surface 限制</li>
+            <li><strong>压缩提升：</strong>引入 Sparse Compression VAE (SC-VAE)，16× 空间下采样，1024³ 资产只需 ~9.6K latent tokens</li>
+            <li><strong>材质完整：</strong>从简单颜色到完整 PBR（Base Color, Metallic, Roughness, Alpha）</li>
+            <li><strong>模型规模：</strong>2B → 4B 参数，用 vanilla DiT</li>
+            <li><strong>分辨率：</strong>512³ → 1536³</li>
+            <li><strong>速度：</strong>512³ 仅需 3s（2s shape + 1s material）</li>
+            <li><strong>数据处理：</strong>Mesh↔O-Voxel 即时转换，无需渲染/优化，CPU <10s</li>
+        </ul>
+        <h3>TRELLIS.2 → GenRecon: 从物体生成到场景重建</h3>
+        <div class="highlight">
+            <strong>范式跃迁：</strong>TRELLIS/TRELLIS.2 是"输入图像→生成单个物体"。GenRecon 是"输入多视角图像→重建整个场景"。不是替代 TRELLIS.2，而是<strong>把 TRELLIS.2 当作场景重建的生成先验引擎</strong>。
+        </div>
+        <ul>
+            <li><strong>场景分块策略：</strong>将大场景切分为重叠 chunks，每个 chunk 用 TRELLIS.2 生成，解决场景尺度远大于单物体的问题</li>
+            <li><strong>投影式多视角条件：</strong>TRELLIS.2 只接受单张图像条件，GenRecon 设计了多视角投影条件机制，视角无关+空间锚定</li>
+            <li><strong>从生成到重建：</strong>TRELLIS.2 是无条件/图像条件生成（创造新物体），GenRecon 是条件重建（恢复已有场景），用生成先验补全欠约束区域</li>
+            <li><strong>PEFT 微调：</strong>不破坏物体级先验，在合成场景数据上参数高效微调</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📊 基准表现</h2>
+        <table>
+            <tr><th>任务</th><th>基准</th><th>GenRecon 表现</th><th>对比</th></tr>
+            <tr><td>场景重建</td><td>合成+真实室内</td><td>SOTA</td><td>比 2DGS/MonoSDF/FineRecon 高 16%</td></tr>
+            <tr><td>PBR 材质</td><td>重新打光</td><td>高质量</td><td>传统重建方法不输出 PBR</td></tr>
+            <tr><td>完整性</td><td>遮挡/未观测区域</td><td>完整</td><td>传统方法在欠约束区域不完整/模糊</td></tr>
+            <tr><td>可编辑性</td><td>mesh 导入游戏引擎</td><td>✅</td><td>传统重建输出点云/splat，不可编辑</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 个人分析</h2>
+        <ul>
+            <li><strong>生成模型反向赋能重建：</strong>GenRecon 代表了一个重要趋势——生成模型的 3D 先验不再是"创造"专用的，而是可以反过来补全重建任务中传统方法搞不定的欠约束区域。这类似于 OSEDiff 用扩散先验做超分，GenRecon 用 3D 生成先验做场景重建。</li>
+            <li><strong>TRELLIS.2 作为"3D 先验引擎"：</strong>TRELLIS.2 不再只是一个独立方法，而是成为了 GenRecon 等后续工作的<strong>基础设施</strong>。这种"生成模型作为先验引擎"的模式可能成为主流。</li>
+            <li><strong>场景分块是关键工程创新：</strong>3D 生成模型的尺度受限（单个物体级别），GenRecon 通过重叠 chunk 策略将其扩展到场景级。这类似于 π³ 用局部点图+全局尺度对齐解决全局坐标系问题的思路。</li>
+            <li><strong>投影式条件的排列等变思想：</strong>GenRecon 的投影式条件机制保证视角顺序无关，这与 π³ 的排列等变架构异曲同工——都在消除对输入顺序的依赖。</li>
+            <li><strong>TUM Nießner 组的持续引领：</strong>从 3D 重建（MVE、FusionBSD）到神经重建（DeepFusion、MonoSDF）再到 GenRecon，Nießner 组在 3D 重建领域持续引领。这次与华为的合作也体现了工业界对场景重建的需求。</li>
+            <li><strong>与 VGGT/π³ 的关系：</strong>VGGT/π³ 是前馈重建（输入图像→直接输出几何），GenRecon 是条件生成重建（输入图像→用生成先验补全→输出）。前者快但欠约束区域不完整，后者慢但完整且带 PBR 材质。两者互补。</li>
+            <li><strong>局限：</strong>依赖合成场景数据训练，真实场景泛化能力待验证；场景尺度仍限于室内环境，大规模室外场景可能需要进一步扩展。</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>优势</th></tr>
+            <tr><td>游戏/影视</td><td>真实场景导入游戏引擎</td><td>输出可编辑 PBR mesh，直接用于渲染管线</td></tr>
+            <tr><td>AR/VR</td><td>沉浸式环境重建</td><td>完整场景+重新打光，适合沉浸体验</td></tr>
+            <tr><td>数字孪生</td><td>室内空间数字化</td><td>高保真+PBR 材质，超越传统扫描</td></tr>
+            <tr><td>室内设计</td><td>房屋重建+重新打光</td><td>材质属性可编辑，支持光照模拟</td></tr>
+            <tr><td>机器人</td><td>场景理解与导航</td><td>完整几何，补全遮挡区域</td></tr>
+            <tr><td>电商</td><td>场景化商品展示</td><td>真实环境重建+虚拟物体放置</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📐 TRELLIS.2 技术补充</h2>
+        <p>GenRecon 基于 TRELLIS.2 构建，这里补充 TRELLIS.2 的关键技术细节：</p>
+        <h3>O-Voxel (Omni-Voxel) 表示</h3>
+        <ul>
+            <li><strong>几何 (f_shape)：</strong>使用 Flexible Dual Grids 表示，处理任意拓扑（开放面、非流形、内部结构），突破 iso-surface 限制</li>
+            <li><strong>材质 (f_mat)：</strong>支持完整 PBR 属性 (Base Color, Metallic, Roughness, Alpha)</li>
+            <li><strong>"field-free"：</strong>不使用 SDF/occupancy field，直接编码几何+外观</li>
+        </ul>
+        <h3>SC-VAE (Sparse Compression VAE)</h3>
+        <ul>
+            <li>使用 Sparse Residual Autoencoding 方案直接压缩体素数据</li>
+            <li><strong>16× 下采样</strong>：1024³ 资产 → ~9.6K latent tokens</li>
+            <li>近乎无损的感知质量，支持高效大规模生成建模</li>
+        </ul>
+        <h3>性能数据</h3>
+        <table>
+            <tr><th>分辨率</th><th>总时间</th><th>说明</th></tr>
+            <tr><td>512³</td><td>3s (2s+1s)</td><td>shape + material</td></tr>
+            <tr><td>1024³</td><td>17s (10s+7s)</td><td>H100 GPU</td></tr>
+            <tr><td>1536³</td><td>60s (35s+25s)</td><td>最高分辨率</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2605.23888" target="_blank">📄 GenRecon arXiv</a>
+            <a href="https://kasothaphie.github.io/GenRecon/" target="_blank">🌐 GenRecon 项目主页</a>
+            <a href="https://github.com/kasothaphie/GenRecon" target="_blank">💻 GenRecon GitHub</a>
+            <a href="https://microsoft.github.io/TRELLIS.2/" target="_blank">🌐 TRELLIS.2 项目主页</a>
+            <a href="https://microsoft.github.io/TRELLIS/" target="_blank">🌐 TRELLIS v1 项目主页</a>
+            <a href="https://github.com/microsoft/TRELLIS" target="_blank">💻 TRELLIS GitHub</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 重建与生成调研 · GenRecon · 桥接生成式先验的多视角3D场景重建 · 基于 TRELLIS.2 · 2026-06-29 整理
+</div>
+
+</body>
+</html>
