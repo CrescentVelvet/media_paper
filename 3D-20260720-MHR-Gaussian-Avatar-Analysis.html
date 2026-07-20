@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+            --warn: #d29922;
+            --red: #f85149;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 18px 0 8px; }
+        .section h4 { color: var(--accent); font-size: 1em; margin: 14px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 2px 8px; border-radius: 10px; font-size: 0.75em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        .tag.red { border-color: var(--red); color: var(--red); }
+        .note-card {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .note-card:hover { border-color: var(--accent); }
+        .note-card h4 { color: var(--accent); font-size: 1em; margin-bottom: 6px; }
+        .note-card .meta { color: var(--text-dim); font-size: 0.82em; margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 12px; }
+        .note-card .meta span { white-space: nowrap; }
+        .note-card p { font-size: 0.9em; margin-bottom: 8px; }
+        .note-card a {
+            display: inline-block; padding: 4px 10px; background: var(--tag-bg); color: var(--accent);
+            border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.8em; margin-right: 6px;
+        }
+        .note-card a:hover { background: var(--accent-dim); color: #fff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        .highlight.red { background: rgba(248, 81, 73, 0.1); border-left-color: var(--red); }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.86em; }
+        th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        .pick { border-left: 3px solid var(--accent); background: rgba(118, 185, 0, 0.05); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline</h1>
+    <div class="meta">
+        <span>📅 2026-07-20</span>
+        <span>📂 3D / Digital Human</span>
+        <span>🔍 方案拆解 + 论文对应 + 精读建议</span>
+        <span>🔗 关联：<a href="3D-20260720-Gaussian-Human-Face-Recon.html" style="color:var(--accent)">3D 高斯人物/人脸调研</a></span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 背景 -->
+    <div class="section">
+        <h2>📋 背景</h2>
+        <p>同事描述了他们的数字人重建方案，核心要点：</p>
+        <div class="highlight">
+            <strong>人脸：</strong>每帧图像预测 3DMM 人脸参数 → 把高斯球拟合上去成动态高斯 → 找误差最小的一帧替换所有帧的人脸高斯 → 用图像增强模型做去噪/去模糊/美颜。<br>
+            <strong>人体：</strong>思路同人脸，但参数化模型换成 SMPL 的升级版 <strong>MHR</strong>。
+        </div>
+        <p>本文逐句解码该方案，对应到具体论文/算法，并给出分析与精读建议。</p>
+    </div>
+
+    <!-- 人脸解码 -->
+    <div class="section">
+        <h2>👤 一、人脸部分逐句解码</h2>
+
+        <h3>步骤 1：每帧预测 3DMM 人脸参数</h3>
+        <table>
+            <tr><th>同事的话</th><th>技术含义</th><th>对应论文/算法</th></tr>
+            <tr>
+                <td>"每帧预测 3DMM 人脸参数"</td>
+                <td><strong>FLAME tracking</strong>：从每帧图像回归 FLAME 的 identity / expression / jaw pose 参数。FLAME 是人脸界 3DMM 的标准参数化模型。</td>
+                <td>FLAME 模型（Li et al., SIGGRAPH Asia 2017）；<strong>SAM 3D Body</strong> (2602.15989) 也含人脸 tracking</td>
+            </tr>
+        </table>
+        <div class="highlight">
+            <strong>说明：</strong>"3DMM" 是俗称，人脸方向实际默认用 <strong>FLAME</strong>（含 identity + expression + pose），是 SMPL 的"脸部版"。所有高斯头部 avatar 论文（GaussianAvatars / GaussianSpeech / EmoTaG 等）都基于 FLAME。
+        </div>
+
+        <h3>步骤 2：把高斯球拟合上去 → 动态高斯</h3>
+        <table>
+            <tr><th>同事的话</th><th>技术含义</th><th>对应论文</th></tr>
+            <tr>
+                <td>"把高斯球拟合上去，就成了动态高斯"</td>
+                <td>把 3D 高斯绑定到 FLAME mesh 的<strong>三角面</strong>上，高斯随 FLAME 形变而动 → 得到表情驱动的动态高斯头部</td>
+                <td><strong>GaussianAvatars</strong> (2312.02069, SIGGRAPH 2024) —— 这正是其核心思路</td>
+            </tr>
+        </table>
+        <div class="highlight">
+            <strong>GaussianAvatars 的关键设计：</strong>每个高斯绑定到一个三角面，用<strong>局部坐标系</strong>参数化（位置 = triangle-local frame + 显式 displacement offset），端到端联合优化 FLAME 参数 + 高斯参数。
+        </div>
+
+        <h3>步骤 3：找误差最小的一帧替换所有帧的人脸高斯</h3>
+        <table>
+            <tr><th>同事的话</th><th>技术含义</th><th>对应论文</th></tr>
+            <tr>
+                <td>"找误差最小的一帧替换所有帧的人脸高斯"</td>
+                <td>选重建误差最小的帧作为 <strong>canonical / reference frame</strong>，用该帧的高斯参数当模板，其他帧靠 FLAME 形变驱动</td>
+                <td>GaussianAvatars / <strong>HUGS</strong> (2311.17910) 的 canonical space —— 但同事是<strong>简化版</strong></td>
+            </tr>
+        </table>
+        <div class="highlight warn">
+            <strong>⚠️ 简化代价分析：</strong>标准做法（GaussianAvatars/HUGS）是<strong>所有帧联合优化</strong> canonical 空间高斯参数，让多帧信息互相约束。同事"选一帧当模板"的做法：<br>
+            ✅ <strong>优点：</strong>极快，省去联合优化，工程落地简单<br>
+            ⚠️ <strong>风险：</strong>只用单帧信息，若该帧光照/遮挡/表情极端，模板有偏；其他帧视角的纹理细节无法融入 canonical 高斯<br>
+            💡 <strong>建议：</strong>折中方案 —— 选 <strong>K 个最优帧联合优化</strong>（而非单帧），既快又保留多帧信息
+        </div>
+
+        <h3>步骤 4：图像增强模型做去噪/去模糊/美颜</h3>
+        <table>
+            <tr><th>同事的话</th><th>技术含义</th><th>对应资源</th></tr>
+            <tr>
+                <td>"用图像增强模型做去噪、去模糊以及适当的美颜"</td>
+                <td>用图像复原 / 超分模型对输入帧（或渲染输出）做前后处理</td>
+                <td>知识库已有：<a href="SR-20260629-RealISR-Evolution.html">Real-ISR 技术演进</a>（ESRGAN→OSEDiff 综述）、<a href="SR-20250728-HYPIR.html">HYPIR</a>（扩散先验复原）</td>
+            </tr>
+        </table>
+        <div class="highlight warn">
+            <strong>⚠️ 增强环节位置很关键，影响多视角一致性：</strong><br>
+            • <strong>预处理（增强输入帧）：</strong>去噪/去模糊让 FLAME tracking 更准、纹理更干净 —— ✅ 推荐<br>
+            • <strong>后处理（增强渲染输出）：</strong>对高斯渲染图做 2D 美颜 —— 简单但每帧独立处理会破坏多视角一致性，产生闪烁<br>
+            💡 <strong>建议：</strong>美颜约束应<strong>进高斯纹理优化</strong>（作为 loss），而非后处理；或对 canonical 空间做一次增强，让所有视角继承
+        </div>
+    </div>
+
+    <!-- 人体解码 -->
+    <div class="section">
+        <h2>🧍 二、人体部分解码</h2>
+
+        <table>
+            <tr><th>同事的话</th><th>技术含义</th><th>对应论文</th></tr>
+            <tr>
+                <td>"思路和人脸优化一样"</td>
+                <td>同样是：参数化模型 + 高斯 rig 到 mesh 三角面 + 选 canonical 帧 + LBS 驱动</td>
+                <td><strong>HUGS</strong> (2311.17910, CVPR 2024) —— SMPL + 高斯人体开山</td>
+            </tr>
+            <tr>
+                <td>"模型换成 SMPL 的升级版 MHR"</td>
+                <td>用 <strong>Momentum Human Rig (MHR)</strong> 替代 SMPL</td>
+                <td><strong>MHR</strong> (2511.15586) · <strong>SAM 3D Body</strong> (2602.15989) · <strong>Better Rigs</strong> (2604.01447)</td>
+            </tr>
+        </table>
+
+        <div class="highlight">
+            <strong>关于 MHR（关键背景）：</strong>MHR 是 <strong>Meta Reality Labs</strong> 于 2025.11 发布的新一代参数化人体模型，开源。<br>
+            • 设计：解耦骨架/形状（继承 ATLAS） + 非线性 pose corrective + Momentum 蒙皮库<br>
+            • 优势：mesh 表达能力 &gt; SMPL，专为 AR/VR/图形管线设计<br>
+            • 配套：<strong>SAM 3D Body</strong> (2602.15989) 是单图预测 MHR 参数的 HMR 模型（MHR 界的 SMPLify/HMR），支持 2D keypoint / mask prompt<br>
+            • 学术验证：<strong>Better Rigs, Not Bigger Networks</strong> (2604.01447) 消融实验证明 —— 换 MHR 后，<strong>无需 pose-dependent correction 网络就能在 PeopleSnapshot / ZJU-MoCap 达到 SOTA PSNR</strong>，说明 SMPL 表达能力是瓶颈
+        </div>
+    </div>
+
+    <!-- 关键论文 -->
+    <div class="section">
+        <h2>📚 三、关键论文清单</h2>
+
+        <div class="note-card pick">
+            <h4>1. GaussianAvatars <span class="tag green">SIGGRAPH 2024</span> <span class="tag">人脸方案原型</span></h4>
+            <div class="meta"><span>📄 arXiv: 2312.02069</span><span>📅 2023-12</span><span>🏢 TU Munich + Nießner</span></div>
+            <div class="tags"><span class="tag green">FLAME</span><span class="tag">Rigged 3D Gaussians</span><span class="tag">Triangle-local Frame</span></div>
+            <p>人脸方案的<strong>直接原型</strong>。每个高斯绑定到 FLAME mesh 一个三角面，用局部坐标系 + 显式 displacement offset 参数化。端到端联合优化 FLAME + 高斯。表情迁移显著超越前作。<strong>同事的人脸 pipeline 本质就是这篇的工程实现。</strong></p>
+            <a href="https://arxiv.org/abs/2312.02069">📄 arXiv</a><a href="https://shenhanqian.github.io/gaussian-avatars">🌐 Project</a>
+        </div>
+
+        <div class="note-card pick">
+            <h4>2. MHR: Momentum Human Rig <span class="tag green">MHR 出处</span></h4>
+            <div class="meta"><span>📄 arXiv: 2511.15586</span><span>📅 2025-11</span><span>🏢 Meta Reality Labs</span></div>
+            <div class="tags"><span class="tag green">SMPL 升级版</span><span class="tag">Decoupled Skeleton/Shape</span><span class="tag">Non-linear Pose Corrective</span><span class="tag">Open Source</span></div>
+            <p>同事所说"SMPL 升级版 MHR"的<strong>原始论文</strong>。Meta 出品，开源。结合 ATLAS 的解耦骨架/形状 + Momentum 蒙皮库的非线性 pose corrective，专为 AR/VR 与图形管线设计。<strong>这是同事方案里"换模型"这一步的依据。</strong></p>
+            <a href="https://arxiv.org/abs/2511.15586">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>3. SAM 3D Body <span class="tag">MHR 的 HMR 模型</span></h4>
+            <div class="meta"><span>📄 arXiv: 2602.15989</span><span>📅 2026-02</span><span>🏢 Meta + CMU</span></div>
+            <div class="tags"><span class="tag green">Single-Image HMR</span><span class="tag">Promptable</span><span class="tag">Body+Hands+Feet</span></div>
+            <p>单图预测 MHR 参数的模型 —— MHR 界的 HMR / SMPLify。encoder-decoder 架构，支持 2D keypoint / mask prompt（SAM 家族风格）。<strong>同事"每帧预测人体参数"这一步的落地工具。</strong></p>
+            <a href="https://arxiv.org/abs/2602.15989">📄 arXiv</a><a href="https://github.com/facebookresearch/sam-3d-body">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h4>4. Better Rigs, Not Bigger Networks <span class="tag">MHR &gt; SMPL 证据</span></h4>
+            <div class="meta"><span>📄 arXiv: 2604.01447</span><span>📅 2026-04</span></div>
+            <div class="tags"><span class="tag green">Ablation</span><span class="tag">Minimal Pipeline</span><span class="tag">SOTA PSNR</span></div>
+            <p>消融实验证明：把 SMPL 换成 MHR（via SAM-3D-Body），<strong>minimal pipeline 无需 pose-dependent correction</strong> 就在 PeopleSnapshot / ZJU-MoCap 取得最高 PSNR。两轮对照消融确认 body model 表达能力是 avatar 重建主瓶颈。<strong>用数据说服同事/老板 MHR 选得对的依据。</strong></p>
+            <a href="https://arxiv.org/abs/2604.01447">📄 arXiv</a>
+        </div>
+
+        <div class="note-card pick">
+            <h4>5. F3G-Avatar <span class="tag red">⚠️ 与同事方案高度重合</span> <span class="tag green">CVPRW 3DMV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2604.09835</span><span>📅 2026-04</span></div>
+            <div class="tags"><span class="tag green">Clothed MHR</span><span class="tag">Body Branch</span><span class="tag green">Face-Focused Branch</span><span class="tag">LBS</span><span class="tag">Face Adversarial Loss</span></div>
+            <p><strong>几乎就是同事方案的完整实现：</strong>clothed MHR 模板 → 渲染 front/back positional maps → 双分支解码高斯（身体分支 + 人脸焦点分支）→ LBS 摆姿态 → 可微高斯渲染。训练用 reconstruction + perceptual + face-specific adversarial loss。AvatarReX 上脸部 PSNR 26.24。<strong>强烈建议先精读，直接复用其双分支架构与 face-specific loss，避免重复造轮子。</strong></p>
+            <a href="https://arxiv.org/abs/2604.09835">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>6. HUGS: Human Gaussian Splats <span class="tag green">CVPR 2024</span> <span class="tag">人体开山</span></h4>
+            <div class="meta"><span>📄 arXiv: 2311.17910</span><span>📅 2023-11</span><span>🏢 Apple</span></div>
+            <div class="tags"><span class="tag green">SMPL</span><span class="tag">Canonical Space</span><span class="tag">Joint LBS Optimization</span></div>
+            <p>SMPL + 高斯人体开山之作。SMPL 初始化高斯，允许偏离体模型捕捉衣物/头发。联合优化 LBS 权重。单目 50-100 帧 30 分钟训练，60 FPS。<strong>同事人体 pipeline 的范式来源</strong>（只是把 SMPL 换成 MHR）。</p>
+            <a href="https://arxiv.org/abs/2311.17910">📄 arXiv</a><a href="https://github.com/apple/ml-hugs">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h4>7. 图像增强方向（知识库已有）</h4>
+            <div class="meta"><span>📂 SR / Image Restoration</span></div>
+            <p>同事"去噪/去模糊/美颜"环节的算法选型参考：</p>
+            <ul>
+                <li><a href="SR-20260629-RealISR-Evolution.html">Real-ISR 技术演进综述</a> —— ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR（2018-2026）</li>
+                <li><a href="SR-20250728-HYPIR.html">HYPIR</a>（arXiv 2507.20590）—— 扩散先验图像复原，一步推理，支持用户控制复原强度</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 方案分析 -->
+    <div class="section">
+        <h2>🎯 四、方案分析与判断</h2>
+
+        <div class="highlight">
+            <strong>核心判断：</strong>同事方案本质是 <strong>GaussianAvatars (脸) + HUGS (体) 的工程实现</strong>，且把 SMPL 换成 MHR —— <strong>方向是对的，且 MHR 选择有前瞻性</strong>。
+        </div>
+
+        <h3>✅ 方案优点</h3>
+        <ul>
+            <li><strong>范式正确：</strong>FLAME+高斯（脸）/ MHR+高斯（体）是 2024-2026 数字人主流路线，学术与工业界大量验证</li>
+            <li><strong>MHR 选得对：</strong>Better Rigs (2604.01447) 实验证明 MHR &gt; SMPL，且 MHR 是 Meta 开源、为 AR/VR 设计，工程友好</li>
+            <li><strong>端到端可落地：</strong>每步都有成熟工具（FLAME tracking、SAM 3D Body、3DGS 渲染器、图像增强模型）</li>
+            <li><strong>人脸/人体解耦：</strong>脸部用 FLAME、身体用 MHR，各自动画控制解耦，符合 F3G-Avatar 设计</li>
+        </ul>
+
+        <h3>⚠️ 需要注意的点</h3>
+        <ul>
+            <li><strong>"选单帧当模板" 是简化，有多帧信息损失风险</strong> —— 建议改为 K 个最优帧联合优化（见上文步骤 3 分析）</li>
+            <li><strong>图像增强位置影响多视角一致性</strong> —— 美颜建议进高斯纹理优化（loss），而非 2D 后处理（见步骤 4 分析）</li>
+            <li><strong>未提及 canonical 空间联合优化</strong> —— 若完全跳过，纹理细节会受限；至少做一轮 canonical 高斯 refinement</li>
+            <li><strong>未提及 pose-dependent correction</strong> —— Better Rigs 说换 MHR 可以省掉，但若衣物宽松、动作复杂，仍可能需要轻量 correction</li>
+            <li><strong>未提及衣物/头发细节</strong> —— MHR 是身体模型，衣物需额外处理（参考 DAMA / Gaussian Wardrobe / CLOTH-HUGS）</li>
+        </ul>
+
+        <h3>💡 改进建议</h3>
+        <ol>
+            <li><strong>先精读 F3G-Avatar</strong>，直接复用其 clothed MHR + 双分支 + face adversarial loss 架构</li>
+            <li>canonical 高斯用 <strong>K=3~5 个最优帧联合优化</strong>，而非单帧</li>
+            <li>图像增强放<strong>预处理</strong>（增强输入帧，让 tracking 更准），美颜约束放<strong>纹理优化 loss</strong></li>
+            <li>若要支持宽松衣物，参考 <strong>MPMAvatar</strong>（物理仿真）或 <strong>DAMA</strong>（多层分离）</li>
+            <li>tracking 用 <strong>SAM 3D Body</strong>（MHR 原生支持），而非把 SMPL 估计再转 MHR</li>
+        </ol>
+
+        <div class="highlight red">
+            <strong>⚠️ 最重要提醒：</strong>F3G-Avatar (2604.09835) 与同事方案<strong>高度重合</strong>（clothed MHR + 身体分支 + 人脸焦点分支 + LBS + 高斯渲染 + face-specific loss）。<strong>强烈建议在动手前先精读这篇</strong>，能直接复用架构、避免重复造轮子，也能对比同事方案与已有工作的差异点。
+        </div>
+    </div>
+
+    <!-- 精读建议 -->
+    <div class="section">
+        <h2>📖 五、针对同事方案的精读顺序</h2>
+        <table>
+            <tr><th>顺序</th><th>论文</th><th>arXiv</th><th>读什么</th></tr>
+            <tr><td><b>1</b></td><td><b>F3G-Avatar</b></td><td>2604.09835</td><td>直接参考：clothed MHR + 双分支 + face loss 架构，对比同事方案差异</td></tr>
+            <tr><td><b>2</b></td><td><b>GaussianAvatars</b></td><td>2312.02069</td><td>人脸 FLAME+高斯 rig 细节、triangle-local 参数化、canonical 优化</td></tr>
+            <tr><td><b>3</b></td><td><b>MHR</b></td><td>2511.15586</td><td>MHR 与 SMPL 的差异、骨架/形状解耦、pose corrective</td></tr>
+            <tr><td>4</td><td><b>SAM 3D Body</b></td><td>2602.15989</td><td>单图预测 MHR 参数的工具链，prompt 机制</td></tr>
+            <tr><td>5</td><td><b>Better Rigs</b></td><td>2604.01447</td><td>用消融数据说服同事/老板：MHR &gt; SMPL，可省 correction 网络</td></tr>
+            <tr><td>6</td><td><b>HUGS</b></td><td>2311.17910</td><td>人体 SMPL+高斯范式、canonical space、LBS 联合优化（理解标准做法）</td></tr>
+            <tr><td>7</td><td>知识库 SR 综述</td><td>SR-20260629</td><td>图像增强算法选型（去噪/去模糊/美颜）</td></tr>
+        </table>
+        <p style="color:var(--text-dim); font-size:0.85em;">前 3 篇是必读（方案原型 + MHR 出处），4-7 按需展开。完整论文列表见 <a href="3D-20260720-Gaussian-Human-Face-Recon.html" style="color:var(--accent)">3D 高斯人物/人脸调研笔记</a>。</p>
+    </div>
+
+    <!-- Pipeline 图 -->
+    <div class="section">
+        <h2>🔧 六、同事方案 Pipeline 还原</h2>
+        <pre style="background: var(--code-bg); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.82em; color: var(--text-dim); line-height: 1.6;">┌─────────────────────────────────────────────────────────────────┐
+│                     人脸 Pipeline (FLAME)                        │
+├─────────────────────────────────────────────────────────────────┤
+│  输入视频帧                                                      │
+│      │                                                           │
+│      ▼                                                           │
+│  [图像增强: 去噪/去模糊] ← 预处理 (推荐)                          │
+│      │                                                           │
+│      ▼                                                           │
+│  [FLAME Tracking] 每帧预测 3DMM 参数 (identity/expression/pose)  │
+│      │                                                           │
+│      ▼                                                           │
+│  [高斯 Rig] 把高斯绑定到 FLAME 三角面 → 动态高斯                │
+│      │                                                           │
+│      ▼                                                           │
+│  [选 canonical 帧] 找误差最小帧, 用其高斯当模板                  │
+│      │        ⚠️ 建议: K 个最优帧联合优化, 而非单帧               │
+│      ▼                                                           │
+│  [FLAME 形变驱动] 其他帧靠 FLAME 参数驱动 canonical 高斯          │
+│      │                                                           │
+│      ▼                                                           │
+│  [可微高斯渲染]                                                  │
+│      │                                                           │
+│      ▼                                                           │
+│  [美颜] ⚠️ 建议作为纹理优化 loss, 而非 2D 后处理                 │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                  人体 Pipeline (MHR, 同人脸思路)                 │
+├─────────────────────────────────────────────────────────────────┤
+│  输入视频帧 → 图像增强 → [SAM 3D Body] 预测 MHR 参数             │
+│      → 高斯 Rig 到 MHR 三角面 → 选 canonical 帧                  │
+│      → LBS 形变驱动 → 可微高斯渲染                                │
+│                                                                  │
+│  ⚠️ 参考实现: F3G-Avatar (2604.09835)                            │
+│      clothed MHR + 身体分支 + 人脸焦点分支 + face adversarial loss│
+└─────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <ul>
+            <li>关联调研：<a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建研究现状</a>（40+ 篇全景）</li>
+            <li>知识库相关：3DGS 基础 / 4D 动态高斯 / Deformable 3DGS / VGGT</li>
+            <li>图像增强：<a href="SR-20260629-RealISR-Evolution.html">Real-ISR 综述</a> · <a href="SR-20250728-HYPIR.html">HYPIR</a></li>
+            <li>arXiv 检索：<a href="https://arxiv.org/search/?searchtype=all&query=Momentum+Human+Rig+MHR+body+model">MHR 检索</a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 同事方案分析 · MHR + 3DMM + 3D 高斯数字人 Pipeline · 2026-07-20 · 供方案对齐与精读决策参考
+</div>
+
+</body>
+</html>
