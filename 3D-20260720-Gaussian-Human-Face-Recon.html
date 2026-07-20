@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 高斯人物与人脸重建研究现状调研 — 2023-2026</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+            --warn: #d29922;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 18px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 2px 8px; border-radius: 10px; font-size: 0.75em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        .note-card {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+        .note-card:hover { border-color: var(--accent); }
+        .note-card h4 { color: var(--accent); font-size: 1.02em; margin-bottom: 8px; }
+        .note-card .meta { color: var(--text-dim); font-size: 0.82em; margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 12px; }
+        .note-card .meta span { white-space: nowrap; }
+        .note-card p { font-size: 0.9em; margin-bottom: 8px; }
+        .note-card a {
+            display: inline-block; padding: 4px 10px; background: var(--tag-bg); color: var(--accent);
+            border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.8em; margin-right: 6px;
+        }
+        .note-card a:hover { background: var(--accent-dim); color: #fff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85em; }
+        th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .pick { border-left: 3px solid var(--accent); background: rgba(118, 185, 0, 0.05); }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>3D 高斯人物与人脸重建研究现状调研</h1>
+    <div class="meta">
+        <span>📅 2026-07-20</span>
+        <span>📂 3D / Digital Human</span>
+        <span>🔍 arXiv 调研，覆盖 2023.11 – 2026.07</span>
+        <span>📄 核心论文 40+ 篇</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 概要 -->
+    <div class="section">
+        <h2>📋 技术方向概要</h2>
+        <div class="tags">
+            <span class="tag green">3D Gaussian Splatting</span>
+            <span class="tag green">Human Avatar</span>
+            <span class="tag green">Face/Head Avatar</span>
+            <span class="tag">Talking Head</span>
+            <span class="tag">SMPL/SMPL-X</span>
+            <span class="tag">FLAME</span>
+            <span class="tag">Animatable</span>
+            <span class="tag">Feed-Forward</span>
+            <span class="tag">Audio-Driven</span>
+            <span class="tag">Telepresence</span>
+        </div>
+        <p>3D Gaussian Splatting (3DGS) 自 2023 年 SIGGRAPH 提出后，迅速被应用到<strong>可动画人体/人脸数字化</strong>方向。相比 NeRF，3DGS 提供<strong>实时渲染</strong>（60-100 FPS）、<strong>显式可编辑表示</strong>、以及<strong>更快的训练</strong>（分钟级 vs 小时级），使其成为数字人、虚拟试衣、远程在场（telepresence）、 talking head 等场景的主流路线。</p>
+        <div class="highlight">
+            <strong>核心范式：</strong>参数化人体模型（SMPL / SMPL-X / FLAME）作为<strong>形变骨架</strong>，3D 高斯作为<strong>外观表示</strong>，通过 Linear Blend Skinning (LBS) 或学习形变场驱动高斯随姿态/表情变化。两者结合兼顾了<strong>可控性</strong>（参数化模型）与<strong>逼真度</strong>（高斯渲染）。
+        </div>
+        <p>本调研覆盖 2023.11 – 2026.07 的 40+ 篇核心论文，按 <strong>人体重建 / 人脸与头部 / 全身表达 / 单图前馈 / 远程在场</strong> 五个子方向组织，并在末尾给出<strong>精读优先级建议</strong>，供你决策深读顺序。</p>
+    </div>
+
+    <!-- 子方向分类 -->
+    <div class="section">
+        <h2>🧭 子方向分类与论文全景</h2>
+        <table>
+            <tr><th>子方向</th><th>代表方法</th><th>输入</th><th>训练范式</th><th>典型速度</th></tr>
+            <tr><td><b>人体 — 优化式</b></td><td>HUGS, HuGS, DAMA, EVA, Gaussian Wardrobe, CLOTH-HUGS</td><td>单目/多目视频</td><td>per-subject 优化</td><td>30 min 训练, 60-100 FPS</td></tr>
+            <tr><td><b>人体 — 单图前馈</b></td><td>LHM, GUAVA, AdaHuman, DLA, FastAvatar</td><td>单张图像</td><td>前馈推理 (秒级/亚秒级)</td><td>0.1s ~ 几秒</td></tr>
+            <tr><td><b>人体 — 物理/可微</b></td><td>MPMAvatar, RnD-Avatar</td><td>多目视频</td><td>物理仿真 + 可微渲染</td><td>训练慢, 渲染快</td></tr>
+            <tr><td><b>人脸/头部 Avatar</b></td><td>GaussianAvatars, HeadStudio, GaussianAvatar-Editor, CompHairHead</td><td>多目/单目视频</td><td>per-subject 优化</td><td>分钟级训练</td></tr>
+            <tr><td><b>Talking Head (音频驱动)</b></td><td>GaussianSpeech, SyncTalk++, EmoTalkingGaussian, EmoTaG, GaussianEmoTalker, EmbedTalk</td><td>视频 + 音频</td><td>per-subject + 音频条件</td><td>实时 60-100 FPS</td></tr>
+            <tr><td><b>全身表达 (表情+手势)</b></td><td>EVA, DEGAS, TaoAvatar, F3G-Avatar, SFGS, InteractAvatar</td><td>多目视频</td><td>解耦身体/脸/手</td><td>实时 ~90 FPS</td></tr>
+            <tr><td><b>远程在场 / 实时</b></td><td>Mon3tr, ICo3D, TaoAvatar</td><td>单目实时流</td><td>离线建 avatar + 在线驱动</td><td>~80 ms 端到端</td></tr>
+        </table>
+    </div>
+
+    <!-- 人体重建 -->
+    <div class="section">
+        <h2>🧍 一、人体重建 (Human Body)</h2>
+
+        <h3>A. 优化式 (per-subject optimization)</h3>
+
+        <div class="note-card pick">
+            <h4>1. HUGS: Human Gaussian Splats <span class="tag green">CVPR 2024</span> <span class="tag">奠基</span></h4>
+            <div class="meta"><span>📄 arXiv: 2311.17910</span><span>📅 2023-11</span><span>🏢 Apple</span></div>
+            <div class="tags"><span class="tag green">SMPL</span><span class="tag">Monocular</span><span class="tag">Scene+Human</span><span class="tag">60 FPS</span></div>
+            <p>3DGS 人体化的<strong>开山之作</strong>。SMPL 初始化人体高斯，允许高斯偏离体模型捕捉衣物/头发细节。联合优化 LBS 权重以协调动画。单目视频 50-100 帧训练 30 分钟，渲染 60 FPS，比前作快 ~100×。</p>
+            <a href="https://arxiv.org/abs/2311.17910">📄 arXiv</a><a href="https://github.com/apple/ml-hugs">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h4>2. HuGS: Human Gaussian Splatting <span class="tag green">CVPR 2024</span></h4>
+            <div class="meta"><span>📄 arXiv: 2311.17113</span><span>📅 2023-11</span></div>
+            <div class="tags"><span class="tag">Multi-view</span><span class="tag">Coarse-to-Fine</span><span class="tag">80 FPS</span></div>
+            <p>多目视频，canonical 空间高斯 + 前向蒙皮 + 局部非刚性精化。THuman4 上 PSNR +1.5 dB，512×512 渲染 80 FPS。与 HUGS 同期并行工作，侧重多目而非单目。</p>
+            <a href="https://arxiv.org/abs/2311.17113">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>3. DAMA: Disentangled Body-Anchored Gaussians for Multi-Layered Avatars</h4>
+            <div class="meta"><span>📄 arXiv: 2605.21001</span><span>📅 2026-05</span><span>🏢 MPI</span></div>
+            <div class="tags"><span class="tag green">SMPL-X</span><span class="tag">Garment Disentangle</span><span class="tag">Layering</span></div>
+            <p>首个支持<strong>物理可层叠衣物</strong>的高斯人体。高斯用 barycentric 坐标绑定到 SMPL-X 面 + 正法向偏移；从 2D 分割 lift 出分层高斯。4D-DRESS 上几何重建与衣物分离 SOTA，支持换装顺序控制。</p>
+            <a href="https://arxiv.org/abs/2605.21001">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>4. Gaussian Wardrobe: Compositional 3D Gaussian Avatars <span class="tag green">3DV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2603.04290</span><span>📅 2026-03</span><span>🏢 ETH Zurich</span></div>
+            <div class="tags"><span class="tag">Virtual Try-On</span><span class="tag">Shape-Agnostic Garments</span></div>
+            <p>将人体分解为身体 + 多层"形状无关"神经衣物，每层规范化到与形状无关的空间。支持跨身份衣物迁移，虚拟试衣 SOTA。</p>
+            <a href="https://arxiv.org/abs/2603.04290">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>5. CLOTH-HUGS: Cloth Aware Human Gaussian Splatting</h4>
+            <div class="meta"><span>📄 arXiv: 2604.15875</span><span>📅 2026-04</span></div>
+            <div class="tags"><span class="tag">Body+Cloth Disentangle</span><span class="tag">Physics Constraints</span><span class="tag">60+ FPS</span></div>
+            <p>HUGS 的衣物扩展：身体与衣物分层高斯，从 mesh 拓扑初始化衣物，加 simulation-consistency / ARAP / mask 约束。LPIPS 降 28%。</p>
+            <a href="https://arxiv.org/abs/2604.15875">📄 arXiv</a>
+        </div>
+
+        <h3>B. 单图前馈 (Feed-Forward, 秒级/亚秒级)</h3>
+
+        <div class="note-card pick">
+            <h4>6. LHM: Large Animatable Human Reconstruction Model <span class="tag green">推荐精读</span></h4>
+            <div class="meta"><span>📄 arXiv: 2503.10625</span><span>📅 2025-03</span></div>
+            <div class="tags"><span class="tag green">Single Image</span><span class="tag green">Feed-Forward</span><span class="tag">Seconds</span><span class="tag">LRM for Human</span></div>
+            <p>单图<strong>秒级</strong>生成可动画人体，类比 LRM (Large Reconstruction Model) 路线但专攻人体。是人体前馈化的<strong>标志性工作</strong>，代表"从优化到前馈"的范式转移。后续 GUAVA/AdaHuman/DLA 都沿此路线。</p>
+            <a href="https://arxiv.org/abs/2503.10625">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>7. AdaHuman: Single-Image Animatable Detailed 3D Human <span class="tag">NVIDIA</span></h4>
+            <div class="meta"><span>📄 arXiv: 2505.24877</span><span>📅 2025-05</span></div>
+            <div class="tags"><span class="tag green">Multi-view Diffusion</span><span class="tag">Compositional 3DGS</span></div>
+            <p>pose-conditioned 3D 联合扩散模型在每步生成一致多视角 + 3DGS；再分部位 crop-aware 精化。A-pose 输出可直接绑骨动画。ActorsHQ/4D-Dress 上超越 SOTA。</p>
+            <a href="https://arxiv.org/abs/2505.24877">📄 arXiv</a><a href="https://nvlabs.github.io/AdaHuman">🌐 Project</a>
+        </div>
+
+        <div class="note-card">
+            <h4>8. DLA: Dream, Lift, Animate <span class="tag green">3DV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2507.15979</span><span>📅 2025-07</span><span>🏢 NVIDIA</span></div>
+            <div class="tags"><span class="tag">Video Diffusion</span><span class="tag">UV-space Gaussians</span></div>
+            <p>单图 → 视频扩散"dream"多视角 → lift 成非结构化 3D 高斯 → transformer 编码到 UV 空间 → 体模型驱动动画。NVIDIA 路线，与 AdaHuman 互补。</p>
+            <a href="https://arxiv.org/abs/2507.15979">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>9. GUAVA: Generalizable Upper Body 3D Gaussian Avatar <span class="tag green">ICCV 2025</span></h4>
+            <div class="meta"><span>📄 arXiv: 2505.03351</span><span>📅 2025-05</span></div>
+            <div class="tags"><span class="tag">Upper-body</span><span class="tag">0.1s</span><span class="tag">EHM</span></div>
+            <p>提出 Expressive Human Model (EHM) 增强表情能力。单图 + inverse texture mapping + 投影采样，<strong>0.1 秒</strong>完成上半身 avatar。</p>
+            <a href="https://arxiv.org/abs/2505.03351">📄 arXiv</a>
+        </div>
+
+        <h3>C. 物理驱动 / 可微仿真</h3>
+
+        <div class="note-card pick">
+            <h4>10. MPMAvatar: Physics-Based Dynamics <span class="tag green">NeurIPS 2025</span> <span class="tag">推荐精读</span></h4>
+            <div class="meta"><span>📄 arXiv: 2510.01619</span><span>📅 2025-10</span><span>🏢 KAIST</span></div>
+            <div class="tags"><span class="tag green">Material Point Method</span><span class="tag">Anisotropic</span><span class="tag">Zero-shot Generalization</span></div>
+            <p>用 <strong>MPM (Material Point Method) 仿真器</strong>建模宽松衣物形变，各向异性本构 + 新碰撞处理。canonical avatar 用 3DGS + quasi-shadowing 渲染。对未见交互的<strong>零样本泛化</strong>是学习类方法做不到的。</p>
+            <a href="https://arxiv.org/abs/2510.01619">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>11. RnD-Avatar: Relightable and Dynamic Gaussian Avatar <span class="tag green">ACM MM 2025</span></h4>
+            <div class="meta"><span>📄 arXiv: 2512.09335</span><span>📅 2025-12</span></div>
+            <div class="tags"><span class="tag green">Relightable</span><span class="tag">Dynamic Skin Weights</span></div>
+            <p>单目视频同时建模可动画 + 可重光照人体。动态蒙皮权重 + pose-induced 形变 + 稀疏几何细节正则。新数据集支持多光照评测。</p>
+            <a href="https://arxiv.org/abs/2512.09335">📄 arXiv</a>
+        </div>
+
+        <h3>D. 其他代表性工作</h3>
+        <div class="note-card">
+            <h4>12. SkinningGS: Editable Dynamic Human Scene</h4>
+            <div class="meta"><span>📄 arXiv: 2506.21632</span><span>📅 2025-06</span></div>
+            <p>SMPL 表面位置纹理细分 + 卷积预测人体点云特征。<strong>仅用 HUGS 一半的高斯</strong>，100 FPS 渲染，超越 HUGS 重建指标。</p>
+            <a href="https://arxiv.org/abs/2506.21632">📄 arXiv</a>
+        </div>
+        <div class="note-card">
+            <h4>13. JOintGS: Joint Optimization Cameras+Bodies+Gaussians</h4>
+            <div class="meta"><span>📄 arXiv: 2602.04317</span><span>📅 2026-02</span></div>
+            <p>单目 in-the-wild 视频联合优化相机/人体姿态/3D 高斯。前背景解耦互相增强。NeuMan 上 PSNR +2.1 dB，对 COLMAP/HMR 噪声初始化鲁棒。</p>
+            <a href="https://arxiv.org/abs/2602.04317">📄 arXiv</a>
+        </div>
+        <div class="note-card">
+            <h4>14. LUNA: LBS-Free Universal 3D Human Animation <span class="tag green">ECCV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2606.31981</span><span>📅 2026-06</span></div>
+            <p>摆脱 LBS 与参数化体模型，transformer 直接从 2D 控制（图像/关键点/草图）映射到 3D 高斯形变。混合监督从 LBS 教师蒸馏。支持<strong>零样本跨身份</strong>与隐式 2D 驱动，是"去参数化模型"的最新方向。</p>
+            <a href="https://arxiv.org/abs/2606.31981">📄 arXiv</a>
+        </div>
+    </div>
+
+    <!-- 人脸与头部 -->
+    <div class="section">
+        <h2>👤 二、人脸与头部 Avatar (Face / Head)</h2>
+
+        <div class="note-card pick">
+            <h4>15. GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians <span class="tag green">SIGGRAPH 2024</span> <span class="tag">奠基</span></h4>
+            <div class="meta"><span>📄 arXiv: 2312.02069</span><span>📅 2023-12</span><span>🏢 TU Munich</span></div>
+            <div class="tags"><span class="tag green">FLAME</span><span class="tag">Rigged Gaussians</span><span class="tag">Triangle-local Frame</span></div>
+            <p>人脸高斯化<strong>开山之作</strong>。每个高斯绑定到 FLAME mesh 的一个三角面，用局部坐标系参数化 + 显式位移偏移。端到端联合优化 FLAME 参数与高斯参数。表情迁移显著超越前作。</p>
+            <a href="https://arxiv.org/abs/2312.02069">📄 arXiv</a><a href="https://shenhanqian.github.io/gaussian-avatars">🌐 Project</a>
+        </div>
+
+        <div class="note-card">
+            <h4>16. HeadStudio: Text to Animatable Head Avatars <span class="tag green">ECCV 2024</span></h4>
+            <div class="meta"><span>📄 arXiv: 2402.06149</span><span>📅 2024-02</span></div>
+            <div class="tags"><span class="tag green">Text-to-Avatar</span><span class="tag">2D Diffusion Prior</span></div>
+            <p>文本 → 3DGS 可动画头部。将 3D 高斯与可动画头部先验关联，从初始化/蒸馏/正则化联合优化。≥40 FPS @1024，可被语音/视频驱动。</p>
+            <a href="https://arxiv.org/abs/2402.06149">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>17. GaussianAvatar-Editor <span class="tag green">3DV 2025</span></h4>
+            <div class="meta"><span>📄 arXiv: 2501.09978</span><span>📅 2025-01</span></div>
+            <div class="tags"><span class="tag">Text-driven Editing</span><span class="tag">WABE</span><span class="tag">4D Consistency</span></div>
+            <p>文本驱动编辑可动画 4D 高斯头部。提出 WABE (Weighted Alpha Blending) 处理运动遮挡，条件对抗学习保证 4D 一致性。</p>
+            <a href="https://arxiv.org/abs/2501.09978">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>18. CompHairHead: One-shot Compositional Head with Deformable Hair</h4>
+            <div class="meta"><span>📄 arXiv: 2604.14782</span><span>📅 2026-04</span></div>
+            <div class="tags"><span class="tag green">Hair Decoupling</span><span class="tag">PBD Simulation</span></div>
+            <p>单图构建完整头部 avatar，显式解耦头发与脸。脸部用 FLAME 绑定非刚性注册；头发用 cage + Position-Based Dynamics 仿真，支持重力/惯性下的真实形变。</p>
+            <a href="https://arxiv.org/abs/2604.14782">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>19. SuperHead: Enhancing Low-quality Talking Heads <span class="tag green">3DV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2602.06122</span><span>📅 2026-02</span></div>
+            <div class="tags"><span class="tag">3D Super-Resolution</span><span class="tag">Generative Prior</span></div>
+            <p>低质量视频 → 高保真 3DGS 头部。dynamics-aware 3D inversion 利用预训练 3D 生成模型先验，输出超分 3DGS 再绑 FLAME 动画。</p>
+            <a href="https://arxiv.org/abs/2602.06122">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>20. FastAvatar: Instant 3D Gaussian for Faces <span class="tag green">单图 3 秒</span></h4>
+            <div class="meta"><span>📄 arXiv: 2508.18389</span><span>📅 2025-08</span></div>
+            <div class="tags"><span class="tag green">Single Image</span><span class="tag">600× Faster</span><span class="tag">FLAME Animation</span></div>
+            <p>单张任意姿态人脸图 → 3DGS 头部 avatar，A100 上 <strong>3 秒</strong>。两阶段：前馈 encoder-decoder 预测粗几何 + 轻量 test-time 精化。比 FlashAvatar/GaussianAvatars/GASP 快 600×，PSNR 24.01 dB。</p>
+            <a href="https://arxiv.org/abs/2508.18389">📄 arXiv</a>
+        </div>
+    </div>
+
+    <!-- Talking Head -->
+    <div class="section">
+        <h2>🗣️ 三、Talking Head (音频驱动人脸动画)</h2>
+        <p>这是 3DGS 人脸方向<strong>论文最密集</strong>的子领域，2025-2026 爆发式增长。核心挑战：唇形同步、表情/情绪可控、时间一致性、跨身份泛化。</p>
+
+        <div class="grid2">
+            <div class="note-card pick">
+                <h4>21. GaussianSpeech <span class="tag green">奠基</span></h4>
+                <div class="meta"><span>📄 2411.18675</span><span>📅 2024-11</span><span>🏢 TUM+Nießner</span></div>
+                <p>音频驱动头部 SOTA 基线。3DGS + audio-conditioned transformer，皱纹/感知损失捕捉表情细节。配套大规模多目 talking 数据集。</p>
+                <a href="https://arxiv.org/abs/2411.18675">📄 arXiv</a>
+            </div>
+            <div class="note-card pick">
+                <h4>22. SyncTalk++ <span class="tag">101 FPS</span></h4>
+                <div class="meta"><span>📄 2506.14742</span><span>📅 2025-06</span></div>
+                <p>Dynamic Portrait Renderer + Face-Sync Controller + Head-Sync Stabilizer + 3D blendshape。身份/唇/表情/头姿四同步，101 FPS。</p>
+                <a href="https://arxiv.org/abs/2506.14742">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>23. EmoTalkingGaussian</h4>
+                <div class="meta"><span>📄 2502.00654</span><span>📅 2025-02</span></div>
+                <p>连续 valence/arousal 情绪控制；自监督唇同步用 TTS + 视听同步网络。情绪+唇同步双优。</p>
+                <a href="https://arxiv.org/abs/2502.00654">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>24. EmoTaG <span class="tag green">CVPR 2026</span></h4>
+                <div class="meta"><span>📄 2603.21332</span><span>📅 2026-03</span></div>
+                <p>few-shot 个性化，FLAME 参数空间预测形变（而非直接动高斯），GRMN 捕获情绪韵律。几何稳定性 SOTA。</p>
+                <a href="https://arxiv.org/abs/2603.21332">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>25. MGGTalk <span class="tag green">CVPR 2025</span></h4>
+                <div class="meta"><span>📄 2504.00665</span><span>📅 2025-04</span></div>
+                <p>单目+可泛化 talking head。深度+对称先验补全几何与外观，两阶段可见/不可见区域参数预测。</p>
+                <a href="https://arxiv.org/abs/2504.00665">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>26. Audio-Plane</h4>
+                <div class="meta"><span>📄 2503.22605</span><span>📅 2025-03</span></div>
+                <p>4D 体积分解为空间平面 + 音频平面，audio-guided saliency splatting 强化嘴部动态。紧凑可解释。</p>
+                <a href="https://arxiv.org/abs/2503.22605">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>27. GaussianEmoTalker</h4>
+                <div class="meta"><span>📄 2607.00959</span><span>📅 2026-07</span></div>
+                <p>实时情绪 talking head。GaussianBlendshapes 构建中性空间 + 残差形变预测情绪，spatial-audio-emotion attention。</p>
+                <a href="https://arxiv.org/abs/2607.00959">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>28. EmbedTalk <span class="tag">Triplane-Free</span></h4>
+                <div class="meta"><span>📄 2603.07604</span><span>📅 2026-03</span></div>
+                <p>用学习 embedding 替代 tri-plane 编码，移动 GPU (RTX 2060 6GB) 60+ FPS，质量超 3DGS 基线。</p>
+                <a href="https://arxiv.org/abs/2603.07604">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>29. EmoDiffTalk</h4>
+                <div class="meta"><span>📄 2512.05991</span><span>📅 2025-12</span></div>
+                <p>情绪感知 Gaussian Diffusion + AU 提示 + text-to-AU 控制器，多模态可编辑情绪 talking head。</p>
+                <a href="https://arxiv.org/abs/2512.05991">📄 arXiv</a>
+            </div>
+            <div class="note-card">
+                <h4>30. Splat-Portrait</h4>
+                <div class="meta"><span>📄 2601.18633</span><span>📅 2026-01</span></div>
+                <p>单肖像 → 3DGS + 2D 背景，audio-driven 唇动，无需 3D 监督或 landmark，纯 score-distillation。</p>
+                <a href="https://arxiv.org/abs/2601.18633">📄 arXiv</a>
+            </div>
+        </div>
+        <p style="font-size:0.85em; color:var(--text-dim);">其他：EGSTalker (KAN, SMC 2025)、PGSTalker (pixel-aware, ICONIP 2025)、GaussianHeadTalk (3DMM-mapped, WACV 2026)、ESGaussianFace (情绪+风格, TVCG 2026)、EmoZone-Talker (AU 区域控制)、SDTalk (one-shot 泛化)、FG-3DGS (频率解耦)、RSATalker (社交感知)。</p>
+    </div>
+
+    <!-- 全身表达 -->
+    <div class="section">
+        <h2>🕺 四、全身表达 (Full-Body Expressive: 身体+脸+手)</h2>
+
+        <div class="note-card pick">
+            <h4>31. EVA: Expressive Virtual Avatars <span class="tag green">SIGGRAPH 2025</span> <span class="tag">推荐精读</span></h4>
+            <div class="meta"><span>📄 arXiv: 2505.15385</span><span>📅 2025-05</span><span>🏢 MPI</span></div>
+            <div class="tags"><span class="tag green">Decoupled Body+Face</span><span class="tag">Real-time</span><span class="tag">Multi-view</span></div>
+            <p>两层模型：表达性 template 几何层 + 3D 高斯外观层。<strong>解耦建模身体与脸部</strong>用两个独立模块，从粗到精恢复身体/表情/非刚性形变。SOTA 渲染质量与表达力，是全身数字人的<strong>当前标杆</strong>。</p>
+            <a href="https://arxiv.org/abs/2505.15385">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>32. TaoAvatar <span class="tag green">CVPR 2025 Highlight</span></h4>
+            <div class="meta"><span>📄 arXiv: 2503.17032</span><span>📅 2025-03</span></div>
+            <div class="tags"><span class="tag green">Apple Vision Pro</span><span class="tag">90 FPS</span><span class="tag">Mobile</span></div>
+            <p>面向 AR 的全身 talking avatar。StyleUnet 预训练非刚性形变 → 蒸馏到轻量 MLP + blendshape 补偿。<strong>Apple Vision Pro 上 90 FPS</strong>，移动端实时。</p>
+            <a href="https://arxiv.org/abs/2503.17032">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>33. DEGAS: Detailed Expressions on Full-Body Gaussian Avatars</h4>
+            <div class="meta"><span>📄 arXiv: 2408.10588</span><span>📅 2024-08</span></div>
+            <p>全身高斯 + 细致表情，face+body 联合表达早期工作。</p>
+            <a href="https://arxiv.org/abs/2408.10588">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>34. F3G-Avatar: Face Focused Full-body Gaussian <span class="tag green">CVPRW 3DMV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2604.09835</span><span>📅 2026-04</span></div>
+            <p>专攻全身 avatar 中<strong>脸部细节不足</strong>问题。双分支：身体分支 + 脸部精化分支，face-specific 对抗损失。AvatarReX 上脸部 PSNR 26.24。</p>
+            <a href="https://arxiv.org/abs/2604.09835">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>35. InteractAvatar: Hand-Face Interaction</h4>
+            <div class="meta"><span>📄 arXiv: 2504.07949</span><span>📅 2025-04</span></div>
+            <p>首个忠实建模<strong>手脸交互</strong>的 photorealistic avatar。Dynamic Gaussian Hand + 手脸交互模块捕捉微妙几何与外观。</p>
+            <a href="https://arxiv.org/abs/2504.07949">📄 arXiv</a>
+        </div>
+    </div>
+
+    <!-- 远程在场 -->
+    <div class="section">
+        <h2>📡 五、远程在场与实时交互 (Telepresence)</h2>
+
+        <div class="note-card pick">
+            <h4>36. Mon3tr: Monocular 3D Telepresence <span class="tag green">推荐精读</span></h4>
+            <div class="meta"><span>📄 arXiv: 2601.07518</span><span>📅 2026-01</span></div>
+            <div class="tags"><span class="tag green">~80 ms latency</span><span class="tag green">&lt;0.2 Mbps</span><span class="tag">Meta Quest 3</span></div>
+            <p>首个把 3DGS 参数化人体引入 telepresence。离线多目建 avatar + 在线单目推理驱动。WebRTC 数据通道传输 &lt;0.2 Mbps，Meta Quest 3 上 ~60 FPS 渲染，<strong>端到端 ~80 ms</strong>。比点云流带宽降 1000×。</p>
+            <a href="https://arxiv.org/abs/2601.07518">📄 arXiv</a>
+        </div>
+
+        <div class="note-card">
+            <h4>37. ICo3D: Interactive Conversational 3D Virtual Human <span class="tag green">IJCV 2026</span></h4>
+            <div class="meta"><span>📄 arXiv: 2601.13148</span><span>📅 2026-01</span></div>
+            <p>SWinGS++ (身体) + HeadGaS++ (脸) 双高斯模型 + LLM 对话 + 音频驱动唇动。完整虚拟人交互系统。</p>
+            <a href="https://arxiv.org/abs/2601.13148">📄 arXiv</a>
+        </div>
+    </div>
+
+    <!-- 对比表 -->
+    <div class="section">
+        <h2>📊 关键技术对比</h2>
+        <h3>人体重建方法对比</h3>
+        <table>
+            <tr><th>方法</th><th>输入</th><th>范式</th><th>速度</th><th>身体模型</th><th>特色</th></tr>
+            <tr><td><b>HUGS</b></td><td>单目视频</td><td>优化</td><td>60 FPS</td><td>SMPL</td><td>开山, 联合 LBS</td></tr>
+            <tr><td>HuGS</td><td>多目</td><td>优化</td><td>80 FPS</td><td>forward skinning</td><td>coarse-to-fine</td></tr>
+            <tr><td>DAMA</td><td>多目</td><td>优化</td><td>—</td><td>SMPL-X</td><td>多层衣物</td></tr>
+            <tr><td><b>LHM</b></td><td>单图</td><td>前馈</td><td>秒级</td><td>—</td><td>LRM for human</td></tr>
+            <tr><td>AdaHuman</td><td>单图</td><td>前馈+扩散</td><td>—</td><td>—</td><td>多视角扩散</td></tr>
+            <tr><td>GUAVA</td><td>单图</td><td>前馈</td><td>0.1s</td><td>EHM</td><td>上半身</td></tr>
+            <tr><td>DLA</td><td>单图</td><td>前馈+扩散</td><td>—</td><td>UV-space</td><td>video diffusion</td></tr>
+            <tr><td><b>MPMAvatar</b></td><td>多目</td><td>物理仿真</td><td>—</td><td>—</td><td>MPM, 零样本泛化</td></tr>
+            <tr><td>RnD-Avatar</td><td>单目</td><td>优化</td><td>—</td><td>dynamic skin</td><td>可重光照</td></tr>
+            <tr><td><b>LUNA</b></td><td>2D 控制</td><td>前馈</td><td>—</td><td>LBS-free</td><td>跨身份零样本</td></tr>
+        </table>
+
+        <h3>人脸/头部方法对比</h3>
+        <table>
+            <tr><th>方法</th><th>输入</th><th>面部模型</th><th>音频驱动</th><th>特色</th></tr>
+            <tr><td><b>GaussianAvatars</b></td><td>多目视频</td><td>FLAME</td><td>❌</td><td>开山, triangle-local</td></tr>
+            <tr><td>HeadStudio</td><td>文本</td><td>FLAME</td><td>✅</td><td>text-to-avatar</td></tr>
+            <tr><td>FastAvatar</td><td>单图</td><td>FLAME</td><td>✅</td><td>3 秒, 600× 快</td></tr>
+            <tr><td>CompHairHead</td><td>单图</td><td>FLAME+cage</td><td>❌</td><td>头发 PBD 仿真</td></tr>
+            <tr><td><b>GaussianSpeech</b></td><td>多目+音频</td><td>3DGS</td><td>✅</td><td>皱纹细节, 数据集</td></tr>
+            <tr><td>SyncTalk++</td><td>视频+音频</td><td>blendshape</td><td>✅</td><td>101 FPS, 四同步</td></tr>
+            <tr><td>EmoTaG</td><td>few-shot</td><td>FLAME</td><td>✅</td><td>情绪, CVPR 2026</td></tr>
+        </table>
+    </div>
+
+    <!-- 演进时间线 -->
+    <div class="section">
+        <h2>🔄 技术演进时间线 (2023-2026)</h2>
+        <table>
+            <tr><th>时间</th><th>方法</th><th>里程碑</th><th>子方向</th></tr>
+            <tr><td>2023-11</td><td>HUGS / HuGS</td><td>3DGS 人体化开山, SMPL+高斯</td><td>人体-优化</td></tr>
+            <tr><td>2023-12</td><td>GaussianAvatars</td><td>FLAME+高斯头部 avatar 开山</td><td>人脸</td></tr>
+            <tr><td>2024-02</td><td>HeadStudio</td><td>文本→可动画头部</td><td>人脸</td></tr>
+            <tr><td>2024-08</td><td>DEGAS</td><td>全身+细致表情</td><td>全身表达</td></tr>
+            <tr><td>2024-11</td><td>GaussianSpeech</td><td>音频驱动头部 SOTA 基线</td><td>Talking Head</td></tr>
+            <tr><td>2025-02</td><td>EmoTalkingGaussian</td><td>连续情绪控制</td><td>Talking Head</td></tr>
+            <tr><td>2025-03</td><td><b>LHM</b></td><td>单图秒级前馈人体</td><td>人体-前馈</td></tr>
+            <tr><td>2025-03</td><td>TaoAvatar</td><td>CVPR Highlight, Vision Pro 90 FPS</td><td>全身</td></tr>
+            <tr><td>2025-05</td><td><b>EVA</b></td><td>SIGGRAPH, 解耦身体+脸</td><td>全身表达</td></tr>
+            <tr><td>2025-05</td><td>AdaHuman / GUAVA</td><td>单图前馈+扩散</td><td>人体-前馈</td></tr>
+            <tr><td>2025-06</td><td>SyncTalk++</td><td>101 FPS 四同步</td><td>Talking Head</td></tr>
+            <tr><td>2025-10</td><td><b>MPMAvatar</b></td><td>NeurIPS, MPM 物理仿真</td><td>人体-物理</td></tr>
+            <tr><td>2025-12</td><td>RnD-Avatar</td><td>可重光照+动态</td><td>人体</td></tr>
+            <tr><td>2026-01</td><td><b>Mon3tr</b></td><td>单目 telepresence, 80ms</td><td>远程在场</td></tr>
+            <tr><td>2026-03</td><td>EmoTaG</td><td>CVPR 2026, few-shot 情绪</td><td>Talking Head</td></tr>
+            <tr><td>2026-05</td><td>DAMA</td><td>多层可叠衣物</td><td>人体-优化</td></tr>
+            <tr><td>2026-06</td><td><b>LUNA</b></td><td>ECCV 2026, LBS-free 跨身份</td><td>人体-前馈</td></tr>
+        </table>
+    </div>
+
+    <!-- 演进趋势 -->
+    <div class="section">
+        <h2>📈 关键演进趋势</h2>
+        <ul>
+            <li><strong>从优化到前馈：</strong>2023 HUGS/HuGS（30 分钟优化）→ 2025 LHM/GUAVA（单图秒级/亚秒级）。类比 3D 重建领域 LRM 路线，人体版"LRM 时刻"正在发生。</li>
+            <li><strong>从静态到动态到物理：</strong>静态 avatar → 动态形变 → MPMAvatar 用 MPM 仿真器实现物理可信的衣物动力学与零样本交互泛化。</li>
+            <li><strong>从单身份到跨身份泛化：</strong>per-subject 训练 → LUNA/DLA/MGGTalk 支持零样本跨身份，降低部署成本。</li>
+            <li><strong>从身体到全身表达：</strong>仅身体 → 身体+脸 (EVA, F3G-Avatar) → 身体+脸+手 (InteractAvatar) → 手脸交互细节。</li>
+            <li><strong>从渲染到交互：</strong>被动渲染 → 音频驱动 talking → 情绪可控 → telepresence 实时双向 (Mon3tr, ICo3D)。</li>
+            <li><strong>从 LBS 到去参数化：</strong>SMPL+LBS 是主流，但 LUNA 探索 LBS-free 直接 2D→3D 高斯形变，是值得关注的新方向。</li>
+            <li><strong>从不可重光照到可重光照：</strong>RnD-Avatar 首次在 3DGS 人体上实现可重光照，拓展 AR/VR 应用。</li>
+            <li><strong>Talking Head 爆发：</strong>2024-2026 涌现 15+ 篇，焦点从唇同步 → 情绪 → 风格 → 跨身份 → 实时移动端。</li>
+        </ul>
+    </div>
+
+    <!-- 精读建议 -->
+    <div class="section">
+        <h2>🎯 个人分析与精读优先级建议</h2>
+        <p>基于<strong>代表性 / 影响力 / 方向覆盖</strong>三个维度，建议按以下优先级深读。每篇标注的 <code>P0/P1/P2</code> 表示推荐精读强度（P0=必读，P1=强烈推荐，P2=选读）。</p>
+
+        <h3>P0 — 必读（奠基 + 当前 SOTA + 范式转移）</h3>
+        <table>
+            <tr><th>论文</th><th>arXiv</th><th>理由</th></tr>
+            <tr><td><b>HUGS</b></td><td>2311.17910</td><td>3DGS 人体化开山，奠定 SMPL+高斯+LBS 范式，后续工作几乎都引用对比</td></tr>
+            <tr><td><b>GaussianAvatars</b></td><td>2312.02069</td><td>FLAME+高斯头部开山，triangle-local 坐标参数化被广泛沿用</td></tr>
+            <tr><td><b>LHM</b></td><td>2503.10625</td><td>单图秒级前馈人体，"LRM for human" 范式转移标志</td></tr>
+            <tr><td><b>EVA</b></td><td>2505.15385</td><td>SIGGRAPH 2025，全身解耦表达当前标杆，工业级多目方案</td></tr>
+            <tr><td><b>MPMAvatar</b></td><td>2510.01619</td><td>NeurIPS 2025，唯一物理仿真路线，零样本泛化独此一家</td></tr>
+            <tr><td><b>Mon3tr</b></td><td>2601.07518</td><td>3DGS telepresence 标志性工作，端到端 80ms / &lt;0.2 Mbps</td></tr>
+        </table>
+
+        <h3>P1 — 强烈推荐（方向代表 + SOTA）</h3>
+        <table>
+            <tr><th>论文</th><th>arXiv</th><th>理由</th></tr>
+            <tr><td>GaussianSpeech</td><td>2411.18675</td><td>音频驱动头部 SOTA 基线 + 配套数据集</td></tr>
+            <tr><td>AdaHuman</td><td>2505.24877</td><td>NVIDIA 单图+多视角扩散路线代表</td></tr>
+            <tr><td>DLA</td><td>2507.15979</td><td>video diffusion + UV-space 高斯，与 AdaHuman 互补</td></tr>
+            <tr><td>TaoAvatar</td><td>2503.17032</td><td>CVPR 2025 Highlight，移动端/Vision Pro 实时落地方案</td></tr>
+            <tr><td>DAMA</td><td>2605.21001</td><td>多层衣物分离 SOTA，虚拟试衣方向</td></tr>
+            <tr><td>LUNA</td><td>2606.31981</td><td>ECCV 2026，LBS-free 去参数化新方向</td></tr>
+            <tr><td>SyncTalk++</td><td>2506.14742</td><td>talking head 四同步 + 101 FPS 工程标杆</td></tr>
+            <tr><td>EmoTaG</td><td>2603.21332</td><td>CVPR 2026，few-shot 情绪 talking head</td></tr>
+        </table>
+
+        <h3>P2 — 选读（特定子方向或延伸）</h3>
+        <ul>
+            <li><strong>FastAvatar</strong> (2508.18389)：单图 3 秒人脸，速度极致</li>
+            <li><strong>CompHairHead</strong> (2604.14782)：头发 PBD 仿真，若关注 hair</li>
+            <li><strong>RnD-Avatar</strong> (2512.09335)：可重光照方向</li>
+            <li><strong>InteractAvatar</strong> (2504.07949)：手脸交互，若关注 gesture</li>
+            <li><strong>CLOTH-HUGS / Gaussian Wardrobe</strong>：虚拟试衣专题</li>
+            <li><strong>JOintGS</strong> (2602.04317)：in-the-wild 单目，若关注鲁棒性</li>
+            <li>Talking Head 其余：按情绪/风格/移动端需求选读</li>
+        </ul>
+
+        <div class="highlight">
+            <strong>我的精读路线建议：</strong>先读 <b>HUGS + GaussianAvatars</b>（建立范式地基）→ 读 <b>LHM + EVA</b>（理解前馈与解耦两条主线）→ 读 <b>MPMAvatar + Mon3tr</b>（看物理与 telepresence 两个前沿）→ 按兴趣选 P1。这样能在 6 篇 P0 内建立完整图景，再按需展开。
+        </div>
+        <div class="highlight warn">
+            <strong>未覆盖提醒：</strong>本次调研基于 arXiv 搜索，可能遗漏：(1) 2024 年的 <em>GaussianBody / SplattingAvatar / GauHuman / D3GA</em> 等早期工作（搜索结果偏新）；(2) 一些只用项目主页/会议发表、未上 arXiv 的工作；(3) NeRF-based avatar 前作（PIRenderer / Animatable NeRF / HumanNeRF）。若要完整脉络，建议补读这些 2024 年早期 Gaussian 人体工作。
+        </div>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源与检索入口</h2>
+        <ul>
+            <li><a href="https://arxiv.org/search/?searchtype=all&query=3D+Gaussian+human+body+avatar">arXiv 检索: 3D Gaussian human body avatar</a>（本次主搜索，48 篇）</li>
+            <li><a href="https://arxiv.org/search/?searchtype=all&query=talking+head+3D+Gaussian+splatting">arXiv 检索: talking head 3D Gaussian</a>（26 篇）</li>
+            <li><a href="https://arxiv.org/search/?searchtype=all&query=Gaussian+head+avatar+FLAME+face">arXiv 检索: Gaussian head FLAME</a>（4 篇）</li>
+            <li>知识库内相关笔记：<a href="3D-20230808-3DGS-Survey.html">3DGS 基础与改进综述</a> · <a href="3D-20230818-4D-Dynamic-Gaussians.html">4D 动态高斯</a> · <a href="3D-20230922-Deformable-3DGS.html">Deformable 3DGS</a> · <a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20250717-Pi3.html">π³</a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 高斯人物与人脸重建研究现状调研 · 2026-07-20 · 覆盖 40+ 篇核心论文 · 供精读决策参考
+</div>
+
+</body>
+</html>
