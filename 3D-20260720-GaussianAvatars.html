@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians — FLAME+高斯头部 avatar 开山之作</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #76b900; --accent-dim: #5a8f00; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; --warn: #d29922; --red: #f85149; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section h4 { color: var(--accent); font-size: 1em; margin: 12px 0 6px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+        .stat { flex: 1; min-width: 120px; text-align: center; background: rgba(118, 185, 0, 0.08); border: 1px solid rgba(118, 185, 0, 0.25); border-radius: 8px; padding: 14px 8px; }
+        .stat .num { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .stat .label { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+        .verdict { background: linear-gradient(135deg, rgba(118, 185, 0, 0.1), rgba(118, 185, 0, 0.05)); border: 1px solid rgba(118, 185, 0, 0.3); }
+        .verdict h2 { color: var(--accent); }
+        .warn { color: #d29922; }
+        pre.ascii { background: var(--code-bg); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.82em; color: var(--text-dim); line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2312.02069</span>
+        <span>📅 2023-12-04 (v2: 2024-03-28)</span>
+        <span>🏢 TU Munich (Nießner 组)</span>
+        <span>🏆 SIGGRAPH 2024</span>
+        <span>✅ 开源</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 论文概要 -->
+    <div class="section">
+        <h2>📋 论文概要</h2>
+        <div class="tags">
+            <span class="tag green">3D Gaussian Splatting</span>
+            <span class="tag green">Head Avatar</span>
+            <span class="tag green">FLAME</span>
+            <span class="tag">Rigged Gaussians</span>
+            <span class="tag">Triangle-local Frame</span>
+            <span class="tag">Binding Inheritance</span>
+            <span class="tag">Multi-view Video</span>
+            <span class="tag">Expression Transfer</span>
+        </div>
+        <p>现有头部 avatar 方法要么渲染不真实（NeRF 低频偏置），要么不可控（动态 3DGS 缺乏动画接口）。GaussianAvatars 由 TU Munich Nießner 组提出，核心创新是<strong>把 3D 高斯绑定到 FLAME mesh 的三角面上</strong>，让高斯随 FLAME 形变而动，实现"可渲染 + 可控动画"的统一。</p>
+        <div class="highlight">
+            <strong>核心贡献：</strong>
+            <ol style="margin-top:6px;">
+                <li>把 3D 高斯 splat 绑定到参数化人脸模型 (FLAME) 的三角面，实现 photorealistic 渲染 + 精确动画控制</li>
+                <li>设计 <strong>Binding Inheritance</strong> 策略，在自适应密度控制（加/删高斯）时保持绑定关系不丢失</li>
+                <li>位置/缩放正则化（带阈值），抑制新表情/姿态下的 spike/blob 伪影</li>
+                <li>端到端联合优化 FLAME 参数 + 高斯参数，reconstruction 与 reenactment 全面超越 SOTA</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 关键数据 -->
+    <div class="section">
+        <h2>📊 关键数据</h2>
+        <div class="stat-row">
+            <div class="stat"><div class="num">31.6</div><div class="label">NeRSemble 新视角 PSNR ↑</div></div>
+            <div class="stat"><div class="num">0.065</div><div class="label">NeRSemble 新视角 LPIPS ↓</div></div>
+            <div class="stat"><div class="num">9</div><div class="label">受试者 (subjects)</div></div>
+        </div>
+        <div class="stat-row">
+            <div class="stat"><div class="num">16</div><div class="label">多视角相机数</div></div>
+            <div class="stat"><div class="num">600k</div><div class="label">训练迭代次数</div></div>
+            <div class="stat"><div class="num">~10×</div><div class="label">高斯数量增长 (初始→收敛)</div></div>
+        </div>
+        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">NeRSemble 数据集 9 个 subject，每个 11 个序列、16 视角。Novel-view synthesis PSNR 31.6（vs INSTA 26.7 / PointAvatar 25.8），LPIPS 0.065（vs 0.122 / 0.097）。Self-reenactment LPIPS 0.076 也大幅领先。</p>
+    </div>
+
+    <!-- 核心问题与动机 -->
+    <div class="section">
+        <h2>🎯 核心问题与动机</h2>
+        <h3>问题：渲染真实感 vs 动画可控性的矛盾</h3>
+        <ul>
+            <li><strong>NeRF 系列：</strong>渲染真实感好，但坐标 MLP 有低频偏置，难以捕捉高频细节（皱纹、头发、牙齿）；且缺乏显式动画接口，对新表情/姿态泛化差</li>
+            <li><strong>动态 3DGS：</strong>渲染质量高且实时，但跨时间步的显式对应只做"回放"，<strong>不能动画</strong></li>
+            <li><strong>INSTA (FLAME+InstantNGP)：</strong>用最近三角面 warp 到 canonical 空间，但每帧"最近"可能变化 → 不一致 → FLAME tracking 不准时误差难修正</li>
+        </ul>
+        <h3>动机：建立高斯与三角面的<strong>一致绑定</strong></h3>
+        <div class="highlight">
+            <strong>关键洞察：</strong>FLAME mesh 跨帧<strong>拓扑不变</strong>（顶点位置变但三角形连接不变）。利用这点，可以建立 3D 高斯与三角形的<strong>持久绑定</strong> —— 高斯在局部坐标系中静态，在全局坐标系中随三角形移动。这比 INSTA "每帧找最近三角形" 更一致、更稳定。
+        </div>
+    </div>
+
+    <!-- 模型架构 -->
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <p>GaussianAvatars 的核心是<strong>3D Gaussian Rigging + Binding Inheritance + 正则化</strong>。</p>
+        <pre class="ascii">┌─────────────────────────────────────────────────────────────────────┐
+│                    GaussianAvatars Pipeline                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  输入: 多视角视频 (NeRSemble 16 视角)                                │
+│      │                                                              │
+│      ▼                                                              │
+│  [FLAME Tracking] 多视角光度头部追踪                                │
+│    每帧得到: shape β, translation t, pose θ, expression ψ, offset Δv │
+│      │                                                              │
+│      ▼                                                              │
+│  [3D Gaussian Rigging]                                              │
+│    • 每个 FLAME 三角形 ↔ 一个 3D 高斯                                │
+│    • 局部坐标系: 原点 T (三角形顶点均值)                            │
+│                  旋转 R (边方向 + 法向 + 叉积)                      │
+│                  缩放 k (边长均值)                                  │
+│    • 高斯局部属性: 位置 μ, 旋转 r, 缩放 s (局部空间定义)            │
+│    • 渲染时变换到全局空间:                                          │
+│        r' = R·r                                                     │
+│        μ' = k·R·μ + T                                              │
+│        s' = k·s                                                     │
+│      │                                                              │
+│      ▼                                                              │
+│  [Binding Inheritance] 自适应密度控制                              │
+│    • 梯度大的高斯: 大→split, 小→clone                              │
+│    • 新高斯继承父高斯的三角形绑定                                   │
+│    • 每个高斯额外存储 parent triangle index                         │
+│    • 保证每个三角形至少有 1 个高斯 (防 eyeball 过度剪枝)            │
+│      │                                                              │
+│      ▼                                                              │
+│  [可微渲染] 3DGS tile rasterizer                                    │
+│      │                                                              │
+│      ▼                                                              │
+│  [损失函数]                                                         │
+│    L = L_rgb + λ_pos · L_position + λ_scale · L_scaling            │
+│    L_rgb = (1-λ)·L1 + λ·L_D-SSIM   (λ=0.2)                        │
+│    L_position = ‖max(μ, ε_pos)‖₂   (ε_pos=1, 阈值容忍小偏差)      │
+│    L_scaling  = ‖max(s, ε_scl)‖₂   (ε_scl=0.6, 容忍 0.6× 以内)   │
+│      │                                                              │
+│      ▼                                                              │
+│  [端到端联合优化] FLAME 参数 + 高斯参数 同时更新                    │
+│    • FLAME: lr(t)=1e-6, lr(θ)=1e-5, lr(ψ)=1e-3                    │
+│    • 高斯 position: lr=5e-3, scaling: lr=1.7e-2                    │
+│    • 600,000 迭代, 每 2000 步做一次密度控制 (10k 步起)            │
+│    • 每 60,000 步重置 opacity                                       │
+└─────────────────────────────────────────────────────────────────────┘</pre>
+
+        <h3>1. 3D Gaussian Rigging（3D 高斯绑定）</h3>
+        <p>核心设计：每个高斯的<strong>位置 μ、旋转 r、缩放 s 都在父三角形的局部坐标系中定义</strong>，渲染时变换到全局空间：</p>
+        <ul>
+            <li><strong>局部原点 T</strong>：三角形三个顶点的均值位置</li>
+            <li><strong>局部旋转 R</strong>：一条边方向向量 + 三角形法向量 + 二者叉积，组成 3×3 旋转矩阵</li>
+            <li><strong>局部缩放 k</strong>：一条边及其垂线的平均长度</li>
+            <li>高斯在局部空间初始化：μ=原点，r=单位矩阵，s=1</li>
+        </ul>
+        <div class="highlight">
+            <strong>缩放 k 的作用：</strong>位置和缩放都乘以 k，意味着小三角形上的高斯"步幅"也小。这<strong>保证了固定学习率下不同大小三角形的均匀更新速度</strong>，同时让局部参数的物理意义更清晰（相对于三角形尺度的偏移量）。
+        </div>
+
+        <h3>2. Binding Inheritance（绑定继承）</h3>
+        <p>3DGS 原版有自适应密度控制（densify + prune），但直接用到绑定场景会破坏高斯与三角形的连接。GaussianAvatars 的解决方案：</p>
+        <ul>
+            <li><strong>Split/Clone：</strong>在局部空间操作，新高斯靠近触发密度化的旧高斯 → 绑定到<strong>同一个父三角形</strong></li>
+            <li><strong>每个高斯额外存储 parent triangle index</strong>，密度化时继承</li>
+            <li><strong>保底机制：</strong>跟踪每个三角形的高斯数量，<strong>保证每个三角形至少有 1 个高斯</strong>（防止眼球等常被遮挡的区域被过度剪枝）</li>
+        </ul>
+
+        <h3>3. Optimization and Regularization（优化与正则化）</h3>
+        <h4>位置正则（带阈值）</h4>
+        <p><code>L_position = ‖max(μ, ε_position)‖₂</code>，<code>ε_position=1</code></p>
+        <p>防止高斯漂移到远离父三角形的位置（如鼻子上的高斯漂到脸颊）。阈值 1 容忍三角形尺度内的小偏差。</p>
+        <h4>缩放正则（带阈值）</h4>
+        <p><code>L_scaling = ‖max(s, ε_scaling)‖₂</code>，<code>ε_scaling=0.6</code></p>
+        <p>防止高斯比父三角形大太多 —— 大高斯在三角形小转角时会产生<strong>放大的抖动</strong>。阈值 0.6 容忍 0.6 倍三角形尺度以内不加惩罚，避免高斯过度收缩导致渲染速度退化。</p>
+        <h4>仅对可见高斯施加正则</h4>
+        <p>只对有颜色损失 <code>L_rgb</code> 的高斯施加位置/缩放正则。这保护了常被遮挡的区域（牙齿、眼球）已学到的结构。</p>
+    </div>
+
+    <!-- 损失函数 -->
+    <div class="section">
+        <h2>🎯 损失函数</h2>
+        <table>
+            <tr><th>损失项</th><th>公式</th><th>权重</th><th>作用</th></tr>
+            <tr><td>L_rgb</td><td>(1-λ)·L1 + λ·L_D-SSIM</td><td>λ=0.2</td><td>渲染重建（沿用 3DGS 原版）</td></tr>
+            <tr><td>L_position</td><td>‖max(μ, ε_pos)‖₂</td><td>λ_pos=0.01</td><td>高斯不漂离父三角形</td></tr>
+            <tr><td>L_scaling</td><td>‖max(s, ε_scl)‖₂</td><td>λ_scl=1.0</td><td>高斯不比父三角形大太多</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>FLAME 联合微调：</strong>除了高斯参数，<strong>同时微调 FLAME 的 translation / joint rotation / expression 参数</strong>（学习率 1e-6 / 1e-5 / 1e-3）。这是 GaussianAvatars 的一大优势 —— 一致绑定让梯度能稳定反传到 FLAME，修正 tracking 误差。消融证明去掉 FLAME 微调后 PSNR 从 28.8 降到 26.1。
+        </div>
+    </div>
+
+    <!-- 实验结果 -->
+    <div class="section">
+        <h2>📈 实验结果</h2>
+        <h3>NeRSemble 数据集（9 subject × 16 视角 × 11 序列）</h3>
+        <table>
+            <tr><th>方法</th><th>Novel-view PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>Self-reenact PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+            <tr><td>AvatarMAV</td><td>29.5</td><td>0.913</td><td>0.152</td><td>24.3</td><td>0.887</td><td>0.168</td></tr>
+            <tr><td>PointAvatar</td><td>25.8</td><td>0.893</td><td>0.097</td><td>23.4</td><td>0.884</td><td>0.102</td></tr>
+            <tr><td>INSTA</td><td>26.7</td><td>0.899</td><td>0.122</td><td>26.3</td><td>0.906</td><td>0.110</td></tr>
+            <tr class="pick" style="border-left:3px solid var(--accent); background:rgba(118,185,0,0.05);"><td><b>GaussianAvatars</b></td><td><b>31.6</b></td><td><b>0.938</b></td><td><b>0.065</b></td><td>26.0</td><td><b>0.910</b></td><td><b>0.076</b></td></tr>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-dim);">Novel-view synthesis 三项指标全面 SOTA，PSNR 比 INSTA 高 4.9 dB。Self-reenactment LPIPS 0.076 大幅领先（INSTA 0.110）。</p>
+    </div>
+
+    <!-- 消融实验 -->
+    <div class="section">
+        <h2>🧪 消融实验（subject #304）</h2>
+        <table>
+            <tr><th>配置</th><th>NV PSNR↑</th><th>NV LPIPS↓</th><th>SR PSNR↑</th><th>SR LPIPS↓</th><th>说明</th></tr>
+            <tr class="pick"><td><b>完整模型</b></td><td>28.8</td><td>0.098</td><td>25.1</td><td>0.101</td><td>所有组件</td></tr>
+            <tr><td>w/o ADC (密度控制)</td><td>26.8</td><td>0.206</td><td>25.1</td><td>0.183</td><td>LPIPS 暴涨，高斯不足导致模糊</td></tr>
+            <tr><td>w/o L_scaling</td><td>28.0</td><td>0.114</td><td>24.9</td><td>0.109</td><td>spike 伪影</td></tr>
+            <tr><td>w/o ε_scaling 阈值</td><td>25.0</td><td>0.195</td><td>24.1</td><td>0.176</td><td>高斯过度收缩，指标暴跌</td></tr>
+            <tr><td>w/o L_position</td><td><b>29.7</b></td><td>0.091</td><td>24.9</td><td>0.096</td><td>NV 最佳但动画时裂纹+漂浮</td></tr>
+            <tr><td>w/o ε_position 阈值</td><td>28.7</td><td>0.105</td><td>25.0</td><td>0.106</td><td>略差</td></tr>
+            <tr><td>w/o FLAME ft.</td><td>26.1</td><td>0.131</td><td>25.5</td><td>0.124</td><td>tracking 误差无法修正</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>消融结论：</strong>
+            <ul style="margin-top:6px;">
+                <li><strong>Binding Inheritance 至关重要：</strong>去掉后 LPIPS 从 0.098 暴涨到 0.206，渲染质量严重退化</li>
+                <li><strong>缩放阈值不可少：</strong>有缩放正则但无阈值，高斯全缩到无穷小，PSNR 从 28.8 跌到 25.0</li>
+                <li><strong>位置正则牺牲 NV 换动画稳定性：</strong>去掉位置正则后 NV PSNR 反升到 29.7，但动画时出现裂纹和漂浮 blob</li>
+                <li><strong>FLAME 微调带来 +2.7 PSNR：</strong>一致绑定让梯度稳定反传修正 tracking</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 与其他方法对比 -->
+    <div class="section">
+        <h2>⚖️ 与相关方法对比</h2>
+        <table>
+            <tr><th>方法</th><th>表示</th><th>动画接口</th><th>渲染速度</th><th>FLAME 绑定</th><th>新表情泛化</th></tr>
+            <tr><td><b>GaussianAvatars</b></td><td>3D 高斯 (rigged)</td><td>✅ FLAME 参数</td><td>实时</td><td>✅ 一致三角面绑定</td><td>✅ 强</td></tr>
+            <tr><td>INSTA</td><td>InstantNGP (NeRF)</td><td>✅ FLAME</td><td>快</td><td>❌ 每帧最近三角形</td><td>弱 (网格外伪影)</td></tr>
+            <tr><td>PointAvatar</td><td>点 (固定大小)</td><td>✅ 形变场</td><td>快</td><td>❌ 形变场条件</td><td>中 (点伪影)</td></tr>
+            <tr><td>AvatarMAV</td><td>体素混合</td><td>✅ 表情向量</td><td>快</td><td>❌ 表情向量条件</td><td>弱 (训练分布外差)</td></tr>
+            <tr><td>NeRF (动态)</td><td>MLP</td><td>❌ 无</td><td>慢</td><td>❌</td><td>❌</td></tr>
+        </table>
+    </div>
+
+    <!-- 核心创新点 -->
+    <div class="section">
+        <h2>⭐ 核心创新点</h2>
+        <div class="highlight"><strong>创新 1：Triangle-local 坐标系参数化</strong> — 每个高斯的位置/旋转/缩放在父三角形的局部坐标系中定义，随三角形一致形变，无需 canonical space 也无需形变 MLP。</div>
+        <div class="highlight"><strong>创新 2：Binding Inheritance</strong> — 自适应密度控制时新高斯继承父高斯的三角形绑定，让"加/删高斯"与"保持可控性"共存。</div>
+        <div class="highlight"><strong>创新 3：带阈值的位置/缩放正则</strong> — 用 max(·, ε) 阈值容忍合理范围内的偏差，避免过度收缩/漂移，同时不影响正常优化。</div>
+        <div class="highlight"><strong>创新 4：端到端 FLAME 微调</strong> — 一致绑定让光度损失梯度能稳定反传到 FLAME 参数，修正 tracking 误差。</div>
+    </div>
+
+    <!-- 局限性 -->
+    <div class="section">
+        <h2>⚠️ 局限性</h2>
+        <ul>
+            <li><strong>不可重光照：</strong>直接捕获辐射场，未解耦材质与光照，无法 relight</li>
+            <li><strong>不控制 FLAME 之外的区域：</strong>头发、配饰等无参数化模型，难以精确控制</li>
+            <li><strong>依赖 FLAME tracking 质量：</strong>虽然可微调修正，但极端遮挡/视角时仍可能失败</li>
+            <li><strong>牙齿处理：</strong>需手动给 FLAME 模板加 168 个牙齿三角形（刚性绑到头/下巴）</li>
+        </ul>
+    </div>
+
+    <!-- 与知识库相关论文的联系 -->
+    <div class="section">
+        <h2>🔗 与知识库相关论文的联系</h2>
+        <table>
+            <tr><th>角色</th><th>论文</th><th>关系</th></tr>
+            <tr><td>3DGS 基础</td><td><a href="3D-20230808-3DGS-Survey.html">3D Gaussian Splatting 综述</a></td><td>可微高斯渲染基础</td></tr>
+            <tr><td>直接后继</td><td><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> (2604.09835)</td><td>把"区域聚焦"思路从头部扩展到全身，脸部分支继承 triangle-local 思想</td></tr>
+            <tr><td>全身调研</td><td><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a></td><td>GaussianAvatars 是人脸/头部 avatar 开山之作</td></tr>
+            <tr><td>同事方案</td><td><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a></td><td>同事人脸 pipeline 本质就是 GaussianAvatars 的工程实现</td></tr>
+            <tr><td>MHR 对比</td><td><a href="3D-20260720-MHR.html">MHR</a> (2511.15586)</td><td>MHR 可替代 FLAME 作为底层参数化模型</td></tr>
+        </table>
+    </div>
+
+    <!-- 应用场景 -->
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用</th><th>场景</th><th>优势</th></tr>
+            <tr><td>表情迁移</td><td>跨身份 reenactment</td><td>FLAME 参数驱动，精确控制</td></tr>
+            <tr><td>游戏/影视</td><td>虚拟角色面部</td><td>photorealistic + 实时渲染</td></tr>
+            <tr><td>远程在场</td><td>视频会议数字分身</td><td>多视角驱动，任意视角渲染</td></tr>
+            <tr><td>AR/VR</td><td>虚拟形象</td><td>可控表情+姿态</td></tr>
+        </table>
+    </div>
+
+    <!-- 个人分析 -->
+    <div class="section">
+        <h2>🧠 个人分析</h2>
+        <ul>
+            <li><strong>开山地位：</strong>GaussianAvatars 是 3DGS 头部 avatar 的<strong>奠基之作</strong>，后续头部/全身高斯 avatar 几乎都引用并对比它。triangle-local 坐标参数化被广泛沿用。</li>
+            <li><strong>一致绑定是核心：</strong>相比 INSTA "每帧找最近三角形"，GaussianAvatars 的"持久绑定"让梯度反传稳定 → 能微调 FLAME → 修正 tracking 误差。这是一个正反馈循环。</li>
+            <li><strong>阈值正则是工程智慧：</strong>直接加位置/缩放正则会过度约束；用 max(·, ε) 容忍合理偏差，平衡了"贴合 mesh"与"表达自由度"。</li>
+            <li><strong>位置正则的 trade-off：</strong>消融显示去掉位置正则后 NV PSNR 反而更高（29.7 vs 28.8），说明正则<strong>牺牲了重建质量换取动画稳定性</strong>。这是"过拟合训练帧" vs "新表情泛化"的经典权衡。</li>
+            <li><strong>局限指引后续：</strong>不可重光照 → RnD-Avatar 补齐；头发不控制 → CompHairHead 用 PBD 仿真；全身 → HUGS/F3G-Avatar 扩展。每条局限都催生了新工作。</li>
+        </ul>
+    </div>
+
+    <!-- 结论 -->
+    <div class="section verdict">
+        <h2>🎯 结论</h2>
+        <ul>
+            <li><b>3DGS 头部 avatar 的开山之作与 SOTA</b>
+                <ul style="margin-top:8px;">
+                    <li>SIGGRAPH 2024，学术顶会认可</li>
+                    <li>Novel-view PSNR 31.6 大幅领先 INSTA/PointAvatar/AvatarMAV</li>
+                    <li>Triangle-local 参数化 + Binding Inheritance 被后续广泛沿用</li>
+                    <li>开源代码 + 项目主页齐全</li>
+                </ul>
+            </li>
+            <li><span class="warn">⚠️ 局限：</span>不可重光照、不控制 FLAME 之外区域、依赖 tracking 质量</li>
+        </ul>
+    </div>
+
+    <!-- 研究团队 -->
+    <div class="section">
+        <h2>👥 研究团队</h2>
+        <table>
+            <tr><th>作者</th><th>单位</th></tr>
+            <tr><td>Shenhan Qian (一作)</td><td>TU Munich</td></tr>
+            <tr><td>Tobias Kirschstein</td><td>TU Munich</td></tr>
+            <tr><td>Liam Schoneveld</td><td>Woven by Toyota</td></tr>
+            <tr><td>Davide Davoli</td><td>Toyota Motor Europe</td></tr>
+            <tr><td>Simon Giebenhain</td><td>TU Munich</td></tr>
+            <tr><td>Matthias Nießner (通讯)</td><td>TU Munich</td></tr>
+        </table>
+        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">Nießner 组是 3D 视觉与数字人方向顶尖团队，后续还出了 HeadStudio / GaussianHeadAvatar 等。本工作受 Toyota Motor Europe 和 Woven by Toyota 资助，以及 ERC Starting Grant Scan2CAD 支持。</p>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2312.02069" target="_blank">📄 arXiv: 2312.02069</a>
+            <a href="https://arxiv.org/html/2312.02069v2" target="_blank">🌐 arXiv HTML</a>
+            <a href="https://shenhanqian.github.io/gaussian-avatars" target="_blank">🌐 项目主页</a>
+        </div>
+        <h3 style="margin-top:20px;">知识库相关笔记</h3>
+        <ul>
+            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — 把脸部专用分支思路引入全身 pipeline</li>
+            <li><a href="3D-20260720-MHR.html">MHR</a> — 可替代 FLAME 的新一代参数化人体模型</li>
+            <li><a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> — 单图预测 MHR 参数</li>
+            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> — 全景调研</li>
+            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a> — GaussianAvatars 是人脸 pipeline 原型</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 数字人调研 · GaussianAvatars · SIGGRAPH 2024 · FLAME+高斯头部 avatar 开山之作 · 2026-07-20 整理
+</div>
+
+</body>
+</html>

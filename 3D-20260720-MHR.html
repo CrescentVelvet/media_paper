@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHR: Momentum Human Rig — Meta 新一代参数化人体模型（SMPL 升级版）</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #76b900; --accent-dim: #5a8f00; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; --warn: #d29922; --red: #f85149; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section h4 { color: var(--accent); font-size: 1em; margin: 12px 0 6px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+        .stat { flex: 1; min-width: 120px; text-align: center; background: rgba(118, 185, 0, 0.08); border: 1px solid rgba(118, 185, 0, 0.25); border-radius: 8px; padding: 14px 8px; }
+        .stat .num { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .stat .label { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+        .verdict { background: linear-gradient(135deg, rgba(118, 185, 0, 0.1), rgba(118, 185, 0, 0.05)); border: 1px solid rgba(118, 185, 0, 0.3); }
+        .verdict h2 { color: var(--accent); }
+        .warn { color: #d29922; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>MHR: Momentum Human Rig — Meta 新一代参数化人体模型</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2511.15586</span>
+        <span>📅 2025-11-19 (v3: 2025-11-24)</span>
+        <span>🏢 Meta Reality Labs (47 位作者)</span>
+        <span>✅ 开源 (industry-friendly license)</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 论文概要 -->
+    <div class="section">
+        <h2>📋 论文概要</h2>
+        <div class="tags">
+            <span class="tag green">Parametric Body Model</span>
+            <span class="tag green">Decoupled Skeleton/Shape</span>
+            <span class="tag green">Non-linear Pose Correctives</span>
+            <span class="tag">ATLAS 基础</span>
+            <span class="tag">Momentum Library</span>
+            <span class="tag">FACs Expressions</span>
+            <span class="tag">Multi-LoD</span>
+            <span class="tag">AR/VR</span>
+        </div>
+        <p>SMPL 自 2015 年提出后一直是参数化人体模型的事实标准，但存在<strong>骨架/形状耦合、表情不兼容艺术家流程、pose corrective 稠密耦合</strong>等根本局限。MHR 由 Meta Reality Labs 47 位作者联合打造，基于 ATLAS 的解耦骨架/形状范式 + Momentum 蒙皮库的现代 rig，专为 AR/VR 与图形管线设计，<strong>是 SMPL 的正式升级版</strong>。</p>
+        <div class="highlight">
+            <strong>核心贡献：</strong>
+            <ol style="margin-top:6px;">
+                <li><strong>解耦骨架与表面</strong>：骨架独立参数化，不从 mesh 回归 → 形状/骨架可独立控制</li>
+                <li><strong>稀疏非线性 pose corrective</strong>：局部 MLP + geodesic 初始化的稀疏 mask，兼顾表达力与稀疏性</li>
+                <li><strong>FACs 语义表情</strong>：72 个艺术家雕塑的 FACS 表情，兼容艺术家工作流（非数据驱动的稠密表情空间）</li>
+                <li><strong>多 LoD + 工业友好许可</strong>：6 级细节（971~73639 顶点），FBX/GLTF 导出，免费实验许可</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 关键数据 -->
+    <div class="section">
+        <h2>📊 关键数据</h2>
+        <div class="stat-row">
+            <div class="stat"><div class="num">127</div><div class="label">关节数</div></div>
+            <div class="stat"><div class="num">204</div><div class="label">pose 参数 (136 pose + 68 skel)</div></div>
+            <div class="stat"><div class="num">72</div><div class="label">FACs 表情数</div></div>
+        </div>
+        <div class="stat-row">
+            <div class="stat"><div class="num">6</div><div class="label">LoD 层级</div></div>
+            <div class="stat"><div class="num">73639</div><div class="label">最高 LoD 顶点数</div></div>
+            <div class="stat"><div class="num">600k</div><div class="label">ATLAS 训练扫描数</div></div>
+        </div>
+        <div class="stat-row">
+            <div class="stat"><div class="num">7110</div><div class="label">MHR body 身份扫描</div></div>
+            <div class="stat"><div class="num">2138</div><div class="label">head 身份扫描</div></div>
+            <div class="stat"><div class="num">3000</div><div class="label">hand 扫描</div></div>
+        </div>
+    </div>
+
+    <!-- 核心问题与动机 -->
+    <div class="section">
+        <h2>🎯 核心问题与动机</h2>
+        <h3>SMPL 系列的根本局限</h3>
+        <ul>
+            <li><strong>骨架从表面回归：</strong>SMPL 的关节位置是从 mesh 顶点加权求和得到的 → 形状和骨架耦合，改身体形状会动关节，给 keypoint fitting 带来错误相关</li>
+            <li><strong>稠密 pose corrective：</strong>SMPL 的 pose corrective 是所有关节→所有顶点的稠密映射 → 远距离的身体部分产生不想要的相关</li>
+            <li><strong>FLAME 表情不兼容艺术家：</strong>ATLAS 用 FLAME 的数据驱动稠密表情空间，但艺术家工作流偏好稀疏语义表情（FACs），且数据驱动表情空间含残余 pose 变化（如眨眼不应与 pose 相关）</li>
+            <li><strong>骨架未优化 pose corrective：</strong>ATLAS 骨架不是为叠加 pose corrective 设计的</li>
+        </ul>
+        <h3>ATLAS 的进步与不足</h3>
+        <p>ATLAS（Meta 2025）已解决部分问题：解耦骨架/形状、77 关节、稀疏非线性 pose corrective、60 万高分辨率扫描训练。但<strong>表情用 FLAME（不兼容艺术家）+ 骨架未为 corrective 优化</strong>。MHR 在 ATLAS 基础上补齐这两块。</p>
+        <div class="highlight">
+            <strong>MHR 定位：</strong>不是替代 ATLAS，而是<strong>ATLAS + 艺术家友好 + pose corrective 优化</strong>的工业级实现。MHR = ATLAS 的解耦范式 + Momentum 库的现代 rig + FACs 表情 + 工业许可。
+        </div>
+    </div>
+
+    <!-- 模型架构 -->
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <p>MHR 的形式化定义：</p>
+        <pre style="background: var(--code-bg); padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; color: var(--text-dim); line-height: 1.6;">X(β, θ) = M(X̃(βˢ, βᶠ, θ), Bᵏ(βᵏ), θ, ω)
+
+X̃(βˢ, βᶠ, θ) = X̄ + Bˢ(βˢ, S)  + Bᶠ(βᶠ, F)  + Bᵖ(θ, P)
+
+其中:
+  X    = 输出顶点 (3V 维)
+  M    = LBS 蒙皮函数 (权重 ω)
+  X̄    = 中性模板
+  Bˢ   = 身份 blendshape (系数 βˢ, 基 S)
+  Bᶠ   = 表情 blendshape (系数 βᶠ, 基 F)
+  Bᵖ   = pose corrective (pose θ, 参数 P)
+  βᵏ   = 骨架变换参数 (68 维: 肢体长度等)
+  θ    = pose 参数 (204 维: 136 pose + 68 skel)</pre>
+
+        <h3>1. Pose Parametrization（姿态参数化）</h3>
+        <h4>骨架（127 关节）</h4>
+        <ul>
+            <li>每个关节：3 平移 + 3 旋转 (XYZ Euler) + 1 均匀缩放 + 常量父偏移 + 常量预旋转</li>
+            <li>预旋转让 x 轴指向骨头方向（twist 轴），其他轴对称（如 z 轴正向后弯膝盖）</li>
+            <li>关节变换：<code>T_w = T_p × T_off × T_t × T_prerot × T_rot × T_s</code></li>
+        </ul>
+        <h4>参数映射（204 → 889 关节参数）</h4>
+        <p>204 个模型参数通过线性变换 <code>T_p</code> 映射到 127×7=889 个关节参数。这层映射带来三大能力：</p>
+        <ul>
+            <li><strong>激活自由度子集：</strong>只给想控制的关节自由度赋非零值（如肘部只允许单轴旋转）</li>
+            <li><strong>单参数→多关节：</strong>如补充 twist 关节按主关节的分数激活，缓解 LBS candy wrapper 效应</li>
+            <li><strong>多参数→单关节：</strong>如脊柱弯曲用两个重叠参数（上/下脊柱）控制</li>
+        </ul>
+        <p>204 参数拆分：<strong>136 pose 参数（每帧变）+ 68 骨架变换参数（每人固定，定义肢体长度等）</strong>。</p>
+        <h4>蒙皮</h4>
+        <ul>
+            <li>LoD 1-4：每顶点 4 关节影响</li>
+            <li>LoD 0：每顶点 8 关节影响</li>
+            <li><strong>使用艺术家定义的蒙皮权重，不进一步优化</strong>（优化权重缺乏结构和局部性，对艺术家不友好）</li>
+        </ul>
+
+        <h3>2. Facial Expressions（面部表情）</h3>
+        <div class="highlight">
+            <strong>关键设计选择：FACs 而非数据驱动</strong>
+            <ul style="margin-top:6px;">
+                <li>72 个<strong>艺术家雕塑</strong>的 FACs (Facial Action Coding System) 表情</li>
+                <li>稀疏、语义化，兼容艺术家工作流</li>
+                <li>消除数据驱动表情空间的残余 pose 变化（如眨眼不应依赖 pose）</li>
+                <li>简化与合成数据生成管线的连接</li>
+            </ul>
+        </div>
+        <p style="font-size:0.85em; color:var(--text-dim);">数据驱动表情（FLAME）优势：来自千张扫描，理论上能建模细微表情；正交空间紧凑；自动建模面部相关性。但残余 pose 变化 + 不兼容艺术家是致命问题。MHR 选 FACs 是工程务实选择。</p>
+
+        <h3>3. Identity Space（身份空间）</h3>
+        <p>身份空间控制<strong>固定骨架下的身体形状</strong>（不像 SMPL 会改肢体长度/身高）。分三个不相交的子空间：</p>
+        <table>
+            <tr><th>子空间</th><th>训练数据</th><th>成分数</th><th>说明</th></tr>
+            <tr><td>Body</td><td>7110 scans (从 13664 过滤)</td><td>20</td><td>体型/年龄/种族多样性</td></tr>
+            <tr><td>Head (skull)</td><td>2138 subjects (扩展自 Codec Avatar)</td><td>20</td><td>用 Pixel Codec Avatar 拟合中性几何</td></tr>
+            <tr><td>Hands</td><td>3000 subjects</td><td>5</td><td>手部专用扫描</td></tr>
+        </table>
+        <ul>
+            <li><strong>软掩码分区：</strong>三个子空间用软 mask 加权后分别做 PCA，避免 body/head/hand 交界处断裂</li>
+            <li><strong>镜像数据：</strong>扫描镜像后训练 → 把伪不对称压到两个特定成分并移除</li>
+            <li><strong>总身份空间 = 45 成分</strong>（20 body + 20 head + 5 hand）</li>
+        </ul>
+
+        <h3>4. Pose Correctives（姿态校正）</h3>
+        <p>这是 MHR 相比 SMPL 的核心改进之一。pose corrective <code>Bᵖ(θ, P)</code> 接收 6D 关节角，输出顶点偏移。设计哲学：<strong>稀疏 + 非线性</strong>。</p>
+        <h4>两阶段分解</h4>
+        <ul>
+            <li><strong>局部非线性：</strong>每个关节 j + 邻居 n(j) 输入轻量 MLP → c 维 embedding</li>
+            <li><strong>稀疏线性：</strong>embedding 乘权重矩阵 P_j → 顶点偏移，再用 ReLU 激活的 mask A_j 限制影响范围</li>
+        </ul>
+        <h4>稀疏 mask 初始化</h4>
+        <ul>
+            <li>顶点 i 对关节 j 的 mask 初始化为 <code>(1 - d(i,j)) · 𝟙[i ∈ seg(j)]</code></li>
+            <li>d(i,j) = 顶点 i 到关节 j 环的归一化 geodesic 距离</li>
+            <li>加 L1 正则 → 训练后 corrective 集中在关节附近</li>
+        </ul>
+        <div class="highlight">
+            <strong>对比 SMPL-X：</strong>SMPL-X 用稠密 pose corrective（所有关节→所有顶点），导致远距离相关。MHR 用<strong>局部 MLP + geodesic 稀疏 mask</strong>，既保留非线性表达力，又限制影响范围。<strong>这是 STAR（稀疏线性）+ GHUM（稠密非线性）的融合。</strong>
+        </div>
+    </div>
+
+    <!-- 评估 -->
+    <div class="section">
+        <h2>📊 评估结果</h2>
+        <h3>3DBodyTex 拟合实验</h3>
+        <p>在 3DBodyTex（100 男 + 100 女，每人 2 个姿态）上优化 body shape + pose 参数，最小化 scan→model 点到面距离 + 关键点距离，Adam 2500 迭代 lr=0.01。</p>
+        <table>
+            <tr><th>附加成分数</th><th>SMPL (mm)</th><th>SMPL-X (mm)</th><th>MHR (mm)</th></tr>
+            <tr><td>2</td><td>~4.8</td><td>~4.6</td><td>~4.4</td></tr>
+            <tr><td>4</td><td>~4.6</td><td>~4.4</td><td>~4.1</td></tr>
+            <tr><td>8</td><td>~4.4</td><td>~4.2</td><td>~3.9</td></tr>
+            <tr><td>16</td><td>~4.3</td><td>~4.1</td><td>~3.8</td></tr>
+            <tr><td>44</td><td>~4.2</td><td>~4.0</td><td>~3.7</td></tr>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-dim);">MHR 在所有成分数下拟合误差均低于 SMPL/SMPL-X（注：SMPL/SMPL-X 额外加 3 个成分以对齐 MHR 的额外 pose 成分）。定性上 MHR 在肘/膝等关节 extremities 和肩膀处贴合更好。</p>
+    </div>
+
+    <!-- 与 SMPL 对比 -->
+    <div class="section">
+        <h2>⚖️ 与 SMPL/SMPL-X/ATLAS 对比</h2>
+        <table>
+            <tr><th>维度</th><th>SMPL</th><th>SMPL-X</th><th>ATLAS</th><th><b>MHR</b></th></tr>
+            <tr><td>骨架来源</td><td>从 mesh 回归</td><td>从 mesh 回归</td><td>解耦</td><td><b>解耦</b></td></tr>
+            <tr><td>关节数</td><td>24</td><td>~55</td><td>77</td><td><b>127</b></td></tr>
+            <tr><td>pose corrective</td><td>稠密线性</td><td>稠密线性</td><td>稀疏非线性</td><td><b>稀疏非线性</b></td></tr>
+            <tr><td>表情模型</td><td>无</td><td>FLAME (数据驱动)</td><td>FLAME</td><td><b>FACs (艺术家雕塑)</b></td></tr>
+            <tr><td>身份空间</td><td>耦合骨架</td><td>耦合骨架</td><td>解耦</td><td><b>解耦 + 分区(body/head/hand)</b></td></tr>
+            <tr><td>LoD</td><td>1</td><td>1</td><td>多</td><td><b>6 (971~73639 顶点)</b></td></tr>
+            <tr><td>训练扫描</td><td>~数千</td><td>~数千</td><td>600k</td><td><b>7110 body + 2138 head + 3000 hand</b></td></tr>
+            <tr><td>许可</td><td>研究用</td><td>研究用</td><td>受限</td><td><b>工业友好 (免费实验)</b></td></tr>
+            <tr><td>工具链</td><td>Python</td><td>Python</td><td>—</td><td><b>Momentum (C++/Python, FBX/GLTF)</b></td></tr>
+        </table>
+    </div>
+
+    <!-- 核心创新点 -->
+    <div class="section">
+        <h2>⭐ 核心创新点</h2>
+        <div class="highlight"><strong>创新 1：解耦骨架/形状 + 127 关节</strong> — 骨架独立参数化，不从 mesh 回归，形状/骨架可独立控制。68 个骨架变换参数定义肢体长度等固定属性。</div>
+        <div class="highlight"><strong>创新 2：稀疏非线性 pose corrective</strong> — 局部 MLP + geodesic 稀疏 mask，融合 STAR（稀疏线性）与 GHUM（稠密非线性）的优势，避免远距离相关。</div>
+        <div class="highlight"><strong>创新 3：FACs 语义表情</strong> — 72 个艺术家雕塑表情，兼容艺术家工作流，消除数据驱动表情的残余 pose 变化。</div>
+        <div class="highlight"><strong>创新 4：分区身份空间</strong> — body/head/hand 三个子空间分别 PCA，用软 mask 平滑过渡，各部位可用专用高质量数据集。</div>
+        <div class="highlight"><strong>创新 5：工业级工程化</strong> — 6 级 LoD、Momentum 库 (C++/Python)、FBX/GLTF 导出、工业友好许可，专为 AR/VR 与图形管线设计。</div>
+    </div>
+
+    <!-- 未来方向 -->
+    <div class="section">
+        <h2>🔮 未来方向（论文自述）</h2>
+        <ul>
+            <li><strong>眼球几何：</strong>当前不含显式眼球（不像 SMPL-X/FLAME），计划未来添加</li>
+            <li><strong>口腔系统：</strong>计划加牙齿+舌头的显式 mouth system</li>
+            <li><strong>shape-dependent corrective：</strong>pose corrective 当前独立于 body shape，计划条件化</li>
+            <li><strong>软组织/衣物：</strong>集成 soft-tissue 与 clothing 模型</li>
+            <li><strong>实时 AR/VR 部署：</strong>实时优化与部署管线</li>
+            <li><strong>风格化角色：</strong>扩展到 stylized characters</li>
+        </ul>
+    </div>
+
+    <!-- 与知识库相关论文的联系 -->
+    <div class="section">
+        <h2>🔗 与知识库相关论文的联系</h2>
+        <table>
+            <tr><th>角色</th><th>论文</th><th>关系</th></tr>
+            <tr><td>直接使用者</td><td><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> (2604.09835)</td><td>首个把 MHR 集成到 3DGS 全身数字人的工作</td></tr>
+            <tr><td>HMR 工具</td><td><a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> (2602.15989)</td><td>单图预测 MHR 参数的模型（MHR 界的 HMR）</td></tr>
+            <tr><td>可替代模型</td><td><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> (2312.02069)</td><td>用 FLAME；MHR 可替代 FLAME 作为底层参数化模型</td></tr>
+            <tr><td>全身调研</td><td><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a></td><td>MHR 是 SMPL 升级版的代表</td></tr>
+            <tr><td>同事方案</td><td><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a></td><td>同事用 MHR 替代 SMPL，MHR 是"换模型"依据</td></tr>
+        </table>
+    </div>
+
+    <!-- 个人分析 -->
+    <div class="section">
+        <h2>🧠 个人分析</h2>
+        <ul>
+            <li><strong>SMPL 的正式继承者：</strong>SMPL 自 2015 年统治了 10 年，但骨架/形状耦合是设计债。MHR 用 ATLAS 的解耦范式 + 工业级工程化，是 Meta 给行业的<strong>正式升级方案</strong>。47 位作者体现了这是组织级投入，不是小团队研究。</li>
+            <li><strong>FACs vs FLAME 的取舍是关键：</strong>数据驱动表情（FLAME）理论上更细，但<strong>残余 pose 变化 + 不兼容艺术家</strong>是工程硬伤。MHR 选 FACs 是务实 —— 牺牲理论极致换工程落地。这也意味着 MHR 更适合生产管线而非学术 SOTA 刷榜。</li>
+            <li><strong>稀疏非线性 pose corrective 是技术亮点：</strong>STAR 太稀疏（线性），GHUM 太稠密（非线性耦合）。MHR 用"局部 MLP + geodesic mask"走中间路线，既有表达力又限制相关，是正确的工程折中。</li>
+            <li><strong>分区身份空间是好设计：</strong>body/head/hand 各自用专用高质量数据集，软 mask 平滑过渡。这比 SMPL 的统一 PCA 更灵活，也解决了全身扫描中手/脸质量不足的问题。</li>
+            <li><strong>工业友好许可是杀手锏：</strong>SMPL 的"研究用"许可限制了工业应用。MHR 明确"免费实验"许可 + FBX/GLTF + Momentum 库，降低工业采用门槛。这可能比技术优势本身更重要。</li>
+            <li><strong>局限与风险：</strong>(1) 还很新（2025.11），社区工具链/预训练不如 SMPL 成熟；(2) 无显式眼球/口腔（SMPL-X 有）；(3) 47 作者说明这是组织工程产物，学术可复现性可能受限；(4) 3DBodyTex 评估范围有限，野外泛化未充分验证。</li>
+        </ul>
+    </div>
+
+    <!-- 结论 -->
+    <div class="section verdict">
+        <h2>🎯 结论</h2>
+        <ul>
+            <li><b>SMPL 的正式升级版，工业级参数化人体模型</b>
+                <ul style="margin-top:8px;">
+                    <li>解耦骨架/形状 + 127 关节 + 稀疏非线性 pose corrective + FACs 表情</li>
+                    <li>3DBodyTex 拟合误差低于 SMPL/SMPL-X</li>
+                    <li>6 级 LoD + Momentum 库 + FBX/GLTF + 工业友好许可</li>
+                    <li>开源，已在 F3G-Avatar 等 3DGS 数字人工作中被采用</li>
+                </ul>
+            </li>
+            <li><span class="warn">⚠️ 局限：</span>尚新、无显式眼球/口腔、社区生态待成熟</li>
+        </ul>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2511.15586" target="_blank">📄 arXiv: 2511.15586</a>
+            <a href="https://arxiv.org/html/2511.15586v3" target="_blank">🌐 arXiv HTML</a>
+            <a href="https://github.com/facebookresearch/MHR" target="_blank">💻 GitHub</a>
+        </div>
+        <h3 style="margin-top:20px;">知识库相关笔记</h3>
+        <ul>
+            <li><a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> — 单图预测 MHR 参数的 HMR 模型</li>
+            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — 首个把 MHR 集成到 3DGS 数字人的工作</li>
+            <li><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> — 用 FLAME 的头部 avatar（MHR 可替代 FLAME）</li>
+            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> — 全景调研</li>
+            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a> — MHR 是"换模型"依据</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 数字人调研 · MHR · Meta Reality Labs · SMPL 升级版 · 2026-07-20 整理
+</div>
+
+</body>
+</html>

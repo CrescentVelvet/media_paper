@@ -925,6 +925,71 @@
             <a href="https://github.com/wjmenu/F3G-avatar" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card">
+            <h3>31. GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2312.02069</span>
+                <span>📅 2023-12-04</span>
+                <span>🏢 TU Munich (Nießner 组)</span>
+                <span>🏆 SIGGRAPH 2024</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Head Avatar</span>
+                <span class="tag green">FLAME</span>
+                <span class="tag">Rigged Gaussians</span>
+                <span class="tag">Triangle-local Frame</span>
+                <span class="tag">Binding Inheritance</span>
+            </div>
+            <p>3DGS 头部 avatar <strong>开山之作</strong>。每个高斯绑定到 FLAME mesh 一个三角面，用局部坐标系参数化 + 显式 displacement offset。Binding Inheritance 策略在自适应密度控制时保持绑定关系。带阈值的位置/缩放正则化抑制动画伪影。端到端联合优化 FLAME + 高斯。NeRSemble novel-view PSNR 31.6，大幅超越 INSTA/PointAvatar/AvatarMAV。triangle-local 参数化被后续广泛沿用。</p>
+            <a href="3D-20260720-GaussianAvatars.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2312.02069" target="_blank">📄 arXiv</a>
+            <a href="https://shenhanqian.github.io/gaussian-avatars" target="_blank">🌐 项目主页</a>
+        </div>
+
+        <div class="note-card">
+            <h3>32. MHR: Momentum Human Rig — SMPL 升级版</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2511.15586</span>
+                <span>📅 2025-11-19</span>
+                <span>🏢 Meta Reality Labs (47 位作者)</span>
+                <span>✅ 开源 (工业友好许可)</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Parametric Body Model</span>
+                <span class="tag green">Decoupled Skeleton/Shape</span>
+                <span class="tag">Non-linear Pose Correctives</span>
+                <span class="tag">FACs Expressions</span>
+                <span class="tag">Multi-LoD</span>
+            </div>
+            <p>SMPL 的<strong>正式升级版</strong>。基于 ATLAS 解耦骨架/形状范式 + Momentum 蒙皮库。127 关节 + 204 pose 参数 + 72 FACS 表情 + 6 级 LoD（971~73639 顶点）。稀疏非线性 pose corrective（局部 MLP + geodesic mask）融合 STAR 与 GHUM 优势。分区身份空间（body/head/hand 各用专用数据集）。3DBodyTex 拟合误差低于 SMPL/SMPL-X。工业友好许可 + FBX/GLTF + Momentum 库。</p>
+            <a href="3D-20260720-MHR.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2511.15586" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/facebookresearch/MHR" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>33. SAM 3D Body: Robust Full-Body Human Mesh Recovery</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2602.15989</span>
+                <span>📅 2026-02-17</span>
+                <span>🏢 Meta + CMU (Jitendra Malik 组)</span>
+                <span>✅ 开源 (3DB + MHR)</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">HMR</span>
+                <span class="tag green">Single Image</span>
+                <span class="tag">MHR (首用)</span>
+                <span class="tag">Promptable</span>
+                <span class="tag">2D Keypoint / Mask Prompt</span>
+                <span class="tag">Body+Hands+Feet</span>
+            </div>
+            <p><strong>首个使用 MHR 的单图全身 HMR 模型</strong>。encoder-decoder 架构 + SAM 风格 promptable 推理（2D keypoint / mask 辅助）。多阶段标注流水线（手动 keypoint + 可微优化 + 多视角几何 + 密集检测）+ 主动数据引擎收集罕见姿态。新评测集按 pose/appearance 分类，支持细粒度分析。野外泛化 SOTA。3DB 是 MHR 界的 HMR/SMPLify，与 MHR 构成完整"模型+预测器"生态。</p>
+            <a href="3D-20260720-SAM-3D-Body.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2602.15989" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/facebookresearch/sam-3d-body" target="_blank">💻 GitHub</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -1000,7 +1065,7 @@
         <h2>📖 图像超分辨率与图像复原 (Real-ISR + HYPIR)</h2>
 
         <div class="note-card">
-            <h3>31. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>34. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -1020,7 +1085,7 @@
         </div>
 
         <div class="note-card">
-            <h3>32. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>35. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -1060,7 +1125,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-07-20 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 32 篇笔记卡片（35 篇论文总数见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-07-20 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 35 篇笔记卡片（38 篇论文总数见 knowledge-index.json）
 </div>
 
 </body>

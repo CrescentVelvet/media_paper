@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAM 3D Body: Robust Full-Body Human Mesh Recovery — 单图预测 MHR 参数的可提示 HMR 模型</title>
+    <style>
+        :root { --bg: #0f1117; --card: #1a1d27; --accent: #76b900; --accent-dim: #5a8f00; --text: #e0e0e0; --text-dim: #9a9a9a; --border: #2a2d37; --tag-bg: #252830; --code-bg: #15171f; --warn: #d29922; --red: #f85149; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section h4 { color: var(--accent); font-size: 1em; margin: 12px 0 6px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+        .stat { flex: 1; min-width: 120px; text-align: center; background: rgba(118, 185, 0, 0.08); border: 1px solid rgba(118, 185, 0, 0.25); border-radius: 8px; padding: 14px 8px; }
+        .stat .num { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .stat .label { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+        .verdict { background: linear-gradient(135deg, rgba(118, 185, 0, 0.1), rgba(118, 185, 0, 0.05)); border: 1px solid rgba(118, 185, 0, 0.3); }
+        .verdict h2 { color: var(--accent); }
+        .warn { color: #d29922; }
+        pre.ascii { background: var(--code-bg); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.82em; color: var(--text-dim); line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>SAM 3D Body: Robust Full-Body Human Mesh Recovery</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2602.15989</span>
+        <span>📅 2026-02-17</span>
+        <span>🏢 Meta + CMU (Jitendra Malik 组)</span>
+        <span>✅ 开源 (3DB + MHR)</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 论文概要 -->
+    <div class="section">
+        <h2>📋 论文概要</h2>
+        <div class="tags">
+            <span class="tag green">HMR (Human Mesh Recovery)</span>
+            <span class="tag green">Single Image</span>
+            <span class="tag green">MHR (首用)</span>
+            <span class="tag">Promptable</span>
+            <span class="tag">Encoder-Decoder</span>
+            <span class="tag">2D Keypoint Prompt</span>
+            <span class="tag">Mask Prompt</span>
+            <span class="tag">Body+Hands+Feet</span>
+            <span class="tag">In-the-wild</span>
+        </div>
+        <p>HMR (Human Mesh Recovery) 任务是从单张图像预测 3D 人体 mesh。现有方法大多基于 SMPL，泛化到野外 (in-the-wild) 困难，且不支持用户引导。SAM 3D Body (3DB) 由 Meta + CMU (Jitendra Malik 组) 提出，是<strong>首个使用 MHR 参数化模型的单图全身 HMR 模型</strong>，支持 2D keypoint / mask 可选 prompt（SAM 家族风格），在野外泛化上达到 SOTA。</p>
+        <div class="highlight">
+            <strong>核心贡献：</strong>
+            <ol style="margin-top:6px;">
+                <li><strong>首个使用 MHR 的 HMR 模型</strong>：MHR 解耦骨架/表面，比 SMPL 更适合 HMR 任务</li>
+                <li><strong>Promptable 推理</strong>：支持 2D keypoint 和 mask 作为辅助 prompt，类似 SAM 家族的交互式分割</li>
+                <li><strong>多阶段标注流水线</strong>：手动 keypoint + 可微优化 + 多视角几何 + 密集 keypoint 检测</li>
+                <li><strong>数据引擎</strong>：高效选择处理数据，确保多样性，主动收集罕见姿态和成像条件</li>
+                <li><strong>新评测数据集</strong>：按 pose 和 appearance 类别组织，支持细粒度分析</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 关键数据 -->
+    <div class="section">
+        <h2>📊 关键数据</h2>
+        <div class="stat-row">
+            <div class="stat"><div class="num">SOTA</div><div class="label">野外泛化性能</div></div>
+            <div class="stat"><div class="num">3</div><div class="label">部位 (body+hands+feet)</div></div>
+            <div class="stat"><div class="num">2</div><div class="label">prompt 类型 (kpt+mask)</div></div>
+        </div>
+        <div class="stat-row">
+            <div class="stat"><div class="num">MHR</div><div class="label">首个采用此模型</div></div>
+            <div class="stat"><div class="num">开源</div><div class="label">3DB + MHR 双开源</div></div>
+            <div class="stat"><div class="num">新数据集</div><div class="label">按 pose+appearance 分类</div></div>
+        </div>
+        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">论文报告在定性用户偏好研究和传统定量分析上均显著超越前作。具体数值指标需查阅 PDF 全文（本笔记基于 arXiv 摘要页分析）。</p>
+    </div>
+
+    <!-- 核心问题与动机 -->
+    <div class="section">
+        <h2>🎯 核心问题与动机</h2>
+        <h3>现有 HMR 的痛点</h3>
+        <ul>
+            <li><strong>SMPL 表达能力不足：</strong>SMPL 骨架从 mesh 回归 → 形状/骨架耦合 → keypoint fitting 错误相关 → 野外泛化差</li>
+            <li><strong>不可交互：</strong>传统 HMR 是黑盒，用户无法在困难样本（遮挡/罕见姿态）上引导模型</li>
+            <li><strong>数据多样性不足：</strong>现有 HMR 训练数据偏向常见姿态，对罕见姿态/成像条件泛化差</li>
+            <li><strong>评测粗放：</strong>现有 benchmark 不区分 pose 类别和 appearance 条件，难以细粒度分析模型行为</li>
+        </ul>
+        <h3>SAM 3D Body 的解题思路</h3>
+        <div class="highlight">
+            <strong>三个突破方向：</strong>
+            <ul style="margin-top:6px;">
+                <li><strong>换模型：</strong>SMPL → MHR（解耦骨架/表面，更适合 HMR）</li>
+                <li><strong>加交互：</strong>借鉴 SAM (Segment Anything Model) 的 promptable 思想，支持 2D keypoint / mask 引导</li>
+                <li><strong>造数据+造 benchmark：</strong>多阶段标注流水线 + 主动数据选择 + 按 pose/appearance 组织的评测集</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 模型架构 -->
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <pre class="ascii">┌─────────────────────────────────────────────────────────────────────┐
+│                   SAM 3D Body (3DB) Pipeline                       │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  输入: 单张图像 (in-the-wild)                                       │
+│    + [可选] 2D keypoint prompt    ─┐                                │
+│    + [可选] mask prompt           ─┤ 辅助引导 (SAM 风格)            │
+│      │                           ─┘                                │
+│      ▼                                                              │
+│  ┌──────────────────────────────────────────┐                       │
+│  │     Encoder-Decoder 架构                 │                       │
+│  │                                          │                       │
+│  │  图像 backbone → 特征提取                │                       │
+│  │  + prompt 编码 (可选)                    │                       │
+│  │  → decoder 输出 MHR 参数                 │                       │
+│  │    • body pose (136 参数)                │                       │
+│  │    • skeleton (68 参数)                  │                       │
+│  │    • body shape (βˢ)                     │                       │
+│  │    • hand shape (βʰ)                     │                       │
+│  │    • head shape (βˢˢ)                    │                       │
+│  │    • expressions (βᶠ, 72 FACS)          │                       │
+│  └──────────────────────────────────────────┘                       │
+│      │                                                              │
+│      ▼                                                              │
+│  [MHR 模型前向]                                                     │
+│    X(β, θ) = M(X̃(βˢ,βᶠ,θ), Bᵏ(βᵏ), θ, ω)                          │
+│    → 3D 全身 mesh (含 body + hands + feet)                         │
+│      │                                                              │
+│      ▼                                                              │
+│  输出: 全身 3D mesh + 关节姿态                                      │
+│                                                                     │
+│  ─────────────────────────────────────────────                      │
+│  训练数据来源 (多阶段标注流水线):                                   │
+│    • 手动 keypoint 标注                                             │
+│    • 可微优化                                                       │
+│    • 多视角几何 (triangulation)                                     │
+│    • 密集 keypoint 检测                                             │
+│                                                                     │
+│  数据引擎 (主动选择):                                               │
+│    • 高效选择处理数据 → 确保多样性                                  │
+│    • 主动收集罕见姿态 + 罕见成像条件                                │
+└─────────────────────────────────────────────────────────────────────┘</pre>
+
+        <h3>1. Encoder-Decoder 架构</h3>
+        <ul>
+            <li><strong>Encoder：</strong>图像 backbone 提取视觉特征；可选 prompt 编码（2D keypoint 坐标 / mask）</li>
+            <li><strong>Decoder：</strong>输出 MHR 的全套参数（pose + skeleton + shape + expression）</li>
+            <li><strong>MHR 前向：</strong>参数通过 MHR 模型生成 3D mesh + 关节姿态</li>
+        </ul>
+
+        <h3>2. Promptable 推理（SAM 风格）</h3>
+        <div class="highlight">
+            <strong>关键设计：</strong>借鉴 SAM (Segment Anything) 的 promptable 思想，3DB 支持两种辅助 prompt：
+            <ul style="margin-top:6px;">
+                <li><strong>2D keypoint prompt：</strong>用户提供/检测的 2D 关键点，引导模型在困难样本上聚焦</li>
+                <li><strong>Mask prompt：</strong>人体分割 mask，帮助模型处理遮挡/复杂背景</li>
+            </ul>
+            这让 3DB 不仅是黑盒预测器，而是<strong>可交互的 HMR 工具</strong> —— 用户可在困难样本上施加先验。
+        </div>
+
+        <h3>3. 多阶段标注流水线</h3>
+        <p>高质量 3D 标注是 HMR 训练的瓶颈。3DB 的标注流水线组合多种方法：</p>
+        <table>
+            <tr><th>阶段</th><th>方法</th><th>作用</th></tr>
+            <tr><td>1</td><td>手动 keypoint 标注</td><td>种子标注，提供初始监督</td></tr>
+            <tr><td>2</td><td>可微优化</td><td>从 2D 标注优化 MHR 参数</td></tr>
+            <tr><td>3</td><td>多视角几何</td><td>多视角 triangulation 得 3D 关键点</td></tr>
+            <tr><td>4</td><td>密集 keypoint 检测</td><td>自动化扩展标注规模</td></tr>
+        </table>
+
+        <h3>4. 数据引擎</h3>
+        <ul>
+            <li><strong>主动选择：</strong>高效筛选数据，确保多样性</li>
+            <li><strong>罕见样本收集：</strong>主动收集 unusual poses 和 rare imaging conditions</li>
+            <li><strong>闭环：</strong>模型预测 → 困难样本识别 → 优先标注 → 模型重训</li>
+        </ul>
+
+        <h3>5. 新评测数据集</h3>
+        <ul>
+            <li><strong>按 pose 类别组织：</strong>不同姿态类型分类评测</li>
+            <li><strong>按 appearance 条件组织：</strong>不同成像条件（遮挡/光照/视角）分类评测</li>
+            <li><strong>细粒度分析：</strong>能识别模型在哪些 pose/appearance 上弱</li>
+        </ul>
+    </div>
+
+    <!-- 与其他 HMR 方法对比 -->
+    <div class="section">
+        <h2>⚖️ 与相关 HMR 方法对比</h2>
+        <table>
+            <tr><th>方法</th><th>身体模型</th><th>Promptable</th><th>部位覆盖</th><th>野外泛化</th><th>数据引擎</th></tr>
+            <tr><td><b>SAM 3D Body</b></td><td><b>MHR</b></td><td><b>✅ kpt+mask</b></td><td><b>body+hands+feet</b></td><td><b>SOTA</b></td><td><b>✅ 主动选择</b></td></tr>
+            <tr><td>HMR (2018)</td><td>SMPL</td><td>❌</td><td>body</td><td>中</td><td>❌</td></tr>
+            <tr><td>SMPLify</td><td>SMPL</td><td>❌</td><td>body</td><td>弱</td><td>❌</td></tr>
+            <tr><td>PIXIE</td><td>SMPL-X</td><td>❌</td><td>body+face+hands</td><td>中</td><td>❌</td></tr>
+            <tr><td>ExPose</td><td>SMPL-X</td><td>❌</td><td>body+face+hands</td><td>中</td><td>❌</td></tr>
+            <tr><td>PyMAF/PyMAF-X</td><td>SMPL(-X)</td><td>❌</td><td>body(+face+hands)</td><td>中</td><td>❌</td></tr>
+            <tr><td>PARE</td><td>SMPL</td><td>❌</td><td>body</td><td>中</td><td>❌</td></tr>
+            <tr><td>OSHMR</td><td>SMPL</td><td>❌</td><td>body</td><td>中</td><td>❌</td></tr>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-dim);">3DB 是唯一同时具备 MHR + promptable + 数据引擎 + 细粒度评测的方法。</p>
+
+        <h3>与 SAM 家族的关系</h3>
+        <p>"SAM 3D Body" 之名继承了 SAM (Segment Anything) 的 promptable 哲学。SAM 做的是<strong>交互式分割</strong>，3DB 把同样的<strong>promptable 思想搬到 3D 人体 mesh recovery</strong>。两者都支持 keypoint / mask prompt，但 3DB 输出的是 3D mesh 而非 2D 分割。</p>
+    </div>
+
+    <!-- 核心创新点 -->
+    <div class="section">
+        <h2>⭐ 核心创新点</h2>
+        <div class="highlight"><strong>创新 1：首个使用 MHR 的 HMR 模型</strong> — MHR 解耦骨架/表面，骨架可独立优化，比 SMPL 的"从 mesh 回归骨架"更适合 keypoint fitting。这验证了 MHR 不只是理论模型，而是可落地的 HMR 基础设施。</div>
+        <div class="highlight"><strong>创新 2：Promptable HMR</strong> — 把 SAM 的交互式 prompt 思想引入 HMR，支持 2D keypoint / mask 引导。让 HMR 从黑盒变成可交互工具，在困难样本（遮挡/罕见姿态）上可施加先验。</div>
+        <div class="highlight"><strong>创新 3：多阶段标注流水线</strong> — 组合手动标注 + 可微优化 + 多视角几何 + 密集 keypoint 检测，系统解决 3D HMR 标注瓶颈。</div>
+        <div class="highlight"><strong>创新 4：主动数据引擎</strong> — 主动选择困难/罕见样本优先标注，提升数据多样性和模型在长尾上的泛化。</div>
+        <div class="highlight"><strong>创新 5：细粒度评测 benchmark</strong> — 按 pose 和 appearance 类别组织评测集，支持模型行为的细粒度分析，而非单一聚合指标。</div>
+    </div>
+
+    <!-- 与知识库相关论文的联系 -->
+    <div class="section">
+        <h2>🔗 与知识库相关论文的联系</h2>
+        <table>
+            <tr><th>角色</th><th>论文</th><th>关系</th></tr>
+            <tr><td>底层模型</td><td><a href="3D-20260720-MHR.html">MHR</a> (2511.15586)</td><td>3DB 是首个使用 MHR 的 HMR 模型</td></tr>
+            <tr><td>下游使用者</td><td><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> (2604.09835)</td><td>可用 3DB 从单图预测 MHR 参数作为输入</td></tr>
+            <tr><td>头部对比</td><td><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> (2312.02069)</td><td>3DB 是 MHR 界的 HMR/SMPLify；GaussianAvatars 是 FLAME tracking</td></tr>
+            <tr><td>全身调研</td><td><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a></td><td>3DB 是单图前馈人体方向的代表</td></tr>
+            <tr><td>同事方案</td><td><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a></td><td>3DB 是同事"每帧预测 MHR 参数"的工具</td></tr>
+        </table>
+    </div>
+
+    <!-- 应用场景 -->
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用</th><th>场景</th><th>优势</th></tr>
+            <tr><td>数字人输入</td><td>单图驱动 3DGS 数字人</td><td>预测 MHR 参数 → 驱动 F3G-Avatar 等</td></tr>
+            <tr><td>AR/VR</td><td>实时人体追踪</td><td>单图推理，promptable 交互</td></tr>
+            <tr><td>动作捕捉</td><td>无标记 mocap 替代</td><td>单图 → 全身 mesh + 关节</td></tr>
+            <tr><td>人机交互</td><td>手势/姿态识别</td><td>body+hands+feet 全覆盖</td></tr>
+            <tr><td>影视/游戏</td><td>角色动画输入</td><td>MHR 参数可直接驱动 rig</td></tr>
+            <tr><td>人体分析</td><td>姿态/体型估计</td><td>解耦骨架/形状，各自独立分析</td></tr>
+        </table>
+    </div>
+
+    <!-- 个人分析 -->
+    <div class="section">
+        <h2>🧠 个人分析</h2>
+        <ul>
+            <li><strong>MHR 生态的关键拼图：</strong>MHR 模型本身只是表示，要落地 HMR 任务还需要"从图像预测 MHR 参数"的工具。3DB 正是这个工具 —— <strong>相当于 MHR 界的 HMR / SMPLify</strong>。MHR + 3DB 一起构成了完整的"模型 + 预测器"生态，对标 SMPL + HMR/SMPLify。</li>
+            <li><strong>Promptable 是范式转移：</strong>传统 HMR 是黑盒端到端预测，3DB 引入 SAM 式 promptable 交互。这意味着<strong>HMR 从"被动预测"走向"主动引导"</strong> —— 在遮挡/罕见姿态上，用户可施加 keypoint/mask 先验。这与 SAM 在分割领域的范式影响类似。</li>
+            <li><strong>数据引擎是隐形竞争力：</strong>3DB 不只是模型创新，更是<strong>数据工程创新</strong>。多阶段标注 + 主动选择 + 罕见样本收集，这是 Meta 级工程能力的体现。学术上难以复现的不是模型架构，而是这套数据流水线。</li>
+            <li><strong>细粒度评测是行业进步：</strong>现有 HMR benchmark 给一个聚合指标，无法识别模型在哪些 pose 上弱。3DB 按 pose/appearance 类别组织评测，推动 HMR 评测从"粗放"走向"细粒度"，这是行业基础设施级贡献。</li>
+            <li><strong>与 F3G-Avatar 的协同：</strong>F3G-Avatar 需要 SMPL-X 参数作为输入（多视角场景）。若改用 3DB，可从<strong>单图预测 MHR 参数</strong>，降低输入门槛。3DB + MHR + F3G-Avatar 构成完整单图→全身高斯数字人管线。</li>
+            <li><strong>局限：</strong>(1) 详细定量指标需查 PDF 全文（本笔记基于摘要分析）；(2) promptable 推理虽好，但需要用户/检测器提供 prompt，增加了使用复杂度；(3) 数据引擎和标注流水线细节需查全文复现；(4) 与 SMPL 生态的兼容性（很多下游工具链基于 SMPL）需过渡。</li>
+        </ul>
+    </div>
+
+    <!-- Pipeline 还原 -->
+    <div class="section">
+        <h2>🔧 在数字人 pipeline 中的位置</h2>
+        <pre class="ascii">┌─────────────────────────────────────────────────────────────────────┐
+│              单图 → 3DGS 全身数字人 完整管线                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  单张图像 (in-the-wild)                                             │
+│      │                                                              │
+│      ▼                                                              │
+│  ┌────────────────────────────────────┐                             │
+│  │ SAM 3D Body (3DB)    ← 本论文      │                             │
+│  │ • promptable (kpt / mask)          │                             │
+│  │ • encoder-decoder                  │                             │
+│  │ • 输出 MHR 参数                    │                             │
+│  └────────────────────────────────────┘                             │
+│      │                                                              │
+│      ▼ MHR pose + shape + expression 参数                           │
+│                                                                     │
+│  ┌────────────────────────────────────┐                             │
+│  │ MHR 模型前向         ← 2511.15586  │                             │
+│  │ • 解耦骨架/表面                     │                             │
+│  │ • 稀疏非线性 pose corrective       │                             │
+│  │ • FACs 表情                         │                             │
+│  └────────────────────────────────────┘                             │
+│      │                                                              │
+│      ▼ clothed MHR template                                         │
+│                                                                     │
+│  ┌────────────────────────────────────┐                             │
+│  │ F3G-Avatar (2604.09835)            │                             │
+│  │ • 身体分支 (BodyUNet)               │                             │
+│  │ • 脸部分支 (3 × StyleUNet)         │                             │
+│  │ • LBS + 3DGS 渲染                  │                             │
+│  │ • 脸部对抗损失                      │                             │
+│  └────────────────────────────────────┘                             │
+│      │                                                              │
+│      ▼                                                              │
+│  photorealistic 全身 3DGS 数字人                                    │
+│  (含脸部细节 + 可动画)                                               │
+│                                                                     │
+│  关键: 3DB 提供输入接口, MHR 提供表示, F3G-Avatar 提供渲染          │
+└─────────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+
+    <!-- 结论 -->
+    <div class="section verdict">
+        <h2>🎯 结论</h2>
+        <ul>
+            <li><b>首个 MHR 原生的 promptable HMR 模型</b>
+                <ul style="margin-top:8px;">
+                    <li>野外泛化 SOTA，用户偏好研究显著超越前作</li>
+                    <li>body + hands + feet 全身覆盖</li>
+                    <li>支持 2D keypoint / mask prompt（SAM 风格）</li>
+                    <li>多阶段标注流水线 + 主动数据引擎</li>
+                    <li>细粒度 pose/appearance 评测 benchmark</li>
+                    <li>3DB + MHR 双开源</li>
+                </ul>
+            </li>
+            <li><span class="warn">⚠️ 局限：</span>详细指标需查 PDF；prompt 增加使用复杂度；数据流水线复现门槛高；与 SMPL 生态需过渡</li>
+        </ul>
+    </div>
+
+    <!-- 研究团队 -->
+    <div class="section">
+        <h2>👥 研究团队</h2>
+        <table>
+            <tr><th>作者</th><th>单位</th><th>角色</th></tr>
+            <tr><td>Xitong Yang (一作)</td><td>Meta</td><td>—</td></tr>
+            <tr><td>Devansh Kukreja</td><td>CMU</td><td>—</td></tr>
+            <tr><td>Don Pinkus</td><td>Meta</td><td>—</td></tr>
+            <tr><td>Anushka Sagar</td><td>Meta</td><td>—</td></tr>
+            <tr><td>Taosha Fan</td><td>CMU</td><td>—</td></tr>
+            <tr><td>Jinhyung Park</td><td>Meta</td><td>MHR 核心贡献者</td></tr>
+            <tr><td>Jinkun Cao</td><td>Meta</td><td>—</td></tr>
+            <tr><td>Matt Feiszli</td><td>Meta</td><td>—</td></tr>
+            <tr><td><b>Jitendra Malik</b></td><td>UC Berkeley / Meta</td><td>计算机视觉泰斗</td></tr>
+            <tr><td><b>Piotr Dollar</b></td><td>Meta</td><td>FAIR 资深</td></tr>
+            <tr><td><b>Kris Kitani</b></td><td>CMU</td><td>MHR 共同作者</td></tr>
+        </table>
+        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">团队横跨 Meta + CMU，包含 Jitendra Malik（CV 领域泰斗）和 Piotr Dollar（FAIR 资深研究员）。Jinhyung Park 和 Kris Kitani 同时是 MHR 论文的作者，确保 3DB 与 MHR 的深度协同。</p>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2602.15989" target="_blank">📄 arXiv: 2602.15989</a>
+            <a href="https://github.com/facebookresearch/sam-3d-body" target="_blank">💻 GitHub</a>
+        </div>
+        <h3 style="margin-top:20px;">知识库相关笔记</h3>
+        <ul>
+            <li><a href="3D-20260720-MHR.html">MHR</a> — 3DB 是首个使用 MHR 的 HMR 模型</li>
+            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — 3DB 可为其提供单图 MHR 参数输入</li>
+            <li><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> — FLAME tracking 对比（3DB 是 MHR 界的对应物）</li>
+            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> — 全景调研</li>
+            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a> — 3DB 是同事"每帧预测 MHR 参数"的工具</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 数字人调研 · SAM 3D Body · Meta + CMU · 首个 MHR 原生的 promptable HMR 模型 · 2026-07-20 整理
+</div>
+
+</body>
+</html>
