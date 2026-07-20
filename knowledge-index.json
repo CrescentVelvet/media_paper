@@ -1,7 +1,7 @@
 {
   "version": "1.1",
   "updated": "2026-07-20",
-  "paper_count": 38,
+  "paper_count": 39,
   "categories": ["CV/AI", "VideoGen", "3D", "SR"],
   "papers": [
     {
@@ -383,6 +383,16 @@
       "category": "3D",
       "tags": ["HMR (Human Mesh Recovery)", "Single Image", "MHR (首用)", "Promptable", "Encoder-Decoder", "2D Keypoint Prompt", "Mask Prompt", "Body+Hands+Feet", "In-the-wild", "SAM Family", "Data Engine", "Multi-stage Annotation", "Meta", "CMU", "Jitendra Malik", "Piotr Dollar", "Fine-grained Benchmark"],
       "sections": ["论文概要", "关键数据", "核心问题与动机", "模型架构", "与其他 HMR 方法对比", "核心创新点", "与知识库相关论文的联系", "应用场景", "个人分析", "Pipeline 还原", "结论", "研究团队", "资源链接"]
+    },
+    {
+      "id": "p39",
+      "file": "3D-20260720-Fast-SAM-3D-Body.html",
+      "title": "Fast SAM 3D Body: Accelerating SAM 3D Body — 训练免费实时加速 + 人形机器人遥操作",
+      "arxiv": "2603.15603",
+      "date": "2026-03-16",
+      "category": "3D",
+      "tags": ["HMR 加速", "Training-free", "Real-time", "MHR → SMPL 转换", "TensorRT", "CUDA Graph", "YOLO11 Pose", "Humanoid Teleoperation", "VLA Policy Learning", "Neural Kinematic Projection", "Batched Multi-crop", "Static Graph", "Unitree G1", "USC PSI Lab", "NVIDIA", "Meta Reality Labs", "SONIC", "Psi0", "AMASS Denoising", "FreiHAND", "3DPW", "EMDB", "Harmony4D", "LSPET"],
+      "sections": ["论文概要", "关键数据", "核心问题与动机", "加速方法", "实验结果", "消融实验", "与原版对比", "核心创新点", "实际部署", "与知识库相关论文的联系", "个人分析", "Pipeline 还原", "结论", "研究团队", "资源链接"]
     }
   ],
   "topic_index": {
@@ -467,7 +477,7 @@
     "CVPRW 3DMV 2026": ["p35"],
     "Full-body Avatar": ["p35"],
     "Face-focused Avatar": ["p35"],
-    "MHR (Momentum Human Rig)": ["p35", "p37", "p38"],
+    "MHR (Momentum Human Rig)": ["p35", "p37", "p38", "p39"],
     "Two-branch Architecture": ["p35"],
     "Region-aware Reconstruction": ["p35"],
     "Adversarial Loss": ["p35"],
@@ -501,8 +511,8 @@
     "Geodesic Mask": ["p37"],
     "Industry-friendly License": ["p37"],
     "3DBodyTex": ["p37"],
-    "HMR (Human Mesh Recovery)": ["p38"],
-    "Single Image": ["p38"],
+    "HMR (Human Mesh Recovery)": ["p38", "p39"],
+    "Single Image": ["p38", "p39"],
     "Promptable": ["p38"],
     "Encoder-Decoder": ["p38"],
     "2D Keypoint Prompt": ["p38"],
@@ -516,7 +526,30 @@
     "CMU": ["p38"],
     "Jitendra Malik": ["p38"],
     "Piotr Dollar": ["p38"],
-    "Fine-grained Benchmark": ["p38"]
+    "Fine-grained Benchmark": ["p38"],
+    "HMR 加速": ["p39"],
+    "Training-free": ["p39"],
+    "Real-time": ["p39"],
+    "MHR → SMPL 转换": ["p39"],
+    "TensorRT": ["p39"],
+    "CUDA Graph": ["p39"],
+    "YOLO11 Pose": ["p39"],
+    "Humanoid Teleoperation": ["p39"],
+    "VLA Policy Learning": ["p39"],
+    "Neural Kinematic Projection": ["p39"],
+    "Batched Multi-crop": ["p39"],
+    "Static Graph": ["p39"],
+    "Unitree G1": ["p39"],
+    "USC PSI Lab": ["p39"],
+    "NVIDIA": ["p01", "p27", "p39"],
+    "SONIC": ["p39"],
+    "Psi0": ["p39"],
+    "AMASS Denoising": ["p39"],
+    "FreiHAND": ["p39"],
+    "3DPW": ["p39"],
+    "EMDB": ["p39"],
+    "Harmony4D": ["p39"],
+    "LSPET": ["p39"]
   },
   "usage": "当用户提问某知识点时，先读取此索引文件，根据 topic_index 或 tags 定位到具体论文(pXX)，再读取对应 HTML 的特定章节。避免每次全量读取论文。"
 }

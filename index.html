@@ -990,6 +990,29 @@
             <a href="https://github.com/facebookresearch/sam-3d-body" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card">
+            <h3>34. Fast SAM 3D Body: Accelerating SAM 3D Body for Real-Time HMR</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2603.15603</span>
+                <span>📅 2026-03-16</span>
+                <span>🏢 USC PSI Lab + UCSD + NVIDIA + Meta Reality Labs</span>
+                <span>✅ 开源</span>
+                <span>🔧 Training-free</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">HMR 加速</span>
+                <span class="tag green">Training-free</span>
+                <span class="tag green">Real-time</span>
+                <span class="tag">MHR → SMPL (MLP)</span>
+                <span class="tag">YOLO11 Pose</span>
+                <span class="tag">Humanoid Teleoperation</span>
+            </div>
+            <p>SAM 3D Body 的<strong>训练免费实时加速版</strong>。3DB 权重完全冻结，通过推理路径重构实现 10.9× 端到端加速：① YOLO11 关键点解耦 hand bbox 串行依赖 → 批化多 crop 编码（3→1 前向）；② 静态图（TensorRT FP16 / CUDA Graph）；③ decoder 剪枝（中间预测层选择 + 去自精化）；④ 用 2.5M 参数 3 层 MLP 替代迭代 MHR→SMPL 转换，<strong>10000× 加速</strong>。部署于 Unitree G1 人形机器人遥操作，单 RGB 65ms 延迟，40 演示微调 VLA 达 80% 成功率。精度持平甚至略超原版。</p>
+            <a href="3D-20260720-Fast-SAM-3D-Body.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2603.15603" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/yangtiming/Fast-SAM-3D-Body" target="_blank">💻 GitHub</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -1065,7 +1088,7 @@
         <h2>📖 图像超分辨率与图像复原 (Real-ISR + HYPIR)</h2>
 
         <div class="note-card">
-            <h3>34. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>35. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -1085,7 +1108,7 @@
         </div>
 
         <div class="note-card">
-            <h3>35. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>36. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -1125,7 +1148,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-07-20 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 35 篇笔记卡片（38 篇论文总数见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-07-20 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 36 篇笔记卡片（39 篇论文总数见 knowledge-index.json）
 </div>
 
 </body>
