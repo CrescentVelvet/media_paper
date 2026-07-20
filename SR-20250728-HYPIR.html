@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HYPIR 论文总结 - Harnessing Diffusion-Yielded Score Priors for Image Restoration</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card-bg: #1a1d27;
+    --card-border: #2a2d3a;
+    --accent: #6c8eef;
+    --accent-light: #8ba8f5;
+    --text: #e0e0e8;
+    --text-muted: #9090a8;
+    --text-bright: #f0f0f8;
+    --tag-bg: #2a2d3a;
+    --tag-text: #8ba8f5;
+    --code-bg: #14161e;
+    --green: #5ec48a;
+    --orange: #e8a35c;
+    --red: #e85c5c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+  .hero {
+    background: linear-gradient(135deg, #1a1d2e 0%, #0f1117 50%, #1a1520 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+  .hero h1 { font-size: 1.75rem; color: var(--text-bright); max-width: 800px; margin: 0 auto 16px; line-height: 1.4; }
+  .hero .authors { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px; }
+  .hero .institutions { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px; }
+  .arxiv-badge {
+    display: inline-block; background: var(--accent); color: #fff;
+    padding: 6px 16px; border-radius: 20px; text-decoration: none;
+    font-size: 0.85rem; font-weight: 600; transition: background 0.2s;
+  }
+  .arxiv-badge:hover { background: var(--accent-light); }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+  .tag { background: var(--tag-bg); color: var(--tag-text); padding: 4px 12px; border-radius: 12px; font-size: 0.78rem; border: 1px solid var(--card-border); }
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
+  section {
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    border-radius: 12px; padding: 28px; margin-bottom: 24px;
+  }
+  section h2 { color: var(--accent); font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--card-border); }
+  section h3 { color: var(--text-bright); font-size: 1.05rem; margin: 18px 0 10px; }
+  section h4 { color: var(--text-bright); font-size: 0.95rem; margin: 14px 0 8px; }
+  section p { margin-bottom: 12px; }
+  section ul, section ol { margin-left: 20px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; }
+  .figure { margin: 24px 0; text-align: center; }
+  .figure img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--card-border); }
+  .figure .caption { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; padding: 0 12px; }
+  .highlight {
+    background: #1e2030; border-left: 3px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .highlight p { margin-bottom: 8px; }
+  .highlight p:last-child { margin-bottom: 0; }
+  .comparison-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+  .comparison-table th, .comparison-table td { padding: 10px 12px; text-align: center; border: 1px solid var(--card-border); }
+  .comparison-table th { background: var(--code-bg); color: var(--text-bright); font-weight: 600; }
+  .comparison-table td { color: var(--text); }
+  .check { color: var(--green); font-weight: bold; }
+  .cross { color: var(--red); font-weight: bold; }
+  .partial { color: var(--orange); font-weight: bold; }
+  .step { display: flex; gap: 16px; margin-bottom: 18px; align-items: flex-start; }
+  .step-num {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: #fff; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;
+  }
+  .step-content { flex: 1; }
+  .step-content h4 { color: var(--text-bright); font-size: 0.95rem; margin-bottom: 4px; }
+  .step-content p { font-size: 0.9rem; color: var(--text-muted); }
+  .theorem-box {
+    background: rgba(108,142,239,0.06); border: 1px solid rgba(108,142,239,0.2);
+    border-radius: 8px; padding: 16px 20px; margin: 16px 0;
+  }
+  .theorem-box .label { color: var(--accent); font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
+  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+  .stat {
+    flex: 1; min-width: 120px; text-align: center;
+    background: rgba(108,142,239,0.08); border: 1px solid rgba(108,142,239,0.25);
+    border-radius: 8px; padding: 14px 8px;
+  }
+  .stat .num { font-size: 1.6em; font-weight: 700; color: var(--accent); }
+  .stat .label { font-size: 0.8em; color: var(--text-muted); margin-top: 4px; }
+  .formula {
+    background: var(--code-bg); border: 1px solid var(--card-border);
+    border-radius: 6px; padding: 14px 18px; margin: 12px 0;
+    font-family: "Cascadia Code", "Fira Code", monospace; font-size: 0.85em;
+    color: var(--accent); overflow-x: auto;
+  }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 24px; }
+  @media (max-width: 600px) {
+    .hero { padding: 32px 16px 28px; }
+    .hero h1 { font-size: 1.3rem; }
+    section { padding: 20px 16px; }
+    .container { padding: 20px 12px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Harnessing Diffusion-Yielded Score Priors for Image Restoration</h1>
+  <div class="authors">Xinqi Lin · Fanghua Yu · Jinfan Hu · Zhiyuan You · Wu Shi · Jimmy S. Ren · Jinjin Gu · Chao Dong</div>
+  <div class="institutions">深圳先进技术研究院 (SIAT/CAS) · SenseTime Research · INSAIT</div>
+  <a href="https://arxiv.org/abs/2507.20590" class="arxiv-badge" target="_blank" rel="noopener">arXiv: 2507.20590</a>
+  <div class="tags">
+    <span class="tag">图像复原</span>
+    <span class="tag">扩散模型</span>
+    <span class="tag">对抗训练</span>
+    <span class="tag">生成先验</span>
+    <span class="tag">单次前向传播</span>
+    <span class="tag">LoRA</span>
+    <span class="tag">Score Function</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 核心思想 -->
+  <section>
+    <h2>🎯 核心思想</h2>
+    <p><strong>HYPIR</strong>（Harnessing Diffusion-Yielded Score Priors，发音 /ˈhaɪ.pər/）提出了一种全新的图像复原范式：利用预训练扩散模型的得分先验作为初始化，通过对抗训练微调来实现高质量图像复原。</p>
+    <div class="highlight">
+      <p>🔑 <strong>关键洞察：</strong>图像复原本质上等价于估计分数（score），即退化图像对数密度的梯度，指向回到自然图像分布的最快路径。扩散模型恰好训练的就是这种分数场，因此其先验与理想修复算子天然接近。</p>
+      <p>⚡ <strong>核心优势：</strong>单次前向传播即可完成复原，比传统扩散方法快一个数量级，同时继承了扩散模型丰富的用户控制能力。不依赖扩散损失、迭代采样或额外适配器。</p>
+    </div>
+    <div class="highlight">
+      <p><strong>两个被打破的思维定式：</strong>① 扩散模型必须配扩散采样器——HYPIR 证明扩散权重可直接用于 GAN；② 扩散一定比 GAN 强——有了好的初始化，GAN 目标在收敛速度、训练稳定性、输出保真度上都优于扩散目标。</p>
+    </div>
+  </section>
+
+  <!-- Figure 1: 效果展示 -->
+  <section>
+    <h2>🖼️ 复原效果展示</h2>
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x1.png" alt="Figure 1: HYPIR复原效果">
+      <div class="caption">图1：HYPIR 图像复原效果展示。模型能够从严重退化的输入图像中恢复出高质量、细节丰富的复原结果。照片来源：Japanesque (Autochrome, ca. 1913)，Alfonse Van Besten 拍摄，公共领域。</div>
+    </div>
+  </section>
+
+  <!-- 方法对比 -->
+  <section>
+    <h2>📊 三类方法对比与HYPIR的定位</h2>
+    <p>图像复原面临三大核心挑战：(1) 去除退化；(2) 生成符合自然图像分布的真实细节；(3) 保证像素级一致性。现有三大类方法各有短板，HYPIR 通过将扩散模型初始化与对抗训练结合，实现了三者的优势统一。</p>
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x2.png" alt="Figure 2: 方法对比">
+      <div class="caption">图2：三类图像复原方法的对比。(a) 像素级损失方法：保真但结果模糊；(b) 对抗训练方法：清晰但可能产生伪影、模式崩溃；(c) 扩散方法：质量高但速度极慢；(d) HYPIR：通过扩散模型初始化 + GAN对抗训练，兼顾保真度、真实感和速度。</div>
+    </div>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>方法类型</th>
+          <th>保真度</th>
+          <th>真实感</th>
+          <th>速度</th>
+          <th>用户控制</th>
+          <th>训练稳定性</th>
+          <th>核心问题</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>MSE-based (SRCNN, SwinIR)</td>
+          <td class="check">✓ 高</td>
+          <td class="cross">✗ 过度平滑</td>
+          <td class="check">✓ 快</td>
+          <td class="cross">✗ 无</td>
+          <td class="check">✓ 稳定</td>
+          <td>PSNR高但视觉质量差</td>
+        </tr>
+        <tr>
+          <td>GAN-based (ESRGAN, Real-ESRGAN)</td>
+          <td class="partial">~ 中</td>
+          <td class="check">✓ 清晰</td>
+          <td class="check">✓ 快</td>
+          <td class="cross">✗ 有限</td>
+          <td class="cross">✗ 易崩溃</td>
+          <td>模式坍塌、纹理单一</td>
+        </tr>
+        <tr>
+          <td>Diffusion (DiffBIR, SUPIR)</td>
+          <td class="check">✓ 高</td>
+          <td class="check">✓ 高</td>
+          <td class="cross">✗ 极慢</td>
+          <td class="check">✓ 丰富</td>
+          <td class="check">✓ 稳定</td>
+          <td>1080p ~20s, 4K ~3min</td>
+        </tr>
+        <tr>
+          <td>单步蒸馏 (OSEDiff, S3Diff)</td>
+          <td class="partial">~ 中</td>
+          <td class="partial">~ 中</td>
+          <td class="check">✓ 快</td>
+          <td class="partial">~ 部分</td>
+          <td class="check">✓ 稳定</td>
+          <td>质量与效率的权衡有限</td>
+        </tr>
+        <tr style="background: rgba(108,142,239,0.12);">
+          <td><strong>HYPIR (本文)</strong></td>
+          <td class="check">✓ 高</td>
+          <td class="check">✓ 超越扩散</td>
+          <td class="check">✓ 快 (1 pass)</td>
+          <td class="check">✓ 丰富</td>
+          <td class="check">✓ 稳定</td>
+          <td>依赖预训练扩散模型质量</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 核心贡献 -->
+  <section>
+    <h2>💡 核心贡献</h2>
+    <ol>
+      <li><strong>新范式：</strong>首次提出用预训练扩散模型作为对抗训练的初始化，将扩散模型的生成先验迁移到前馈式复原网络中。不依赖扩散教师、控制适配器或迭代精炼步骤。</li>
+      <li><strong>理论分析：</strong>从理论上证明扩散模型初始化使复原模型参数处于自然图像分布附近，包含 4 个定理/引理：
+        <ul>
+          <li>Theorem 4.1：扩散到复原的近似性（Wasserstein 距离有界）</li>
+          <li>Lemma 4.2：初始梯度有界（优化始于近鞍点）</li>
+          <li>Proposition 4.3：均匀模式质量有界（避免模式坍塌）</li>
+          <li>Proposition 4.4：线性收敛速率</li>
+        </ul>
+      </li>
+      <li><strong>高效推理：</strong>单次前向传播完成复原，无需迭代采样，训练和推理速度比扩散方法快一个数量级以上。</li>
+      <li><strong>继承控制能力：</strong>直接利用扩散模型的先验知识，支持文本引导复原、可调纹理丰富度、生成-保真权衡和随机采样。</li>
+      <li><strong>无需 ControlNet：</strong>内存占用低到可以容纳最新最大的扩散模型（如 Flux 12B）作为先验，天花板极高。</li>
+    </ol>
+  </section>
+
+  <!-- 方法详解 -->
+  <section>
+    <h2>🔧 方法详解</h2>
+    <p>HYPIR 的方法论极为简洁——不修改扩散模型架构，仅做两件事：扩散模型初始化 + 对抗训练微调。方法分为三个关键阶段：</p>
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x3.png" alt="Figure 3: 方法流程图">
+      <div class="caption">图3：HYPIR 方法流程图。(a) 预训练扩散模型作为基础；(b) VAE编码器微调用于退化预去除；(c) 退化感知编码器和预训练解码器初始化对抗训练的图像复原模型。最终只优化"Restore Network"。</div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>预训练扩散模型基础</h4>
+        <p>从一个已训练好的扩散模型出发。该模型在其训练过程中已经学习到了丰富的自然图像分布先验，包括纹理、结构和语义信息。论文验证了四种扩散模型：SD2 (0.8B)、SDXL (2.6B)、SD3 (8B)、Flux (12B)，更大模型带来更好效果。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>VAE 编码器微调 — 退化预去除</h4>
+        <p>对扩散模型中的 VAE 编码器进行微调，使其具备退化预去除（degradation pre-removal）的能力。微调目标函数：</p>
+      </div>
+    </div>
+
+    <div class="formula">
+      ℒ_E = ‖ 𝒱_D(𝒱_E_R(I_deg)) - 𝒱_D(𝒱_E_R(I_GT)) ‖²
+    </div>
+    <p style="font-size:0.88rem; color:var(--text-muted); margin-left:20px;">其中 𝒱_E_R 是微调后的编码器，𝒱_D 是固定解码器。微调后，退化图像被映射到更接近自然图像的潜空间表示。退化潜在观测 y 可建模为：y = k_deg * x + ε，其中 k_deg 为潜在空间退化核，ε 为高斯噪声。</p>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>对抗训练复原模型</h4>
+        <p>使用退化感知编码器和预训练解码器来初始化对抗训练的图像复原模型（Restore Network 𝒰_θ）。以扩散模型参数为起点进行对抗微调。对抗训练目标函数：</p>
+      </div>
+    </div>
+
+    <div class="formula">
+      min_θ max_ϕ [ E_{x~p_data}[log D_ϕ(x)] + E_{y~p_y}[log(1 - D_ϕ(𝒰_θ(y)))] ]
+    </div>
+    <p style="font-size:0.88rem; color:var(--text-muted); margin-left:20px;">判别器 D_ϕ 区分真实隐编码 x ~ p_data 和复原输出 𝒰_θ(y)。仅优化 Restore Network 的参数 θ。</p>
+
+    <h3>损失函数组合</h3>
+    <p>实际训练中，损失函数由三部分加权组合：</p>
+    <div class="formula">
+      ℒ_total = 0.5 × ℒ_adv + 5 × ℒ_LPIPS + 1 × ℒ_MSE
+    </div>
+    <ul>
+      <li><strong>对抗损失 ℒ_adv (权重 0.5)：</strong>推动输出分布接近自然图像分布</li>
+      <li><strong>LPIPS 感知损失 (权重 5)：</strong>保持感知质量，最大权重确保视觉质量优先</li>
+      <li><strong>MSE 损失 (权重 1)：</strong>保证像素级一致性，防止过度生成</li>
+    </ul>
+
+    <div class="highlight">
+      <p><strong>理论核心：</strong>扩散模型的预训练过程等价于学习自然图像的得分函数（score function）。以这些参数为初始化，复原模型的起始点就位于自然图像流形附近。对抗训练在此起点上进行微调，只需小幅调整即可获得高质量复原能力，避免了从随机初始化开始时常见的训练不稳定和模式崩溃问题。</p>
+    </div>
+  </section>
+
+  <!-- 理论分析 -->
+  <section>
+    <h2>📐 理论分析</h2>
+    <p>论文提供了 4 个定理/引理的启发式证明，构成完整的理论框架：</p>
+
+    <div class="theorem-box">
+      <div class="label">Theorem 4.1（扩散到复原近似性）</div>
+      <p>假设扩散网络 𝒰_{θ_Diff} 在 (p_data * k_σ) 上的分数误差有界为 ε_sc，退化核满足 Δ_k = ‖k_deg - k_σ‖₁ ≪ 1。则以其参数初始化的复原网络的前推分布 p_{θ_Diff} 满足：</p>
+      <div class="formula" style="margin:8px 0;">W₂(p_{θ_Diff}, p_data) ≤ C₁·ε_sc + C₂·Δ_k =: ε₀</div>
+      <p style="font-size:0.88rem;"><strong>通俗解释：</strong>扩散模型初始化后的复原网络输出分布，与真实自然图像分布之间的 2-Wasserstein 距离有界，且该界由两部分组成：扩散模型的分数误差（ε_sc）和退化核不匹配（Δ_k）。两者都很小时，初始化就接近最优。</p>
+    </div>
+
+    <div class="theorem-box">
+      <div class="label">Lemma 4.2（初始梯度有界）</div>
+      <p>假设 (a) 生成器 L_g-Lipschitz；(b) 参数 Jacobian 在 θ_Diff 处一致有界为 L_J；(c) p_data 和 p_{θ_Diff} 的密度上有界为 M。则：</p>
+      <div class="formula" style="margin:8px 0;">‖∇_θ ℒ_G(θ_Diff)‖₂ ≤ √2 · L_J · ε₀</div>
+      <p style="font-size:0.88rem;"><strong>通俗解释：</strong>在扩散模型初始化处，对抗训练的梯度已经与 ε₀ 成正比——而 ε₀ 很小。这意味着优化始于一个近鞍点（near-saddle plateau），损失面几乎平坦，梯度小且数值稳定，不会引发训练崩溃。这是"好的初始化带来稳定训练"的理论基础。</p>
+    </div>
+
+    <div class="theorem-box">
+      <div class="label">Proposition 4.3（均匀模式质量有界）</div>
+      <p>对于每个数据模式 k ∈ {1, ..., K}：</p>
+      <div class="formula" style="margin:8px 0;">|p_{θ_Diff}(A_k) - p_data(A_k)| ≤ (√2/2) · ε₀</div>
+      <p style="font-size:0.88rem;"><strong>通俗解释：</strong>扩散初始化覆盖了几乎所有数据模式，没有任何语义区域会丢失超过 (√2/2)·ε₀ 的概率质量。这意味着即使最稀有的模式也保留在生成器的支持集中，从根本上避免了 GAN 的模式坍塌问题。判别器的梯度因此转向更高阶的差异（颜色细微差别、边缘锐化），而非生成缺失的类别。</p>
+    </div>
+    <p>论文用 Figure 5 直观展示了这一点：没有扩散初始化的 GAN 在不同语义区域（动物、植被、建筑等）产生相似的纹理（模式坍塌），而 HYPIR 为不同语义生成准确、有区分度的纹理。</p>
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x5.png" alt="Figure 5: 模式坍塌对比">
+      <div class="caption">图5：模式坍塌对比。无扩散初始化的 GAN（中间行，红圈标注）在不同语义区域产生相似纹理；HYPIR（底行）为不同类别生成准确的差异化纹理。</div>
+    </div>
+
+    <div class="theorem-box">
+      <div class="label">Proposition 4.4（线性收敛）</div>
+      <p>在好的初始化下，对抗训练的优化轨迹满足线性收敛条件。通过平滑性引理和强凸性引理的链式推导：</p>
+      <p style="font-size:0.88rem;"><strong>通俗解释：</strong>每步训练使与真实分布的距离按固定比例衰减，收敛步数与 log(1/ε) 成正比——远快于从零开始的指数收敛。证明步骤包括：(1) 平滑性引理；(2) 强凸性引理；(3) 链式推导（线性衰减）；(4) 将 δ₀ 关联到 ε₀；(5) 计数步数。这解释了为什么 HYPIR 仅需数万步即可收敛。</p>
+    </div>
+  </section>
+
+  <!-- 训练细节 -->
+  <section>
+    <h2>⚙️ 训练细节与超参数</h2>
+
+    <h3>训练数据</h3>
+    <ul>
+      <li><strong>主数据集：</strong>约 2000 万高质量图像块，附带文本描述</li>
+      <li><strong>人脸数据：</strong>额外 7 万张人脸图像</li>
+      <li><strong>退化模型：</strong>采用 Real-ESRGAN 的退化管线（blur + noise + compression 等）</li>
+      <li><strong>测试数据集：</strong>DIV2K (合成) 和 RealPhoto60 (真实)</li>
+    </ul>
+
+    <h3>训练配置</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>参数</th><th>SD2 配置</th><th>SDXL 配置</th><th>Flux/SD3 配置</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>输入分辨率</td><td>512×512</td><td>512×512 (裁剪)</td><td>1024×1024</td></tr>
+        <tr><td>LoRA 秩</td><td>64</td><td>64</td><td>64</td></tr>
+        <tr><td>初始 batch size</td><td>384</td><td>—</td><td>—</td></tr>
+        <tr><td>梯度累积后 batch size</td><td>1536</td><td>—</td><td>—</td></tr>
+        <tr><td>初始学习率</td><td>1×10⁻⁵</td><td>—</td><td>—</td></tr>
+        <tr><td>第二阶段学习率</td><td>5×10⁻⁶</td><td>—</td><td>—</td></tr>
+        <tr><td>训练步数</td><td>~20k (10k+10k)</td><td>—</td><td>—</td></tr>
+        <tr><td>GPU</td><td colspan="3">64× Nvidia A6000</td></tr>
+        <tr><td>优化器</td><td colspan="3">AdamW</td></tr>
+        <tr><td>EMA 衰减</td><td colspan="3">0.999</td></tr>
+      </tbody>
+    </table>
+
+    <h3>损失权重</h3>
+    <div class="formula">
+      ℒ = 0.5 · ℒ_adv + 5 · ℒ_LPIPS + 1 · ℒ_MSE
+    </div>
+
+    <h3>推理策略</h3>
+    <ul>
+      <li>测试时使用 EMA 权重</li>
+      <li>大图分块处理：将输入图像切分为训练分辨率的 patch，分别处理后拼接</li>
+      <li>支持任意分辨率输入</li>
+    </ul>
+  </section>
+
+  <!-- 判别器设计 -->
+  <section>
+    <h2>🏆 判别器设计（消融实验）</h2>
+    <p>论文对比了四种预训练骨干作为判别器，这是影响最终质量的关键设计决策：</p>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>判别器骨干</th><th>分辨率处理</th><th>优势</th><th>劣势</th><th>效果</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>DINO</td>
+          <td>固定 224×224</td>
+          <td>自监督鲁棒表示</td>
+          <td>限制高频监督，引入噪声</td>
+          <td class="partial">~ 中</td>
+        </tr>
+        <tr>
+          <td>CLIP</td>
+          <td>固定 224×224</td>
+          <td>丰富语义信息</td>
+          <td>同上，分辨率限制</td>
+          <td class="partial">~ 中</td>
+        </tr>
+        <tr>
+          <td>Diffusion U-Net</td>
+          <td>原始分辨率</td>
+          <td>鲁棒特征提取</td>
+          <td>本质是生成模型，不适合判别</td>
+          <td class="cross">✗ 差</td>
+        </tr>
+        <tr style="background: rgba(108,142,239,0.12);">
+          <td><strong>ConvNeXt</strong></td>
+          <td><strong>原始分辨率</strong></td>
+          <td><strong>细粒度特征，任意尺寸</strong></td>
+          <td>—</td>
+          <td class="check">✓ 最优</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><strong>结论：</strong>ConvNeXt 在原始分辨率处理图像，无需 resize，显著增强了保留细节纹理的能力。ConvNeXt 指导的复原结果呈现更丰富、更精确的图像纹理。</p>
+  </section>
+
+  <!-- 其他消融实验 -->
+  <section>
+    <h2>🧪 其他消融实验要点</h2>
+
+    <h3>6.1.1 初始化与训练方法对比</h3>
+    <p>论文对比了 8 种初始化/训练组合：</p>
+    <ul>
+      <li><strong>(1) 从零训练 GAN：</strong>模式坍塌，训练不稳定 ❌</li>
+      <li><strong>(2) MSE + DAE 预训练初始化：</strong>改善视觉质量但未完全解决 GAN 训练困难 ⚠️</li>
+      <li><strong>(3) BigGAN 初始化：</strong>直接用 GAN 生成模型初始化面临巨大挑战 ❌</li>
+      <li><strong>(4) 扩散初始化 + GAN 微调 (本文)：</strong>显著更高质量 ✅</li>
+      <li><strong>(5) 扩散初始化 + MSE 微调：</strong>未充分利用生成先验 ⚠️</li>
+      <li><strong>(8) 扩散预训练 + 扩散微调：</strong>质量相当但需迭代采样，计算昂贵</li>
+    </ul>
+    <div class="highlight">
+      <p><strong>关键发现：</strong>扩散初始化 + GAN 微调的图像质量与扩散预训练 + 扩散微调（类似 DiffBIR/SUPIR）相当，但避免了后者昂贵的迭代生成过程。</p>
+    </div>
+
+    <h3>6.1.3 LoRA 训练秩</h3>
+    <p>使用 LoRA 降低可训练参数量，使最大的扩散模型也能作为先验。增加 LoRA 秩扩展模型容量，一般能提升性能，表明对抗训练对视觉质量提升贡献显著。</p>
+
+    <h3>6.1.4 退化预去除</h3>
+    <p>无退化预去除时，编码器会误判退化图像内容，导致明显伪影。加入退化预去除后，复原结果的清晰度和准确性显著提高。</p>
+
+    <h3>6.1.5 扩散先验选择</h3>
+    <p>更大更先进的扩散模型提供更准确的分数函数近似和更强的复杂图像结构处理能力。关键：性能提升不仅仅因为模型更大——没有本文方法，训练大型 GAN 本身仍然极具挑战。</p>
+    <div class="stat-row">
+      <div class="stat"><div class="num">SD2</div><div class="label">0.8B 参数</div></div>
+      <div class="stat"><div class="num">SDXL</div><div class="label">2.6B 参数</div></div>
+      <div class="stat"><div class="num">SD3</div><div class="label">8B 参数</div></div>
+      <div class="stat"><div class="num">Flux</div><div class="label">12B 参数</div></div>
+    </div>
+  </section>
+
+  <!-- 定量实验结果 -->
+  <section>
+    <h2>📈 定量实验结果</h2>
+
+    <h3>Table 1: DIV2K 数据集 (合成退化)</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>Model</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>NIQE↓</th><th>MUSIQ↑</th><th>MANIQA↑</th><th>CLIP-IQA↑</th><th>DeQA↑</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>RealESRGAN</td><td><b>23.52</b></td><td><b>0.6298</b></td><td>0.2784</td><td>4.102</td><td>69.40</td><td>0.4832</td><td>0.6744</td><td>3.678</td></tr>
+        <tr><td>StableSR</td><td>23.64</td><td>0.6071</td><td>0.2761</td><td>3.958</td><td>64.99</td><td>0.3902</td><td>0.5888</td><td>3.354</td></tr>
+        <tr><td>DiffBIR</td><td>23.80</td><td>0.5988</td><td>0.2726</td><td>3.904</td><td>69.84</td><td>0.4705</td><td>0.6398</td><td>3.770</td></tr>
+        <tr><td>InvSR</td><td>23.28</td><td>0.6123</td><td>0.2852</td><td>4.200</td><td>68.91</td><td>0.4828</td><td>0.6616</td><td>3.725</td></tr>
+        <tr><td>SeeSR</td><td>23.41</td><td>0.6090</td><td><u>0.2295</u></td><td>3.855</td><td>72.73</td><td>0.5133</td><td>0.6877</td><td>4.003</td></tr>
+        <tr><td>OSEDiff</td><td>23.32</td><td>0.6160</td><td>0.2260</td><td>4.026</td><td>71.77</td><td>0.5050</td><td>0.6934</td><td>4.023</td></tr>
+        <tr style="background: rgba(108,142,239,0.08);"><td>Ours (SD2)</td><td>22.16</td><td>0.5877</td><td>0.2318</td><td>3.832</td><td>72.58</td><td><u>0.5838</u></td><td><u>0.7467</u></td><td><u>4.056</u></td></tr>
+        <tr style="background: rgba(108,142,239,0.12);"><td><b>Ours (Flux)</b></td><td>21.65</td><td>0.5982</td><td><b>0.2022</b></td><td><b>4.004</b></td><td><b>73.07</b></td><td><b>0.5966</b></td><td><b>0.7555</b></td><td>3.959</td></tr>
+      </tbody>
+    </table>
+
+    <h3>RealPhoto60 数据集 (真实退化)</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>Model</th><th>NIQE↓</th><th>MUSIQ↑</th><th>MANIQA↑</th><th>CLIP-IQA↑</th><th>DeQA↑</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>RealESRGAN</td><td>5.294</td><td>60.38</td><td>0.4527</td><td>0.5812</td><td>3.313</td></tr>
+        <tr><td>StableSR</td><td>4.176</td><td>61.88</td><td>0.3679</td><td>0.5995</td><td>3.355</td></tr>
+        <tr><td>DiffBIR</td><td>4.096</td><td>64.67</td><td>0.4506</td><td>0.6327</td><td>3.615</td></tr>
+        <tr><td>SeeSR</td><td>3.579</td><td>72.52</td><td>0.5120</td><td>0.7125</td><td>4.042</td></tr>
+        <tr><td>OSEDiff</td><td>3.868</td><td>71.44</td><td>0.5217</td><td>0.7339</td><td>4.171</td></tr>
+        <tr style="background: rgba(108,142,239,0.08);"><td>Ours (SD2)</td><td>3.713</td><td>72.50</td><td><u>0.5834</u></td><td><u>0.7886</u></td><td>4.171</td></tr>
+        <tr style="background: rgba(108,142,239,0.12);"><td><b>Ours (Flux)</b></td><td><b>3.640</b></td><td><b>73.12</b></td><td><b>0.5947</b></td><td><b>0.7871</b></td><td><b>3.965</b></td></tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      <p><strong>⚠️ 关于指标的说明：</strong>论文强调 IQA 指标不足以评估生成式复原方法——可以通过人为提升指标分数而不改善视觉质量。因此论文更重视用户研究。</p>
+    </div>
+
+    <h3>用户研究</h3>
+    <p>两轮用户研究，26 张测试图像（16 真实 + 10 合成），100 名有图像处理经验的参与者，11 级评分（0-10）：</p>
+    <ul>
+      <li><strong>第一轮：</strong>SD2 级别模型对比，HYPIR (SD2) 获得最高感知评分</li>
+      <li><strong>第二轮：</strong>扩展至 SDXL 级别（含 SUPIR），HYPIR (Flux) 依然最高</li>
+      <li>HYPIR 的低分评分很少出现，证明方法的鲁棒性和可靠性</li>
+    </ul>
+
+    <h3>推理速度对比 (1024×1024, A6000 GPU)</h3>
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x4.png" alt="Figure 4/15: 推理时间对比">
+      <div class="caption">推理时间对比（对数坐标）。多步扩散方法耗时显著更长；HYPIR 即使使用 Flux (12B) 参数，推理速度仍与其他单步方法相当，同时质量更优。</div>
+    </div>
+  </section>
+
+  <!-- 实验结果与可视化 -->
+  <section>
+    <h2>🖼️ 定性结果与可视化</h2>
+
+    <h3>合成数据对比</h3>
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x4.png" alt="Figure 4/16: 合成数据对比">
+      <div class="caption">合成测试数据定性对比。SD2-based HYPIR 已生成优于对比方法的纹理，Flux-based HYPIR 进一步增强结构细节。注意大蒜和玻璃瓶的精细结构仅 HYPIR 能准确恢复。</div>
+    </div>
+
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x6.png" alt="Figure 6: 文本引导复原">
+      <div class="caption">图6：文本引导复原结果。HYPIR 继承了扩散模型的文本控制能力，可以通过文本提示引导复原方向。</div>
+    </div>
+
+    <div class="figure">
+      <img src="https://arxiv.org/html/2507.20590v2/x7.png" alt="Figure 7: 可调纹理丰富度">
+      <div class="caption">图7：可调纹理丰富度展示。通过调节参数，用户可以控制复原结果的纹理丰富程度，在平滑与细节之间灵活权衡。</div>
+    </div>
+  </section>
+
+  <!-- 条件复原 -->
+  <section>
+    <h2>🎛️ 用户控制能力</h2>
+    <p>由于保留了扩散模型的架构和文本条件能力，HYPIR 天然支持四种可控复原：</p>
+
+    <h3>6.3.1 文本引导 (Text Prompt)</h3>
+    <ul>
+      <li><strong>纠正文字元素：</strong>退化图像中的文字（标牌、文档）通过文本提示精确恢复。例如输入 "Vote against Wilson, he opposed national woman suffrage" 可重建清晰可读的文字</li>
+      <li><strong>识别模糊物体：</strong>像素太少或高度模糊的物体，通过不同提示词（如"…cows and sheep…"或"…rocks and stones…"）引导生成不同语义内容</li>
+      <li><strong>区分相似概念：</strong>如"…streams…"vs"…snow and ice…"实现细粒度属性控制</li>
+    </ul>
+
+    <h3>6.3.2 纹理丰富度 (Texture Richness)</h3>
+    <p>低参数值产生平滑柔和的纹理（如动物毛发柔和），高参数值显著增强毛发纹理的锐度和细节。提供对整体风格外观的直观控制。</p>
+
+    <h3>6.3.3 生成-保真权衡 (Generativity-Fidelity Trade-off)</h3>
+    <p>控制生成性与输入保真度之间的平衡，满足不同场景需求：高保真模式适合纪实摄影，高生成性模式适合艺术修复。</p>
+
+    <h3>6.3.4 随机采样 (Random Sampling)</h3>
+    <p>支持随机采样产生多样化修复结果，同一张退化图可以得到不同的合理修复——适合处理严重退化但有多种可能解释的场景。</p>
+  </section>
+
+  <!-- 技术路线对比 -->
+  <section>
+    <h2>🔄 技术路线对比与演进</h2>
+    <table class="comparison-table">
+      <tr><th>范式</th><th>代表方法</th><th>生成先验</th><th>推理</th><th>核心局限</th></tr>
+      <tr><td>MSE 回归</td><td>SRCNN, SwinIR, HAT</td><td>无</td><td>单次前向</td><td>过度平滑，缺乏真实细节</td></tr>
+      <tr><td>纯 GAN</td><td>ESRGAN, Real-ESRGAN</td><td>对抗训练</td><td>单次前向</td><td>模式坍塌，纹理单一</td></tr>
+      <tr><td>扩散 + ControlNet</td><td>DiffBIR, SeeSR, SUPIR</td><td>预训练 T2I 扩散</td><td>多步迭代 (10-50+步)</td><td>推理慢，训练耗时长</td></tr>
+      <tr><td>单步蒸馏</td><td>OSEDiff, S3Diff, InvSR</td><td>扩散蒸馏</td><td>单步/少步</td><td>质量与效率的权衡仍有限</td></tr>
+      <tr style="background: rgba(108,142,239,0.12);"><td><b>HYPIR</b></td><td><b>本文</b></td><td><b>扩散初始化 + GAN 微调</b></td><td><b>单次前向</b></td><td><b>依赖预训练扩散模型质量</b></td></tr>
+    </table>
+    <div class="highlight">
+      <p><strong>演进趋势：</strong>MSE 回归 → GAN → 扩散模型 → 单步蒸馏 → <strong>扩散初始化 + GAN 微调</strong>。HYPIR 开辟了新范式：扩散模型不用于推理，而用于提供强大的参数初始化，实际推理交给 GAN。类比 NLP 中"预训练 + 轻量微调"范式。</p>
+    </div>
+  </section>
+
+  <!-- 核心洞察 -->
+  <section>
+    <h2>🧠 核心洞察与启示</h2>
+    <div class="stat-row">
+      <div class="stat"><div class="num">10×+</div><div class="label">训练/推理速度提升</div></div>
+      <div class="stat"><div class="num">~20k</div><div class="label">步即可收敛</div></div>
+      <div class="stat"><div class="num">1 pass</div><div class="label">单次前向推理</div></div>
+      <div class="stat"><div class="num">12B</div><div class="label">最大先验 (Flux)</div></div>
+    </div>
+    <ul>
+      <li><strong>反直觉结论：</strong>有了足够好的初始化，GAN 目标在收敛速度、训练稳定性、输出保真度上都优于扩散目标。"扩散总是优于 GAN"的观念需要修正。</li>
+      <li><strong>扩散 = 预训练：</strong>扩散模型的最佳用法可能不是做扩散推理，而是作为强大生成先验为其他训练范式提供初始化——类比 NLP 中 BERT 的预训练范式。</li>
+      <li><strong>可扩展性：</strong>不需要 ControlNet 意味着可以轻松使用最新最大的扩散模型作为先验，天花板极高，随扩散模型进步自动受益。之前的方法因计算成本无法利用 SD3 或 Flux。</li>
+      <li><strong>分数函数视角：</strong>图像复原 ≡ 估计分数，扩散模型 ≡ 学习分数场，两者天然对齐。这个理论洞察是整个方法的基础。</li>
+    </ul>
+  </section>
+
+  <!-- 结论 -->
+  <section>
+    <h2>📝 结论</h2>
+    <p>HYPIR 提出了一种优雅的思路：<strong>站在扩散模型的肩膀上，用对抗训练来精炼</strong>。</p>
+    <ul>
+      <li>理论上，扩散先验提供了良好的初始化，使对抗训练更稳定、更快收敛（4 个定理/引理支撑）</li>
+      <li>实践中，单次前向传播实现了与扩散方法相当甚至超越的质量，同时速度快一个数量级以上</li>
+      <li>继承了扩散模型的控制能力（文本引导、可调纹理、生成-保真权衡、随机采样），这是纯 GAN 方法难以实现的</li>
+      <li>不需要扩散损失、迭代采样或额外适配器，方法简洁且高效</li>
+      <li>通过 LoRA 微调策略，使最大的扩散模型（Flux 12B）也能作为先验使用</li>
+    </ul>
+    <div class="highlight">
+      <p><strong>一句话总结：</strong>用扩散模型的预训练知识做初始化，用对抗训练做微调，兼得扩散模型的质量与 GAN 的速度，开创图像复原新范式。</p>
+    </div>
+    <p><strong>⚠️ 注意事项：</strong></p>
+    <ul>
+      <li>论文 2025-07 发布，社区实践反馈和复现验证需要时间</li>
+      <li>依赖预训练扩散模型的质量，基础模型选择影响最终效果</li>
+      <li>对抗训练虽更稳定了，但仍需一定的调参经验</li>
+      <li>训练需要 64× A6000 GPU，资源需求不低（但远低于扩散方法训练）</li>
+      <li>IQA 指标表现不总是最优，但用户研究感知质量最高</li>
+    </ul>
+  </section>
+
+  <!-- 研究团队 -->
+  <section>
+    <h2>👥 研究团队</h2>
+    <table class="comparison-table">
+      <tr><th>作者</th><th>单位</th></tr>
+      <tr><td>Xinqi Lin (林鑫琪)</td><td>深圳先进院 (SIAT, CAS) / 国科大</td></tr>
+      <tr><td>Fanghua Yu (余方华)</td><td>深圳先进院 (SIAT, CAS)</td></tr>
+      <tr><td>Jinfan Hu (胡锦凡)</td><td>深圳先进院 (SIAT, CAS) / 国科大</td></tr>
+      <tr><td>Zhiyuan You (尤致远)</td><td>深圳先进院 (SIAT, CAS) / 港中文</td></tr>
+      <tr><td>Wu Shi (施武)</td><td>深圳先进院 (SIAT, CAS)</td></tr>
+      <tr><td>Jimmy S. Ren</td><td>商汤科技 / 香港都会大学</td></tr>
+      <tr><td>Jinjin Gu (顾金今)</td><td>INSAIT, 索菲亚大学 (保加利亚)</td></tr>
+      <tr><td>Chao Dong (董超)</td><td>深圳先进院 / 深圳先进技术大学</td></tr>
+    </table>
+    <p style="margin-top:12px; color:var(--text-muted); font-size:0.9em;">通讯作者：Chao Dong (董超) 和 Jinjin Gu (顾金今)。董超团队是图像复原领域的知名研究组，此前提出了 SRResNet、ESRGAN 等经典工作。</p>
+  </section>
+
+  <!-- 资源链接 -->
+  <section>
+    <h2>🔗 资源链接</h2>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;">
+      <a href="https://arxiv.org/abs/2507.20590" target="_blank" class="arxiv-badge">📄 arXiv: 2507.20590</a>
+      <a href="https://arxiv.org/html/2507.20590v2" target="_blank" class="arxiv-badge">🌐 HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2507.20590" target="_blank" class="arxiv-badge">📥 PDF 下载</a>
+    </div>
+  </section>
+
+</div>
+
+<div class="footer">
+  HYPIR 论文总结 · arXiv: 2507.20590 · SIAT/SenseTime/INSAIT · 2026-07-08 整理
+</div>
+
+</body>
+</html>

@@ -17,6 +17,8 @@ package-lock.json
 paper-text.txt
 extract*.js
 extract*.py
+extract*.ps1
+update_notes*.ps1
 
 # OS files
 Thumbs.db

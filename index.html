@@ -860,6 +860,29 @@
         </div>
 
         <div class="note-card">
+            <h3>28. VGGT-Ω: 前馈3D重建的规模化里程碑</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2605.15195</span>
+                <span>📅 2026-05-14</span>
+                <span>🏢 Oxford VGG + Meta AI</span>
+                <span>🏆 CVPR 2026 Best Paper Finalist (Oral)</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Feed-Forward 3D</span>
+                <span class="tag green">Scaling Law</span>
+                <span class="tag">Register Attention</span>
+                <span class="tag">Dynamic Scenes</span>
+                <span class="tag">Self-Supervised</span>
+            </div>
+            <p>VGGT (CVPR 2025 Best Paper) 的升级版。三大架构改进：单一 dense prediction head + Register Attention + 动态场景支持。训练显存降至原版 ~30%，可处理 200 帧/A100，用 15× 监督数据训练。Sintel 相机精度 +77%，ATE ↓60%，ARE ↓55%，AbsRel ↓40%。首次验证前馈3D重建的 Scaling Law，register 特征可增强 VLA 并与语言对齐（类似 CLIP CLS token）。</p>
+            <a href="3D-20260514-VGGT-Omega.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2605.15195" target="_blank">📄 arXiv</a>
+            <a href="https://vggt-omega.github.io/" target="_blank">🌐 项目主页</a>
+            <a href="https://github.com/facebookresearch/vggt-omega" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
             <h3>29. GenRecon: 桥接生成式先验的多视角3D场景重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.23888</span>
@@ -878,33 +901,6 @@
             <a href="3D-20260522-GenRecon.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2605.23888" target="_blank">📄 arXiv</a>
             <a href="https://kasothaphie.github.io/GenRecon/" target="_blank">🌐 项目主页</a>
-        </div>
-
-    </div>
-
-    <div class="section">
-        <h2>📖 图像超分辨率 (2026-06-29 新增)</h2>
-
-        <div class="note-card">
-            <h3>28. 真实图像超分辨率技术演进：从 ESRGAN 到 OSEDiff</h3>
-            <div class="meta">
-                <span>📄 7 篇论文综述</span>
-                <span>📅 2018-2024</span>
-                <span>📂 Real-ISR / Blind SR</span>
-                <span>🔄 GAN → Diffusion → One-Step</span>
-            </div>
-            <div class="tags">
-                <span class="tag green">Real-ISR</span>
-                <span class="tag">ESRGAN</span>
-                <span class="tag">Real-ESRGAN</span>
-                <span class="tag">BSRGAN</span>
-                <span class="tag">StableSR</span>
-                <span class="tag">DiffBIR</span>
-                <span class="tag">SeeSR</span>
-                <span class="tag">OSEDiff</span>
-            </div>
-            <p>覆盖 ESRGAN(2018) → BSRGAN(2021) → Real-ESRGAN(2021) → StableSR(2023) → DiffBIR(2023) → SeeSR(2023) → OSEDiff(2024) 七个关键方法。展现从 CNN+GAN 到扩散先验再到一步扩散的完整技术演进路线。OSEDiff 单步推理达到多步扩散方法质量，NeurIPS 2024。</p>
-            <a href="SR-20260629-RealISR-Evolution.html">📖 阅读笔记</a>
         </div>
 
     </div>
@@ -979,10 +975,10 @@
     </div>
 
     <div class="section">
-        <h2>📖 图像超分辨率 (Real-ISR) 技术演进 (2026-06-29 新增)</h2>
+        <h2>📖 图像超分辨率与图像复原 (Real-ISR + HYPIR)</h2>
 
         <div class="note-card">
-            <h3>28. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>30. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -999,6 +995,26 @@
             <a href="https://arxiv.org/abs/1809.00219" target="_blank">📄 ESRGAN</a>
             <a href="https://arxiv.org/abs/2406.08177" target="_blank">📄 OSEDiff</a>
             <a href="https://arxiv.org/abs/2606.16188" target="_blank">📄 TEASR</a>
+        </div>
+
+        <div class="note-card">
+            <h3>31. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2507.20590</span>
+                <span>📅 2025-07-28</span>
+                <span>📂 Image Restoration</span>
+                <span>🔄 Diffusion Prior + One-Step</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Image Restoration</span>
+                <span class="tag">Diffusion Prior</span>
+                <span class="tag">Score Distillation</span>
+                <span class="tag">One-Step</span>
+                <span class="tag">GAN Discriminator</span>
+            </div>
+            <p>利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。</p>
+            <a href="SR-20250728-HYPIR.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2507.20590" target="_blank">📄 arXiv</a>
         </div>
 
     </div>
@@ -1022,7 +1038,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-06-29 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR · 涵盖 28 篇笔记
+    📝 调研索引 · 更新于 2026-07-20 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 31 篇笔记卡片（34 篇论文总数见 knowledge-index.json）
 </div>
 
 </body>
