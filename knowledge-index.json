@@ -1,7 +1,7 @@
 {
   "version": "1.1",
   "updated": "2026-07-20",
-  "paper_count": 34,
+  "paper_count": 35,
   "categories": ["CV/AI", "VideoGen", "3D", "SR"],
   "papers": [
     {
@@ -343,6 +343,16 @@
       "category": "3D",
       "tags": ["Feed-Forward 3D", "Transformer", "Camera Pose", "Depth", "Point Cloud", "Point Tracking", "Foundation Model", "CVPR 2025 Best Paper", "DINOv2", "Plücker", "Meta FAIR", "QuantVGGT"],
       "sections": ["论文概要", "方法/架构", "关键特性", "技术细节", "基准表现", "个人分析", "算法框图与架构详解", "核心创新点", "应用场景", "训练策略（深入）", "数据集构建（深入）", "损失函数（深入）", "技术路线对比与演进（深入）", "资源链接"]
+    },
+    {
+      "id": "p35",
+      "file": "3D-20260720-F3G-Avatar.html",
+      "title": "F3G-Avatar: Face Focused Full-body Gaussian Avatar — 全身高斯数字人的脸部焦点重建",
+      "arxiv": "2604.09835",
+      "date": "2026-04-10",
+      "category": "3D",
+      "tags": ["3D Gaussian Splatting", "Full-body Avatar", "Face-focused", "MHR (Momentum Human Rig)", "Two-branch Architecture", "LBS", "Adversarial Loss", "Multi-view RGB", "CVPRW 3DMV 2026", "StyleUNet", "StyleGAN2", "Clothed MHR", "NeuS2", "SAM", "4D-Dress", "Robust Skinning Transfer", "TU/e", "AIMS Group", "AvatarReX", "THuman4.0", "Region-aware Reconstruction", "Front/back Positional Maps"],
+      "sections": ["论文概要", "关键数据", "核心问题与动机", "模型架构", "损失函数", "实验结果", "消融实验", "与其他方法对比", "核心创新点", "与知识库相关论文的联系", "训练策略与实现细节", "应用场景", "个人分析", "Pipeline 还原", "结论", "研究团队", "资源链接"]
     }
   ],
   "topic_index": {
@@ -352,7 +362,7 @@
     "VAE": ["p01", "p07", "p11", "p03"],
     "Reinforcement Learning (RL)": ["p01", "p13", "p16", "p17", "p18"],
     "GRPO": ["p16"],
-    "3D Gaussian Splatting": ["p20", "p21", "p22", "p23", "p26", "p17", "p28", "p29"],
+    "3D Gaussian Splatting": ["p20", "p21", "p22", "p23", "p26", "p17", "p28", "p29", "p35"],
     "Camera Pose Estimation": ["p26", "p18", "p30", "p31"],
     "Point Tracking": ["p26", "p15", "p17", "p18"],
     "Novel View Synthesis": ["p20", "p21", "p23", "p27", "p28", "p29"],
@@ -423,7 +433,21 @@
     "GAN→Diffusion→One-Step": ["p34"],
     "TUM": ["p32"],
     "华为": ["p32"],
-    "CVPR 2026 Best Paper Finalist": ["p31"]
+    "CVPR 2026 Best Paper Finalist": ["p31"],
+    "CVPRW 3DMV 2026": ["p35"],
+    "Full-body Avatar": ["p35"],
+    "Face-focused Avatar": ["p35"],
+    "MHR (Momentum Human Rig)": ["p35"],
+    "Two-branch Architecture": ["p35"],
+    "Region-aware Reconstruction": ["p35"],
+    "Adversarial Loss": ["p35"],
+    "TU/e AIMS Group": ["p35"],
+    "NeuS2": ["p35"],
+    "StyleGAN2 Discriminator": ["p35"],
+    "Clothed Body Template": ["p35"],
+    "Front/back Positional Maps": ["p35"],
+    "AvatarReX": ["p35"],
+    "THuman4.0": ["p35"]
   },
   "usage": "当用户提问某知识点时，先读取此索引文件，根据 topic_index 或 tags 定位到具体论文(pXX)，再读取对应 HTML 的特定章节。避免每次全量读取论文。"
 }

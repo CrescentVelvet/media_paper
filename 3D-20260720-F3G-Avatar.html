@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F3G-Avatar: Face Focused Full-body Gaussian Avatar — 全身高斯数字人的脸部焦点重建</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+            --warn: #d29922;
+            --red: #f85149;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section h4 { color: var(--accent); font-size: 1em; margin: 12px 0 6px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        .tag.red { border-color: var(--red); color: var(--red); }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        .highlight.red { background: rgba(248, 81, 73, 0.1); border-left-color: var(--red); }
+        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
+        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
+        .stat {
+            flex: 1;
+            min-width: 130px;
+            text-align: center;
+            background: rgba(118, 185, 0, 0.08);
+            border: 1px solid rgba(118, 185, 0, 0.25);
+            border-radius: 8px;
+            padding: 14px 8px;
+        }
+        .stat .num { font-size: 1.8em; font-weight: 700; color: var(--accent); }
+        .stat .label { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+        .verdict {
+            background: linear-gradient(135deg, rgba(118, 185, 0, 0.1), rgba(118, 185, 0, 0.05));
+            border: 1px solid rgba(118, 185, 0, 0.3);
+        }
+        .verdict h2 { color: var(--accent); }
+        .warn { color: #d29922; }
+        pre.ascii {
+            background: var(--code-bg);
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.82em;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>F3G-Avatar: Face Focused Full-body Gaussian Avatar</h1>
+    <div class="meta">
+        <span>📄 arXiv: 2604.09835</span>
+        <span>📅 2026-04-10</span>
+        <span>🏢 Eindhoven University of Technology (TU/e) AIMS Group</span>
+        <span>🏆 CVPRW 3DMV 2026</span>
+        <span>✅ 开源</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 论文概要 -->
+    <div class="section">
+        <h2>📋 论文概要</h2>
+        <div class="tags">
+            <span class="tag green">3D Gaussian Splatting</span>
+            <span class="tag green">Full-body Avatar</span>
+            <span class="tag green">Face-focused</span>
+            <span class="tag">MHR (Momentum Human Rig)</span>
+            <span class="tag">Two-branch Architecture</span>
+            <span class="tag">LBS</span>
+            <span class="tag">Adversarial Loss</span>
+            <span class="tag">Multi-view RGB</span>
+        </div>
+        <p>现有全身高斯数字人方法主要优化全局重建质量，<strong>往往无法保留细粒度的脸部几何与表情细节</strong>。根本原因是：脸部在全身像素中占比很小，模型容量被均匀分配，导致脸部出现过度平滑、细节丢失，触发"<strong>恐怖谷</strong>"效应。</p>
+        <p>F3G-Avatar 由荷兰埃因霍温理工大学 (TU/e) AIMS Group 提出，核心思路是<strong>在全身 pipeline 中增加一个专门的脸部焦点形变分支</strong>，与身体分支并行预测高斯属性，最后融合并 LBS 摆姿态、可微高斯渲染。论文还首次将 <strong>MHR (Momentum Human Rig)</strong> 参数化人体模型集成到 3DGS 数字人流程中，替代传统 SMPL/SMPL-X。</p>
+        <div class="highlight">
+            <strong>核心贡献：</strong>
+            <ol style="margin-top:6px;">
+                <li><strong>脸部焦点形变网络</strong>：与身体分支并行的专用分支，独立预测一整套脸部 3D 高斯，与身体高斯拼接</li>
+                <li><strong>首次把 clothed MHR 模板集成到 3DGS 全身数字人</strong>：MHR 比 SMPL 表达能力更强，脸部 articulation 更准</li>
+                <li><strong>Region-aware 重建 + 脸部对抗损失</strong>：全局重建损失 + 脸部专属感知/对抗损失，强化特写视角真实感</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 关键数据 -->
+    <div class="section">
+        <h2>📊 关键数据</h2>
+        <div class="stat-row">
+            <div class="stat">
+                <div class="num">26.24</div>
+                <div class="label">AvatarReX 脸部 PSNR ↑</div>
+            </div>
+            <div class="stat">
+                <div class="num">0.964</div>
+                <div class="label">AvatarReX 脸部 SSIM ↑</div>
+            </div>
+            <div class="stat">
+                <div class="num">0.084</div>
+                <div class="label">AvatarReX 脸部 LPIPS ↓</div>
+            </div>
+        </div>
+        <div class="stat-row">
+            <div class="stat">
+                <div class="num">320k + 60k</div>
+                <div class="label">身体 + 脸部高斯数</div>
+            </div>
+            <div class="stat">
+                <div class="num">~1.5 天</div>
+                <div class="label">单人训练 (单 A100)</div>
+            </div>
+            <div class="stat">
+                <div class="num">10 页</div>
+                <div class="label">CVPRW 3DMV 论文</div>
+            </div>
+        </div>
+        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">脸部 PSNR 26.24 是 AvatarReX 上 SOTA；THuman4.0 上脸部 PSNR 26.934、LPIPS 0.062。身体指标与 AnimatableGaussians 相当（PSNR 略低但 SSIM/LPIPS 更优），脸部指标全面超越。</p>
+    </div>
+
+    <!-- 核心问题与动机 -->
+    <div class="section">
+        <h2>🎯 核心问题与动机</h2>
+        <h3>问题：全身数字人脸部细节不足</h3>
+        <ul>
+            <li><strong>容量分配不均：</strong>现有全身高斯方法（AnimatableGaussians / GaussianAvatar / 3DGS-Avatar）把模型容量均匀分配到全身，脸部只占很小比例</li>
+            <li><strong>高频细节丢失：</strong>脸部需要建模 pose-dependent 的高频形变（表情、皱纹、唇形），低容量导致过度平滑</li>
+            <li><strong>感知影响：</strong>研究表明脸部在人类判断真实感时起主导作用；脸部失真直接触发恐怖谷效应</li>
+        </ul>
+        <h3>动机：从头部 avatar 借鉴"区域聚焦"思路</h3>
+        <p>头部 avatar 方法（GaussianAvatars / PointAvatar / Gaussian Head Avatar 等）把全部容量给到脸部，持续提升脸部重建质量。F3G-Avatar 把这种"<strong>空间聚焦建模</strong>"思路引入全身 pipeline —— 给脸部单独分配一个高分辨率专用分支。</p>
+        <div class="highlight">
+            <strong>设计哲学：</strong>不是"全身均匀分配容量"，而是"<strong>脸部分配更多容量</strong>"。这反映了一个新兴方向：显式点表示的高效渲染 + 区域专用网络的混合表示。
+        </div>
+    </div>
+
+    <!-- 模型架构 -->
+    <div class="section">
+        <h2>🏗️ 模型架构</h2>
+        <p>F3G-Avatar 的核心是<strong>双分支 + Region-aware 重建</strong>。整体流程：</p>
+        <pre class="ascii">┌─────────────────────────────────────────────────────────────────────┐
+│                       F3G-Avatar Pipeline                           │
+├─────────────────────────────────────────────────────────────────────┤
+│  输入: 多视角 RGB 视频 + 回归得到的 SMPL-X pose/shape 参数           │
+│      │                                                              │
+│      ▼                                                              │
+│  [SMPL-X → MHR 转换] 优化 β_mhr, θ_mhr 使 MHR 顶点/关节匹配 SMPL-X   │
+│      │                                                              │
+│      ▼                                                              │
+│  [Clothed MHR 模板构建]                                             │
+│    • A-pose 帧选 → NeuS2 隐式表面重建                              │
+│    • SAM 分割非身体成分 (衣物/配饰)                                  │
+│    • 4D-Dress 投影到 body mesh                                      │
+│    • Robust Skinning Transfer 估计衣物蒙皮权重                       │
+│    • 合并 → 完整 clothed MHR 模板                                   │
+│      │                                                              │
+│      ▼                                                              │
+│  [前/后正交位置图渲染]  1024×2048 body positional maps              │
+│      │                                                              │
+│      ├──────────────────────┬───────────────────────────────────┐  │
+│      ▼                          ▼                                 │  │
+│  ┌────────────────┐         ┌──────────────────────────┐         │  │
+│  │ Body Branch    │         │ Face-focused Branch      │         │  │
+│  │ (BodyUNet/     │         │ • 512×512 脸部裁剪        │         │  │
+│  │  StyleUNet)    │         │ • 更新相机内参 K_new       │         │  │
+│  │ 1024×1024      │         │ • 256×256 脸部位置图      │         │  │
+│  │ → ΔG^b (身体  │         │ • 3 个轻量 StyleUNet:     │         │  │
+│  │   高斯残差)    │         │   P(·) 位置               │         │  │
+│  └────────────────┘         │   C(·) 颜色               │         │  │
+│         │                   │   A(·) 辅助属性            │         │  │
+│         │                   │ → ΔG^h (脸部高斯残差)      │         │  │
+│         │                   └──────────────────────────┘         │  │
+│         │                              │                          │  │
+│         └──────────┬───────────────────┘                          │  │
+│                    ▼                                              │  │
+│  [Gaussian 融合] 身体 + 脸部高斯合并                              │  │
+│      │                                                            │  │
+│      ▼                                                            │  │
+│  [LBS 摆姿态]  canonical → posed 空间                            │  │
+│      │                                                            │  │
+│      ▼                                                            │  │
+│  [3DGS 可微渲染]                                                  │  │
+│      │                                                            │  │
+│      ▼                                                            │  │
+│  [Region-aware 损失]                                              │  │
+│    • 全身: ℓ1 + LPIPS + offset 正则                                │  │
+│    • 脸部裁剪: StyleGAN2 判别器 → L_adv 对抗损失                  │  │
+└─────────────────────────────────────────────────────────────────────┘</pre>
+
+        <h3>1. MHR Body Template（MHR 身体模板）</h3>
+        <p>论文的核心创新之一是采用 <strong>MHR (Momentum Human Rig)</strong> 替代 SMPL/SMPL-X 作为参数化身体模型。由于多视角数据集通常只提供 SMPL-X 参数，需要做转换：</p>
+        <ul>
+            <li><strong>SMPL-X → MHR 转换：</strong>优化 MHR 的 shape 参数 β_mhr 和 pose 参数 θ_mhr，使 MHR 顶点和关节位置匹配 SMPL-X</li>
+            <li><strong>A-pose 选帧：</strong>从 star-like A-pose 帧出发，提供最大表面可见性</li>
+            <li><strong>NeuS2 隐式表面重建：</strong>对 A-pose 帧做高质量 clothed-body 几何重建</li>
+            <li><strong>SAM 分割：</strong>把衣物/配饰等非身体成分从图像中分割出来</li>
+            <li><strong>4D-Dress 投影：</strong>把分割区域投影并归因到 body mesh</li>
+            <li><strong>Robust Skinning Transfer：</strong>估计非身体成分的蒙皮权重，保证衣物随身体一致形变</li>
+        </ul>
+        <div class="highlight">
+            <strong>关于 MHR：</strong>MHR 是 Meta Reality Labs 于 2025.11 发布的新一代参数化人体模型（arXiv 2511.15586），开源。相比 SMPL，MHR 用<strong>解耦骨架/形状</strong> + <strong>非线性 pose corrective</strong> + <strong>Momentum 蒙皮库</strong>，mesh 表达能力更强、脸部 articulation 更准。<strong>F3G-Avatar 是首个把 MHR 集成到 3DGS 全身数字人的工作。</strong>
+        </div>
+
+        <h3>2. Global Canonical Deformation for Body（身体全局 canonical 形变）</h3>
+        <ul>
+            <li>用大型 <strong>StyleUNet</strong> <code>T(·)</code> 捕捉 pose-dependent 的非刚性高斯形变</li>
+            <li>从 posed MHR 模板渲染前/后正交位置图 <code>{P_f^b, P_b^b}</code>，分辨率 <strong>1024×1024</strong></li>
+            <li>每像素对应一个 3D 高斯（位置/协方差/不透明度/颜色）</li>
+            <li>位置图 + 相机参数 → StyleUNet → 非刚性形变图 <code>{ΔG_f^b, ΔG_b^b}</code></li>
+            <li><strong>两阶段训练：</strong>预训练阶段 StyleUNet 重建输入位置图；正式训练阶段 BodyUNet 预测残差高斯属性</li>
+        </ul>
+
+        <h3>3. Face-Focused Deformation（脸部焦点形变）</h3>
+        <h4>3.1 Canonical Face Model</h4>
+        <ul>
+            <li>从预训练 BodyUNet 模板中提取头部区域</li>
+            <li>将每个头部位置图变换到 canonical 坐标系，<strong>在整个数据集上平均</strong>得到 canonical 脸部高斯</li>
+            <li>用<strong>三线性插值</strong>对 canonical 脸部高斯网格做密化，提升脸部空间分辨率</li>
+        </ul>
+        <h4>3.2 Positional Face Maps</h4>
+        <ul>
+            <li>提取以脸部为中心的 <strong>512×512 局部裁剪</strong></li>
+            <li>crop-and-resize 后更新相机内参（焦距乘缩放因子 s，主点减裁剪起点并乘 s）</li>
+            <li>用更新后的 <code>K_new</code> 正交渲染 MHR posed 位置图，得到前/后脸部图 <code>{P_f^h, P_b^h}</code></li>
+        </ul>
+        <h4>3.3 Face-focused Gaussian Maps</h4>
+        <p>用<strong>三个轻量 StyleUNet</strong> 从头部位置图预测高斯属性：</p>
+        <table>
+            <tr><th>网络</th><th>符号</th><th>输出</th></tr>
+            <tr><td>Positional StyleUNet</td><td><code>𝒫(·)</code></td><td>位置形变图 <code>P̂^h</code></td></tr>
+            <tr><td>Color StyleUNet</td><td><code>𝒞(·)</code></td><td>颜色属性（条件于位置+相机）</td></tr>
+            <tr><td>Auxiliary StyleUNet</td><td><code>𝒜(·)</code></td><td>辅助高斯属性（不透明度/SH/缩放）</td></tr>
+        </table>
+        <p>三路输出 concat 原始位置图，得到残差高斯属性图 <code>ΔG^h</code>（前/后各一份）。</p>
+
+        <h3>4. Region-Aware Reconstruction（区域感知重建）</h3>
+        <ul>
+            <li>脸部残差高斯与 canonical 脸部高斯融合 → 与身体高斯合并</li>
+            <li>canonical 高斯通过 <strong>LBS</strong> 变换到 posed 空间</li>
+            <li>用 3DGS 可微渲染到图像域</li>
+            <li><strong>关键设计：预训练 StyleGAN2 判别器</strong>作用在渲染的脸部裁剪上，提供非饱和对抗损失 <code>ℒ_adv</code></li>
+            <li>总损失 = <code>ℓ1 + LPIPS + offset 正则 + ℒ_adv</code></li>
+        </ul>
+    </div>
+
+    <!-- 损失函数 -->
+    <div class="section">
+        <h2>🎯 损失函数</h2>
+        <table>
+            <tr><th>损失项</th><th>权重</th><th>作用</th></tr>
+            <tr><td>ℓ1 重建损失</td><td>λ_ℓ1 = 1.0</td><td>像素级 RGB 重建</td></tr>
+            <tr><td>LPIPS 感知损失</td><td>λ_LPIPS = 0.1</td><td>感知质量对齐</td></tr>
+            <tr><td>offset 正则</td><td>λ_off = 5e-3</td><td>防止高斯位置偏移过大</td></tr>
+            <tr><td>对抗损失 ℒ_adv</td><td>λ_adv = 5e-3</td><td>脸部特写视角真实感</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>训练策略：</strong>
+            <ul style="margin-top:6px;">
+                <li><strong>5k 步预训练：</strong>BodyUNet 重建输入位置图，其余高斯属性对齐到 canonical 模型</li>
+                <li><strong>400k 步联合优化：</strong>BodyUNet 预测残差高斯属性，可微渲染 + 全损失反传</li>
+                <li><strong>5k 步脸部精调：</strong>专门针对脸部做最后精化</li>
+                <li>每次迭代：单帧-单视角渲染，用 RGB + mask 监督；身体分支用全图，脸部分支用裁剪后的头部视角</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 实验结果 -->
+    <div class="section">
+        <h2>📈 实验结果</h2>
+        <h3>数据集</h3>
+        <table>
+            <tr><th>数据集</th><th>相机数</th><th>分辨率</th><th>帧率</th><th>标注</th></tr>
+            <tr><td><b>AvatarReX</b></td><td>16</td><td>1500×2048</td><td>30 fps</td><td>SMPL-X 参数</td></tr>
+            <tr><td><b>THuman4.0</b></td><td>24</td><td>1330×1150</td><td>30 fps</td><td>SMPL-X 参数</td></tr>
+        </table>
+
+        <h3>AvatarReX 量化结果（表 1）</h3>
+        <table>
+            <tr><th>模型</th><th>身体 PSNR↑</th><th>身体 SSIM↑</th><th>身体 LPIPS↓</th><th>脸部 PSNR↑</th><th>脸部 SSIM↑</th><th>脸部 LPIPS↓</th></tr>
+            <tr><td>AvatarReX</td><td>23.248</td><td>0.957</td><td>0.065</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>3DGS-Avatar</td><td>28.784</td><td>0.951</td><td>0.042</td><td>24.972</td><td>0.943</td><td>0.121</td></tr>
+            <tr><td>GaussianAvatar</td><td>26.950</td><td>0.939</td><td>0.041</td><td>24.011</td><td>0.933</td><td>0.144</td></tr>
+            <tr><td>AnimatableGaussians</td><td><b>30.361</b></td><td>0.968</td><td>0.034</td><td>25.671</td><td>0.957</td><td>0.114</td></tr>
+            <tr class="pick"><td><b>F3G-Avatar (ours)</b></td><td>30.214</td><td><b>0.970</b></td><td><b>0.032</b></td><td><b>26.243</b></td><td><b>0.964</b></td><td><b>0.084</b></td></tr>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-dim);">身体 PSNR 略低于 AnimatableGaussians，但 SSIM/LPIPS 更优；脸部三项指标全面 SOTA，LPIPS 相对 AnimatableGaussians 下降 26%。</p>
+
+        <h3>THuman4.0 量化结果（表 2）</h3>
+        <table>
+            <tr><th>模型</th><th>身体 PSNR↑</th><th>身体 SSIM↑</th><th>身体 LPIPS↓</th><th>脸部 PSNR↑</th><th>脸部 SSIM↑</th><th>脸部 LPIPS↓</th></tr>
+            <tr><td>TAVA</td><td>26.61</td><td>0.968</td><td>0.032</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>Ani-NeRF</td><td>22.53</td><td>0.964</td><td>0.034</td><td>20.14</td><td>0.931</td><td>0.102</td></tr>
+            <tr><td>AnimatableGaussians</td><td><b>30.614</b></td><td>0.980</td><td>0.029</td><td>26.434</td><td>0.953</td><td>0.071</td></tr>
+            <tr class="pick"><td><b>F3G-Avatar (ours)</b></td><td>30.311</td><td><b>0.981</b></td><td><b>0.026</b></td><td><b>26.934</b></td><td><b>0.961</b></td><td><b>0.062</b></td></tr>
+        </table>
+    </div>
+
+    <!-- 消融实验 -->
+    <div class="section">
+        <h2>🧪 消融实验</h2>
+        <h3>组件消融（表 3，AvatarReX 脸部指标）</h3>
+        <table>
+            <tr><th>配置</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>说明</th></tr>
+            <tr><td>w/o Face-focused Deformation</td><td>25.721</td><td>0.951</td><td>0.107</td><td>去掉脸部分支，PSNR 暴跌 0.52</td></tr>
+            <tr><td>w/o MHR template</td><td>26.015</td><td>0.963</td><td>0.090</td><td>退回 SMPL，PSNR 降 0.23</td></tr>
+            <tr><td>w/o ℒ_adv</td><td>27.010</td><td>0.959</td><td>0.091</td><td>去掉对抗损失，PSNR 反而高但 LPIPS 差</td></tr>
+            <tr class="pick"><td><b>Full model</b></td><td>26.243</td><td>0.964</td><td>0.084</td><td>所有组件叠加</td></tr>
+        </table>
+        <div class="highlight">
+            <strong>消融结论：</strong>
+            <ul style="margin-top:6px;">
+                <li><strong>脸部分支贡献最大：</strong>去掉后 LPIPS 从 0.084 暴涨到 0.107（+27%），证明专用分支对脸部感知质量至关重要</li>
+                <li><strong>MHR &gt; SMPL：</strong>换掉 MHR 后 PSNR/SSIM 都下降，验证 MHR 表达能力优势</li>
+                <li><strong>对抗损失换感知质量：</strong>去掉 ℒ_adv 后 PSNR 反而升到 27.0，但 LPIPS 变差 —— 说明对抗损失不优化 PSNR，而是优化<strong>感知真实感</strong>，这点与生成模型常识一致</li>
+            </ul>
+        </div>
+
+        <h3>分辨率与容量消融（表 4）</h3>
+        <table>
+            <tr><th>配置</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>时间 (ms)</th></tr>
+            <tr><td>输入 128×128</td><td>24.554</td><td>0.939</td><td>0.101</td><td>24.34 ± 1.12</td></tr>
+            <tr><td>输入 256×256</td><td>26.774</td><td>0.956</td><td>0.086</td><td>61.41 ± 0.87</td></tr>
+            <tr><td>(n_mlp, cm) = (2, 1)</td><td>25.340</td><td>0.941</td><td>0.087</td><td>47.43 ± 1.11</td></tr>
+            <tr class="pick"><td>(n_mlp, cm) = (4, 1)</td><td>26.243</td><td>0.964</td><td>0.084</td><td>56.47 ± 1.16</td></tr>
+            <tr><td>(n_mlp, cm) = (4, 2)</td><td>26.774</td><td>0.956</td><td>0.086</td><td>61.41 ± 0.87</td></tr>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-dim);">提高输入分辨率 128→256 显著提升质量（PSNR +2.2）；增加 mapping depth 2→4 明显改善；增加 channel multiplier 1→2 收益有限但代价显著。</p>
+    </div>
+
+    <!-- 与其他方法对比 -->
+    <div class="section">
+        <h2>⚖️ 与相关方法对比</h2>
+        <table>
+            <tr>
+                <th>方法</th>
+                <th>身体模型</th>
+                <th>脸部专用分支</th>
+                <th>2D 参数化</th>
+                <th>对抗损失</th>
+                <th>脸部 PSNR*</th>
+            </tr>
+            <tr>
+                <td><b>F3G-Avatar</b></td>
+                <td><b>MHR (clothed)</b></td>
+                <td>✅ 三 StyleUNet</td>
+                <td>front/back ortho maps</td>
+                <td>✅ StyleGAN2</td>
+                <td><b>26.24</b></td>
+            </tr>
+            <tr>
+                <td>AnimatableGaussians</td>
+                <td>SMPL-X</td>
+                <td>❌</td>
+                <td>front/back ortho maps</td>
+                <td>❌</td>
+                <td>25.67</td>
+            </tr>
+            <tr>
+                <td>GaussianAvatar</td>
+                <td>SMPL</td>
+                <td>❌</td>
+                <td>UV-space</td>
+                <td>❌</td>
+                <td>24.01</td>
+            </tr>
+            <tr>
+                <td>3DGS-Avatar</td>
+                <td>SMPL</td>
+                <td>❌</td>
+                <td>canonical space</td>
+                <td>❌</td>
+                <td>24.97</td>
+            </tr>
+            <tr>
+                <td>SplattingAvatar</td>
+                <td>SMPL-X</td>
+                <td>❌</td>
+                <td>mesh-embedded</td>
+                <td>❌</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td>UV Gaussians</td>
+                <td>SMPL-X</td>
+                <td>❌</td>
+                <td>UV-space</td>
+                <td>❌</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td>HUGS</td>
+                <td>SMPL</td>
+                <td>❌</td>
+                <td>canonical + offset</td>
+                <td>❌</td>
+                <td>—</td>
+            </tr>
+        </table>
+        <p style="font-size:0.85em; color:var(--text-dim);">*脸部 PSNR 在 AvatarReX 上对比。F3G-Avatar 是唯一同时具备 MHR + 脸部分支 + 对抗损失的方法。</p>
+
+        <h3>与头部专用方法的差异</h3>
+        <p>头部专用方法（GaussianAvatars / PointAvatar / Gaussian Head Avatar）把全部容量给脸部，质量更高但<strong>不能渲染身体</strong>。F3G-Avatar 的差异是：</p>
+        <ul>
+            <li>在全身 pipeline 内<strong>嵌套</strong>一个脸部专用分支，而非独立头部 avatar</li>
+            <li>脸部高斯与身体高斯在 canonical 空间融合后统一 LBS 摆姿态</li>
+            <li>用 region-aware 损失同时优化全身与脸部</li>
+        </ul>
+    </div>
+
+    <!-- 核心创新点 -->
+    <div class="section">
+        <h2>⭐ 核心创新点</h2>
+        <div class="highlight">
+            <strong>创新 1：双分支架构（身体 + 脸部焦点）</strong> — 脸部分支独立预测一整套 3D 高斯（位置/颜色/辅助），与身体高斯在 canonical 空间融合。把"区域聚焦建模"思路从头部 avatar 引入全身 pipeline。
+        </div>
+        <div class="highlight">
+            <strong>创新 2：首次集成 clothed MHR 到 3DGS 全身数字人</strong> — MHR 比 SMPL/SMPL-X 表达能力更强，脸部 articulation 更准；用 NeuS2 + SAM + 4D-Dress + Robust Skinning Transfer 构建 clothed MHR 模板。
+        </div>
+        <div class="highlight">
+            <strong>创新 3：Region-aware 重建 + 脸部对抗损失</strong> — 用预训练 StyleGAN2 判别器作用在渲染的脸部裁剪上，优化感知质量而非像素误差。消融证明：PSNR 略降但 LPIPS 大幅改善。
+        </div>
+        <div class="highlight">
+            <strong>创新 4：高分辨率脸部位置图 + canonical 三线性插值密化</strong> — 512×512 脸部裁剪 + 256×256 脸部位置图 + canonical 网格三线性插值密化，为脸部分配更高空间分辨率。
+        </div>
+    </div>
+
+    <!-- 与知识库相关论文的联系 -->
+    <div class="section">
+        <h2>🔗 与知识库相关论文的联系</h2>
+        <p>F3G-Avatar 是知识库中 <a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> 与 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a> 两篇笔记的核心案例论文。它在全身表达子方向中代表"<strong>脸部分支专用化</strong>"路线。</p>
+
+        <h3>上下游技术关系</h3>
+        <table>
+            <tr><th>角色</th><th>论文/技术</th><th>关系</th></tr>
+            <tr><td>身体模型</td><td><b>MHR</b> (2511.15586)</td><td>F3G-Avatar 直接采用，是 MHR 在 3DGS 数字人的首个集成</td></tr>
+            <tr><td>身体范式来源</td><td><b>AnimatableGaussians</b> (2304.11421)</td><td>front/back positional maps + StyleUNet 范式直接继承</td></tr>
+            <tr><td>头部 avatar 借鉴</td><td><b>GaussianAvatars</b> (2312.02069)</td><td>"区域聚焦建模"思路从头部 avatar 引入全身 pipeline</td></tr>
+            <tr><td>3DGS 基础</td><td><b>3D Gaussian Splatting</b> (2308.04079)</td><td>可微渲染基础</td></tr>
+            <tr><td>衣物分割</td><td><b>4D-Dress</b></td><td>非身体成分的投影与归因</td></tr>
+            <tr><td>表面重建</td><td><b>NeuS2</b></td><td>clothed body 几何重建</td></tr>
+            <tr><td>对抗损失判别器</td><td><b>StyleGAN2</b> (Alias-free GAN)</td><td>预训练判别器提供脸部感知监督</td></tr>
+            <tr><td>MHR &gt; SMPL 证据</td><td><b>Better Rigs, Not Bigger Networks</b> (2604.01447)</td><td>消融实验证明 MHR 替换 SMPL 带来 SOTA</td></tr>
+            <tr><td>同子方向对比</td><td><b>EVA</b> (2505.15385) / DEGAS / TaoAvatar</td><td>全身表达子方向的其他代表</td></tr>
+        </table>
+    </div>
+
+    <!-- 训练策略 -->
+    <div class="section">
+        <h2>🏋️ 训练策略与实现细节</h2>
+        <h3>Canonical 模板与高斯初始化</h3>
+        <ul>
+            <li>每个 subject 用其 SMPL-X 参数构建 canonical A-pose clothed MHR 模板</li>
+            <li>从前/后位置图渲染 1024×2048 拼接图</li>
+            <li>Canonical 模型含 <strong>320k 身体高斯 + 60k 脸部高斯</strong></li>
+            <li>初始位置来自 A-pose 位置图；尺度各向同性；颜色从均匀分布采样</li>
+        </ul>
+        <h3>网络架构</h3>
+        <ul>
+            <li><strong>身体分支：</strong>StyleUNet 主干，输入 512×512 canonical map，输出 1024×1024 的颜色/位置 offset/辅助属性图</li>
+            <li><strong>脸部分支：</strong>三个轻量 StyleUNet，在 256×256 脸部裁剪上预测头部特定修正，最后融合到全局高斯表示</li>
+        </ul>
+        <h3>优化</h3>
+        <ul>
+            <li>每次迭代渲染单帧-单视角，用 RGB + mask 监督</li>
+            <li>身体分支用全图训练，脸部分支用更新内参后的头部裁剪视角</li>
+            <li>损失权重：λ_ℓ1=1.0、λ_LPIPS=0.1、λ_off=5e-3、λ_adv=5e-3</li>
+            <li>训练流程：5k 预训练 → 400k 联合优化 → 5k 脸部精调</li>
+            <li><strong>单张 A100 GPU，每个 subject 约 1.5 天</strong></li>
+        </ul>
+    </div>
+
+    <!-- 应用场景 -->
+    <div class="section">
+        <h2>🎯 应用场景</h2>
+        <table>
+            <tr><th>应用领域</th><th>具体场景</th><th>优势</th></tr>
+            <tr><td>远程在场 / Telepresence</td><td>视频会议中的高保真数字分身</td><td>脸部细节决定感知真实感，避免恐怖谷</td></tr>
+            <tr><td>虚拟主播 / 直播</td><td>全天候可驱动的虚拟形象</td><td>多视角一致、表情自然、可动画</td></tr>
+            <tr><td>AR/VR</td><td>沉浸式社交与协作</td><td>脸部对抗损失保证特写视角质量</td></tr>
+            <tr><td>影视与游戏</td><td>角色数字化、虚拟演员</td><td>3DGS 显式表示可编辑，PBR 友好</td></tr>
+            <tr><td>数字人内容生成</td><td>数字人生成与编辑</td><td>可控表情与身体动作</td></tr>
+        </table>
+        <div class="highlight warn">
+            <strong>⚠️ 潜在社会影响：</strong>论文明确指出，F3G-Avatar 能合成逼真可驱动的全身数字人，可能被用于伪造 3D 内容或 2D 视频，需要负责任地使用。
+        </div>
+    </div>
+
+    <!-- 个人分析 -->
+    <div class="section">
+        <h2>🧠 个人分析</h2>
+        <ul>
+            <li><strong>"区域聚焦建模"是全身数字人的正确方向：</strong>脸部占全身像素小但感知权重大。F3G-Avatar 用专用分支打破"均匀分配容量"的桎梏，思路清晰、消融有力。这预示着未来会出现更多"手部分支"、"发丝分支"、"衣物分支"等区域专用网络。</li>
+            <li><strong>MHR 集成是工程亮点但也是依赖：</strong>F3G-Avatar 是 MHR 在 3DGS 数字人的首个落地，但 MHR 还很新（2025.11 发布），社区支持、工具链、预训练模型都不如 SMPL 成熟。早期采用者有优势，也承担生态风险。</li>
+            <li><strong>身体 PSNR 并未超越 AnimatableGaussians：</strong>论文强项是脸部，身体 PSNR 略低（30.21 vs 30.36）。说明脸部分支的额外容量<strong>没有帮助反而略影响</strong>身体重建 —— 但 SSIM/LPIPS 更好，说明感知质量更优。</li>
+            <li><strong>对抗损失换感知质量而非 PSNR：</strong>消融显示去掉 ℒ_adv 后 PSNR 反升到 27.0，但 LPIPS 变差。这是生成对抗损失的经典 trade-off —— 优化感知分布而非像素误差。F3G-Avatar 用 StyleGAN2 判别器，继承 StyleGAN 系列在脸部感知上的优势。</li>
+            <li><strong>与 EVA 的对比定位：</strong>EVA (SIGGRAPH 2025) 也做身体+脸解耦，但用"两层模板几何 + 高斯外观"思路；F3G-Avatar 用"双分支高斯预测"思路，更轻量、更专注脸部。EVA 是工业级多目方案标杆，F3G-Avatar 是脸部细节工程化的代表。</li>
+            <li><strong>限制：</strong>(1) 需要 SMPL-X 参数作为输入，tracking 质量影响最终效果；(2) MHR 转换需要优化，依赖 SMPL-X 的初始估计；(3) 每人 1.5 天训练，无法做到单图前馈；(4) 仅在 AvatarReX/THuman4.0 评测，真实野外场景未验证；(5) 没有显式头发/手部专用分支，仍是"脸 + 身体"二元划分。</li>
+            <li><strong>与"同事方案"高度重合：</strong>F3G-Avatar 几乎是同事方案（MHR + clothed 模板 + 双分支 + LBS + 高斯渲染 + 脸部对抗损失）的<strong>完整学术实现</strong>。强烈建议在动手前精读这篇，直接复用其架构避免重复造轮子，详见 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析笔记</a>。</li>
+        </ul>
+    </div>
+
+    <!-- Pipeline 还原 -->
+    <div class="section">
+        <h2>🔧 Pipeline 还原（ASCII 图）</h2>
+        <pre class="ascii">┌────────────────────────────────────────────────────────────────────┐
+│                   F3G-Avatar 端到端流程                            │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  多视角 RGB 视频 ──► SMPL-X 参数回归                                │
+│                         │                                          │
+│                         ▼                                          │
+│              [SMPL-X → MHR 转换]                                   │
+│              min ‖V_mhr - V_smplx‖ + λ‖J_mhr - J_smplx‖           │
+│                         │                                          │
+│                         ▼                                          │
+│              [Clothed MHR 模板]                                    │
+│              NeuS2 重建 + SAM 分割 + 4D-Dress + Skinning Transfer  │
+│                         │                                          │
+│           ┌─────────────┴─────────────┐                            │
+│           ▼                           ▼                            │
+│  ┌──────────────────┐        ┌──────────────────────┐              │
+│  │  身体分支         │        │  脸部分支             │              │
+│  │                  │        │                      │              │
+│  │ 1024×1024       │        │  512×512 脸部裁剪     │              │
+│  │ front/back      │        │  → K_new 更新        │              │
+│  │ positional maps │        │  → 256×256 头部 map  │              │
+│  │      │          │        │      │                │              │
+│  │      ▼          │        │      ▼                │              │
+│  │ BodyUNet/       │        │ 3 × StyleUNet        │              │
+│  │ StyleUNet       │        │  P(·) → 位置          │              │
+│  │      │          │        │  C(·) → 颜色          │              │
+│  │      ▼          │        │  A(·) → 辅助          │              │
+│  │ ΔG^b (body      │        │      │                │              │
+│  │  Gaussian res.) │        │      ▼                │              │
+│  └──────────────────┘        │  ΔG^h (face           │              │
+│           │                  │   Gaussian res.)     │              │
+│           │                  └──────────────────────┘              │
+│           │                              │                          │
+│           └──────────┬───────────────────┘                          │
+│                      ▼                                              │
+│         [Gaussian 融合 + canonical 头部高斯]                        │
+│                      │                                              │
+│                      ▼                                              │
+│              [LBS: canonical → posed]                               │
+│                      │                                              │
+│                      ▼                                              │
+│              [3DGS 可微渲染]                                        │
+│                      │                                              │
+│                      ▼                                              │
+│         ┌────────────────────────────┐                              │
+│         │ Region-aware 损失           │                              │
+│         │ • 全身: ℓ1 + LPIPS + offset │                              │
+│         │ • 脸部: StyleGAN2 → ℒ_adv  │                              │
+│         └────────────────────────────┘                              │
+│                                                                    │
+│  训练: 5k 预训练 → 400k 联合 → 5k 脸部精调                         │
+│  硬件: 单 A100, ~1.5 天/人                                         │
+│  规模: 320k body + 60k face Gaussians                             │
+└────────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+
+    <!-- 结论 -->
+    <div class="section verdict">
+        <h2>🎯 结论：是不是最好的方法？</h2>
+        <ul>
+            <li><b>在"全身 + 脸部细节"子赛道，F3G-Avatar 是当前 SOTA</b>
+                <ul style="margin-top:8px;">
+                    <li>AvatarReX 与 THuman4.0 脸部 PSNR/SSIM/LPIPS 全面领先 AnimatableGaussians、3DGS-Avatar、GaussianAvatar</li>
+                    <li>脸部 LPIPS 大幅改善（0.084 vs 0.114），说明感知质量显著提升</li>
+                    <li>首次验证 MHR 在 3DGS 数字人流程中的有效性</li>
+                    <li>双分支 + 对抗损失的工程组合可复用性强</li>
+                    <li>开源代码 + 单 A100 1.5 天/人，工程落地门槛适中</li>
+                </ul>
+            </li>
+            <li><span class="warn">⚠️ 需要注意：</span>
+                <ul style="margin-top:8px;">
+                    <li>身体 PSNR 略低于 AnimatableGaussians，强项仅在脸部</li>
+                    <li>需要 SMPL-X 参数作为输入，不是端到端单图方法</li>
+                    <li>每人 1.5 天训练，无法做到前馈秒级</li>
+                    <li>MHR 生态尚不成熟，依赖 Meta 后续支持</li>
+                    <li>仅在 AvatarReX/THuman4.0 评测，野外场景泛化未验证</li>
+                    <li>没有显式头发/手部专用分支，仍是"脸 + 身体"二元划分</li>
+                    <li>论文为 CVPR Workshop (3DMV)，不是主会议，影响力有限</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 研究团队 -->
+    <div class="section">
+        <h2>👥 研究团队</h2>
+        <table>
+            <tr><th>作者</th><th>单位</th></tr>
+            <tr><td>Willem Menu (一作)</td><td>TU/e Eindhoven, AIMS Group</td></tr>
+            <tr><td>Erkut Akdag</td><td>TU/e Eindhoven, AIMS Group</td></tr>
+            <tr><td>Pedro Quesado</td><td>TU/e Eindhoven, AIMS Group</td></tr>
+            <tr><td>Yasaman Kashefbahrami</td><td>TU/e Eindhoven, AIMS Group</td></tr>
+            <tr><td>Egor Bondarev</td><td>TU/e Eindhoven, AIMS Group</td></tr>
+        </table>
+        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">AIMS (AI for Media Streaming) Group 隶属于埃因霍温理工大学电气工程系，研究方向包括视频分析、流媒体与计算机视觉。本工作受 ELEVATION Ecsel 项目资助，面向云端的 Systems-of-Systems 高端安全与广播应用。</p>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <div class="resource-links">
+            <a href="https://arxiv.org/abs/2604.09835" target="_blank">📄 arXiv: 2604.09835</a>
+            <a href="https://arxiv.org/html/2604.09835v1" target="_blank">🌐 arXiv HTML</a>
+            <a href="https://github.com/wjmenu/F3G-avatar" target="_blank">💻 GitHub</a>
+        </div>
+        <h3 style="margin-top:20px;">知识库相关笔记</h3>
+        <ul>
+            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建研究现状调研</a> — F3G-Avatar 出现在"全身表达"子方向</li>
+            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline</a> — F3G-Avatar 是该分析的核心参考论文</li>
+            <li><a href="3D-20230808-3DGS-Survey.html">3D Gaussian Splatting 基础与改进综述</a> — 3DGS 基础</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3D 数字人调研 · F3G-Avatar · CVPRW 3DMV 2026 · 全身高斯数字人的脸部焦点重建 · 2026-07-20 整理
+</div>
+
+</body>
+</html>
