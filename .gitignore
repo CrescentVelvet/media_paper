@@ -23,3 +23,7 @@ update_notes*.ps1
 # OS files
 Thumbs.db
 .DS_Store
+
+# Raw saved Zhihu webpages (large; article figures already extracted to images/)
+_archive/sources/zhihu_sam3d*.html
+_archive/sources/zhihu_sam3d*_files/
