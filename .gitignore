@@ -25,5 +25,5 @@ Thumbs.db
 .DS_Store
 
 # Raw saved Zhihu webpages (large; article figures already extracted to images/)
-_archive/sources/zhihu_sam3d*.html
-_archive/sources/zhihu_sam3d*_files/
+_archive/sources/zhihu_*.html
+_archive/sources/zhihu_*_files/

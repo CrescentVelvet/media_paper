@@ -42,6 +42,14 @@
         .verdict { background: linear-gradient(135deg, rgba(118, 185, 0, 0.1), rgba(118, 185, 0, 0.05)); border: 1px solid rgba(118, 185, 0, 0.3); }
         .verdict h2 { color: var(--accent); }
         .warn { color: #d29922; }
+        .figure { text-align: center; margin: 18px 0; }
+        .figure img { max-width: 100%; border-radius: 6px; border: 1px solid var(--border); display: block; margin: 0 auto; }
+        .figure .caption { color: var(--text-dim); font-size: 0.82em; margin-top: 6px; line-height: 1.5; }
+        .figure .caption b { color: #c8c8c8; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+        @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+        .src-note { font-size: 0.78em; color: var(--text-dim); border-left: 2px solid var(--border); padding-left: 10px; margin: 8px 0; }
+        .src-note a { color: var(--accent); }
     </style>
 </head>
 <body>
@@ -204,7 +212,69 @@ X̃(βˢ, βᶠ, θ) = X̄ + Bˢ(βˢ, S)  + Bᶠ(βᶠ, F)  + Bᵖ(θ, P)
         </div>
     </div>
 
-    <!-- 评估 -->
+    <!-- 知乎精读：原文转载 -->
+    <div class="section">
+      <h2>📖 知乎精读：MHR 详解（原文）</h2>
+      <div class="src-note">以下为知乎专栏原文转载（<a href="https://zhuanlan.zhihu.com/p/1975249116436120099" target="_blank">原文链接</a>），配图本地化于 <code>images/mhr-zhihu/</code>。</div>
+        <div class="figure"><img src="images/mhr-zhihu/x1.jpg" alt="配图" loading="lazy"><div class="caption"><b>图1</b> 配图</div></div>
+        <p>大家好！今天想和大家聊一篇非常有趣的新论文，它来自Meta，题为《MHR: Momentum Human Rig 》。这篇论文介绍了一种全新的参数化人体模型—— MHR (Momentum Human Rig) 。对于从事AR/VR、游戏开发或是数字人研究的朋友们来说，这绝对是一个值得关注的进展。简单来说，MHR模型旨在创建更富有表现力、 解剖学 上更合理的人体动画，它巧妙地结合了两种 现有技术 的优点，并引入了创新性的改进，让数字人的动作和形态都达到了一个新的高度。</p>
+        <p>在深入了解MHR之前，我们先来看看这篇重磅论文的基本信息：</p>
+            <ul>
+            <li>论文标题 : MHR: Momentum Human Rig</li>
+            <li>论文作者 : Aaron Ferguson, Ahmed A. A. Osman, Berta Bescos, Carsten Stoll, Chris Twigg, Christoph Lassner, David Otte, Eric Vignola等</li>
+            <li>作者机构 : Meta</li>
+            <li>论文地址 : https:// arxiv.org/abs/2511.1558 6</li>
+            <li>代码仓库 : https:// github.com/facebookrese arch/MHR</li>
+            </ul>
+        <h3>数字人模型的“前世今生”</h3>
+        <p>在 计算机图形学 领域，参数化人体模型扮演着核心角色。像我们熟知的 SMPL 、SMPL-X等模型，它们能用一组紧凑的参数（比如体型和姿态）来生成一个完整的三维人体网格。这项技术是虚拟试衣、 动作捕捉 和虚拟形象创建等应用的基石。</p>
+        <p>然而，经典的模型也存在一些固有的局限性。例如，在SMPL这类模型中，人体的骨骼关节位置是通过表面网格顶点加权计算得出的。这种设计导致了骨骼和身体外形（ 软组织 ）的“纠缠”，使得我们很难独立地去调整骨骼长度（比如让一个角色变高，但不变胖）或精确地塑造体型。这对于追求细节的 艺术家 和开发者来说，无疑是一个痛点。</p>
+        <p>为了解决这个问题， ATLAS 模型率先提出了解耦骨骼与外形的思想，允许对骨骼和表面进行 独立控制 。MHR正是在这一思想的基础上，进一步融合了 Momentum库 的灵活性和现代化的绑定系统，旨在打造一个表现力更强、更符合解剖学原理的全新模型。</p>
+        <div class="figure"><img src="images/mhr-zhihu/x2.jpg" alt="数字人模型的“前世今生”" loading="lazy"><div class="caption"><b>图2</b> 数字人模型的“前世今生”</div></div>
+        <h3>MHR模型的核心创新</h3>
+        <p>MHR模型的 设计哲学 是“解耦”与“精控”。它将人体分为几个可以独立控制的部分，并对姿态引起的变化进行了更精细的建模。其核心可以概括为以下几点：</p>
+        <h4>骨骼、体型和姿态的完全解耦</h4>
+        <p>MHR的第一个亮点，就是它彻底分离了 骨骼结构 （Skeletal Structure）、身份体型（Identity Shape）和姿态（Pose）。</p>
+            <ul>
+            <li>独立的 骨骼系统 ：MHR的骨骼系统基于Momentum库构建，拥有127个关节。与以往模型不同，骨骼的长度、位置等属性可以被直接、独立地调整，而不会意外地影响到身体的胖瘦。这为创建不同身高、臂展和腿长的角色提供了极大的便利。论文中的图示非常直观地展示了改变单一骨骼参数的效果，例如拉长手臂或大腿，而身体其他部分保持不变。</li>
+            </ul>
+        <div class="figure"><img src="images/mhr-zhihu/x3.jpg" alt="骨骼、体型和姿态的完全解耦" loading="lazy"><div class="caption"><b>图3</b> 骨骼、体型和姿态的完全解耦</div></div>
+            <ul>
+            <li>分区的身份空间 (Partitioned Identity Space) ：为了更精细地控制体型，MHR将身份体型 空间划分 为了三个独立的部分： 身体、头部和手部 。这意味着你可以使用不同的参数集分别调整这三个区域的形状，比如单独改变一个人的脸型，而身体和手保持不变。这种设计不仅让艺术家的创作更自由，也使得模型可以利用来自不同大型扫描数据集的优势，分别针对身体、头部和手部进行学习，从而提升各部分的细节和保真度。</li>
+            </ul>
+        <div class="figure"><img src="images/mhr-zhihu/x4.jpg" alt="骨骼、体型和姿态的完全解耦" loading="lazy"><div class="caption"><b>图4</b> 骨骼、体型和姿态的完全解耦</div></div>
+            <ul>
+            <li>丰富的表情系统 ：MHR还包含一个由艺术家雕刻的、基于面部动作编码系统（ FACS ）的表情空间。这个系统包含了72个 语义化 的表情，比如抬眉、微笑等，它们是稀疏且明确的，使得表情控制更加直观和精准。</li>
+            </ul>
+        <div class="figure"><img src="images/mhr-zhihu/x5.jpg" alt="骨骼、体型和姿态的完全解耦" loading="lazy"><div class="caption"><b>图5</b> 骨骼、体型和姿态的完全解耦</div></div>
+        <p>下图展示了MHR身份空间中身体、面部和手部的前几个主成分变化效果，可以看出其对局部形态的强大控制力。</p>
+        <div class="figure"><img src="images/mhr-zhihu/x6.jpg" alt="骨骼、体型和姿态的完全解耦" loading="lazy"><div class="caption"><b>图6</b> 骨骼、体型和姿态的完全解耦</div></div>
+        <h4>创新的稀疏非线性姿态校正</h4>
+        <p>当人体做出大幅度动作时（比如弯曲手肘或膝盖），皮肤和肌肉会产生复杂的变形，这被称为“软组织变形”。传统的线性混合蒙皮（LBS）技术很难完美模拟这种效果，经常会导致“糖纸包裹”等不自然现象。因此，需要额外的“姿态校正”来修正。</p>
+        <p>SMPL-X等模型虽然有姿态校正，但其校正量是全局性的，一个关节的运动可能会影响到全身的顶点，这在物理上是不准确的。</p>
+        <p>MHR在这里提出了一个非常巧妙的方案： 稀疏非线性姿态校正 (Sparse, Non-Linear Pose Correctives) 。它将校正过程分解为两步：</p>
+            <ul>
+            <li>局部非线性编码 ：首先，一个轻量级的多层感知机（MLP）网络会处理每个关节及其相邻关节的姿态信息，生成一个编码了局部姿态变化的特征。这个过程是 非线性 的，能够捕捉到更复杂的变形关系。</li>
+            <li>稀疏线性应用 ：然后，该特征会通过一个线性层，将变形应用到 网格顶点 上。关键在于，这个应用过程是 稀疏 的。通过一种基于 测地线 距离的初始化和L1正则化，模型能学习到每个关节的运动只影响其周围的一小片区域。</li>
+            </ul>
+        <p>如下图所示，SMPL-X的姿态校正（第一行）影响范围很广，而MHR的校正（第三行）在训练后变得非常稀疏和局部化，更符合真实的肌肉运动原理。</p>
+        <div class="figure"><img src="images/mhr-zhihu/x7.jpg" alt="创新的稀疏非线性姿态校正" loading="lazy"><div class="caption"><b>图7</b> 创新的稀疏非线性姿态校正</div></div>
+        <p>这种设计结合了 非线性模型 的表现力和 稀疏模型 的局部性与效率，是MHR在技术上的一个重大突破。</p>
+        <h3>实验效果如何？</h3>
+        <p>说了这么多技术细节，MHR的实际表现究竟怎么样呢？论文在3DBodyTex这个公开数据集上，将MHR与SMPL和SMPL-X进行了详细的比较。</p>
+        <h4>定量分析</h4>
+        <p>在模型拟合3D扫描数据的任务上，研究人员评估了模型表面与真实扫描数据点之间的平均距离（即顶点到表面的误差）。结果显示，MHR在不同数量的拟合参数下，其 拟合误差 均显著低于SMPL和SMPL-X 。这意味着MHR能够用更少的参数更准确地表达真实的人体形状。</p>
+        <div class="figure"><img src="images/mhr-zhihu/x8.jpg" alt="定量分析" loading="lazy"><div class="caption"><b>图8</b> 定量分析</div></div>
+        <h4>定性分析</h4>
+        <p>定性结果更加直观。从下图的比较中我们可以看到，无论是从模型与扫描的重叠度，还是从误差热力图来看，MHR（最右列）的拟合效果都远超前两者。特别是在关节处，如肩膀、肘部和膝盖，SMPL和SMPL-X的拟合偏差较大，而MHR则能非常贴合地重建出身体轮廓，尤其是在一些极端姿态下，优势更为明显。</p>
+        <div class="figure"><img src="images/mhr-zhihu/x9.jpg" alt="定性分析" loading="lazy"><div class="caption"><b>图9</b> 定性分析</div></div>
+        <h3>总结与展望</h3>
+        <p>总的来说，MHR通过将骨骼与体型解耦、引入分区的身份空间以及设计巧妙的稀疏非线性姿态校正系统，成功地创建了一个在表现力、准确性和艺术家友好性方面都超越以往工作的参数化 人体模型 。</p>
+        <p>这项工作不仅为AR/VR中的虚拟化身、电影和游戏中的角色动画提供了更强大的工具，也为 计算机视觉 领域中基于模型的3D人体姿态和形状估计等研究铺平了道路。虽然模型还有一些待完善之处，比如集成眼球和 口腔系统 ，但MHR无疑为 数字人技术 的未来指明了一个清晰而令人兴奋的方向。</p>
+        <p>大家对MHR这个新模型有什么看法？你觉得它最可能在哪些领域大放异彩？欢迎在评论区一起交流讨论！</p>
+    </div>
+
+        <!-- 评估 -->
     <div class="section">
         <h2>📊 评估结果</h2>
         <h3>3DBodyTex 拟合实验</h3>
@@ -309,6 +379,7 @@ X̃(βˢ, βᶠ, θ) = X̄ + Bˢ(βˢ, S)  + Bᶠ(βᶠ, F)  + Bᵖ(θ, P)
             <a href="https://arxiv.org/abs/2511.15586" target="_blank">📄 arXiv: 2511.15586</a>
             <a href="https://arxiv.org/html/2511.15586v3" target="_blank">🌐 arXiv HTML</a>
             <a href="https://github.com/facebookresearch/MHR" target="_blank">💻 GitHub</a>
+            <a href="https://zhuanlan.zhihu.com/p/1975249116436120099" target="_blank">📖 知乎精读：MHR 详解</a>
         </div>
         <h3 style="margin-top:20px;">知识库相关笔记</h3>
         <ul>
