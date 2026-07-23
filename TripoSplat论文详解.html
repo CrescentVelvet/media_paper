@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TripoSplat：基于学习密度控制的生成式3D高斯 — 论文详解</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-card: #f8f9fa;
+  --bg-code: #f1f3f5;
+  --text: #1a1a2e;
+  --text-secondary: #555;
+  --border: #dee2e6;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --green-bg: #e8f5e9;
+  --green-border: #66bb6a;
+  --green-text: #2e7d32;
+  --table-header: #e3f2fd;
+  --table-row-alt: #f8f9fa;
+  --shadow: rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+  --bg: #0f0f1a;
+  --bg-card: #1a1a2e;
+  --bg-code: #16213e;
+  --text: #e0e0e0;
+  --text-secondary: #999;
+  --border: #2a2a4a;
+  --accent: #60a5fa;
+  --accent-light: #1e3a5f;
+  --green-bg: #1b3a1b;
+  --green-border: #4caf50;
+  --green-text: #81c784;
+  --table-header: #1e3a5f;
+  --table-row-alt: #1a1a2e;
+  --shadow: rgba(0,0,0,0.3);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, "SF Pro Text", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.8;
+  font-size: 17px;
+  padding: 0;
+}
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px 120px;
+}
+h1 {
+  font-size: 2em;
+  text-align: center;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 1.6em;
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent);
+}
+h3 {
+  font-size: 1.3em;
+  margin-top: 32px;
+  margin-bottom: 12px;
+}
+h4 {
+  font-size: 1.1em;
+  margin-top: 24px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+p {
+  margin-bottom: 14px;
+  text-align: justify;
+}
+.meta {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+.badge {
+  display: inline-block;
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin: 2px;
+}
+.figure {
+  margin: 28px 0;
+  text-align: center;
+}
+.figure img {
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+.figure figcaption {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  text-align: center;
+}
+.cn-summary {
+  background: var(--green-bg);
+  border-left: 4px solid var(--green-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+}
+.cn-summary::before {
+  content: "🀄 ";
+  font-size: 1.1em;
+}
+.cn-summary p {
+  color: var(--green-text);
+  margin: 0;
+}
+.equation {
+  background: var(--bg-code);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-family: "Cambria Math", "Latin Modern Math", serif;
+  font-size: 0.95em;
+  overflow-x: auto;
+  text-align: center;
+}
+.algorithm {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 0.85em;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+.algorithm .title {
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+.algorithm .line {
+  white-space: pre-wrap;
+  padding-left: 0;
+}
+.algorithm .indent { padding-left: 2em; }
+.algorithm .indent2 { padding-left: 4em; }
+.algorithm .comment {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.85em;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: center;
+}
+th {
+  background: var(--table-header);
+  font-weight: 600;
+}
+tr:nth-child(even) {
+  background: var(--table-row-alt);
+}
+.best { font-weight: bold; color: var(--accent); }
+.card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+}
+.contribution-list {
+  list-style: none;
+  counter-reset: contrib;
+}
+.contribution-list li {
+  counter-increment: contrib;
+  padding: 10px 0 10px 36px;
+  position: relative;
+}
+.contribution-list li::before {
+  content: counter(contrib);
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+/* FAB Group */
+.fab-group {
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+.fab:hover { opacity: 0.85; }
+/* Drawer */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 999;
+}
+.drawer {
+  display: none;
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 300px;
+  max-width: 85vw;
+  background: var(--bg);
+  z-index: 1001;
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: -2px 0 12px var(--shadow);
+}
+.drawer.open { display: block; }
+.drawer-overlay.open { display: block; }
+.drawer h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--accent);
+}
+.drawer ul {
+  list-style: none;
+}
+.drawer ul li {
+  margin-bottom: 6px;
+}
+.drawer ul li a {
+  display: block;
+  padding: 8px 12px;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.9em;
+  transition: background 0.2s;
+}
+.drawer ul li a:hover {
+  background: var(--accent-light);
+}
+.drawer ul li.sub a {
+  padding-left: 28px;
+  font-size: 0.85em;
+}
+.drawer-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
+}
+.highlight-box {
+  background: var(--accent-light);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  border-left: 4px solid var(--accent);
+}
+.stage-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  border-left: 4px solid var(--accent);
+}
+.stage-card .stage-label {
+  font-weight: bold;
+  color: var(--accent);
+  font-size: 0.9em;
+}
+code {
+  background: var(--bg-code);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+a { color: var(--accent); }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="fab-group">
+  <button class="fab" onclick="toggleTheme()" id="themeBtn">🌙</button>
+  <button class="fab" onclick="toggleDrawer()">📋</button>
+</div>
+
+<div class="drawer-overlay" id="overlay" onclick="toggleDrawer()"></div>
+<div class="drawer" id="drawer">
+  <button class="drawer-close" onclick="toggleDrawer()">✕</button>
+  <h3>📑 目录</h3>
+  <ul>
+    <li><a href="#top">论文概览</a></li>
+    <li><a href="#abstract">摘要</a></li>
+    <li><a href="#intro">1. 引言</a></li>
+    <li><a href="#contrib">核心贡献</a></li>
+    <li><a href="#related">2. 相关工作</a></li>
+    <li class="sub"><a href="#rw-gs">2.1 3D高斯泼溅</a></li>
+    <li class="sub"><a href="#rw-gen">2.2 3D生成模型</a></li>
+    <li class="sub"><a href="#rw-gsgen">2.3 3D高斯生成</a></li>
+    <li><a href="#method">3. 方法</a></li>
+    <li class="sub"><a href="#overview">3.1 总览</a></li>
+    <li class="sub"><a href="#vae">3.2 DeG-VAE</a></li>
+    <li class="sub"><a href="#density">3.3 可微密度优化</a></li>
+    <li class="sub"><a href="#vecseq">3.4 VecSeq扩散</a></li>
+    <li class="sub"><a href="#algo">Algorithm 1</a></li>
+    <li><a href="#exp">4. 实验</a></li>
+    <li class="sub"><a href="#impl">4.1 实现细节</a></li>
+    <li class="sub"><a href="#recon">4.2 重建结果</a></li>
+    <li class="sub"><a href="#gen">4.3 生成结果</a></li>
+    <li class="sub"><a href="#ablation">消融实验</a></li>
+    <li class="sub"><a href="#user">用户研究</a></li>
+    <li><a href="#conclusion">5. 结论与展望</a></li>
+    <li><a href="#tech">技术总结</a></li>
+  </ul>
+</div>
+
+<div class="container" id="top">
+
+<h1>TripoSplat：基于学习密度控制的生成式3D高斯</h1>
+<p class="meta">
+  <strong>Generative 3D Gaussians with Learned Density Control</strong><br>
+  Runjie Yan (清华), Yan-Pei Cao, Peng Wang, Ding Liang, Yuan-Chen Guo (VAST / TripoAI)<br>
+  arXiv:2605.16355 · SIGGRAPH 2026 Conference Papers · 2026年5月<br>
+  <span class="badge">3D生成</span>
+  <span class="badge">高斯泼溅</span>
+  <span class="badge">单图转3D</span>
+  <span class="badge">MIT License</span>
+</p>
+
+<div class="cn-summary">
+  <p>TripoSplat 是 VAST-AI Research / TripoAI 推出的单图转3D高斯生成模型。核心创新有三：(1) <strong>密度采样高斯（DeG）</strong>——将高斯中心建模为从可学习概率密度函数中采样，支持任意数量的高斯输出；(2) <strong>渲染损失贡献梯度</strong>——将3DGS的离散致密化/剪枝替换为全可微的密度优化；(3) <strong>VecSeq重排序</strong>——通过最优传输将无序潜在token映射到确定性的3D Sobol序列，解决扩散模型在集合数据上的排列歧义问题。</p>
+</div>
+
+<figure class="figure" id="fig-teaser">
+  <img src="figures/x2.png" alt="Figure 1 Teaser">
+  <figcaption><strong>图1.</strong> Teaser。不同高斯数量的最佳生成样本，展示模型可从单个潜在表示解码任意数量的3D高斯泼溅。</figcaption>
+</figure>
+
+<!-- ==================== 摘要 ==================== -->
+<h2 id="abstract">摘要</h2>
+
+<p>本文提出<strong>密度采样高斯（Density-Sampled Gaussians, DeG）</strong>，一种全新的3D表示方法，旨在弥合自适应渲染原语与可扩展生成建模之间的差距。</p>
+
+<p>现有方法将3D高斯约束在固定的体素网格或数组上，而DeG将高斯中心建模为<strong>从定义在八叉树上的可学习概率密度函数中采样的样本</strong>。这一公式提供了一个严格的数学框架来实现自适应密度控制：通过在渲染监督下联合优化空间密度和高斯属性，模型自然地将原语集中在几何复杂度高的区域。</p>
+
+<p>为实现生成式合成，作者在DeG上训练了潜在扩散模型，并提出了<strong>VecSeq</strong>——一种规范重索引机制，将潜在token锚定到确定性的3D Sobol序列上，将无序集合生成问题转化为鲁棒的序列建模任务。实验证明该流程在单图转3D生成中达到了SOTA质量。</p>
+
+<!-- ==================== 引言 ==================== -->
+<h2 id="intro">1. 引言</h2>
+
+<p>3D生成模型在图形学和视觉领域日益重要，广泛应用于AR/VR、仿真、机器人和交互应用。3D高斯泼溅（3DGS）因其灵活性、高视觉质量和有前景的渲染速度而成为一种引人注目的表示方法。</p>
+
+<p><strong>核心挑战：</strong>3DGS的质量主要源于密度控制策略——迭代致密化和剪枝。但这个过程是<strong>不可微且难以向量化的</strong>，在可泛化的学习设置中不实用。因此，现有的高斯生成方法通常将3D场景表示为绑定在预定义结构上的固定数量高斯：</p>
+
+<ul style="margin-left: 2em; margin-bottom: 14px;">
+  <li><strong>GaussianCube</strong>：优化固定的 N³ 个高斯，用最优传输重排到网格</li>
+  <li><strong>结构化潜在方法</strong>（TRELLIS, UniLat3D）：给每个体素分配固定数量的高斯</li>
+  <li><strong>像素对齐方法</strong>（LGM, DiffusionGS）：每个像素/图块预测固定数量的高斯</li>
+</ul>
+
+<p>这些方法都无法根据局部复杂度自适应分配高斯，导致需要过多的高斯才能达到高保真度。</p>
+
+<div class="highlight-box">
+  <p><strong>本文方案：</strong>提出一个恢复3DGS自适应能力的生成框架，无需逐场景优化。引入<strong>DeG</strong>——高斯中心从学习的3D概率密度函数中动态采样，将原语的空间分布与其属性解耦。推理时可从该密度中采样任意数量的锚点，实现从轻量移动端资产到超高保真渲染的灵活权衡。</p>
+</div>
+
+<h3 id="contrib">核心贡献</h3>
+
+<ol class="contribution-list">
+  <li><strong>密度采样高斯（DeG）</strong>：一种面向生成建模的3D表示，通过从可学习密度函数采样中心来支持可变大小输出和高斯的自适应分配。</li>
+  <li><strong>渲染损失贡献梯度</strong>：一种高效信号，仅使用图像重建损失即可端到端优化随机密度函数，有效学习最优原语放置——相当于3DGS致密化/剪枝的全可微替代。</li>
+  <li><strong>VecSeq重排序机制</strong>：通过将token锚定到确定性空间结构来稳定集合数据上的扩散训练，实现更快收敛和SOTA生成质量。</li>
+</ol>
+
+<!-- ==================== 相关工作 ==================== -->
+<h2 id="related">2. 相关工作</h2>
+
+<h3 id="rw-gs">2.1 3D高斯泼溅</h3>
+<p>3DGS将场景或物体表示为一组各向异性高斯，通过可微光栅化（泼溅）渲染，达到实时速度和高视觉质量。近期改进包括增强致密化、高效训练、稀疏视图重建和即时前馈推理。F4Splat将致密化扩展到前馈重建。但这些工作面向重建，通常缺乏生成3D高斯的能力。</p>
+
+<h3 id="rw-gen">2.2 3D生成模型</h3>
+<p>早期方法使用对抗训练建模类别级形状分布。SDS（Score Distillation Sampling）通过冻结的扩散模型梯度实现3D生成。近年来潜在扩散模型启发了3D原生潜在表示：<strong>3DShape2VecSet</strong>提出将SDF编码为无序token集合并在潜在空间进行扩散的范式；CLAY进一步扩展；后续包括TripoSG、Hunyuan3D 2.1、Direct3D、LATTICE等。另一分支通过稀疏体素层级或稀疏结构改进几何细节，但主要面向表面几何生成。</p>
+
+<h3 id="rw-gsgen">2.3 3D高斯生成</h3>
+<p>现有高斯生成方法受限于神经输出参数化：<strong>结构化潜在方法</strong>给每个体素分配固定数量高斯；<strong>像素对齐方法</strong>预测每个像素/图块的固定高斯数。<strong>GaussianCube</strong>尝试通过OT映射恢复输出灵活性，但引入大量训练开销（逐物体高斯拟合），且仍受网格分辨率限制。<strong>AtlasGaussian</strong>在UV图块内均匀采样，不建模全局自适应分布。<strong>MaskGaussian</strong>将高斯视为概率实体，但仍操作在固定空间支架上。</p>
+
+<div class="cn-summary">
+  <p>关键差距：现有方法都无法像原始3DGS那样根据局部复杂度自适应分配高斯。TripoSplat通过将密度控制"烘焙"进生成模型来解决这一问题。</p>
+</div>
+
+<!-- ==================== 方法 ==================== -->
+<h2 id="method">3. 方法</h2>
+
+<h3 id="overview">3.1 总览</h3>
+
+<p>整个流程遵循潜在扩散范式，但摒弃将高斯约束在规则固定大小结构上的做法。方法由两个核心组件构成：</p>
+
+<div class="stage-card">
+  <span class="stage-label">组件 1：DeG-VAE（密度采样高斯VAE）</span>
+  <p>将3D资产编码到紧凑的潜在空间，通过学习的空间概率密度解码。允许模型动态分配高斯基元，并通过新颖的密度感知多视图渲染损失端到端训练VAE。</p>
+</div>
+
+<div class="stage-card">
+  <span class="stage-label">组件 2：VecSeq扩散Transformer</span>
+  <p>建模这些潜在token的分布，训练以在单张输入图像条件下恢复潜在表示。VecSeq引入基于最优传输的规范重索引机制，解决无序集合上扩散训练的收敛挑战。</p>
+</div>
+
+<figure class="figure" id="fig-overview">
+  <img src="figures/x3.png" alt="Figure 2 Overview of DeG-VAE">
+  <figcaption><strong>图2.</strong> DeG-VAE总览。多视图渲染使用现成特征提取器编码，特征投影到随机采样的表面点。带特征的点按照3DShape2VecSet编码为潜在token。以潜在token为条件，空间密度解码器建模高斯的空间分布，高斯解码器预测高斯属性用于可微渲染。注意渲染损失可反向传播到空间密度解码器，实现自适应密度控制。</figcaption>
+</figure>
+
+<h3 id="vae">3.2 密度采样高斯VAE</h3>
+
+<p>表示的核心是<strong>将几何分布（原语存在于何处）与原语属性（外观和局部形状）解耦</strong>。</p>
+
+<h4>集合编码器</h4>
+<p>对于3D资产 𝒪，将其几何和外观表示为潜在token集合 𝒵 = {zᵢ ∈ ℝᶜ}ᵢ₌₁ᴹ。为捕获高保真细节，从两个来源聚合信息：</p>
+<ul style="margin-left: 2em; margin-bottom: 14px;">
+  <li><strong>DINOv3</strong>：语义一致性特征</li>
+  <li><strong>FLUX.2 VAE</strong>：高频纹理细节</li>
+</ul>
+<p>同时从资产表面采样密集点云 𝒫，将每个点投影到多视图特征图上并跨视图平均检索特征。得到两组互补的特征增强点集，用基于Transformer的集合编码器 ℰθ 压缩为固定大小的潜在集合：</p>
+<div class="equation">𝒵 = ℰθ( FPS(𝒫) | 𝒫<sup>dinov3</sup>, 𝒫<sup>flux2</sup> )</div>
+<p>其中FPS表示最远点采样，选择M个代表性中心作为编码器注意力的种子。</p>
+
+<h4>随机密度解码</h4>
+<p>标准3D解码器通常将潜在token映射到固定数量的原语或均匀体素网格。本文将高斯中心预测公式化为从学习的条件概率密度 qθ(x|𝒵) 中的<strong>采样过程</strong>：</p>
+<div class="equation">𝒫<sub>anchor</sub> = {xᵢ}ᵢ₌₁ᴸ ∼ qθ(·|𝒵)</div>
+<p><strong>关键：P 不是由架构固定的</strong>，可在推理时调整以权衡渲染速度与保真度。</p>
+
+<h4>高效八叉树采样</h4>
+<p>在密集体素网格上定义 qθ 计算上不可行（O(N³)）。改用 <strong>L层八叉树分解</strong>，有效分辨率 (2ᴸ)³ 同时保持稀疏计算。联合概率分解为：</p>
+<div class="equation">qθ(x|𝒵) = ∏ₗ₌₁ᴸ qθ(x₀:ₗ | x₀:ₗ₋₁, 𝒵)</div>
+<p>每项是父节点的8个子节点的分类分布。通过高效祖先采样实现：维护一个包含样本的活动单元前沿，每层只为活动单元评估概率logits，根据 qθ 将样本路由到子节点。空分支自然剪枝，重复直到第L层。叶节点索引通过叶体积内均匀采样去量化为连续锚点位置。</p>
+
+<figure class="figure" id="fig-sampling">
+  <img src="figures/x4.png" alt="Figure 3 Point sampling process">
+  <figcaption><strong>图3.</strong> 点采样过程的2D图示。从最粗层级开始，网络迭代预测当前层级每个占用体素的密度值，直到达到最细层级。网格中的整数表示在目标1000个点的情况下分配给每个体素的点数。</figcaption>
+</figure>
+
+<h4>属性解码与局部扩展</h4>
+<p>给定锚点和全局潜在 𝒵，使用基于Transformer的属性解码器预测高斯基元参数（不透明度、缩放、旋转、球谐系数）。为捕获局部表面细节，实现<strong>局部扩展机制</strong>：每个锚点 xᵢ 生成 K 个独立高斯，带有学习的局部偏移：</p>
+<div class="equation">{ {gᵢᵏ}ₖ₌₁ᴷ }ᵢ₌₁ᴸ = 𝒟θ( 𝒫<sub>anchor</sub> | 𝒵 )</div>
+<p>这种"全局密度采样 + 局部扩展"的层次方法使模型能用少量锚点表示大的均匀区域，同时在复杂细节处密集填充，共产生 N = P·K 个泼溅。</p>
+
+<figure class="figure" id="fig-arch-encoder">
+  <img src="figures/architecture_encoder.png" alt="Figure 4a Encoder architecture">
+  <figcaption><strong>图4(a).</strong> 编码器 ℰθ 架构。</figcaption>
+</figure>
+
+<figure class="figure" id="fig-arch-density">
+  <img src="figures/architecture_points_decoder.png" alt="Figure 4b Density Decoder">
+  <figcaption><strong>图4(b).</strong> 密度解码器 qθ 架构。</figcaption>
+</figure>
+
+<figure class="figure" id="fig-arch-gs">
+  <img src="figures/architecture_gs_decoder.png" alt="Figure 4c GS Decoder">
+  <figcaption><strong>图4(c).</strong> 高斯属性解码器 𝒟θ 架构。</figcaption>
+</figure>
+
+<h3 id="density">3.3 可微密度优化</h3>
+
+<p><strong>核心挑战：</strong>优化空间密度 qθ。标准方法仅依赖结构监督（如对表面体素的交叉熵），这与渲染需求不一致——会将过多原语分配给平坦的纹理表面，而过少分配给薄几何结构。</p>
+
+<p>由于锚点位置是 qθ 的采样，渲染损失 ℒ<sub>render</sub> 对密度参数 θ 不可直接微分。为此推导<strong>渲染损失贡献梯度</strong>，将渲染反馈反向传播到概率密度中。</p>
+
+<h4>结构初始化</h4>
+<p>首先用显式几何锚定密度。给定从表面点导出的目标分布 p(x)，最小化八叉树结构上的交叉熵损失：</p>
+<div class="equation">ℒ<sub>CE</sub> = -∑ₓ₀:ₗ p(x₀:ₗ) log qθ(x₀:ₗ | 𝒵)</div>
+
+<h4>渲染监督</h4>
+<p>采样相机位姿 π，最小化渲染图像与目标图像之间的重建损失（L1 + SSIM + LPIPS的加权和）：</p>
+<div class="equation">ℒ<sub>render</sub> = ℒ<sub>l1</sub> + λ<sub>ssim</sub> ℒ<sub>ssim</sub> + λ<sub>lpips</sub> ℒ<sub>lpips</sub></div>
+
+<h4>将渲染反向传播到密度</h4>
+<p>不同于先前工作将结构和外观视为分离的优化问题，本文<strong>统一两者</strong>。利用策略梯度和差异奖励（difference reward）推导梯度：</p>
+<div class="equation">∇θ ℒ<sub>render</sub> = 𝔼[ ∑ⱼ₌₁ᴾ (ℒ({xᵢ}ᵢ₌₁ᴸ) - ℒ({xᵢ}ᵢ≠ⱼᴸ)) ∇θ log(qθ(xⱼ)) ]</div>
+<p>差异项 Δℒ<sub>render</sub> = ℒ<sub>render</sub>(全部锚点) - ℒ<sub>render</sub>(去掉xⱼ的锚点) 度量锚点 xⱼ <strong>降低了多少渲染损失</strong>。直观上，这一项增加了锚点 xⱼ 存在时导致渲染误差更大降低的位置的概率密度。</p>
+
+<h4>高效的渲染损失贡献梯度</h4>
+<p>直接评估上式不切实际（每个锚点需要额外的留一渲染）。关键观察：对于 ℒ<sub>l1</sub> 项，标准3DGS反向光栅化已经维护了估计移除原语导致的损失变化所需的透射率和累积背景色。因此在<strong>同一个CUDA反向传播中</strong>以可忽略的开销累积原语级贡献，按同一锚点的原语求和，直接反向传播锚点级信号到 log(qθ(xⱼ|𝒵))。</p>
+
+<p>最终VAE训练损失：</p>
+<div class="equation">ℒ<sub>VAE</sub> = λ<sub>struct</sub>ℒ<sub>CE</sub> + λ<sub>render</sub>(ℒ<sub>render</sub> + ℒ̂<sub>render</sub>) + λ<sub>reg</sub>ℒ<sub>reg</sub> + λ<sub>kl</sub>ℒ<sub>kl</sub></div>
+<p>其中 ℒ̂<sub>render</sub> 即渲染损失贡献梯度。</p>
+
+<h4>三阶段训练课程</h4>
+
+<div class="stage-card">
+  <span class="stage-label">阶段1：结构初始化（~6%训练时间）</span>
+  <p>仅用 ℒ<sub>CE</sub> 优化 ℰθ 和 qθ，建立粗略几何外壳，防止退化解（如零不透明度坍缩）。</p>
+</div>
+
+<div class="stage-card">
+  <span class="stage-label">阶段2：外观（可选）</span>
+  <p>用少量高斯和大批量训练属性解码器 𝒟θ，使用 ℒ<sub>render</sub> + ℒ<sub>CE</sub>，锁定外观，加速收敛。</p>
+</div>
+
+<div class="stage-card">
+  <span class="stage-label">阶段3：联合精炼</span>
+  <p>端到端训练所有参数，使用完整 ℒ<sub>VAE</sub>，使 ℒ̂<sub>render</sub> 提供密度重分配信号。同时随机化锚点数 P 以鼓励模型泛化到不同分辨率预算。</p>
+</div>
+
+<h3 id="vecseq">3.4 VecSeq扩散</h3>
+
+<p>使用扩散Transformer建模潜在码 𝒵 的分布，采用 <strong>Flow Matching</strong> 框架和 <strong>S3-DiT</strong> 骨干。训练目标：</p>
+<div class="equation">ℒ<sub>FM</sub> = 𝔼<sub>t,x₀,ε</sub> ‖vθ(xₜ, t) - (ε - x₀)‖²₂</div>
+<p>同时联合预测一个紧凑的噪声相机token cₜ 并拼接到 xₜ，用于恢复条件视图位姿。</p>
+
+<h4>排列歧义问题</h4>
+<p>集合编码器产生的无序token集合 𝒵 = {zᵢ}ᵢ₌₁ᴹ 没有内在顺序。如果直接送入扩散模型，噪声token与数据token的配对变得任意（M! 种可能配对），模型被迫学习所有排列的平均，导致<strong>收敛缓慢和模糊的模态平均生成</strong>。</p>
+
+<h4>VecSeq：通过最优传输的规范序列化</h4>
+<p>将无序潜在集合转换为规范有序的向量序列。选择 <strong>3D Sobol序列</strong> 𝒮 = {sⱼ}ⱼ₌₁ᴹ 作为锚定结构——Sobol序列是低差异准随机序列，比标准随机采样更均匀地覆盖单位立方体 [0,1]³。</p>
+
+<p>训练时计算最优分配 π*，将资产特定的FPS点 {pᵢ} 匹配到固定的Sobol锚点 {sⱼ}，最小化总传输成本：</p>
+<div class="equation">π* = 3D OT Assign({pᵢ}, {sⱼ})</div>
+<p>然后按此映射重排潜在token，得到序列 𝒵̃ = {z̃ⱼ}ⱼ₌₁ᴹ，其中 z̃ⱼ = z<sub>π*(j)</sub>。此分配作为离线预处理步骤计算一次，训练和推理时零成本。</p>
+
+<p>将 sⱼ 的正弦位置嵌入添加到第j个token，注入空间先验。推理时模型只需预测长度为M的序列，隐含知道第j个输出对应空间位置 sⱼ。这有效地将困难的集合生成问题转化为<strong>稳定的序列生成问题</strong>。</p>
+
+<div class="cn-summary">
+  <p>与GaussianCube的区别：GaussianCube用OT将高斯原语直接分配到固定立方体结构；VecSeq是在潜在token上执行OT分配，且使用单一通用模板（Sobol锚点），允许每个物体独立匹配，复杂度为O(N)，而经典排列同步方法需要O(N²)。</p>
+</div>
+
+<figure class="figure" id="fig-vecseq">
+  <img src="figures/x5.png" alt="Figure 5 VecSeq re-indexing">
+  <figcaption><strong>图5.</strong> VecSeq重索引。潜在token在编码时与3D位置关联，然后通过匹配到确定性3D Sobol锚点进行规范排序，将无序潜在集合转化为稳定的向量序列用于扩散去噪。</figcaption>
+</figure>
+
+<figure class="figure" id="fig-arch-dit">
+  <img src="figures/architecture_dit.png" alt="Figure 4d VecSeq DiT">
+  <figcaption><strong>图4(d).</strong> VecSeq DiT vθ 架构。Refiner是用于处理不同模态输入的Transformer层（遵循S3-DiT）。为在DiT中实现RoPE，使用轻量级头在每层DiT中从潜在预测3D索引（遵循RePo）。</figcaption>
+</figure>
+
+<!-- ==================== Algorithm 1 ==================== -->
+<h3 id="algo">Algorithm 1: 高效批量八叉树采样</h3>
+
+<div class="algorithm">
+  <div class="title">Algorithm 1: Efficient Batched Octree Sampling</div>
+  <div class="line"><strong>Input:</strong> 潜在码 𝒵, 总采样数 P, 最大层级 L</div>
+  <div class="line"><strong>Output:</strong> 3D锚点集合 𝒫<sub>anchor</sub>, 对数概率 ℒ</div>
+  <div class="line"></div>
+  <div class="line"><span class="comment">// 用根节点初始化活动前沿</span></div>
+  <div class="line">Initialize active frontier ℱ₀ ← { (root, P, 0) }</div>
+  <div class="line"></div>
+  <div class="line"><strong>for</strong> l ← 1 <strong>to</strong> L <strong>do</strong></div>
+  <div class="line indent">ℱₗ ← ∅</div>
+  <div class="line indent"><strong>foreach</strong> active cell (c<sub>parent</sub>, n<sub>parent</sub>, log p<sub>parent</sub>) ∈ ℱₗ₋₁ <strong>do</strong></div>
+  <div class="line indent2"><span class="comment">// 从潜在码预测子节点分布</span></div>
+  <div class="line indent2">Compute logits: h ← Model(c<sub>parent</sub>, 𝒵)</div>
+  <div class="line indent2">Compute probabilities: D ← Softmax(h)</div>
+  <div class="line indent2">Compute log-probabilities: log D ← LogSoftmax(h)</div>
+  <div class="line indent2"><span class="comment">// 将父节点样本分配到子节点</span></div>
+  <div class="line indent2">Distribute n<sub>parent</sub> into {n₀,...,n₇} according to D with systematic sampling</div>
+  <div class="line indent2"><strong>for</strong> k ← 0 <strong>to</strong> 7 <strong>do</strong></div>
+  <div class="line indent2">  <strong>if</strong> nₖ > 0 <strong>then</strong></div>
+  <div class="line indent2">    <span class="comment">// 更新累积对数概率</span></div>
+  <div class="line indent2">    log p<sub>child</sub> ← log p<sub>parent</sub> + log D[k]</div>
+  <div class="line indent2">    ℱₗ ← ℱₗ ∪ { (c<sub>parent</sub>·8+k, nₖ, log p<sub>child</sub>) }</div>
+  <div class="line indent2">  <strong>end if</strong></div>
+  <div class="line indent2"><strong>end for</strong></div>
+  <div class="line indent"><strong>end foreach</strong></div>
+  <div class="line"><strong>end for</strong></div>
+  <div class="line"></div>
+  <div class="line">𝒫<sub>anchor</sub> ← ∅;  ℒ ← ∅</div>
+  <div class="line"><span class="comment">// 将叶节点索引转换为连续坐标</span></div>
+  <div class="line"><strong>foreach</strong> leaf cell (c<sub>leaf</sub>, n<sub>leaf</sub>, log p<sub>leaf</sub>) ∈ ℱₗ <strong>do</strong></div>
+  <div class="line indent">Determine spatial bounds B of cell c<sub>leaf</sub></div>
+  <div class="line indent">Sample n<sub>leaf</sub> points {x⁽ʲ⁾} ∼ Uniform(B)</div>
+  <div class="line indent">𝒫<sub>anchor</sub> ← 𝒫<sub>anchor</sub> ∪ {x⁽ʲ⁾}</div>
+  <div class="line indent">ℒ ← ℒ ∪ {log p<sub>leaf</sub>}</div>
+  <div class="line"><strong>end foreach</strong></div>
+  <div class="line"></div>
+  <div class="line"><strong>return</strong> 𝒫<sub>anchor</sub>, ℒ</div>
+</div>
+
+<div class="cn-summary">
+  <p>算法核心思路：从八叉树根节点开始，逐层预测每个活动体素的8个子节点的概率分布，用系统采样将父节点的样本数分配到子节点。空分支自然剪枝，最终在叶节点内均匀采样得到连续坐标的锚点。整个过程高度并行化，复杂度远低于O(N³)的密集网格。</p>
+</div>
+
+<!-- ==================== 实验 ==================== -->
+<h2 id="exp">4. 实验</h2>
+
+<h3 id="impl">4.1 实现细节</h3>
+
+<ul style="margin-left: 2em; margin-bottom: 14px;">
+  <li><strong>训练数据</strong>：Objaverse + Objaverse-XL 子集（TRELLIS-500K数据集）</li>
+  <li><strong>阶段1</strong>：1024个潜在token，交叉熵监督8192个点</li>
+  <li><strong>阶段2</strong>：随机采样1024-8192个token和2048个锚点用于GS渲染</li>
+  <li><strong>阶段3</strong>：随机采样1024-8192个token和1024-8192个锚点（两者不必相同）</li>
+  <li><strong>硬件</strong>：VAE训练约10天（32×A800），Flow Matching模型约11天（32×A800）</li>
+  <li><strong>评测</strong>：Toys4K数据集（训练中未见），定量和定性评测</li>
+</ul>
+
+<h3 id="recon">4.2 重建结果</h3>
+
+<figure class="figure" id="fig-recon">
+  <img src="figures/x6.png" alt="Figure 7 Quantitative evaluation">
+  <figcaption><strong>图7.</strong> 定量评估。PSNR随(a)解码高斯数和(b)潜在token长度的变化，比较TRELLIS、UniLat3D、本文方法和去除渲染损失贡献梯度(ℒ̂<sub>render</sub>)的本文方法。</figcaption>
+</figure>
+
+<table>
+  <caption style="text-align:center; padding:8px; font-size:0.85em; color:var(--text-secondary);">表1. Toys4K数据集上的定量重建结果</caption>
+  <thead>
+    <tr>
+      <th>方法</th>
+      <th>#Token(维度)</th>
+      <th>#高斯</th>
+      <th>解码时间(s)</th>
+      <th>PSNR↑</th>
+      <th>SSIM↑</th>
+      <th>LPIPS↓</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>TRELLIS</td>
+      <td>≈9679(≈77k)</td>
+      <td>≈310k</td>
+      <td>0.034</td>
+      <td>32.72</td>
+      <td>0.9734</td>
+      <td>0.0269</td>
+    </tr>
+    <tr>
+      <td>UniLat3D</td>
+      <td>4096(32k)</td>
+      <td>≈310k</td>
+      <td>0.074</td>
+      <td>32.10</td>
+      <td>0.9715</td>
+      <td>0.0307</td>
+    </tr>
+    <tr style="background: var(--accent-light);">
+      <td><strong>Ours</strong></td>
+      <td><strong>8192(131k)</strong></td>
+      <td><strong>262k</strong></td>
+      <td><strong>0.10</strong></td>
+      <td class="best">35.89</td>
+      <td class="best">0.9787</td>
+      <td class="best">0.0223</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="cn-summary">
+  <p>在可比高斯预算下（262K vs 基线≈310K），DeG-VAE在PSNR、SSIM、LPIPS上全面超越。关键洞察：TRELLIS和UniLat3D给每个体素分配固定高斯，不可避免地在简单区域过度花费容量，在复杂区域分配不足。DeG-VAE直接从渲染监督学习分配高斯密度，更有效地利用可用高斯。值得注意的是，DeG-VAE在使用不到1/2的高斯数时即可达到与TRELLIS相同的视觉质量(LPIPS)。</p>
+</div>
+
+<h4>可变大小高斯</h4>
+<p>DeG表示的关键优势是产生可变大小的高斯集合。通过改变采样锚点数 P（决定最终高斯数 N=PK），可在渲染/内存成本与视觉质量之间显式权衡。图7(a)显示随着高斯数增加，性能稳步提升。</p>
+
+<h4>学习密度控制</h4>
+<p>为验证 ℒ̂<sub>render</sub> 的有效性，训练了一个禁用该项的Stage-3 VAE变体。图7显示加入 ℒ̂<sub>render</sub> 一致地改善重建，最大增益出现在低预算区域——与"自适应分配在容量有限时最有价值"的直觉一致。</p>
+
+<h4>Token长度</h4>
+<p>图7(b)可视化重建质量随token长度的变化，观察到随token增加一致改善，体现DeG的良好缩放行为。</p>
+
+<h3 id="gen">4.3 生成结果</h3>
+
+<table>
+  <caption style="text-align:center; padding:8px; font-size:0.85em; color:var(--text-secondary);">表2. 3DGS生成指标</caption>
+  <thead>
+    <tr>
+      <th>方法</th>
+      <th>表示</th>
+      <th>CLIP-I↑</th>
+      <th>FD<sub>incep</sub>↓</th>
+      <th>KD<sub>incep</sub>↓</th>
+      <th>FD<sub>dinov2</sub>↓</th>
+      <th>KD<sub>dinov2</sub>↓</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Hunyuan3D 2.1</td><td>Mesh</td><td>89.09</td><td>4.86</td><td>0.05</td><td>95.55</td><td>7.99</td></tr>
+    <tr><td>TRELLIS-2</td><td>Mesh</td><td>89.83</td><td>4.55</td><td>0.05</td><td>63.36</td><td>2.74</td></tr>
+    <tr><td>LGM</td><td>3DGS</td><td>80.49</td><td>35.7</td><td>1.74</td><td>626.4</td><td>112.4</td></tr>
+    <tr><td>DiffusionGS</td><td>3DGS</td><td>84.82</td><td>15.7</td><td>0.49</td><td>287.9</td><td>34.52</td></tr>
+    <tr><td>TRELLIS</td><td>3DGS</td><td>91.68</td><td>2.55</td><td>0.02</td><td>33.39</td><td class="best">1.3</td></tr>
+    <tr><td>UniLat3D</td><td>3DGS</td><td>91.69</td><td>2.72</td><td>0.02</td><td>33.71</td><td class="best">1.3</td></tr>
+    <tr style="background: var(--accent-light);">
+      <td><strong>Ours</strong></td><td><strong>3DGS</strong></td>
+      <td class="best">92.26</td><td class="best">2.42</td><td class="best">0.02</td><td class="best">31.16</td><td>1.4</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="cn-summary">
+  <p>本文方法获得最高的图像条件对齐分数(CLIP-I)和多数分布指标上的最佳表现，证明了SOTA的3D生成和强视觉一致性。相比其他3DGS生成方法（TRELLIS, UniLat3D），在CLIP-I上提升明显，在FD指标上也有显著改善。</p>
+</div>
+
+<figure class="figure" id="fig-gen-comparison">
+  <img src="figures/x7.png" alt="Figure 8 Generation comparison">
+  <figcaption><strong>图8.</strong> 生成对比。将生成的3D高斯资产与代表性纹理3D生成模型在相同渲染设置下比较。模型可生成具有准确结构和外观细节的3D高斯。</figcaption>
+</figure>
+
+<figure class="figure" id="fig-gallery">
+  <img src="figures/x32.png" alt="Figure 9 Generated samples gallery">
+  <figcaption><strong>图9.</strong> 生成样本画廊。模型生成的多样化3D高斯，从两个不同视角渲染。</figcaption>
+</figure>
+
+<h3 id="ablation">消融实验</h3>
+
+<h4>Token重排序效果（VecSeq vs. VecSet）</h4>
+<table>
+  <caption style="text-align:center; padding:8px; font-size:0.85em; color:var(--text-secondary);">表3. 重排序消融（80K步训练，KD<sub>dinov2</sub>放大100×）</caption>
+  <thead>
+    <tr><th>变体</th><th>CLIP-I↑</th><th>FD<sub>dinov2</sub>↓</th><th>KD<sub>dinov2</sub>↓</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>w/o reordering (VecSet)</td><td>89.39</td><td>75.08</td><td>4.79</td></tr>
+    <tr style="background: var(--accent-light);"><td><strong>w/ reordering (Ours)</strong></td><td class="best">90.01</td><td class="best">66.94</td><td class="best">3.81</td></tr>
+  </tbody>
+</table>
+<p>无重排序时，Sobol锚点位置嵌入没有一致的空间含义：相同索引可能对应不同物体的不同几何特征。VecSeq通过OT重排序使每个token索引一致地对应相同空间区域，使位置编码变得有意义，改善了提示对齐和分布质量。</p>
+
+<h4>超参数消融</h4>
+<table>
+  <caption style="text-align:center; padding:8px; font-size:0.85em; color:var(--text-secondary);">表5. DeG-VAE超参数消融（100K步微调，P=2048）</caption>
+  <thead>
+    <tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>时间(h)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>K=8</td><td>27.39</td><td>0.9383</td><td>0.0887</td><td>47.0</td></tr>
+    <tr><td>K=16</td><td>27.40</td><td>0.9389</td><td>0.0863</td><td>47.7</td></tr>
+    <tr style="background: var(--accent-light);"><td><strong>K=32†</strong></td><td><strong>27.48</strong></td><td><strong>0.9398</strong></td><td><strong>0.0835</strong></td><td>47.0</td></tr>
+    <tr><td>K=64</td><td>27.49</td><td>0.9401</td><td>0.0812</td><td>47.8</td></tr>
+    <tr><td>L=4</td><td>27.17</td><td>0.9381</td><td>0.0836</td><td>45.0</td></tr>
+    <tr><td>L=6</td><td>27.10</td><td>0.9378</td><td>0.0839</td><td>43.5</td></tr>
+    <tr style="background: var(--accent-light);"><td><strong>L=8†</strong></td><td><strong>27.48</strong></td><td><strong>0.9398</strong></td><td><strong>0.0835</strong></td><td>47.0</td></tr>
+    <tr><td>L=10</td><td>27.46</td><td>0.9396</td><td>0.0836</td><td>52.6</td></tr>
+    <tr><td>w/o ℒ<sub>reg</sub></td><td>27.44</td><td>0.9397</td><td>0.0834</td><td>46.7</td></tr>
+    <tr style="background: var(--accent-light);"><td><strong>w/ ℒ<sub>reg</sub>†</strong></td><td><strong>27.48</strong></td><td><strong>0.9398</strong></td><td>0.0835</td><td>47.0</td></tr>
+  </tbody>
+</table>
+<p>局部扩展因子 K=32 提供良好权衡（K=64仅带来边际PSNR增益但成本更高）；八叉树深度 L=8 达到最佳PSNR（L=10质量相当但训练时间更长）；移除 ℒ<sub>reg</sub> 略微降低PSNR。</p>
+
+<h3 id="user">用户研究</h3>
+<table>
+  <caption style="text-align:center; padding:8px; font-size:0.85em; color:var(--text-secondary);">表4. 用户研究结果（94个复杂提示，399次两两比较，32位参与者）</caption>
+  <thead>
+    <tr><th>方法</th><th>DeG (Ours)</th><th>TRELLIS</th><th>TRELLIS.2</th><th>UniLat3D</th><th>Hunyuan3D 2.1</th></tr>
+  </thead>
+  <tbody>
+    <tr style="background: var(--accent-light);"><td><strong>Elo↑</strong></td><td class="best">1137</td><td>975</td><td>992</td><td>900</td><td>996</td></tr>
+  </tbody>
+</table>
+<p>在32位参与者对399次两两比较的Elo评分中，本文方法以1137分显著领先所有基线方法（第二名TRELLIS.2仅992分），证明了在感知质量上的显著优势。</p>
+
+<!-- ==================== 结论 ==================== -->
+<h2 id="conclusion">5. 结论与展望</h2>
+
+<p>TripoSplat提出了<strong>密度采样高斯（DeG）</strong>，用定义在八叉树上的可学习、渲染优化密度取代不可微的致密化和剪枝。通过从该密度采样高斯中心，DeG支持可变大小输出和高斯向局部复杂区域的自适应分配。</p>
+
+<p>进一步引入了配对学习流程，训练自编码器将3D资产压缩为紧凑潜在token并解码为DeG，密度在渲染监督下端到端优化。实验表明该设计在可比高斯预算下显著提升重建质量，渲染损失贡献梯度(ℒ̂<sub>render</sub>)提供一致增益（尤其在低预算区域）。DeG还展现出强缩放行为。</p>
+
+<p>最后，通过<strong>VecSeq</strong>解决了向量集潜在上生成建模的关键收敛挑战——扩散训练中的排列歧义。通过最优传输分配token位置以启用位置编码，实现更快收敛和更高质量的单图条件生成。</p>
+
+<h4>局限性</h4>
+<ul style="margin-left: 2em; margin-bottom: 14px;">
+  <li>作为单图转3D方法，背面区域在推理时未被观测，质量可能较低</li>
+  <li>当前表示仅针对3DGS而非网格；但潜在空间已忠实重建3D形状和纹理，可能已包含带纹理网格解码器所需信息</li>
+</ul>
+
+<!-- ==================== 技术总结 ==================== -->
+<h2 id="tech">技术总结</h2>
+
+<div class="card">
+  <h3 style="margin-top:0;">🔑 核心创新点</h3>
+  <table style="margin-top:12px;">
+    <thead>
+      <tr><th>创新</th><th>解决的问题</th><th>技术方案</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>DeG表示</strong></td>
+        <td>固定结构无法自适应分配高斯</td>
+        <td>八叉树上的可学习概率密度，采样任意数量锚点</td>
+      </tr>
+      <tr>
+        <td><strong>渲染损失贡献梯度</strong></td>
+        <td>密度采样不可微，无法端到端优化</td>
+        <td>差异奖励+策略梯度，CUDA反向传播中零开销累积</td>
+      </tr>
+      <tr>
+        <td><strong>VecSeq重排序</strong></td>
+        <td>无序集合上扩散训练的排列歧义</td>
+        <td>3D Sobol序列+最优传输，O(N)复杂度规范序列化</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">📊 关键数据</h3>
+  <ul style="margin-left: 1.5em;">
+    <li>重建PSNR：<strong>35.89</strong>（vs TRELLIS 32.72, UniLat3D 32.10）</li>
+    <li>生成CLIP-I：<strong>92.26</strong>（SOTA，vs TRELLIS 91.68）</li>
+    <li>用户研究Elo：<strong>1137</strong>（vs TRELLIS.2 992）</li>
+    <li>最大高斯数：262,144（可变，低至33K仍可用）</li>
+    <li>代码：仅2个文件，~2000行，MIT License，近零依赖</li>
+    <li>训练：VAE 10天 + DiT 11天，各32×A800</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">🔗 相关链接</h3>
+  <ul style="margin-left: 1.5em;">
+    <li>论文：<a href="https://arxiv.org/abs/2605.16355" target="_blank">arXiv:2605.16355</a></li>
+    <li>代码：<a href="https://github.com/VAST-AI-Research/TripoSplat" target="_blank">GitHub: VAST-AI-Research/TripoSplat</a></li>
+    <li>模型权重：<a href="https://huggingface.co/VAST-AI/TripoSplat" target="_blank">HuggingFace: VAST-AI/TripoSplat</a></li>
+    <li>前作：TripoSG (arXiv:2502.06608, 同团队的高保真3D网格生成)</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+function toggleTheme() {
+  var body = document.body;
+  var btn = document.getElementById('themeBtn');
+  if (body.getAttribute('data-theme') === 'light') {
+    body.setAttribute('data-theme', 'dark');
+    btn.textContent = '☀️';
+  } else {
+    body.setAttribute('data-theme', 'light');
+    btn.textContent = '🌙';
+  }
+}
+function toggleDrawer() {
+  var drawer = document.getElementById('drawer');
+  var overlay = document.getElementById('overlay');
+  if (drawer.classList.contains('open')) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+  } else {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+// 点击目录链接后关闭抽屉
+document.querySelectorAll('.drawer a').forEach(function(a) {
+  a.addEventListener('click', function() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  });
+});
+</script>
+
+</body>
+</html>
