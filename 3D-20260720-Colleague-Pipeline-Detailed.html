@@ -177,7 +177,7 @@
             <div class="hbox dim">body mask ∩ 人脸框 → IoU 最高 → 一 ID 配一脸</div>
             <div class="varrow"></div>
 
-            <div class="hbox blue title">④ 人脸重建 · ExpTracker</div>
+            <div class="hbox blue title">④ 人脸重建 · Expression Tracker</div>
             <div class="hbox dim">512×512 + 上半身 2.5× → 657点 + 朝向 + 表情 → 逆仿射回原坐标</div>
             <div class="varrow"></div>
 
@@ -196,7 +196,7 @@
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
                     <div class="hbox purple title">⑧ 身体高斯初始化</div>
-                    <div class="hbox dim">场景点云抠身体 → 去人脸附近 → 深度稠密化 → 颜色初始化</div>
+                    <div class="hbox dim">场景点云抠身体 → 去人脸附近 → 深度重投影稠密化 → 颜色初始化</div>
                 </div>
             </div>
             <div class="varrow"></div>
@@ -242,10 +242,10 @@
                                 </ul>
                             </li>
                             <li><span class="leaf">3. 人脸匹配（IoU）</span> — mask ∩ 人脸框 → 一 ID 配一脸</li>
-                            <li><span class="leaf">4. 人脸重建（ExpTracker）</span>
+                            <li><span class="leaf">4. 人脸重建（Expression Tracker）</span>
                                 <ul>
                                     <li class="note">裁剪 512×512 + 上半身 2.5×</li>
-                                    <li class="note">657 关键点 + 头部朝向 + 表情系数</li>
+                                    <li class="note">ViT 推理 → 657 关键点 + 头部朝向 + 表情系数</li>
                                     <li class="note">逆仿射回原图坐标</li>
                                 </ul>
                             </li>
@@ -282,7 +282,7 @@
                                 <ul>
                                     <li class="note">场景点云抠身体</li>
                                     <li class="note">去人脸附近点云</li>
-                                    <li class="note">深度加权稠密化</li>
+                                    <li class="note">深度重投影稠密化</li>
                                     <li class="note">代表视角颜色初始化</li>
                                 </ul>
                             </li>
@@ -501,7 +501,7 @@
     <div class="section">
         <h2>🔎 第 4 步：人脸重建（检测 657 个点 + 表情系数）</h2>
         <div class="tags">
-            <span class="tag green">ExpTracker</span>
+            <span class="tag green">Expression Tracker</span>
             <span class="tag">657关键点</span>
             <span class="tag">头部朝向</span>
             <span class="tag">表情系数</span>
@@ -509,7 +509,7 @@
         </div>
 
         <div class="highlight">
-            <strong>一句话：</strong>用 ExpTracker 模型在脸上标出 657 个密集点，并预测头部朝向和表情系数。
+            <strong>一句话：</strong>用 Expression Tracker（基于 ViT 的模型）在脸上标出 657 个密集点，并预测头部朝向和表情系数。
         </div>
 
         <h3>为什么需要这一步？</h3>
@@ -525,10 +525,10 @@
             <li><strong>放大到 512×512</strong>：模型要求的标准尺寸</li>
             <li><strong>裁剪框放大 2.5 倍</strong>：不只是脸，把上半身也带进来
                 <ul>
-                    <li>提供上下文：ExpTracker 需要看到肩膀/脖子才能准确判断头部朝向</li>
+                    <li>提供上下文：Expression Tracker 需要看到肩膀/脖子才能准确判断头部朝向</li>
                 </ul>
             </li>
-            <li><strong>ExpTracker 推理</strong>：模型输出：
+            <li><strong>Expression Tracker (ViT) 推理</strong>：基于 ViT 的模型输出：
                 <ul>
                     <li><strong>657 个脸上点</strong>的像素坐标（眉毛、眼睛、嘴唇、脸颊等密集关键点）</li>
                     <li><strong>头部朝向</strong>（pose，三个轴的旋转角）</li>
@@ -544,8 +544,8 @@
 
         <h3>代码示意</h3>
         <div class="algo-ref">
-            <strong>ExpTracker</strong>：同事使用的人脸密集跟踪模型（具体出处待确认）。输出 657 个脸上关键点 + 头部朝向 + 表情系数。<br>
-            <span style="color:var(--text-dim);">流程：人脸框放大 2.5× 含上半身 → 缩放到 512×512 → 模型推理 → 逆仿射变换回原图坐标。本文不臆测具体模型 API。</span>
+            <strong>Expression Tracker (ExpTracker)</strong>：基于 ViT 的模型，专门从人脸图像中提取密集的面部关键点和表情信息。输出 657 个脸上关键点 + 头部朝向 + 表情系数。<br>
+            <span style="color:var(--text-dim);">流程：人脸框放大 2.5× 含上半身 → 缩放到 512×512 → ViT 推理 → 逆仿射变换回原图坐标。</span>
         </div>
 
         <div class="io-box">
@@ -566,7 +566,7 @@
         <h3>关键术语</h3>
         <table>
             <tr><th>术语</th><th>解释</th></tr>
-            <tr><td><strong>ExpTracker</strong></td><td>人脸密集跟踪模型，输出密集关键点 + 表情参数（具体是哪篇工作待确认）</td></tr>
+            <tr><td><strong>Expression Tracker (ExpTracker)</strong></td><td>基于 ViT 的人脸密集跟踪模型，输出密集关键点 + 表情参数</td></tr>
             <tr><td><strong>657 关键点</strong></td><td>比 5 关键点密集 100 多倍的脸部定位点，覆盖眉毛/眼睛/鼻/嘴/脸颊</td></tr>
             <tr><td><strong>表情系数</strong></td><td>控制表情的数字向量，如 [微笑度, 皱眉度, 张嘴度, ...]</td></tr>
             <tr><td><strong>逆仿射变换</strong></td><td>把"裁剪+缩放"过的图坐标，反向换算回原图坐标</td></tr>
@@ -723,11 +723,7 @@
         <h4>① 全局对齐（所有人脸一起优化）</h4>
         <ol>
             <li><strong>PnP 估计初始位姿</strong>：用 5 个粗略关键点 + 3DMM 标准关键点，用 PnP 算法估计初始 SRT（scale, rotation, translation）</li>
-            <li><strong>视线交叉法估计</strong>：用多视角的视线交叉，进一步估计 3D 关键点位置（多视角约束更准）
-                <div class="highlight warn" style="margin:6px 0;">
-                    <strong>⚠️ 笔记可能有误：</strong>原话"用PnP估计初始位姿然后视线交叉法估计初始位姿"——两次说"估计初始位姿"。可能第二个是"估计 3D 关键点"或"细化位姿"。
-                </div>
-            </li>
+            <li><strong>视线交叉法估计初始位置</strong>：多个相机的视线交汇处就是人脸中心（triangulation），用于确定人脸在 3D 空间的位置</li>
             <li><strong>过滤</strong>：扔掉拍摄角度太大的图像（侧脸/后脑勺看不清的，对齐会不准）</li>
             <li><strong>Adam 优化 300 次</strong>：迭代优化得到最终的 SRT</li>
         </ol>
@@ -747,7 +743,7 @@
         <h3>代码示意</h3>
         <div class="algo-ref">
             <strong>PnP（Perspective-n-Point）</strong>：经典 CV 算法，从 2D-3D 对应点估计相机位姿（OpenCV <code>solvePnP</code>）。<br>
-            <strong>视线交叉法</strong>：多视角下，从每个视角经 2D 关键点画视线，所有视线交点 = 3D 关键点（triangulation）。<br>
+            <strong>视线交叉法</strong>：多个相机的视线交汇处就是人脸中心（triangulation），用于估计人脸在 3D 空间的初始位置。<br>
             <strong>Adam 优化</strong>：标准梯度下降变体（<code>torch.optim.Adam</code>），迭代 300 次优化 SRT。<br>
             <strong>3DMM</strong>：参数化人脸模型（如 FLAME），身份系数控制"长什么样"，表情系数控制表情。<br>
             <span style="color:var(--text-dim);">三层优化：全局对齐（所有帧联合 Adam 300 次）→ 局部对齐（每帧微调 + 锚点正则防偏离）→ 系数优化（身份共用 + 每帧表情独立）。</span>
@@ -854,7 +850,7 @@
             <span class="tag green">BodyGaussianModel</span>
             <span class="tag">场景点云</span>
             <span class="tag">去人脸附近</span>
-            <span class="tag">深度加权稠密化</span>
+            <span class="tag">深度重投影稠密化</span>
             <span class="tag">代表视角颜色</span>
         </div>
 
@@ -881,9 +877,9 @@
                     <li>避免人脸高斯和身体高斯重叠</li>
                 </ul>
             </li>
-            <li><strong>深度加权稠密化</strong>：根据深度信息调整点云密度
-                <div class="highlight warn" style="margin:6px 0;">
-                    <strong>⚠️ 笔记可能有误：</strong>原话"深度重头有稠密化"，"重头"可能是"重加权"或"重新"的笔误。
+            <li><strong>深度重投影稠密化</strong>：把点云按深度重投影到不同视角，增加稀疏区域的密度
+                <div class="highlight" style="margin:6px 0;">
+                    <strong>✅ 已确认：</strong>原话"深度重头有稠密化"，实际是"<strong>深度重投影稠密化</strong>"——把点云重投影回各视角来增密。
                 </div>
             </li>
             <li><strong>代表视角颜色初始化</strong>：选一个代表视角，用它的颜色给高斯初始化</li>
@@ -892,7 +888,7 @@
         <h3>代码示意</h3>
         <div class="algo-ref">
             <strong>BodyGaussianModel</strong>：同事 pipeline 的代码类名。与脸不同，身体没有精确 3D 参数化模型（未用 MHR/SMPL），所以<strong>从场景点云里抠出身体部分</strong>作为高斯初始化。这是 HUGS (CVPR 2024) 早期"SMPL 初始化 + 偏离"思路的简化版——同事连 SMPL 都没用，直接用场景点云。<br>
-            <span style="color:var(--text-dim);">流程：场景点云 ∩ body mask → 去人脸附近点云 → 深度加权稠密化 → 代表视角颜色初始化。</span><br>
+            <span style="color:var(--text-dim);">流程：场景点云 ∩ body mask → 去人脸附近点云 → 深度重投影稠密化 → 代表视角颜色初始化。</span><br>
             <span style="color:var(--warn);">⚠️ 这种方式身体不可驱动新 pose（无 rig 骨架）。要可驱动需升级为 MHR/SMPL + LBS（见 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a>）。</span>
         </div>
 
@@ -1134,7 +1130,7 @@
             <div class="hbox dim">mask ∩ 人脸框 → 一 ID 配一脸</div>
             <div class="varrow"></div>
 
-            <div class="hbox blue title">④ ExpTracker 人脸重建</div>
+            <div class="hbox blue title">④ Expression Tracker 人脸重建</div>
             <div class="hbox dim">512×512 + 上半身 2.5× → 657 点 + 朝向 + 表情 → 逆仿射</div>
             <div class="varrow"></div>
 
@@ -1158,7 +1154,7 @@
             <div class="varrow"></div>
 
             <div class="hbox purple title">⑧ BodyGaussianModel 身体高斯初始化</div>
-            <div class="hbox dim">场景点云抠身体 → 去人脸附近 → 深度稠密化 → 代表视角颜色</div>
+            <div class="hbox dim">场景点云抠身体 → 去人脸附近 → 深度重投影稠密化 → 代表视角颜色</div>
             <div class="varrow"></div>
 
             <div class="hgroup">
@@ -1220,51 +1216,51 @@
     <!-- 可能的笔记误差 -->
     <div class="section">
         <h2>⚠️ 可能的笔记误差</h2>
-        <p>本流程按同事口述记忆整理，可能存在以下误差，请与同事确认：</p>
+        <p>本流程按同事口述记忆整理。以下三项已与同事确认并更正，其余仍待确认：</p>
 
         <table>
-            <tr><th>位置</th><th>原话</th><th>疑问</th><th>推测正确含义</th></tr>
-            <tr>
+            <tr><th>位置</th><th>原话</th><th>疑问</th><th>✅ 已确认 / ⚠️ 待确认</th></tr>
+            <tr style="background:rgba(118,185,0,0.08);">
                 <td>第 6 步</td>
                 <td>"PnP估计初始位姿然后视线交叉法估计初始位姿"</td>
                 <td>两次说"估计初始位姿"</td>
-                <td>可能第二个是"视线交叉法估计 3D 关键点"或"细化位姿"</td>
+                <td><strong>✅ 已确认：</strong>"PnP估计初始位姿，视线交叉法估计初始位置，即多个相机的视线交汇处就是人脸中心"</td>
             </tr>
-            <tr>
+            <tr style="background:rgba(118,185,0,0.08);">
                 <td>第 8 步</td>
                 <td>"深度重头有稠密化"</td>
                 <td>"重头"含义不清</td>
-                <td>可能是"深度重加权稠密化"或"深度重新稠密化"</td>
+                <td><strong>✅ 已确认：</strong>"<strong>深度重投影稠密化</strong>"——把点云重投影回各视角来增密</td>
+            </tr>
+            <tr style="background:rgba(118,185,0,0.08);">
+                <td>第 4 步</td>
+                <td>"ExpTracker"</td>
+                <td>具体是哪篇工作</td>
+                <td><strong>✅ 已确认：</strong>"<strong>Expression Tracker</strong>"——基于 ViT 的模型，专门从人脸图像提取密集关键点和表情信息</td>
             </tr>
             <tr>
                 <td>第 9 步</td>
                 <td>"禁用动态干扰消除"</td>
                 <td>"动态干扰消除"具体指什么</td>
-                <td>可能是某种动态干扰去除模块（具体待确认）</td>
+                <td>⚠️ 待确认，可能是某种动态干扰去除模块</td>
             </tr>
             <tr>
                 <td>第 9 步</td>
                 <td>"禁用新视角生成"</td>
                 <td>训练时禁用新视角生成</td>
-                <td>可能指禁用 novel view synthesis 模块，先把已有视角建好</td>
-            </tr>
-            <tr>
-                <td>第 4 步</td>
-                <td>"ExpTracker"</td>
-                <td>具体是哪篇工作</td>
-                <td>待确认，可能是 Expression Tracker 类模型</td>
+                <td>⚠️ 可能指禁用 novel view synthesis 模块，先把已有视角建好</td>
             </tr>
             <tr>
                 <td>第 7 步</td>
                 <td>"AvatarGaussianModel"、"FaceAlignment"</td>
                 <td>类名</td>
-                <td>应为代码类名，按字面理解即可</td>
+                <td>⚠️ 应为代码类名，按字面理解即可</td>
             </tr>
             <tr>
                 <td>第 9 步</td>
                 <td>"语义损失"</td>
                 <td>具体语义是什么</td>
-                <td>可能是脸/身体/背景的语义分割一致性，待确认</td>
+                <td>⚠️ 可能是脸/身体/背景的语义分割一致性，待确认</td>
             </tr>
         </table>
 
@@ -1285,7 +1281,7 @@
             <tr><td><strong>NMS（非极大值抑制）</strong></td><td>多个重叠框只保留最确信的一个</td><td>第 2 步</td></tr>
             <tr><td><strong>5 关键点</strong></td><td>左眼/右眼/鼻尖/左嘴角/右嘴角，标准人脸定位锚</td><td>第 2 步</td></tr>
             <tr><td><strong>IoU</strong></td><td>两个区域的重叠度，1=完全重合，0=不重叠</td><td>第 3 步</td></tr>
-            <tr><td><strong>ExpTracker</strong></td><td>人脸密集跟踪模型，输出 657 关键点 + 表情参数</td><td>第 4 步</td></tr>
+            <tr><td><strong>Expression Tracker (ExpTracker)</strong></td><td>基于 ViT 的模型，从人脸图像提取密集关键点 + 表情参数</td><td>第 4 步</td></tr>
             <tr><td><strong>657 关键点</strong></td><td>密集脸部定位点，覆盖眉/眼/鼻/嘴/脸颊</td><td>第 4 步</td></tr>
             <tr><td><strong>表情系数</strong></td><td>控制表情的参数向量</td><td>第 4 步</td></tr>
             <tr><td><strong>逆仿射变换</strong></td><td>把裁剪+缩放过的坐标换算回原图坐标</td><td>第 4 步</td></tr>
@@ -1311,6 +1307,116 @@
             <tr><td><strong>位姿优化</strong></td><td>训练时联合优化相机位姿</td><td>第 9 步</td></tr>
             <tr><td><strong>曝光补偿</strong></td><td>补偿不同帧光照差异</td><td>第 9 步</td></tr>
         </table>
+    </div>
+
+    <!-- SVG 完整流程图 -->
+    <div class="section">
+        <h2>🎨 SVG 完整流程图（一图总结）</h2>
+        <p>下面是一张 SVG 矢量图，完整总结 9 步流程。颜色分组：蓝色=前处理（1-5），绿色=对齐（6），紫色=初始化（7-8），橙色=训练（9）。</p>
+        <svg viewBox="0 0 880 880" width="100%" style="max-width:880px; margin:0 auto; display:block; background:#15171f; border-radius:8px; border:1px solid #2a2d37;" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L10,5 L0,10 Z" fill="#6a7a8a"/>
+                </marker>
+            </defs>
+
+            <!-- Title -->
+            <rect x="0" y="0" width="880" height="36" fill="#0f1117" stroke="#76b900" stroke-width="2"/>
+            <text x="440" y="23" text-anchor="middle" fill="#76b900" font-size="14" font-weight="bold" font-family="sans-serif">同事人体重建 Pipeline 完整流程</text>
+
+            <!-- Input -->
+            <rect x="240" y="52" width="400" height="44" rx="8" fill="#1a1d27" stroke="#4a4d57" stroke-width="1.5"/>
+            <text x="440" y="72" text-anchor="middle" fill="#e0e0e0" font-size="13" font-weight="bold" font-family="sans-serif">视频输入</text>
+            <text x="440" y="88" text-anchor="middle" fill="#9a9a9a" font-size="10" font-family="sans-serif">人物在里面动的视频</text>
+
+            <!-- Arrow input→1 -->
+            <line x1="440" y1="96" x2="440" y2="112" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 1: SAM3 (blue) -->
+            <rect x="120" y="114" width="640" height="48" rx="8" fill="#152030" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="140" y="134" fill="#58a6ff" font-size="13" font-weight="bold" font-family="sans-serif">① SAM3 人体跟踪</text>
+            <text x="140" y="152" fill="#9a9a9a" font-size="10" font-family="sans-serif">文字提示找人 → 逐帧传播 → 输出 (人物ID, mask)</text>
+
+            <line x1="440" y1="162" x2="440" y2="178" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 2: RetinaFace (blue) -->
+            <rect x="120" y="180" width="640" height="48" rx="8" fill="#152030" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="140" y="200" fill="#58a6ff" font-size="13" font-weight="bold" font-family="sans-serif">② RetinaFace 人脸检测</text>
+            <text x="140" y="218" fill="#9a9a9a" font-size="10" font-family="sans-serif">1024×1024 → 三种扫描框 → 5关键点 → NMS去重 → 过滤</text>
+
+            <line x1="440" y1="228" x2="440" y2="244" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 3: IoU (blue) -->
+            <rect x="120" y="246" width="640" height="48" rx="8" fill="#152030" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="140" y="266" fill="#58a6ff" font-size="13" font-weight="bold" font-family="sans-serif">③ IoU 人脸匹配</text>
+            <text x="140" y="284" fill="#9a9a9a" font-size="10" font-family="sans-serif">body mask ∩ 人脸框 → IoU 最高 → 一个 ID 最多配一张脸</text>
+
+            <line x1="440" y1="294" x2="440" y2="310" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 4: Expression Tracker (blue) -->
+            <rect x="120" y="312" width="640" height="48" rx="8" fill="#152030" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="140" y="332" fill="#58a6ff" font-size="13" font-weight="bold" font-family="sans-serif">④ Expression Tracker 人脸重建 (ViT)</text>
+            <text x="140" y="350" fill="#9a9a9a" font-size="10" font-family="sans-serif">512×512 + 上半身 2.5× → 657点 + 朝向 + 表情 → 逆仿射回原图</text>
+
+            <line x1="440" y1="360" x2="440" y2="376" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 5: HYPIR (blue) -->
+            <rect x="120" y="378" width="640" height="48" rx="8" fill="#152030" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="140" y="398" fill="#58a6ff" font-size="13" font-weight="bold" font-family="sans-serif">⑤ HYPIR 人脸增强</text>
+            <text x="140" y="416" fill="#9a9a9a" font-size="10" font-family="sans-serif">LQ→HQ（高斯模糊 LQ + RetouchFormer 美颜 HQ）→ 54px 渐变融合</text>
+
+            <line x1="440" y1="426" x2="440" y2="442" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 6: 3DMM (green) -->
+            <rect x="120" y="444" width="640" height="48" rx="8" fill="#152615" stroke="#76b900" stroke-width="1.5"/>
+            <text x="140" y="464" fill="#76b900" font-size="13" font-weight="bold" font-family="sans-serif">⑥ 3DMM 人脸对齐</text>
+            <text x="140" y="482" fill="#9a9a9a" font-size="10" font-family="sans-serif">全局: PnP + 视线交叉(人脸中心) + Adam 300 → 局部: 微调+锚点正则 → 系数</text>
+
+            <line x1="440" y1="492" x2="440" y2="508" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Steps 7 & 8 parallel (purple) -->
+            <rect x="120" y="510" width="300" height="58" rx="8" fill="#221530" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="140" y="530" fill="#bc8cff" font-size="12" font-weight="bold" font-family="sans-serif">⑦ 人脸高斯初始化</text>
+            <text x="140" y="546" fill="#9a9a9a" font-size="9" font-family="sans-serif">AvatarGaussianModel 绑骨</text>
+            <text x="140" y="558" fill="#9a9a9a" font-size="9" font-family="sans-serif">继承 SRT → 渲染 → 训练</text>
+
+            <rect x="460" y="510" width="300" height="58" rx="8" fill="#221530" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="480" y="530" fill="#bc8cff" font-size="12" font-weight="bold" font-family="sans-serif">⑧ 身体高斯初始化</text>
+            <text x="480" y="546" fill="#9a9a9a" font-size="9" font-family="sans-serif">场景点云抠身体 → 去人脸</text>
+            <text x="480" y="558" fill="#9a9a9a" font-size="9" font-family="sans-serif">→ 深度重投影稠密化</text>
+
+            <!-- Merge arrows from 7&8 -->
+            <line x1="270" y1="568" x2="270" y2="584" stroke="#6a7a8a" stroke-width="2"/>
+            <line x1="610" y1="568" x2="610" y2="584" stroke="#6a7a8a" stroke-width="2"/>
+            <line x1="270" y1="584" x2="610" y2="584" stroke="#6a7a8a" stroke-width="2"/>
+            <line x1="440" y1="584" x2="440" y2="600" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Step 9: Training loop (orange) -->
+            <rect x="120" y="602" width="640" height="58" rx="8" fill="#2a2415" stroke="#d29922" stroke-width="1.5"/>
+            <text x="140" y="622" fill="#d29922" font-size="13" font-weight="bold" font-family="sans-serif">⑨ 高斯训练循环（核心）</text>
+            <text x="140" y="638" fill="#9a9a9a" font-size="9" font-family="sans-serif">avatar+body+scene+bg 叠加渲染 | L1+SSIM+mask+语义 loss</text>
+            <text x="140" y="650" fill="#9a9a9a" font-size="9" font-family="sans-serif">分裂/剪枝/SH升级(0→1→2→3阶) | 位姿优化+曝光补偿 | 表情统一</text>
+
+            <line x1="440" y1="660" x2="440" y2="676" stroke="#6a7a8a" stroke-width="2" marker-end="url(#ah)"/>
+
+            <!-- Output -->
+            <rect x="240" y="678" width="400" height="48" rx="8" fill="#152615" stroke="#76b900" stroke-width="2"/>
+            <text x="440" y="698" text-anchor="middle" fill="#76b900" font-size="13" font-weight="bold" font-family="sans-serif">3D 数字人模型</text>
+            <text x="440" y="716" text-anchor="middle" fill="#9a9a9a" font-size="10" font-family="sans-serif">可渲染任意视角 · 可驱动新 pose</text>
+
+            <!-- Color legend -->
+            <rect x="120" y="746" width="14" height="14" rx="3" fill="#152030" stroke="#58a6ff"/>
+            <text x="140" y="757" fill="#9a9a9a" font-size="10" font-family="sans-serif">前处理 (1-5)</text>
+            <rect x="240" y="746" width="14" height="14" rx="3" fill="#152615" stroke="#76b900"/>
+            <text x="260" y="757" fill="#9a9a9a" font-size="10" font-family="sans-serif">对齐 (6)</text>
+            <rect x="330" y="746" width="14" height="14" rx="3" fill="#221530" stroke="#bc8cff"/>
+            <text x="350" y="757" fill="#9a9a9a" font-size="10" font-family="sans-serif">初始化 (7-8)</text>
+            <rect x="440" y="746" width="14" height="14" rx="3" fill="#2a2415" stroke="#d29922"/>
+            <text x="460" y="757" fill="#9a9a9a" font-size="10" font-family="sans-serif">训练 (9)</text>
+            <rect x="530" y="746" width="14" height="14" rx="3" fill="#152615" stroke="#76b900" stroke-width="2"/>
+            <text x="550" y="757" fill="#9a9a9a" font-size="10" font-family="sans-serif">最终产物</text>
+        </svg>
+        <p style="color:var(--text-dim); font-size:0.82em; text-align:center; margin-top:8px;">👆 可右键保存 SVG，矢量图缩放不失真</p>
     </div>
 
     <!-- 资源链接 -->
