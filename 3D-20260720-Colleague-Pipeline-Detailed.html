@@ -71,6 +71,16 @@
         .io-box .io .label { color: var(--accent); font-size: 0.8em; font-weight: bold; margin-bottom: 4px; }
         .io-box .io .content { color: var(--text-dim); font-size: 0.88em; }
         .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        pre.code { background: var(--code-bg); padding: 14px 18px; border-radius: 6px; overflow-x: auto; font-size: 0.82em; color: #d0d0d0; line-height: 1.55; margin: 12px 0; border-left: 3px solid var(--accent-dim); }
+        pre.code .comment { color: #6a7a8a; font-style: italic; }
+        pre.code .keyword { color: var(--purple); font-weight: bold; }
+        pre.code .string { color: #a5d6a7; }
+        pre.code .func { color: var(--accent); }
+        pre.code .num { color: var(--warn); }
+        pre.mindmap { background: var(--code-bg); padding: 18px 22px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; color: var(--text); line-height: 1.55; margin: 12px 0; border: 1px solid var(--border); }
+        .mindmap-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; font-size: 0.82em; color: var(--text-dim); }
+        .mindmap-legend span { display: inline-flex; align-items: center; gap: 4px; }
+        .mindmap-legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     </style>
 </head>
 <body>
@@ -192,6 +202,98 @@
         3D 数字人模型</pre>
     </div>
 
+    <!-- 思维导图 -->
+    <div class="section">
+        <h2>🧠 思维导图（一眼看全 9 步）</h2>
+        <p>用树状结构展示整个 pipeline 的逻辑分组，方便记忆和理解。</p>
+
+        <div class="mindmap-legend">
+            <span><span class="dot" style="background:var(--blue)"></span> 前处理（步骤 1-5）</span>
+            <span><span class="dot" style="background:var(--accent)"></span> 对齐（步骤 6）</span>
+            <span><span class="dot" style="background:var(--purple)"></span> 初始化（步骤 7-8）</span>
+            <span><span class="dot" style="background:var(--warn)"></span> 训练（步骤 9）</span>
+        </div>
+
+<pre class="mindmap"><span style="color:var(--accent);font-weight:bold;">人体重建 Pipeline</span>
+│
+├── <span style="color:var(--blue);">前处理（步骤 1-5）—— 找人 + 找脸 + 增强</span>
+│   │
+│   ├── 1. 人体跟踪（SAM3）
+│   │   ├── 文字提示找人
+│   │   ├── 逐帧传播
+│   │   └── 输出: (人物ID, mask)
+│   │
+│   ├── 2. 人脸检测（RetinaFace）
+│   │   ├── 1024×1024 缩放
+│   │   ├── 三种扫描框滑动
+│   │   ├── 5 关键点（眼/鼻/嘴角）
+│   │   ├── NMS 去重
+│   │   └── 过滤低置信度 + 小框
+│   │
+│   ├── 3. 人脸匹配（IoU）
+│   │   ├── mask ∩ 人脸框 → IoU
+│   │   └── 一个 ID 最多配一张脸
+│   │
+│   ├── 4. 人脸重建（ExpTracker）
+│   │   ├── 裁剪 512×512 + 上半身 2.5×
+│   │   ├── 657 关键点 + 头部朝向 + 表情系数
+│   │   └── 逆仿射回原图坐标
+│   │
+│   └── 5. 人脸增强（HYPIR）
+│       ├── LQ → HQ（高斯模糊 LQ + RetouchFormer 美颜 HQ 训练）
+│       ├── 54px 渐变融合 mask
+│       └── 前处理（输入帧）+ 后处理（训练中期渲染图）
+│
+├── <span style="color:var(--accent);">对齐（步骤 6）—— 把 3D 脸模型摆到图像里</span>
+│   │
+│   └── 3DMM 对齐
+│       ├── 全局对齐
+│       │   ├── PnP 初始位姿
+│       │   ├── 视线交叉法估计
+│       │   ├── 过滤大角度图像
+│       │   └── Adam 优化 300 次 → SRT
+│       ├── 局部对齐
+│       │   ├── 每帧微调偏差
+│       │   └── 锚点正则（防偏离）
+│       └── 系数优化
+│           ├── 身份系数（所有帧共用）
+│           └── 每帧表情系数（独立）
+│
+├── <span style="color:var(--purple);">初始化（步骤 7-8）—— 准备高斯球</span>
+│   │
+│   ├── 7. 人脸高斯初始化
+│   │   ├── AvatarGaussianModel 绑骨到 3DMM
+│   │   ├── 继承 SRT + 身份系数
+│   │   └── 初始化 → 渲染 → 训练
+│   │
+│   └── 8. 身体高斯初始化
+│       ├── 场景点云抠身体
+│       ├── 去人脸附近点云
+│       ├── 深度加权稠密化
+│       └── 代表视角颜色初始化
+│
+└── <span style="color:var(--warn);">训练（步骤 9）—— 核心训练循环</span>
+    │
+    └── 高斯训练循环
+        ├── 渲染
+        │   └── avatar + body + scene + bg 叠加
+        ├── Loss 组合
+        │   ├── L1（像素级）
+        │   ├── SSIM（结构相似）
+        │   ├── mask（区域约束）
+        │   └── 语义（语义一致）
+        ├── 训练策略
+        │   ├── 禁用动态干扰消除
+        │   ├── 禁用新视角生成
+        │   └── 位姿优化 + 曝光补偿
+        ├── 高斯自适应
+        │   ├── 分裂（梯度大处增密）
+        │   ├── 剪枝（不透明度低处删）
+        │   └── SH 升级（0→1→2→3 阶）
+        └── 表情统一
+            └── 代表视角表情</pre>
+    </div>
+
     <!-- 第 1 步 -->
     <div class="section">
         <h2>🚶 第 1 步：人体跟踪（找出视频里的人）</h2>
@@ -221,6 +323,22 @@
             <li><strong>逐帧传播</strong>：在第一帧找到人后，后续帧自动跟踪这个人（不需要每帧都重新搜索，效率高）</li>
             <li><strong>输出</strong>：每一帧每个人体一个 ID + 一个 mask（黑白图，白色是人）</li>
         </ol>
+
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># SAM3 视频跟踪：从文字提示找人，逐帧传播</span>
+<span class="keyword">def</span> <span class="func">track_humans</span>(video_frames, text_prompt):
+    <span class="comment"># 第一帧用文字提示找人</span>
+    first_frame = video_frames[<span class="num">0</span>]
+    masks, ids = sam3.segment(first_frame, text=text_prompt)
+
+    <span class="comment"># 后续帧逐帧传播（不需要每帧重新搜索）</span>
+    all_results = []
+    <span class="keyword">for</span> frame <span class="keyword">in</span> video_frames:
+        masks, ids = sam3.propagate(masks, ids, frame)
+        all_results.append({<span class="string">'frame'</span>: frame,
+                            <span class="string">'ids'</span>: ids,
+                            <span class="string">'masks'</span>: masks})
+    <span class="keyword">return</span> all_results  <span class="comment"># 每帧的 (ID, mask) 列表</span></pre>
 
         <div class="io-box">
             <div class="io">
@@ -284,6 +402,26 @@
             <li><strong>过滤</strong>：把置信度太低或框太小的检测结果扔掉（避免误检干扰后续）</li>
         </ol>
 
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># RetinaFace 人脸检测 + NMS + 过滤</span>
+<span class="keyword">def</span> <span class="func">detect_faces</span>(image):
+    image = <span class="func">resize</span>(image, (<span class="num">1024</span>, <span class="num">1024</span>))
+
+    <span class="comment"># 三种大小的扫描框滑动检测</span>
+    boxes = []
+    <span class="keyword">for</span> scale <span class="keyword">in</span> [<span class="string">'small'</span>, <span class="string">'medium'</span>, <span class="string">'large'</span>]:
+        boxes += retinaface.<span class="func">detect</span>(image, box_scale=scale)
+
+    <span class="comment"># 每个 box 附带 5 关键点</span>
+    <span class="keyword">for</span> box <span class="keyword">in</span> boxes:
+        box.kp5 = retinaface.<span class="func">predict_keypoints</span>(box)
+
+    <span class="comment"># NMS 去重 + 过滤低置信度/小框</span>
+    boxes = <span class="func">nms</span>(boxes, iou_threshold=<span class="num">0.5</span>)
+    boxes = [b <span class="keyword">for</span> b <span class="keyword">in</span> boxes
+             <span class="keyword">if</span> b.conf &gt; <span class="num">0.9</span> <span class="keyword">and</span> b.size &gt; min_size]
+    <span class="keyword">return</span> boxes  <span class="comment"># 每帧 (人脸框, 5关键点, 置信度)</span></pre>
+
         <div class="io-box">
             <div class="io">
                 <div class="label">输入</div>
@@ -342,6 +480,25 @@
             <li>给每个 ID 选择 IoU 最高的那张人脸作为匹配结果</li>
             <li>约束：<strong>一个 ID 最多匹配一张脸</strong>（防止一个人配两张脸，保证一一对应）</li>
         </ol>
+
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># 人脸-人体匹配：用 IoU 重叠率，一 ID 配一脸</span>
+<span class="keyword">def</span> <span class="func">match_faces_to_bodies</span>(body_masks, face_boxes):
+    matches = {}
+    <span class="keyword">for</span> body_id, body_mask <span class="keyword">in</span> body_masks.<span class="func">items</span>():
+        best_iou, best_face = <span class="num">0</span>, <span class="keyword">None</span>
+        <span class="keyword">for</span> face_box <span class="keyword">in</span> face_boxes:
+            iou = <span class="func">compute_iou</span>(body_mask, face_box)
+            <span class="keyword">if</span> iou &gt; best_iou:
+                best_iou, best_face = iou, face_box
+        matches[body_id] = best_face  <span class="comment"># 一 ID 最多配一脸</span>
+    <span class="keyword">return</span> matches
+
+<span class="keyword">def</span> <span class="func">compute_iou</span>(mask, box):
+    <span class="comment"># 交集面积 / 并集面积，1=完全重合，0=不重叠</span>
+    intersection = (mask &amp; box).<span class="func">area</span>()
+    union = (mask | box).<span class="func">area</span>()
+    <span class="keyword">return</span> intersection / union</pre>
 
         <div class="io-box">
             <div class="io">
@@ -409,6 +566,22 @@
                 </ul>
             </li>
         </ol>
+
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># ExpTracker 人脸重建：657 关键点 + 朝向 + 表情</span>
+<span class="keyword">def</span> <span class="func">reconstruct_face</span>(image, face_box):
+    <span class="comment"># 裁剪 + 放大到 512×512（裁剪框放大 2.5× 含上半身）</span>
+    crop, affine = <span class="func">crop_and_resize</span>(
+        image, face_box, size=<span class="num">512</span>, scale=<span class="num">2.5</span>
+    )
+
+    <span class="comment"># ExpTracker 推理</span>
+    kpts657, head_pose, expr = exptracker.<span class="func">predict</span>(crop)
+
+    <span class="comment"># 逆仿射变换：把 512×512 坐标换回原图坐标</span>
+    kpts657_orig = <span class="func">inverse_affine</span>(kpts657, affine)
+    <span class="keyword">return</span> kpts657_orig, head_pose, expr
+    <span class="comment"># 输出: 657 关键点（原图坐标）+ 头部朝向 + 表情系数</span></pre>
 
         <div class="io-box">
             <div class="io">
@@ -482,6 +655,23 @@
             </li>
         </ol>
 
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># HYPIR 人脸增强 + 54px 渐变融合</span>
+<span class="keyword">def</span> <span class="func">enhance_face</span>(image, face_box, mode=<span class="string">'preprocess'</span>):
+    <span class="comment"># 裁剪放大到 512×512</span>
+    crop = <span class="func">resize</span>(<span class="func">crop</span>(image, face_box), (<span class="num">512</span>, <span class="num">512</span>))
+
+    <span class="comment"># HYPIR 一步推理：LQ → HQ（同时去模糊 + 美颜）</span>
+    enhanced = hypir.<span class="func">enhance</span>(crop)
+
+    <span class="comment"># 54px 渐变融合 mask（中心 1.0 → 边缘 0.0）</span>
+    mask = <span class="func">make_gradient_mask</span>(size=<span class="num">512</span>, feather=<span class="num">54</span>)
+    blended = crop * (<span class="num">1</span> - mask) + enhanced * mask
+
+    <span class="comment"># 缩放回原大小，贴回原图</span>
+    result = <span class="func">paste_back</span>(image, <span class="func">resize</span>(blended, orig_size), face_box)
+    <span class="keyword">return</span> result</pre>
+
         <div class="io-box">
             <div class="io">
                 <div class="label">输入</div>
@@ -536,6 +726,35 @@
 
         <h3>具体怎么做？（三层优化）</h3>
 
+        <h4>🎯 三层优化流程图</h4>
+        <pre>┌──────────────────────────────────────────────────────────┐
+│  ① 全局对齐（所有帧一起）                                  │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌────────┐ │
+│  │ PnP 估计 │──►│ 视线交叉 │──►│ 过滤大角 │──►│ Adam   │ │
+│  │ 初始位姿 │   │ 估3D关键点│   │ 度图像   │   │ 300 次 │ │
+│  └──────────┘   └──────────┘   └──────────┘   └───┬────┘ │
+│                                                    │      │
+└────────────────────────────────────────────────────┼──────┘
+                                                     │
+                                                     ▼
+                                          全局 SRT + 3D 关键点
+                                                     │
+┌────────────────────────────────────────────────────┼──────┐
+│  ② 局部对齐（每帧微调）                                   │
+│  ┌──────────────┐   ┌──────────────┐                │      │
+│  │ 每帧微调偏差 │──►│ 锚点正则     │──► 每帧 offset │      │
+│  └──────────────┘   └──────────────┘                │      │
+└────────────────────────────────────────────────────┼──────┘
+                                                     │
+                                                     ▼
+┌────────────────────────────────────────────────────┼──────┐
+│  ③ 系数优化                                               │
+│  ┌──────────────┐   ┌──────────────┐                │      │
+│  │ 身份系数     │   │ 每帧表情系数 │──► 完整对齐结果 │      │
+│  │ (所有帧共用) │   │ (每帧独立)   │                │      │
+│  └──────────────┘   └──────────────┘                │      │
+└────────────────────────────────────────────────────┴──────┘</pre>
+
         <h4>① 全局对齐（所有人脸一起优化）</h4>
         <ol>
             <li><strong>PnP 估计初始位姿</strong>：用 5 个粗略关键点 + 3DMM 标准关键点，用 PnP 算法估计初始 SRT（scale, rotation, translation）</li>
@@ -559,6 +778,31 @@
             <li><strong>身份系数</strong>（这个人长什么样，所有帧共用）</li>
             <li><strong>每帧表情系数</strong>（这帧是什么表情，每帧独立）</li>
         </ul>
+
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># 3DMM 三层对齐：全局 SRT → 局部 offset → 系数</span>
+<span class="keyword">def</span> <span class="func">align_3dmm</span>(kp657_list, kp5_list, images, dmm_model):
+    <span class="comment"># === ① 全局对齐 ===</span>
+    srt = <span class="func">pnp</span>(kp5_list, dmm_model.kp5_3d)        <span class="comment"># PnP 初始位姿</span>
+    kp_3d = <span class="func">triangulate</span>(kp657_list, cameras)     <span class="comment"># 视线交叉法</span>
+    valid = [i <span class="keyword">for</span> i, img <span class="keyword">in</span> <span class="func">enumerate</span>(images)
+             <span class="keyword">if</span> <span class="func">view_angle</span>(img) &lt; max_angle]  <span class="comment"># 过滤大角度</span>
+    srt = <span class="func">adam_optimize</span>(srt, kp_3d, kp657_list[valid],
+                       iterations=<span class="num">300</span>)           <span class="comment"># Adam 300 次</span>
+
+    <span class="comment"># === ② 局部对齐 ===</span>
+    per_frame_offset = {}
+    <span class="keyword">for</span> i <span class="keyword">in</span> valid:
+        offset = <span class="func">optimize_offset</span>(srt[i], kp657_list[i])
+        <span class="comment"># 锚点正则：约束 offset 不太大</span>
+        offset = offset * <span class="func">sigmoid</span>(<span class="func">norm</span>(offset) / anchor_scale)
+        per_frame_offset[i] = offset
+
+    <span class="comment"># === ③ 系数优化 ===</span>
+    identity_coef = <span class="func">optimize_identity</span>(srt, kp_3d)   <span class="comment"># 所有帧共用</span>
+    expr_coef = {i: <span class="func">optimize_expr</span>(srt[i], kp657_list[i])
+                 <span class="keyword">for</span> i <span class="keyword">in</span> valid}               <span class="comment"># 每帧独立</span>
+    <span class="keyword">return</span> srt, identity_coef, expr_coef</pre>
 
         <div class="io-box">
             <div class="io">
@@ -622,6 +866,30 @@
             <li><strong>渲染</strong>：用可微高斯渲染器渲染当前视角</li>
             <li><strong>训练</strong>：与原图对比 loss，反向传播优化高斯参数</li>
         </ol>
+
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># AvatarGaussianModel：把高斯绑到 3DMM 三角面上</span>
+<span class="keyword">class</span> <span class="func">AvatarGaussianModel</span>:
+    <span class="keyword">def</span> <span class="func">__init__</span>(self, dmm_model, face_alignment):
+        <span class="comment"># 继承第 6 步的全局 SRT 和身份系数</span>
+        self.srt = face_alignment.srt
+        self.identity = face_alignment.identity_coef
+
+        <span class="comment"># 绑骨：每个高斯绑到一个三角面的局部坐标系</span>
+        self.gaussians = <span class="func">init_gaussians_on_mesh</span>(dmm_model.mesh)
+        self.bindings = <span class="func">bind_to_triangles</span>(self.gaussians, dmm_model.mesh)
+
+    <span class="keyword">def</span> <span class="func">render</span>(self, viewpoint):
+        <span class="comment"># 3DMM 形变 → 三角面动 → 高斯跟随</span>
+        posed_mesh = <span class="func">lbs</span>(self.srt, self.identity, dmm_model)
+        posed_gaussians = <span class="func">follow_triangles</span>(self.gaussians, posed_mesh)
+        <span class="keyword">return</span> <span class="func">differentiable_render</span>(posed_gaussians, viewpoint)
+
+    <span class="keyword">def</span> <span class="func">train</span>(self, images, viewpoints):
+        <span class="keyword">for</span> img, vp <span class="keyword">in</span> <span class="func">zip</span>(images, viewpoints):
+            rendered = self.<span class="func">render</span>(vp)
+            loss = <span class="func">l1</span>(rendered, img) + <span class="func">ssim</span>(rendered, img)
+            loss.<span class="func">backward</span>()</pre>
 
         <div class="io-box">
             <div class="io">
@@ -690,6 +958,25 @@
             <li><strong>代表视角颜色初始化</strong>：选一个代表视角，用它的颜色给高斯初始化</li>
         </ol>
 
+        <h3>代码示意</h3>
+        <pre class="code"><span class="comment"># BodyGaussianModel：从场景点云抠身体</span>
+<span class="keyword">def</span> <span class="func">init_body_gaussian</span>(scene_cloud, body_mask, face_mask):
+    <span class="comment"># 从场景点云抠出身体部分（用第 1 步 mask 约束）</span>
+    body_cloud = scene_cloud[body_mask]
+
+    <span class="comment"># 去掉人脸附近的点云（人脸已被第 7 步处理）</span>
+    body_cloud = body_cloud[~face_mask]
+
+    <span class="comment"># 深度加权稠密化：稀疏区域增密</span>
+    body_cloud = <span class="func">densify_by_depth</span>(body_cloud)
+
+    <span class="comment"># 代表视角颜色初始化</span>
+    canonical_view = <span class="func">select_representative_view</span>(views)
+    body_gaussians = <span class="func">init_gaussians</span>(
+        body_cloud, color_from=canonical_view
+    )
+    <span class="keyword">return</span> body_gaussians</pre>
+
         <div class="io-box">
             <div class="io">
                 <div class="label">输入</div>
@@ -753,6 +1040,27 @@
             </li>
         </ol>
 
+        <h4>🧠 Loss 组合思维导图</h4>
+        <pre class="mindmap"><span style="color:var(--warn);font-weight:bold;">训练 Loss</span>
+│
+├── L1（像素级）
+│   ├── 公式: |rendered - frame|_1
+│   └── 作用: 基础重建，逐像素对齐
+│
+├── SSIM（结构相似）
+│   ├── 公式: 1 - ssim(rendered, frame)
+│   └── 作用: 局部结构对比，比 L1 更符合人眼
+│
+├── mask（区域约束）
+│   ├── 公式: ||rendered * body_mask - frame * body_mask||_1
+│   └── 作用: 让身体高斯不要乱跑到背景里
+│
+└── 语义（语义一致）
+    ├── 公式: CE(seg(rendered), seg(frame))
+    └── 作用: 脸/身体/背景的语义分割保持一致
+
+总 Loss = α·L1 + β·SSIM + γ·mask + δ·语义</pre>
+
         <h4>② 训练策略</h4>
         <ol>
             <li><strong>禁用动态干扰消除</strong>：训练时不做动态干扰消除（先把静态建好）
@@ -781,6 +1089,33 @@
             </li>
         </ol>
 
+        <h4>🧠 高斯生命周期思维导图</h4>
+        <pre class="mindmap"><span style="color:var(--accent);font-weight:bold;">高斯生命周期</span>
+│
+├── 初始化
+│   ├── 人脸: 3DMM 表面均匀放置（第7步）
+│   └── 身体: 场景点云抠出（第8步）
+│
+├── 训练循环（每次迭代）
+│   │
+│   ├── <span style="color:var(--blue);">分裂 (split)</span>
+│   │   ├── 触发: 梯度 > 阈值
+│   │   ├── 动作: 一个高斯 → 两个
+│   │   └── 目的: 信息密集区增密
+│   │
+│   ├── <span style="color:var(--red);">剪枝 (prune)</span>
+│   │   ├── 触发: 不透明度 < 阈值
+│   │   ├── 动作: 删除高斯
+│   │   └── 目的: 节省计算
+│   │
+│   └── <span style="color:var(--purple);">SH 升级</span>
+│       ├── 0阶: 固定颜色（初期，快收敛）
+│       ├── 1阶: 简单方向变化
+│       ├── 2阶: 中等变化
+│       └── 3阶: 反光/高光（后期，精细）
+│
+└── 最终: 训练好的高斯模型</pre>
+
         <h4>④ 表情统一</h4>
         <ol>
             <li><strong>表情统一为代表视角</strong>：人脸增强后处理之前，把所有帧的表情统一为代表视角的表情
@@ -790,6 +1125,47 @@
                 </ul>
             </li>
         </ol>
+
+        <h3>代码示意（核心训练循环）</h3>
+        <pre class="code"><span class="comment"># 完整高斯训练循环：多模型叠加 + Loss + 自适应</span>
+<span class="keyword">def</span> <span class="func">training_loop</span>(avatar, body, scene, bg, frames, viewpoints):
+    sh_order = <span class="num">0</span>  <span class="comment"># 球谐阶数，从 0 开始</span>
+
+    <span class="keyword">for</span> iteration <span class="keyword">in</span> <span class="func">range</span>(max_iters):
+        <span class="comment"># === 渲染：多模型叠加 ===</span>
+        rendered = (avatar.<span class="func">render</span>(vp) + body.<span class="func">render</span>(vp)
+                   + scene.<span class="func">render</span>(vp) + bg.<span class="func">render</span>(vp))
+
+        <span class="comment"># === Loss 组合 ===</span>
+        loss = (<span class="func">l1_loss</span>(rendered, frame)
+                + <span class="func">ssim_loss</span>(rendered, frame)
+                + <span class="func">mask_loss</span>(rendered, body_mask)
+                + <span class="func">semantic_loss</span>(rendered, seg_map))
+
+        <span class="comment"># === 策略：位姿优化 + 曝光补偿 ===</span>
+        <span class="keyword">if</span> use_pose_opt:  <span class="func">optimize_pose</span>(camera, frame)
+        <span class="keyword">if</span> use_exposure:  <span class="func">optimize_exposure</span>(camera, frame)
+
+        <span class="comment"># === 反向传播 ===</span>
+        loss.<span class="func">backward</span>()
+        optimizer.<span class="func">step</span>()
+
+        <span class="comment"># === 高斯自适应（每 densify_interval 次迭代）===</span>
+        <span class="keyword">if</span> iteration % densify_interval == <span class="num">0</span>:
+            <span class="func">split_gaussians</span>(grad_threshold)   <span class="comment"># 分裂梯度大处</span>
+            <span class="func">prune_gaussians</span>(opacity_threshold) <span class="comment"># 剪枝不透明度低</span>
+
+        <span class="comment"># === SH 升级（先粗后细）===</span>
+        <span class="keyword">if</span> iteration == sh_milestone_1: sh_order = <span class="num">1</span>
+        <span class="keyword">elif</span> iteration == sh_milestone_2: sh_order = <span class="num">2</span>
+        <span class="keyword">elif</span> iteration == sh_milestone_3: sh_order = <span class="num">3</span>
+        <span class="func">update_sh_order</span>(avatar, body, scene, sh_order)
+
+        <span class="comment"># === 表情统一（人脸增强后处理前）===</span>
+        <span class="keyword">if</span> iteration == expr_unify_step:
+            canonical_expr = <span class="func">select_representative_expr</span>()
+            <span class="keyword">for</span> frame <span class="keyword">in</span> frames:
+                frame.expr = canonical_expr</pre>
 
         <div class="io-box">
             <div class="io">
