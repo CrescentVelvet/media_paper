@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同事人体重建 Pipeline 详细流程（初学者友好版）</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+            --warn: #d29922;
+            --red: #f85149;
+            --blue: #58a6ff;
+            --purple: #bc8cff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+        }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .subtitle { color: var(--text-dim); font-size: 1em; margin-top: 8px; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; margin-top: 12px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.4em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.1em; margin: 18px 0 8px; }
+        .section h4 { color: var(--accent); font-size: 1em; margin: 14px 0 8px; }
+        .section p { margin-bottom: 12px; }
+        .step { border-left: 4px solid var(--accent); padding-left: 20px; margin-bottom: 30px; }
+        .step .step-num { display: inline-block; background: var(--accent); color: var(--bg); padding: 2px 10px; border-radius: 4px; font-weight: bold; margin-right: 8px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 2px 8px; border-radius: 10px; font-size: 0.75em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.blue { border-color: var(--blue); color: var(--blue); }
+        .tag.warn { border-color: var(--warn); color: var(--warn); }
+        .tag.red { border-color: var(--red); color: var(--red); }
+        .tag.purple { border-color: var(--purple); color: var(--purple); }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.warn { background: rgba(210, 153, 34, 0.1); border-left-color: var(--warn); }
+        .highlight.red { background: rgba(248, 81, 73, 0.1); border-left-color: var(--red); }
+        .highlight.blue { background: rgba(88, 166, 255, 0.1); border-left-color: var(--blue); }
+        .highlight.purple { background: rgba(188, 140, 255, 0.1); border-left-color: var(--purple); }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
+        pre { background: var(--code-bg); padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.82em; color: var(--text-dim); line-height: 1.5; margin: 12px 0; }
+        .analogy { background: rgba(88, 166, 255, 0.08); border: 1px solid rgba(88, 166, 255, 0.3); border-radius: 8px; padding: 14px 18px; margin: 12px 0; }
+        .analogy::before { content: "💡 大白话"; display: block; color: var(--blue); font-weight: bold; margin-bottom: 6px; font-size: 0.85em; }
+        .io-box { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+        .io-box .io { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; }
+        .io-box .io .label { color: var(--accent); font-size: 0.8em; font-weight: bold; margin-bottom: 4px; }
+        .io-box .io .content { color: var(--text-dim); font-size: 0.88em; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>同事人体重建 Pipeline 详细流程</h1>
+    <div class="subtitle">📐 9 步从视频到 3D 数字人 · 初学者友好版（让奶奶也能看懂）</div>
+    <div class="meta">
+        <span>📅 2026-07-27</span>
+        <span>📂 3D / Digital Human / Pipeline</span>
+        <span>🔍 9 步详解 + 框图 + 大白话 + 术语表</span>
+        <span>🔗 关联：<a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html" style="color:var(--accent)">同事方案分析（MHR 版）</a></span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 这是什么 -->
+    <div class="section">
+        <h2>📖 这是什么？</h2>
+        <p>这是一份把同事的<strong>人体重建 pipeline</strong>从头到尾讲清楚的文档。整个 pipeline 做的事用一句话说就是：</p>
+        <div class="highlight">
+            <strong>输入：</strong>一段拍摄视频（人物在里面动）<br>
+            <strong>输出：</strong>一个 3D 高斯数字人模型（能渲染任意视角、能驱动新 pose）<br>
+            <strong>中间：</strong>9 个步骤，像流水线一样把视频"消化"成 3D 模型
+        </div>
+
+        <div class="analogy">
+            想象你要给一个人做一尊 3D 雕像。你拿着相机绕他拍一圈视频，然后把这视频丢给电脑。电脑要干的事：
+            <ul>
+                <li>第一步：在每帧视频里找到这个人（人体跟踪）</li>
+                <li>第二步：找到他的脸（人脸检测）</li>
+                <li>第三步：确认这个脸确实属于这个人（人脸匹配）</li>
+                <li>第四步：在脸上标出几百个点，知道他朝哪、什么表情（人脸重建）</li>
+                <li>第五步：把脸变清晰（人脸增强）</li>
+                <li>第六步：把 3D 脸模型"摆"到图像里脸的位置（人脸对齐）</li>
+                <li>第七步：在 3D 脸模型上挂高斯球，训练（人脸高斯初始化）</li>
+                <li>第八步：从场景点云里抠出身体部分，初始化（身体高斯初始化）</li>
+                <li>第九步：脸 + 身体 + 场景 + 背景一起训练，优化所有参数（高斯训练循环）</li>
+            </ul>
+            最后你得到一个完整的 3D 数字人雕像，能从任意角度看，还能动起来。
+        </div>
+
+        <h3>关于本文档</h3>
+        <p>本流程是按同事口述记忆整理的，<strong>可能存在误差</strong>（见文末"可能的笔记误差"小节）。但整体框架与社区主流数字人 pipeline（HUGS + GaussianAvatars 混合）一致，对理解研究方向有参考价值。</p>
+    </div>
+
+    <!-- 整体流程图 -->
+    <div class="section">
+        <h2>🗺️ 整体流程图（一眼看懂）</h2>
+        <pre>视频输入
+   │
+   ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 1. 人体跟踪 (SAM3)                                            │
+│    文字提示找人 → 逐帧传播 → 输出 (人物ID, mask)              │
+└──────────────────────────────────────────────────────────────┘
+   │
+   ├──────────────────────┐
+   ▼                      ▼
+┌────────────────┐  ┌─────────────────────────────────────────┐
+│ 2. 人脸检测    │  │ 视频帧 (缩放到 1024×1024)               │
+│ RetinaFace     │  │   └─► 三种扫描框滑动                    │
+│ 5关键点+NMS    │  │   └─► NMS 去重 + 过滤低置信度/小框       │
+└────────────────┘  └─────────────────────────────────────────┘
+   │                      │
+   └──────────┬───────────┘
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 3. 人脸匹配 (IoU)                                             │
+│    人体mask ∩ 人脸框 → IoU 最高 → 一个 ID 最多配一张脸        │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 4. 人脸重建 (ExpTracker)                                     │
+│    裁剪 512×512 (含上半身 2.5×) → 657点+朝向+表情 → 逆仿射   │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 5. 人脸增强 (HYPIR)                                          │
+│    LQ → HQ (高斯模糊→美颜训练) → 54px 渐变融合              │
+│    前处理阶段（输入帧）+ 后处理阶段（训练中期渲染图）         │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 6. 人脸对齐 (3DMM)                                           │
+│    全局: PnP + 视线交叉 + Adam 300 次 → SRT                  │
+│    局部: 微调每帧偏差 + 锚点正则                              │
+│    系数: 身份系数 (共用) + 每帧表情系数                       │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 7. 人脸高斯初始化                                           │
+│    AvatarGaussianModel 绑骨 + FaceAlignment 继承 SRT        │
+│    → 初始化 → 渲染 → 训练                                    │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 8. 身体高斯初始化                                           │
+│    场景点云抠身体 → 去人脸附近 → 深度加权稠密化 → 颜色初始化 │
+│    (身体没有精确 3D 模型，改用点云法)                        │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│ 9. 高斯训练循环 (核心)                                      │
+│    avatar+body+scene+bg 叠加渲染                              │
+│    L1 + SSIM + mask + 语义 loss                              │
+│    分裂/剪枝/SH 升级 (0阶→1阶→2阶→3阶)                      │
+│    表情统一为代表视角                                         │
+└──────────────────────────────────────────────────────────────┘
+              │
+              ▼
+        3D 数字人模型</pre>
+    </div>
+
+    <!-- 第 1 步 -->
+    <div class="section">
+        <h2>🚶 第 1 步：人体跟踪（找出视频里的人）</h2>
+        <div class="tags">
+            <span class="tag green">SAM3</span>
+            <span class="tag">文字提示</span>
+            <span class="tag">逐帧传播</span>
+            <span class="tag">mask</span>
+            <span class="tag">人物ID</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>在视频每一帧里找出人在哪里，给每个人一个编号（ID），并标记出人的轮廓（mask）。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <p>视频里可能有多个人，我们需要：</p>
+        <ul>
+            <li>知道哪部分图像是"我们的主角"（不能把背景路人也建进去）</li>
+            <li>在不同帧里跟踪同一个人（不能这一帧是张三下一帧变李四）</li>
+            <li>拿到人的轮廓（mask），后面要用它来约束身体高斯区域</li>
+        </ul>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li><strong>文字提示找人</strong>：用 SAM3 模型，输入文字描述（比如"穿红衣服的人"），模型在第一帧找到对应的人</li>
+            <li><strong>逐帧传播</strong>：在第一帧找到人后，后续帧自动跟踪这个人（不需要每帧都重新搜索，效率高）</li>
+            <li><strong>输出</strong>：每一帧每个人体一个 ID + 一个 mask（黑白图，白色是人）</li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">视频帧序列 + 文字提示（如"穿红衣服的人"）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">每帧的 (人物ID, mask) 列表</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            像你拿相机拍一群人，先指着那个穿红衣服的说"我要这个人"，然后相机自己跟着他走，每一帧都标记出他的轮廓。最后你得到一摞"贴纸"——每帧一张，上面只有那个人的剪影。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>SAM3</strong></td><td>Segment Anything Model 3，Meta 出品的"分割一切"模型，能从图像里抠出物体轮廓</td></tr>
+            <tr><td><strong>mask（掩码）</strong></td><td>一张黑白图，白色标记"哪里是人"，黑色标记"哪里不是"</td></tr>
+            <tr><td><strong>逐帧传播</strong></td><td>第一帧用提示找一次，后续帧靠模型自动跟踪，不用每帧都重新搜索</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 2 步 -->
+    <div class="section">
+        <h2>👤 第 2 步：人脸检测（找出脸上的关键点）</h2>
+        <div class="tags">
+            <span class="tag green">RetinaFace</span>
+            <span class="tag">三种扫描框</span>
+            <span class="tag">5关键点</span>
+            <span class="tag">NMS</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>在每一帧图像上找到人脸位置，并标记出 5 个关键点（双眼/鼻尖/嘴角）。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>人脸是数字人最重要的部分，需要单独精细处理</li>
+            <li>后面要对齐 3D 人脸模型（3DMM），必须先知道脸在图像哪里、关键点位置</li>
+            <li>5 个关键点是标准化的"人脸定位锚点"，几乎所有 3DMM 对齐算法都用它们</li>
+        </ul>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li><strong>缩放图像</strong>：把图像缩放到 1024×1024（模型要求的标准尺寸，太大会爆显存，太小看不清脸）</li>
+            <li><strong>滑动扫描</strong>：用三种不同大小的"扫描框"在图像上滑动，每个位置都问一次"这里有脸吗？"
+                <ul>
+                    <li>三种大小是为了检测不同距离的人脸（近的脸大，远的脸小）</li>
+                </ul>
+            </li>
+            <li><strong>RetinaFace 检测</strong>：模型对每个扫描框判断：是不是脸 + 5 个关键点位置
+                <ul>
+                    <li>5 关键点：左眼、右眼、鼻尖、左嘴角、右嘴角</li>
+                </ul>
+            </li>
+            <li><strong>NMS 去重</strong>：同一个人脸可能被多个扫描框检测到，用 NMS（非极大值抑制）保留最确信的那一个</li>
+            <li><strong>过滤</strong>：把置信度太低或框太小的检测结果扔掉（避免误检干扰后续）</li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">每帧图像（1024×1024）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">每帧的 (人脸框, 5 关键点坐标, 置信度) 列表</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            像你在一张大合照里找人脸。你拿着三个不同大小的放大镜（小、中、大）在照片上扫一遍，每扫到一个位置就问"这里有脸吗？" 找到脸以后在眼睛、鼻子、嘴角位置画五个点。同一张脸可能被多个放大镜扫到，只保留最确信的那次。太小的脸或不确定的，直接忽略。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>RetinaFace</strong></td><td>经典人脸检测模型，输出人脸框 + 5 关键点</td></tr>
+            <tr><td><strong>NMS（非极大值抑制）</strong></td><td>多个重叠的检测框只保留置信度最高的那一个</td></tr>
+            <tr><td><strong>5 关键点</strong></td><td>左眼/右眼/鼻尖/左嘴角/右嘴角，人脸定位的标准锚点</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 3 步 -->
+    <div class="section">
+        <h2>🔗 第 3 步：人脸匹配（把人脸框对应到人体 ID）</h2>
+        <div class="tags">
+            <span class="tag green">IoU</span>
+            <span class="tag">人体mask</span>
+            <span class="tag">人脸框</span>
+            <span class="tag">一一对应</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>把第 1 步的人体 ID 和第 2 步的人脸框对应起来，给每个人配上正确的脸。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>第 1 步知道了"哪里是人体"（ID + mask）</li>
+            <li>第 2 步知道了"哪里是人脸"（人脸框 + 关键点）</li>
+            <li>但两边没关联！需要把它们匹配起来，才能知道"这个 ID 的人脸在哪"</li>
+        </ul>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li>对每个<strong>人体 ID</strong>，取出第 1 步对应的 mask（人体轮廓）</li>
+            <li>遍历第 2 步所有检测到的人脸框</li>
+            <li>计算每个人脸框和这个 mask 的<strong>重叠率</strong>（IoU）：
+                <ul>
+                    <li>IoU = 交集面积 / 并集面积</li>
+                    <li>IoU = 1 表示完全重合，IoU = 0 表示完全不重叠</li>
+                </ul>
+            </li>
+            <li>给每个 ID 选择 IoU 最高的那张人脸作为匹配结果</li>
+            <li>约束：<strong>一个 ID 最多匹配一张脸</strong>（防止一个人配两张脸，保证一一对应）</li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">人体 ID+mask 列表（第1步）+ 人脸框列表（第2步）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">每个 ID 对应的人脸框 + 关键点（一一对应）</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            想象你有一摞人形剪影（第1步的 mask）和一摞人脸框（第2步）。你要把每张脸贴到正确的人形剪影上。怎么判断？看脸框和剪影重合多少——重合最多的那张脸，就是属于这个剪影的。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>IoU（Intersection over Union）</strong></td><td>两个区域的重叠度。交集面积 ÷ 并集面积。1 = 完全重合，0 = 完全不重叠</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 4 步 -->
+    <div class="section">
+        <h2>🔎 第 4 步：人脸重建（检测 657 个点 + 表情系数）</h2>
+        <div class="tags">
+            <span class="tag green">ExpTracker</span>
+            <span class="tag">657关键点</span>
+            <span class="tag">头部朝向</span>
+            <span class="tag">表情系数</span>
+            <span class="tag">逆仿射变换</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>用 ExpTracker 模型在脸上标出 657 个密集点，并预测头部朝向和表情系数。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>第 2 步只标了 5 个粗略关键点，不够精细</li>
+            <li>后面要对齐 3D 人脸模型（3DMM），需要密集的对应点作为监督</li>
+            <li>表情系数用于驱动数字人表情（哪帧在笑、哪帧在皱眉）</li>
+        </ul>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li><strong>裁剪人脸区域</strong>：从原图裁出人脸部分</li>
+            <li><strong>放大到 512×512</strong>：模型要求的标准尺寸</li>
+            <li><strong>裁剪框放大 2.5 倍</strong>：不只是脸，把上半身也带进来
+                <ul>
+                    <li>提供上下文：ExpTracker 需要看到肩膀/脖子才能准确判断头部朝向</li>
+                </ul>
+            </li>
+            <li><strong>ExpTracker 推理</strong>：模型输出：
+                <ul>
+                    <li><strong>657 个脸上点</strong>的像素坐标（眉毛、眼睛、嘴唇、脸颊等密集关键点）</li>
+                    <li><strong>头部朝向</strong>（pose，三个轴的旋转角）</li>
+                    <li><strong>表情系数</strong>（expression coefficients，控制表情的参数向量）</li>
+                </ul>
+            </li>
+            <li><strong>逆仿射变换</strong>：把模型输出的坐标（在 512×512 裁剪图里的）换回原图坐标系
+                <ul>
+                    <li>因为第 4 步裁剪+缩放过，坐标变了；后面要用原图坐标</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">人脸框 + 512×512 裁剪图（含上半身 2.5×）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">657 关键点（原图坐标）+ 头部朝向 + 表情系数</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            第 2 步只在脸上点了 5 个点，太粗了。这一步用更精细的模型，在脸上点 657 个点（眉毛怎么弯、嘴角怎么翘、眼皮怎么垂），还能算出"头往左偏 15°，在微笑"。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>ExpTracker</strong></td><td>人脸密集跟踪模型，输出密集关键点 + 表情参数（具体是哪篇工作待确认）</td></tr>
+            <tr><td><strong>657 关键点</strong></td><td>比 5 关键点密集 100 多倍的脸部定位点，覆盖眉毛/眼睛/鼻/嘴/脸颊</td></tr>
+            <tr><td><strong>表情系数</strong></td><td>控制表情的数字向量，如 [微笑度, 皱眉度, 张嘴度, ...]</td></tr>
+            <tr><td><strong>逆仿射变换</strong></td><td>把"裁剪+缩放"过的图坐标，反向换算回原图坐标</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 5 步 -->
+    <div class="section">
+        <h2>✨ 第 5 步：人脸增强（提升人脸画质）</h2>
+        <div class="tags">
+            <span class="tag green">HYPIR</span>
+            <span class="tag">RetouchFormer</span>
+            <span class="tag">高斯模糊 LQ</span>
+            <span class="tag">美颜 HQ</span>
+            <span class="tag">54px 渐变融合</span>
+            <span class="tag">前处理+后处理</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>用 HYPIR 模型把模糊/噪点的人脸变清晰，并和原图平滑融合。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>视频里人脸可能模糊、有噪点、光照差</li>
+            <li>后面要拿去训练 3D 高斯，<strong>垃圾输入 = 垃圾输出</strong></li>
+            <li>增强后能显著提升重建质量</li>
+        </ul>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li><strong>裁剪人脸区域</strong>：放大到 512×512</li>
+            <li><strong>HYPIR 推理</strong>：模型把 LQ（低画质）变 HQ（高画质）
+                <ul>
+                    <li><strong>训练数据</strong>：LQ = 加高斯模糊的图；HQ = 加 RetouchFormer 美颜的图</li>
+                    <li>所以 HYPIR 同时去模糊 + 美颜（一举两得）</li>
+                </ul>
+            </li>
+            <li><strong>缩放回原大小</strong></li>
+            <li><strong>渐变融合</strong>：用 54 像素宽的渐变 mask 把增强图和原图拼起来
+                <ul>
+                    <li>中心区域用增强图，边缘渐变过渡到原图</li>
+                    <li>避免增强区域和原图有明显接缝</li>
+                </ul>
+            </li>
+            <li><strong>两个阶段</strong>：
+                <ul>
+                    <li><strong>前处理增强</strong>：训练前增强输入帧（让 tracking 更准、纹理更干净）</li>
+                    <li><strong>后处理增强</strong>：训练中期对渲染图增强（再喂回去训练，迭代提升）</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">512×512 人脸裁剪图（LQ）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">增强后的人脸（已融合回原图坐标）</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            你拍的脸照片糊了，用修图软件一键美颜+锐化。这个软件（HYPIR）是专门训练过的：给它看的"差图"是加了模糊的，"好图"是美颜过的，所以它学会了一步搞定去模糊+美颜。但只对脸做美颜太突兀，所以脸周围用渐变过渡，让美颜区域和原图无缝衔接。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>HYPIR</strong></td><td>扩散先验图像复原模型，一步推理，支持用户控制复原强度（详见 <a href="SR-20250728-HYPIR.html">HYPIR 笔记</a>）</td></tr>
+            <tr><td><strong>RetouchFormer</strong></td><td>美颜模型，用作 HYPIR 的训练目标（生成 HQ）</td></tr>
+            <tr><td><strong>渐变融合 mask</strong></td><td>让增强区域和原图无缝拼接的权重图，从中心 1.0 渐变到边缘 0.0</td></tr>
+            <tr><td><strong>前处理 vs 后处理</strong></td><td>前处理 = 增强输入帧；后处理 = 增强训练中渲染图（闭环迭代）</td></tr>
+        </table>
+
+        <div class="highlight warn">
+            <strong>⚠️ 多视角一致性提醒：</strong>美颜属于 2D 后处理，每帧独立处理可能破坏多视角一致性（不同视角美颜力度不同 → 闪烁）。建议把美颜约束作为<strong>纹理优化 loss</strong>，而非纯 2D 后处理。前处理（去噪/去模糊）影响小，可放心用。
+        </div>
+    </div>
+
+    <!-- 第 6 步 -->
+    <div class="section">
+        <h2>🎯 第 6 步：人脸对齐（3DMM 模型与图像对齐）</h2>
+        <div class="tags">
+            <span class="tag green">3DMM</span>
+            <span class="tag">PnP</span>
+            <span class="tag">视线交叉法</span>
+            <span class="tag">Adam 300次</span>
+            <span class="tag">SRT</span>
+            <span class="tag">锚点正则</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>把 3DMM 人脸模型"摆"到图像里人脸的位置和姿态，使两者对齐。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>第 4 步得到了 657 个 2D 关键点</li>
+            <li>3DMM 模型是 3D 的，需要确定它在该帧图像里的"位置、姿态、大小"</li>
+            <li>对齐后才能把 3D 高斯绑到 3DMM 上（第 7 步）</li>
+        </ul>
+
+        <h3>具体怎么做？（三层优化）</h3>
+
+        <h4>① 全局对齐（所有人脸一起优化）</h4>
+        <ol>
+            <li><strong>PnP 估计初始位姿</strong>：用 5 个粗略关键点 + 3DMM 标准关键点，用 PnP 算法估计初始 SRT（scale, rotation, translation）</li>
+            <li><strong>视线交叉法估计</strong>：用多视角的视线交叉，进一步估计 3D 关键点位置（多视角约束更准）
+                <div class="highlight warn" style="margin:6px 0;">
+                    <strong>⚠️ 笔记可能有误：</strong>原话"用PnP估计初始位姿然后视线交叉法估计初始位姿"——两次说"估计初始位姿"。可能第二个是"估计 3D 关键点"或"细化位姿"。
+                </div>
+            </li>
+            <li><strong>过滤</strong>：扔掉拍摄角度太大的图像（侧脸/后脑勺看不清的，对齐会不准）</li>
+            <li><strong>Adam 优化 300 次</strong>：迭代优化得到最终的 SRT</li>
+        </ol>
+
+        <h4>② 局部对齐（每张图微调）</h4>
+        <ul>
+            <li>微调每张图像的偏差（每帧都有一个小的偏移修正）</li>
+            <li>加<strong>锚点正则</strong>：约束每帧修正不超过一定范围，防止局部修正跑太远</li>
+        </ul>
+
+        <h4>③ 系数优化</h4>
+        <ul>
+            <li><strong>身份系数</strong>（这个人长什么样，所有帧共用）</li>
+            <li><strong>每帧表情系数</strong>（这帧是什么表情，每帧独立）</li>
+        </ul>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">657 关键点（多帧）+ 3DMM 模型</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">每帧 SRT + 身份系数（共用）+ 每帧表情系数</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            想象你有一个 3D 的塑料人脸模型（3DMM），现在要把它"摆"到视频每一帧里人脸的位置。你先用 5 个粗略点估计大概位置（PnP），再用多视角交叉精确化，然后扔掉看不清的角度，最后迭代优化 300 次让模型和图像脸对齐。对齐后再微调每帧的小偏差，最后定下"这个人长什么样"（身份系数）和"每帧什么表情"（表情系数）。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>3DMM</strong></td><td>3D Morphable Model，参数化人脸模型（如 FLAME），用一组参数控制脸型+表情</td></tr>
+            <tr><td><strong>PnP</strong></td><td>Perspective-n-Point，从 2D-3D 对应点估计相机位姿的经典算法</td></tr>
+            <tr><td><strong>SRT</strong></td><td>Scale, Rotation, Translation（缩放、旋转、平移），描述 3D 模型在图像里的位姿</td></tr>
+            <tr><td><strong>视线交叉法</strong></td><td>多视角下，从每个视角画一条经过 2D 关键点的视线，所有视线交点即为 3D 关键点</td></tr>
+            <tr><td><strong>Adam 优化</strong></td><td>一种自适应梯度下降算法，比普通 SGD 更稳定</td></tr>
+            <tr><td><strong>锚点正则</strong></td><td>约束每帧修正不偏离太多，防止局部优化跑飞</td></tr>
+            <tr><td><strong>身份系数</strong></td><td>这个人"长什么样"的参数，所有帧共用</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 7 步 -->
+    <div class="section">
+        <h2>🎮 第 7 步：人脸高斯初始化（绑骨 + 训练）</h2>
+        <div class="tags">
+            <span class="tag green">AvatarGaussianModel</span>
+            <span class="tag">FaceAlignment</span>
+            <span class="tag">绑骨 rig</span>
+            <span class="tag">可微渲染</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>把 3D 高斯球绑到 3DMM 人脸模型上，初始化、渲染、训练。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>经过第 6 步，3DMM 已经和图像对齐了</li>
+            <li>但 3DMM 只是 mesh（网格），没有高斯渲染能力</li>
+            <li>要把高斯"挂"到 3DMM 上（绑骨/rig），才能渲染出真实感图像</li>
+        </ul>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li><strong>AvatarGaussianModel 绑骨</strong>：把高斯球绑到 3DMM 的三角面上（rig）
+                <ul>
+                    <li>每个高斯定义在某个三角面的局部坐标系里</li>
+                    <li>三角面动 → 高斯跟着动（这就是"绑骨"）</li>
+                </ul>
+            </li>
+            <li><strong>FaceAlignment 继承全局 SRT 和身份系数</strong>：复用第 6 步的优化结果，作为初始化</li>
+            <li><strong>初始化</strong>：放置初始高斯球（在 3DMM 表面均匀放置）</li>
+            <li><strong>渲染</strong>：用可微高斯渲染器渲染当前视角</li>
+            <li><strong>训练</strong>：与原图对比 loss，反向传播优化高斯参数</li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">3DMM + SRT + 身份系数（来自第6步）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">训练好的人脸高斯模型</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            3DMM 是一个塑料脸模型，本身不能渲染照片。现在往这个塑料脸上贴满小光球（3D 高斯），每个光球记住"我在哪个三角面上、什么颜色、多亮"。这些光球跟着塑料脸动。然后用可微渲染器把这堆光球"画"成图像，跟原图对比，调整光球参数让它越来越像真人。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>AvatarGaussianModel</strong></td><td>人脸高斯模型类（代码类名），管理绑骨高斯</td></tr>
+            <tr><td><strong>绑骨（rig）</strong></td><td>把高斯绑到 mesh 三角面，让高斯跟随 mesh 形变（详见 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html#section-7">第七章 LBS 解码</a>）</td></tr>
+            <tr><td><strong>FaceAlignment</strong></td><td>对齐结果类，继承全局 SRT 和身份系数</td></tr>
+            <tr><td><strong>可微渲染</strong></td><td>渲染过程可求导，能用梯度下降优化高斯参数</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 8 步 -->
+    <div class="section">
+        <h2>🧍 第 8 步：身体高斯初始化（场景点云抠身体）</h2>
+        <div class="tags">
+            <span class="tag green">BodyGaussianModel</span>
+            <span class="tag">场景点云</span>
+            <span class="tag">去人脸附近</span>
+            <span class="tag">深度加权稠密化</span>
+            <span class="tag">代表视角颜色</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>从场景点云里抠出身体部分，初始化身体高斯。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>人脸有 3DMM 模型作为骨架（第 6-7 步）</li>
+            <li><strong>但身体没有精确的 3D 模型可用</strong>（不像脸有 3DMM）</li>
+            <li>改用"从场景点云里抠身体"的方法</li>
+        </ul>
+
+        <div class="highlight warn">
+            <strong>⚠️ 与之前讨论的差异：</strong>之前讨论的 MHR pipeline 是把身体也绑到 MHR mesh 上（参数化 rig）。但当前同事的 pipeline <strong>身体部分没用 MHR</strong>，而是直接从场景点云抠出身体部分。这是更接近 HUGS 早期"SMPL 初始化 + 偏离"思路的简化版。
+        </div>
+
+        <h3>具体怎么做？</h3>
+        <ol>
+            <li><strong>从场景点云抠身体</strong>：从整个场景的点云里，分离出属于身体的部分（用第 1 步的 mask 约束）</li>
+            <li><strong>去掉人脸附近的点云</strong>：人脸已经被第 7 步处理了，身体部分不要重复
+                <ul>
+                    <li>避免人脸高斯和身体高斯重叠</li>
+                </ul>
+            </li>
+            <li><strong>深度加权稠密化</strong>：根据深度信息调整点云密度
+                <div class="highlight warn" style="margin:6px 0;">
+                    <strong>⚠️ 笔记可能有误：</strong>原话"深度重头有稠密化"，"重头"可能是"重加权"或"重新"的笔误。
+                </div>
+            </li>
+            <li><strong>代表视角颜色初始化</strong>：选一个代表视角，用它的颜色给高斯初始化</li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">场景点云 + 人体 mask（第1步）+ 人脸 mask（第7步）</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">身体高斯初始化（颜色/位置/不透明度）</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            脸有塑料模型可以贴光球。身体没有现成模型，怎么办？把整个场景的 3D 点云拿来，从中抠出"这个人"的点（用第1步的剪影约束），再把脸那块的点去掉（脸已经单独处理了）。剩下的点就是身体点云，给它们染上颜色，变成身体高斯。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>场景点云</strong></td><td>3D 重建整个场景得到的点云（含人+背景+物体）</td></tr>
+            <tr><td><strong>稠密化</strong></td><td>增加点云密度的过程，让稀疏区域更密</td></tr>
+            <tr><td><strong>代表视角</strong></td><td>选一个最正面、光照最好的视角，用它的颜色给高斯初始化</td></tr>
+        </table>
+    </div>
+
+    <!-- 第 9 步 -->
+    <div class="section">
+        <h2>🔥 第 9 步：高斯训练循环（核心训练）</h2>
+        <div class="tags">
+            <span class="tag green">多模型叠加</span>
+            <span class="tag">L1+SSIM+mask+语义</span>
+            <span class="tag">分裂/剪枝</span>
+            <span class="tag">SH升级 0→3阶</span>
+            <span class="tag">表情统一</span>
+            <span class="tag">位姿优化+曝光补偿</span>
+        </div>
+
+        <div class="highlight">
+            <strong>一句话：</strong>把人脸高斯 + 身体高斯 + 场景高斯 + 背景高斯叠加起来，一起训练，优化所有参数。
+        </div>
+
+        <h3>为什么需要这一步？</h3>
+        <ul>
+            <li>第 7 步只训练了人脸高斯</li>
+            <li>第 8 步只初始化了身体高斯</li>
+            <li>但完整图像包含：<strong>人脸 + 身体 + 场景 + 背景</strong></li>
+            <li>需要联合训练，让所有部分协调一致（避免边界接缝）</li>
+        </ul>
+
+        <h3>具体怎么做？（训练循环）</h3>
+
+        <h4>① 渲染与损失</h4>
+        <ol>
+            <li><strong>多个模型叠加渲染</strong>：avatar（人脸）+ body（身体）+ scene（场景）+ bg（背景）一起渲染成一张图</li>
+            <li><strong>多种损失</strong>：
+                <ul>
+                    <li><strong>L1 损失</strong>：像素级绝对值差（基础重建损失）</li>
+                    <li><strong>SSIM 损失</strong>：结构相似性（比 L1 更符合人眼感受）</li>
+                    <li><strong>mask 损失</strong>：人体区域约束（让身体高斯不要乱跑）</li>
+                    <li><strong>语义损失</strong>：语义一致性（如脸/身体/背景的语义分割一致）</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h4>② 训练策略</h4>
+        <ol>
+            <li><strong>禁用动态干扰消除</strong>：训练时不做动态干扰消除（先把静态建好）
+                <div class="highlight warn" style="margin:6px 0;">
+                    <strong>⚠️ 笔记可能有误：</strong>"动态干扰消除"具体指什么不确定，可能是某种动态干扰去除模块。
+                </div>
+            </li>
+            <li><strong>禁用新视角生成</strong>：训练时不生成新视角（避免引入误差，先把已有视角建好）</li>
+            <li><strong>位姿优化 + 曝光补偿</strong>：训练时联合优化相机位姿和曝光参数（让位姿更准、光照一致）</li>
+        </ol>
+
+        <h4>③ 高斯自适应</h4>
+        <ol>
+            <li><strong>梯度大处分裂</strong>：在梯度大的区域（细节多）分裂高斯球，增加密度
+                <ul>
+                    <li>梯度大 = 该区域信息丰富 = 需要更多高斯表达</li>
+                </ul>
+            </li>
+            <li><strong>不透明度低处剪枝</strong>：不透明度太低的高斯球直接剪掉（节省计算）</li>
+            <li><strong>球谐函数（SH）升级</strong>：
+                <ul>
+                    <li>训练初期：只用 <strong>0 阶 SH</strong>（颜色简单，每个高斯一个固定颜色）</li>
+                    <li>后期：升级到 <strong>1 阶、2 阶、3 阶 SH</strong>（颜色更精细，能表达视角相关效果，如反光）</li>
+                    <li>先粗后细，加快收敛</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h4>④ 表情统一</h4>
+        <ol>
+            <li><strong>表情统一为代表视角</strong>：人脸增强后处理之前，把所有帧的表情统一为代表视角的表情
+                <ul>
+                    <li><strong>原因</strong>：避免表情差异影响重建（不同表情的纹理对不齐）</li>
+                    <li>统一后所有帧用同一个表情的纹理，canonical 空间更干净</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="io-box">
+            <div class="io">
+                <div class="label">输入</div>
+                <div class="content">人脸高斯 + 身体高斯 + 场景/背景高斯 + 多帧图像</div>
+            </div>
+            <div class="io">
+                <div class="label">输出</div>
+                <div class="content">训练好的完整数字人模型</div>
+            </div>
+        </div>
+
+        <div class="analogy">
+            现在脸、身体、场景、背景的"光球"都准备好了，但各自独立。这一步把它们全部叠加渲染成一张图，跟原图对比，差距越大就越调整对应光球。怎么调？信息多的地方（细节多）多放几个光球（分裂），看不到的光球删掉（剪枝），颜色一开始简单后面变复杂（SH 升级）。最后所有帧的表情统一成同一个表情，避免表情差异搞乱重建。
+        </div>
+
+        <h3>关键术语</h3>
+        <table>
+            <tr><th>术语</th><th>解释</th></tr>
+            <tr><td><strong>L1 损失</strong></td><td>渲染图与原图像素级绝对值差</td></tr>
+            <tr><td><strong>SSIM</strong></td><td>结构相似性，考虑局部结构，比 L1 更符合人眼</td></tr>
+            <tr><td><strong>mask 损失</strong></td><td>用人体 mask 约束身体高斯区域，防止乱跑</td></tr>
+            <tr><td><strong>语义损失</strong></td><td>语义分割一致性约束</td></tr>
+            <tr><td><strong>分裂（split）</strong></td><td>把一个高斯球分成两个，在信息密集区域增加密度</td></tr>
+            <tr><td><strong>剪枝（prune）</strong></td><td>删掉不透明度太低的高斯球（看不见的，浪费计算）</td></tr>
+            <tr><td><strong>球谐函数（SH）</strong></td><td>表达高斯颜色随视角变化的函数。阶数越高越精细。0阶=固定色，3阶=可表达反光/高光</td></tr>
+            <tr><td><strong>位姿优化</strong></td><td>训练时联合优化相机位姿（让位姿估计更准）</td></tr>
+            <tr><td><strong>曝光补偿</strong></td><td>不同帧光照不同，补偿曝光差异让纹理一致</td></tr>
+        </table>
+    </div>
+
+    <!-- 完整架构图 -->
+    <div class="section">
+        <h2>🏗️ 完整架构图（按数据流）</h2>
+        <pre>                    ┌──────────────────────┐
+                    │  视频输入 (帧序列)    │
+                    └──────────┬───────────┘
+                               │
+        ┌──────────────────────┴──────────────────────┐
+        │                                              │
+        ▼                                              ▼
+┌──────────────────┐                       ┌──────────────────────┐
+│ 1. SAM3 人体跟踪 │                       │ 2. RetinaFace 人脸检测│
+│  文字提示找人    │                       │  1024×1024 + 3种框   │
+│  逐帧传播        │                       │  5关键点 + NMS + 过滤 │
+└────────┬─────────┘                       └──────────┬───────────┘
+         │ (ID, mask)                                 │ (人脸框+5点)
+         │                                            │
+         └──────────────────┬────────────────────────┘
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │ 3. IoU 人脸匹配     │
+                  │  mask ∩ 框 → 配对   │
+                  └─────────┬───────────┘
+                            │ (ID ↔ 人脸框)
+                            ▼
+                  ┌─────────────────────┐
+                  │ 4. ExpTracker 重建  │
+                  │  512×512 + 上半身2.5×│
+                  │  657点 + 朝向 + 表情 │
+                  │  逆仿射回原坐标       │
+                  └─────────┬───────────┘
+                            │
+              ┌─────────────┴──────────────┐
+              │                            │
+              ▼                            ▼
+    ┌──────────────────┐        ┌──────────────────────┐
+    │ 5. HYPIR 增强    │        │ 6. 3DMM 对齐         │
+    │  LQ→HQ (模糊+美颜)│       │  全局: PnP+视线交叉  │
+    │  54px 渐变融合   │        │       +Adam 300次   │
+    │  前处理+后处理   │        │  局部: 微调+锚点正则 │
+    └────────┬─────────┘        │  系数: 身份+每帧表情 │
+             │                  └──────────┬───────────┘
+             │                             │ (SRT, 身份, 表情)
+             │                             ▼
+             │                  ┌──────────────────────┐
+             │                  │ 7. AvatarGaussianModel│
+             │                  │  绑骨到 3DMM 三角面  │
+             │                  │  继承 SRT + 身份     │
+             │                  │  初始化→渲染→训练   │
+             │                  └──────────┬───────────┘
+             │                             │ (人脸高斯)
+             │                             │
+             │     ┌───────────────────────┘
+             │     │
+             │     │      ┌──────────────────────┐
+             │     │      │ 8. BodyGaussianModel │
+             │     │      │  场景点云抠身体      │
+             │     │      │  去人脸附近          │
+             │     │      │  深度加权稠密化     │
+             │     │      │  代表视角颜色初始化 │
+             │     │      └──────────┬───────────┘
+             │     │                 │ (身体高斯)
+             │     │                 │
+             ▼     ▼                 ▼
+        ┌──────────────────────────────────┐
+        │ 9. 高斯训练循环                  │
+        │                                  │
+        │  叠加渲染: avatar+body+scene+bg │
+        │  Loss: L1 + SSIM + mask + 语义  │
+        │  策略: 禁用动态干扰/新视角       │
+        │        位姿优化 + 曝光补偿       │
+        │  自适应: 分裂 + 剪枝 + SH升级    │
+        │           (0阶 → 1阶 → 2阶 → 3阶)│
+        │  表情统一: 代表视角表情          │
+        └──────────────┬───────────────────┘
+                       │
+                       ▼
+              ┌────────────────┐
+              │ 3D 数字人模型  │
+              │ (可渲染+可驱动)│
+              └────────────────┘</pre>
+    </div>
+
+    <!-- 与 MHR 方案的关系 -->
+    <div class="section">
+        <h2>🔗 与之前讨论的 MHR 方案的关系</h2>
+        <p>当前同事的 pipeline（本文件描述）与之前讨论的 MHR pipeline（<a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a>）有一些关键差异，对比如下：</p>
+
+        <table>
+            <tr><th>维度</th><th>当前 pipeline（本文档）</th><th>MHR pipeline（之前讨论）</th></tr>
+            <tr><td><strong>人脸参数化模型</strong></td><td>3DMM（PnP+视线交叉+Adam 对齐）</td><td>FLAME（GaussianAvatars 风格）</td></tr>
+            <tr><td><strong>身体表示</strong></td><td><strong>场景点云抠身体</strong>（无参数化模型）</td><td>MHR mesh + 高斯 rig + LBS</td></tr>
+            <tr><td><strong>身体动画能力</strong></td><td>❌ 无（点云无 rig）</td><td>✅ 有（MHR + LBS 驱动）</td></tr>
+            <tr><td><strong>身体 tracking</strong></td><td>无 per-frame pose 估计</td><td>SAM 3D Body 逐帧预测 MHR 参数</td></tr>
+            <tr><td><strong>是否用 MHR</strong></td><td>❌ 未提及</td><td>✅ 核心组件</td></tr>
+            <tr><td><strong>整体定位</strong></td><td>HUGS 早期简化版（场景点云 + 身体偏离）</td><td>F3G-Avatar 风格（MHR rig + 双分支）</td></tr>
+        </table>
+
+        <div class="highlight">
+            <strong>关键洞察：</strong>当前 pipeline 的身体部分是<strong>非参数化</strong>的（直接从场景点云抠出身体），没有 MHR rig 骨架。这意味着：
+            <ul style="margin-top:6px;">
+                <li>身体不能驱动新 pose（只能渲染原视角）</li>
+                <li>没有 per-frame pose 估计 → 没有同事之前说的"手臂转向估计错"问题</li>
+                <li>身体部分本质上是<strong>静态点云重建</strong>，不是动态重建</li>
+            </ul>
+        </div>
+
+        <div class="highlight warn">
+            <strong>可能的发展方向：</strong>如果未来要支持身体动画（驱动新 pose），需要把身体从"场景点云"升级为"MHR mesh + 高斯 rig"，这就是之前讨论的 MHR pipeline。也就是说：<strong>当前 pipeline 是 MHR pipeline 的前身/简化版</strong>，升级到 MHR 后才能获得完整的可驱动能力。
+        </div>
+
+        <p>参见：</p>
+        <ul>
+            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
+            <li><a href="3D-20260720-MHR.html">MHR 论文</a> — 参数化人体模型（SMPL 升级版）</li>
+            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 数字人的开山工作</li>
+        </ul>
+    </div>
+
+    <!-- 可能的笔记误差 -->
+    <div class="section">
+        <h2>⚠️ 可能的笔记误差</h2>
+        <p>本流程按同事口述记忆整理，可能存在以下误差，请与同事确认：</p>
+
+        <table>
+            <tr><th>位置</th><th>原话</th><th>疑问</th><th>推测正确含义</th></tr>
+            <tr>
+                <td>第 6 步</td>
+                <td>"PnP估计初始位姿然后视线交叉法估计初始位姿"</td>
+                <td>两次说"估计初始位姿"</td>
+                <td>可能第二个是"视线交叉法估计 3D 关键点"或"细化位姿"</td>
+            </tr>
+            <tr>
+                <td>第 8 步</td>
+                <td>"深度重头有稠密化"</td>
+                <td>"重头"含义不清</td>
+                <td>可能是"深度重加权稠密化"或"深度重新稠密化"</td>
+            </tr>
+            <tr>
+                <td>第 9 步</td>
+                <td>"禁用动态干扰消除"</td>
+                <td>"动态干扰消除"具体指什么</td>
+                <td>可能是某种动态干扰去除模块（具体待确认）</td>
+            </tr>
+            <tr>
+                <td>第 9 步</td>
+                <td>"禁用新视角生成"</td>
+                <td>训练时禁用新视角生成</td>
+                <td>可能指禁用 novel view synthesis 模块，先把已有视角建好</td>
+            </tr>
+            <tr>
+                <td>第 4 步</td>
+                <td>"ExpTracker"</td>
+                <td>具体是哪篇工作</td>
+                <td>待确认，可能是 Expression Tracker 类模型</td>
+            </tr>
+            <tr>
+                <td>第 7 步</td>
+                <td>"AvatarGaussianModel"、"FaceAlignment"</td>
+                <td>类名</td>
+                <td>应为代码类名，按字面理解即可</td>
+            </tr>
+            <tr>
+                <td>第 9 步</td>
+                <td>"语义损失"</td>
+                <td>具体语义是什么</td>
+                <td>可能是脸/身体/背景的语义分割一致性，待确认</td>
+            </tr>
+        </table>
+
+        <div class="highlight">
+            <strong>使用建议：</strong>本文档作为<strong>研究方向理解</strong>的参考是足够的，整体框架与社区主流 pipeline（HUGS + GaussianAvatars 混合）一致。但若要<strong>复现</strong>，请与同事逐项确认细节，尤其是上述存疑点。
+        </div>
+    </div>
+
+    <!-- 术语表 -->
+    <div class="section">
+        <h2>📚 术语表（初学者查词）</h2>
+        <table>
+            <tr><th>术语</th><th>解释</th><th>所在步骤</th></tr>
+            <tr><td><strong>SAM3</strong></td><td>Meta 的"分割一切"模型 v3，能从图像抠出物体轮廓</td><td>第 1 步</td></tr>
+            <tr><td><strong>mask（掩码）</strong></td><td>黑白图，标记"哪里是人"</td><td>第 1 步</td></tr>
+            <tr><td><strong>逐帧传播</strong></td><td>第一帧用提示找一次，后续帧自动跟踪</td><td>第 1 步</td></tr>
+            <tr><td><strong>RetinaFace</strong></td><td>经典人脸检测模型，输出人脸框 + 5 关键点</td><td>第 2 步</td></tr>
+            <tr><td><strong>NMS（非极大值抑制）</strong></td><td>多个重叠框只保留最确信的一个</td><td>第 2 步</td></tr>
+            <tr><td><strong>5 关键点</strong></td><td>左眼/右眼/鼻尖/左嘴角/右嘴角，标准人脸定位锚</td><td>第 2 步</td></tr>
+            <tr><td><strong>IoU</strong></td><td>两个区域的重叠度，1=完全重合，0=不重叠</td><td>第 3 步</td></tr>
+            <tr><td><strong>ExpTracker</strong></td><td>人脸密集跟踪模型，输出 657 关键点 + 表情参数</td><td>第 4 步</td></tr>
+            <tr><td><strong>657 关键点</strong></td><td>密集脸部定位点，覆盖眉/眼/鼻/嘴/脸颊</td><td>第 4 步</td></tr>
+            <tr><td><strong>表情系数</strong></td><td>控制表情的参数向量</td><td>第 4 步</td></tr>
+            <tr><td><strong>逆仿射变换</strong></td><td>把裁剪+缩放过的坐标换算回原图坐标</td><td>第 4 步</td></tr>
+            <tr><td><strong>HYPIR</strong></td><td>扩散先验图像复原模型，一步推理</td><td>第 5 步</td></tr>
+            <tr><td><strong>RetouchFormer</strong></td><td>美颜模型，用作 HYPIR 训练目标</td><td>第 5 步</td></tr>
+            <tr><td><strong>渐变融合 mask</strong></td><td>让增强区域和原图无缝拼接的权重图</td><td>第 5 步</td></tr>
+            <tr><td><strong>3DMM</strong></td><td>3D Morphable Model，参数化人脸模型</td><td>第 6 步</td></tr>
+            <tr><td><strong>PnP</strong></td><td>从 2D-3D 对应点估计相机位姿的算法</td><td>第 6 步</td></tr>
+            <tr><td><strong>SRT</strong></td><td>Scale, Rotation, Translation（缩放、旋转、平移）</td><td>第 6 步</td></tr>
+            <tr><td><strong>视线交叉法</strong></td><td>多视角视线交点 = 3D 关键点</td><td>第 6 步</td></tr>
+            <tr><td><strong>Adam 优化</strong></td><td>自适应梯度下降算法</td><td>第 6 步</td></tr>
+            <tr><td><strong>锚点正则</strong></td><td>约束每帧修正不偏离太多</td><td>第 6 步</td></tr>
+            <tr><td><strong>身份系数</strong></td><td>"这个人长什么样"的参数，所有帧共用</td><td>第 6 步</td></tr>
+            <tr><td><strong>绑骨（rig）</strong></td><td>把高斯绑到 mesh 三角面，让高斯跟随 mesh 形变</td><td>第 7 步</td></tr>
+            <tr><td><strong>可微渲染</strong></td><td>渲染过程可求导，能用梯度下降优化</td><td>第 7 步</td></tr>
+            <tr><td><strong>场景点云</strong></td><td>3D 重建整个场景得到的点云</td><td>第 8 步</td></tr>
+            <tr><td><strong>稠密化</strong></td><td>增加点云密度的过程</td><td>第 8 步</td></tr>
+            <tr><td><strong>L1 损失</strong></td><td>像素级绝对值差</td><td>第 9 步</td></tr>
+            <tr><td><strong>SSIM</strong></td><td>结构相似性，比 L1 更符合人眼</td><td>第 9 步</td></tr>
+            <tr><td><strong>分裂（split）</strong></td><td>把一个高斯球分成两个，信息密集区增密</td><td>第 9 步</td></tr>
+            <tr><td><strong>剪枝（prune）</strong></td><td>删掉不透明度太低的高斯球</td><td>第 9 步</td></tr>
+            <tr><td><strong>球谐函数（SH）</strong></td><td>表达高斯颜色随视角变化的函数，阶数越高越精细</td><td>第 9 步</td></tr>
+            <tr><td><strong>位姿优化</strong></td><td>训练时联合优化相机位姿</td><td>第 9 步</td></tr>
+            <tr><td><strong>曝光补偿</strong></td><td>补偿不同帧光照差异</td><td>第 9 步</td></tr>
+        </table>
+    </div>
+
+    <!-- 资源链接 -->
+    <div class="section">
+        <h2>🔗 资源链接</h2>
+        <h3>知识库相关笔记</h3>
+        <ul>
+            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
+            <li><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> — FLAME + rigged Gaussians 人脸方案原型</li>
+            <li><a href="3D-20260720-MHR.html">MHR</a> — SMPL 升级版参数化人体模型</li>
+            <li><a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> — 单图预测 MHR 参数的 HMR 模型</li>
+            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 全身数字人</li>
+            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> — 40+ 篇全景</li>
+            <li><a href="SR-20250728-HYPIR.html">HYPIR</a> — 扩散先验图像复原模型</li>
+            <li><a href="SR-20260629-RealISR-Evolution.html">Real-ISR 综述</a> — 图像增强算法选型</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 同事人体重建 Pipeline 详细流程 · 9 步详解 · 2026-07-27 · 初学者友好版（让奶奶也能看懂）<br>
+    按同事口述记忆整理，可能存在误差，整体框架与社区主流数字人 pipeline 一致
+</div>
+
+</body>
+</html>
