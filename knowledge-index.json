@@ -1,7 +1,7 @@
 {
   "version": "1.1",
   "updated": "2026-07-20",
-  "paper_count": 39,
+  "paper_count": 40,
   "categories": ["CV/AI", "VideoGen", "3D", "SR"],
   "papers": [
     {
@@ -393,6 +393,16 @@
       "category": "3D",
       "tags": ["HMR 加速", "Training-free", "Real-time", "MHR → SMPL 转换", "TensorRT", "CUDA Graph", "YOLO11 Pose", "Humanoid Teleoperation", "VLA Policy Learning", "Neural Kinematic Projection", "Batched Multi-crop", "Static Graph", "Unitree G1", "USC PSI Lab", "NVIDIA", "Meta Reality Labs", "SONIC", "Psi0", "AMASS Denoising", "FreiHAND", "3DPW", "EMDB", "Harmony4D", "LSPET"],
       "sections": ["论文概要", "关键数据", "核心问题与动机", "加速方法", "实验结果", "消融实验", "与原版对比", "核心创新点", "实际部署", "与知识库相关论文的联系", "个人分析", "Pipeline 还原", "结论", "研究团队", "资源链接"]
+    },
+    {
+      "id": "p40",
+      "file": "微动人体三维重建调研.html",
+      "title": "微动人体三维重建调研 — 从视频生成几何一致性到生成式三维重建的技术路线",
+      "arxiv": "",
+      "date": "2026-08-10",
+      "category": "3D",
+      "tags": ["3D Reconstruction", "3D Gaussian Splatting", "Non-rigid Deformation", "Motion-to-Static", "Geometric Consistency", "Video Generation", "Pose Guidance", "Generative 3D Reconstruction", "Wan 2.2", "SMPL", "动转静", "骨骼引导", "萌宠数字人", "技术调研", "综述"],
+      "sections": ["结论先行：技术路线判断", "人体微动三维重建经典方法", "视频生成中的几何一致性", "骨骼/姿态引导的视频生成与重建", "动转静/姿态归一化方向", "生成式三维重建", "Wan模型几何一致性特性", "技术路线对比表", "综述正文示例段", "参考文献", "相关资源链接"]
     }
   ],
   "topic_index": {
@@ -402,7 +412,7 @@
     "VAE": ["p01", "p07", "p11", "p03"],
     "Reinforcement Learning (RL)": ["p01", "p13", "p16", "p17", "p18"],
     "GRPO": ["p16"],
-    "3D Gaussian Splatting": ["p20", "p21", "p22", "p23", "p26", "p17", "p28", "p29", "p35", "p36"],
+    "3D Gaussian Splatting": ["p20", "p21", "p22", "p23", "p26", "p17", "p28", "p29", "p35", "p36", "p40"],
     "Camera Pose Estimation": ["p26", "p18", "p30", "p31"],
     "Point Tracking": ["p26", "p15", "p17", "p18"],
     "Novel View Synthesis": ["p20", "p21", "p23", "p27", "p28", "p29"],
@@ -425,7 +435,7 @@
     "Audio Generation": ["p01", "p09", "p12", "p05", "p19"],
     "Motion Control": ["p10", "p15", "p18"],
     "Camera Control": ["p10", "p18", "p27"],
-    "Geometric Consistency": ["p17", "p27"],
+    "Geometric Consistency": ["p17", "p27", "p40"],
     "Real-time/Streaming": ["p05", "p19"],
     "3D Reconstruction": ["p23", "p26", "p27", "p29", "p32"],
     "3D Generation": ["p22", "p24", "p25", "p29"],
@@ -436,7 +446,7 @@
     "PBR Material": ["p25", "p32"],
     "SLAT": ["p24"],
     "Plücker Embedding": ["p26"],
-    "Wan Series": ["p07", "p11", "p06", "p15", "p16", "p19"],
+    "Wan Series": ["p07", "p11", "p06", "p15", "p16", "p19", "p40"],
     "Depth Prediction": ["p27"],
     "Point Cloud/3D Cache": ["p27", "p26"],
     "Driving Simulation": ["p27"],
@@ -446,6 +456,10 @@
     "Deformation Field": ["p28"],
     "Canonical Space": ["p28"],
     "Monocular Dynamic Reconstruction": ["p28", "p21"],
+    "Non-rigid Deformation": ["p28", "p40"],
+    "Motion-to-Static / 动转静": ["p40"],
+    "Pose Guidance / 姿态引导": ["p40"],
+    "Generative 3D Reconstruction": ["p22", "p40"],
     "Time Interpolation": ["p28"],
     "Annealing Training": ["p28"],
     "NVIDIA": ["p01", "p27"],

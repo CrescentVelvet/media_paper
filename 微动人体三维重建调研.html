@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微动人体三维重建调研</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 960px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
+        .section h4 { color: #b0b0b0; font-size: 0.95em; margin: 12px 0 6px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.orange { border-color: #e6a23c; color: #e6a23c; }
+        .tag.red { border-color: #f56c6c; color: #f56c6c; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); font-weight: 600; }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
+        pre { background: var(--code-bg); padding: 12px 15px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-size: 0.85em; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.orange { background: rgba(230, 162, 60, 0.1); border-left-color: #e6a23c; }
+        .highlight.red { background: rgba(245, 108, 108, 0.1); border-left-color: #f56c6c; }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        .toc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 25px; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; }
+        .toc h2 { font-size: 1.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .toc ul { list-style: none; margin-left: 0; columns: 2; column-gap: 20px; }
+        .toc li { margin-bottom: 6px; }
+        .toc a { color: var(--text-dim); text-decoration: none; font-size: 0.9em; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent); }
+        .paper-card { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 15px; margin: 10px 0; }
+        .paper-card .title { color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+        .paper-card .meta { color: var(--text-dim); font-size: 0.85em; margin-bottom: 6px; }
+        .paper-card .desc { font-size: 0.9em; color: #c0c0c0; }
+        .verdict-box { display: flex; gap: 15px; margin: 15px 0; flex-wrap: wrap; }
+        .verdict-item { flex: 1; min-width: 200px; background: var(--code-bg); border-radius: 6px; padding: 12px; border: 1px solid var(--border); }
+        .verdict-item .label { font-size: 0.85em; color: var(--text-dim); margin-bottom: 4px; }
+        .verdict-item .value { font-size: 1.1em; font-weight: 600; }
+        .verdict-item .value.green { color: var(--accent); }
+        .verdict-item .value.orange { color: #e6a23c; }
+        .verdict-item .value.red { color: #f56c6c; }
+        @media (max-width: 768px) {
+            .toc ul { columns: 1; }
+            .container { padding: 15px; }
+            .header { padding: 25px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>微动人体三维重建调研</h1>
+    <div class="meta">
+        <span>📄 技术调研报告</span>
+        <span>📅 2026-08-10</span>
+        <span>📂 CV / 3D Reconstruction / Video Generation</span>
+        <span>🎯 工程落地导向</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">3DGS</span>
+        <span class="tag green">Wan 2.2</span>
+        <span class="tag green">几何一致性</span>
+        <span class="tag">非刚性形变</span>
+        <span class="tag">姿态引导</span>
+        <span class="tag">动转静</span>
+        <span class="tag">生成式重建</span>
+        <span class="tag orange">萌宠数字人</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 结论先行 -->
+    <div class="section" id="conclusion">
+        <h2>🎯 结论先行：技术路线判断</h2>
+        
+        <div class="highlight">
+            <strong>核心推荐：动转静 + 3DGS 重建路线</strong><br>
+            基于 Wan 2.2 LoRA 现有基础，采用"单图 + 多姿态条件生成静止旋转视频 → 3DGS 重建"的技术路径。工程落地难度最低，与现有技术栈兼容性最好，几何一致性有明确的保障方案。
+        </div>
+
+        <div class="verdict-box">
+            <div class="verdict-item">
+                <div class="label">推荐路线</div>
+                <div class="value green">动转静 + 3DGS</div>
+            </div>
+            <div class="verdict-item">
+                <div class="label">备选路线</div>
+                <div class="value orange">骨骼引导 + 可变形3DGS</div>
+            </div>
+            <div class="verdict-item">
+                <div class="label">不推荐</div>
+                <div class="value red">纯生成式3D重建（SDS）</div>
+            </div>
+        </div>
+
+        <h3>推荐理由</h3>
+        <ul>
+            <li><strong>与现有技术栈兼容：</strong>用户已训练 Wan 2.2 LoRA 生成旋转视频，动转静路线只需在现有基础上增加姿态条件，无需重建整个训练管线</li>
+            <li><strong>几何一致性有保障：</strong>借鉴 VideoMV、Hi3D 的思路，视频扩散模型的时序一致性天然可转化为多视角几何一致性，配合 3D 感知去噪采样可进一步提升</li>
+            <li><strong>萌宠场景适配性好：</strong>骨骼引导路线依赖 SMPL 等人体参数化模型，对萌宠（猫/狗等）需要额外的动物骨骼模型（如 SMAL），而动转静路线无此限制</li>
+            <li><strong>重建质量有保障：</strong>多视角一致的视频帧输入 3DGS 重建，效果远优于单图生成式重建，细节和几何准确性更高</li>
+            <li><strong>工程复杂度可控：</strong>视频生成侧基于 Wan 2.2 微调，重建侧基于成熟的 3DGS 开源实现（gsplat），中间环节少，调试路径清晰</li>
+        </ul>
+
+        <h3>备选路线适用场景</h3>
+        <p>骨骼引导路线（SMPL/SMAL 骨骼条件注入 + 可变形 3DGS）适用于：</p>
+        <ul>
+            <li>需要精确控制姿态的场景（如指定特定动作序列）</li>
+            <li>已有成熟的动物骨骼提取管线</li>
+            <li>需要从单目视频做 4D 重建（动态序列）</li>
+        </ul>
+
+        <h3>不推荐路线原因</h3>
+        <p>纯生成式 3D 重建（SDS/分数蒸馏）不推荐的原因：</p>
+        <ul>
+            <li>质量不稳定，容易出现"Janus 问题"（多面/畸形）</li>
+            <li>细节丢失严重，纹理模糊</li>
+            <li>与用户已有的视频生成能力不匹配，属于另起炉灶</li>
+            <li>对萌宠这类非标准人体类别，生成先验更弱</li>
+        </ul>
+    </div>
+
+    <!-- 目录 -->
+    <div class="toc">
+        <h2>📑 目录导航</h2>
+        <ul>
+            <li><a href="#conclusion">🎯 结论先行：技术路线判断</a></li>
+            <li><a href="#dim1">1. 人体微动三维重建经典方法</a></li>
+            <li><a href="#dim2">2. 视频生成中的几何一致性</a></li>
+            <li><a href="#dim3">3. 骨骼/姿态引导的视频生成与重建</a></li>
+            <li><a href="#dim4">4. 动转静/姿态归一化方向</a></li>
+            <li><a href="#dim5">5. 生成式三维重建（人体方向）</a></li>
+            <li><a href="#dim6">6. Wan 模型几何一致性特性</a></li>
+            <li><a href="#comparison">📊 技术路线对比表</a></li>
+            <li><a href="#sample">📝 综述正文示例段</a></li>
+            <li><a href="#references">📚 参考文献</a></li>
+        </ul>
+    </div>
+
+    <!-- 维度1：人体微动三维重建经典方法 -->
+    <div class="section" id="dim1">
+        <h2>1. 人体微动三维重建经典方法</h2>
+        <p>人体微动（非刚性形变）是三维重建中的经典挑战。传统 NeRF 方法通过 MLP 变形场处理非刚性运动，但速度慢。3DGS 的出现为实时动态重建提供了新的可能，衍生出多种可变形 3DGS 方案。</p>
+
+        <div class="highlight">
+            <strong>核心发现：</strong>非刚性 3DGS 重建已形成成熟的技术范式——以 SMPL/SMAL 等参数化模型为骨架先验，高斯点通过线性混合蒙皮（LBS）或潜骨骼驱动变形，同时允许高斯偏离模板以捕捉衣物、毛发等细节。
+        </div>
+
+        <h3>1.1 基于参数化模型的可变形 3DGS</h3>
+        
+        <div class="paper-card">
+            <div class="title">HUGS: Human Gaussian Splats</div>
+            <div class="meta">Apple · 2023 · 单目视频 50-100 帧 · 30 分钟训练 · 60 FPS</div>
+            <div class="desc">利用 SMPL 人体模型初始化高斯，同时优化线性混合蒙皮权重（LBS），使高斯能跟随骨骼运动。只需少量单目视频帧即可训练，自动分离静态场景和可动画人体。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">GART: Gaussian Articulated Template Models</div>
+            <div class="meta">CVPR 2024 · SMPL 先验 + 潜骨骼 · 150+ FPS 渲染</div>
+            <div class="desc">提出高斯关节模板模型，使用混合运动高斯显式近似可变形主体的几何和外观。除了 SMPL 等分类模板先验，还引入新颖的潜骨骼来泛化到更复杂的非刚性形变。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">ParDy-Human (Parameterized Dynamic Human Avatar)</div>
+            <div class="meta">Huawei Noah's Ark Lab · 2023 · 单目序列 · 消费级硬件可运行</div>
+            <div class="desc">完全显式的参数驱动动态 3DGS 方法。第一模块根据 SMPL 顶点变形规范高斯，第二模块预测每个高斯的额外变形以处理 SMPL 之外的动态。无需 mask、UV 图等额外标注。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">SplattingAvatar</div>
+            <div class="meta">CVPR 2024 · 网格嵌入高斯 · 300+ FPS (GPU) / 30 FPS (移动端)</div>
+            <div class="desc">混合表示：三角形网格上嵌入高斯泼溅。网格控制低频运动和表面变形，高斯接管高频几何和细节外观。高斯的旋转和平移直接由网格控制，兼容骨骼动画、混合形状、网格编辑等各种动画技术。</div>
+        </div>
+
+        <h3>1.2 无模板的可变形 3DGS</h3>
+
+        <div class="paper-card">
+            <div class="title">MotionGS</div>
+            <div class="meta">NeurIPS 2024 · 显式运动引导 · 光流解耦</div>
+            <div class="desc">提出光流解耦模块，将光流分解为相机流（相机运动）和运动流（物体运动），用运动流有效约束 3D 高斯的变形。同时引入相机位姿精炼模块，交替优化高斯和相机位姿，减轻不准确相机位姿的影响。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">DualAvatar</div>
+            <div class="meta">SIGGRAPH Asia 2024 · 双表示（GS + 网格）互补</div>
+            <div class="desc">同时优化两个不同表示的化身：GS 化身和网格化身。网格化身虽外观质量低，但能有效适应新姿态，可指导 GS 化身优化未见区域和姿态（如腋下），从而生成鲁棒的 GS 化身。</div>
+        </div>
+
+        <h3>1.3 分层变形策略</h3>
+
+        <div class="paper-card">
+            <div class="title">HoliGS: Holistic Gaussian Splatting</div>
+            <div class="meta">NeurIPS 2025 · 分层变形 · 长单目视频</div>
+            <div class="desc">将场景分解为静态背景 + 时变物体，每个由学习的高斯基元表示，经历全局刚性变换、骨骼驱动关节运动、以及通过可逆神经流的细微非刚性变形。分层变形策略使长视频重建更鲁棒。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">GASPACHO</div>
+            <div class="meta">Huawei Noah's Ark Lab · 2025 · 人-物交互可控重建</div>
+            <div class="desc">同时恢复人体和交互物体的可动画模板，作为两组独立高斯。物体高斯在底层 2D 表面流形上学习，而非 3D 体积中，产生更清晰的细节。引入高斯空间中的接触约束，规范人-物关系，实现物理上合理的动画。</div>
+        </div>
+
+        <h3>1.4 对本项目的启示</h3>
+        <ul>
+            <li><strong>萌宠适配：</strong>人体方法可迁移到动物，但需替换 SMPL 为 SMAL（动物参数化模型），或采用无模板方法（如 MotionGS）</li>
+            <li><strong>微动处理：</strong>分层变形策略（刚性 + 非刚性）适合处理微动——主体保持刚性旋转，表面细节（毛发、皮肤）有微小非刚性变形</li>
+            <li><strong>重建质量：</strong>多视角一致输入 > 单目视频输入。如果能从视频生成模型获得多视角一致的帧，重建质量会显著提升</li>
+        </ul>
+    </div>
+
+    <!-- 维度2：视频生成中的几何一致性 -->
+    <div class="section" id="dim2">
+        <h2>2. 视频生成中的几何一致性</h2>
+        <p>视频扩散模型生成旋转/环绕视频时，几何一致性是核心挑战——物体不应变形或闪烁、透视关系应正确、运动应符合物理规律。当前已有多种方法从不同角度解决此问题。</p>
+
+        <div class="highlight">
+            <strong>核心发现：</strong>视频扩散模型的时序一致性知识可直接迁移为多视角几何一致性。当前主流方向包括：3D 感知去噪采样、显式 3D 缓存引导、潜空间 3D 记忆、RL 几何约束、注意力层内点追踪监督。
+        </div>
+
+        <h3>2.1 视频扩散 = 多视角生成范式</h3>
+
+        <div class="paper-card">
+            <div class="title">Hi3D: High-resolution Image-to-3D with Video Diffusion</div>
+            <div class="meta">2024 · 轨道视频生成 = 多视角生成 · 3D 感知 v2v 精炼</div>
+            <div class="desc">将单图到多视角重新定义为 3D 感知序列图像生成（轨道视频生成）。利用视频扩散模型中底层的时序一致性知识，将其泛化为 3D 生成中的跨视角几何一致性。先训练相机姿态条件的低分辨率多视角，再用 3D 感知视频到视频精炼器提升分辨率。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">ViVid-1-to-3</div>
+            <div class="meta">CVPR 2024 · 视频扩散模型做新视角合成</div>
+            <div class="desc">核心思想：合成新视角可以重新表述为合成相机环绕物体的视频。创建平滑相机轨迹到目标视图，同时使用视图条件扩散模型和视频扩散模型去噪，获得高度一致的新视角合成结果。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">VideoMV: Consistent Multi-View Generation</div>
+            <div class="meta">2024 · 3D 感知去噪采样 · 几秒生成 3DGS</div>
+            <div class="desc">从现成视频生成模型微调得到密集一致的多视角生成模型。引入 3D 感知去噪采样：先用前馈重建模块得到显式全局 3D 模型，然后在去噪采样循环中有效引入从全局 3D 模型渲染的图像，提升最终图像的多视角一致性。作为副产品，几秒内即可创建 3DGS 表示的 3D 资产。</div>
+        </div>
+
+        <h3>2.2 相机控制与几何一致性</h3>
+
+        <div class="paper-card">
+            <div class="title">VD3D: Taming Large Video Diffusion Transformers for 3D Camera Control</div>
+            <div class="meta">Snap Inc · 2024 · Plücker 坐标嵌入 · 首个 DiT 相机控制</div>
+            <div class="desc">首个为基于 Transformer 的视频扩散模型启用相机控制的工作。使用类似 ControlNet 的条件机制，结合基于 Plücker 坐标的时空相机嵌入。在 RealEstate10K 数据集上微调后达到 SOTA 可控视频生成性能。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">AC3D: Analyzing and Improving 3D Camera Control in Video Diffusion Transformers</div>
+            <div class="meta">Snap Inc · 2024 · 低频运动特性 · 分层条件注入</div>
+            <div class="desc">从第一性原理分析相机运动，发现相机运动诱导的视频运动本质上是低频的。据此调整训练和测试姿态条件调度，加速收敛同时提升视觉和运动质量。探测发现只有部分层包含相机信息，因此将相机条件注入限制在架构子集，训练参数减少 4×，视觉质量提高 10%。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">CamCtrl3D</div>
+            <div class="meta">2025 · 四种条件组合 · ControlNet 式架构</div>
+            <div class="desc">四种技术组合条件化 UNet 去噪器：(1) 原始相机外参条件化时间块；(2) 包含相机射线和方向的图像；(3) 初始图像重投影到后续帧作为条件；(4) 2D⇔3D Transformer 引入全局 3D 表示。在 ControlNet 式架构中组合所有条件。</div>
+        </div>
+
+        <h3>2.3 显式 3D 缓存引导</h3>
+
+        <div class="paper-card">
+            <div class="title">GEN3C: 3D-Informed World-Consistent Video Generation</div>
+            <div class="meta">NVIDIA · 2025 · 3D 缓存（点云）引导 · 精确相机控制</div>
+            <div class="desc">由 3D 缓存引导：通过预测种子图像或先前生成帧的像素级深度获得点云。生成下一帧时，以新相机轨迹下 3D 缓存的 2D 渲染为条件。这意味着 GEN3C 既不需要记住先前生成的内容，也不需要从相机姿态推断图像结构，而是可以将所有生成能力集中在先前未观察到的区域。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">IllumiCraft</div>
+            <div class="meta">NeurIPS 2025 · 统一几何与光照扩散 · 3D 点轨迹</div>
+            <div class="desc">端到端扩散框架，接受三种互补输入：(1) HDR 视频图用于详细光照控制；(2) 合成重光照帧提供外观线索；(3) 3D 点轨迹捕获精确的 3D 几何信息。通过在统一扩散架构中整合光照、外观和几何线索，生成与用户定义提示对齐的时间连贯视频。</div>
+        </div>
+
+        <h3>2.4 最新进展：RL 约束与潜空间记忆</h3>
+
+        <div class="paper-card">
+            <div class="title">World-R1</div>
+            <div class="meta">ICML 2026 · Microsoft · RL 强化 3D 约束 · Flow-GRPO</div>
+            <div class="desc">首个将 RL 用于 3D 一致性约束的工作。使用 Flow-GRPO 优化 3D 一致性，预训练 3D 基础模型提供反馈惩罚几何不一致，VLM 评估结构连贯性。引入专为世界模拟设计的纯文本数据集。周期解耦训练交替训练刚性几何一致性和动态场景流动性。不改变基础模型架构，仅通过 RL 后训练对齐。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Robust Dreamer</div>
+            <div class="meta">2025 · 潜空间 3D 高斯记忆 · 偏差学习</div>
+            <div class="desc">解决自回归视频生成中长序列 rollout 的灾难性漂移。将扩散过程中的潜空间表示锚定到 3D 高斯原语，通过潜空间高斯泼溅回忆——避免 RGB 中转的信息损失。偏差学习通过一步近似合成 rollout 引起的潜空间偏差，训练时注入到历史记忆中，让模型面对"被污染"的记忆状态时学会内部纠错。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">MVTrack4Gen</div>
+            <div class="meta">2026 · 多视角点追踪监督 · 注意力层内几何信号</div>
+            <div class="desc">关键发现：特定注意力层的 query-key 特征在几何对应位置跨视图跨时间形成强对应信号，这些对应的不对齐导致运动不一致。将这些注意力特征路由到辅助多视角追踪头，与扩散模型联合训练点追踪目标，显式强化跨视图运动对应。即插即用，可增强现有相机条件模型。</div>
+        </div>
+
+        <h3>2.5 对本项目的启示</h3>
+        <ul>
+            <li><strong>视频扩散 = 多视角生成：</strong>这是最核心的洞察。Wan 2.2 生成的环绕视频，其帧间一致性可直接作为多视角一致性使用，VideoMV 和 Hi3D 已验证此范式</li>
+            <li><strong>3D 感知去噪采样：</strong>可借鉴 VideoMV 的思路，在 Wan 2.2 的去噪过程中引入显式 3D 模型渲染作为条件，进一步提升多视角一致性</li>
+            <li><strong>相机控制精度：</strong>VD3D/AC3D 的 Plücker 坐标嵌入和分层条件注入可用于提升 Wan 2.2 相机控制的精确性</li>
+            <li><strong>RL 后训练：</strong>如果微调成本高，可考虑 World-R1 的 RL 后训练路线，不修改模型架构，仅用 3D 一致性奖励对齐</li>
+        </ul>
+    </div>
+
+    <!-- 维度3：骨骼/姿态引导的视频生成与重建 -->
+    <div class="section" id="dim3">
+        <h2>3. 骨骼/姿态引导的视频生成与重建</h2>
+        <p>姿态引导是人体视频生成的经典控制方式。从早期的 2D 姿态条件，到 3D SMPL 参数引导，再到最近的扩散变换器架构，姿态引导的精度和质量不断提升。</p>
+
+        <div class="highlight">
+            <strong>核心发现：</strong>姿态引导已从 2D 关键点进化到 3D SMPL-X 参数引导，从 U-Net 架构进化到 DiT 架构。置信度感知、区域损失放大、渐进潜融合等技术有效提升了姿态引导的质量和稳定性。
+        </div>
+
+        <h3>3.1 姿态引导视频生成</h3>
+
+        <div class="paper-card">
+            <div class="title">MimicMotion</div>
+            <div class="meta">Tencent · 2024 · 置信度感知姿态引导 · 区域损失放大</div>
+            <div class="desc">使用姿态引导生成任意长度的高质量人体视频。引入置信度感知姿态引导确保高帧质量和时间平滑性。引入基于姿态置信度的区域损失放大，减少关键区域的图像失真。提出渐进潜融合策略生成长而平滑的视频。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">HumanDiT</div>
+            <div class="meta">ByteDance · 2025 · 姿态引导扩散变换器 · 14000 小时数据</div>
+            <div class="desc">基于扩散变换器的长视频人体运动生成框架，在 14000 小时高质量视频大数据集上训练。支持多种视频分辨率和可变序列长度，有利于长序列视频生成学习。引入前缀潜参考策略在扩展序列中保持高保真特征。使用 Keypoint-DiT 生成后续姿态序列，支持从静态图像或现有视频继续。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Text2Performer</div>
+            <div class="meta">2023 · 分解人体表示 · 连续 VQ 扩散器</div>
+            <div class="desc">从文本生成具有关节运动的生动人体视频。两个新颖设计：(1) 分解人体表示——无监督地将 VQVAE 潜空间分解为人体外观和姿态表示，外观在生成帧中保持良好；(2) 基于扩散的运动采样器——连续 VQ 扩散器直接输出连续姿态嵌入，更好地建模运动。</div>
+        </div>
+
+        <h3>3.2 3D 几何引导的视频生成</h3>
+
+        <div class="paper-card">
+            <div class="title">PoseFuse3D-KI (PoseFuse3D Keyframe Interpolator)</div>
+            <div class="meta">NeurIPS 2025 · 3D 人体引导关键帧插值 · SMPL-X 编码器</div>
+            <div class="desc">将 3D 人体引导信号集成到扩散过程中，用于可控人体中心关键帧插值。PoseFuse3D 作为 3D 感知控制模型，具有新颖的 SMPL-X 编码器，将 3D 几何和形状转换为 2D 潜条件空间，以及融合网络整合这些 3D 线索与 2D 姿态嵌入。PSNR 提升 9%，LPIPS 降低 38%。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">CFSynthesis: Controllable and Free-view 3D Human Video Synthesis</div>
+            <div class="meta">Zhejiang University · 2024 · 纹理-SMPL 表示 · 前后景分离</div>
+            <div class="desc">生成具有可定制属性（身份、运动、场景配置）的高质量人体视频。利用基于纹理-SMPL 的表示确保自由视点中一致稳定的角色外观。引入新颖的前景-背景分离策略，有效分解场景为前景和背景，支持无缝集成用户定义的背景。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">HumanGif</div>
+            <div class="meta">Sony AI · 2025 · 单视图人体扩散 · 生成先验</div>
+            <div class="desc">学习单视图条件人体扩散模型，利用 Stable Diffusion 的生成先验进行新视角和姿态合成。给定参考人体图像和目标人体姿态序列，预测与参考图像中的人和目标姿态序列中的运动对齐的人体姿态图像序列。假设相机参数预校准，人体区域 mask 可估计，SMPL 姿态和形状参数给定。</div>
+        </div>
+
+        <h3>3.3 组合式 3D 人体生成</h3>
+
+        <div class="paper-card">
+            <div class="title">EVA3D: Compositional 3D Human Generation from 2D Image Collections</div>
+            <div class="meta">2022 · 组合式 NeRF 表示 · 仅 2D 图像集合训练</div>
+            <div class="desc">无条件 3D 人体生成模型，仅从 2D 图像集合学习。核心是组合式人体 NeRF 表示，将人体分成局部部位，每个部位由个体积表示。这种组合表示实现了：(1) 固有的人体先验；(2) 网络参数的自适应分配；(3) 高效的训练和渲染。</div>
+        </div>
+
+        <h3>3.4 对本项目的启示</h3>
+        <ul>
+            <li><strong>萌宠适配：</strong>姿态引导方法可迁移到动物，但需替换 SMPL 为 SMAL 等动物骨骼模型，或使用 2D 关键点替代</li>
+            <li><strong>置信度感知：</strong>MimicMotion 的置信度感知姿态引导值得借鉴——姿态估计本身有误差，低置信度区域不应强约束</li>
+            <li><strong>3D 几何注入：</strong>PoseFuse3D-KI 的 SMPL-X 编码器思路可用于将 3D 几何信息注入 Wan 2.2，提升几何一致性</li>
+            <li><strong>与动转静的关系：</strong>姿态引导是动转静的一种实现方式——通过指定"静止姿态"作为条件，生成姿态一致的多视角视频</li>
+        </ul>
+    </div>
+
+    <!-- 维度4：动转静/姿态归一化 -->
+    <div class="section" id="dim4">
+        <h2>4. 动转静/姿态归一化方向</h2>
+        <p>动转静（Motion-to-Static）是指从运动的人体/动物中提取一致的静态表示，或将不同姿态的图像归一化到统一姿态。这是解决微动问题的直接思路——如果能把所有帧都归一化到同一姿态，重建就变成了静态重建问题。</p>
+
+        <div class="highlight">
+            <strong>核心发现：</strong>姿态归一化已形成"规范空间 + 运动场"的经典范式（PersonNeRF）。最新进展是 3D 感知隐式运动控制——不依赖显式参数化模型，而是从视频中蒸馏视图无关的运动表示。
+        </div>
+
+        <h3>4.1 规范空间表示</h3>
+
+        <div class="paper-card">
+            <div class="title">PersonNeRF: Personalized Reconstruction from Photo Collections</div>
+            <div class="meta">Google · CVPR 2023 · 规范 T 姿势神经体积 · 共享运动场</div>
+            <div class="desc">从多年拍摄的、具有任意身体姿态和外观的主题照片集合中，恢复可渲染任意视点、身体姿态和外观组合的定制神经体积 3D 模型。核心方法：恢复主题的规范 T 姿势神经体积表示，允许不同观察间外观变化，但使用所有观察共享的姿态相关运动场。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">PoseVocab: Learning Joint-structured Pose Embeddings for Human Avatar Modeling</div>
+            <div class="meta">Tsinghua · SIGGRAPH 2023 · 关节级姿态嵌入 · 特征线表示</div>
+            <div class="desc">新颖的姿态编码方法，鼓励网络发现用于学习动态人体外观的最优姿态嵌入。基于训练姿态构建关键姿态和潜嵌入。为实现姿态泛化和时间一致性，采样每个关节的关键旋转而非全局姿态向量，并为每个采样的关键旋转分配姿态嵌入。</div>
+        </div>
+
+        <h3>4.2 3D 感知隐式运动控制</h3>
+
+        <div class="paper-card">
+            <div class="title">3DiMo: 3D-Aware Implicit Motion Control for View-Adaptive Human Video Generation</div>
+            <div class="meta">Kuaishou Kling Team · 2026 · 视图无关运动 token · SMPL 退火</div>
+            <div class="desc">从 3D 感知角度重新审视运动控制，提倡隐式的、视图无关的运动表示，自然对齐生成器的空间先验，而非依赖外部重建约束。联合训练运动编码器和预训练视频生成器，将驱动帧蒸馏为紧凑的视图无关运动 token，通过交叉注意力语义注入。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">MoViD: View-Invariant 3D Human Pose Estimation via Motion-View Disentanglement</div>
+            <div class="meta">HKUST · 2026 · 运动视图解耦 · 正交投影模块</div>
+            <div class="desc">视角不变的 3D 人体姿态估计框架，将视点信息从运动特征中解耦。视图估计器建模关键关节关系以预测视点信息，正交投影模块解耦运动和视图特征，通过跨视图的物理基础对比对齐增强。</div>
+        </div>
+
+        <h3>4.3 对本项目的启示</h3>
+        <ul>
+            <li><strong>动转静的本质：</strong>就是姿态归一化——把不同时刻/不同视角的帧归一化到统一姿态的规范空间，然后做静态重建</li>
+            <li><strong>实现路径：</strong>有两种路径——(1) 显式参数化模型（SMPL/SMAL）引导的归一化；(2) 隐式运动表示（3DiMo 风格）的归一化</li>
+            <li><strong>萌宠场景：</strong>如果没有好的动物骨骼模型，隐式运动控制路线可能更实用——从视频中学习运动表示，不依赖显式参数化模型</li>
+            <li><strong>与视频生成的结合：</strong>姿态条件 + 相机条件 = 姿态一致的多视角视频，这正是动转静的目标</li>
+        </ul>
+
+        <div class="highlight orange">
+            <strong>关键洞察：</strong>动转静不是一个独立的任务，而是"姿态条件视频生成"的一个特例——当目标姿态固定为某一姿态（如正面站立）时，生成的环绕视频就是姿态一致的多视角视频，可直接用于静态 3D 重建。
+        </div>
+    </div>
+
+    <!-- 维度5：生成式三维重建 -->
+    <div class="section" id="dim5">
+        <h2>5. 生成式三维重建（人体方向）</h2>
+        <p>生成式三维重建利用扩散模型的生成先验，从单张图像或文本直接生成 3D 表示。核心技术是分数蒸馏采样（SDS），通过预训练 2D 扩散模型的梯度来优化 3D 表示。</p>
+
+        <div class="highlight">
+            <strong>核心发现：</strong>生成式 3D 重建在创意生成场景有价值，但在精确重建场景质量不足。人体方向的生成式重建普遍引入 SMPL 等参数化先验来提升几何合理性。当前趋势是从 SDS 优化向前馈生成（LRM 类）演进，速度大幅提升。
+        </div>
+
+        <h3>5.1 SDS 优化路线</h3>
+
+        <div class="paper-card">
+            <div class="title">DreamHuman: Animatable 3D Avatars from Text</div>
+            <div class="meta">Google Research · NeurIPS 2023 · NeRF + SMPL + SDS</div>
+            <div class="desc">仅从文本描述生成逼真的可动画 3D 人体化身模型。连接大型文本到图像合成模型、神经辐射场和统计人体模型。生成具有高质量纹理和学习的、实例特定的表面变形的动态 3D 人体化身。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">TeCH: Text-guided Reconstruction of Lifelike Clothed Humans</div>
+            <div class="meta">MPI · 2023 · DMTet 混合表示 · 多视角 SDS</div>
+            <div class="desc">利用基础模型重建 3D 人体：(1) 描述性文本提示（服装、颜色、发型等），通过服装解析模型和 VQA 自动生成；(2) 个性化微调的文本到图像扩散模型，学习"不可描述"的外观。基于 DMTet 的混合 3D 表示，由显体形状网格和隐式距离场组成。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">3DFuse: Let 2D Diffusion Model Know 3D-Consistency</div>
+            <div class="meta">2023 · 一致性注入模块 · 点云 → 深度图</div>
+            <div class="desc">将 3D 感知整合到预训练 2D 扩散模型中，增强基于分数蒸馏的方法的鲁棒性和 3D 一致性。引入一致性注入模块，从文本提示构建 3D 点云，利用其在给定视角的投影深度图作为扩散模型的条件。</div>
+        </div>
+
+        <h3>5.2 前馈生成路线</h3>
+
+        <div class="paper-card">
+            <div class="title">Human-LRM: Template-Free Single-View 3D Human Digitalization with Diffusion-Guided LRM</div>
+            <div class="meta">Adobe · 2024 · 扩散引导 LRM · 无模板</div>
+            <div class="desc">扩散引导的前馈模型，从单张图像预测人体的隐式场。利用最先进的重建模型（LRM）和生成模型（Stable Diffusion）的能力，无需任何模板先验（如 SMPL）即可捕捉人体，有效增强被遮挡部分的丰富逼真细节。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">TriplaneTurbo</div>
+            <div class="meta">2025 · 渐进渲染蒸馏 · 1.2 秒生成 3D 网格</div>
+            <div class="desc">渐进渲染蒸馏训练方案，无需 3D 真值，通过蒸馏多视角扩散模型并将 SD 适配为原生 3D 生成器。训练 Triplane 生成器，仅增加 2.5% 可训练参数即可将 SD 适配为 Triplane 生成。1.2 秒生成高质量 3D 网格，对挑战性文本输入泛化良好。</div>
+        </div>
+
+        <h3>5.3 GAN + 扩散混合路线</h3>
+
+        <div class="paper-card">
+            <div class="title">DiffusionGAN3D</div>
+            <div class="meta">CVPR 2024 · 3D GAN + 扩散先验 · EG3D + SD</div>
+            <div class="desc">结合预训练 3D 生成模型（如 EG3D）和文本到图像扩散模型。前者为稳定高质量的文本化身生成提供坚实基础，后者提供强大先验并指导 3D 生成器微调。引入相对距离损失和特定案例可学习 triplane 增强多样性。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Get3DHuman: Lifting StyleGAN-Human into a 3D Generative Model</div>
+            <div class="meta">Tencent · ICCV 2023 · 像素对齐重建先验</div>
+            <div class="desc">将 StyleGAN-Human 提升为 3D 生成模型。利用像素对齐的重建先验，将 2D GAN 的丰富先验提升到 3D。核心观点：好的 3D 生成器应该见过真实的 3D 数据！</div>
+        </div>
+
+        <h3>5.4 对本项目的启示</h3>
+        <ul>
+            <li><strong>质量限制：</strong>生成式重建的质量和细节远不如多视角重建，不适合作为主路线</li>
+            <li><strong>补全作用：</strong>可作为补充——对于重建中遮挡或缺失的部分，用生成先验补全细节</li>
+            <li><strong>萌宠挑战：</strong>人体生成式重建有 SMPL 先验加持，萌宠缺乏类似的强参数化先验，生成质量可能更差</li>
+            <li><strong>速度优势：</strong>前馈方法（LRM 类）速度快（秒级），可用于快速原型验证</li>
+        </ul>
+
+        <div class="highlight red">
+            <strong>风险提示：</strong>SDS 方法存在已知的"过平滑"、"Janus 问题"（多面畸形）、"漂浮物"等问题。对于需要精确几何和细节的数字人项目，纯生成式重建质量不足以满足生产需求。
+        </div>
+    </div>
+
+    <!-- 维度6：Wan 模型几何一致性特性 -->
+    <div class="section" id="dim6">
+        <h2>6. Wan 模型几何一致性特性</h2>
+        <p>Wan 2.1/2.2 作为当前最优秀的开源视频扩散模型之一，其几何一致性和相机控制能力是本项目的基础。虽然 Wan 官方没有专门的几何一致性论文，但社区已有大量相关工作。</p>
+
+        <div class="highlight">
+            <strong>核心发现：</strong>Wan 2.2 的 MoE 架构和大规模训练数据使其具有较强的隐式 3D 理解能力。社区已在 Wan 基础上开发了相机控制、几何一致性增强等扩展。可借鉴 VD3D/AC3D 的 DiT 相机控制方法和 World-R1 的 RL 几何约束方法在 Wan 上实现。
+        </div>
+
+        <h3>6.1 Wan 2.2 架构特性</h3>
+        <ul>
+            <li><strong>MoE DiT 架构：</strong>跨时间步专家分离，早期专家处理结构，晚期专家处理细节。这种天然的粗到细生成过程有利于几何一致性——结构先确定，细节再精修</li>
+            <li><strong>Wan2.2-VAE：</strong>16×16×4 压缩比，空间压缩率高，潜空间表示更紧凑，有利于学习全局 3D 结构</li>
+            <li><strong>大规模训练数据：</strong>相比 Wan 2.1，视频数据增加 83.2%，图像数据增加 65.6%。更多数据意味着更强的隐式 3D 先验</li>
+            <li><strong>Animate 模型：</strong>Wan2.2-Animate-14B 统一角色动画与替换，说明模型已具备一定的身份保持和姿态控制能力</li>
+        </ul>
+
+        <h3>6.2 社区扩展：相机控制</h3>
+        <p>Wan 官方没有专门的相机控制模型，但可借鉴以下 DiT 相机控制方法在 Wan 上实现：</p>
+        <ul>
+            <li><strong>VD3D 的 Plücker 坐标嵌入：</strong>将相机轨迹编码为 Plücker 坐标，通过 ControlNet 式机制注入 DiT。这是首个为 DiT 设计的相机控制方法，可直接迁移到 Wan</li>
+            <li><strong>AC3D 的分层条件注入：</strong>发现只有部分层包含相机信息，因此只在子集层注入条件，减少 4× 训练参数，提升 10% 视觉质量。这对 Wan 的微调效率很重要</li>
+            <li><strong>CamCtrl3D 的四条件组合：</strong>外参 + 射线图 + 重投影 + 2D⇔3D Transformer。这种多条件组合可显著提升相机控制精度</li>
+        </ul>
+
+        <h3>6.3 社区扩展：几何一致性</h3>
+        <p>可借鉴以下几何一致性方法增强 Wan：</p>
+        <ul>
+            <li><strong>VideoMV 的 3D 感知去噪采样：</strong>在去噪过程中引入显式 3D 模型渲染作为条件，提升多视角一致性。这是最直接的"视频生成 → 3D 重建"桥接方案</li>
+            <li><strong>GEN3C 的 3D 缓存引导：</strong>用点云作为 3D 缓存，生成新帧时以 3D 缓存的 2D 渲染为条件。这种显式 3D 记忆可显著提升长序列几何一致性</li>
+            <li><strong>World-R1 的 RL 后训练：</strong>不修改模型架构，用 Flow-GRPO + 3D 一致性奖励后训练。如果 Wan 微调成本高，这是低成本替代方案</li>
+            <li><strong>MVTrack4Gen 的注意力层内点追踪：</strong>利用注意力层中已存在的几何对应信号，通过辅助任务显式强化。即插即用，可直接增强现有 Wan 模型</li>
+        </ul>
+
+        <h3>6.4 对本项目的启示</h3>
+        <ul>
+            <li><strong>基础能力：</strong>Wan 2.2 已有较强的隐式 3D 理解和相机跟随能力，这是项目的基础</li>
+            <li><strong>微调路径：</strong>建议采用"姿态条件 + 相机条件"的双条件微调，参考 VD3D/AC3D 的 DiT 相机控制方案</li>
+            <li><strong>一致性增强：</strong>在推理阶段可采用 VideoMV 风格的 3D 感知去噪采样——先用快速方法得到粗略 3D，再用 3D 渲染引导去噪</li>
+            <li><strong>MoE 优势：</strong>Wan 2.2 的 MoE 架构中，早期时间步专家处理结构，可针对性地在早期专家中加强几何约束</li>
+        </ul>
+
+        <div class="highlight">
+            <strong>工程建议：</strong>优先在 Wan 2.2 I2V 模型基础上做"姿态 + 相机"双条件 LoRA 微调，这是工程量最小、见效最快的方案。几何一致性可先依赖模型隐式能力，后续再逐步加入 3D 感知去噪采样等增强。
+        </div>
+    </div>
+
+    <!-- 技术路线对比表 -->
+    <div class="section" id="comparison">
+        <h2>📊 技术路线对比表</h2>
+        <p>针对"微动人体三维重建"问题，以下是三条主要技术路线的详细对比：</p>
+
+        <table>
+            <tr>
+                <th>维度</th>
+                <th>动转静 + 3DGS 重建<br>（推荐）</th>
+                <th>骨骼引导 + 可变形 3DGS<br>（备选）</th>
+                <th>纯生成式 3D 重建<br>（不推荐）</th>
+            </tr>
+            <tr>
+                <td><strong>核心思路</strong></td>
+                <td>生成姿态一致的多视角视频 → 静态 3DGS 重建</td>
+                <td>骨骼条件引导视频生成 → 可变形 3DGS 重建</td>
+                <td>单图/文本 → SDS/LRM 直接生成 3D</td>
+            </tr>
+            <tr>
+                <td><strong>几何一致性</strong></td>
+                <td><span style="color:var(--accent)">★★★★☆</span><br>视频时序一致性 + 3D 感知去噪</td>
+                <td><span style="color:var(--accent)">★★★★★</span><br>骨骼强约束 + 非刚性变形场</td>
+                <td><span style="color:#f56c6c">★★☆☆☆</span><br>SDS 过平滑、Janus 问题</td>
+            </tr>
+            <tr>
+                <td><strong>细节质量</strong></td>
+                <td><span style="color:var(--accent)">★★★★☆</span><br>多视角一致，细节丰富</td>
+                <td><span style="color:var(--accent)">★★★★☆</span><br>高斯偏离模板捕捉细节</td>
+                <td><span style="color:#f56c6c">★★☆☆☆</span><br>模糊、细节丢失</td>
+            </tr>
+            <tr>
+                <td><strong>萌宠适配性</strong></td>
+                <td><span style="color:var(--accent)">★★★★★</span><br>无骨骼依赖，通用</td>
+                <td><span style="color:#e6a23c">★★★☆☆</span><br>需 SMAL 等动物骨骼模型</td>
+                <td><span style="color:#e6a23c">★★★☆☆</span><br>动物生成先验弱于人体</td>
+            </tr>
+            <tr>
+                <td><strong>工程复杂度</strong></td>
+                <td><span style="color:var(--accent)">★★☆☆☆</span><br>Wan LoRA 微调 + gsplat 重建</td>
+                <td><span style="color:#e6a23c">★★★★☆</span><br>骨骼提取 + 条件注入 + 可变形3DGS</td>
+                <td><span style="color:var(--accent)">★★☆☆☆</span><br>单图输入，流程简单</td>
+            </tr>
+            <tr>
+                <td><strong>与现有技术栈兼容</strong></td>
+                <td><span style="color:var(--accent)">★★★★★</span><br>基于已有 Wan 2.2 LoRA 扩展</td>
+                <td><span style="color:#e6a23c">★★★☆☆</span><br>需新增骨骼提取和渲染管线</td>
+                <td><span style="color:#f56c6c">★★☆☆☆</span><br>另起炉灶，技术栈不同</td>
+            </tr>
+            <tr>
+                <td><strong>训练数据需求</strong></td>
+                <td>中等：多视角/环绕视频 + 姿态标注</td>
+                <td>高：需精确 3D 骨骼标注数据</td>
+                <td>低：单图/文本即可</td>
+            </tr>
+            <tr>
+                <td><strong>推理速度</strong></td>
+                <td>视频生成（秒级）+ 重建（分钟级）</td>
+                <td>视频生成（秒级）+ 4D重建（小时级）</td>
+                <td>前馈：秒级；SDS优化：分钟~小时级</td>
+            </tr>
+            <tr>
+                <td><strong>可控性</strong></td>
+                <td>中：姿态 + 相机双条件控制</td>
+                <td>高：精确骨骼姿态控制</td>
+                <td>低：文本/单图控制粒度粗</td>
+            </tr>
+            <tr>
+                <td><strong>成熟度</strong></td>
+                <td>高：VideoMV/Hi3D 已验证范式</td>
+                <td>中：人体方向成熟，动物方向待验证</td>
+                <td>中：创意生成可用，精确重建不足</td>
+            </tr>
+            <tr>
+                <td><strong>代表工作</strong></td>
+                <td>VideoMV, Hi3D, ViVid-1-to-3</td>
+                <td>HUGS, GART, ParDy-Human, SplattingAvatar</td>
+                <td>DreamHuman, TeCH, Human-LRM</td>
+            </tr>
+            <tr>
+                <td><strong>推荐度</strong></td>
+                <td><strong style="color:var(--accent)">⭐⭐⭐⭐⭐ 强烈推荐</strong></td>
+                <td><strong style="color:#e6a23c">⭐⭐⭐ 可选备选</strong></td>
+                <td><strong style="color:#f56c6c">⭐⭐ 不推荐作为主路线</strong></td>
+            </tr>
+        </table>
+
+        <h3>混合方案建议</h3>
+        <p>实际项目中可采用混合方案，以动转静 + 3DGS 为主路线，同时吸收其他路线的优点：</p>
+        <ul>
+            <li><strong>姿态条件增强：</strong>在动转静路线中引入姿态条件（2D 关键点或简化骨骼），提升姿态一致性</li>
+            <li><strong>3D 感知去噪：</strong>借鉴 VideoMV，在推理阶段用粗略 3D 引导去噪，进一步提升多视角一致性</li>
+            <li><strong>生成先验补全：</strong>对于重建中遮挡严重的区域，用生成式扩散模型补全细节</li>
+            <li><strong>可变形后处理：</strong>如果需要动态序列，可在静态 3DGS 基础上学习非刚性变形场</li>
+        </ul>
+    </div>
+
+    <!-- 综述正文示例段 -->
+    <div class="section" id="sample">
+        <h2>📝 综述正文示例段</h2>
+        <p>以下为综述正文的示例段落，展示六大维度之间的逻辑关联和技术演进脉络：</p>
+
+        <h3>引言段</h3>
+        <p>三维人体重建是计算机视觉和图形学的长期挑战，在数字人、虚拟现实、游戏制作等领域有广泛应用。传统多视角重建方法依赖精确的相机标定和同步采集，成本高昂且部署困难。近年来，随着扩散模型在视频生成领域的快速进展，"生成式多视角"范式逐渐兴起——通过视频扩散模型生成环绕物体的视频序列，再利用多视角一致性进行三维重建。这一范式极大降低了重建门槛，但也带来了新的挑战：视频生成中的几何不一致性会直接影响重建质量，而人体/动物的微动（非刚性形变）进一步加剧了这一问题。</p>
+
+        <h3>问题分析段</h3>
+        <p>微动人体三维重建的核心矛盾在于：<strong>运动与一致性的矛盾</strong>。一方面，真实拍摄或生成的视频中，人体/动物不可避免地存在微小运动——呼吸、肌肉颤动、毛发摆动、姿态微调等；另一方面，三维重建算法假设场景是刚性的，非刚性运动会导致重建模糊、伪影、几何失真。传统动态重建方法（如动态 NeRF、可变形 3DGS）通过引入变形场来处理运动，但需要密集的时间采样和较长的训练时间，且对微动量级的形变难以精确建模。</p>
+
+        <h3>技术路线段</h3>
+        <p>围绕这一问题，学术界和工业界探索了三条主要技术路线。第一条路线是<strong>可变形三维重建</strong>，以 HUGS、GART、SplattingAvatar 为代表，在 3DGS 基础上引入参数化人体模型（SMPL）和变形场，直接建模非刚性运动。第二条路线是<strong>视频生成几何一致性增强</strong>，以 VideoMV、Hi3D、GEN3C 为代表，通过 3D 感知去噪采样、显式 3D 缓存、RL 约束等方法提升视频生成的多视角一致性，从源头上保证重建输入的质量。第三条路线是<strong>生成式三维重建</strong>，以 DreamHuman、TeCH、Human-LRM 为代表，利用扩散模型的生成先验直接从单图或文本生成 3D 表示，绕开了多视角一致性问题。</p>
+
+        <h3>动转静范式段</h3>
+        <p>在三条路线之外，<strong>动转静（Motion-to-Static）</strong>范式提供了一个优雅的折中方案：如果能将运动的人体"冻结"到某一姿态，生成姿态一致的多视角视频，那么重建就退化为成熟的静态 3DGS 重建问题。这一范式的关键在于如何实现高质量的姿态归一化——从 PersonNeRF 的规范 T 姿势表示，到 PoseVocab 的关节级姿态嵌入，再到最新的 3DiMo 隐式运动控制，姿态归一化技术已从显式参数化模型依赖向隐式学习演进。对于视频生成场景，动转静可以通过"姿态条件 + 相机条件"的双条件生成来实现——固定目标姿态，变化相机视角，即可生成姿态一致的环绕视频。</p>
+
+        <h3>萌宠场景适配段</h3>
+        <p>值得注意的是，上述大多数方法是针对人体设计的，而萌宠（猫、狗等）数字人场景有其特殊性。首先，萌宠缺乏像 SMPL 这样成熟的参数化模型，虽然有 SMAL 等动物骨骼模型，但其数据覆盖和精度远不及人体。其次，萌宠的毛发、皮肤纹理等细节比人体更复杂，对重建质量要求更高。第三，萌宠的运动模式与人体不同，四足动物的骨骼拓扑和运动学特性需要专门处理。因此，在萌宠场景中，对参数化模型依赖较少的方法（如动转静、无模板可变形 3DGS）可能更具实用性。</p>
+
+        <h3>展望段</h3>
+        <p>展望未来，微动人体三维重建的发展趋势可概括为三个方向。一是<strong>生成与重建的深度融合</strong>——视频生成模型不再仅仅是重建的"输入提供者"，而是与重建算法端到端联合优化，生成过程中嵌入几何一致性约束。二是<strong>从显式先验到隐式学习</strong>——从依赖 SMPL 等参数化模型，转向从大规模视频数据中学习隐式的 3D 运动先验，降低对特定类别模型的依赖。三是<strong>实时动态重建</strong>——随着 3DGS 渲染速度的提升和视频生成模型的加速，实时 4D 重建（动态序列）将成为可能，为交互式数字人应用提供基础。</p>
+    </div>
+
+    <!-- 参考文献 -->
+    <div class="section" id="references">
+        <h2>📚 参考文献</h2>
+
+        <h3>维度1：非刚性形变三维重建</h3>
+        <ol>
+            <li>Shao Z, Wang Z, Li Z, et al. SplattingAvatar: Realistic Real-Time Human Avatars with Mesh-Embedded Gaussian Splatting[C]//CVPR. 2024.</li>
+            <li>Kocabas M, Chang J R, Gabriel J, et al. HUGS: Human Gaussian Splats[J]. arXiv preprint arXiv:2311.17910, 2023.</li>
+            <li>Lei J, Wang Y, Pavlakos G, et al. GART: Gaussian Articulated Template Models[C]//CVPR. 2024.</li>
+            <li>Jung H, Brasch N, Song J, et al. ParDy-Human: Deformable 3D Gaussian Splatting for Animatable Human Avatars[J]. arXiv preprint arXiv:2312.15059, 2023.</li>
+            <li>Zhu R, Liang Y, Chang H, et al. MotionGS: Exploring Explicit Motion Guidance for Deformable 3D Gaussian Splatting[C]//NeurIPS. 2024.</li>
+            <li>Zhang J, Shen I, Sakamiya J, et al. DualAvatar: Robust Gaussian Avatar with Dual Representation[C]//SIGGRAPH Asia. 2024.</li>
+            <li>Mir A, Moreau A, Dhamo H, et al. GASPACHO: Gaussian Splatting for Controllable Humans and Objects[J]. arXiv preprint arXiv:2503.09342, 2025.</li>
+            <li>Wang X, Zhao Y, Ye B, et al. HoliGS: Holistic Gaussian Splatting for Embodied View Synthesis[C]//NeurIPS. 2025.</li>
+        </ol>
+
+        <h3>维度2：视频生成几何一致性</h3>
+        <ol start="9">
+            <li>Yang H, Chen Y, Pan Y, et al. Hi3D: Pursuing High-Resolution Image-to-3D Generation with Video Diffusion Models[J]. arXiv preprint arXiv:2409.07452, 2024.</li>
+            <li>Kwak J, Dong E, Jin Y, et al. ViVid-1-to-3: Novel View Synthesis with Video Diffusion Models[C]//CVPR. 2024.</li>
+            <li>Zuo Q, Gu X, Qiu L, et al. VideoMV: Consistent Multi-View Generation Based on Large Video Generative Model[J]. arXiv preprint arXiv:2403.12010, 2024.</li>
+            <li>Popov S, Raj A, Krainin M, et al. CamCtrl3D: Single-Image Scene Exploration with Precise 3D Camera Control[J]. arXiv preprint arXiv:2501.06006, 2025.</li>
+            <li>Bahmani S, Skorokhodov I, Siarohin A, et al. VD3D: Taming Large Video Diffusion Transformers for 3D Camera Control[J]. arXiv preprint arXiv:2407.12781, 2024.</li>
+            <li>Bahmani S, Skorokhodov I, Qian G, et al. AC3D: Analyzing and Improving 3D Camera Control in Video Diffusion Transformers[J]. arXiv preprint arXiv:2411.18673, 2024.</li>
+            <li>Ren X, Shen T, Huang J, et al. GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control[J]. arXiv preprint arXiv:2503.03751, 2025.</li>
+            <li>Lin Y, Chen Y W, Tsai Y H, et al. IllumiCraft: Unified Geometry and Illumination Diffusion for Controllable Video Generation[C]//NeurIPS. 2025.</li>
+        </ol>
+
+        <h3>维度3：骨骼/姿态引导</h3>
+        <ol start="17">
+            <li>Zhang Y, Gu J, Wang L W, et al. MimicMotion: High-Quality Human Motion Video Generation with Confidence-aware Pose Guidance[J]. arXiv preprint arXiv:2406.19680, 2024.</li>
+            <li>Gan Q, Ren Y, Zhang C, et al. HumanDiT: Pose-Guided Diffusion Transformer for Long-form Human Motion Video Generation[J]. arXiv preprint arXiv:2502.04847, 2025.</li>
+            <li>Guo Z, Wu S, Cai Z, et al. Controllable Human-centric Keyframe Interpolation with Generative Prior[C]//NeurIPS. 2025.</li>
+            <li>Cui L, Xui X, Dong W, et al. CFSynthesis: Controllable and Free-view 3D Human Video Synthesis[J]. arXiv preprint arXiv:2412.11067, 2024.</li>
+            <li>Hu S, Narihira T, Fukuda K, et al. HumanGif: Single-View Human Diffusion with Generative Prior[J]. arXiv preprint arXiv:2502.12080, 2025.</li>
+            <li>Jiang Y, Yang S, Koh T L, et al. Text2Performer: Text-Driven Human Video Generation[J]. arXiv preprint arXiv:2304.08483, 2023.</li>
+            <li>Hong F, Chen Z, Lan Y, et al. EVA3D: Compositional 3D Human Generation from 2D Image Collections[J]. arXiv preprint arXiv:2210.04888, 2022.</li>
+        </ol>
+
+        <h3>维度4：动转静/姿态归一化</h3>
+        <ol start="24">
+            <li>Weng C, Srinivasan P P, Curless B, et al. PersonNeRF: Personalized Reconstruction from Photo Collections[C]//CVPR. 2023.</li>
+            <li>Li Z, Zheng Z, Liu Y, et al. PoseVocab: Learning Joint-structured Pose Embeddings for Human Avatar Modeling[C]//SIGGRAPH. 2023.</li>
+            <li>Fang Z, He X, Tang S, et al. 3D-Aware Implicit Motion Control for View-Adaptive Human Video Generation[J]. arXiv preprint arXiv:2602.03796, 2026.</li>
+            <li>Liu Y, Jiang H, Liu H, et al. MoViD: View-Invariant 3D Human Pose Estimation via Motion-View Disentanglement[J]. arXiv preprint arXiv:2604.03299, 2026.</li>
+        </ol>
+
+        <h3>维度5：生成式三维重建</h3>
+        <ol start="28">
+            <li>Kolotouros N, Alldieck T, Zanfir A, et al. DreamHuman: Animatable 3D Avatars from Text[C]//NeurIPS. 2023.</li>
+            <li>Huang Y, Yi H, Xiu Y, et al. TeCH: Text-guided Reconstruction of Lifelike Clothed Humans[J]. arXiv preprint arXiv:2308.08545, 2023.</li>
+            <li>Weng Z, Liu J, Tan H, et al. Template-Free Single-View 3D Human Digitalization with Diffusion-Guided LRM[J]. arXiv preprint arXiv:2401.12175, 2024.</li>
+            <li>Lei B, Yu K, Feng M, et al. DiffusionGAN3D: Boosting Text-guided 3D Generation and Domain Adaption by Combining 3D GANs and Diffusion Priors[C]//CVPR. 2024.</li>
+            <li>Chen W. Get3DHuman: Lifting StyleGAN-Human into a 3D Generative Model using Pixel-aligned Reconstruction Priors[C]//ICCV. 2023.</li>
+            <li>Seo J, Jang W, Kwak M, et al. Let 2D Diffusion Model Know 3D-Consistency for Robust Text-to-3D Generation[J]. arXiv preprint arXiv:2303.07937, 2023.</li>
+        </ol>
+
+        <h3>维度6：Wan 模型相关</h3>
+        <ol start="34">
+            <li>Wan-AI Team. Wan2.1: Open-Sora-Plan's Video Generation Suite[EB/OL]. 2025.</li>
+            <li>Wan-AI Team. Wan2.2: Major Upgrade with MoE Architecture[EB/OL]. 2025.</li>
+            <li>Microsoft. World-R1: Reinforcing 3D Consistency in Video Foundation Models[J]. arXiv preprint arXiv:2604.24764, 2026.</li>
+            <li>KAIST & Sony. MVTrack4Gen: Multi-View Point Tracking for Geometrically Consistent Video Generation[J]. arXiv preprint arXiv:2606.26087, 2026.</li>
+        </ol>
+    </div>
+
+    <!-- 相关资源链接 -->
+    <div class="section">
+        <h2>🔗 相关资源链接</h2>
+        <div class="links">
+            <a href="VideoGen-20250728-Wan2.2.html">📄 Wan2.2 详解</a>
+            <a href="VideoGen-20260427-GeometricConsistency.html">📄 几何一致性调研</a>
+            <a href="VideoGen-20260618-CameraControl.html">📄 相机可控性调研</a>
+            <a href="3D-20230922-Deformable-3DGS.html">📄 可变形3DGS详解</a>
+            <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">📄 MHR 高斯化身分析</a>
+            <a href="3D-20260720-GaussianAvatars.html">📄 GaussianAvatars 详解</a>
+            <a href="3D-20260720-F3G-Avatar.html">📄 F3G-Avatar 详解</a>
+            <a href="index.html">🏠 返回知识库首页</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 微动人体三维重建调研 · 生成于 2026-08-10 · 领域: CV/3D Reconstruction/Video Generation
+</div>
+
+</body>
+</html>
