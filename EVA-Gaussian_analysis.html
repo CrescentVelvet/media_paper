@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVA-Gaussian 算法原理与逻辑框图分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .loss-tag{
+    display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px;
+    margin:2px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2410.01425 · 2024 · CV</span>
+    <h1>EVA-Gaussian:基于 3D 高斯的实时人体新视角合成</h1>
+    <p class="subtitle">面向多样化多视角相机设置的实时前馈式 3D 人体重建 —— 通过高效跨视角注意力(EVA)模块、特征溅射与循环精修,在稀疏视角与高分辨率下实现高质量实时渲染。</p>
+    <p class="authors">Yingdong Hu · Zhening Liu · Jiawei Shao · Zehong Lin · Jun Zhang<br>
+    <span style="color:var(--muted);font-size:13px">香港科技大学 · 天翼智脑人工智能研究院 (TeleAI, 中国电信)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2410.01425" target="_blank">论文 PDF</a>
+      <a href="https://github.com/zhenliuZJU/EVA-Gaussian" target="_blank">官方代码</a>
+      <a href="https://zhenliuzju.github.io/huyingdong/EVA-Gaussian" target="_blank">项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#stage1">阶段一:高斯位置估计 (EVA 模块)</a></li>
+    <li><a href="#stage2">阶段二:高斯属性估计</a></li>
+    <li><a href="#stage3">阶段三:特征溅射与循环精修</a></li>
+    <li><a href="#anchor">属性正则化 (锚点损失)</a></li>
+    <li><a href="#loss">总损失函数</a></li>
+    <li><a href="#flowchart">逻辑流程图</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#conclusion">总结</a></li>
+  </ol>
+</div>
+
+<!-- ==================== ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">前馈式 3D 高斯溅射(3DGS)方法在人体新视角合成的实时渲染中展现了卓越能力。然而,现有方法要么局限于<strong>稠密视角配置</strong>,要么受限于<strong>较低的图像分辨率</strong>,这阻碍了它们在大视角差下的自由视角渲染能力,也限制其在常用 GPU 上实时恢复精细人体细节的能力。</p>
+<div class="callout key">
+<p>为解决上述问题,本文提出 <strong>EVA-Gaussian</strong> —— 一个面向多样化多视角相机设置的 3D 人体新视角合成新管线。其三大核心设计为:</p>
+<ol>
+<li><strong>高效跨视角注意力模块 (Efficient cross-View Attention, EVA)</strong>:在高分辨率输入与稀疏视角设置下有效融合跨视角信息,同时最小化时间与计算开销;</li>
+<li><strong>特征精修机制</strong>:为每个 3D 高斯赋予特征向量,通过循环 U-Net 精修器纠正位置估计几何误差导致的伪影,增强整体视觉保真度;</li>
+<li><strong>锚点损失 (Anchor Loss)</strong>:正则化高斯的不透明度、尺度,以及人脸关键点位置一致性。</li>
+</ol>
+</div>
+<p>在 THuman2.0 与 THumansit 数据集上的实验表明,EVA-Gaussian 在多样化相机设置下的渲染质量上具有显著优势。</p>
+</section>
+
+<!-- ==================== MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>2.1 现有方法的局限</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--orange)">GPS-Gaussian</h4>
+    <ul>
+      <li>基于立体匹配的 3D 高斯位置估计</li>
+      <li>依赖 <strong>立体矫正 (stereo rectification)</strong>,大视角时失败</li>
+      <li>Δ=90° 时完全无法工作</li>
+      <li>多于 2 视角时性能下降(多视角不匹配)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">Tele-Aloha</h4>
+    <ul>
+      <li>图像融合 + 级联视差估计</li>
+      <li>仅针对 <strong>4 视角固定系统</strong></li>
+      <li>无法泛化到更稀疏(<4)的相机设置</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">GHG</h4>
+    <ul>
+      <li>前馈式实时人体高斯渲染</li>
+      <li>需要 <strong>人体模板先验</strong> (SMPL)</li>
+      <li>继承模板方法的缺陷(姿态估计误差误导重建)</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 其他相关工作的问题</h3>
+<ul>
+<li><strong>pixelSplat / Splatter Image</strong>:首次将前馈推理与 3DGS 结合,但高斯位置估计不准确;</li>
+<li><strong>MVSplat / MVGaussian</strong>:用交叉注意力/cost volume 改进位置估计,但<strong>仅限于 256×256 低分辨率</strong>;</li>
+<li><strong>基于模板的 3DGS 人体方法</strong>:将高斯绑定到 SMPL/SMPL-X 网格,迭代绑定过程耗时,无法实时;</li>
+<li><strong>NeRF 类方法</strong>:训练与渲染均耗时,难以实时应用。</li>
+</ul>
+
+<div class="callout tip">
+<h4>EVA-Gaussian 的目标</h4>
+<p>无需人体模板先验,在<strong>高分辨率 (1024×1024)</strong> 下,支持<strong>任意数量相机、大视角差(包括稀疏视角)</strong>的实时 3D 人体重建与新视角合成。</p>
+</div>
+</section>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p class="lead">给定围绕人体的 $n$ 张稀疏视角 RGB 图像 $\{\bm{I}_i\}_{i=1}^n$, $\bm{I}_i \in \mathbb{R}^{H\times W\times 3}$,目标是在任意相机位置实时合成新视角图像。EVA-Gaussian 将每个源图像的前景像素对应到一个唯一的 3D 高斯,并将整个过程分为<strong>三个阶段</strong>:</p>
+
+<div class="grid grid-3">
+  <div class="card" style="border-top:3px solid var(--accent)">
+    <span class="stage-tag stage-1">STAGE 1</span>
+    <h4>3D 高斯位置估计</h4>
+    <p style="font-size:14px">基于 U-Net + EVA 模块,从多视角图像估计每个像素对应的 3D 高斯位置(深度图 $\bm{P}_i$)。</p>
+    <p style="font-size:13px;color:var(--muted)">网络: $\mathcal{D}^P_{\theta_1}$ (AttenUNet)</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--green)">
+    <span class="stage-tag stage-2">STAGE 2</span>
+    <h4>3D 高斯属性估计</h4>
+    <p style="font-size:14px">以位置图 + 原始 RGB 为输入,预测剩余属性:不透明度 $\bm{O}$、尺度 $\bm{S}$、四元数 $\bm{Q}$、特征 $\bm{F}$。</p>
+    <p style="font-size:13px;color:var(--muted)">网络: $\mathcal{D}^A_{\theta_2}$ (GSRegresser_feature)</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--accent2)">
+    <span class="stage-tag stage-3">STAGE 3</span>
+    <h4>特征溅射与循环精修</h4>
+    <p style="font-size:14px">将所有视角高斯聚合,通过 α-混合溅射渲染 RGB 与特征图,循环 U-Net 精修器纠正伪影。</p>
+    <p style="font-size:13px;color:var(--muted)">网络: $\mathcal{D}^R_{\theta_3}$ (feature_refiner)</p>
+  </div>
+</div>
+
+<h3>3.1 数学形式化</h3>
+<p>每个源图像 $i$ 对应 $U_i$ 个 3D 高斯,其完整属性图为:</p>
+<div class="equation">
+$$\{\bm{M}_i\}_{i=1}^n = \{\bm{P}_i, \bm{O}_i, \bm{S}_i, \bm{Q}_i, \bm{F}_i\}_{i=1}^n = \mathcal{D}_{\bm{\theta}}(\{\bm{I}_i\}_{i=1}^n) \quad \text{(式 1)}$$
+</div>
+<p>其中 $\bm{P}_i, \bm{O}_i, \bm{S}_i, \bm{Q}_i, \bm{F}_i$ 分别表示位置、不透明度、尺度、四元数(旋转)和特征图。特征向量 $\bm{f}_i^u \in \mathbb{R}^{32}$ 是每个高斯的新增属性,用于后续精修阶段消除位置估计误差引起的伪影。</p>
+
+<div class="callout">
+<h4>核心观察:高斯位置与深度的等价性</h4>
+<p>当每个高斯的尺度足够小时,某像素的 3D 高斯位置精确对齐其深度图上的对应值(附录 D 证明)。因此,位置估计网络可以用深度图真值监督训练。</p>
+</div>
+</section>
+
+<!-- ==================== STAGE 1 ==================== -->
+<section id="stage1">
+<h2><span class="num">4</span>阶段一:高斯位置估计 (EVA 模块)</h2>
+
+<p>人体表面深度变化虽小,但在面部、手部等语义丰富区域,微小的深度估计误差会导致显著的视觉质量退化。因此精确的 3D 高斯位置估计至关重要。</p>
+
+<h3>4.1 网络结构 (AttenUNet)</h3>
+<p>位置估计网络 $\mathcal{D}^P_{\theta_1}$ 采用 <strong>U-Net 架构</strong>,并在其<strong>三个最低分辨率层</strong>集成 EVA 模块,以实现多视角对应检索与信息交换。</p>
+
+<div class="equation">
+$$\{\bm{P}_i\}_{i=1}^n = \mathcal{D}^P_{\theta_1}(\{\bm{I}_i\}_{i=1}^n) \quad \text{(式 2)}$$
+</div>
+
+<table>
+<tr><th>层</th><th>分辨率</th><th>通道</th><th>EVA 模块</th><th>窗口大小</th></tr>
+<tr><td>left_conv_1</td><td>1024</td><td>16</td><td>—</td><td>—</td></tr>
+<tr><td>left_conv_2</td><td>512</td><td>32</td><td>—</td><td>—</td></tr>
+<tr><td>left_conv_3</td><td>256</td><td>64</td><td><strong>CVA (w=32)</strong></td><td>32</td></tr>
+<tr><td>left_conv_4</td><td>128</td><td>128</td><td><strong>CVA (w=64)</strong></td><td>64</td></tr>
+<tr><td>center_conv</td><td>64</td><td>256</td><td><strong>CVA (w=64)</strong></td><td>64</td></tr>
+<tr><td>right_conv_1~2</td><td>128~256</td><td>128~64</td><td>CVA</td><td>64~32</td></tr>
+<tr><td>output</td><td>1024</td><td>1</td><td>sigmoid</td><td>—</td></tr>
+</table>
+
+<h3>4.2 EVA 模块的核心设计</h3>
+
+<div class="callout key">
+<h4>关键洞察</h4>
+<p>在人体采集系统中,人体通常位于每帧中心,因此<strong>对极线 (epipolar lines) 几乎平行于图像的 x 轴</strong>。这意味着来自参考视角的对应像素通常位于沿 x 轴的相邻位置。基于此,EVA 只需在<strong>沿 x 轴的局部 1D 窗口</strong>内计算交叉注意力,而无需全局注意力。</p>
+</div>
+
+<h4>EVA 模块 (CVA) 工作流程:</h4>
+<ol>
+<li><strong>位置编码</strong>:添加可学习位置嵌入 $\gamma$ 编码空间坐标;</li>
+<li><strong>窗口划分</strong>:将特征沿 x 轴划分为大小为 $w$ 的 1D 窗口;</li>
+<li><strong>双向交叉注意力</strong>:
+  <ul>
+    <li><code>attn_1</code>:视角 1 的特征 Query 视角 2 的特征(View1 ← View2)</li>
+    <li><code>attn_2</code>:视角 2 的特征 Query 视角 1 的特征(View2 ← View1)</li>
+  </ul>
+</li>
+<li><strong>移位窗口算法 (Shifted Window)</strong>:每次迭代将窗口移动半个窗口大小,扩展感受野;</li>
+<li><strong>MLP + 残差连接</strong>:经 LayerNorm 与 MLP 进一步融合。</li>
+</ol>
+
+<div class="mermaid">
+flowchart TD
+    subgraph EVA["EVA 模块 (CVA)"]
+        A["输入特征 E_i^j<br/>(view 1 & view 2)"] --> B["+ 可学习位置嵌入 γ"]
+        B --> C["LayerNorm"]
+        C --> D{"ResAttBlock 1<br/>(index=0)"}
+        C --> E{"ResAttBlock 2<br/>(index=1)"}
+        D --> D1["窗口划分<br/>(规则窗口 w)"]
+        D1 --> D2["attn_1: V1←V2<br/>attn_2: V2←V1"]
+        D2 --> D3["重组特征"]
+        E --> E1["窗口移位 w/2<br/>(torch.roll)"]
+        E1 --> E2["窗口划分<br/>(移位窗口)"]
+        E2 --> E3["attn_1: V1←V2<br/>attn_2: V2←V1"]
+        E3 --> E4["反向移位<br/>重组特征"]
+        D3 --> F["残差 + x"]
+        E4 --> F
+        F --> G["LayerNorm + MLP"]
+        G --> H["残差 + x"]
+        H --> I["输出增强特征 Ë_i^j"]
+    end
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style I fill:#ddd6fe,stroke:#7c3aed,color:#2d1b4e
+    style D fill:#fef3c7,stroke:#d97706
+    style E fill:#fef3c7,stroke:#d97706
+</div>
+
+<h3>4.3 与现有注意力机制对比</h3>
+<table>
+<tr><th>模块</th><th>2×64×128×128</th><th>2×64×256×256</th><th>2×32×256×256</th></tr>
+<tr><td>CVA (MVSplat, 全局注意力)</td><td>35.3ms / 3.72GB</td><td>30.4ms / 35.44GB</td><td>26.3ms / 31.77GB</td></tr>
+<tr><td>EA (pixelSplat, 对极注意力)</td><td>58.3ms / 15.19GB</td><td>19.3ms / 59.14GB</td><td>16.9ms / 58.01GB</td></tr>
+<tr><td><strong>EVA (w16)</strong></td><td><strong>7.23ms / 0.92GB</strong></td><td><strong>1.77ms / 2.14GB</strong></td><td><strong>1.43ms / 1.37GB</strong></td></tr>
+<tr><td>EVA (w32)</td><td>6.53ms / 0.92GB</td><td>1.49ms / 2.14GB</td><td>1.16ms / 1.37GB</td></tr>
+<tr><td>EVA (w64)</td><td>6.31ms / 0.92GB</td><td>1.39ms / 2.14GB</td><td>1.06ms / 1.37GB</td></tr>
+</table>
+<p style="color:var(--green);font-size:14px">EVA 相比 CVA/EA:速度提升 4-10×,显存降低 15-40×,且支持 1024×1024 高分辨率。</p>
+
+<h3>4.4 训练损失</h3>
+<p>位置估计网络使用深度图真值的 MSE 损失(深度预训练):</p>
+<div class="equation">
+$$\mathcal{L}_{\text{depth}} = \|\bm{P}_i - \bm{P}_i^{\text{gt}}\|_2 \quad \text{(式 3)}$$
+</div>
+</section>
+
+<!-- ==================== STAGE 2 ==================== -->
+<section id="stage2">
+<h2><span class="num">5</span>阶段二:高斯属性估计</h2>
+
+<p>为完成 3D 高斯属性图 $\{\bm{M}_i\}$ 的估计,采用一个<strong>浅层 U-Net</strong> $\mathcal{D}^A_{\theta_2}$ (GSRegresser_feature),输入为阶段一估计的位置图与原始 RGB 图像的拼接,输出剩余高斯属性:</p>
+
+<div class="equation">
+$$\{\bm{O}_i, \bm{S}_i, \bm{Q}_i, \bm{F}_i\}_{i=1}^n = \mathcal{D}^A_{\theta_2}(\{\bm{I}_i\}_{i=1}^n \oplus \{\bm{P}_i\}_{i=1}^n) \quad \text{(式 4)}$$
+</div>
+
+<h3>5.1 网络结构 (GSRegresser_feature)</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph Input
+        IMG["RGB 图像 I<br/>(3ch)"]
+        DEP["深度/位置图 P<br/>(1ch)"]
+        IMGFEAT["图像特征<br/>(UnetExtractor)<br/>[32,48,96]"]
+    end
+    DEP --> DENC["深度编码器<br/>(UnetExtractor)<br/>[32,48,96]"]
+    IMGFEAT --> DEC3["decoder3<br/>(concat img+depth)"]
+    DENC --> DEC3
+    DEC3 --> UP3["Upsample×2"]
+    UP3 --> DEC2["decoder2"]
+    IMGFEAT --> DEC2
+    DENC --> DEC2
+    DEC2 --> UP2["Upsample×2"]
+    UP2 --> DEC1["decoder1"]
+    IMGFEAT --> DEC1
+    DENC --> DEC1
+    DEC1 --> UP1["Upsample×2"]
+    UP1 --> OUTCONV["out_conv<br/>(concat img+depth)"]
+    IMG --> OUTCONV
+    DEP --> OUTCONV
+    OUTCONV --> HEADS
+    subgraph HEADS["属性预测头"]
+        R["rot_head<br/>→ 4 (四元数)"]
+        S["scale_head<br/>→ 3 (sigmoid×0.01)"]
+        O["opacity_head<br/>→ 1 (sigmoid)"]
+        F["feature_head<br/>→ 32 (特征)"]
+    end
+    style HEADS fill:#dbeafe,stroke:#3b82f6
+    style OUTCONV fill:#fef3c7,stroke:#d97706
+</div>
+
+<h3>5.2 渲染与新视角合成</h3>
+<p>所有源视角的 3D 高斯 $\{\bm{M}_i\}$ 聚合后,通过差分光栅化 (α-混合) 渲染目标视角。属性估计网络使用渲染图像与真值的 MSE + SSIM 组合损失训练:</p>
+<div class="equation">
+$$\mathcal{L}_{\text{render}} = \|\hat{\bm{I}}^0 - \bm{I}^{\text{gt}}\|_2 + \lambda_{\text{render}}(1 - \text{SSIM}(\hat{\bm{I}}^0, \bm{I}^{\text{gt}})) \quad \text{(式 5)}$$
+</div>
+</section>
+
+<!-- ==================== STAGE 3 ==================== -->
+<section id="stage3">
+<h2><span class="num">6</span>阶段三:特征溅射与循环精修</h2>
+
+<p>阶段一估计的 3D 高斯位置图 $\bm{P}_i$ 不可避免地包含误差,可能导致渲染 RGB 图像出现畸变和伪影。为缓解这些问题,本文提出<strong>溅射后精修方法</strong>。</p>
+
+<h3>6.1 特征溅射 (Feature Splatting)</h3>
+<p>受研究表明特征向量表示比球谐函数更有效捕获场景信息的启发,本文为每个高斯赋予一个 32 维特征向量 $\bm{f}_i^u \in \mathbb{R}^{32}$。溅射时,颜色值通过标准 α-混合渲染,特征值通过<strong>修改的 α-混合函数</strong>溅射到图像平面:</p>
+<div class="equation">
+$$\bm{f}_{\text{pixel}} = \sum_{j=1}^{N} \bm{f}_j \, \alpha_j \prod_{l=1}^{j-1}(1-\alpha_l) \quad \text{(式 6)}$$
+</div>
+<p>其中 $N = \sum_{i=1}^n U_i$ 是所有源视角的 3D 高斯总数,$\bm{f}_j$ 是深度第 $j$ 大的高斯的特征向量。</p>
+
+<h3>6.2 循环 U-Net 精修器 (feature_refiner)</h3>
+<p>采用精心设计的<strong>循环 U-Net</strong> $\mathcal{D}^R_{\theta_3}$,同时接收 RGB 图像与特征图为输入,经 $L$ 次循环投影到 RGB 空间输出最终结果:</p>
+<div class="equation">
+$$\hat{\bm{I}}^l = \mathcal{D}^R_{\theta_3}(\hat{\bm{I}}^{l-1} \oplus \bm{F}_{\text{novel}}), \quad l \in \{1 \cdots L\} \quad \text{(式 7)}$$
+</div>
+<p>其中 $\hat{\bm{I}}^l \in \mathbb{R}^{H\times W\times 3}$,$\bm{F}_{\text{novel}} \in \mathbb{R}^{H\times W\times 32}$。</p>
+
+<div class="mermaid">
+flowchart LR
+    subgraph Splatting
+        GS["聚合所有视角<br/>3D 高斯 {M_i}"] --> R1["α-混合渲染<br/>RGB 图 Î⁰"]
+        GS --> R2["特征溅射<br/>特征图 F_novel"]
+    end
+    R1 --> LOOP["循环 U-Net 精修器<br/>D^R_θ3"]
+    R2 --> LOOP
+    LOOP -->|"l=1"| O1["Î¹"]
+    O1 --> LOOP
+    LOOP -->|"l=2"| O2["Î²"]
+    O2 --> LOOP
+    LOOP -->|"l=L"| OUT["最终输出 Î^L"]
+    style R1 fill:#dbeafe,stroke:#3b82f6
+    style R2 fill:#ddd6fe,stroke:#7c3aed
+    style OUT fill:#d1fae5,stroke:#10b981
+</div>
+
+<h3>6.3 精修损失</h3>
+<div class="equation">
+$$\mathcal{L}_{\text{refine}} = \|\hat{\bm{I}}^L - \bm{I}^{\text{gt}}\|_2 + \lambda_{\text{refine}}(1 - \text{SSIM}(\hat{\bm{I}}^L, \bm{I}^{\text{gt}})) \quad \text{(式 8)}$$
+</div>
+</section>
+
+<!-- ==================== ANCHOR LOSS ==================== -->
+<section id="anchor">
+<h2><span class="num">7</span>属性正则化 (锚点损失)</h2>
+
+<p>现有前馈式 3DGS 方法假设 3D 高斯位置直接对应各自视角的估计深度值。但这一假设并不总成立——高斯未被显式约束在物体表面上,且各视角独立反投影,缺乏跨视角一致性与全局场景优化。</p>
+
+<h3>7.1 锚点损失的三项组成</h3>
+<div class="equation">
+$$\mathcal{L}_{\text{anchor}} = \lambda_{\text{opacity}} \sum_{i=1}^{N} \|\bm{O}_i \log(\bm{O}_i)\|_1 + \lambda_{\text{scale}} \sum_{i=1}^{N} \|\bm{S}_i\|_2 + \sum_{i,j \in \mathbb{V}} \sum_{m_i \in \mathbb{M}_i, m_j \in \mathbb{M}_j} \max\{Dist, t\} \quad \text{(式 9)}$$
+</div>
+
+<div class="grid grid-3">
+  <div class="card">
+    <span class="stage-tag stage-1">项 1</span>
+    <h4>不透明度正则化</h4>
+    <p style="font-size:14px">$O_i \log(O_i)$ 熵形式,推动不透明度趋向 0 或 1,减少半透明伪影。</p>
+    <p style="font-size:13px;color:var(--muted)">代码: <code>(opacity * log(opacity)).mean()</code></p>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-2">项 2</span>
+    <h4>尺度正则化</h4>
+    <p style="font-size:14px">L2 范数惩罚大尺度,保持高斯小且紧贴表面,支撑"小尺度高斯位置对齐深度"的证明。</p>
+    <p style="font-size:13px;color:var(--muted)">代码: <code>scale.mean()</code></p>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-3">项 3</span>
+    <h4>关键点位置一致性</h4>
+    <p style="font-size:14px">使用 MediaPipe 标注人脸关键点,约束同一关键点在不同视角反投影到 3D 后的距离。</p>
+    <p style="font-size:13px;color:var(--muted)">容差 $t_2 = 0.05$</p>
+  </div>
+</div>
+
+<h3>7.2 关键点距离计算</h3>
+<div class="equation">
+$$Dist = \|\Pi^{-1}(\bm{m}_i, \bm{P}_i(\bm{m}_i)) - \Pi^{-1}(\bm{m}_j, \bm{P}_j(\bm{m}_j))\|_2$$
+</div>
+<p>其中 $\Pi^{-1}$ 为从 2D 图像到 3D 空间的反投影,$\bm{m}_i, \bm{m}_j$ 为两视角的 2D 人脸关键点位置,$\bm{P}_i(\bm{m}_i)$ 为该关键点处的深度值。</p>
+
+<div class="callout warn">
+<h4>容差机制 (Hinge)</h4>
+<p>$\max\{Dist, t\}$ 形式意味着:当 $Dist \le t$ 时损失为常数 $t$(无梯度);仅当 $Dist > t$ 时提供梯度拉拢关键点。代码实现采用平滑铰链:$(|Dist - t_2| + |Dist + t_2|)/2$,容差 $t_2 = 0.05$。</p>
+</div>
+</section>
+
+<!-- ==================== TOTAL LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">8</span>总损失函数</h2>
+<div class="equation">
+$$\mathcal{L}_{\text{EVA}} = \mathcal{L}_{\text{depth}} + \lambda_1 \mathcal{L}_{\text{render}} + \lambda_2 \mathcal{L}_{\text{refine}} + \lambda_3 \mathcal{L}_{\text{anchor}} \quad \text{(式 10)}$$
+</div>
+
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(代码)</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{\text{depth}}$</td><td>$\|\bm{P}_i - \bm{P}_i^{\text{gt}}\|_2$</td><td>1.0</td><td>位置/深度监督</td></tr>
+<tr><td>$\mathcal{L}_{\text{render}}$ (MSE)</td><td>$\|\hat{\bm{I}}^0 - \bm{I}^{\text{gt}}\|_2$</td><td>0.8</td><td>溅射渲染监督</td></tr>
+<tr><td>$\mathcal{L}_{\text{render}}$ (SSIM)</td><td>$1 - \text{SSIM}(\hat{\bm{I}}^0)$</td><td>0.2</td><td>结构相似性</td></tr>
+<tr><td>$\mathcal{L}_{\text{refine}}$ (MSE)</td><td>$\|\hat{\bm{I}}^L - \bm{I}^{\text{gt}}\|_2$</td><td>0.8</td><td>精修输出监督</td></tr>
+<tr><td>$\mathcal{L}_{\text{refine}}$ (SSIM)</td><td>$1 - \text{SSIM}(\hat{\bm{I}}^L)$</td><td>0.2</td><td>结构相似性</td></tr>
+<tr><td>$\mathcal{L}_{\text{opacity}}$</td><td>熵形式</td><td>1.0</td><td>不透明度正则</td></tr>
+<tr><td>$\mathcal{L}_{\text{scale}}$</td><td>$\|\bm{S}\|_2$</td><td>1.0</td><td>尺度正则</td></tr>
+<tr><td><strong>$\mathcal{L}_{\text{anchor}}$</strong></td><td>关键点铰链</td><td><strong>1000 (10³)</strong></td><td>跨视角几何一致</td></tr>
+</table>
+
+<div class="callout">
+<p><strong>训练配置</strong>:NVIDIA A800 GPU · 1024×1024 分辨率 · 100K 迭代 · AdamW 优化器 · OneCycleLR 调度 · 位置网络先用深度真值预训练 (depthnet_pretrain.py)。</p>
+</div>
+</section>
+
+<!-- ==================== FLOWCHART ==================== -->
+<section id="flowchart">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 算法总流程</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: n 张稀疏视角 RGB 图像<br/>{I_1, ..., I_n}<br/>1024×1024"] 
+    
+    INPUT --> S1
+    
+    subgraph S1["阶段一: 3D 高斯位置估计"]
+        direction TB
+        S1A["AttenUNet<br/>(U-Net + EVA 模块)"]
+        S1B["EVA 模块嵌入于<br/>3 个最低分辨率层<br/>(j=-1, -2, -3)"]
+        S1C["1D 移位窗口<br/>跨视角注意力"]
+        S1A --> S1B --> S1C
+        S1C --> S1D["输出: 位置图 {P_i}<br/>(深度图)"]
+    end
+    
+    S1 --> S2
+    
+    subgraph S2["阶段二: 3D 高斯属性估计"]
+        direction TB
+        S2A["拼接 RGB + 位置图<br/>{I_i} ⊕ {P_i}"]
+        S2B["GSRegresser_feature<br/>(浅层 U-Net + UnetExtractor)"]
+        S2A --> S2B
+        S2B --> S2C["输出: 属性图<br/>{O_i, S_i, Q_i, F_i}"]
+    end
+    
+    S2 --> S3
+    
+    subgraph S3["阶段三: 特征溅射与精修"]
+        direction TB
+        S3A["聚合所有视角 3D 高斯<br/>N = Σ U_i"]
+        S3B["α-混合渲染<br/>→ RGB 图 Î⁰"]
+        S3C["特征溅射 (式6)<br/>→ 特征图 F_novel (32ch)"]
+        S3A --> S3B
+        S3A --> S3C
+        S3B --> S3D["循环 U-Net 精修器<br/>D^R_θ3 (L 次循环)"]
+        S3C --> S3D
+        S3D --> S3E["最终输出<br/>新视角图像 Î^L"]
+    end
+    
+    S3E --> OUTPUT["输出: 任意视角合成图像<br/>(实时渲染 ~55ms)"]
+    
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUTPUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style S1 fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style S2 fill:#064e3b,stroke:#10b981,color:#fff
+    style S3 fill:#2d1b4e,stroke:#7c3aed,color:#fff
+</div>
+
+<h3>9.2 训练流程</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph Train["训练流程 (train.py)"]
+        T1["加载深度预训练权重<br/>(depthnet_pretrain.py)"] --> T2["EVANet 前向<br/>(AttenUNet + GSRegresser + Refiner)"]
+        T2 --> T3["pts2render_feature<br/>(溅射渲染)"]
+        T3 --> T4["feature_refiner<br/>(循环精修)"]
+        T4 --> T5["计算总损失<br/>L = L_depth + 0.8×(L_render+L_refine)_MSE<br/>+ 0.2×(L_render+L_refine)_SSIM<br/>+ L_opacity + L_scale + 10³×L_anchor"]
+        T5 --> T6["AMP 混合精度反向<br/>AdamW + OneCycleLR"]
+        T6 --> T7{"100K 迭代?"}
+        T7 -->|否| T2
+        T7 -->|是| T8["保存最终模型"]
+    end
+    style T5 fill:#fef3c7,stroke:#d97706
+    style T8 fill:#d1fae5,stroke:#10b981
+</div>
+
+<h3>9.3 EVANet 模块组成</h3>
+<div class="mermaid">
+flowchart TD
+    EVANET["EVANet<br/>(network_transformer.py)"]
+    EVANET --> M1["AttenUNet<br/>(位置估计 D^P_θ1)<br/>输入: 3ch RGB → 输出: 1ch 深度"]
+    EVANET --> M2["img_encoder<br/>(UnetExtractor)<br/>RGB 特征 [32,48,96]"]
+    EVANET --> M3["GSRegresser_feature<br/>(属性估计 D^A_θ2)<br/>→ rot(4), scale(3), opacity(1), feat(32)"]
+    EVANET --> M4["feature_refiner<br/>(循环精修 D^R_θ3)<br/>RGB(3)+feat(32) → RGB(3)"]
+    
+    M1 --> M1A["CVA 模块 × 5<br/>(含 EVA 注意力)"]
+    M1A --> M1B["ResAttBlock<br/>attn_1: V1←V2<br/>attn_2: V2←V1<br/>+ 移位窗口"]
+    
+    style EVANET fill:#1e3a5f,stroke:#3b82f6,color:#fff
+    style M1 fill:#dbeafe,stroke:#3b82f6
+    style M3 fill:#d1fae5,stroke:#10b981
+    style M4 fill:#ddd6fe,stroke:#7c3aed
+</div>
+</section>
+
+<!-- ==================== EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 实验设置</h3>
+<ul>
+<li><strong>数据集</strong>:THuman2.0 (526 模型, 100 个用于评估) · THumansit (72 模型, 5 个评估)</li>
+<li><strong>指标</strong>:PSNR↑ · SSIM↑ · LPIPS↓ · 推理时间↓</li>
+<li><strong>对比方法</strong>:pixelSplat · MVSplat · MVSGaussian · ENeRF · GPS-Gaussian</li>
+<li><strong>硬件</strong>:NVIDIA A800 · 1024×1024 · 100K 迭代</li>
+</ul>
+
+<h3>10.2 立体重建 (256×256, Δ=45°) — 表 2</h3>
+<table>
+<tr><th>方法</th><th>THuman2.0 PSNR</th><th>SSIM</th><th>LPIPS</th><th>THumansit PSNR</th><th>SSIM</th><th>LPIPS</th><th>速度</th></tr>
+<tr><td>pixelSplat</td><td>25.19</td><td>0.9156</td><td>0.0824</td><td>23.31</td><td>0.8880</td><td>0.0954</td><td>185ms</td></tr>
+<tr><td>MVSplat</td><td>28.05</td><td>0.9515</td><td>0.0346</td><td>24.97</td><td>0.9223</td><td>0.0532</td><td>70ms</td></tr>
+<tr><td>MVSGaussian</td><td>26.44</td><td>0.9706</td><td>0.0283</td><td>25.20</td><td>0.9641</td><td>0.0297</td><td>71ms</td></tr>
+<tr><td>ENeRF</td><td>29.62</td><td>0.9696</td><td>0.0238</td><td>27.06</td><td>0.9567</td><td>0.0334</td><td>136ms</td></tr>
+<tr><td>GPS-Gaussian</td><td>30.30</td><td>0.9762</td><td>0.0224</td><td>28.02</td><td>0.9671</td><td>0.0251</td><td>40ms</td></tr>
+<tr><td><strong>EVA-Gaussian</strong></td><td class="best">31.11</td><td class="best">0.9782</td><td class="best">0.0198</td><td class="best">29.16</td><td class="best">0.9696</td><td class="best">0.0249</td><td>55ms</td></tr>
+</table>
+
+<h3>10.3 多角度立体重建 (1024×1024) — 表 3 (THuman2.0)</h3>
+<table>
+<tr><th>方法</th><th>Δ=45°</th><th>Δ=60°</th><th>Δ=72°</th><th>Δ=90°</th></tr>
+<tr><td>ENeRF PSNR</td><td>27.94</td><td>26.16</td><td>24.61</td><td>22.85</td></tr>
+<tr><td>GPS-Gaussian PSNR</td><td>29.63</td><td>27.36</td><td>24.25</td><td class="fail">失败</td></tr>
+<tr><td><strong>EVA-Gaussian PSNR</strong></td><td class="best">30.46</td><td class="best">28.29</td><td class="best">27.54</td><td class="best">26.31</td></tr>
+</table>
+<div class="callout tip">
+<p><strong>关键发现</strong>:EVA-Gaussian 在所有角度设置下全面领先,最大 PSNR 优势达 <strong>5.12 dB</strong>。GPS-Gaussian 在 Δ=90° 因依赖立体矫正而<strong>完全失败</strong>,EVA-Gaussian 仍有效。</p>
+</div>
+
+<h3>10.4 多视角重建 (1024×1024, Δ=45°) — 表 4</h3>
+<table>
+<tr><th>方法</th><th>THuman2.0 (3-view)</th><th>THuman2.0 (4-view)</th><th>THumansit (3-view)</th><th>THumansit (4-view)</th></tr>
+<tr><td>GPS-Gaussian</td><td>28.74</td><td>28.51</td><td>26.87</td><td>26.50</td></tr>
+<tr><td><strong>EVA-Gaussian</strong></td><td class="best">30.76</td><td class="best">30.35</td><td class="best">28.64</td><td class="best">28.32</td></tr>
+</table>
+<p>GPS-Gaussian 视角增多时性能反而下降(多视角不匹配),EVA-Gaussian 保持高表现。</p>
+
+<h3>10.5 跨域泛化 — 表 5</h3>
+<table>
+<tr><th>方法</th><th>THumansit→THuman2.0</th><th>THuman2.0→THumansit</th></tr>
+<tr><td>GPS-Gaussian</td><td>29.33 / 0.9733 / 0.0325</td><td>20.86 / 0.9243 / 0.0872</td></tr>
+<tr><td><strong>EVA-Gaussian</strong></td><td class="best">30.40 / 0.9751 / 0.0321</td><td class="best">21.27 / 0.9275 / 0.0876</td></tr>
+</table>
+</section>
+
+<!-- ==================== ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">11</span>消融实验</h2>
+<p>THuman2.0 · 立体 · Δ=45° · 1024×1024 — 表 6</p>
+
+<table>
+<tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>Δ PSNR</th></tr>
+<tr><td><strong>完整模型</strong></td><td class="best">30.46</td><td class="best">0.9730</td><td class="best">0.0178</td><td>—</td></tr>
+<tr><td>w/o EVA 模块</td><td>23.41</td><td>0.9380</td><td>0.0659</td><td class="fail">-7.05</td></tr>
+<tr><td>w/o 特征精修</td><td>29.31</td><td>0.9676</td><td>0.0191</td><td>-1.15</td></tr>
+<tr><td>w/o 锚点损失</td><td>30.34</td><td>0.9724</td><td>0.0186</td><td>-0.12</td></tr>
+</table>
+
+<div class="grid grid-3">
+  <div class="card" style="border-left:3px solid var(--red)">
+    <h4 style="color:var(--red)">EVA 模块 (最关键)</h4>
+    <p>移除后 PSNR 暴跌 <strong>7.05 dB</strong>,LPIPS 恶化至 0.0659。无 EVA 时网络无法进行多视角 3D 高斯几何预测。</p>
+  </div>
+  <div class="card" style="border-left:3px solid var(--orange)">
+    <h4 style="color:var(--orange)">特征精修</h4>
+    <p>移除后 PSNR 降 <strong>1.15 dB</strong>,手部、脚部等关键区域出现伪影(位置估计几何误差未被纠正)。</p>
+  </div>
+  <div class="card" style="border-left:3px solid var(--accent)">
+    <h4 style="color:var(--accent)">锚点损失</h4>
+    <p>移除后 PSNR 降 <strong>0.12 dB</strong>,LPIPS 受影响(0.0178→0.0186),<strong>面部区域</strong>几何预测不可靠。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">12</span>总结</h2>
+
+<div class="callout key">
+<h4>EVA-Gaussian 的四大贡献</h4>
+<ol>
+<li><strong>三阶段管线</strong>:位置估计 → 属性估计 → 特征精修,实现快速前馈式 3D 人体重建;</li>
+<li><strong>EVA 模块</strong>:基于 1D 移位窗口的跨视角注意力,在稀疏视角与高分辨率下增强多视角对应检索,计算与显存开销极低;</li>
+<li><strong>特征溅射 + 循环精修</strong>:为每个高斯嵌入 32 维特征,循环 U-Net 融合溅射图像与特征图,纠正位置估计误差伪影;</li>
+<li><strong>锚点损失</strong>:正则化不透明度、尺度与人脸关键点跨视角一致性,增强稳定性。</li>
+</ol>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h4>核心优势</h4>
+    <ul>
+      <li>无需人体模板先验</li>
+      <li>支持 2~4+ 视角,大视角差 (Δ=90°)</li>
+      <li>1024×1024 高分辨率</li>
+      <li>实时渲染 (~55ms)</li>
+      <li>跨域泛化能力强</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>技术要点</h4>
+    <ul>
+      <li>对极线近似平行 x 轴的人体中心先验</li>
+      <li>1D 移位窗口注意力(类 Swin Transformer)</li>
+      <li>特征向量优于球谐函数</li>
+      <li>铰链式关键点容差损失</li>
+      <li>深度预训练 + 端到端微调</li>
+    </ul>
+  </div>
+</div>
+
+<hr>
+<p style="color:var(--muted);font-size:13px;text-align:center">
+本分析基于论文 arXiv:2410.01425v2 与官方代码仓库 github.com/zhenliuZJU/EVA-Gaussian 编写。<br>
+流程图使用 Mermaid.js 渲染,公式使用 MathJax 渲染。
+</p>
+</section>
+
+</div>
+
+<div class="footer">
+  EVA-Gaussian 算法原理分析 · 2024 · HKUST
+</div>
+
+<script>
+  mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
