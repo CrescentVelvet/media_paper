@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DGS 多视角重建 SOTA 调研 — 2025-2026</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+            --warn: #e6a23c;
+            --danger: #f56c6c;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
+        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
+        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
+        .header .meta span { white-space: nowrap; }
+        .container { max-width: 980px; margin: 0 auto; padding: 30px; }
+        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
+        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 18px 0 8px; }
+        .section h4 { color: #b0b0b0; font-size: 0.95em; margin: 12px 0 6px; }
+        .section p { margin-bottom: 12px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .tag.orange { border-color: var(--warn); color: var(--warn); }
+        .tag.red { border-color: var(--danger); color: var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.88em; }
+        th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+        th { background: var(--code-bg); color: var(--accent); font-weight: 600; }
+        tr:nth-child(even) { background: var(--code-bg); }
+        ul, ol { margin-left: 20px; margin-bottom: 12px; }
+        li { margin-bottom: 5px; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #c8b0ff; }
+        pre { background: var(--code-bg); padding: 12px 15px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-size: 0.85em; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: #c8b0ff; }
+        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+        .highlight.orange { background: rgba(230, 162, 60, 0.1); border-left-color: var(--warn); }
+        .highlight.red { background: rgba(245, 108, 108, 0.1); border-left-color: var(--danger); }
+        .toc { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 25px; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; }
+        .toc h2 { font-size: 1.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .toc ul { list-style: none; margin-left: 0; columns: 2; column-gap: 20px; }
+        .toc li { margin-bottom: 6px; }
+        .toc a { color: var(--text-dim); text-decoration: none; font-size: 0.9em; transition: color 0.2s; }
+        .toc a:hover { color: var(--accent); }
+        .paper-card { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 15px; margin: 10px 0; }
+        .paper-card .title { color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+        .paper-card .meta { color: var(--text-dim); font-size: 0.85em; margin-bottom: 6px; }
+        .paper-card .desc { font-size: 0.9em; color: #c0c0c0; }
+        .paper-card .links { margin-top: 6px; }
+        .paper-card .links a { color: var(--accent); font-size: 0.85em; text-decoration: none; margin-right: 10px; }
+        .verdict-box { display: flex; gap: 15px; margin: 15px 0; flex-wrap: wrap; }
+        .verdict-item { flex: 1; min-width: 200px; background: var(--code-bg); border-radius: 6px; padding: 12px; border: 1px solid var(--border); }
+        .verdict-item .label { font-size: 0.85em; color: var(--text-dim); margin-bottom: 4px; }
+        .verdict-item .value { font-size: 1.05em; font-weight: 600; color: var(--accent); }
+        .flow { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin: 12px 0; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85em; line-height: 1.6; white-space: pre-wrap; color: #c8c8c0; }
+        .flow .step { color: var(--accent); }
+        .flow .arrow { color: var(--text-dim); }
+        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
+        .links a:hover { background: var(--accent-dim); color: #fff; }
+        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
+        @media (max-width: 768px) {
+            .toc ul { columns: 1; }
+            .container { padding: 15px; }
+            .header { padding: 25px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>3DGS 多视角重建 SOTA 调研</h1>
+    <div class="meta">
+        <span>📄 技术调研报告</span>
+        <span>📅 2026-08-12</span>
+        <span>📂 3D / Gaussian Splatting / Reconstruction</span>
+        <span>🎯 真拍多视角 + 微动 + 人体场景</span>
+    </div>
+    <div class="tags">
+        <span class="tag green">3DGS</span>
+        <span class="tag green">2DGS</span>
+        <span class="tag green">PDF-GS</span>
+        <span class="tag orange">鲁棒性</span>
+        <span class="tag orange">稀疏视角</span>
+        <span class="tag">SMPL prior</span>
+        <span class="tag">CVPR 2026</span>
+        <span class="tag">SIGGRAPH 2024-2025</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 结论先行 -->
+    <div class="section" id="conclusion">
+        <h2>🎯 结论先行：场景最优方案</h2>
+
+        <div class="highlight">
+            <strong>核心推荐：2DGS（baseline）+ PDF-GS（鲁棒性）+ SAM2 mask 监督 + （可选）SMPL prior</strong><br>
+            针对 12-16 视角 + 含微动 + 人体场景，这是性价比最高、工程量可控的组合方案。
+        </div>
+
+        <div class="verdict-box">
+            <div class="verdict-item">
+                <div class="label">首选 baseline</div>
+                <div class="value">2DGS</div>
+            </div>
+            <div class="verdict-item">
+                <div class="label">鲁棒性增强</div>
+                <div class="value">PDF-GS</div>
+            </div>
+            <div class="verdict-item">
+                <div class="label">人体专用</div>
+                <div class="value">HUGS / GaussianAvatars</div>
+            </div>
+            <div class="verdict-item">
+                <div class="label">兜底方案</div>
+                <div class="value">Deformable-3DGS</div>
+            </div>
+        </div>
+
+        <h3>为什么是这个组合</h3>
+        <ul>
+            <li><strong>2DGS 几何质量 SOTA：</strong>2D 盘状高斯沿表面对齐，几何精度远超原版 3DGS，<strong>漂浮点天生更少</strong>——这正是微动场景的痛点</li>
+            <li><strong>PDF-GS 专为不一致输入设计：</strong>2026-04 CVPR Findings 最新工作，把破坏多视角一致性的像素/帧当 distractor 渐进剔除——肢体微动 + Wan 生成帧的不一致正好是它的目标场景</li>
+            <li><strong>SAM2 mask 直接可用：</strong>你已有的 mask 可作为前景监督，与 2DGS/HUGS 范式天然契合</li>
+            <li><strong>SMPL prior 可选叠加：</strong>若 2DGS+PDF-GS 仍不够，可上 HUGS 范式（SMPL 初始化 + 偏移场）</li>
+        </ul>
+
+        <div class="highlight orange">
+            <strong>关键洞察：</strong>PDF-GS（arXiv:2604.12580）几乎是为你的场景量身定做的——微动 + 生成帧不一致正是它要处理的 distractor。<strong>即插即用、零额外推理成本、可直接挂到 2DGS 上</strong>。
+        </div>
+    </div>
+
+    <!-- 目录 -->
+    <div class="toc">
+        <h2>📑 目录导航</h2>
+        <ul>
+            <li><a href="#conclusion">🎯 结论先行：场景最优方案</a></li>
+            <li><a href="#top3">1. Top 3 推荐方案详解</a></li>
+            <li><a href="#density">2. 密度控制改进类</a></li>
+            <li><a href="#sparse">3. 稀疏视角类</a></li>
+            <li><a href="#priors">4. 几何先验注入类</a></li>
+            <li><a href="#robust">5. 鲁棒性 / 不一致输入类</a></li>
+            <li><a href="#human">6. 人体 / 数字人专用类</a></li>
+            <li><a href="#comparison">7. 关键对比表</a></li>
+            <li><a href="#scenario">8. 针对本场景的推荐组合</a></li>
+            <li><a href="#implement">9. 立即可执行的实施方案</a></li>
+            <li><a href="#avoid">10. 不推荐方案</a></li>
+        </ul>
+    </div>
+
+    <!-- 1. Top 3 详解 -->
+    <div class="section" id="top3">
+        <h2>1. Top 3 推荐方案详解</h2>
+
+        <h3>1.1 🥇 2D Gaussian Splatting (2DGS)</h3>
+        <div class="paper-card">
+            <div class="title">2D Gaussian Splatting for Geometrically Accurate Radiance Fields</div>
+            <div class="meta">SIGGRAPH 2024 · hbb1/2d-gaussian-splatting · 3.3k stars · ~20-40min/场景</div>
+            <div class="desc">将 3D 高斯塌缩为沿表面对齐的 2D 盘状高斯，直接沿法线方向"投影"厚度。几何精度大幅提升、漂浮点明显减少。在 DTU/Spaces/Mip-NeRF360 上取得 SOTA。nerfstudio 已集成为 <code>splatfacto</code>，gsplat 亦支持。</div>
+            <div class="links">
+                <a href="https://github.com/hbb1/2d-gaussian-splatting">GitHub</a>
+                <a href="https://arxiv.org/abs/2403.17888">arXiv</a>
+            </div>
+        </div>
+        <p><strong>选它作 baseline 的理由：</strong></p>
+        <ul>
+            <li>12-16 视角已不算极端稀疏，2DGS 的表面几何质量远好于原版 3DGS</li>
+            <li>mask 可直接作为前景监督（已有 SAM2）</li>
+            <li>nerfstudio/gsplat 生态成熟，开箱即用</li>
+            <li>工程成熟度 ★★★★★</li>
+        </ul>
+
+        <h3>1.2 🥈 PDF-GS（鲁棒性首选）</h3>
+        <div class="paper-card">
+            <div class="title">PDF-GS: Progressive Distractor Filtering for Robust 3D Gaussian Splatting</div>
+            <div class="meta">CVPR Findings 2026 · arXiv:2604.12580 · kangrnin/PDF-GS · 即插即用</div>
+            <div class="desc">利用 3DGS 内在的"自过滤"能力，多阶段渐进式剔除破坏多视角一致性的"干扰点"（distractor，含微动肢体、动态物体、生成帧不一致像素），再用纯化后的高斯重建细节。<strong>轻量、无架构改动、无额外推理开销</strong>，可直接挂到 2DGS/3DGS baseline 上。</div>
+            <div class="links">
+                <a href="https://github.com/kangrnin/PDF-GS">GitHub</a>
+                <a href="https://arxiv.org/abs/2604.12580">arXiv</a>
+            </div>
+        </div>
+        <div class="highlight">
+            <strong>为什么契合你的场景：</strong>你的"肢体微动 + Wan 2.2 生成帧的不一致"正是 PDF-GS 设计目标的 distractor。它不会硬压微动，而是<strong>识别并降权</strong>这些不一致区域，让主体重建保持高保真。
+        </div>
+
+        <h3>1.3 🥉 HUGS / GaussianAvatars（人体专用）</h3>
+        <div class="paper-card">
+            <div class="title">HUGS: Human Gaussian Splats</div>
+            <div class="meta">CVPR 2024 · apple24f/HUGS · 4-8 视角 · ~30min 训练 · 60 FPS</div>
+            <div class="desc">利用 SMPL 人体模型初始化高斯，同时优化线性混合蒙皮权重（LBS），使高斯能跟随骨骼运动。只需少量单目视频帧即可训练，自动分离静态场景和可动画人体。</div>
+            <div class="links">
+                <a href="https://github.com/apple24f/HUGS">GitHub</a>
+                <a href="https://arxiv.org/abs/2311.17910">arXiv</a>
+            </div>
+        </div>
+        <div class="paper-card">
+            <div class="title">GaussianAvatars: Semantic Control & Animator-Ready</div>
+            <div class="meta">CVPR 2024 · QianyiWu/GaussianAvatars · 8-16 视角 · ~60min 训练</div>
+            <div class="desc">语义可控动画 avatar，FLAME/SMPL 绑定高斯，三角网格局部帧作为参考。与 HUGS 思路类似但更偏重可驱动。</div>
+            <div class="links">
+                <a href="https://github.com/QianyiWu/GaussianAvatars">GitHub</a>
+            </div>
+        </div>
+        <p><strong>选它们作人体专用的理由：</strong>对"静态多视角人体"特别契合，配合已有的 SMPL/SAM2 mask 天然适配。若需要可驱动数字人是 HUGS/GaussianAvatars 的强项；若只需静态资产，2DGS+PDF-GS 已足够，HUGS 可作为升级路线。</p>
+    </div>
+
+    <!-- 2. 密度控制改进类 -->
+    <div class="section" id="density">
+        <h2>2. 密度控制改进类（抗漂浮点 / 伪影）</h2>
+        <p>原版 3DGS 的自适应密度控制（split/clone/prune）是启发式的，容易产生漂浮点和过度增长。这类方法改进密度控制机制。</p>
+
+        <div class="paper-card">
+            <div class="title">3DGS-MCMC</div>
+            <div class="meta">3DV 2024 · 把自适应密度控制替换为马尔可夫链蒙特卡洛采样</div>
+            <div class="desc">杜绝启发式 split/clone 的漂移，更稳定的密度控制。是后续很多方法的 density backend。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">AbsGS</div>
+            <div class="meta">2024 · 抽象高斯 · 改进 densification 退化问题</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">StopThePop</div>
+            <div class="meta">SIGGRAPH 2024 · 解决高斯"弹出"（popping）伪影 · 视点依赖调节</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Scaffold-GS</div>
+            <div class="meta">CVPR 2024 · anchor + MLP 生成高斯 · 结构化抑制漂浮</div>
+            <div class="desc">用 anchor 点作为高斯生成的种子，MLP 学习局部偏移和外观，结构化表示有效抑制漂浮点。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">3DGBGS</div>
+            <div class="meta">2026-07 (arXiv:2607.26578) · 粒球自适应分区 anchor · 更紧凑表示</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">GaussianPro</div>
+            <div class="meta">CVPR 2024 · 渐进式传播高斯 · 抑制冗余增长</div>
+        </div>
+    </div>
+
+    <!-- 3. 稀疏视角类 -->
+    <div class="section" id="sparse">
+        <h2>3. 稀疏视角类（&lt; 20 视角）</h2>
+        <p>针对稀疏视角（2-12 视角）的重建方法，通常引入几何先验（深度/法线）或大规模预训练先验。你的 12-16 视角处于<strong>中度稀疏</strong>，可选但非必需。</p>
+
+        <div class="paper-card">
+            <div class="title">DNGaussian</div>
+            <div class="meta">CVPR 2024 · 2-4 视角 · ~15min · 几何先验蒸馏</div>
+            <div class="desc">从预训练模型蒸馏深度/法线先验，对极稀疏视角（2-4）效果好。你的 12-16 视角用不上这么激进的方案。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">FSGS</div>
+            <div class="meta">ECCV 2024 · 频率正则稀疏重建</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">MAC-Splat</div>
+            <div class="meta">ECCV 2026 · MASt3R + DINOv3 对应点 · 2-12 视角 · &lt;1min</div>
+            <div class="desc">用 MASt3R 和 DINOv3 提取对应点直接监督 3D 一致性，ScanNet++ 上 PSNR 比 Splatt3R 高 4.5dB。但属于 feedforward 范式，对非常规输入泛化差。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">PairDropGS</div>
+            <div class="meta">2026-05 (arXiv:2605.12072) · dropout 一致性正则 · 稀疏稳定</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">GeoQuery</div>
+            <div class="meta">SIGGRAPH 2026 · 几何引导扩散修复稀疏伪影</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">CLEAR</div>
+            <div class="meta">2026-08 (arXiv:2608.02206) · 单阶段稀疏超分重建</div>
+        </div>
+    </div>
+
+    <!-- 4. 几何先验注入类 -->
+    <div class="section" id="priors">
+        <h2>4. 几何先验注入类（depth / normal / SMPL prior）</h2>
+        <p>这类方法显式注入几何先验（深度图、法线图、参数化模型）以约束重建，特别适合稀疏视角或需要高质量表面的场景。</p>
+
+        <div class="paper-card">
+            <div class="title">SuGaR</div>
+            <div class="meta">CVPR 2024 · 3.5k stars · 高斯贴合表面 → 高质量 mesh</div>
+            <div class="desc">让高斯贴合到表面上，便于提取高质量 mesh。如果你的下游需要 mesh 而非高斯，这是首选。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">GOF (Gaussian Opacity Fields)</div>
+            <div class="meta">CVPR 2024 · 几何感知高斯场 + SDF 一致性 · 15+ 视角</div>
+            <div class="desc">引入 SDF 一致性约束，提升表面质量。视角需求 15+，正好契合你的 12-16。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">2DGS</div>
+            <div class="meta">SIGGRAPH 2024 · 2D 盘状高斯 + 法线对齐（已在 Top 3 介绍）</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Confidence-matters (Lähner et al.)</div>
+            <div class="meta">2026-08 (arXiv:2608.06117) · VGGT 多视角置信度图加权深度/法线先验</div>
+            <div class="desc">用 VGGT 提取的置信度图加权深度/法线先验，显著改善镜面物体等难区域。可借鉴思路加入你的 pipeline。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">D²-4DGS</div>
+            <div class="meta">2026-08 (arXiv:2608.01588) · 单目+多视角双源深度对齐 · 稀疏动态</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">P2GS</div>
+            <div class="meta">CVPR 2026 · 物理光度一致 · 分离 HDR 辐照/曝光</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Gaussian Sculpting</div>
+            <div class="meta">2026-08 (arXiv:2608.10602) · SDF + 高斯双层优化 · 端到端表面重建</div>
+        </div>
+    </div>
+
+    <!-- 5. 鲁棒性 / 不一致输入类 -->
+    <div class="section" id="robust">
+        <h2>5. 鲁棒性 / 不一致输入类（针对你的微动场景）</h2>
+        <div class="highlight red">
+            <strong>最关键的一类：</strong>你的场景核心是"输入帧有微动 + 生成帧有不一致"，需要鲁棒性方法处理。这一类是<strong>为你场景量身定做</strong>的。
+        </div>
+
+        <div class="paper-card">
+            <div class="title">PDF-GS</div>
+            <div class="meta">CVPR Findings 2026 · 渐进干扰点过滤 · 已在 Top 3 介绍</div>
+            <div class="desc"><strong>本类首选。</strong>把破坏多视角一致性的像素/帧当 distractor 渐进剔除。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Gaussian in the Wild (GITG)</div>
+            <div class="meta">CVPR 2024 · 分离静态/动态/瞬态场 · 处理野外不一致</div>
+            <div class="desc">将场景分解为静态场、动态场、瞬态场，分别建模。野外场景下处理不一致输入的经典工作。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">RAWG</div>
+            <div class="meta">2024 · 鲁棒自适应加权高斯</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">Deformable-3DGS</div>
+            <div class="meta">3DV 2024 · 变形场建模动态 · 对微动友好 · 官方实现</div>
+            <div class="desc">用规范空间 + 变形场建模动态，对微动友好。工程更重，建议作为 PDF-GS 不够时的升级路线。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">AniGS</div>
+            <div class="meta">2024-12 (arXiv:2412.02684) · 把"不一致图像重建"当作 4D 任务处理</div>
+            <div class="desc">4DGS 范式适配生成图不一致性，思路新颖。若 PDF-GS 不够，可考虑此方向。</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">ArtifactWorld</div>
+            <div class="meta">2026-04 · 视频扩散 backbone 修复 3DGS 伪影 · 107.5K 训练对</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">NRGS</div>
+            <div class="meta">2026-04 · 神经正则化多视角不一致语义场</div>
+        </div>
+    </div>
+
+    <!-- 6. 人体专用类 -->
+    <div class="section" id="human">
+        <h2>6. 人体 / 数字人专用类</h2>
+        <p>利用 SMPL/SMPL-X/FLAME 等参数化人体先验，专门为人体/人脸重建设计的方法。</p>
+
+        <div class="paper-card">
+            <div class="title">PIFu / PIFuHD</div>
+            <div class="meta">ECCV 2019 / ECCV 2020 · 隐式人体多视角重建 · 经典 baseline</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">EVA3D</div>
+            <div class="meta">CVPR 2023 · 生成式人体 · 可动画</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">GART</div>
+            <div class="meta">CVPR 2024 · 高斯关节人体跟踪 · 150+ FPS</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">HUGS / SplattingAvatar / GaussianAvatars</div>
+            <div class="meta">CVPR 2024 · 已在 Top 3 介绍</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">PGHM</div>
+            <div class="meta">2025-06 (arXiv:2506.06645) · 参数化高斯人体先验 · 单目 ~20min</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">FMGS-Avatar</div>
+            <div class="meta">2025-09 · mesh-guided 2DGS + Sapiens 基础模型先验</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">MPMAvatar</div>
+            <div class="meta">NeurIPS 2025 · MPM 物理仿真衣物</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">RnD-Avatar</div>
+            <div class="meta">ACM MM 2025 · 可重照明 + 动态</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">JOintGS</div>
+            <div class="meta">2026-02 (arXiv:2602.04317) · 联合优化相机/姿态/高斯 · 抗噪声</div>
+            <div class="desc">联合优化相机位姿、人体姿态、高斯，抗噪声能力强。对你"标定误差 + 微动误差耦合"的痛点有针对性。</div>
+            <div class="links"><a href="https://github.com/MiliLab/JOintGS">GitHub</a></div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">F3G-Avatar</div>
+            <div class="meta">CVPRW 2026 · 全身面部聚焦</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">SpatialAvatar-0</div>
+            <div class="meta">2026-06 · FLAME 绑定共享表征 · 10K 迭代精修</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">ICo3D</div>
+            <div class="meta">IJCV 2026 · 多视角会话数字人完整系统</div>
+        </div>
+
+        <div class="paper-card">
+            <div class="title">ReWeaver</div>
+            <div class="meta">CVPR 2026 · 拓扑精确衣物重建</div>
+        </div>
+    </div>
+
+    <!-- 7. 关键对比表 -->
+    <div class="section" id="comparison">
+        <h2>7. 关键对比表</h2>
+
+        <h3>7.1 综合对比</h3>
+        <table>
+            <tr>
+                <th>方法</th>
+                <th>视角需求</th>
+                <th>训练时长</th>
+                <th>需 mask</th>
+                <th>需深度先验</th>
+                <th>开源</th>
+                <th>SOTA 定位</th>
+            </tr>
+            <tr><td><strong>2DGS</strong></td><td>10+</td><td>~30min</td><td>可选</td><td>否（隐式法线）</td><td>✅ 官方</td><td>几何质量 SOTA</td></tr>
+            <tr><td>3DGS（原版）</td><td>30+</td><td>~30min</td><td>否</td><td>否</td><td>✅ 官方</td><td>baseline</td></tr>
+            <tr><td>Mip-Splatting</td><td>20+</td><td>~40min</td><td>否</td><td>否</td><td>✅ 官方</td><td>抗锯齿 SOTA</td></tr>
+            <tr><td>Scaffold-GS</td><td>20+</td><td>~40min</td><td>否</td><td>否</td><td>✅ 官方</td><td>紧凑结构</td></tr>
+            <tr><td>3DGS-MCMC</td><td>20+</td><td>~30min</td><td>否</td><td>否</td><td>✅ 官方</td><td>密度控制 SOTA</td></tr>
+            <tr><td>SuGaR</td><td>20+</td><td>~45min+mesh</td><td>否</td><td>否</td><td>✅ 官方</td><td>mesh 提取 SOTA</td></tr>
+            <tr><td>GOF</td><td>15+</td><td>~40min</td><td>否</td><td>是（法线）</td><td>✅ 官方</td><td>表面 SOTA</td></tr>
+            <tr><td>DNGaussian</td><td>2-4</td><td>~15min</td><td>否</td><td>是（蒸馏）</td><td>✅ 官方</td><td>极稀疏 SOTA</td></tr>
+            <tr><td>MAC-Splat</td><td>2-12</td><td>&lt;1min</td><td>否</td><td>是（MASt3R）</td><td>待发布</td><td>ECCV2026 稀疏 SOTA</td></tr>
+            <tr><td><strong>PDF-GS</strong></td><td>任意</td><td>+baseline</td><td>否</td><td>否</td><td>✅ 官方</td><td>鲁棒性 SOTA（CVPR26F）</td></tr>
+            <tr><td>GITG</td><td>任意</td><td>~45min</td><td>可选</td><td>否</td><td>✅ 官方</td><td>野外鲁棒</td></tr>
+            <tr><td>Deformable-3DGS</td><td>视频</td><td>~40min</td><td>否</td><td>否</td><td>✅ 官方</td><td>动态微动</td></tr>
+            <tr><td><strong>HUGS</strong></td><td>4-8</td><td>~30min</td><td>是</td><td>SMPL</td><td>✅ 官方</td><td>人体少视角</td></tr>
+            <tr><td>GaussianAvatars</td><td>8-16</td><td>~60min</td><td>是</td><td>mesh</td><td>✅ 官方</td><td>人体动画</td></tr>
+            <tr><td>FMGS-Avatar</td><td>视频</td><td>~60min</td><td>否</td><td>Sapiens</td><td>待发布</td><td>单目人体几何</td></tr>
+            <tr><td>Confidence-matters</td><td>多视角</td><td>+baseline</td><td>否</td><td>VGGT</td><td>待发布</td><td>镜面/几何先验</td></tr>
+            <tr><td>JOintGS</td><td>多视角</td><td>~45min</td><td>否</td><td>联合优化</td><td>✅ 官方</td><td>抗噪声人体</td></tr>
+        </table>
+
+        <h3>7.2 按你的场景评分</h3>
+        <table>
+            <tr>
+                <th>方法</th>
+                <th>几何质量</th>
+                <th>抗微动</th>
+                <th>抗生成不一致</th>
+                <th>工程量</th>
+                <th>人体适配</th>
+                <th>综合推荐</th>
+            </tr>
+            <tr><td><strong>2DGS + PDF-GS</strong></td><td>★★★★★</td><td>★★★★</td><td>★★★★★</td><td>★★★</td><td>★★★</td><td><strong style="color:var(--accent)">⭐⭐⭐⭐⭐</strong></td></tr>
+            <tr><td>2DGS</td><td>★★★★★</td><td>★★★</td><td>★★</td><td>★★★★★</td><td>★★★</td><td>⭐⭐⭐⭐</td></tr>
+            <tr><td>HUGS</td><td>★★★★</td><td>★★★★</td><td>★★★</td><td>★★★</td><td>★★★★★</td><td>⭐⭐⭐⭐</td></tr>
+            <tr><td>Deformable-3DGS</td><td>★★★</td><td>★★★★★</td><td>★★★★</td><td>★★</td><td>★★★★</td><td>⭐⭐⭐</td></tr>
+            <tr><td>AniGS</td><td>★★★</td><td>★★★★</td><td>★★★★★</td><td>★★</td><td>★★★</td><td>⭐⭐⭐</td></tr>
+            <tr><td>JOintGS</td><td>★★★★</td><td>★★★★</td><td>★★★</td><td>★★</td><td>★★★★★</td><td>⭐⭐⭐</td></tr>
+            <tr><td>原版 3DGS</td><td>★★</td><td>★★</td><td>★</td><td>★★★★★</td><td>★★</td><td>⭐⭐</td></tr>
+        </table>
+    </div>
+
+    <!-- 8. 场景推荐组合 -->
+    <div class="section" id="scenario">
+        <h2>8. 针对本场景的推荐组合</h2>
+
+        <div class="highlight">
+            <strong>场景定义：</strong>12-16 真拍视角（含肢体微动） + SAM2 mask + Wan 2.2 生成旋转帧（含生成不一致） + 不需可驱动 + 暂缓长发/宽松衣物
+        </div>
+
+        <h3>8.1 推荐主组合</h3>
+        <div class="flow"><span class="step">2DGS</span>（baseline 几何质量）
+  <span class="arrow">+</span> <span class="step">PDF-GS</span>（处理微动 + 生成帧不一致）
+  <span class="arrow">+</span> <span class="step">SAM2 mask</span>（前景监督，已有）
+  <span class="arrow">+</span> <span class="step">真拍 N 视角 λ=1.0</span>（几何锚点）
+  <span class="arrow">+</span> <span class="step">生成 M 帧 λ=0.3</span>（视角补全，置信度加权）</div>
+
+        <h3>8.2 升级路径</h3>
+        <p>若主组合仍残留问题，按以下顺序升级：</p>
+        <ol>
+            <li><strong>主组合不足时 →</strong> 加 HUGS 范式：SMPL-X 初始化高斯 + LBS 偏移场学习（处理衣物超出模板）</li>
+            <li><strong>仍有残差 →</strong> 上 Deformable-3DGS：变形场建模微动（更重但更鲁棒）</li>
+            <li><strong>极端情况 →</strong> 上 AniGS：4D 范式把不一致图像当 4D 任务处理</li>
+        </ol>
+
+        <h3>8.3 不同子场景的最优解</h3>
+        <table>
+            <tr>
+                <th>子场景</th>
+                <th>最优解</th>
+                <th>理由</th>
+            </tr>
+            <tr>
+                <td>仅真拍 N 视角，不上生成帧</td>
+                <td>2DGS + PDF-GS + SAM2</td>
+                <td>PDF-GS 直接处理微动 distractor</td>
+            </tr>
+            <tr>
+                <td>真拍 + Wan 生成帧联合</td>
+                <td>2DGS + PDF-GS + 置信度加权</td>
+                <td>真拍 λ=1.0 锚几何，生成 λ=0.3 补稀疏</td>
+            </tr>
+            <tr>
+                <td>需可驱动数字人</td>
+                <td>HUGS 或 GaussianAvatars</td>
+                <td>SMPL 绑定直接产出可动画资产</td>
+            </tr>
+            <tr>
+                <td>微动严重到 PDF-GS 失效</td>
+                <td>Deformable-3DGS</td>
+                <td>显式变形场建模</td>
+            </tr>
+            <tr>
+                <td>需要 mesh 输出</td>
+                <td>SuGaR 或 GOF</td>
+                <td>专为 mesh 提取设计</td>
+            </tr>
+            <tr>
+                <td>标定误差与微动误差难分离</td>
+                <td>JOintGS</td>
+                <td>联合优化相机/姿态/高斯</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 9. 立即可执行的实施方案 -->
+    <div class="section" id="implement">
+        <h2>9. 立即可执行的实施方案</h2>
+
+        <h3>9.1 第一阶段：2DGS baseline（1-2 天）</h3>
+        <pre><code>git clone https://github.com/hbb1/2d-gaussian-splatting
+cd 2d-gaussian-splatting
+conda env create -f environment.yml
+conda activate 2dgs
+
+# 输入数据准备：
+# - images/ 目录放 12-16 真拍视角图
+# - masks/ 目录放 SAM2 输出的 mask（同名）
+# - 用 COLMAP 算相机位姿（images + masks 一起输入）
+
+python train.py \
+    -s <path_to_input> \
+    -m <path_to_output> \
+    --mask_path <path_to_masks> \
+    --iterations 30000
+
+# 训练 ~20-40min，看 baseline 失败模式</code></pre>
+
+        <h3>9.2 第二阶段：叠加 PDF-GS（1-2 天）</h3>
+        <pre><code>git clone https://github.com/kangrnin/PDF-GS
+cd PDF-GS
+# 按 README 集成到 2DGS 训练流程
+# 关键参数：distractor_threshold, progressive_stages
+
+# 对比 baseline，看漂浮点和双影是否减少</code></pre>
+
+        <h3>9.3 第三阶段：加入生成帧（按需）</h3>
+        <pre><code># 把 Wan 2.2 生成的 M 帧作为额外视角输入
+# 关键：在 3DGS 训练损失里加权
+# 真拍视角 λ=1.0，生成视角 λ=0.3
+
+# 在 train.py 中修改 loss：
+# L = λ_real * L_real + λ_gen * L_gen
+# 或用 confidence-weighted loss（参考 Confidence-matters 思路）</code></pre>
+
+        <h3>9.4 第四阶段：若残差大，升级 HUGS（1-2 周）</h3>
+        <pre><code>git clone https://github.com/apple24f/HUGS
+# 需要：SMPL-X 估计（PIXIE/ExPose/HMR2.0）
+# 训练：SMPL 初始化高斯 + LBS 学习 + 偏移场
+# 训练 ~30min，输出可驱动数字人</code></pre>
+
+        <h3>9.5 验证与对比</h3>
+        <ul>
+            <li>固定测试视角（hold-out），算 PSNR/SSIM/LPIPS</li>
+            <li>用 Objaverse 高质量人体模型合成 GT，做 Chamfer 距离评估</li>
+            <li>主观对比：2DGS baseline vs +PDF-GS vs +生成帧 vs +HUGS</li>
+            <li>记录失败模式分布：漂浮点？双影？空洞？纹理模糊？</li>
+        </ul>
+    </div>
+
+    <!-- 10. 不推荐方案 -->
+    <div class="section" id="avoid">
+        <h2>10. 不推荐方案</h2>
+
+        <div class="highlight red">
+            <strong>以下方案不适合你的场景，避免踩坑：</strong>
+        </div>
+
+        <h3>10.1 原版 3DGS</h3>
+        <p>漂浮点多、几何质量差、对微动极敏感。已有 2DGS 这个全面升级版，没必要再走老路。</p>
+
+        <h3>10.2 Feedforward LRM 类（GS-LRM / Splatt3R / MAC-Splat）</h3>
+        <p>这些是单图/少图前馈式重建，速度快但对"含微动真实多视角 + 生成帧混合"这种非常规输入泛化差。你的输入不是它们的训练分布。</p>
+
+        <h3>10.3 极稀疏方法（DNGaussian）</h3>
+        <p>专为 2-4 视角设计，需要强先验蒸馏。你 12-16 视角用不上这么激进的方案，反而引入不必要的先验偏差。</p>
+
+        <h3>10.4 一上来就上 Deformable-3DGS / AniGS</h3>
+        <p>虽然对微动友好，但工程量大、训练慢。应该先用 PDF-GS 这种轻量方案试，不够再升级。</p>
+
+        <h3>10.5 纯生成式 3D 重建（SDS / DreamGaussian）</h3>
+        <p>质量不稳定，Janus 问题、漂浮物、纹理模糊。你已有真拍数据，没必要走纯生成路线。</p>
+    </div>
+
+    <!-- 相关资源链接 -->
+    <div class="section">
+        <h2>🔗 相关资源链接</h2>
+        <div class="links">
+            <a href="https://github.com/hbb1/2d-gaussian-splatting">📦 2DGS</a>
+            <a href="https://github.com/kangrnin/PDF-GS">📦 PDF-GS</a>
+            <a href="https://github.com/apple24f/HUGS">📦 HUGS</a>
+            <a href="https://github.com/QianyiWu/GaussianAvatars">📦 GaussianAvatars</a>
+            <a href="https://github.com/MiliLab/JOintGS">📦 JOintGS</a>
+            <a href="3D-20230808-3DGS-Survey.html">📄 3DGS 综述</a>
+            <a href="3D-20230922-Deformable-3DGS.html">📄 可变形 3DGS</a>
+            <a href="3D-20260720-Gaussian-Human-Face-Recon.html">📄 人脸 3DGS</a>
+            <a href="微动人体三维重建-思路辨析.html">📄 思路辨析文档</a>
+            <a href="微动人体三维重建调研.html">📄 原始调研</a>
+            <a href="index.html">🏠 知识库首页</a>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    📝 3DGS 多视角重建 SOTA 调研 · 生成于 2026-08-12 · 场景：真拍多视角 + 微动 + 人体
+</div>
+
+</body>
+</html>
