@@ -374,7 +374,7 @@
                 <span class="tag">ECCV 2026</span>
             </div>
             <p>从单一模态向多模态统一演进（TriMotion 三模态），从隐式对应向显式 3D 点轨迹升级（Track2View），从 SFT 向 RL 对齐发展（Geo-Align）。旋转误差降低 30-65%，平移误差降低 61-72%。</p>
-            <a href="VideoGen-20260618-CameraControl.html">📖 阅读笔记</a>
+            <a href="VideoGen-20260618-视频生成相机可控性调研.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2606.20774" target="_blank">📄 TriMotion</a>
             <a href="https://arxiv.org/abs/2606.15534" target="_blank">📄 Track2View</a>
             <a href="https://arxiv.org/abs/2605.23903" target="_blank">📄 Geo-Align</a>
@@ -395,7 +395,7 @@
                 <span class="tag">ICML 2026</span>
             </div>
             <p>从架构修改注入 3D 先验转向 RL 强化 3D 约束（World-R1, ICML 2026），从 RGB 空间循环转向潜空间 3D 高斯记忆（Robust Dreamer），从外部 3D 重建转向注意力层内点追踪监督（MVTrack4Gen）。</p>
-            <a href="VideoGen-20260427-GeometricConsistency.html">📖 阅读笔记</a>
+            <a href="VideoGen-20260427-视频生成几何一致性调研.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2604.24764" target="_blank">📄 World-R1</a>
             <a href="https://arxiv.org/abs/2605.30855" target="_blank">📄 Robust Dreamer</a>
             <a href="https://arxiv.org/abs/2606.26087" target="_blank">📄 MVTrack4Gen</a>
@@ -734,7 +734,7 @@
                 <span class="tag">Survey</span>
             </div>
             <p>3DGS 用可学习高斯椭球体显式表示场景，实现 1080p 30+ FPS 实时新视角合成。改进工作涵盖：GaussianPro (MVS 启发的密度化)、3DGS-MCMC (MCMC 采样)、Mip-Splatting (抗锯齿)、2DGS (表面重建)、SuGaR (表面对齐)、Scaffold-GS (锚点引导)。</p>
-            <a href="3D-20230808-3DGS-Survey.html">📖 阅读笔记</a>
+            <a href="3D-20230808-3DGS基础与改进综述.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2308.04079" target="_blank">📄 3DGS 原始</a>
             <a href="https://arxiv.org/abs/2402.14650" target="_blank">📄 GaussianPro</a>
         </div>
@@ -753,7 +753,7 @@
                 <span class="tag">0.1s ~ 1s</span>
             </div>
             <p>前馈重建是最重要趋势：LRM (Triplane NeRF) → GRM (像素对齐高斯) → GS-LRM (每像素高斯, 场景级) → Long-LRM (32 视角 360°) → Long-LRM++ (14 FPS 实时)。从仅物体到场景级，从 2-4 张到 32-64 张输入。</p>
-            <a href="3D-20231110-FeedForward-Reconstruction.html">📖 阅读笔记</a>
+            <a href="3D-20231110-前馈3D重建模型综述.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2404.19702" target="_blank">📄 GS-LRM</a>
             <a href="https://arxiv.org/abs/2410.12781" target="_blank">📄 Long-LRM</a>
         </div>
@@ -814,7 +814,7 @@
                 <span class="tag">2D+3D Diffusion</span>
             </div>
             <p>DreamGaussian: 渐进密度化高斯 + 网格提取 + UV 精调, 2 分钟图生 3D (10× 加速)。GaussianDreamer: 3D 扩散先验初始化 + 2D 扩散精化, 15 分钟文生 3D, CVPR 2024。验证了高斯是 3D 生成的正确表示。</p>
-            <a href="3D-20230928-3D-Generation-Gaussian.html">📖 阅读笔记</a>
+            <a href="3D-20230928-3D生成高斯方法综述.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2309.16653" target="_blank">📄 DreamGaussian</a>
             <a href="https://arxiv.org/abs/2310.08529" target="_blank">📄 GaussianDreamer</a>
         </div>
@@ -833,7 +833,7 @@
                 <span class="tag">4D Segmentation</span>
             </div>
             <p>Dynamic 3D Gaussians: 高斯随时间移动旋转, 局部刚性约束, 从持久视图合成涌现 6-DOF 追踪 (无需对应/光流输入)。SA4D: 4D 分割框架。DGD: 单目视频语义动态场。4DLangVGGT: 动态场景语言-几何统一。</p>
-            <a href="3D-20230818-4D-Dynamic-Gaussians.html">📖 阅读笔记</a>
+            <a href="3D-20230818-4D动态高斯综述.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2308.09713" target="_blank">📄 Dynamic 3D Gaussians</a>
         </div>
 
@@ -1148,7 +1148,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-07-20 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 36 篇笔记卡片（39 篇论文总数见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-08-12 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 36 篇笔记卡片（39 篇论文总数见 knowledge-index.json）
 </div>
 
 </body>

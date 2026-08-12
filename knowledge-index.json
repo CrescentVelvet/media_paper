@@ -1,6 +1,6 @@
 {
   "version": "1.1",
-  "updated": "2026-07-20",
+  "updated": "2026-08-12",
   "paper_count": 40,
   "categories": ["CV/AI", "VideoGen", "3D", "SR"],
   "papers": [
@@ -166,7 +166,7 @@
     },
     {
       "id": "p17",
-      "file": "VideoGen-20260427-GeometricConsistency.html",
+      "file": "VideoGen-20260427-视频生成几何一致性调研.html",
       "title": "视频生成中的几何一致性技术方向调研",
       "arxiv": "",
       "date": "2026-04-27",
@@ -176,7 +176,7 @@
     },
     {
       "id": "p18",
-      "file": "VideoGen-20260618-CameraControl.html",
+      "file": "VideoGen-20260618-视频生成相机可控性调研.html",
       "title": "视频生成中的相机可控性技术方向调研",
       "arxiv": "",
       "date": "2026-06-18",
@@ -276,7 +276,7 @@
     },
     {
       "id": "p20",
-      "file": "3D-20230808-3DGS-Survey.html",
+      "file": "3D-20230808-3DGS基础与改进综述.html",
       "title": "3D Gaussian Splatting: 基础技术与改进综述",
       "arxiv": "2308.04079",
       "date": "2023-08-08",
@@ -286,7 +286,7 @@
     },
     {
       "id": "p21",
-      "file": "3D-20230818-4D-Dynamic-Gaussians.html",
+      "file": "3D-20230818-4D动态高斯综述.html",
       "title": "4D / 动态 3D 高斯: 动态场景重建与追踪",
       "arxiv": "2308.09713",
       "date": "2023-08-18",
@@ -296,7 +296,7 @@
     },
     {
       "id": "p22",
-      "file": "3D-20230928-3D-Generation-Gaussian.html",
+      "file": "3D-20230928-3D生成高斯方法综述.html",
       "title": "3D 生成: DreamGaussian / GaussianDreamer",
       "arxiv": "2309.16653",
       "date": "2023-09-28",
@@ -306,7 +306,7 @@
     },
     {
       "id": "p23",
-      "file": "3D-20231110-FeedForward-Reconstruction.html",
+      "file": "3D-20231110-前馈3D重建模型综述.html",
       "title": "前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D",
       "arxiv": "2311.06214",
       "date": "2023-11-10",
@@ -396,7 +396,7 @@
     },
     {
       "id": "p40",
-      "file": "微动人体三维重建调研.html",
+      "file": "3D-20260810-微动人体三维重建调研.html",
       "title": "微动人体三维重建调研 — 从视频生成几何一致性到生成式三维重建的技术路线",
       "arxiv": "",
       "date": "2026-08-10",

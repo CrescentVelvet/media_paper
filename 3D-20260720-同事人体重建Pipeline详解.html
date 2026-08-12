@@ -122,7 +122,7 @@
         <span>📅 2026-07-27</span>
         <span>📂 3D / Digital Human / Pipeline</span>
         <span>🔍 9 步详解 + 框图 + 大白话 + 术语表</span>
-        <span>🔗 关联：<a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html" style="color:var(--accent)">同事方案分析（MHR 版）</a></span>
+        <span>🔗 关联：<a href="3D-20260720-同事方案MHR高斯数字人分析.html" style="color:var(--accent)">同事方案分析（MHR 版）</a></span>
     </div>
 </div>
 
@@ -837,7 +837,7 @@
         <table>
             <tr><th>术语</th><th>解释</th></tr>
             <tr><td><strong>AvatarGaussianModel</strong></td><td>人脸高斯模型类（代码类名），管理绑骨高斯</td></tr>
-            <tr><td><strong>绑骨（rig）</strong></td><td>把高斯绑到 mesh 三角面，让高斯跟随 mesh 形变（详见 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html#section-7">第七章 LBS 解码</a>）</td></tr>
+            <tr><td><strong>绑骨（rig）</strong></td><td>把高斯绑到 mesh 三角面，让高斯跟随 mesh 形变（详见 <a href="3D-20260720-同事方案MHR高斯数字人分析.html#section-7">第七章 LBS 解码</a>）</td></tr>
             <tr><td><strong>FaceAlignment</strong></td><td>对齐结果类，继承全局 SRT 和身份系数</td></tr>
             <tr><td><strong>可微渲染</strong></td><td>渲染过程可求导，能用梯度下降优化高斯参数</td></tr>
         </table>
@@ -889,7 +889,7 @@
         <div class="algo-ref">
             <strong>BodyGaussianModel</strong>：同事 pipeline 的代码类名。与脸不同，身体没有精确 3D 参数化模型（未用 MHR/SMPL），所以<strong>从场景点云里抠出身体部分</strong>作为高斯初始化。这是 HUGS (CVPR 2024) 早期"SMPL 初始化 + 偏离"思路的简化版——同事连 SMPL 都没用，直接用场景点云。<br>
             <span style="color:var(--text-dim);">流程：场景点云 ∩ body mask → 去人脸附近点云 → 深度重投影稠密化 → 代表视角颜色初始化。</span><br>
-            <span style="color:var(--warn);">⚠️ 这种方式身体不可驱动新 pose（无 rig 骨架）。要可驱动需升级为 MHR/SMPL + LBS（见 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a>）。</span>
+            <span style="color:var(--warn);">⚠️ 这种方式身体不可驱动新 pose（无 rig 骨架）。要可驱动需升级为 MHR/SMPL + LBS（见 <a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析</a>）。</span>
         </div>
 
         <div class="io-box">
@@ -1071,7 +1071,7 @@
 
         <h3>代码示意（核心训练循环）</h3>
         <div class="algo-ref">
-            <strong>3DGS 训练标准范式</strong>（参考 <a href="3D-20230808-3DGS-Survey.html">3DGS Survey</a> / HUGS / GaussianAvatars）：可微高斯渲染 + 多损失 + 自适应密度控制 + SH 阶数渐进升级。同事 pipeline 的特殊点：(1) <strong>多模型叠加渲染</strong>（avatar+body+scene+bg 一起）；(2) <strong>禁用动态干扰消除和新视角生成</strong>（先把静态建好）；(3) <strong>位姿优化 + 曝光补偿</strong>（联合优化相机位姿和光照）；(4) <strong>表情统一为代表视角</strong>（避免表情差异污染 canonical）。<br>
+            <strong>3DGS 训练标准范式</strong>（参考 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS Survey</a> / HUGS / GaussianAvatars）：可微高斯渲染 + 多损失 + 自适应密度控制 + SH 阶数渐进升级。同事 pipeline 的特殊点：(1) <strong>多模型叠加渲染</strong>（avatar+body+scene+bg 一起）；(2) <strong>禁用动态干扰消除和新视角生成</strong>（先把静态建好）；(3) <strong>位姿优化 + 曝光补偿</strong>（联合优化相机位姿和光照）；(4) <strong>表情统一为代表视角</strong>（避免表情差异污染 canonical）。<br>
             <span style="color:var(--text-dim);">关键超参：分裂梯度阈值、剪枝不透明度阈值、SH 升级里程碑。这些是 3DGS 标准调参点，具体值取决于同事实验。</span>
         </div>
 
@@ -1180,7 +1180,7 @@
     <!-- 与 MHR 方案的关系 -->
     <div class="section">
         <h2>🔗 与之前讨论的 MHR 方案的关系</h2>
-        <p>当前同事的 pipeline（本文件描述）与之前讨论的 MHR pipeline（<a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a>）有一些关键差异，对比如下：</p>
+        <p>当前同事的 pipeline（本文件描述）与之前讨论的 MHR pipeline（<a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析</a>）有一些关键差异，对比如下：</p>
 
         <table>
             <tr><th>维度</th><th>当前 pipeline（本文档）</th><th>MHR pipeline（之前讨论）</th></tr>
@@ -1207,7 +1207,7 @@
 
         <p>参见：</p>
         <ul>
-            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
+            <li><a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
             <li><a href="3D-20260720-MHR.html">MHR 论文</a> — 参数化人体模型（SMPL 升级版）</li>
             <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 数字人的开山工作</li>
         </ul>
@@ -1424,12 +1424,12 @@
         <h2>🔗 资源链接</h2>
         <h3>知识库相关笔记</h3>
         <ul>
-            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
+            <li><a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
             <li><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> — FLAME + rigged Gaussians 人脸方案原型</li>
             <li><a href="3D-20260720-MHR.html">MHR</a> — SMPL 升级版参数化人体模型</li>
             <li><a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> — 单图预测 MHR 参数的 HMR 模型</li>
             <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 全身数字人</li>
-            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> — 40+ 篇全景</li>
+            <li><a href="3D-20260720-高斯人物与人脸重建调研.html">3D 高斯人物与人脸重建调研</a> — 40+ 篇全景</li>
             <li><a href="SR-20250728-HYPIR.html">HYPIR</a> — 扩散先验图像复原模型</li>
             <li><a href="SR-20260629-RealISR-Evolution.html">Real-ISR 综述</a> — 图像增强算法选型</li>
         </ul>

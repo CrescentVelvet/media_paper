@@ -151,7 +151,7 @@
     <!-- 1. 背景 -->
     <div class="section" id="background">
         <h2>1. 背景与原调研结论</h2>
-        <p>本调研承接自 <code>微动人体三维重建调研.html</code>。原调研综述了六大维度：(1) 可变形 3DGS、(2) 视频生成几何一致性、(3) 骨骼/姿态引导、(4) 动转静/姿态归一化、(5) 生成式三维重建、(6) Wan 模型几何一致性特性。</p>
+        <p>本调研承接自 <code>3D-20260810-微动人体三维重建调研.html</code>。原调研综述了六大维度：(1) 可变形 3DGS、(2) 视频生成几何一致性、(3) 骨骼/姿态引导、(4) 动转静/姿态归一化、(5) 生成式三维重建、(6) Wan 模型几何一致性特性。</p>
 
         <div class="highlight">
             <strong>原调研核心推荐：</strong>"动转静 + 3DGS 重建路线"——基于 Wan 2.2 LoRA 现有基础，采用"单图 + 多姿态条件生成静止旋转视频 → 3DGS 重建"。工程落地难度最低，与现有技术栈兼容性最好。
@@ -595,18 +595,18 @@
         <h3>10.4 建议补充阅读的现有调研</h3>
         <p>调研库里已有但本次辨析中被低估或未引用的相关文档：</p>
         <ul>
-            <li><code>3D-20260720-Gaussian-Human-Face-Recon.html</code>——人脸 3DGS 专项</li>
+            <li><code>3D-20260720-高斯人物与人脸重建调研.html</code>——人脸 3DGS 专项</li>
             <li><code>3D-20260720-GaussianAvatars.html</code>——FLAME + 3DGS 范式</li>
-            <li><code>3D-20260720-MHR-Gaussian-Avatar-Analysis.html</code>——多视角人体化身分析</li>
+            <li><code>3D-20260720-同事方案MHR高斯数字人分析.html</code>——多视角人体化身分析</li>
             <li><code>3D-20230922-Deformable-3DGS.html</code>——可变形 3DGS 全景</li>
             <li><code>VideoGen-20250305-GEN3C.html</code>——3D 缓存引导生成</li>
-            <li><code>VideoGen-20260427-GeometricConsistency.html</code>——几何一致性调研</li>
+            <li><code>VideoGen-20260427-视频生成几何一致性调研.html</code>——几何一致性调研</li>
         </ul>
         <p>这些是已有的一手资料，建议在下一版调研里把人体/人脸专用方法整合进去，否则会出现"做了人体调研，结论却像在做通用物体"的偏差。</p>
 
         <h3>10.5 需要修正的原调研结论</h3>
         <div class="highlight red">
-            <strong>原调研 <code>微动人体三维重建调研.html</code> 需要修正的部分：</strong>
+            <strong>原调研 <code>3D-20260810-微动人体三维重建调研.html</code> 需要修正的部分：</strong>
             <ol style="margin-bottom:0;">
                 <li><strong>"动转静"概念重定义：</strong>从"Wan 生成旋转视频"改为"姿态归一化"（无论是 SMPL 规范化还是生成端锁姿态）</li>
                 <li><strong>骨骼引导路线评级上调：</strong>对人类场景，从"★★★★ 工程复杂度"下调为"★★★ 中等"，应升为主路线候选之一</li>
@@ -621,13 +621,13 @@
     <div class="section">
         <h2>🔗 相关资源链接</h2>
         <div class="links">
-            <a href="微动人体三维重建调研.html">📄 原始调研文档</a>
+            <a href="3D-20260810-微动人体三维重建调研.html">📄 原始调研文档</a>
             <a href="3D-20230922-Deformable-3DGS.html">📄 可变形 3DGS 详解</a>
-            <a href="3D-20260720-Gaussian-Human-Face-Recon.html">📄 人脸 3DGS 调研</a>
+            <a href="3D-20260720-高斯人物与人脸重建调研.html">📄 人脸 3DGS 调研</a>
             <a href="3D-20260720-GaussianAvatars.html">📄 GaussianAvatars</a>
             <a href="VideoGen-20250728-Wan2.2.html">📄 Wan 2.2 详解</a>
             <a href="VideoGen-20250305-GEN3C.html">📄 GEN3C 3D 缓存引导</a>
-            <a href="VideoGen-20260427-GeometricConsistency.html">📄 几何一致性调研</a>
+            <a href="VideoGen-20260427-视频生成几何一致性调研.html">📄 几何一致性调研</a>
             <a href="index.html">🏠 返回知识库首页</a>
         </div>
     </div>

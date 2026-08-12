@@ -471,7 +471,7 @@
     <!-- 与知识库相关论文的联系 -->
     <div class="section">
         <h2>🔗 与知识库相关论文的联系</h2>
-        <p>F3G-Avatar 是知识库中 <a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建调研</a> 与 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析</a> 两篇笔记的核心案例论文。它在全身表达子方向中代表"<strong>脸部分支专用化</strong>"路线。</p>
+        <p>F3G-Avatar 是知识库中 <a href="3D-20260720-高斯人物与人脸重建调研.html">3D 高斯人物与人脸重建调研</a> 与 <a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析</a> 两篇笔记的核心案例论文。它在全身表达子方向中代表"<strong>脸部分支专用化</strong>"路线。</p>
 
         <h3>上下游技术关系</h3>
         <table>
@@ -539,7 +539,7 @@
             <li><strong>对抗损失换感知质量而非 PSNR：</strong>消融显示去掉 ℒ_adv 后 PSNR 反升到 27.0，但 LPIPS 变差。这是生成对抗损失的经典 trade-off —— 优化感知分布而非像素误差。F3G-Avatar 用 StyleGAN2 判别器，继承 StyleGAN 系列在脸部感知上的优势。</li>
             <li><strong>与 EVA 的对比定位：</strong>EVA (SIGGRAPH 2025) 也做身体+脸解耦，但用"两层模板几何 + 高斯外观"思路；F3G-Avatar 用"双分支高斯预测"思路，更轻量、更专注脸部。EVA 是工业级多目方案标杆，F3G-Avatar 是脸部细节工程化的代表。</li>
             <li><strong>限制：</strong>(1) 需要 SMPL-X 参数作为输入，tracking 质量影响最终效果；(2) MHR 转换需要优化，依赖 SMPL-X 的初始估计；(3) 每人 1.5 天训练，无法做到单图前馈；(4) 仅在 AvatarReX/THuman4.0 评测，真实野外场景未验证；(5) 没有显式头发/手部专用分支，仍是"脸 + 身体"二元划分。</li>
-            <li><strong>与"同事方案"高度重合：</strong>F3G-Avatar 几乎是同事方案（MHR + clothed 模板 + 双分支 + LBS + 高斯渲染 + 脸部对抗损失）的<strong>完整学术实现</strong>。强烈建议在动手前精读这篇，直接复用其架构避免重复造轮子，详见 <a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析笔记</a>。</li>
+            <li><strong>与"同事方案"高度重合：</strong>F3G-Avatar 几乎是同事方案（MHR + clothed 模板 + 双分支 + LBS + 高斯渲染 + 脸部对抗损失）的<strong>完整学术实现</strong>。强烈建议在动手前精读这篇，直接复用其架构避免重复造轮子，详见 <a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析笔记</a>。</li>
         </ul>
     </div>
 
@@ -654,9 +654,9 @@
         </div>
         <h3 style="margin-top:20px;">知识库相关笔记</h3>
         <ul>
-            <li><a href="3D-20260720-Gaussian-Human-Face-Recon.html">3D 高斯人物与人脸重建研究现状调研</a> — F3G-Avatar 出现在"全身表达"子方向</li>
-            <li><a href="3D-20260720-MHR-Gaussian-Avatar-Analysis.html">同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline</a> — F3G-Avatar 是该分析的核心参考论文</li>
-            <li><a href="3D-20230808-3DGS-Survey.html">3D Gaussian Splatting 基础与改进综述</a> — 3DGS 基础</li>
+            <li><a href="3D-20260720-高斯人物与人脸重建调研.html">3D 高斯人物与人脸重建研究现状调研</a> — F3G-Avatar 出现在"全身表达"子方向</li>
+            <li><a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline</a> — F3G-Avatar 是该分析的核心参考论文</li>
+            <li><a href="3D-20230808-3DGS基础与改进综述.html">3D Gaussian Splatting 基础与改进综述</a> — 3DGS 基础</li>
         </ul>
     </div>
 
