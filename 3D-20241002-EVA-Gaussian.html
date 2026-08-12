@@ -184,6 +184,7 @@
     <li><a href="#flowchart">逻辑流程图</a></li>
     <li><a href="#experiments">实验结果</a></li>
     <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
     <li><a href="#conclusion">总结</a></li>
   </ol>
 </div>
@@ -709,9 +710,127 @@ flowchart TD
 </div>
 </section>
 
+<!-- ==================== IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">12</span>可改进方向分析</h2>
+
+<p class="lead">基于对论文方法与官方代码的深入研读,本节从<strong>方法、数据与评估、工程实用性</strong>三个维度分析 EVA-Gaussian 的可改进方向,并标注每项的优先级与代码佐证。</p>
+
+<h3>12.1 方法层面</h3>
+
+<div class="card" style="border-left:3px solid var(--red)">
+<h4>① 多视角支持"名不副实"<span style="color:var(--red);font-size:13px">[高优先级]</span></h4>
+<p>论文宣称支持 $n$ 视角输入,但代码中 <code>EVANet.forward</code> 硬编码了 <code>lmain/rmain</code> 双视角(<code>torch.stack([data['lmain']['img'], data['rmain']['img']], dim=1)</code>),EVA 模块虽理论上可扩展到 $n$ 视角,但训练与推理流程被锁死在 stereo。</p>
+<p><strong>改进</strong>:真正实现可变 $n$ 视角输入,用 set-based 注意力(如 Perceiver / Transformer 编码器)替代固定双视角栈,使网络能自适应处理 2~6+ 视角。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--orange)">
+<h4>② 1D 窗口假设的几何脆弱性<span style="color:var(--orange);font-size:13px">[中优先级]</span></h4>
+<p>EVA 的核心先验是"人体居中 → 对极线近似平行 x 轴",这要求相机<strong>水平环绕</strong>排列。一旦相机有俯仰角、上下排列、或人体偏离中心,窗口沿 x 轴划分就失效。</p>
+<p><strong>改进</strong>:引入<strong>对极几何感知的窗口方向自适应</strong>——根据基础矩阵 $\bm{F}$ 动态决定窗口主轴方向;或用可变形窗口 (deformable window) 学习最优窗口形状,而非固定沿 x 轴。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--red)">
+<h4>③ 关键点仅约束面部<span style="color:var(--red);font-size:13px">[高优先级]</span></h4>
+<p><code>anchor_loss</code> 只用了 MediaPipe 人脸关键点。但消融实验(11 节)显示伪影高发区恰是<strong>手部、脚部</strong>,这些区域没有关键点约束。</p>
+<p><strong>改进</strong>:引入全身关键点(COCO-17 / SMPL joints / MediaPipe Holistic 478 点),对关节、指尖、脚趾等高频区域施加跨视角一致性约束。手部关键点对消除手部伪影尤为关键。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--accent2)">
+<h4>④ 特征精修是单向后处理<span style="color:var(--accent2);font-size:13px">[中优先级]</span></h4>
+<p>循环 U-Net 只在末端精修,精修信息<strong>未回传</strong>到位置/属性估计阶段。这是一个"信息单向流"的设计,精修器无法指导前端改进。</p>
+<p><strong>改进</strong>:引入<strong>端到端的循环反馈</strong>——精修后的图像特征回传重估计位置 → 重属性;或用可微渲染的梯度直接回传到位置网络,形成闭环优化。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--orange)">
+<h4>⑤ 无不确定性建模<span style="color:var(--orange);font-size:13px">[中优先级]</span></h4>
+<p>位置网络只输出点估计(深度值),没有置信度/方差。多视角聚合时所有高斯被同等对待,无法区分可靠与不可靠区域。</p>
+<p><strong>改进</strong>:让网络输出高斯位置的<strong>概率分布</strong>(均值+方差),在精修与聚合阶段按不确定性加权(类似 Kendall 的 aleatoric uncertainty),而非简单 α-混合。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--accent)">
+<h4>⑥ 无遮挡/可见性显式处理<span style="color:var(--accent);font-size:13px">[中优先级]</span></h4>
+<p>多视角聚合时未做可见性判断,被遮挡视角的高斯仍会贡献到渲染,可能导致"穿模"伪影。</p>
+<p><strong>改进</strong>:加 visibility mask 或学习各视角贡献权重(soft visibility),让被遮挡视角的高斯自动降权。</p>
+</div>
+
+<h3>12.2 数据与评估层面</h3>
+
+<div class="card" style="border-left:3px solid var(--red)">
+<h4>⑦ 仅在合成/受限数据集验证<span style="color:var(--red);font-size:13px">[高优先级]</span></h4>
+<p>THuman2.0 是 SMPL 渲染的合成数据(无真实纹理噪声),THumansit 仅坐姿单一姿态。缺乏真实捕获、多样服装、复杂姿态、跨种族验证。</p>
+<p><strong>改进</strong>:在 DNA-Rendering、RealHuman、CustomHuman 等真实捕获数据上验证;增加宽松服装、配饰、手持物体等困难场景测试。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--orange)">
+<h4>⑧ 缺乏时序一致性评估<span style="color:var(--orange);font-size:13px">[中优先级]</span></h4>
+<p>前馈单帧方法在视频上会闪烁(flickering),但论文未评估时序一致性。</p>
+<p><strong>改进</strong>:增加时序指标(tLP、光流一致性);或加时序平滑正则、跨帧特征对齐。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--accent)">
+<h4>⑨ 未与最新 SOTA 对比<span style="color:var(--accent);font-size:13px">[中优先级]</span></h4>
+<p>Tele-Aloha 仅在 related work 提及未实验对比;GHG、latentSplat、Splatter Image 也未纳入实验。消融中也未对比不同 EVA 窗口大小对最终质量的影响(仅 Table 1 给了计算开销)。</p>
+<p><strong>改进</strong>:补全基线对比;补充窗口大小 $w \in \{16,32,64\}$ 对 PSNR 的消融。</p>
+</div>
+
+<h3>12.3 工程与实用性层面</h3>
+
+<div class="card" style="border-left:3px solid var(--red)">
+<h4>⑩ 深度预训练依赖 GT depth<span style="color:var(--red);font-size:13px">[高优先级]</span></h4>
+<p><code>depthnet_pretrain.py</code> 需要合成深度真值,真实部署中难以获得(需 SMPL 渲染)。</p>
+<p><strong>改进</strong>:用自监督立体匹配、或 teacher-student 蒸馏(用预训练大模型做 pseudo-GT),减少对 GT depth 的依赖,使方法能在无标注真实数据上训练。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--orange)">
+<h4>⑪ anchor loss 权重 1000 偏大且固定<span style="color:var(--orange);font-size:13px">[中优先级]</span></h4>
+<p>代码中 <code>(10**3)*L_anchor</code> 与其他损失项量级悬殊(L_depth ~ 0.01, L_anchor × 1000),易致梯度失衡。容差 $t_2=0.05$ 也是固定值,未随训练阶段调整。</p>
+<p><strong>改进</strong>:用课程学习(初期小权重,后期增大)或自适应权重(GradNorm / Uncertainty Weighting / Homoscedastic loss)替代固定 10³。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--accent)">
+<h4>⑫ 特征维度 32 与循环次数 L 未充分讨论<span style="color:var(--accent);font-size:13px">[低优先级]</span></h4>
+<p>论文未消融这两个超参。特征维度是否最优?循环次数 L 增多是否持续收益?</p>
+<p><strong>改进</strong>:补充维度 $\in \{16,32,64,128\}$、循环次数 $L \in \{1,2,3,4\}$ 的 Pareto 曲线(质量-速度权衡)。</p>
+</div>
+
+<div class="card" style="border-left:3px solid var(--accent2)">
+<h4>⑬ 无 4D/动态扩展<span style="color:var(--accent2);font-size:13px">[中优先级]</span></h4>
+<p>方法本身是静态单帧重建,未支持动态运动序列的端到端时序建模。</p>
+<p><strong>改进</strong>:结合 4DGS / deformation field,扩展到动态人体运动序列;或用时空 attention 融合相邻帧信息。</p>
+</div>
+
+<h3>12.4 改进优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>影响维度</th><th>代码佐证</th></tr>
+<tr><td rowspan="3" style="color:var(--red);font-weight:700">高</td><td>① 真正实现可变 $n$ 视角</td><td>泛化性</td><td>EVANet.forward 硬编码 lmain/rmain</td></tr>
+<tr><td>③ 全身关键点约束</td><td>质量</td><td>anchor_loss 仅用 face 字段</td></tr>
+<tr><td>⑦ 真实数据验证</td><td>可信度</td><td>仅 THuman2.0/THumansit</td></tr>
+<tr><td>⑩ 自监督深度预训练</td><td>部署</td><td>depthnet_pretrain 需 GT depth</td></tr>
+<tr><td rowspan="6" style="color:var(--orange);font-weight:700">中</td><td>② 窗口方向自适应</td><td>鲁棒性</td><td>CVA 固定沿 x 轴划分</td></tr>
+<tr><td>④ 精修信息回传</td><td>质量</td><td>feature_refiner 无回传</td></tr>
+<tr><td>⑤ 不确定性建模</td><td>质量</td><td>位置网络无方差输出</td></tr>
+<tr><td>⑥ 可见性处理</td><td>质量</td><td>聚合无 visibility mask</td></tr>
+<tr><td>⑧ 时序一致性</td><td>视频</td><td>单帧方法无时序约束</td></tr>
+<tr><td>⑨ 补全 SOTA 对比</td><td>公平性</td><td>未对比 Tele-Aloha/GHG</td></tr>
+<tr><td>⑪ 自适应 anchor 权重</td><td>训练</td><td>固定 10³ 权重</td></tr>
+<tr><td>⑬ 4D 动态扩展</td><td>能力</td><td>静态单帧</td></tr>
+<tr><td style="color:var(--accent);font-weight:700">低</td><td>⑫ 特征维度/L 消融</td><td>完整性</td><td>未消融超参</td></tr>
+</table>
+
+<div class="callout key">
+<h4>个人认为最关键的三点</h4>
+<ol>
+<li><strong>真正实现可变 $n$ 视角</strong>(而非代码中的双视角锁死)——直接决定方法能否泛化到不同采集系统;</li>
+<li><strong>用全身关键点替换仅面部约束</strong>——直接针对消融暴露的手部/脚部伪影问题;</li>
+<li><strong>在真实捕获数据上验证泛化性</strong>——决定方法从"实验室 demo"走向"实际部署"的可行性。</li>
+</ol>
+</div>
+</section>
+
 <!-- ==================== CONCLUSION ==================== -->
 <section id="conclusion">
-<h2><span class="num">12</span>总结</h2>
+<h2><span class="num">13</span>总结</h2>
 
 <div class="callout key">
 <h4>EVA-Gaussian 的四大贡献</h4>
