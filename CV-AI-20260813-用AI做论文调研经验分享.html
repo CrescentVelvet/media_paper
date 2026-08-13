@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用 AI 做论文调研:从链接到深度分析笔记的工作流</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7; padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  pre code{background:none; padding:0; color:#e2e8f0}
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+  details{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 20px; margin:14px 0}
+  summary{cursor:pointer; color:var(--accent); font-weight:600; font-size:14px}
+  details[open] summary{margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">经验分享 · 2026-08-13 · AI 协作方法论</span>
+    <h1>用 AI 做论文调研:从链接到深度分析笔记的工作流</h1>
+    <p class="subtitle">基于 media_paper 知识库(51 个 HTML 笔记 / 40 篇论文 / 4 大领域)的真实协作沉淀 —— 讲清楚怎么把"读论文"从一次性消耗战,变成可累积、可检索、可复用的知识资产。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
+    <p class="authors">面向技术同事 · 配套仓库 <code>media_paper</code>(含 AGENTS.md 规范 + 51 个范例笔记)</p>
+    <div class="links">
+      <a href="#why">为什么用 AI</a>
+      <a href="#workflow">5 步工作流</a>
+      <a href="#agents">AGENTS.md 怎么写</a>
+      <a href="#subagent">子代理协作</a>
+      <a href="#case">案例剖析</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#why">为什么用 AI 做论文调研</a></li>
+    <li><a href="#workflow">核心工作流:5 步从链接到笔记</a></li>
+    <li><a href="#agents">AGENTS.md:让规范成为协作的"操作系统"</a></li>
+    <li><a href="#subagent">子代理与人机协作:让 AI 读 2000 行论文</a></li>
+    <li><a href="#diagram">框图演进:从 ASCII 到 Mermaid</a></li>
+    <li><a href="#case">真实案例:一篇笔记从 219 行到 876 行</a></li>
+    <li><a href="#pitfall">踩坑与反模式</a></li>
+    <li><a href="#toolchain">工具链与验证清单</a></li>
+    <li><a href="#summary">经验总结:知识沉淀的三层境界</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. WHY ==================== -->
+<section id="why">
+<h2><span class="num">1</span>为什么用 AI 做论文调研</h2>
+<p class="lead">读论文是研究者的日常,但传统方式有两个顽疾:<strong>读完就忘</strong>(没有可检索的沉淀)、<strong>笔记碎散</strong>(Markdown 散落在十几个文件,找不到也接不上)。AI 协作的真正价值,不是"替你读",而是把读论文变成<em>可累积的知识资产生产</em>。</p>
+
+<h3>1.1 知识库全景:这份经验从哪来</h3>
+<p>这套经验来自 <code>media_paper</code> 知识库的真实协作,不是空谈。它的规模:</p>
+<div class="grid grid-3">
+  <div class="card"><div class="num-big">40</div><p>篇论文调研笔记(p01–p40)</p></div>
+  <div class="card"><div class="num-big">51</div><p>个自包含 HTML 文件</p></div>
+  <div class="card"><div class="num-big">4</div><p>大领域:VideoGen / 3D / SR / CV-AI</p></div>
+</div>
+<p>从 git log 看,合作经历了清晰的三个阶段:</p>
+<table>
+  <tr><th>阶段</th><th>代表 commit</th><th>特征</th></tr>
+  <tr><td><span class="stage-tag stage-1">堆量期</span></td><td><code>b663f9b Add arxiv HTML figures: batch2</code></td><td>批量添加笔记,单篇较简略(219 行级别)</td></tr>
+  <tr><td><span class="stage-tag stage-2">深耕期</span></td><td><code>228c34e 新增 EVA-Gaussian 算法原理与逻辑框图分析</code></td><td>单篇深耕,引入 Mermaid+MathJax,884 行</td></tr>
+  <tr><td><span class="stage-tag stage-3">规范化</span></td><td><code>afbf8b4 新增 AGENTS.md</code> → <code>edab92c 重写 GEN3C</code></td><td>建立规范,按规格产出深度版(876 行)</td></tr>
+</table>
+
+<h3>1.2 AI 协作的真正价值定位</h3>
+<div class="callout key">
+<p>很多人把 AI 当"快速读论文的工具",这低估了它。<strong>正确的定位是:AI 是知识资产的"生产线",人是"产品经理 + 质检员"</strong>。你不必逐字读论文,但必须决定:调研什么、产出什么形态、什么质量算合格。AI 负责把链接变成结构化笔记,你负责验收与深化。</p>
+</div>
+<p>三个具体价值:</p>
+<ol>
+  <li><strong>从消耗战变资产</strong>:读一篇论文不再是 2 小时读完就忘,而是产出一个可检索、可复用、可关联的 HTML 笔记,下次遇到相关问题直接 grep。</li>
+  <li><strong>从碎散变结构化</strong>:笔记不是 Markdown 散文件,而是统一样式(Style A/B)、统一命名、统一目录、有索引的可浏览知识库。</li>
+  <li><strong>从被动变主动</strong>:AI 不只复述论文,还会写"可改进方向""技术路线对比"等增值章节,逼着你从"读懂"走向"评判"。</li>
+</ol>
+</section>
+
+<!-- ==================== 2. WORKFLOW ==================== -->
+<section id="workflow">
+<h2><span class="num">2</span>核心工作流:5 步从链接到笔记</h2>
+<p>这是 AGENTS.md 里沉淀的 5 步工作流,适用于任何 arXiv/GitHub 链接。</p>
+
+<div class="mermaid">
+flowchart TD
+    L["输入: arXiv / GitHub / 项目主页 链接"] --> S1["① 输入解析<br/>提取 arxiv-id / 仓库名 / 最新版本号"]
+    S1 --> S2["② 并行信息抓取<br/>abs页 + HTML全文 + 项目主页 + README"]
+    S2 --> S3["③ 子代理深读全文<br/>委派 Task 读超长 HTML,提取方法/公式/实验/消融"]
+    S3 --> S4["④ 框图绘制<br/>Mermaid 画 pipeline / 损失 / 演进"]
+    S4 --> S5["⑤ 分点解析成笔记<br/>按 Style A/B 模板,热链 arXiv 图,含可改进方向"]
+    S5 --> IDX["更新 index.html 加卡片"]
+    IDX --> COMMIT["commit(中文,描述章节)"]
+    style L fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S3 fill:#ede9fe,stroke:#a78bfa,color:#4c1d95
+    style S5 fill:#dcfce7,stroke:#34d399,color:#065f46
+    style COMMIT fill:#fef3c7,stroke:#fb923c,color:#78350f
+</div>
+
+<h3>2.1 第 1 步:输入解析</h3>
+<ul>
+  <li><strong>arXiv 链接</strong>(<code>https://arxiv.org/abs/2410.01425</code>):提取 arxiv-id <code>2410.01425</code></li>
+  <li><strong>GitHub 链接</strong>:提取仓库名作短名,从 README 找论文 arXiv 链接与项目主页</li>
+  <li><strong>关键:查最新版本号</strong>。abs 页有 submission history,取 v2/v3...。HTML 全文 URL 是 <code>https://arxiv.org/html/&lt;id&gt;v&lt;n&gt;</code>,版本号错了会 404</li>
+</ul>
+
+<h3>2.2 第 2 步:并行信息抓取</h3>
+<p>四路并行(一条消息里发 4 个工具调用),不要串行等:</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>① arXiv abs 页</h4>
+    <p>取标题、作者、机构、abstract、提交日期、版本号、会议。小,直接 webfetch。</p>
+  </div>
+  <div class="card">
+    <h4>② arXiv HTML 全文 <span style="color:var(--red)">最重要</span></h4>
+    <p><code>https://arxiv.org/html/&lt;id&gt;v&lt;n&gt;</code>。含完整方法、公式、实验、图。<strong>不要自己 Read 全文</strong>(会爆上下文),委派子代理(见 §4)。</p>
+  </div>
+  <div class="card">
+    <h4>③ 项目主页</h4>
+    <p><code>.github.io</code> / <code>research.nvidia.com/labs</code>。取 Method Overview 图、可视化对比图、bibtex。</p>
+  </div>
+  <div class="card">
+    <h4>④ GitHub README + 源码</h4>
+    <p>取环境配置、训练命令、数据集说明。深度调研时 <code>git clone --depth 1</code> 读 <code>train.py</code>/<code>config/*.yaml</code>,检验论文"宣称 vs 实现"差异。</p>
+  </div>
+</div>
+
+<h3>2.3 第 3 步:子代理深读(详见 §4)</h3>
+<p>HTML 全文常超 2000 行/51200 字节,主代理直接读会爆上下文。委派 explore 子代理读取,提取方法/损失/实验/消融/图 URL,返回结构化素材。</p>
+
+<h3>2.4 第 4 步:框图绘制(详见 §5)</h3>
+<p>方法密集型论文用 Mermaid 画 pipeline、损失树、演进路线;总结性大图用内联 SVG;轻量嵌入用 HTML/CSS。ASCII 已废弃。</p>
+
+<h3>2.5 第 5 步:分点解析成笔记</h3>
+<p>按模板(Style A 方法密集型 13 节 / Style B 通用 14 节)填充。关键章节:</p>
+<ul>
+  <li><strong>实验表格</strong>:PSNR/SSIM/LPIPS 等量化指标必须完整数字,最优行标 <code>.best</code></li>
+  <li><strong>可改进方向</strong>:知识库特色章节,三维度(方法/数据/工程)+ 优先级表 + <em>代码佐证</em>,不能空谈</li>
+  <li><strong>技术路线对比与演进</strong>:把论文放回领域脉络,范式 → 代表方法 → 先验 → 局限</li>
+</ul>
+</section>
+
+<!-- ==================== 3. AGENTS.md ==================== -->
+<section id="agents">
+<h2><span class="num">3</span>AGENTS.md:让规范成为协作的"操作系统"</h2>
+<p class="lead">用 AI 协作最容易被忽视的一步:<strong>没有规范,每次产出都不一样,质量随心情起伏</strong>。AGENTS.md 是写给 AI 看的"作业规范",它把你的偏好固化下来,让每次调研都按同一套标准产出。</p>
+
+<h3>3.1 为什么必须写 AGENTS.md</h3>
+<div class="callout warn">
+<p><strong>反模式</strong>:不写规范,每次口头交代"帮我深度调研这篇论文"。结果:今天 14 节明天 8 节;今天 Mermaid 明天纯文字;今天有可改进方向明天没有;文件名一会儿英文一会儿中文。三个月后自己都看不懂自己的笔记。</p>
+</div>
+<p>AGENTS.md 解决三件事:</p>
+<ol>
+  <li><strong>一致性</strong>:命名、样式、章节结构统一,知识库像系列产品而非草稿堆</li>
+  <li><strong>可验收</strong>:有验证清单,产出前自查,质量稳定</li>
+  <li><strong>零记忆负担</strong>:规范在文件里,新会话的 AI 读一遍就上手,不必每次重新交代</li>
+</ol>
+
+<h3>3.2 AGENTS.md 的 7 个必备模块</h3>
+<p>本知识库的 AGENTS.md(133 行)覆盖这 7 块,可作为模板:</p>
+<table>
+  <tr><th>模块</th><th>内容</th><th>为什么重要</th></tr>
+  <tr><td>① 工作流</td><td>5 步:输入解析→并行抓取→子代理深读→框图→分点解析</td><td>让 AI 知道"先做什么后做什么",不会跳步</td></tr>
+  <tr><td>② 文件命名</td><td><code>PREFIX-YYYYMMDD-Name.html</code>,4 个前缀(3D-/VideoGen-/SR-/CV-AI-)</td><td>排序即分类,日期即版本,一眼看出归属</td></tr>
+  <tr><td>③ HTML 样式</td><td>Style A(方法密集型,Mermaid+MathJax)/ Style B(通用,NVIDIA 绿)</td><td>样式与内容匹配,方法论文用 A,综述用 B</td></tr>
+  <tr><td>④ 公式处理</td><td>三档:MathJax / 纯文本 <code>.formula</code> / <code>&lt;code&gt;</code> 内联</td><td>按公式密度选,不必每篇都上 MathJax</td></tr>
+  <tr><td>⑤ 图像策略</td><td>优先热链 arXiv HTML 图(<code>loading="lazy"</code>),失效则本地化</td><td>热链省存储且图自动跟论文版本走</td></tr>
+  <tr><td>⑥ 对比表格</td><td>✓/✗/~ 标记,<code>.best</code>/<code>.fail</code> 标色</td><td>对比一目了然,最优行突出</td></tr>
+  <tr><td>⑦ 验证清单</td><td>成稿前 9 项自查(lang/主题色/链接/图/Mermaid/表格/可改进方向/index)</td><td>质检门,防止低质产出</td></tr>
+</table>
+
+<h3>3.3 验证清单(直接抄)</h3>
+<p>这是 AGENTS.md 最后一节,成稿前逐条自查:</p>
+<pre><code>- [ ] 文件名符合 PREFIX-YYYYMMDD-Name.html
+- [ ] &lt;html lang="zh-CN"&gt;
+- [ ] 主题色与所选 Style 一致(NVIDIA 绿 / EVA 蓝)
+- [ ] 资源链接含 arXiv abs + HTML 全文 + GitHub + 项目主页
+- [ ] 图像有 loading="lazy" 与 alt
+- [ ] Mermaid/MathJax(若用)CDN 与 init 脚本正确
+- [ ] 实验表格含 PSNR/SSIM/LPIPS,最优行标 .best
+- [ ] 含「可改进方向分析」章节(三维度 + 优先级表 + 代码佐证)
+- [ ] 已更新 index.html 加 .note-card
+- [ ] commit 信息中文,描述新增/改动章节</code></pre>
+
+<h3>3.4 Style A vs Style B:怎么选</h3>
+<table>
+  <tr><th>维度</th><th>Style A(高端)</th><th>Style B(默认)</th></tr>
+  <tr><td>主题色</td><td>EVA 蓝 <code>#60a5fa</code> + 紫 <code>#a78bfa</code></td><td>NVIDIA 绿 <code>#76b900</code></td></tr>
+  <tr><td>头部</td><td><code>.hero</code> 双渐变 + badge + subtitle + authors + links</td><td><code>.header</code> 渐变 + h1 + meta + tags</td></tr>
+  <tr><td>标题</td><td>数字徽章 <code>&lt;h2&gt;&lt;span class="num"&gt;N&lt;/span&gt;</code></td><td>emoji 前缀 📌/🏗️/🎯,不加数字</td></tr>
+  <tr><td>公式</td><td>MathJax <code>.equation</code> + 标号</td><td>纯文本或 <code>&lt;code&gt;</code></td></tr>
+  <tr><td>框图</td><td>Mermaid 优先</td><td>HTML/CSS 或 ASCII(已弃)</td></tr>
+  <tr><td>适用</td><td class="best">方法密集型(多公式多 pipeline)</td><td class="best">95% 通用论文</td></tr>
+  <tr><td>范例</td><td><code>3D-20241002-EVA-Gaussian.html</code></td><td>大多数 VideoGen 笔记</td></tr>
+</table>
+<div class="callout tip">
+<p><strong>选型原则</strong>:论文有 3 个以上公式或复杂 pipeline → Style A;只是了解性调研 → Style B。别为了"好看"给简单论文上 Style A,MathJax 和 Mermaid 是有加载成本的。</p>
+</div>
+</section>
+
+<!-- ==================== 4. SUBAGENT ==================== -->
+<section id="subagent">
+<h2><span class="num">4</span>子代理与人机协作:让 AI 读 2000 行论文</h2>
+<p class="lead">这是整套工作流里最关键、也最容易被忽略的技巧。<strong>arXiv HTML 全文动辄 700-2000 行,主代理直接读会撑爆上下文窗口,后续写作就废了</strong>。解法是委派子代理。</p>
+
+<h3>4.1 为什么要用子代理</h3>
+<div class="callout warn">
+<p><strong>反模式</strong>:主代理自己 <code>webfetch</code> arXiv HTML 全文,返回 2000 行被截断,主代理 context 被占满,写笔记时遗忘前文、重复内容、丢公式。<strong>上下文是稀缺资源,要留给写作</strong>。</p>
+</div>
+<p>子代理有独立的上下文窗口。主代理委派它去读全文、提取结构化素材,子代理返回精炼结果,主代理的 context 只消耗"精炼结果"那部分,写作空间充足。</p>
+
+<div class="mermaid">
+flowchart LR
+    MAIN["主代理<br/>(写作 context)"] -->|"委派 Task + 详细 prompt"| SUB1["子代理 A<br/>读 arXiv HTML 全文"]
+    MAIN -->|"并行"| SUB2["子代理 B<br/>git clone 读源码"]
+    MAIN -->|"并行 webfetch"| ABS["abs 页(小,直接读)"]
+    MAIN -->|"并行 webfetch"| HOME["项目主页(中)"]
+    SUB1 -->|"返回结构化素材<br/>方法+公式+表格数字+图URL"| MAIN
+    SUB2 -->|"返回代码佐证<br/>真实超参/硬编码/命令"| MAIN
+    ABS --> META["元信息"] --> MAIN
+    HOME --> METHOD["方法图+可视化"] --> MAIN
+    MAIN --> WRITE["写作(只用精炼素材,<br/>context 充裕)"]
+    style MAIN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style SUB1 fill:#ede9fe,stroke:#a78bfa,color:#4c1d95
+    style SUB2 fill:#ede9fe,stroke:#a78bfa,color:#4c1d95
+    style WRITE fill:#dcfce7,stroke:#34d399,color:#065f46
+</div>
+
+<h3>4.2 子代理 prompt 怎么写:三要素</h3>
+<p>委派子代理的 prompt 决定素材质量。三要素:<strong>明确任务目标、列出要提取的字段、要求原文照录关键数据</strong>。</p>
+<details>
+<summary>📋 点击展开:委派子代理读 arXiv HTML 全文的 prompt 模板(实战版)</summary>
+<pre><code>请深度调研 arXiv 论文 [标题] 的 HTML 全文,URL 是 https://arxiv.org/html/[id]v[n]
+
+## 任务目标
+用 webfetch 抓取该 URL(format 用 markdown),从返回内容中结构化提取以下信息。
+若内容被截断(超 2000 行/51200 字节会落盘到临时文件),用 Read 工具读取
+临时文件各部分,确保覆盖全文。
+
+## 需要提取的内容(请尽量原文照录关键数字、公式、表格数据)
+### 1. 论文基本信息
+- 标题、作者、机构、提交日期、会议、一句话定位
+### 2. Abstract 全文(逐字)
+### 3. Introduction
+- 现有方法痛点的具体表现 / 核心思路 / 贡献点列表(逐条)
+### 4. Method(最重要)
+- 各子节详解:网络结构、数学公式(LaTeX 原文)、输入输出
+- 所有 Figure 的编号、caption、图片 URL(完整路径 https://arxiv.org/html/[id]v[n]/xN.png)
+### 5. 损失函数
+- 每个损失的公式、权重、作用
+### 6. 实现细节
+- 训练数据集(名称/规模/来源)、训练超参(lr/batch/iter/GPU/时长)、推理超参
+### 7. 实验
+- 量化结果表格:把每个表格的数值逐行列出(方法名+各指标+最优行标注)
+- 消融实验:每个组件 + ΔPSNR/Δ指标
+### 8. 局限性章节原文要点
+### 9. 关键图清单(完整 URL)
+
+## 返回格式
+结构化 markdown。关键要求:
+1. 公式用 LaTeX 原文($$...$$)
+2. 实验表格的数字必须完整,不要省略任何一个数字
+3. 图片 URL 必须是完整路径
+4. 方法部分要足够详细,能支撑写一份方法密集型分析笔记</code></pre>
+</details>
+<div class="callout key">
+<p>三个不可妥协的要求:<strong>① 公式用 LaTeX 原文</strong>(否则主代理写作时要重新找);<strong>② 实验表格数字必须完整</strong>(子代理爱省略,要明确禁止);<strong>③ 图 URL 必须完整路径</strong>(主代理写作时直接热链)。</p>
+</div>
+
+<h3>4.3 并行 vs 串行:何时用并行</h3>
+<p><strong>独立任务必须并行</strong>。abs 页、项目主页、子代理读全文、git clone 源码这四路互不依赖,一条消息里发 4 个工具调用同时跑,比串行快 4 倍。<strong>有依赖才串行</strong>:读完 abs 页才知道版本号 → 才能委派读 HTML 全文(这种情况用 <code>cmd1; if ($?) { cmd2 }</code>)。</p>
+
+<h3>4.4 源码佐证:让 AI 检验"论文宣称 vs 实现"</h3>
+<p>深度调研时,让子代理 <code>git clone --depth 1</code> 仓库到临时目录,读 <code>train.py</code>/<code>lib/*.py</code>/<code>config/*.yaml</code>,提取真实超参(损失权重、特征维度、循环次数)、硬编码限制。这是<strong>超越论文复述的关键</strong>。</p>
+<div class="callout tip">
+<p><strong>实战案例</strong>:GEN3C 论文说"用视频扩散模型",代码里实际是 <code>nvidia/GEN3C-Cosmos-7B</code>(Cosmos-7B 底座),README 暴露自回归 chunk 是 121 帧、8 种预设轨迹、ViPE/VGGT 工具链。这些是论文正文不写但代码暴露的"真实",写进笔记的"可改进方向"才有底气。</p>
+</div>
+</section>
+
+<!-- ==================== 5. DIAGRAM ==================== -->
+<section id="diagram">
+<h2><span class="num">5</span>框图演进:从 ASCII 到 Mermaid</h2>
+<p class="lead">框图是技术笔记的灵魂 —— 一张好框图胜过千字描述。我们的框图技术经历了三次演进,git log 有完整记录。</p>
+
+<h3>5.1 三代技术对比</h3>
+<table>
+  <tr><th>技术</th><th>适用</th><th>优点</th><th>缺点</th><th>状态</th></tr>
+  <tr><td>ASCII <code>&lt;pre class="ascii"&gt;</code></td><td>极简流程</td><td>零依赖</td><td class="fail">丑、不缩放、难维护</td><td class="fail">已废弃</td></tr>
+  <tr><td>HTML/CSS(<code>.hdiag</code>/<code>.hbox</code>/<code>.mtree</code>)</td><td>不依赖 CDN、轻量嵌入</td><td>无加载、可定制</td><td class="partial">复杂连线难画</td><td class="partial">保留</td></tr>
+  <tr><td>内联 SVG</td><td>一张"总结性大图",色码分组、复杂连线</td><td>表现力最强</td><td class="partial">手写成本高</td><td class="partial">偶尔用</td></tr>
+  <tr><td class="best">Mermaid.js</td><td class="best">多阶段 pipeline、损失树、训练流程</td><td class="best">代码即图、易改、自动布局</td><td>复杂图布局偶尔乱</td><td class="best">首选</td></tr>
+</table>
+
+<div class="mermaid">
+flowchart LR
+    A["ASCII &lt;pre&gt;<br/>早期 4 个文件"] -->|"commit 47102e5<br/>迁移"| B["HTML/CSS 框图"]
+    B --> C["内联 SVG<br/>总结性大图"]
+    C --> D["Mermaid.js<br/>(首选)"]
+    style A fill:#fecaca,stroke:#f87171
+    style D fill:#bbf7d0,stroke:#34d399
+</div>
+
+<h3>5.2 Mermaid 用法要点</h3>
+<pre><code>&lt;div class="mermaid"&gt;
+flowchart TD
+    INPUT["输入: n 张稀疏视角 RGB 图像"] --> S1
+    subgraph S1["阶段一: 3D 高斯位置估计"]
+        S1A["AttenUNet"] --> S1B["EVA 模块"] --> S1C["输出: 位置图"]
+    end
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+&lt;/div&gt;
+&lt;script&gt;mermaid.initialize({startOnLoad:true, theme:'default',
+  flowchart:{curve:'basis', useMaxWidth:true}});&lt;/script&gt;</code></pre>
+<ul>
+  <li><strong>方向</strong>:多阶段 pipeline 用 <code>TD</code>(纵向),流程对比用 <code>LR</code>(横向)</li>
+  <li><strong>分组</strong>:用 <code>subgraph</code> 把相关节点框起来,加阶段标签</li>
+  <li><strong>配色</strong>:用 <code>style</code> 节点配色,浅底深字(如 <code>#dbeafe</code> 底 + <code>#1e3a5f</code> 字)</li>
+  <li><strong>换行</strong>:节点内用 <code>&lt;br/&gt;</code></li>
+  <li><strong>虚线</strong>:反馈/可选路径用 <code>-.-&gt;</code></li>
+</ul>
+<div class="callout warn">
+<p><strong>唯一允许的 CDN</strong>:<code>cdn.jsdelivr.net/npm/mermaid@10</code> 与 <code>cdn.jsdelivr.net/npm/mathjax@3</code>。不用 Bootstrap、Font-Awesome、外部 CSS —— 自包含是知识库的铁律,十年后打开还能看。</p>
+</div>
+</section>
+
+<!-- ==================== 6. CASE ==================== -->
+<section id="case">
+<h2><span class="num">6</span>真实案例:一篇笔记从 219 行到 876 行</h2>
+<p class="lead">用三个真实文件,展示"简略版 → 深度版"的差距到底在哪。这不是抽象说教,是行数和结构能验证的对比。</p>
+
+<h3>6.1 三代笔记的量化对比</h3>
+<table>
+  <tr><th>笔记</th><th>行数</th><th>Mermaid</th><th>公式</th><th>图</th><th>特征</th></tr>
+  <tr><td>DynamiCrafter <small>(p02, 堆量期)</small></td><td class="fail">219</td><td class="fail">0</td><td class="fail">0</td><td>5</td><td>简略,纯文字复述</td></tr>
+  <tr><td>EVA-Gaussian <small>(深耕期)</small></td><td>884</td><td class="best">6</td><td class="best">11</td><td class="fail">0</td><td>深度,Mermaid+MathJax,本地图</td></tr>
+  <tr><td>GEN3C <small>(规范化期,今日重写)</small></td><td>876</td><td class="best">5</td><td class="best">6</td><td class="best">11</td><td>深度,热链 arXiv 图,代码佐证</td></tr>
+</table>
+<p>差距:行数 4 倍、Mermaid 从 0 到 5-6、公式从 0 到 6-11。这不是"写得多",是<strong>从复述论文到结构化解析的质变</strong>。</p>
+
+<h3>6.2 GEN3C 重写过程:今天刚发生的实战</h3>
+<p>用户指出 <code>VideoGen-20250305-GEN3C.html</code>(旧版 331 行)写得简略,要求按现规格重写。实际操作步骤:</p>
+<div class="mermaid">
+flowchart TD
+    OLD["旧版 331 行<br/>Style B,无 Mermaid,无公式,表无数字"] --> READ
+    subgraph READ["① 读现状 + 读 EVA-Gaussian 作样式参考"]
+        R1["读旧版"] --> R2["读 EVA-Gaussian 的 Style A CSS"]
+    end
+    READ --> FETCH
+    subgraph FETCH["② 并行抓取 4 路"]
+        F1["webfetch abs 页"] 
+        F2["webfetch 项目主页"]
+        F3["webfetch GitHub README<br/>(首次失败,改用 raw 链接成功)"]
+        F4["Task 委派子代理读 HTML 全文 771 行"]
+    end
+    FETCH --> WRITE
+    subgraph WRITE["③ 写作(主代理,context 充裕)"]
+        W1["14 节结构(Style A)"]
+        W2["6 个公式(MathJax)"]
+        W3["5 个 Mermaid 框图"]
+        W4["完整 Table 1-6 数字"]
+        W5["9 个可改进方向+代码佐证"]
+        W6["11 张 arXiv 图热链"]
+    end
+    WRITE --> VERIFY
+    subgraph VERIFY["④ 验证"]
+        V1["section 14=14 闭合"]
+        V2["10 张图全部 HTTP 200"]
+        V3["index 加 12b 卡片"]
+    end
+    VERIFY --> NEW["新版 876 行,commit edab92c"]
+    style OLD fill:#fecaca,stroke:#f87171
+    style NEW fill:#bbf7d0,stroke:#34d399
+    style F4 fill:#ede9fe,stroke:#a78bfa
+</div>
+
+<h3>6.3 三个关键决策点</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--accent)">① 选 Style A 而非沿用旧 Style B</h4>
+    <p>GEN3C 是方法密集型(3D cache pipeline + 多公式 + 多实验表),Style A 的 MathJax+Mermaid+数字徽章更匹配。旧版用 Style B 是错配。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--green)">② 委派子代理读全文</h4>
+    <p>HTML 全文 771 行,若自己 webfetch 会爆 context。委派子代理返回结构化素材(含完整 Table 1-6 数字、所有图 URL、式 1-5 LaTeX),主代理只消耗精炼结果。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--accent2)">③ 拿到 README 作代码佐证</h4>
+    <p>GitHub webfetch 失败,改用 <code>raw.githubusercontent.com</code> 拿到 README,发现实际底座是 Cosmos-7B(论文写 SVD)、chunk=121 帧、8 种轨迹 —— 写进"可改进方向"才有底气。</p>
+  </div>
+</div>
+
+<h3>6.4 新增了什么:可改进方向章节</h3>
+<p>旧版没有"可改进方向",新版有 9 个(高3+中3+低2+优先级表)。这是知识库特色章节,要求<strong>每点有代码/实验佐证</strong>。例:</p>
+<div class="callout key">
+<p><strong>改进点示例(GEN3C)</strong>:说"自回归 chunk 漂移风险"—— 佐证是代码 <code>--num_video_frames 121*N-1</code>(仅 1 帧重叠);说"Cosmos 微调不充分"—— 佐证是论文 §5.7 写"10K 步、batch 64"。<em>不能空谈,要能指到具体行</em>。</p>
+</div>
+</section>
+
+<!-- ==================== 7. PITFALL ==================== -->
+<section id="pitfall">
+<h2><span class="num">7</span>踩坑与反模式</h2>
+<p class="lead">从 git log 能看到我们踩过的坑,以及对应的修复 commit。这些都是血泪经验。</p>
+
+<table>
+  <tr><th>反模式</th><th>后果</th><th>正解</th><th>修复 commit</th></tr>
+  <tr><td>主代理自己读 HTML 全文</td><td class="fail">context 爆满,写作遗忘/重复</td><td class="best">委派子代理读,主代理只用精炼素材</td><td>—</td></tr>
+  <tr><td>用 ASCII 画框图</td><td class="fail">丑、不缩放、难维护</td><td class="best">Mermaid(<code>flowchart TD/LR</code> + subgraph + style)</td><td><code>47102e5 Replace ASCII with HTML/CSS</code></td></tr>
+  <tr><td>arXiv 图直链失效不处理</td><td class="fail">笔记图裂</td><td class="best">改链到 PDF 下载,或本地化到 <code>images/&lt;id&gt;/</code></td><td><code>6a0112e Fix SR survey: replace broken image refs</code></td></tr>
+  <tr><td>实验表格只写"达 SOTA"</td><td class="fail">无数字,不可验证</td><td class="best">逐行列出 PSNR/SSIM/LPIPS,最优行标 <code>.best</code></td><td>—</td></tr>
+  <tr><td>可改进方向空谈</td><td class="fail">像 GPT 套话,无信息量</td><td class="best">每点带代码/实验佐证,标优先级</td><td><code>ce7e49d EVA-Gaussian 新增可改进方向</code></td></tr>
+  <tr><td>文件名中英混杂</td><td class="fail">排序乱,难检索</td><td class="best"><code>PREFIX-YYYYMMDD-Name.html</code> 统一</td><td><code>d3239b5 整理知识库命名规范</code></td></tr>
+  <tr><td>每篇都上 MathJax</td><td class="fail">加载慢,简单论文过载</td><td class="best">三档选:MathJax / 纯文本 / <code>&lt;code&gt;</code></td><td>—</td></tr>
+  <tr><td>用 Bootstrap/外部 CSS</td><td class="fail">十年后打不开</td><td class="best">仅 mermaid+mathjax CDN,其余自包含</td><td>—</td></tr>
+  <tr><td>commit 信息写"update"</td><td class="fail">改了啥不知道</td><td class="best">中文,描述新增/改动章节</td><td>全仓库一致</td></tr>
+</table>
+
+<div class="callout warn">
+<p><strong>最致命的反模式</strong>:不写 AGENTS.md,每次口头交代。三个月后笔记风格分裂成十种,自己也看不懂。<strong>规范是给未来的自己和未来的 AI 会话看的</strong>,不是负担。</p>
+</div>
+</section>
+
+<!-- ==================== 8. TOOLCHAIN ==================== -->
+<section id="toolchain">
+<h2><span class="num">8</span>工具链与验证清单</h2>
+
+<h3>8.1 工具链(opencode CLI)</h3>
+<table>
+  <tr><th>工具</th><th>用途</th><th>何时用</th></tr>
+  <tr><td><code>webfetch</code></td><td>抓 URL 转 markdown</td><td>abs 页(小)、项目主页(中)。大文件(HTML 全文)不用</td></tr>
+  <tr><td><code>Task</code> + explore 子代理</td><td>读超长内容、提取结构化素材</td><td>arXiv HTML 全文、git clone 源码深读</td></tr>
+  <tr><td><code>bash</code> + <code>git clone --depth 1</code></td><td>克隆仓库到临时目录</td><td>深度调研,读 train.py/config 验证论文</td></tr>
+  <tr><td><code>read</code> / <code>glob</code> / <code>grep</code></td><td>本地文件操作</td><td>读旧笔记、找样式参考、搜索内容</td></tr>
+  <tr><td><code>edit</code> / <code>write</code></td><td>改文件 / 写新文件</td><td>写笔记、更新 index.html</td></tr>
+  <tr><td><code>todowrite</code></td><td>多步骤任务跟踪</td><td>3+ 步骤的复杂任务(如重写+更新+commit)</td></tr>
+  <tr><td><code>question</code></td><td>向用户澄清</td><td>开放性任务的方向性问题(形式/受众/侧重)</td></tr>
+</table>
+
+<h3>8.2 一次调研的完整操作序列</h3>
+<pre><code># 1. 读现状(若重写)+ 读样式参考(并行)
+read 旧笔记; read EVA-Gaussian.html(CSS 模板)
+
+# 2. 并行抓取 4 路(一条消息 4 个工具调用)
+webfetch abs页;
+webfetch 项目主页;
+webfetch raw.githubusercontent.com/.../README.md;
+Task 委派 explore 子代理读 HTML 全文(prompt 见 §4.2)
+
+# 3. 主代理写作(用子代理返回的精炼素材)
+write 新笔记(Style A,14 节,Mermaid+MathJax+完整表格+可改进方向)
+
+# 4. 验证(并行)
+bash 检查 section 闭合 / arXiv 图 HTTP 200;
+grep 计数 mermaid/equation/figure 块
+
+# 5. 更新索引 + commit
+edit index.html 加 .note-card;
+bash git add + commit(中文信息)</code></pre>
+
+<h3>8.3 验证清单(成稿前自查)</h3>
+<pre><code># 结构验证(PowerShell)
+$f = "笔记.html"; $c = Get-Content $f -Raw
+"section open:  " + ([regex]::Matches($c, '&lt;section ')).Count
+"section close: " + ([regex]::Matches($c, '&lt;/section&gt;')).Count   # 应相等
+"mermaid div:   " + ([regex]::Matches($c, 'class="mermaid"')).Count
+"equation div:  " + ([regex]::Matches($c, 'class="equation"')).Count
+"loading lazy:  " + ([regex]::Matches($c, 'loading="lazy"')).Count     # = img 数
+
+# arXiv 图可访问性验证
+$urls = @("https://arxiv.org/html/&lt;id&gt;v&lt;n&gt;/x1.png", ...)
+foreach ($u in $urls) {
+  $r = [System.Net.HttpWebRequest]::Create($u).GetResponse()
+  "{0} {1}" -f $r.StatusCode.value__, $r.ContentLength
+  $r.Close()
+}</code></pre>
+<div class="callout tip">
+<p>这两个验证脚本是我每次重写后必跑的。section 不闭合说明 HTML 坏了;图 HTTP 非 200 说明热链失效要本地化。这是质量门。</p>
+</div>
+</section>
+
+<!-- ==================== 9. SUMMARY ==================== -->
+<section id="summary">
+<h2><span class="num">9</span>经验总结:知识沉淀的三层境界</h2>
+<p class="lead">回看这 40 篇笔记的演进,其实是知识沉淀的三层境界。</p>
+
+<div class="grid grid-3">
+  <div class="card">
+    <span class="stage-tag stage-1">第一层</span>
+    <h4>复述</h4>
+    <p>把论文摘要翻译成中文,列几个要点。<strong>DynamiCrafter(219 行)就是这个层级</strong>。价值:低。因为摘要本身 arXiv 就有,你没增值。</p>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-2">第二层</span>
+    <h4>结构化解析</h4>
+    <p>完整方法 + 公式 + Mermaid 框图 + 完整实验数字 + 消融。<strong>EVA-Gaussian(884 行)是这个层级</strong>。价值:中。可检索、可复习,但仍是"读懂论文"。</p>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-3">第三层</span>
+    <h4>评判与关联</h4>
+    <p>加"可改进方向"(代码佐证)+"技术路线对比与演进"+ 跨论文引用。<strong>GEN3C(876 行)是这个层级</strong>。价值:高。从"读懂"走向"评判",把论文放回领域脉络。</p>
+  </div>
+</div>
+
+<h3>9.1 三条核心经验</h3>
+<div class="callout key">
+<ol>
+<li><strong>规范先行,产出稳定</strong>。AGENTS.md 是一切的基础。没有规范,AI 协作就是"看心情",笔记质量随会话漂移。先把命名、样式、章节、验证清单定死,再让 AI 按规格产出。</li>
+<li><strong>子代理是上下文倍增器</strong>。主代理的 context 是稀缺资源,留给写作。读全文、读源码这种消耗 context 的活,委派子代理。一个 prompt 写得好,子代理能帮你读 2000 行论文返回精炼素材。</li>
+<li><strong>代码佐证让评判有底气</strong>。"可改进方向"不能空谈。说"多视角名不副实"要引用 <code>torch.stack([lmain, rmain])</code>;说"chunk 漂移风险"要引用 <code>121*N-1</code>。读源码是超越论文复述的关键。</li>
+</ol>
+</div>
+
+<h3>9.2 给上手者的最小建议</h3>
+<ol>
+  <li><strong>先建 AGENTS.md</strong>:哪怕只写命名规范 + 5 步工作流 + 1 个样式模板,先立起来</li>
+  <li><strong>先做 3 篇深度版</strong>:别堆量,3 篇 800 行深度版比 30 篇 200 行简略版有价值</li>
+  <li><strong>每次都委派子代理读全文</strong>:主代理别碰 HTML 全文,留 context 写作</li>
+  <li><strong>每次都验证</strong>:section 闭合 + 图 HTTP 200,跑两个脚本就够</li>
+  <li><strong>commit 信息写中文写章节</strong>:未来 grep 自己的演进史</li>
+</ol>
+
+<div class="callout tip">
+<p><strong>最后一句</strong>:AI 协作做调研,真正的杠杆不在"AI 多聪明",而在<em>你有没有把规范、工作流、验证清单沉淀下来</em>。这套东西沉淀好,换任何 AI 工具都能复用,且产出会越来越稳。media_paper 知识库就是这套思路的活样本 —— 40 篇笔记、51 个文件、一条清晰的演进线,全部开源可参考。</p>
+</div>
+</section>
+
+</div>
+
+<div class="footer">
+  用 AI 做论文调研:从链接到深度分析笔记的工作流 · 经验分享<br>
+  📝 基于 media_paper 知识库(40 篇论文 / 51 个 HTML 笔记) · 生成于 2026-08-13 · 面向技术同事
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
