@@ -500,6 +500,31 @@
         </div>
 
         <div class="note-card">
+            <h3>12b. GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2503.03751</span>
+                <span>📅 2025-03-05</span>
+                <span>🏢 NVIDIA Toronto AI Lab / U. Toronto / Vector Institute</span>
+                <span>🏆 CVPR 2025 Highlight</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3D Cache</span>
+                <span class="tag green">Camera Control</span>
+                <span class="tag green">3D Consistency</span>
+                <span class="tag">NVS</span>
+                <span class="tag">Driving</span>
+                <span class="tag">Dolly Zoom</span>
+                <span class="tag">Cosmos/SVD 底座</span>
+            </div>
+            <p>用显式 3D 点云缓存(3D cache)作视频扩散模型的几何骨架——把"几何记忆"从模型剥离到外部缓存。DAV2 预测深度反投影为点云,按用户相机轨迹渲染为 2D 条件视频注入视频扩散模型(SVD/Cosmos-7B)。模型只需补全未观测区域 + 推进场景动态。统一覆盖单图/稀疏视角/驾驶/单目动态四类 NVS,TSED 0.9143、驾驶 y±4m FID 35.33(3D-GS 81.26)、RE10K 双视角外推 PSNR 21.56(MVSplat 15.51)。In-Layer+Max-Pool 置换不变多视角融合,仅 denoising score matching 损失(以架构替代损失堆叠)。</p>
+            <a href="VideoGen-20250305-GEN3C.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2503.03751" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/nv-tlabs/GEN3C" target="_blank">💻 GitHub</a>
+            <a href="https://research.nvidia.com/labs/toronto-ai/GEN3C/" target="_blank">🌐 项目主页</a>
+        </div>
+
+        <div class="note-card">
             <h3>13. Sora 2: OpenAI 旗舰视频与音频生成模型</h3>
             <div class="meta">
                 <span>📄 博客: openai.com/index/sora-2/</span>

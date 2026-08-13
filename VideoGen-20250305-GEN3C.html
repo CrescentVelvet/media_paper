@@ -1,331 +1,876 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control</title>
-    <style>
-        :root {
-            --bg: #0f1117;
-            --card: #1a1d27;
-            --accent: #76b900;
-            --accent-dim: #5a8f00;
-            --text: #e0e0e0;
-            --text-dim: #9a9a9a;
-            --border: #2a2d37;
-            --tag-bg: #252830;
-            --code-bg: #15171f;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 0; }
-        .header { background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%); border-bottom: 3px solid var(--accent); padding: 40px 30px; }
-        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
-        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
-        .header .meta span { white-space: nowrap; }
-        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
-        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
-        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
-        .section p { margin-bottom: 12px; }
-        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
-        .tag.green { border-color: var(--accent); color: var(--accent); }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
-        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
-        th { background: var(--code-bg); color: var(--accent); }
-        tr:nth-child(even) { background: var(--code-bg); }
-        ul { margin-left: 20px; margin-bottom: 12px; }
-        li { margin-bottom: 5px; }
-        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #c8b0ff; }
-        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
-        .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        .links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 6px; text-decoration: none; font-size: 0.85em; transition: background 0.2s; }
-        .links a:hover { background: var(--accent-dim); color: #fff; }
-        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEN3C:3D 缓存引导的世界一致视频生成</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .figure{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:14px; margin:20px 0; text-align:center;
+  }
+  .figure img{
+    max-width:100%; border-radius:8px; border:1px solid #333;
+  }
+  .figure .caption{
+    color:var(--muted); font-size:13px; margin-top:10px; text-align:left;
+    padding:0 6px;
+  }
+  .figure .caption b{color:var(--accent)}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .improve{
+    background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--accent);
+    border-radius:8px; padding:16px 22px; margin:16px 0;
+  }
+  .improve.high{border-left-color:var(--red)}
+  .improve.mid{border-left-color:var(--orange)}
+  .improve.low{border-left-color:var(--muted)}
+  .improve .pri{
+    display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px;
+    font-weight:700; margin-right:8px;
+  }
+  .improve.high .pri{background:rgba(248,113,113,0.15); color:var(--red)}
+  .improve.mid .pri{background:rgba(251,146,60,0.15); color:var(--orange)}
+  .improve.low .pri{background:rgba(148,163,184,0.15); color:var(--muted)}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
 </head>
 <body>
 
-<div class="header">
-    <h1>GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control</h1>
-    <div class="meta">
-        <span>📄 arXiv: 2503.03751 (2025-03-05)</span>
-        <span>🏢 NVIDIA / University of Toronto / Vector Institute</span>
-        <span>📅 2025-03-05</span>
-        <span>🏆 CVPR 2025 Highlight</span>
-        <span>📂 CV / Graphics / Video Generation</span>
+<!-- arXiv HTML figures (from https://arxiv.org/html/2503.03751v1) -->
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2503.03751 · 2025 · CVPR Highlight</span>
+    <h1>GEN3C:3D 缓存引导的世界一致视频生成</h1>
+    <p class="subtitle">用显式 3D 点云缓存(3D cache)作为视频扩散模型的几何骨架 —— 把"几何记忆"从神经网络中剥离到外部缓存,让模型专注于未观测区域的补全与场景状态推进,实现精确相机控制与时序 3D 一致性,统一覆盖单图/稀疏视角/驾驶/单目动态四类 NVS 任务。</p>
+    <p class="authors">Xuanchi Ren* · Tianchang Shen* · Jiahui Huang · Huan Ling · Yifan Lu · Merlin Nimier-David · Thomas Müller · Alexander Keller · Sanja Fidler · Jun Gao<br>
+    <span style="color:var(--muted);font-size:13px">NVIDIA Toronto AI Lab · University of Toronto · Vector Institute(*同等贡献)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2503.03751" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2503.03751v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2503.03751" target="_blank">📥 PDF</a>
+      <a href="https://research.nvidia.com/labs/toronto-ai/GEN3C/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/nv-tlabs/GEN3C" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/nvidia/GEN3C-Cosmos-7B" target="_blank">🤗 模型权重</a>
     </div>
-    <div class="tags">
-        <span class="tag green">Camera Control</span>
-        <span class="tag green">3D Consistency</span>
-        <span class="tag">Point Cloud Cache</span>
-        <span class="tag">Depth Prediction</span>
-        <span class="tag">Novel View Synthesis</span>
-        <span class="tag">Driving Simulation</span>
-        <span class="tag">Video Diffusion</span>
-        <span class="tag">NVIDIA</span>
-    </div>
+  </div>
 </div>
 
 <div class="container">
 
-    <div class="section">
-        <h2>📌 论文概要</h2>
-        <p><strong>GEN3C</strong> 是 NVIDIA Toronto AI Lab 提出的生成式视频模型，核心解决两个问题：<strong>精确的相机控制</strong>和<strong>时间上的 3D 一致性</strong>。</p>
-        <p>与之前的视频模型直接让神经网络从相机参数推断画面结构不同，GEN3C 引入了一个<strong>3D 缓存（3D Cache）</strong>机制：通过预测种子图像或已生成帧的像素级深度，反投影为 3D 点云。生成新帧时，先用用户提供的相机轨迹将 3D 缓存渲染为 2D 视频，再以此作为条件输入视频扩散模型生成最终画面。</p>
-        <div class="highlight">
-            <strong>核心洞察：</strong>模型不需要"记住"之前生成了什么，也不需要从相机位姿反推图像结构。3D 缓存已经提供了几何骨架，模型可以把全部生成能力集中在<strong>未观测区域的补全</strong>和<strong>场景状态的时间推进</strong>上。
-        </div>
-        <table>
-            <tr><th>属性</th><th>详情</th></tr>
-            <tr><td>机构</td><td>NVIDIA, University of Toronto, Vector Institute</td></tr>
-            <tr><td>作者</td><td>Xuanchi Ren*, Tianchang Shen*, Jiahui Huang, Huan Ling, Yifan Lu, Merlin Nimier-David, Thomas Müller, Alexander Keller, Sanja Fidler, Jun Gao</td></tr>
-            <tr><td>会议</td><td>CVPR 2025 Highlight</td></tr>
-            <tr><td>底层视频模型</td><td>Cosmos（主要）+ SVD（对比验证）</td></tr>
-            <tr><td>代码</td><td>开源 (github.com/nv-tlabs/GEN3C)</td></tr>
-        </table>
-    </div>
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#stage1">阶段一:时空 3D Cache 构建</a></li>
+    <li><a href="#stage2">阶段二:Cache 渲染与多视角融合</a></li>
+    <li><a href="#stage3">阶段三:视频扩散模型与自回归推理</a></li>
+    <li><a href="#control">相机控制与 3D 编辑</a></li>
+    <li><a href="#loss">损失函数</a></li>
+    <li><a href="#flowchart">逻辑流程图</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#evolution">技术路线对比与演进</a></li>
+    <li><a href="#conclusion">总结</a></li>
+  </ol>
+</div>
 
-    <div class="section">
-        <h2>🏗️ 模型架构</h2>
-        <p>GEN3C 的架构由三个核心模块组成，形成一个<strong>生成-缓存-渲染</strong>的闭环：</p>
-        <table>
-            <tr><th>模块</th><th>功能</th><th>输入</th><th>输出</th></tr>
-            <tr><td><strong>深度预测器</strong></td><td>预测每帧像素级深度</td><td>种子图像 / 已生成帧</td><td>深度图</td></tr>
-            <tr><td><strong>3D 缓存构建器</strong></td><td>将深度图反投影为 3D 点云</td><td>深度图 + 相机位姿</td><td>时空 3D 点云缓存</td></tr>
-            <tr><td><strong>视频扩散模型</strong></td><td>生成真实感视频</td><td>3D 缓存的 2D 渲染 + 文本/图像条件</td><td>最终视频帧</td></tr>
-        </table>
-        <h3>处理流程（Pipeline）</h3>
-        <ol style="margin-left: 20px; margin-bottom: 12px;">
-            <li><strong>输入处理：</strong>用户输入可以是单张图像、多张稀疏视角图像、或动态视频</li>
-            <li><strong>深度预测：</strong>对每帧预测像素级深度</li>
-            <li><strong>3D 缓存构建：</strong>将深度反投影到 3D，构建时空点云缓存</li>
-            <li><strong>相机轨迹渲染：</strong>用户提供目标相机轨迹，将 3D 缓存按新视角渲染为 2D 视频</li>
-            <li><strong>条件生成：</strong>渲染的 2D 视频作为强条件输入视频扩散模型，生成最终真实感视频</li>
-            <li><strong>迭代：</strong>生成的帧可反馈到深度预测→更新 3D 缓存→生成下一批帧</li>
-        </ol>
-        <div class="highlight">
-            <strong>关键设计：</strong>3D 缓存渲染的 2D 视频已经包含了几何结构和纹理信息，视频扩散模型只需"填充"被遮挡或未观测的区域，并推进场景的动态变化。这大幅降低了模型负担，提升了生成质量和一致性。
-        </div>
-    </div>
+<!-- ==================== 1. ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">现有视频生成模型已经能生成真实感视频,但存在两大顽疾:<strong>3D 信息利用极少</strong>导致物体突然出现/消失等时序不一致;<strong>相机控制不精确</strong>——相机参数仅作为神经网络输入,模型必须自己学习"相机→视频"映射,无法泛化到训练分布外的相机运动。</p>
+<div class="callout key">
+<p>GEN3C 的核心洞察:<strong>把几何记忆从模型中剥离到外部 3D 缓存</strong>。用深度估计将种子图像或先前生成帧反投影为 3D 点云缓存;生成新帧时,先用用户相机轨迹把 3D 缓存渲染成 2D 视频,再以此为强条件输入视频扩散模型。如此模型既不必"记住"先前生成内容,也不必从位姿反推结构,可把全部生成能力集中于<em>未观测区域的补全</em>与<em>场景状态的时间推进</em>。</p>
+</div>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/teaser_fig_1114_3.png" alt="GEN3C teaser" loading="lazy">
+  <div class="caption"><b>图 1</b> GEN3C 统一支持单图→视频、稀疏视角 NVS、单目动态 NVS、驾驶 NVS 四类任务,并支持 Dolly Zoom(同时改变位姿与内参)与 3D 编辑(物体移除/轨迹修改)等下游应用。</div>
+</div>
+<div class="grid grid-3">
+  <div class="card"><div class="num-big">18.66</div><p>单图→视频 T-&-T PSNR(OOD 最优)</p></div>
+  <div class="card"><div class="num-big">24.08</div><p>双视角 NVS RE10K 插值 PSNR</p></div>
+  <div class="card"><div class="num-big">7.93</div><p>驾驶 NVS y±0.0m FID(远超 3D-GS 34.81)</p></div>
+</div>
+</section>
 
-    <div class="section">
-        <h2>🎯 关键特性</h2>
-        <ul>
-            <li><strong>精确相机控制：</strong>用户直接指定相机轨迹（位姿+内参），3D 缓存渲染确保几何一致性，比纯神经网络控制更精确</li>
-            <li><strong>时间 3D 一致性：</strong>通过 3D 点云缓存，前后帧在 3D 空间中一致，避免物体突然出现/消失</li>
-            <li><strong>多种输入模式：</strong>单图→视频、稀疏多视角→视频、动态视频→新视角视频</li>
-            <li><strong>动态场景支持：</strong>不仅支持静态场景的新视角合成，还支持动态视频的新视角变换</li>
-            <li><strong>Dolly Zoom 效果：</strong>支持同时改变位姿和内参的电影级特效（背景变化但前景透视不变）</li>
-            <li><strong>3D 编辑能力：</strong>基于显式 3D 缓存，支持物体移除、轨迹编辑等 3D 编辑操作</li>
-            <li><strong>双模型验证：</strong>在 Cosmos 和 SVD 两种视频扩散模型上验证了方法通用性</li>
-            <li><strong>驾驶仿真应用：</strong>支持驾驶场景的视角变换（左移、上升等），可生成不同视角的驾驶视频</li>
-        </ul>
-    </div>
+<!-- ==================== 2. MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 现有方法的三大局限</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--orange)">隐式相机控制类</h4>
+    <ul>
+      <li>CameraCtrl / MotionCtrl:Plücker 嵌入作网络输入</li>
+      <li>需学习"相机参数→视频"映射</li>
+      <li>OOD 相机运动泛化差(T-&-T 仅 15.88 PSNR)</li>
+      <li>无法精确跟随复杂轨迹</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--red)">重建类 NVS</h4>
+    <ul>
+      <li>Nerfacto / 3D-GS:依赖稠密输入</li>
+      <li>稀疏视角下外推伪影严重</li>
+      <li>驾驶场景 y±4m FID 高达 81–112</li>
+      <li>对光照/重叠极敏感</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--pink)">一致视频生成类</h4>
+    <ul>
+      <li>Streetscapes:依赖精确高度图</li>
+      <li>CVD:内容离开视角即丢失一致性</li>
+      <li>StreamingT2V:用 latent 特征图作历史,相机控制仍难</li>
+      <li>ReconX/ViewCrafter:依赖 DUSt3R 对齐,未对齐即伪影</li>
+    </ul>
+  </div>
+</div>
 
-    <div class="section">
-        <h2>🔬 技术细节</h2>
-        <h3>3D 缓存机制</h3>
-        <p>3D 缓存是 GEN3C 的核心。具体实现：</p>
-        <ul>
-            <li><strong>深度预测：</strong>使用预训练的深度估计模型对每帧预测像素级深度</li>
-            <li><strong>反投影：</strong>利用已知相机内参和位姿，将每个像素反投影到 3D 空间形成点云</li>
-            <li><strong>时空缓存：</strong>多帧的点云在 3D 空间中累积，形成时空一致的 3D 缓存</li>
-            <li><strong>渲染条件：</strong>给定新相机轨迹，将 3D 缓存投影到新视角，生成渲染视频作为扩散模型的条件</li>
-        </ul>
-        <h3>视频扩散模型</h3>
-        <ul>
-            <li><strong>主模型：Cosmos</strong> — NVIDIA 的视频生成模型，质量更高</li>
-            <li><strong>对比模型：SVD</strong> — Stable Video Diffusion，验证方法通用性</li>
-            <li>渲染的 2D 视频通过 <strong>ControlNet 式的条件注入</strong>引导扩散模型生成</li>
-            <li>模型聚焦于：未观测区域的 hallucination + 场景动态的时间推进</li>
-        </ul>
-        <h3>支持的相机控制</h3>
-        <table>
-            <tr><th>控制类型</th><th>说明</th></tr>
-            <tr><td>6-DOF 位姿轨迹</td><td>用户指定相机在 3D 空间中的运动路径</td></tr>
-            <tr><td>内参变化</td><td>支持焦距等内参动态变化（如 Dolly Zoom）</td></tr>
-            <tr><td>预设视角变换</td><td>驾驶场景中的 "左移 2m/4m"、"上升 2m/4m" 等</td></tr>
-        </table>
-    </div>
+<h3>2.2 Motivation:回扫即遗忘</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/motivation_img.png" alt="motivation" loading="lazy">
+  <div class="caption"><b>图 2</b> 当相机来回扫视同一区域时,先前方法因无显式历史建模,会产生"忘记之前生成内容"的严重伪影;GEN3C 用 3D 缓存显式记录历史几何,回扫时仍保持一致。</div>
+</div>
 
-    <div class="section">
-        <h2>📊 基准表现</h2>
-        <h3>稀疏视角新视角合成</h3>
-        <ul>
-            <li>在双视角新视角合成任务上达到 SOTA</li>
-            <li>对比 MVSplat、PixelSplat：GEN3C 生成更真实、过渡更平滑的新视角，即使输入视角重叠极少、光照条件不同</li>
-            <li>对比 Nerfacto、3D-GS：基于重建的方法存在更多伪影，GEN3C 更可信</li>
-        </ul>
-        <h3>单图到视频生成</h3>
-        <ul>
-            <li>对比 CameraCtrl、MotionCtrl、GenWarp、NVS-Solver：GEN3C 生成的画面与相机位姿对齐更精确，画质更高</li>
-        </ul>
-        <h3>驾驶仿真</h3>
-        <ul>
-            <li>能从原始驾驶视频生成不同视角的视频（左移、上升等）</li>
-            <li>支持 3D 编辑：物体移除、车辆轨迹编辑</li>
-        </ul>
-        <h3>动态视频新视角合成</h3>
-        <ul>
-            <li>输入 Sora/MovieGen 生成的动态视频，GEN3C 能重新渲染为新的相机轨迹</li>
-            <li>模型对域外视频有泛化能力</li>
-        </ul>
-    </div>
+<h3>2.3 GEN3C 的设计哲学</h3>
+<div class="callout tip">
+<p>受图形学管线启发:<strong>可控性与一致性的根源是显式 3D 几何建模 + 渲染到 2D</strong>。GEN3C 构建"近似 3D 几何"(点云缓存),从用户图像或先前帧反投影得到,再按用户相机轨迹渲染成 2D 视频作条件。视频模型被微调为"翻译器":把不完美的渲染视频翻译为高质量视频,修正反投影-投影过程的伪影、补全缺失区域。<em>多视角时为每个视角维护独立 cache,由视频模型处理视角间对齐与聚合</em>——这避免显式点云融合的脆弱性。</p>
+</div>
+</section>
 
-    <div class="section">
-        <h2>💡 个人分析</h2>
-        <h3>核心贡献</h3>
-        <p>GEN3C 的关键贡献不在网络架构创新，而在于<strong>将 3D 几何信息以显式缓存的方式注入视频生成流程</strong>。这是一个"系统工程"式的创新——用成熟的 3D 重建技术（深度预测+点云+渲染）作为视频扩散模型的条件，巧妙地解决了视频生成中两个顽疾：相机控制不精确和 3D 不一致。</p>
-        <h3>优势</h3>
-        <ul>
-            <li>方法与底层视频模型解耦，理论上可以应用于任何视频扩散模型</li>
-            <li>3D 缓存是显式表示，支持 3D 编辑等下游任务</li>
-            <li>生成质量和一致性提升明显，尤其在稀疏视角和长序列场景</li>
-        </ul>
-        <h3>局限</h3>
-        <ul>
-            <li>依赖深度预测质量，深度误差会传播到生成结果</li>
-            <li>3D 缓存构建和渲染增加推理开销</li>
-            <li>动态场景中非刚性变形的处理仍有限——3D 缓存主要编码几何结构，复杂运动语义需要模型自己处理</li>
-            <li>需要已知或估计相机位姿，对完全无位姿信息场景不适用</li>
-        </ul>
-        <h3>与 NVIDIA 生态的关系</h3>
-        <p>GEN3C 与 NVIDIA 的 Cosmos 系列紧密关联——Cosmos 作为底层视频扩散模型，GEN3C 在其上添加 3D 缓存层。这体现了 NVIDIA "Physical AI" 战略：通过几何/物理约束提升生成模型的可靠性，服务于自动驾驶、机器人等需要精确 3D 理解的场景。</p>
-    </div>
+<!-- ==================== 3. OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p>GEN3C 是一个三阶段 pipeline,核心是<em>显式 3D 缓存</em>作为几何骨架,把"几何一致性"从模型负担转为外部约束。</p>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/method_compatible.png" alt="method overview" loading="lazy">
+  <div class="caption"><b>图 3</b> 方法总览:用户输入(单图/多视图/视频)→构建时空 3D cache(§4.1)→渲染成视频(§4.2)→送入视频扩散模型(§4.3, §4.4)。</div>
+</div>
 
-    <div class="section">
-        <h2>📐 算法框图</h2>
-        <p>请参考论文原文 Figure 2 (Method Overview) 和项目主页 <a href="https://research.nvidia.com/labs/toronto-ai/GEN3C/" style="color: var(--accent);">NVIDIA GEN3C</a> 的方法图。</p>
-        <div class="highlight">
-            <strong>流程简述：</strong>输入(图像/多视图/视频) → 深度预测 → 反投影为3D点云缓存 → 用户相机轨迹 → 渲染2D视频 → 视频扩散模型(Cosmos/SVD) → 生成最终视频
-        </div>
-        <p><strong>核心组件：</strong></p>
-        <ul>
-            <li>深度预测模块：像素级深度估计</li>
-            <li>3D 缓存：时空点云累积</li>
-            <li>渲染器：新视角点云渲染</li>
-            <li>视频扩散模型：条件视频生成</li>
-        </ul>
-    </div>
+<h3>3.1 三阶段形式化</h3>
+<table>
+  <tr><th>阶段</th><th>输入</th><th>核心操作</th><th>输出</th></tr>
+  <tr><td><span class="stage-tag stage-1">一</span> 3D Cache 构建</td><td>$V$ 视角 × $L$ 时刻的 RGB 图像 + 相机位姿</td><td>DAV2 预测深度 → 反投影为点云 $\mathbf{P}^{t,v}$</td><td>$L \times V$ 个点云阵列</td></tr>
+  <tr><td><span class="stage-tag stage-2">二</span> Cache 渲染</td><td>3D cache + 用户相机轨迹 $\mathbf{C}^t$</td><td>点云渲染 $\mathcal{R}$ + mask 生成</td><td>渲染视频 $\mathbf{I}^v$ + disocclusion mask $\mathbf{M}^v$</td></tr>
+  <tr><td><span class="stage-tag stage-3">三</span> 条件视频扩散</td><td>渲染 latent + noisy latent</td><td>In-Layer + Max-Pool 融合 → 去噪</td><td>14 帧真实感视频</td></tr>
+</table>
 
-    <div class="section">
-        <h2>💡 核心创新点</h2>
-        <ol style="margin-left: 20px; margin-bottom: 12px;">
-            <li><strong>3D 缓存引导的视频生成：</strong>首次将显式 3D 点云缓存作为视频扩散模型的条件，实现几何一致的视频生成</li>
-            <li><strong>解耦几何与生成：</strong>模型不需记忆/推断几何结构，专注生成能力释放给纹理补全和动态推进</li>
-            <li><strong>精确相机控制：</strong>通过 3D 缓存渲染直接对齐相机轨迹，比纯神经网络相机控制更精确</li>
-            <li><strong>统一框架：</strong>单图、稀疏多视角、动态视频三种输入统一处理</li>
-            <li><strong>3D 编辑支持：</strong>显式 3D 表示天然支持物体移除、轨迹编辑等下游任务</li>
-            <li><strong>电影级特效：</strong>Dolly Zoom 等需要同时控制位姿和内参的效果</li>
-            <li><strong>跨模型通用：</strong>在 Cosmos 和 SVD 两种模型上验证，方法不绑定特定视频扩散模型</li>
-        </ol>
-    </div>
+<h3>3.2 关键数学符号</h3>
+<ul>
+  <li>3D cache:$\{\mathbf{P}^{t,v}\}$,$1 \le t \le L, 1 \le v \le V$($L$ 时序长度,$V$ 视角数)</li>
+  <li>渲染函数:$(I^{t,v}, M^{t,v}) := \mathcal{R}(\mathbf{P}^{t,v}, \mathbf{C}^t)$,产出 RGB + disocclusion mask</li>
+  <li>渲染视频 latent:$\mathbf{z}^v = \mathcal{E}(\mathbf{I}^v) \in \mathbb{R}^{L \times C \times h \times w}$(SVD 设置 $L'=L, C=4, h=H/8, w=W/8$)</li>
+  <li>noisy latent:$\mathbf{z}_\tau = \alpha_\tau \mathcal{E}(\mathbf{x}) + \sigma_\tau \mathbb{\epsilon}$</li>
+</ul>
 
-    <div class="section">
-        <h2>🎯 应用场景</h2>
-        <table>
-            <tr><th>场景</th><th>输入</th><th>输出</th><th>特点</th></tr>
-            <tr><td>单图场景创建</td><td>1 张图像</td><td>任意相机轨迹视频</td><td>从单图生成 3D 一致的漫游视频</td></tr>
-            <tr><td>稀疏视角 NVS</td><td>2-5 张图像</td><td>新视角视频</td><td>SOTA，超越 MVSplat/PixelSplat</td></tr>
-            <tr><td>动态视频重渲染</td><td>动态视频(Sora/MovieGen)</td><td>新相机轨迹视频</td><td>域外泛化，支持电影特效</td></tr>
-            <tr><td>驾驶仿真</td><td>驾驶视频</td><td>视角变换视频</td><td>左移/上升等预设，支持编辑</td></tr>
-            <tr><td>3D 编辑</td><td>场景视频</td><td>编辑后视频</td><td>物体移除、轨迹修改</td></tr>
-            <tr><td>Dolly Zoom</td><td>视频/图像</td><td>电影特效视频</td><td>同时变位姿+内参，前景不变背景变</td></tr>
-        </table>
-    </div>
+<div class="callout key">
+<p><strong>核心创新:3D 几何从"模型负担"转为"外部约束"</strong>。GEN3C 不要求模型记忆或推断几何结构,3D cache 已提供几何骨架,模型只需补全未观测区域 + 推进场景动态。这种"显式几何 + 生成补全"的分工,是其在 OOD 场景与长视频生成上稳健的根本原因。</p>
+</div>
+</section>
 
-    <div class="section">
-        <h2>🏋️ 训练策略</h2>
-        <ul>
-            <li><strong>视频扩散模型：</strong>使用预训练的 Cosmos / SVD，不在主生成模型上进行大规模训练</li>
-            <li><strong>条件适配层：</strong>训练将 3D 缓存渲染的 2D 视频作为条件注入扩散模型，类似 ControlNet 的条件适配</li>
-            <li><strong>深度模型：</strong>使用预训练深度估计模型，不需要在目标数据上微调</li>
-            <li><strong>自迭代生成：</strong>生成帧反馈到深度预测→更新缓存→生成下一帧，形成自举式长视频生成</li>
-        </ul>
-        <div class="highlight">
-            <strong>注：</strong>论文未详细描述训练数据集规模和训练超参数。方法的核心在于推理时架构设计而非训练策略创新。如需了解训练细节请参考论文原文 Section 3-4。
-        </div>
-    </div>
+<!-- ==================== 4. STAGE 1 ==================== -->
+<section id="stage1">
+<h2><span class="num">4</span>阶段一:时空 3D Cache 构建</h2>
+<span class="stage-tag stage-1">Cache Building</span>
+<p>3D cache 是彩色点云,由 RGB 图像的深度估计反投影得到。选择点云形式,因<em>深度估计在室内/室外/驾驶各域均进展显著</em>(DAV2、DepthCrafter、Depth Anything 等),泛化性强。</p>
 
-    <div class="section">
-        <h2>📊 数据集构建</h2>
-        <p>GEN3C 在多种数据集上评测，覆盖静态和动态场景：</p>
-        <table>
-            <tr><th>评测任务</th><th>数据集</th><th>说明</th></tr>
-            <tr><td>稀疏视角 NVS</td><td>RE10K / DL3DV 等</td><td>双视角输入，新视角合成</td></tr>
-            <tr><td>单图到视频</td><td>RealEstate10K</td><td>单图输入生成漫游视频</td></tr>
-            <tr><td>驾驶仿真</td><td>驾驶数据集（如 nuScenes/KITTI 类）</td><td>视角变换评测</td></tr>
-            <tr><td>动态视频 NVS</td><td>Sora/MovieGen 生成的动态视频</td><td>域外泛化测试</td></tr>
-        </table>
-        <div class="highlight">
-            <strong>注：</strong>论文强调评测的多样性而非训练数据构建。GEN3C 主要利用预训练模型，自身训练数据规模有限。具体数据集详情请参考论文原文实验部分。
-        </div>
-    </div>
+<h3>4.1 时空缓存结构</h3>
+<p>对视角 $v$、时刻 $t$ 的 RGB 图像,创建点云 $\mathbf{P}^{t,v}$(由该图深度估计反投影)。设视角数 $V$、时序长度 $L$,则 3D cache 为 $L \times V$ 个点云的阵列。按应用差异化构建:</p>
+<table>
+  <tr><th>应用</th><th>视角数 $V$</th><th>时序处理</th></tr>
+  <tr><td>单图→视频</td><td>$V=1$</td><td>单 cache 元素沿时间维复制 $L$ 次</td></tr>
+  <tr><td>静态 NVS(稀疏/稠密)</td><td>$V$ = 用户给图数</td><td>每个沿时间复制 $L$ 次</td></tr>
+  <tr><td>动态 NVS</td><td>$V$ = 时间同步视频数</td><td>cache 由长 $L$ 初始视频构建</td></tr>
+</table>
 
-    <div class="section">
-        <h2>📐 损失函数</h2>
-        <p>GEN3C 的损失函数主要继承自底层视频扩散模型：</p>
-        <ul>
-            <li><strong>视频扩散损失：</strong>Cosmos/SVD 的标准去噪扩散损失（如 flow matching / ε-prediction）</li>
-            <li><strong>条件控制损失：</strong>条件适配层的训练损失，确保 3D 缓存渲染条件被正确利用</li>
-            <li><strong>深度预测损失：</strong>使用预训练深度模型，不涉及额外训练损失</li>
-        </ul>
-        <div class="highlight">
-            <strong>注：</strong>GEN3C 的核心贡献在推理架构而非损失设计。深度预测和视频扩散使用现成模型和损失函数。具体损失公式请参考论文原文。
-        </div>
-    </div>
+<h3>4.2 深度与位姿来源</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>深度模型</h4>
+    <p><strong>DAV2</strong>(Depth Anything V2)。RE10K/DL3DV 深度对齐到 DROID-SLAM 场景尺度;WOD 对齐到 LiDAR 点云尺度。</p>
+  </div>
+  <div class="card">
+    <h4>相机位姿</h4>
+    <p>用户未提供时用 <strong>DROID-SLAM</strong> 估计。代码层面,后续发布的 <code>ViPE</code>(nv-tlabs/vipe)可联合预测深度+位姿,WOD 用 LiDAR 标定尺度。</p>
+  </div>
+</div>
 
-    <div class="section">
-        <h2>🔄 技术路线对比与演进</h2>
-        <h3>相机可控视频生成方法对比</h3>
-        <table>
-            <tr><th>方法</th><th>相机控制方式</th><th>3D 一致性</th><th>特点</th></tr>
-            <tr><td><strong>GEN3C</strong></td><td>3D 缓存渲染（显式）</td><td>✅ 强（点云约束）</td><td>精确控制 + 3D 编辑</td></tr>
-            <tr><td>CameraCtrl</td><td>神经网络隐式</td><td>❌ 弱</td><td>相机参数直接输入网络</td></tr>
-            <tr><td>MotionCtrl</td><td>轨迹编码器</td><td>❌ 弱</td><td>运动轨迹嵌入</td></tr>
-            <tr><td>NVS-Solver</td><td>基于 NeRF 渲染</td><td>⚠️ 中</td><td>依赖 NeRF 重建质量</td></tr>
-            <tr><td>GenWarp</td><td>单帧 warp</td><td>❌ 弱</td><td>仅适合单图变换</td></tr>
-        </table>
-        <h3>新视角合成方法对比</h3>
-        <table>
-            <tr><th>方法</th><th>类型</th><th>输入</th><th>vs GEN3C</th></tr>
-            <tr><td>MVSplat</td><td>前馈 NVS</td><td>2 视角</td><td>GEN3C 更真实，过渡更平滑</td></tr>
-            <tr><td>PixelSplat</td><td>前馈 NVS</td><td>2 视角</td><td>GEN3C 质量明显更好</td></tr>
-            <tr><td>Nerfacto</td><td>重建+渲染</td><td>多视角</td><td>GEN3C 伪影更少</td></tr>
-            <tr><td>3D-GS</td><td>重建+渲染</td><td>多视角</td><td>GEN3C 更可信，尤其在稀疏视角</td></tr>
-        </table>
-        <h3>技术演进路线</h3>
-        <ul>
-            <li><strong>前馈 NVS：</strong>MVSplat → PixelSplat → <strong>GEN3C</strong>（引入 3D 缓存+视频扩散）</li>
-            <li><strong>相机可控生成：</strong>CameraCtrl → MotionCtrl → NVS-Solver → <strong>GEN3C</strong>（从隐式→显式 3D 约束）</li>
-            <li><strong>NVIDIA 3D+视频生态：</strong>3DGS → VGGT → GEN3C → Cosmos 3（从重建→生成→世界模型）</li>
-        </ul>
-        <h3>与相关工作的关系</h3>
-        <ul>
-            <li><strong>vs Cosmos 3 (p01)：</strong>Cosmos 3 是 NVIDIA 的全模态世界模型，GEN3C 可视为 Cosmos 在 3D 一致性方向的特化增强</li>
-            <li><strong>vs VGGT (p26)：</strong>VGGT 做前馈 3D 重建（深度/位姿/点云），GEN3C 使用类似技术构建 3D 缓存但用于视频生成</li>
-            <li><strong>vs 相机可控性综述 (p18)：</strong>GEN3C 属于该综述中"3D 点轨迹引导"和"显式几何约束"的代表性工作</li>
-            <li><strong>vs 几何一致性综述 (p17)：</strong>GEN3C 通过 3D 缓存实现几何一致性，是该方向的重要基线</li>
-        </ul>
-    </div>
+<h3>4.3 反投影数学形式</h3>
+<p>对像素 $\mathbf{p}=(u,v)$ 与深度 $d$,相机内参 $K$、外参 $[R|t]$,反投影为 3D 点:</p>
+<div class="equation">
+$$\mathbf{X} = R^{-1}\left(\frac{1}{d} K^{-1} \begin{bmatrix} u \\ v \\ 1 \end{bmatrix} - t\right) \quad \Rightarrow \quad \mathbf{P}^{t,v} = \{(R^{t,v})^{-1}((1/d_i) K^{-1} \mathbf{p}_i - t^{t,v}), \text{color}_i\}_i$$
+</div>
 
-    <div class="section">
-        <h2>🔗 资源链接</h2>
-        <div class="links">
-            <a href="https://arxiv.org/abs/2503.03751">📄 arXiv 论文</a>
-            <a href="https://research.nvidia.com/labs/toronto-ai/GEN3C/">🌐 项目主页</a>
-            <a href="https://github.com/nv-tlabs/GEN3C">💻 GitHub 代码</a>
-            <a href="https://arxiv.org/pdf/2503.03751">📥 PDF 下载</a>
-        </div>
-    </div>
+<div class="callout warn">
+<p><strong>关键工程细节</strong>:深度仅对齐到<em>场景尺度</em>(全局 $s,t$),不要求像素级精确对齐——这把"显式融合"的脆弱性转移给视频模型处理(见 §5)。深度误差由模型在渲染条件中修正(Fig. 14 展示模型修正橙色扶手/灯的深度错误并 inpaint 缺失铁轨)。</p>
+</div>
+</section>
+
+<!-- ==================== 5. STAGE 2 ==================== -->
+<section id="stage2">
+<h2><span class="num">5</span>阶段二:Cache 渲染与多视角融合</h2>
+<span class="stage-tag stage-2">Rendering & Fusion</span>
+
+<h3>5.1 点云渲染与 mask 生成</h3>
+<p>点云可像 Gaussian Splats 一样高效渲染。渲染函数 $\mathcal{R}$ 将 $\mathbf{P}^{t,v}$ 映射到元组:</p>
+<div class="equation">
+$$(I^{t,v}, M^{t,v}) := \mathcal{R}(\mathbf{P}^{t,v}, \mathbf{C}^t) \tag{1}$$
+<span class="label">(式 1)</span>
+</div>
+<ul>
+  <li>$I^{t,v}$:从新相机 $\mathbf{C}^t$ 看到的 RGB 图像</li>
+  <li>$M^{t,v}$:disocclusion mask,标记未被点云覆盖的像素(需模型补全区域)</li>
+</ul>
+<p>给定相机序列 $\mathbf{C}=(\mathbf{C}^1,\ldots,\mathbf{C}^L)$,渲染所有 cache 元素得 $V$ 个视频,沿时间拼接为 $\mathbf{I}^v \in \mathbb{R}^{L\times 3\times H\times W}$ 与 $\mathbf{M}^v \in \mathbb{R}^{L\times 1\times H\times W}$。<em>仅保留 RGB + 1 通道 mask,不显式保留深度作为条件通道</em>。</p>
+
+<h3>5.2 多视角融合:In-Layer + Max-Pool</h3>
+<p>核心原则:<strong>最小化新增可训练参数</strong>——预训练视频扩散模型在海量互联网数据上训练,任何新参数都可能损害泛化。融合流程:</p>
+<ol>
+  <li>用<strong>冻结 VAE 编码器</strong> $\mathcal{E}$ 编码渲染视频:$\mathbf{z}^v = \mathcal{E}(\mathbf{I}^v)$</li>
+  <li>用 mask $\mathbf{M}^v$ 屏蔽未覆盖区域</li>
+  <li>训练时把 masked latent 与目标视频 noisy latent $\mathbf{z}_\tau$ 沿通道维拼接</li>
+  <li>每个视角分别送入扩散模型第一层(<strong>In-Layer</strong>),再对所有视角做 <strong>Max-Pool</strong></li>
+</ol>
+
+<div class="equation">
+$$\mathbf{z}^{v,\prime} = \text{In-Layer}\left(\text{Concat}\left(\mathbf{z}^v \odot \mathbf{M}^{v,\prime},\; \mathbf{z}_\tau\right)\right) \tag{2}$$
+<span class="label">(式 2)</span>
+</div>
+<div class="equation">
+$$\mathbf{z}^{\prime} = \text{Max-Pool}\left\{\mathbf{z}^{1,\prime},\ldots,\mathbf{z}^{V,\prime}\right\} \tag{3}$$
+<span class="label">(式 3)</span>
+</div>
+<p>其中 $\odot$ 为元素乘;$\mathbf{M}^{v,\prime}$ 由 $\mathbf{M}^v$ 用 <strong>min-pooling</strong>(size $H/h \times W/w = 8\times 8$)下采样到 latent 维度。Max-Pool 保证<em>置换不变性</em>(视角顺序无关)且<em>不限视角数</em>(训练 $V_{\max}=4$,推理可任意)。</p>
+
+<h3>5.3 三种融合策略对比</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/fusion_compatible.png" alt="fusion strategies" loading="lazy">
+  <div class="caption"><b>图 4</b> 融合多视角点云的三种策略:Explicit Fusion(直接 3D 空间融合)/ Concat(通道拼接)/ Ours(In-Layer + Max-Pool)。</div>
+</div>
+<table>
+  <tr><th>策略</th><th>描述</th><th>局限</th></tr>
+  <tr><td>Explicit Fusion<br><small>(ReconX/ViewCrafter)</small></td><td>直接在 3D 空间融合点云</td><td class="fail">强依赖深度对齐;不一致即伪影;难注入视角相关光照</td></tr>
+  <tr><td>Concat</td><td>所有视角 latent 沿通道拼接</td><td class="fail">需限定最大视角数;强加视角顺序;非置换不变</td></tr>
+  <tr><td class="best">Ours(In-Layer + Max-Pool)</td><td>置换不变、不限定视角数</td><td class="best">无(消融验证最优)</td></tr>
+</table>
+
+<h3>5.4 mask 注入:元素乘而非拼接</h3>
+<p>曾尝试把 mask 拼接为额外通道,但拼接引入新参数、需训练,在驾驶等 OOD mask 上泛化差。改用<em>元素乘直接施加于 latent</em>,模型架构不变:</p>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/mask_channel_img.png" alt="mask injection" loading="lazy">
+  <div class="caption"><b>图 16</b> mask 注入对比:左=拼接为额外通道(泛化差);右=元素乘直接施加于 latent(本文,OOD 鲁棒)。</div>
+</div>
+</section>
+
+<!-- ==================== 6. STAGE 3 ==================== -->
+<section id="stage3">
+<h2><span class="num">6</span>阶段三:视频扩散模型与自回归推理</h2>
+<span class="stage-tag stage-3">Video Diffusion</span>
+
+<h3>6.1 底座模型:SVD 与 Cosmos</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>SVD(论文主底座)</h4>
+    <ul>
+      <li>Stable Video Diffusion,image-to-video 潜扩散</li>
+      <li>VAE 仅空间压缩($L'=L, C=4, h=H/8, w=W/8$)</li>
+      <li>额外条件:CLIP 编码第一帧</li>
+      <li>所有消融与对比基准用 SVD</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Cosmos(更强底座)</h4>
+    <ul>
+      <li>Cosmos1.0Diffusion7BVideo2World(7B 参数)</li>
+      <li>用 Cosmos tokenizer 编码渲染帧</li>
+      <li>与 noisy latent 拼接</li>
+      <li>RE10K+DL3DV 上 10K 步、batch 64 微调</li>
+      <li>质量大幅提升,验证方法<em>可受益于演进中的视频模型</em></li>
+    </ul>
+  </div>
+</div>
+<div class="callout tip">
+<p><strong>代码佐证</strong>:实际发布版本(<code>nvidia/GEN3C-Cosmos-7B</code>)以 Cosmos 为底座,推理脚本为 <code>cosmos_predict1/diffusion/inference/gen3c_single_image.py</code>、<code>gen3c_dynamic.py</code>、<code>gen3c_multiview.py</code>。SVD 主要用于论文消融对比。</p>
+</div>
+
+<h3>6.2 训练损失(仅去噪得分匹配)</h3>
+<p>条件信号 $\mathbf{c}$ = 3D cache 的渲染;配对数据:渲染 $\mathcal{R}(\mathbf{P}^{t,v},\cdot)$ ↔ 新相机轨迹下的 RGB GT 视频 $\mathbf{x}$。损失为标准 denoising score matching,target $\mathbf{y} = \mathbf{z}_0 = \mathcal{E}(\mathbf{x})$(跟随 SVD 实践):</p>
+<div class="equation">
+$$\mathbb{E}_{\mathbf{x}_0\sim p_{\text{data}},\;\tau\sim p_\tau,\;\mathbb{\epsilon}\sim\mathcal{N}(\mathbf{0},\mathbf{I})}\left[\left\|\mathbf{f}_\theta(\mathbf{x}_\tau;\mathbf{c},\tau)-\mathbf{y}\right\|_2^2\right] \tag{4}$$
+<span class="label">(式 4)</span>
+</div>
+
+<h3>6.3 三阶段训练协议</h3>
+<table>
+  <tr><th>阶段</th><th>数据</th><th>分辨率</th><th>迭代</th><th>序列长</th></tr>
+  <tr><td><span class="stage-tag stage-1">1</span> 室内+室外</td><td>RE10K + DL3DV</td><td>320×576</td><td>100K</td><td>14</td></tr>
+  <tr><td><span class="stage-tag stage-2">2</span> 全域</td><td>4 数据集(RE10K/DL3DV/WOD/Kubric4D)</td><td>576×1024</td><td>100K</td><td>14</td></tr>
+  <tr><td><span class="stage-tag stage-3">3</span> 时序微调</td><td>4 数据集</td><td>320×576</td><td>10K</td><td>14–56 随机</td></tr>
+</table>
+<ul>
+  <li>优化器 AdamW,学习率 3e-5,条件 dropout 15%(rendered video + CLIP 第一帧)</li>
+  <li>32× A100 GPU,训练总时长约 4 天</li>
+  <li>第三阶段仅微调 temporal layers</li>
+</ul>
+
+<h3>6.4 推理与自回归长视频生成</h3>
+<p>初始化 latent 为高斯噪声,25 步去噪,CFG 权重 3(跟随 SVD)。14 帧视频约 30 秒(1×A100)。长视频切分为长度 $L$ 的重叠 chunk,相邻 chunk <strong>1 帧重叠</strong>,顺序自回归生成。</p>
+<div class="callout key">
+<p><strong>3D Cache 增量更新</strong>:用先前 chunk 的帧更新 cache —— 对每帧用 DAV2 估计深度,因相机位姿已知(用户给),通过<em>最小化重投影误差</em>对齐到现有 cache(全局 $s,t$),对齐后 RGB-D 反投影到 3D 拼接到 cache,用于预测下一 chunk。</p>
+</div>
+<div class="equation">
+$$s,t = \arg\min_{s,t}\left\|\left(s\cdot\mathbf{d}+t-\mathbf{d}^{\text{tgt}}\right)\cdot M\right\|_2^2,\qquad \mathbf{d}' = s\cdot\mathbf{d}+t \tag{5}$$
+<span class="label">(式 5,深度对齐)</span>
+</div>
+<div class="callout tip">
+<p><strong>代码佐证</strong>:README 明确单次生成长度为 121 帧(= 1 chunk),长视频模式为 <code>--num_video_frames 121*N-1</code>(如 241、361)。多 GPU 用 <code>torchrun --nproc_per_node=8</code>,全 offload 显存约 43GB,仅测试 H100/A100。</p>
+</div>
+</section>
+
+<!-- ==================== 7. CONTROL ==================== -->
+<section id="control">
+<h2><span class="num">7</span>相机控制与 3D 编辑</h2>
+
+<h3>7.1 相机轨迹接口</h3>
+<p>用户提供的相机轨迹 $\mathbf{C}=(\mathbf{C}^1,\ldots,\mathbf{C}^L)$ 即相机控制接口;$\mathbf{C}^t$ 可编码<strong>外参(位姿)与内参</strong>。3D cache 渲染直接对齐相机轨迹,比纯神经网络控制更精确。</p>
+
+<h3>7.2 Dolly Zoom:同时改位姿+内参</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/teaser_fig_1114_3.png" alt="dolly zoom" loading="lazy">
+  <div class="caption"><b>图 1 局部</b> Dolly Zoom:同时改变位姿与内参(焦距),实现"背景变化但前景透视不变"的电影级特效。这是 $\mathbf{C}^t$ 同时编码外参与内参的自然结果。</div>
+</div>
+
+<h3>7.3 8 种预设相机轨迹(代码佐证)</h3>
+<p>README 的 <code>--trajectory</code> 参数提供 8 种预设:</p>
+<table>
+  <tr><th>轨迹</th><th>说明</th><th>旋转模式 <code>--camera_rotation</code></th></tr>
+  <tr><td><code>left</code> / <code>right</code></td><td>水平左右移动(默认 left)</td><td><code>center_facing</code>(默认,看向场景中心)</td></tr>
+  <tr><td><code>up</code> / <code>down</code></td><td>垂直上下移动</td><td><code>no_rotation</code>(保持原朝向)</td></tr>
+  <tr><td><code>zoom_in</code> / <code>zoom_out</code></td><td>推进/拉远</td><td><code>trajectory_aligned</code>(沿运动方向)</td></tr>
+  <tr><td><code>clockwise</code> / <code>counterclockwise</code></td><td>顺/逆时针圆周</td><td>—</td></tr>
+</table>
+<p>驾驶场景(§5.4)论文给出具体参数:<strong>水平偏移原始前相机轨迹</strong> $y\pm0.0/1.0/2.0/4.0$ m。<code>--movement_distance</code> 默认 0.3。</p>
+
+<h3>7.4 3D 编辑:物体移除与轨迹修改</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/editing.png" alt="3D editing" loading="lazy">
+  <div class="caption"><b>图 8</b> 驾驶 3D 编辑:直接从 3D cache 点云中删除目标物体的点(物体移除),或修改 cache 中车辆点的轨迹(轨迹编辑),用编辑后 cache 渲染→生成得编辑后视频。</div>
+</div>
+<div class="callout tip">
+<p><strong>显式 3D 表示的天然优势</strong>:因 cache 是点云,可直接编辑点云实现下游 3D 编辑任务,这是 latent 条件类方法(如 StreamingT2V)无法实现的。</p>
+</div>
+</section>
+
+<!-- ==================== 8. LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">8</span>损失函数</h2>
+<p>GEN3C 是方法密集型但<em>损失极简</em>——仅 denoising score matching(式 4)+ 深度对齐(式 5,仅自回归更新用)。<strong>无感知损失、无对抗损失、无几何一致性损失</strong>。这是其工程亮点:以架构创新替代损失堆叠。</p>
+<table>
+  <tr><th>损失</th><th>公式</th><th>权重/用途</th><th>作用</th></tr>
+  <tr><td class="best">Denoising score matching</td><td>$\|\mathbf{f}_\theta(\mathbf{x}_\tau;\mathbf{c},\tau)-\mathbf{z}_0\|_2^2$</td><td>主损失,权重 1</td><td>训练视频扩散模型把渲染条件翻译为真实视频</td></tr>
+  <tr><td>深度对齐(全局 $s,t$)</td><td>$\arg\min_{s,t}\|(s\mathbf{d}+t-\mathbf{d}^{\text{tgt}})\cdot M\|_2^2$</td><td>仅自回归更新 cache 时用</td><td>对新帧深度做全局尺度+偏移对齐到现有 cache</td></tr>
+  <tr><td>条件 dropout</td><td>—</td><td>15%(rendered video + CLIP)</td><td>支持 CFG,提升生成质量与可控性</td></tr>
+</table>
+<div class="callout warn">
+<p><strong>对比</strong>:EVA-Gaussian 等方法密集型论文常堆叠 5+ 损失(锚点、感知、LPIPS 等)。GEN3C 反其道而行,把几何约束从损失项移到<em>架构条件</em>(3D cache 渲染作为强条件),损失保持最简,既训练稳定又泛化好。</p>
+</div>
+</section>
+
+<!-- ==================== 9. FLOWCHART ==================== -->
+<section id="flowchart">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 总流程 Pipeline</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["用户输入<br/>(单图 / 多视图 / 动态视频)"] --> POSE["相机位姿<br/>(用户提供 或 DROID-SLAM/ViPE 估计)"]
+    INPUT --> DEPTH["DAV2 深度预测"]
+    DEPTH --> UNPROJECT["反投影为点云 P"]
+    POSE --> UNPROJECT
+    UNPROJECT --> CACHE["时空 3D Cache<br/>(L×V 个点云阵列)"]
+    CACHE --> RENDER["点云渲染 R(P, C)"]
+    USERCAM["用户相机轨迹 C"] --> RENDER
+    RENDER --> COND["渲染视频 I + disocclusion mask M"]
+    COND --> VAE["冻结 VAE 编码 z = E(I)"]
+    VAE --> FUSE["In-Layer + Max-Pool 多视角融合"]
+    NOISE["noisy latent z_tau"] --> FUSE
+    FUSE --> DIFF["视频扩散模型 f_θ<br/>(SVD / Cosmos-7B)"]
+    CLIP["CLIP 第一帧"] --> DIFF
+    DIFF --> DENOISE["25 步去噪 + CFG=3"]
+    DENOISE --> DECODE["VAE 解码 → 14 帧视频"]
+    DECODE --> OUT["输出视频"]
+    DECODE -. "自回归反馈" .-> DEPTH2["DAV2 深度(新帧)"]
+    DEPTH2 --> ALIGN["深度对齐 s,t (式 5)"]
+    ALIGN --> CACHE
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CACHE fill:#dcfce7,stroke:#34d399,color:#065f46
+    style DIFF fill:#ede9fe,stroke:#a78bfa,color:#4c1d95
+    style OUT fill:#fef3c7,stroke:#fb923c,color:#78350f
+</div>
+
+<h3>9.2 训练流程</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph DATA["训练数据构建"]
+        D1["RE10K/DL3DV<br/>DROID-SLAM 位姿+DAV2 深度"]
+        D2["WOD<br/>LiDAR 尺度+DAV2 深度<br/>V=3 相机"]
+        D3["Kubric4D<br/>合成动态 RGB-D"]
+        D1 --> PAIR["配对: 渲染条件 ↔ GT 视频"]
+        D2 --> PAIR
+        D3 --> PAIR
+    end
+    subgraph TRAIN["三阶段训练"]
+        T1["阶段1: RE10K+DL3DV<br/>320×576, 100K iter"]
+        T2["阶段2: 全4数据集<br/>576×1024, 100K iter"]
+        T3["阶段3: temporal 微调<br/>10K iter, 序列14-56"]
+        T1 --> T2 --> T3
+    end
+    PAIR --> T1
+    style DATA fill:#dbeafe,stroke:#3b82f6
+    style TRAIN fill:#ede9fe,stroke:#a78bfa
+</div>
+
+<h3>9.3 自回归长视频推理</h3>
+<div class="mermaid">
+flowchart TD
+    SEED["种子帧<br/>(首 chunk)"] --> C1["生成 chunk 1 (14帧 / 121帧 Cosmos)"]
+    C1 --> UPDATE1["DAV2 深度 + 式5 对齐"]
+    UPDATE1 --> APPEND["RGB-D 反投影 → 拼接到 cache"]
+    APPEND --> OVERLAP["取末 1 帧重叠"]
+    OVERLAP --> C2["生成 chunk 2"]
+    C2 --> UPDATE2["深度对齐 → 更新 cache"]
+    UPDATE2 --> C3["生成 chunk 3 ..."]
+    C3 --> LONG["长视频 (241 / 361 / ... 帧)"]
+    style SEED fill:#dbeafe,stroke:#3b82f6
+    style C1 fill:#dcfce7,stroke:#34d399
+    style LONG fill:#fef3c7,stroke:#fb923c
+</div>
+
+<h3>9.4 多视角融合策略对比</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph A["Explicit Fusion (ReconX/ViewCrafter)"]
+        A1["多视角点云"] --> A2["DUSt3R/3D 融合"]
+        A2 --> A3["单一点云"]
+        A3 --> A4["渲染"]
+        A4 --> A5["失败: 未对齐即伪影"]
+    end
+    subgraph B["Concat"]
+        B1["视角1 latent"] --> B4["通道拼接"]
+        B2["视角2 latent"] --> B4
+        B3["视角3 latent"] --> B4
+        B4 --> B5["失败: 限视角数 + 非置换不变"]
+    end
+    subgraph C["Ours: In-Layer + Max-Pool"]
+        C1["视角1: In-Layer"] --> C4["Max-Pool"]
+        C2["视角2: In-Layer"] --> C4
+        C3["视角N: In-Layer"] --> C4
+        C4 --> C5["成功: 置换不变 + 任意视角数"]
+    end
+    style A5 fill:#fecaca,stroke:#f87171
+    style B5 fill:#fecaca,stroke:#f87171
+    style C5 fill:#bbf7d0,stroke:#34d399
+</div>
+</section>
+
+<!-- ==================== 10. EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 单图→视频生成(Table 1)</h3>
+<p>RE10K 为 in-domain,T-&-T(Tanks-&-Temples)为 OOD。GEN3C 全面最优;CameraCtrl 等 Plücker 方法在 OOD 上泛化差。</p>
+<table>
+  <tr><th>Method</th><th>T-&-T PSNR↑</th><th>T-&-T SSIM↑</th><th>T-&-T LPIPS↓</th><th>RE10K PSNR↑</th><th>RE10K SSIM↑</th><th>RE10K LPIPS↓</th><th>RE10K TSED↑</th></tr>
+  <tr><td>MotionCtrl</td><td>13.46</td><td>0.46</td><td>0.42</td><td>13.60</td><td>0.59</td><td>0.46</td><td>0.1363</td></tr>
+  <tr><td>CameraCtrl</td><td>15.88</td><td>0.55</td><td>0.29</td><td>18.40</td><td>0.72</td><td>0.25</td><td>0.8033</td></tr>
+  <tr><td>GenWarp</td><td>16.04</td><td>0.50</td><td>0.39</td><td>15.50</td><td>0.61</td><td>0.40</td><td>0.0330</td></tr>
+  <tr><td>NVS-Solver</td><td>16.95</td><td>0.59</td><td>0.27</td><td>16.90</td><td>0.69</td><td>0.30</td><td>0.7286</td></tr>
+  <tr class="best"><td>Gen3C</td><td>18.66</td><td>0.67</td><td>0.20</td><td>19.88</td><td>0.78</td><td>0.20</td><td>0.9143</td></tr>
+</table>
+<div class="callout tip">
+<p><strong>TSED 指标</strong>(3D 一致性)差距尤为显著:Gen3C 达 0.9143,GenWarp 仅 0.0330、MotionCtrl 仅 0.1363 —— 这直接验证 3D cache 对时序一致性的决定性作用。</p>
+</div>
+
+<h3>10.2 双视角 NVS(Table 2)</h3>
+<p>每格两值为 interpolation / extrapolation。外推场景下 Gen3C 优势尤其明显。</p>
+<table>
+  <tr><th>Dataset</th><th>Method</th><th>PSNR↑ (interp/extrap)</th><th>SSIM↑ (interp/extrap)</th><th>LPIPS↓ (interp/extrap)</th></tr>
+  <tr><td>T-&-T</td><td>PixelSplat</td><td>21.34 / 17.45</td><td>0.70 / 0.65</td><td>0.42 / 0.46</td></tr>
+  <tr><td>T-&-T</td><td>MVSplat</td><td>20.90 / 16.08</td><td>0.70 / 0.63</td><td>0.39 / 0.44</td></tr>
+  <tr class="best"><td>T-&-T</td><td>Gen3C</td><td>22.22 / 20.51</td><td>0.76 / 0.72</td><td>0.14 / 0.16</td></tr>
+  <tr><td>RE10K</td><td>PixelSplat</td><td>19.74 / 16.95</td><td>0.75 / 0.70</td><td>0.40 / 0.44</td></tr>
+  <tr><td>RE10K</td><td>MVSplat</td><td>21.40 / 15.51</td><td>0.78 / 0.69</td><td>0.30 / 0.37</td></tr>
+  <tr class="best"><td>RE10K</td><td>Gen3C</td><td>24.08 / 21.56</td><td>0.86 / 0.83</td><td>0.11 / 0.15</td></tr>
+</table>
+<div class="callout key">
+<p>RE10K 外推 PSNR:Gen3C <strong>21.56</strong> vs MVSplat 15.51(+6.05)——外推是前馈 NVS 的痛点,3D cache + 视频先验把外推能力推到新高度。LPIPS 从 0.30 降至 0.11,感知质量提升 2.7 倍。</p>
+</div>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/2view.png" alt="2view NVS" loading="lazy">
+  <div class="caption"><b>图 6</b> 双视角 NVS:即便两视角重叠极小、光照不同,Gen3C 仍生成平滑过渡与视角相关光照(如钢琴反射)。</div>
+</div>
+
+<h3>10.3 驾驶 NVS(Table 3,FID↓)</h3>
+<p>偏差越大重建方法退化越严重;Gen3C 在 y±4.0m 上 FID 仅为 3D-GS 的 43%。</p>
+<table>
+  <tr><th>Method</th><th>y±0.0m</th><th>y±1.0m</th><th>y±2.0m</th><th>y±4.0m</th></tr>
+  <tr><td>Nerfacto</td><td>48.34</td><td>67.77</td><td>80.41</td><td class="fail">112.40</td></tr>
+  <tr><td>3D-GS</td><td>34.81</td><td>53.85</td><td>61.78</td><td>81.26</td></tr>
+  <tr class="best"><td>Gen3C</td><td>7.93</td><td>18.19</td><td>25.11</td><td>35.33</td></tr>
+</table>
+
+<h3>10.4 单目动态 NVS(Table 4,Kubric4D)</h3>
+<p>PSNR/SSIM 接近 GCD,但 LPIPS 与 FID 大幅领先(FID 降 34%)。</p>
+<table>
+  <tr><th>Method</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th></tr>
+  <tr><td>GCD</td><td>19.37</td><td class="best">0.67</td><td>0.48</td><td>150.64</td></tr>
+  <tr class="best"><td>Gen3C</td><td class="best">19.41</td><td>0.63</td><td class="best">0.29</td><td class="best">98.58</td></tr>
+</table>
+
+<h3>10.5 模型如何修正深度错误(Fig. 14)</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/input_and_ours.png" alt="depth correction" loading="lazy">
+  <div class="caption"><b>图 14</b> 渲染深度图(左)与模型输出(右):模型修正反投影-投影过程的深度错误(如橙色扶手/灯),并 inpaint 缺失区域(如铁轨)。这验证"视频模型作翻译器"的设计。</div>
+</div>
+</section>
+
+<!-- ==================== 11. ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">11</span>消融实验</h2>
+
+<h3>11.1 深度噪声鲁棒性(Table 5)</h3>
+<p>RE10K 双视角,两值 interp/extrap。噪声 $\mathcal{N}(0, s(d_{0.95}-d_{0.05}))$。小噪声损失可忽略;30% 噪声仍合理。</p>
+<table>
+  <tr><th>Noise Ratio</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+  <tr class="best"><td>0%</td><td>24.08 / 21.56</td><td>0.86 / 0.83</td><td>0.12 / 0.15</td></tr>
+  <tr><td>3%</td><td>22.39 / 21.00</td><td>0.83 / 0.81</td><td>0.16 / 0.18</td></tr>
+  <tr><td>10%</td><td>20.85 / 19.64</td><td>0.79 / 0.76</td><td>0.19 / 0.22</td></tr>
+  <tr><td>30%</td><td>18.52 / 17.91</td><td>0.72 / 0.70</td><td>0.29 / 0.31</td></tr>
+</table>
+
+<h3>11.2 融合策略消融(Table 6)</h3>
+<p>Explicit Fusion 在深度未对齐/光照不同时伪影严重;Gen3C 平滑过渡。</p>
+<table>
+  <tr><th>Strategy</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+  <tr><td>Explicit Fusion</td><td>21.81 / 19.87</td><td>0.79 / 0.75</td><td>0.21 / 0.28</td></tr>
+  <tr class="best"><td>Ours</td><td>24.08 / 21.56</td><td>0.86 / 0.83</td><td>0.11 / 0.15</td></tr>
+</table>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/buffer_vs_point_crop.png" alt="fusion ablation" loading="lazy">
+  <div class="caption"><b>图 10</b> Explicit Fusion 在深度未对齐/光照不同时失败(伪影严重),Gen3C 鲁棒。</div>
+</div>
+
+<h3>11.3 底座升级:SVD → Cosmos(Fig. 11)</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2503.03751v1/cosmos_comparison.png" alt="svd vs cosmos" loading="lazy">
+  <div class="caption"><b>图 11</b> SVD vs Cosmos 底座对比:更强底座 → 更少伪影。Cosmos-7B 仅 10K 步微调即获大幅质量提升,验证方法<em>可受益于持续演进的预训练视频模型</em>。</div>
+</div>
+</section>
+
+<!-- ==================== 12. IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">12</span>可改进方向分析</h2>
+<p class="lead">这是知识库特色分析章节。从方法、数据与评估、工程实用性三维度,结合<em>代码与实验佐证</em>提出改进点。</p>
+
+<h3>12.1 方法层面</h3>
+<div class="improve high">
+  <span class="pri">高优先级</span><strong>动态内容生成依赖预生成视频</strong>
+  <p>论文 §6 自陈局限:"Gen3C relies on a pre-generated video to provide the motion of the objects. Generating such a video is a challenge on its own." 动态 NVS 必须先有 Sora/MovieGen 生成的动态视频作运动来源,而生成这样的视频本身是难题。改进方向:引入<strong>文本条件提示运动</strong>(论文明示为未来方向),或结合运动生成模型联合训练。</p>
+</div>
+<div class="improve mid">
+  <span class="pri">中优先级</span><strong>深度对齐仅全局 $s,t$,非局部/非刚性</strong>
+  <p>式 5 仅做全局尺度+偏移对齐 $\mathbf{d}' = s\mathbf{d}+t$,对刚性场景足够,但对非刚性变形(如行人姿态变化、物体独立运动)无法精确对齐。改进方向:引入<em>场景流</em>或<em>分段刚性对齐</em>(如按语义分割区域分别对齐),或用学习式对齐网络替代闭式 $s,t$。</p>
+</div>
+<div class="improve mid">
+  <span class="pri">中优先级</span><strong>1 帧重叠的 chunk 可能仍漂移</strong>
+  <p>自回归推理相邻 chunk 仅 1 帧重叠(代码 <code>--num_video_frames 121*N-1</code>,即 121 帧 chunk + 1 帧重叠)。长视频(如 361 帧 = 3 chunk)累积漂移风险仍在。改进方向:增加重叠帧数(如 3-5 帧)并引入<em>chunk 间一致性损失</em>或边界 blend;代码层面可暴露 overlap 参数。</p>
+</div>
+
+<h3>12.2 数据与评估层面</h3>
+<div class="improve high">
+  <span class="pri">高优先级</span><strong>驾驶评测仅 FID,缺乏几何精度评估</strong>
+  <p>Table 3 仅用 FID(因无 GT),无法评估几何精度(如生成视角的真实 3D 结构是否正确)。改进方向:在 Waymo 等有 LiDAR/GT 的数据上增加<strong>深度误差、点云重投影误差、3D 边界框一致性</strong>等几何指标,或用 NeRF-W 等指标评估结构保真度。</p>
+</div>
+<div class="improve mid">
+  <span class="pri">中优先级</span><strong>缺乏时序一致性专门评估</strong>
+  <p>仅用 TSED 评估 3D 一致性,未在长视频上系统量化漂移。改进方向:设计"回扫一致性"指标(对同一区域多次扫视,度量生成内容的差异),与 StreamingT2V/CVD 等在统一长视频基准上对比。</p>
+</div>
+<div class="improve low">
+  <span class="pri">低优先级</span><strong>仅在合成数据集验证动态场景</strong>
+  <p>Kubric4D 是合成动态数据集,真实世界动态 NVS 评测缺失。改进方向:构建真实动态 NVS benchmark(如多相机同步视频数据集),验证对真实非刚性运动的泛化。</p>
+</div>
+
+<h3>12.3 工程实用性层面</h3>
+<div class="improve high">
+  <span class="pri">高优先级</span><strong>训练资源门槛高,且 Cosmos 微调不充分</strong>
+  <p>训练需 32× A100 约 4 天;Cosmos-7B 仅微调 10K 步、batch 64。论文称"可受益于更强底座",但 10K 步远未充分挖掘 Cosmos 潜力。改进方向:延长 Cosmos 微调(如 50K-100K 步)、引入多视角一致性损失强化对齐;提供轻量蒸馏版本(README 已提后续 <a href="https://github.com/nv-tlabs/lyra" target="_blank" style="color:var(--accent)">Lyra</a> 蒸馏到 3DGS decoder,无需真实数据)。</p>
+</div>
+<div class="improve mid">
+  <span class="pri">中优先级</span><strong>mask 用 8× min-pooling 下采样,边界精度损失</strong>
+  <p>mask $\mathbf{M}^{v,\prime}$ 由 $\mathbf{M}^v$ 用 8×8 min-pooling 下采样到 latent 维度,边界处可能过度锐化或丢失细节。改进方向:用<em>可学习下采样</em>或<em>多尺度 mask</em>保留边界精度,或在高分辨率特征图上施加 mask。</p>
+</div>
+<div class="improve low">
+  <span class="pri">低优先级</span><strong>深度+位姿依赖外部工具链</strong>
+  <p>训练用 DROID-SLAM 估计位姿、DAV2 估计深度;推理时视频输入需 ViPE(后续发布)、多视角需 VGGT。工具链复杂、环境不兼容(README 明示 ViPE 与 GEN3C 环境不兼容,需单独 conda env)。改进方向:训练端到端联合预测模型(已部分由 ViPE 解决),推理侧整合到单一环境。</p>
+</div>
+
+<h3>12.4 优先级总览</h3>
+<table>
+  <tr><th>优先级</th><th>改进点</th><th>佐证</th></tr>
+  <tr><td class="fail">高</td><td>动态内容依赖预生成视频</td><td>论文 §6 原文自陈</td></tr>
+  <tr><td class="fail">高</td><td>驾驶评测仅 FID 无几何指标</td><td>Table 3 仅 FID</td></tr>
+  <tr><td class="fail">高</td><td>Cosmos 微调不充分(仅 10K 步)</td><td>§5.7 + README 模型权重</td></tr>
+  <tr><td class="partial">中</td><td>深度对齐仅全局 $s,t$</td><td>式 5</td></tr>
+  <tr><td class="partial">中</td><td>1 帧重叠 chunk 漂移风险</td><td>代码 <code>121*N-1</code></td></tr>
+  <tr><td class="partial">中</td><td>缺乏长视频时序一致性评估</td><td>仅 TSED</td></tr>
+  <tr><td class="partial">中</td><td>mask 8× min-pooling 边界损失</td><td>§4.3 mask 处理</td></tr>
+  <tr><td>低</td><td>仅合成动态数据验证</td><td>Kubric4D</td></tr>
+  <tr><td>低</td><td>外部工具链环境不兼容</td><td>README ViPE/VGGT 说明</td></tr>
+</table>
+
+<div class="callout key">
+<p><strong>个人认为最关键的三点</strong>:</p>
+<ol>
+<li><strong>动态内容生成</strong>(高优先级)—— 这是论文自陈的核心局限,直接限制 GEN3C 在真实动态场景的适用性,文本驱动运动是最值得突破的方向。</li>
+<li><strong>Cosmos 微调不充分</strong>(高优先级)—— 10K 步远未挖掘 7B 底座潜力,延长微调 + 多视角一致性损失可能带来二次跃升,Lyra 蒸馏路线已部分回应。</li>
+<li><strong>驾驶几何精度评估缺失</strong>(高优先级)—— FID 无法反映结构正确性,对自动驾驶仿真这类对几何精度敏感的应用是关键缺口。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== 13. EVOLUTION ==================== -->
+<section id="evolution">
+<h2><span class="num">13</span>技术路线对比与演进</h2>
+
+<h3>13.1 相机可控视频生成方法对比</h3>
+<table>
+  <tr><th>方法</th><th>相机控制方式</th><th>3D 一致性</th><th>视角数限制</th><th>特点</th></tr>
+  <tr class="best"><td>GEN3C</td><td>3D cache 渲染(显式)</td><td class="best">✅ 强(点云约束)</td><td class="best">无限制</td><td>精确控制 + 3D 编辑 + 外推强</td></tr>
+  <tr><td>CameraCtrl</td><td>Plücker 嵌入(隐式)</td><td class="fail">❌ 弱</td><td>—</td><td>OOD 泛化差(T-&-T 15.88)</td></tr>
+  <tr><td>MotionCtrl</td><td>轨迹编码器(隐式)</td><td class="fail">❌ 弱</td><td>—</td><td>TSED 仅 0.1363</td></tr>
+  <tr><td>NVS-Solver</td><td>深度 warp + 去噪</td><td class="partial">⚠️ 中</td><td>—</td><td>training-free,需调一致性</td></tr>
+  <tr><td>GenWarp</td><td>单帧 warp</td><td class="fail">❌ 弱</td><td>—</td><td>仅单图,TSED 0.0330</td></tr>
+  <tr><td>ReconX/ViewCrafter</td><td>Explicit Fusion</td><td class="partial">⚠️ 中</td><td class="fail">限</td><td>依赖 DUSt3R 对齐,未对齐即伪影</td></tr>
+</table>
+
+<h3>13.2 NVS 方法对比</h3>
+<table>
+  <tr><th>方法</th><th>类型</th><th>输入</th><th>vs GEN3C</th></tr>
+  <tr><td>MVSplat</td><td>前馈 NVS</td><td>2 视角</td><td>RE10K 外推 PSNR 仅 15.51(vs 21.56)</td></tr>
+  <tr><td>PixelSplat</td><td>前馈 NVS</td><td>2 视角</td><td>RE10K 外推 PSNR 16.95</td></tr>
+  <tr><td>Nerfacto</td><td>NeRF 重建</td><td>多视角</td><td>驾驶 y±4m FID 112.40(vs 35.33)</td></tr>
+  <tr><td>3D-GS</td><td>显式重建</td><td>多视角</td><td>驾驶 y±4m FID 81.26</td></tr>
+  <tr><td>GCD</td><td>单目动态 NVS</td><td>视频</td><td>FID 150.64(vs 98.58)</td></tr>
+</table>
+
+<h3>13.3 技术演进路线</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph A["前馈 NVS 范式"]
+        A1["MVSplat"] --> A2["PixelSplat"] --> A3["GEN3C<br/>(3D cache + 视频扩散)"]
+    end
+    subgraph B["相机可控生成范式"]
+        B1["CameraCtrl<br/>(隐式)"] --> B2["MotionCtrl"] --> B3["NVS-Solver"] --> B4["GEN3C<br/>(显式 3D 约束)"]
+    end
+    subgraph C["NVIDIA 3D+视频生态"]
+        C1["3DGS"] --> C2["VGGT"] --> C3["GEN3C"] --> C4["Cosmos 3<br/>(世界模型)"]
+    end
+    style A3 fill:#bbf7d0,stroke:#34d399
+    style B4 fill:#bbf7d0,stroke:#34d399
+    style C3 fill:#bbf7d0,stroke:#34d399
+</div>
+
+<h3>13.4 与相关工作的关系</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>vs Cosmos 3(世界模型)</h4>
+    <p>Cosmos 3 是 NVIDIA 全模态世界模型;GEN3C 可视为 Cosmos 在 3D 一致性方向的特化增强 —— 用显式 3D cache 为视频生成注入几何骨架。</p>
+  </div>
+  <div class="card">
+    <h4>vs VGGT(前馈 3D 重建)</h4>
+    <p>VGGT 做前馈 3D 重建(深度/位姿/点云),GEN3C 用类似技术构建 3D cache 但用于视频生成;代码层面 GEN3C 多视角推理用 VGGT 提供位姿。</p>
+  </div>
+  <div class="card">
+    <h4>vs 3D-GS / NeRF</h4>
+    <p>重建类方法需稠密输入、外推伪影严重;GEN3C 用视频先验在稀疏视角下外推能力强。但 3D-GS 在后续 <a href="https://github.com/nv-tlabs/lyra" target="_blank" style="color:var(--accent)">Lyra</a> 中作为 GEN3C 的蒸馏目标。</p>
+  </div>
+  <div class="card">
+    <h4>vs ReconFusion/CAT3D</h4>
+    <p>同样用扩散先验做稀疏 NVS,但需 per-scene 优化(慢);GEN3C 前馈式推理,且不依赖显式点云融合(用 In-Layer+Max-Pool 替代)。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 14. CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">14</span>总结</h2>
+<p>GEN3C 的关键贡献不在网络架构创新,而在于<strong>将 3D 几何信息以显式缓存的方式注入视频生成流程</strong>。这是一个"系统工程"式的创新——用成熟的 3D 重建技术(深度预测+点云+渲染)作为视频扩散模型的条件,巧妙解决了视频生成中两个顽疾:相机控制不精确和 3D 不一致。</p>
+<div class="callout key">
+<p><strong>三大设计哲学</strong>:</p>
+<ol>
+<li><strong>几何记忆外置</strong>:把"记住先前生成内容"从模型负担转为外部 3D cache,模型专注于补全+推进。</li>
+<li><strong>显式几何 + 生成补全分工</strong>:3D cache 提供几何骨架,视频模型补全未观测区域,OOD 鲁棒。</li>
+<li><strong>以架构替代损失堆叠</strong>:仅 denoising score matching,几何约束在条件而非损失项,训练稳、泛化好。</li>
+</ol>
+</div>
+<div class="grid grid-3">
+  <div class="card"><h4 style="color:var(--green)">优势</h4><ul><li>方法与底层模型解耦,可迁移到任意视频扩散模型</li><li>3D cache 显式,支持 3D 编辑等下游任务</li><li>稀疏视角与长序列质量提升明显</li></ul></div>
+  <div class="card"><h4 style="color:var(--orange)">局限</h4><ul><li>依赖深度预测质量</li><li>动态内容需预生成视频</li><li>训练资源门槛高(32×A100 4天)</li></ul></div>
+  <div class="card"><h4 style="color:var(--accent2)">NVIDIA 生态定位</h4><ul><li>Physical AI 战略:几何/物理约束提升生成可靠性</li><li>服务自动驾驶、机器人等需精确 3D 理解的场景</li><li>后续 Lyra 蒸馏到 3DGS、ViPE 联合深度位姿预测</li></ul></div>
+</div>
+</section>
 
 </div>
 
 <div class="footer">
-    GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control · NVIDIA Toronto AI Lab · CVPR 2025 Highlight<br>
-    笔记创建: 2026-06-26 · 知识库索引: p27
+  GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control · NVIDIA Toronto AI Lab · CVPR 2025 Highlight<br>
+  📝 阅读笔记 · 生成于 2026-08-13 · 领域:视频生成 / 3D 一致性 / 相机控制
 </div>
 
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
 </body>
 </html>
