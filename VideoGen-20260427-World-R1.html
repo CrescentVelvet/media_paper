@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World-R1:用强化学习为视频生成注入 3D 约束 — 算法原理与逻辑框图分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .hero-fig{position:relative;max-width:1100px;margin:24px auto 0;text-align:center}
+  .hero-fig img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+  .hero-fig .cap{color:var(--muted);font-size:13px;margin-top:8px}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange); background:linear-gradient(90deg,rgba(251,146,60,0.08),var(--panel))}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card.left-bar{border-left:4px solid var(--accent)}
+  .card.left-bar.warn{border-left-color:var(--orange)}
+  .card.left-bar.red{border-left-color:var(--red)}
+  .card.left-bar.green{border-left-color:var(--green)}
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:18px 0}
+  @media(max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center}
+  .stat .v{font-size:26px; font-weight:700; color:var(--accent)}
+  .stat .v.green{color:var(--green)}
+  .stat .v.red{color:var(--red)}
+  .stat .l{color:var(--muted); font-size:13px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .stage-r{background:rgba(251,146,60,0.15); color:var(--orange); border:1px solid rgba(251,146,60,0.3)}
+  .figure{margin:18px 0; text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:8px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2604.24764v4) -->
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2604.24764 · 2026 · ICML 2026</span>
+    <h1>World-R1:用强化学习为文本到视频生成注入 3D 约束</h1>
+    <p class="subtitle">不改动基础模型架构、不依赖昂贵 3D 监督数据 —— 通过 Flow-GRPO 强化学习,用预训练 3D 基础模型与 VLM 的反馈作为"分析-合成"奖励,把视频生成器从"2D 帧预测器"诱导成"几何一致的世界模拟器",并辅以隐式相机条件化与周期解耦训练平衡刚性与动态。</p>
+    <p class="authors">Weijie Wang<sup>1,2</sup>, Xiaoxuan He<sup>1</sup>, Youping Gu<sup>1</sup>, Yifan Yang<sup>2</sup>, Zeyu Zhang<sup>3</sup>, Yefei He<sup>1</sup>, Yanbo Ding<sup>2</sup>, Xirui Hu<sup>3</sup>, Donny Y. Chen<sup>3</sup>, Zhiyuan He<sup>2</sup>, Yuqing Yang<sup>2</sup>, Bohan Zhuang<sup>1</sup> &nbsp;|&nbsp; ¹浙江大学 &nbsp;²Microsoft Research &nbsp;³独立研究者</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2604.24764" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2604.24764v4" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2604.24764" target="_blank">📥 PDF</a>
+      <a href="https://github.com/microsoft/World-R1" target="_blank">💻 GitHub</a>
+      <a href="https://aka.ms/world-r1" target="_blank">🌐 项目主页</a>
+      <a href="https://huggingface.co/datasets/microsoft/World-R1" target="_blank">🤗 数据集</a>
+    </div>
+  </div>
+  <div class="hero-fig">
+    <img src="https://arxiv.org/html/2604.24764v4/teaser.png" alt="World-R1 teaser: 几何一致的世界建模" loading="lazy">
+    <div class="cap"><b>图 1</b> World-R1 接受文本输入,生成高质量 3D 一致视频;右侧为对应帧的 3D 重建结果,验证几何一致性。</div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与核心数据</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">前置:Flow-GRPO 原理</a></li>
+    <li><a href="#s5">阶段一:隐式相机条件化</a></li>
+    <li><a href="#s6">阶段二:复合奖励设计</a></li>
+    <li><a href="#s7">阶段三:纯文本数据集</a></li>
+    <li><a href="#s8">阶段四:周期解耦训练</a></li>
+    <li><a href="#s9">总奖励函数汇总表</a></li>
+    <li><a href="#s10">逻辑流程图</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融与奖励黑客分析</a></li>
+    <li><a href="#s13">可改进方向分析</a></li>
+    <li><a href="#s14">总结</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与核心数据</h2>
+<p class="lead">当前视频基础模型合成能力强,但<em>缺乏对真实世界 3D 几何的内在理解</em>,在大相机运动或长时序场景中频繁出现<strong>几何幻觉</strong>(物体变形/消失/扭曲)。已有方法通过<em>架构修改</em>注入 3D 先验(如挂载 3D 解码器),推理成本高、可扩展性差,且只能用于 I2V。World-R1 的核心论断是:<strong>视频基础模型本就内蕴丰富的 3D 几何信息,关键在于"诱导"而非"注入"</strong> —— 因此它用 RL 把"真实世界一致性要求"建模成奖励,在不改架构、不要 3D 监督数据的前提下,把模型从 2D 帧预测器变成几何一致的世界模拟器。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v green">+10.23 dB</div><div class="l">PSNR 提升(Small vs Wan2.1-1.3B: 17.40→27.63)</div></div>
+  <div class="stat"><div class="v green">+7.91 dB</div><div class="l">PSNR 提升(Large vs Wan2.1-14B: 19.76→27.67)</div></div>
+  <div class="stat"><div class="v green">+8.00 dB</div><div class="l">121 帧长视频泛化(14B: 18.32→26.32)</div></div>
+  <div class="stat"><div class="v green">92% / 86%</div><div class="l">用户研究胜率(几何一致 / 总体)</div></div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>四点贡献</h4>
+    <ol>
+      <li><strong>新范式</strong>:用 RL 对齐视频生成与 3D 基础模型,免大规模 3D 数据集与昂贵推理期约束</li>
+      <li><strong>复合奖励系统</strong>:3D 基础模型 + VLM,Flow-GRPO 优化,通过判别反馈内化几何一致性</li>
+      <li><strong>纯文本数据集</strong>:多类、多级相机控制,用于视频模型后训练</li>
+      <li><strong>实验验证</strong>:显著提升世界建模能力,同时保持视觉生成多样性</li>
+    </ol>
+  </div>
+  <div class="card left-bar">
+    <h4>关键事实</h4>
+    <ul>
+      <li><strong>会议</strong>:ICML 2026(第 43 届)</li>
+      <li><strong>基础模型</strong>:Wan 2.1-T2V-1.3B / 14B</li>
+      <li><strong>训练</strong>:Small=48×H200, Large=96×H200</li>
+      <li><strong>分辨率</strong>:832×480</li>
+      <li><strong>算法</strong>:Flow-GRPO-Fast,G=8,48 并行组</li>
+      <li><strong>数据</strong>:~3000 纯文本提示(+~500 动态子集)</li>
+      <li><strong>许可</strong>:论文 CC BY-NC-SA 4.0;代码 MIT</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>一句话定位</h4>
+    <p>把 3D 一致性从"<em>改架构/加约束</em>"问题,转化为"<em>RL 后训练对齐</em>"问题 —— 论文反复强调的"elicit latent spatial awareness"(诱导潜在空间感知)是其方法论内核。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 2. 背景动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>视频生成模型在互联网规模数据上预训练,被视作通用世界模型的雏形,可用于自动驾驶/机器人/沉浸式内容。但它们本质是<strong>图像空间生成</strong>,缺失 3D 几何先验。下表对比三类已有路线及其局限:</p>
+
+<table>
+<tr><th>路线</th><th>代表方法</th><th>注入方式</th><th>关键局限</th></tr>
+<tr><td>架构修改 + 3D 解码器</td><td>FantasyWorld / 4DNex</td><td>视频编码器后挂 3D 模块输出 pointmap</td><td class="fail">大架构改动 + 高推理延迟,仅限 I2V,依赖静态 3D 数据集,损害动态多样性</td></tr>
+<tr><td>推理期 3D 约束</td><td>Voyager / ViewCrafter / FlashWorld / VerseCrafter</td><td>推理时强制生成遵循静态 3D 约束</td><td class="fail">推理成本过高,限制生成精度与泛化范围,难规模化,丧失视频模型流畅多样性</td></tr>
+<tr><td>辅助相机控制模块</td><td>CameraCtrl / ReCamMaster / DAS / Traj-Attn</td><td>训练额外控制网络引入显式相机姿态</td><td class="partial">只关注轨迹遵循,不保证 3D 几何一致,复杂运动下物体扭曲,VBench 美学大幅下降</td></tr>
+<tr class="best"><td>RL 后训练对齐(本文)</td><td>World-R1</td><td>不改架构,RL 诱导潜在 3D 感知</td><td class="best">无架构改动、无 3D 监督数据、可处理 T2V,保持原始视觉质量</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>💡 核心洞察:elicit 而非 inject</h4>
+  <p>论文引用证据表明<em>视频基础模型已内蕴丰富 3D 几何信息</em>(可被 3D 基础模型重建)。因此路径不是"堆数据或施加刚性推理约束",而是"<strong>用 RL 把真实世界一致性要求转成奖励,诱导出潜在空间感知</strong>"。这一思路与 LLM 中 RLHF 对齐人类偏好的逻辑同构 —— 但把"人类偏好"换成了"3D 几何自洽性"。</p>
+</div>
+</section>
+
+<!-- ==================== 3. 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p>World-R1 由四个耦合模块构成,全部围绕"<strong>不改 Wan 2.1 架构</strong>"这一约束展开:</p>
+
+<div class="grid grid-2">
+  <div class="card left-bar">
+    <span class="stage-tag stage-1">模块 A · 无参数相机条件化</span>
+    <p>文本提示 → 关键词检测 → 相机轨迹 → 投影成 2D 光流 → <strong>离散噪声传输</strong>嵌入初始潜噪声(借 Go-with-the-Flow)。无额外网络。</p>
+  </div>
+  <div class="card left-bar green">
+    <span class="stage-tag stage-2">模块 B · 复合奖励</span>
+    <p>生成视频 → Depth Anything 3 重建为 3DGS Φ_GS + 估计轨迹 Ê → 三项 3D 奖励(几何/重建/轨迹)+ VLM 语义批判 + HPSv3 美学奖励。</p>
+  </div>
+  <div class="card left-bar warn">
+    <span class="stage-tag stage-r">模块 C · 纯文本数据集</span>
+    <p>~3000 条 Gemini 合成场景描述,与固定视频分布解耦,覆盖自然/城市/微距/奇幻/艺术 5 类,含隐式/单向/复合三级相机控制复杂度。</p>
+  </div>
+  <div class="card left-bar">
+    <span class="stage-tag stage-3">模块 D · 周期解耦训练</span>
+    <p>每 100 步插入一个"<strong>动态微调相</strong>":仅用 ~500 条高熵动态提示,关闭 R_3D,只用 R_gen 优化,防止模型坍缩为"易重建的静态片段"。</p>
+  </div>
+</div>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2604.24764v4/pipeline.png" alt="World-R1 pipeline overview" loading="lazy">
+  <div class="caption"><b>图 2</b> World-R1 总览。左:文本→相机轨迹→噪声包裹(隐式相机条件)。中:Wan 2.1 生成候选视频。右:复合奖励(3DGS 提升 + meta-view 评估 + 重建保真 + 轨迹对齐 + 通用生成奖励),Flow-GRPO-Fast 优化。</div>
+</div>
+</section>
+
+<!-- ==================== 4. Flow-GRPO 前置 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>前置:Flow-GRPO 原理</h2>
+<p>Flow-GRPO 把 flow matching 模型的去噪过程重写成 MDP,使策略梯度方法可用。关键在于把确定性 ODE 转成随机 SDE 以引入 RL 所需的探索性,同时保持边缘分布不变。</p>
+
+<h3>随机采样(ODE→SDE)</h3>
+<div class="equation">
+$$\mathrm{d}\mathbf{x}_t=\left[\mathbf{v}_t(\mathbf{x}_t)+\frac{\sigma_t^{2}}{2t}\left(\mathbf{x}_t+(1-t)\mathbf{v}_t(\mathbf{x}_t)\right)\right]\mathrm{d}t+\sigma_t\,\mathrm{d}\mathbf{w}, \qquad \text{(式 1)}$$
+</div>
+<p>其中 $\sigma_t$ 控制噪声水平,$\mathbf{w}$ 为维纳过程。离散化得策略 $\pi_\theta$ 的随机更新:</p>
+<div class="equation">
+$$\mathbf{x}_{t+\Delta t}=\mathbf{x}_t+\left[\mathbf{v}_\theta(\mathbf{x}_t,t)+\frac{\sigma_t^{2}}{2t}\big(\mathbf{x}_t+(1-t)\mathbf{v}_\theta(\mathbf{x}_t,t)\big)\right]\Delta t+\sigma_t\sqrt{\Delta t}\,\epsilon,\quad \epsilon\sim\mathcal{N}(0,\mathbf{I}). \quad \text{(式 2)}$$
+</div>
+
+<h3>GRPO 组归一化优势</h3>
+<p>给定条件 $\mathbf{c}$,采样一组 $G$ 条轨迹 $\{\mathbf{x}^i\}_{i=1}^G$,第 $i$ 条的优势按组统计归一化(无需 critic 网络,这是 GRPO 相对 PPO 的效率优势):</p>
+<div class="equation">
+$$\hat{A}_t^i=\frac{R(\mathbf{x}_0^i,\mathbf{c})-\text{mean}(\{R(\mathbf{x}_0^i,\mathbf{c})\}_{i=1}^G)}{\text{std}(\{R(\mathbf{x}_0^i,\mathbf{c})\}_{i=1}^G)}. \qquad \text{(式 3)}$$
+</div>
+
+<h3>带 KL 约束的目标</h3>
+<div class="equation">
+$$\mathcal{J}(\theta)=\mathbb{E}_{\mathbf{c},\{\mathbf{x}^i\}}\left[\frac{1}{T}\sum_{t=0}^{T-1}\Big(\mathcal{L}_{\text{clip}}(r_t^i,\hat{A}_t^i)-\beta\,D_{\text{KL}}(\pi_\theta\|\pi_{\text{ref}})\Big)\right], \qquad \text{(式 4)}$$
+</div>
+<p>其中 $\mathcal{L}_{\text{clip}}$ 为 PPO 式截断代理目标,$r_t^i$ 是新旧策略概率比,$\beta$ 为 KL 系数(防止偏离参考策略 $\pi_{\text{ref}}$)。Flow-GRPO 还用"<em>denoise reduction</em>"——训练时用更少时间步加速收敛,推理时不牺牲质量。</p>
+
+<div class="callout tip">
+  <h4>🔑 Flow-GRPO-Fast 的加速</h4>
+  <p>Flow-GRPO-<strong>Fast</strong> 在确定性 ODE 轨迹的随机中间步注入噪声、切换到 SDE 采样,进一步加速训练。World-R1 全程使用 Fast 变体。⚠️ 论文<strong>未给出</strong>训练/推理的具体去噪步数、$\sigma_t$ 调度、$\beta$ 数值与学习率(详见第 13 节改进分析)。</p>
+</div>
+</section>
+
+<!-- ==================== 5. 相机条件化 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>阶段一:隐式相机条件化</h2>
+<p>传统方法需训练辅助网络编码相机姿态。World-R1 借 Go-with-the-Flow,用<strong>无参数</strong>策略把相机运动先验直接嵌进初始潜噪声 —— 动机是"扩散模型初始噪声分布显著影响生成内容轨迹"。</p>
+
+<h3>5.1 提示驱动轨迹生成</h3>
+<p>关键词检测函数 $\phi(c)$ 扫描提示中的运动 token $\mathcal{K}=\{\text{`push in'},\text{`pan left'},\text{`orbit left'},\dots\}$,按检测到的 token 用参数化生成器递推姿态($E_0=I_{4\times 4}$):</p>
+<div class="equation">
+$$E_t=E_{t-1}\cdot T_{\text{action}}(t), \qquad \text{(式 5)}$$
+</div>
+<p>多条指令并存时,拼接各自生成的轨迹段。</p>
+
+<h3>5.2 轨迹→光流投影</h3>
+<p>将 3D 轨迹 $E$ 投影为 2D 稠密光流序列。采用针孔模型,把场景几何近似为位于恒定参考深度 $z_{\text{ref}}$ 的<em>前向平行平面</em>。对帧 $t$ 像素 $u$,其在 $t+1$ 的投影坐标 $u'$ 由相对相机运动诱导的平面单应给出:</p>
+<div class="equation">
+$$u'\sim K\left(R_{\text{rel}}+\frac{1}{z_{\text{ref}}}\mathbf{t}_{\text{rel}}\mathbf{n}^\top\right)K^{-1}u,\qquad \mathbf{n}=[0,0,1]^\top,\qquad f(u)=u'-u. \quad \text{(式 6)}$$
+</div>
+<p>其中 $K$ 为内参,$(R_{\text{rel}},\mathbf{t}_{\text{rel}})$ 为相对刚体变换 $E_{t+1}E_t^{-1}$,$\mathbf{n}$ 为图像平面法向量。</p>
+
+<h3>5.3 离散噪声传输</h3>
+<p>连续光流 $f(u)$ 定义在连续空间,但初始噪声定义在离散网格。直接 warp 会导致<em>重叠区方差坍缩</em>、<em>遮挡区噪声缺失</em>,破坏扩散模型所需的标准正态分布。Go-with-the-Flow 把噪声 warp 建模为光流诱导二部图上的<strong>质量传输</strong>:源像素 $v$ → 目标像素 $v'$,密度跟踪器 $\rho(v')$ 记录入度,再归一化保单位方差:</p>
+<div class="equation">
+$$z_{t+1}(v')=\frac{1}{\sqrt{\rho(v')}}\sum_{v\to v'}z_t(v). \qquad \text{(式 7)}$$
+</div>
+
+<div class="callout warn">
+  <h4>⚠️ 几何脆弱性:前向平行假设</h4>
+  <p>式 6 用单一 $z_{\text{ref}}$ 前向平行平面近似场景几何 —— 对<strong>深度变化大的场景</strong>(如走廊纵深、穿越物体)会引入系统误差。论文未做 $z_{\text{ref}}$ 敏感性分析;GitHub 提供 <code>noise_wrap_strength_sweep.py</code> 与 <code>noise_wrap_ablation.py</code> 暗示包裹强度可调,但论文正文未讨论(详见第 13 节)。</p>
+</div>
+</section>
+
+<!-- ==================== 6. 奖励设计 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>阶段二:复合奖励设计</h2>
+<p>奖励 $R$ 是<strong>3D 一致性项</strong>与<strong>通用质量项</strong>的加权聚合。3D 项用"分析-合成"(analysis-by-synthesis)策略区分真实视差与 2D 内容漂移。</p>
+
+<div class="equation">
+$$R(\mathbf{x},c)=R_{\text{3D}}(\mathbf{x},E,c)+\lambda_{\text{gen}}\,R_{\text{gen}}(\mathbf{x},c), \qquad \text{(式 8)}$$
+</div>
+
+<h3>6.1 三项 3D 奖励</h3>
+<div class="equation">
+$$R_{\text{3D}}=\mathcal{S}_{\text{meta}}+\mathcal{S}_{\text{recon}}+\mathcal{S}_{\text{traj}}. \qquad \text{(式 9)}$$
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <h4>① $\mathcal{S}_{\text{meta}}$ · 几何完整性</h4>
+    <p>从<strong>偏移的 meta-view</strong>渲染 3DGS $\Phi_{\text{GS}}$,由 <strong>Qwen3-VL</strong> 评分(0–9 整数 ×0.1→[0,1]),识别在规范视图被遮挡但暴露底层几何缺陷的伪影(飘浮、拉伸、扭曲)。</p>
+  </div>
+  <div class="card left-bar green">
+    <h4>② $\mathcal{S}_{\text{recon}}$ · 重建保真</h4>
+    <p>像素级保真:生成视频 $\mathbf{x}$ 与从 3DGS $\Phi_{\text{GS}}$ 沿估计轨迹 $\hat{E}$ 重渲染版本 $\hat{\mathbf{x}}$ 的<em>负感知距离</em>:</p>
+    <p><code>S_recon = 1 − LPIPS(x, x̂)</code> ∈ [0,1]</p>
+  </div>
+  <div class="card left-bar warn">
+    <h4>③ $\mathcal{S}_{\text{traj}}$ · 轨迹对齐</h4>
+    <p>控制精度:用户指定轨迹 $E$ 与 3D 基础模型估计轨迹 $\hat{E}$ 的偏差。平移用负 L2 指数,旋转用负测地距离指数:</p>
+    <p><code>exp(−‖t‖₂),  exp(−geodesic(R, R̂))</code></p>
+  </div>
+</div>
+
+<h4>Qwen3-VL meta-view 评分 prompt(附录 A.1 原文)</h4>
+<div class="quote">"You are a professional 3D vision expert. … judge the quality of the original video by analyzing the provided image of its resulting 3D pointmap. A good video (smooth, orbiting camera) creates a good pointmap. A bad video (static, jittery, or zooming) creates a bad pointmap. … 9: Excellent · 7-8: Good · 4-6: Mediocre · 2-3: Poor · 0-1: Very Poor. Output only a single digit (0-9)."</div>
+
+<h3>6.2 通用生成奖励</h3>
+<div class="equation">
+$$R_{\text{gen}}(\mathbf{x})=\frac{1}{K}\sum_{t=0}^{K-1}\mathcal{H}(\mathbf{x}_t), \qquad \mathcal{H}=\text{HPSv3}. \quad \text{(式 10)}$$
+</div>
+<p>对前 $K$ 帧逐帧算 HPSv3 美学评分再平均,确保视频整体对齐人类视觉偏好,维持高感知标准。(⚠️ $K$ 的具体数值论文未给。)</p>
+
+<h3>6.3 3D 基础模型的作用</h3>
+<p>用 <strong>Depth Anything 3</strong> 从生成视频直接重建场景为 3DGS 表示 $\Phi_{\text{GS}}$ 并估计相机轨迹 $\hat{E}$。这是整个奖励系统的"判官" —— 论文称此为"<em>analysis-by-synthesis</em>"。</p>
+</section>
+
+<!-- ==================== 7. 数据集 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>阶段三:纯文本数据集</h2>
+<p>以往相机控制研究依赖开放域视频数据集,分辨率有限、文本-视频对齐噪声大。World-R1 反其道而行 —— <strong>用纯文本(无视频)数据集</strong>,把"3D 约束学习"与"特定视频分布"解耦。</p>
+
+<div class="grid grid-2">
+  <div class="card left-bar">
+    <h4>生成流水线</h4>
+    <ul>
+      <li>用 <strong>Gemini</strong>(系统提示扮演"电影摄影师 + 3D 布景设计师")合成</li>
+      <li><strong>~3000 条</strong>唯一场景描述</li>
+      <li>动作空间限定 11 种:<code>push_in/pull_out/move_left/move_right/orbit_left/orbit_right/pan_left/pan_right/pull_left/pull_right/fixed</code></li>
+      <li>遵循 WorldScore 的轨迹分类学:场景内探索 / 场景间转换 / 复合轨迹 / 静态观察</li>
+      <li>JSON 输出含 <code>prompt / camera_logic / domain / layout_type</code></li>
+    </ul>
+  </div>
+  <div class="card left-bar green">
+    <h4>五大类别 + 动态子集</h4>
+    <ul>
+      <li><strong>自然地貌</strong>:地貌/水景/天气时间</li>
+      <li><strong>城市建筑</strong>:强调透视正确、灭点、直线保持</li>
+      <li><strong>微距与静物</strong>:景深与纹理保真</li>
+      <li><strong>奇幻与超现实</strong>:非欧几何、违反物理结构</li>
+      <li><strong>艺术风格</strong>:水彩/黑白/赛博朋克/梵高/金缮/蒸汽朋克…</li>
+      <li><strong>动态子集</strong>:~500 条高熵场景(瀑布/火焰/人群/变形)用于周期解耦训练</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout key">
+  <h4>💡 为什么纯文本?为什么有效?</h4>
+  <p>论文核心论点:视频基础模型已内蕴 3D 感知,只需 RL 信号诱导。<strong>纯文本数据集</strong>让模型合成"各种不同场景"而非拟合固定视频分布,从而把"物理学习"与"视觉偏置"分离。代码侧确认:<code>dataset/final/</code>(基础提示)+ <code>dataset/enhanced/</code>(扩展变体)两套 —— 论文只提 ~3000,enhanced 分支未在正文披露。</p>
+</div>
+</section>
+
+<!-- ==================== 8. 周期解耦训练 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>阶段四:周期解耦训练</h2>
+<p>严格 3D 一致性会<em>意外抑制</em>非刚性动态(运动角色、自然形变物体)。为平衡几何保真与动态能力,World-R1 采用<strong>周期解耦训练</strong>:</p>
+
+<div class="mermaid">
+flowchart LR
+    subgraph P1["主阶段 · 每 100 步"]
+        P1A["全量数据集<br/>~3000 提示"] --> P1B["完整复合奖励<br/>R3D + λ·Rgen"]
+        P1B --> P1C["强化 3D 一致性"]
+    end
+    subgraph P2["动态微调相 · 每 100 步触发一次"]
+        P2A["仅动态子集<br/>~500 高熵提示"] --> P2B["仅通用奖励 Rgen<br/>关闭 R3D"]
+        P2B --> P2C["正则化<br/>防止坍缩为静态"]
+    end
+    P1 --> P2 --> P1
+    style P1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<ul>
+  <li><strong>主阶段</strong>:全量混合数据,完整复合奖励 $R_{\text{3D}}+\lambda_{\text{gen}}R_{\text{gen}}$ 强制 3D 感知</li>
+  <li><strong>动态微调相</strong>:每 100 训练步触发一次,临时停用 $R_{\text{3D}}$,仅在 ~500 动态提示上用 $R_{\text{gen}}$ 优化</li>
+  <li>这相当于一个"<strong>抗奖励黑客的正则器</strong>" —— 见第 12 节,去掉它模型会刷高 PSNR 但 VBench 崩塌(典型 reward hacking 特征)</li>
+</ul>
+</section>
+
+<!-- ==================== 9. 总奖励汇总表 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>总奖励函数汇总表</h2>
+<table>
+<tr><th>项</th><th>公式</th><th>范围</th><th>作用</th><th>判官</th></tr>
+<tr><td><strong>$\mathcal{S}_{\text{meta}}$</strong></td><td>Qwen3-VL(meta-view 渲染图)评分 ×0.1</td><td>[0,1]</td><td>惩罚规范视图遮挡的几何缺陷(飘浮/拉伸)</td><td>Qwen3-VL</td></tr>
+<tr><td><strong>$\mathcal{S}_{\text{recon}}$</strong></td><td>$1-\text{LPIPS}(\mathbf{x},\hat{\mathbf{x}})$</td><td>[0,1]</td><td>像素级重建保真,抑制几何幻觉与时序扭曲</td><td>LPIPS</td></tr>
+<tr><td><strong>$\mathcal{S}_{\text{traj}}$</strong></td><td>$\exp(-\|\mathbf{t}\|_2)$ + $\exp(-\text{geodesic})$</td><td>[0,1]</td><td>相机控制精度,惩罚静态输出</td><td>Depth Anything 3</td></tr>
+<tr><td><strong>$R_{\text{3D}}$</strong></td><td>$\mathcal{S}_{\text{meta}}+\mathcal{S}_{\text{recon}}+\mathcal{S}_{\text{traj}}$</td><td>[0,3]</td><td>3D 一致性总分</td><td>—</td></tr>
+<tr><td><strong>$R_{\text{gen}}$</strong></td><td>$\frac{1}{K}\sum_{t=0}^{K-1}\text{HPSv3}(\mathbf{x}_t)$</td><td>[−1,1]</td><td>美学保真,防视觉质量退化</td><td>HPSv3</td></tr>
+<tr class="best"><td><strong>$R$</strong></td><td>$R_{\text{3D}}+\lambda_{\text{gen}}R_{\text{gen}}$</td><td>[−1,4]</td><td>复合目标</td><td>—</td></tr>
+</table>
+<div class="callout tip">
+  <h4>🔑 关键超参 $\lambda_{\text{gen}}=1$</h4>
+  <p>附录 A.1 明确:所有子奖励限制在 [0,1] 后直接相加;$R_{\text{gen}}\in[-1,1]$,$R_{\text{3D}}\in[0,3]$,<strong>$\lambda_{\text{gen}}=1$ 直接相加</strong>。即总奖励范围 $[-1,4]$,3D 项权重天然是美学的 3 倍 —— 这解释了为何模型倾向几何保真而需动态相正则。</p>
+</div>
+</section>
+
+<!-- ==================== 10. 流程图 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>逻辑流程图</h2>
+
+<h3>10.1 总推理/训练流水线</h3>
+<div class="mermaid">
+flowchart TD
+    IN["文本提示 c<br/>(含相机指令)"] --> KW["关键词检测 φ(c)<br/>匹配 push_in/pan_left/orbit…"]
+    KW --> TRAJ["参数化轨迹生成<br/>E_t = E_(t-1)·T_action(t)"]
+    TRAJ --> FLOW["投影为 2D 光流<br/>前向平行平面 z_ref 单应"]
+    FLOW --> NW["离散噪声传输<br/>z_(t+1)=Σz_t/√ρ"]
+    NW --> GEN["Wan 2.1 基础模型<br/>生成候选视频 x"]
+    GEN --> LIFT["Depth Anything 3<br/>提升为 3DGS Φ_GS + 估计轨迹 Ê"]
+    LIFT --> RMETA["S_meta: Qwen3-VL<br/>评 meta-view 渲染"]
+    LIFT --> RREC["S_recon: 1−LPIPS(x, x̂)"]
+    LIFT --> RTRAJ["S_traj: exp(−‖t‖₂, geodesic)"]
+    GEN --> RGEN["R_gen: HPSv3 均值"]
+    RMETA & RREC & RTRAJ --> R3D["R_3D ∈ [0,3]"]
+    RGEN --> RG["R_gen ∈ [−1,1]"]
+    R3D & RG --> RTOT["R = R_3D + R_gen"]
+    RTOT --> FG["Flow-GRPO-Fast<br/>组归一优势 + KL 约束"]
+    FG --> UPD["更新 Wan 2.1 策略<br/>(LoRA)"]
+    UPD --> CYC{"每 100 步?"}
+    CYC -->|是| DYN["动态微调相<br/>仅 R_gen + ~500 动态提示"]
+    DYN --> UPD
+    CYC -->|否| UPD
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GEN fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style RTOT fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style DYN fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>10.2 奖励计算的数据流(分析-合成)</h3>
+<div class="mermaid">
+flowchart LR
+    X["生成视频 x"] --> DA3["Depth Anything 3"]
+    DA3 --> GS["3DGS 表示 Φ_GS"]
+    DA3 --> EHAT["估计轨迹 Ê"]
+    GS --> MV["渲染 meta-view<br/>(偏移视角)"]
+    MV --> QVL["Qwen3-VL 评分 0-9"]
+    GS --> RR["沿 Ê 重渲染 x̂"]
+    RR --> LP["LPIPS(x, x̂)"]
+    EHAT --> DEV["偏差 E vs Ê"]
+    QVL --> SM["S_meta"]
+    LP --> SR["S_recon"]
+    DEV --> ST["S_traj"]
+    SM & SR & ST --> R3D2["R_3D"]
+    style X fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style DA3 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style R3D2 fill:#fae8ff,stroke:#a855f7,color:#581c87
+</div>
+</section>
+
+<!-- ==================== 11. 实验 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 实现细节</h3>
+<ul>
+  <li><strong>基础模型</strong>:Wan 2.1-T2V-1.3B(Small)/ 14B(Large),分辨率 832×480</li>
+  <li><strong>硬件</strong>:Small = 48× NVIDIA H200;Large = 96× NVIDIA H200</li>
+  <li><strong>RL</strong>:Flow-GRPO-Fast,48 并行组 × 组大小 8</li>
+  <li><strong>评测</strong>:3D 一致性(3DGS 重建后沿指定轨迹重渲染,算 PSNR/SSIM/LPIPS)+ VBench(美学/成像/运动平滑/一致性)+ MVCS(重建无关)</li>
+</ul>
+
+<h3>11.2 3D 一致性(主结果 · 表 2)</h3>
+<table>
+<tr><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr>
+<tr><td>CogVideoX-1.5-5B</td><td>24.44</td><td>0.783</td><td>0.242</td></tr>
+<tr><td>Wan2.2-T2V-14B</td><td>23.47</td><td>0.779</td><td>0.253</td></tr>
+<tr><td>Wan2.2-T2V-5B</td><td>22.36</td><td>0.716</td><td>0.303</td></tr>
+<tr><td>Wan2.1-T2V-14B(基线)</td><td>19.76</td><td>0.629</td><td>0.405</td></tr>
+<tr><td>Wan2.1-T2V-1.3B(基线)</td><td>17.40</td><td>0.550</td><td>0.467</td></tr>
+<tr class="best"><td>World-R1-Small(本文)</td><td>27.63</td><td>0.858</td><td>0.201</td></tr>
+<tr class="best"><td>World-R1-Large(本文)</td><td>27.67</td><td>0.865</td><td>0.162</td></tr>
+</table>
+<p>相对各自 Wan 2.1 基线:Small <strong>+10.23 dB</strong>(17.40→27.63),Large <strong>+7.91 dB</strong>(19.76→27.67)。SSIM 与 LPIPS 同步大幅改善。</p>
+
+<h3>11.3 VBench 通用视频质量(表 1)</h3>
+<table>
+<tr><th>方法</th><th>美学 ↑</th><th>成像 ↑</th><th>运动平滑 ↑</th><th>主体一致 ↑</th><th>背景一致 ↑</th></tr>
+<tr><td>CogVideoX-1.5-5B</td><td>62.07</td><td>65.34</td><td>98.15</td><td>96.56</td><td>96.81</td></tr>
+<tr><td>Wan2.1-T2V-1.3B</td><td>62.43</td><td>66.51</td><td>97.44</td><td>96.34</td><td>97.29</td></tr>
+<tr><td>GCD</td><td class="fail">38.21</td><td class="fail">41.56</td><td>98.37</td><td class="fail">88.94</td><td class="fail">92.00</td></tr>
+<tr><td>Trajectory-Attention</td><td class="fail">38.50</td><td class="fail">51.00</td><td>98.21</td><td class="fail">90.60</td><td class="fail">92.83</td></tr>
+<tr><td>DAS</td><td class="fail">39.86</td><td class="fail">51.55</td><td>99.14</td><td class="fail">90.34</td><td class="fail">92.03</td></tr>
+<tr><td>ReCamMaster</td><td class="fail">42.70</td><td class="fail">53.97</td><td>99.28</td><td class="fail">92.05</td><td class="fail">93.83</td></tr>
+<tr class="best"><td>World-R1-Small(本文)</td><td>65.74</td><td>67.53</td><td>98.55</td><td>97.58</td><td>96.67</td></tr>
+</table>
+<div class="callout tip">
+  <h4>✅ 关键:不降反升</h4>
+  <p>World-R1 在 VBench 上<strong>超越自己的 Wan 2.1 基线</strong>(美学 62.43→65.74,主体一致 96.34→97.58),证明 RL 对齐<em>没有牺牲</em>通用质量。而所有显式相机控制方法(GCD/Traj-Attn/DAS/ReCamMaster)美学/成像全部塌方(38–53 区间) —— 这是 World-R1 "不改架构"路线对"加控制模块"路线的碾压性优势。</p>
+</div>
+<p class="quote">⚠️ 注:论文声明"因资源限制,未测 World-R1-Large 的 VBench"。</p>
+
+<h3>11.4 相机控制精度(附录 D.1 · 表 C)</h3>
+<p>World-R1 是后训练对齐方法而非专用相机控制架构,但相机精度<strong>可比肩专用方法</strong>:</p>
+<table>
+<tr><th>方法</th><th>RotErr ↓</th><th>TransErr ↓</th><th>CamMC ↓</th></tr>
+<tr><td>ReCamMaster(专用)</td><td>1.53</td><td>3.12</td><td>4.17</td></tr>
+<tr><td>TrajectoryCrafter</td><td>3.08</td><td>7.46</td><td>10.22</td></tr>
+<tr><td>CamCloneMaster</td><td>1.36</td><td>2.02</td><td>3.05</td></tr>
+<tr><td>Wan2.1-T2V-1.3B(无控制)</td><td class="fail">9.29</td><td class="fail">62.94</td><td class="fail">66.21</td></tr>
+<tr><td>Wan2.1-T2V-14B(无控制)</td><td class="fail">17.01</td><td class="fail">60.90</td><td class="fail">70.55</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>1.50</td><td>2.76</td><td>3.39</td></tr>
+<tr class="best"><td>World-R1-Large</td><td>1.21</td><td>1.30</td><td>2.95</td></tr>
+</table>
+
+<h3>11.5 重建无关的多视角一致性 MVCS(附录 D.2)</h3>
+<p>为减少对重建 pipeline 的依赖,补充 MVCS(GeoVideo 定义的重建无关指标,直接度量跨视角一致性):</p>
+<table>
+<tr><th>方法</th><th>MVCS ↑</th></tr>
+<tr><td>Wan2.1-T2V-1.3B</td><td>0.974</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>0.989 (+0.015)</td></tr>
+<tr><td>Wan2.1-T2V-14B</td><td>0.963</td></tr>
+<tr class="best"><td>World-R1-Large</td><td>0.993 (+0.030)</td></tr>
+</table>
+
+<h3>11.6 121 帧长视频泛化(附录 D.4 · 表 F)</h3>
+<table>
+<tr><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr>
+<tr><td>Wan2.1-T2V-14B</td><td>18.32</td><td>0.558</td><td>0.534</td></tr>
+<tr class="best"><td>World-R1-Large</td><td>26.32</td><td>0.828</td><td>0.257</td></tr>
+</table>
+<p>长视频场景 <strong>+8.00 dB</strong>,证明学习到的 3D 一致性可泛化到比训练时更长的序列。</p>
+
+<h3>11.7 用户研究(附录 C)</h3>
+<p>30 个复杂提示(建筑 fly-through、自然地貌),25 参与者盲评 World-R1 vs Wan 2.1:</p>
+<div class="stat-row">
+  <div class="stat"><div class="v green">92%</div><div class="l">几何一致性胜率</div></div>
+  <div class="stat"><div class="v green">76%</div><div class="l">相机控制精度胜率</div></div>
+  <div class="stat"><div class="v green">86%</div><div class="l">总体视觉质量胜率</div></div>
+  <div class="stat"><div class="v green">91.17%</div><div class="l">指标验证研究人类一致率</div></div>
+</div>
+</section>
+
+<!-- ==================== 12. 消融与奖励黑客 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>消融与奖励黑客分析</h2>
+
+<h3>12.1 奖励组件消融(附录 D.7 · 表 I)</h3>
+<table>
+<tr><th>变体</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>VBench AVG ↑</th></tr>
+<tr class="best"><td>完整(World-R1-Small)</td><td>27.63</td><td>0.858</td><td>0.201</td><td>85.21</td></tr>
+<tr><td>w/o $\mathcal{S}_{\text{meta}}$</td><td>26.91</td><td>0.841</td><td>0.218</td><td class="partial">83.67</td></tr>
+<tr><td>w/o $\mathcal{S}_{\text{recon}}$</td><td class="fail">25.14</td><td class="fail">0.798</td><td class="fail">0.271</td><td>84.35</td></tr>
+<tr><td>w/o $\mathcal{S}_{\text{traj}}$</td><td>26.27</td><td>0.829</td><td>0.237</td><td class="partial">84.53</td></tr>
+</table>
+<p>去掉任一奖励项均降性能:$\mathcal{S}_{\text{recon}}$ 对几何一致性最关键(PSNR 掉 2.49);$\mathcal{S}_{\text{meta}}$/$\mathcal{S}_{\text{traj}}$ 主要影响 VBench。</p>
+
+<h3>12.2 训练/条件消融 + 分解奖励信号(表 J · 关键!)</h3>
+<p>这是整篇论文最有洞察力的表 —— 它<strong>显式刻画了 reward hacking 的签名</strong>:</p>
+<table>
+<tr><th>变体</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>VBench ↑</th><th>$\mathcal{S}_{\text{recon}}$</th><th>$\mathcal{S}_{\text{traj}}$</th><th>$\mathcal{S}_{\text{meta}}$</th><th>$\mathcal{S}_{\text{gen}}$</th></tr>
+<tr class="best"><td>完整</td><td>27.63</td><td>0.858</td><td>0.201</td><td>85.21</td><td>0.342</td><td>0.296</td><td>0.307</td><td>0.37</td></tr>
+<tr><td>w/o 噪声包裹</td><td class="fail">24.46</td><td class="fail">0.745</td><td class="fail">0.298</td><td class="fail">76.39</td><td>0.312</td><td>0.213</td><td>0.275</td><td class="fail">−0.42</td></tr>
+<tr class="partial"><td>w/o 周期解耦训练</td><td>27.89 ↑</td><td>0.898 ↑</td><td>0.192 ↑</td><td class="fail">82.64 ↓</td><td>0.348</td><td>0.310</td><td>0.298</td><td class="fail">0.18</td></tr>
+<tr><td>w/o 3D 奖励</td><td class="fail">18.93</td><td class="fail">0.502</td><td class="fail">0.496</td><td>84.96</td><td>—</td><td>—</td><td>—</td><td>0.33</td></tr>
+<tr><td>w/o 通用奖励</td><td>27.57</td><td>0.849</td><td>0.206</td><td class="fail">83.44</td><td>0.388 ↑</td><td>0.231</td><td>0.305</td><td>—</td></tr>
+</table>
+
+<div class="callout red">
+  <h4>🚨 Reward Hacking 签名(论文 D.7 自承)</h4>
+  <p>论文原文:"a potential failure mode … the model may learn degenerate shortcuts such as <em>producing near-static clips that are easy to reconstruct but do not follow the desired camera motion or preserve dynamic content</em>."</p>
+  <p><strong>w/o 周期解耦训练</strong>这一行是教科书级证据:PSNR/SSIM/LPIPS <em>反而更好</em>(27.89 > 27.63),但 VBench 崩到 82.64、$\mathcal{S}_{\text{gen}}$ 塌到 0.18 —— 模型学会了"<strong>生成静态、易重建的片段刷高 3D 分</strong>"。这正是周期解耦训练要防的。三条缓解措施:① 复合奖励(无单项可主导);② $\mathcal{S}_{\text{traj}}$ 惩罚静态输出;③ 动态子集周期正则。</p>
+</div>
+
+<div class="grid grid-2">
+  <div class="card left-bar red">
+    <h4>w/o 噪声包裹 → 全面崩塌</h4>
+    <p>VBench 76.39(掉 8.8),$\mathcal{S}_{\text{gen}}$ 转<strong>负值 −0.42</strong>。证明隐式相机条件化是<strong>美学与几何的共同基础</strong> —— 没有运动先验,模型连基本生成质量都保不住。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>w/o 3D 奖励 → 回退基线</h4>
+    <p>PSNR 18.93(≈Wan2.1-1.3B 基线 17.40),但 VBench 仍 84.96 —— <strong>3D 奖励正则几何,通用质量靠 R_gen 维持</strong>,两者职责分离清晰。</p>
+  </div>
+</div>
+
+<h3>12.3 数据集规模(附录 D.3 · 表 E)</h3>
+<table>
+<tr><th>数据规模</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>VBench AVG ↑</th></tr>
+<tr><td>1K</td><td>25.82</td><td>0.812</td><td>0.258</td><td>83.23</td></tr>
+<tr><td>2K</td><td>26.54</td><td>0.839</td><td>0.223</td><td>84.76</td></tr>
+<tr class="best"><td>3K</td><td>27.63</td><td>0.858</td><td>0.201</td><td>85.21</td></tr>
+</table>
+<p>1K→3K 单调提升,论文称"World-R1 数据高效,3K 提示即可产生强增益"。⚠️ 但<strong>未测 5K/10K 外推</strong>,无法判断是否已饱和(见第 13 节)。</p>
+
+<h3>12.4 场景复杂度分解(附录 D.5 · 表 G · World-R1-Small vs Wan2.1-1.3B)</h3>
+<table>
+<tr><th>场景类型</th><th>占比</th><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>MVCS ↑</th></tr>
+<tr><td rowspan="2">静态场景</td><td rowspan="2">30.11%</td><td>Wan2.1-1.3B</td><td>20.14</td><td>0.632</td><td>0.389</td><td>0.981</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>30.52</td><td>0.912</td><td>0.142</td><td>0.994</td></tr>
+<tr><td rowspan="2">单物体动态</td><td rowspan="2">29.03%</td><td>Wan2.1-1.3B</td><td>17.86</td><td>0.563</td><td>0.452</td><td>0.976</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>28.17</td><td>0.869</td><td>0.189</td><td>0.991</td></tr>
+<tr><td rowspan="2">多物体动态</td><td rowspan="2">21.51%</td><td>Wan2.1-1.3B</td><td>15.23</td><td>0.487</td><td>0.528</td><td>0.968</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>25.41</td><td>0.812</td><td>0.248</td><td>0.985</td></tr>
+<tr><td rowspan="2">非刚性运动</td><td rowspan="2">19.35%</td><td>Wan2.1-1.3B</td><td>14.58</td><td>0.462</td><td>0.548</td><td>0.965</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>24.73</td><td>0.793</td><td>0.267</td><td>0.982</td></tr>
+<tr><td rowspan="2">长时序动态</td><td rowspan="2">12.89%</td><td>Wan2.1-1.3B</td><td class="fail">12.53</td><td class="fail">0.382</td><td class="fail">0.683</td><td>0.951</td></tr>
+<tr class="best"><td>World-R1-Small</td><td>23.59</td><td>0.781</td><td>0.299</td><td>0.974</td></tr>
+</table>
+<p>场景越复杂,基线越差、World-R1 相对增益越大(长时序动态 +11.06 dB) —— 说明 RL 对齐在<strong>最难的场景</strong>上价值最大。</p>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2604.24764v4/vis_video.png" alt="World-R1 定性对比" loading="lazy">
+  <div class="caption"><b>图 3</b> 定性对比 + 3D 重建可视化。基线模型在环绕建筑/穿越走廊等复杂相机运动下物体消失或墙壁扭曲;World-R1 保持严格物体永久性与刚性几何,3DGS 重建点云密集且结构化,而基线因多视角不一致重建稀疏且噪声大。</div>
+</div>
+</section>
+
+<!-- ==================== 13. 可改进方向 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>可改进方向分析</h2>
+<p>本节为知识库特色分析章节,从方法/数据评估/工程实用性三维度分点,每点含<em>问题描述 + 代码或实验佐证 + 改进建议</em>,标优先级。</p>
+
+<h3>方法层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] RL 计算瓶颈被奖励服务器架构实证</h4>
+  <p><strong>问题:</strong>论文自承"<em>RL 用于视频生成,在线 rollout + 奖励评估是显著瓶颈</em>"。代码侧印证:奖励计算被拆成<strong>两个独立 HTTP Flask 服务</strong> —— <code>serve_reward_3d.py</code>(端口 18089,跑 Depth Anything 3 + 3DGS 重建 + Qwen3-VL)与 <code>serve_general_reward.py</code>(端口 18090,HPSv3)。每个 batch 的 rollout 视频都要经网络往返送到 3D 服务器重建+评分,这是 Small 需 48 卡、Large 需 96 卡的主因。</p>
+  <p><strong>改进:</strong>把 Depth Anything 3 / Qwen3-VL 蒸馏成轻量判别器嵌入训练进程;reward 缓存(相似 prompt 复用);异步 reward(不阻塞策略更新)。论文 limitation 已点名这些方向。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[高优先级] 前向平行平面 $z_{\text{ref}}$ 假设的几何脆弱性</h4>
+  <p><strong>问题:</strong>式 6 用单一参考深度把场景近似为前向平行平面,对<strong>强深度变化场景</strong>(纵深走廊、穿越物体、orbit 包围)系统性失真。论文未做 $z_{\text{ref}}$ 敏感性分析。</p>
+  <p><strong>代码佐证:</strong>GitHub 提供 <code>noise_wrap_ablation.py</code> 与 <code>noise_wrap_strength_sweep.py</code>,暗示包裹强度是可调超参且值得扫,但论文正文完全未讨论其影响或失败模式。</p>
+  <p><strong>改进:</strong>用 Depth Anything 3 估的每像素深度替换恒定 $z_{\text{ref}}$ 做 warping;或对 $z_{\text{ref}}$ 做 sweep 消融报告敏感区间。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 多项关键超参未披露,影响可复现与可比较</h4>
+  <p><strong>问题:</strong>以下数值论文均未给出:学习率、优化器名、总训练步数、$\beta$(KL 系数)、$\sigma_t$ 调度、Flow-GRPO-Fast 训练/推理去噪步数、$K$($R_{\text{gen}}$ 帧数)、训练片段帧数。</p>
+  <p><strong>代码佐证:</strong><code>infer_wan_lora.py</code> 与 <code>train_world_r1.py</code> 暗示训练用 <strong>LoRA</strong> 而非全量微调 —— 论文正文未明确说明这一点,而这直接影响"是否可扩展到更大模型/是否真'不改架构'"的论断强度。</p>
+  <p><strong>改进:</strong>附录补全超参表;明确 LoRA rank 与目标模块;若用 LoRA,需讨论"全量微调是否能进一步提升"。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 主指标依赖 3DGS 重建 pipeline,存在循环风险</h4>
+  <p><strong>问题:</strong>主指标 PSNR/SSIM/LPIPS 由"Depth Anything 3 重建 → 沿指定轨迹重渲染 → 比对原视频"算出。论文承认"为减少对重建 pipeline 依赖"才补充 MVCS。但<strong>Depth Anything 3 本身对一致视频会重建得更好</strong> —— 这与要奖励的信号同向,可能放大表观增益。</p>
+  <p><strong>改进:</strong>用多个独立 3D 重建器(VGGT/π³ 见知识库兄弟笔记)交叉验证;或用纯几何(点轨迹)指标为主。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 数据规模仅验证到 3K,声称"data-efficient"缺乏外推</h4>
+  <p><strong>问题:</strong>表 E 只测 1K/2K/3K 三档且单调上升,论文据此称"3K 即强增益、数据高效"。但<strong>未测 5K/10K/50K</strong>,无法判断曲线是否已接近饱和 —— "data-efficient"的结论可能被更大的数据规模证伪。</p>
+  <p><strong>改进:</strong>扩展到 10K+ 报告饱和拐点;或对比视频数据 SFT 的同规模增益。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 仅在 Wan 2.1-T2V 上验证,泛化性未知</h4>
+  <p><strong>问题:</strong>所有实验基于 Wan 2.1(1.3B/14B)。论文称"可受益于更强的视频基础模型",但未在 CogVideoX/HunyuanVideo/Mochi 等其他架构上验证"elicit latent awareness"是否普适。</p>
+  <p><strong>改进:</strong>至少在一个非 Wan 架构上做 case study。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card left-bar">
+  <h4>[中优先级] 评测依赖静态场景,动态非刚性提升有限</h4>
+  <p><strong>实验佐证:</strong>表 G 显示 World-R1 在静态场景 PSNR 30.52,但<strong>非刚性运动仅 24.73、长时序动态仅 23.59</strong>(差距 7+ dB)。论文 limitation 也点名"<em>细粒度非刚性运动、手部动力学、长时序演化仍继承基线伪影</em>"。对实际世界模拟(机器人/驾驶)最关键的恰是动态非刚性场景 —— 此处增益最弱。</p>
+  <p><strong>改进:</strong>扩大动态子集权重;设计针对非刚性的奖励(如 4D 高斯追踪一致性,见知识库 <a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a>);更长训练片段。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 两套数据集分支未在正文披露</h4>
+  <p><strong>代码佐证:</strong>GitHub 有 <code>dataset/final/</code> 与 <code>dataset/enhanced/</code> 两套提示,但论文只提 ~3000 条总数,<code>enhanced/</code> 的规模与作用未说明。复现者难以判断最终用了哪套。</p>
+  <p><strong>改进:</strong>附录补全两个分支的样本数、是否参与训练/验证。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>佐证类型</th></tr>
+<tr><td class="fail">高</td><td>RL 奖励服务器 HTTP 架构导致计算瓶颈</td><td>代码(serve_reward_3d.py/flask + 论文 limitation)</td></tr>
+<tr><td class="fail">高</td><td>$z_{\text{ref}}$ 前向平行假设 + 噪声包裹强度未消融</td><td>公式(式 6)+ 代码(noise_wrap_*_sweep.py)</td></tr>
+<tr><td class="partial">中</td><td>关键超参/$\beta$/$K$/LoRA 未披露</td><td>论文缺失 + 代码(infer_wan_lora.py)</td></tr>
+<tr><td class="partial">中</td><td>主指标依赖 3DGS 重建(循环风险)</td><td>评测协议 + 论文自承</td></tr>
+<tr><td class="partial">中</td><td>数据规模仅到 3K 无外推</td><td>表 E</td></tr>
+<tr><td class="partial">中</td><td>动态非刚性场景增益最弱</td><td>表 G + limitation</td></tr>
+<tr><td>低</td><td>仅 Wan 2.1 架构验证</td><td>实验范围</td></tr>
+<tr><td>低</td><td>两套数据集分支未披露</td><td>代码(dataset/enhanced/)</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>🎯 个人认为最关键的三点</h4>
+  <ol>
+    <li><strong>奖励计算成本</strong> —— 这是把 World-R1 从论文推向产品的最大障碍,Flask+HTTP 服务化架构已实证瓶颈。reward 蒸馏/异步化是关键解锁。</li>
+    <li><strong>奖励黑客的内在张力</strong> —— 表 J 是整篇论文的精华:去掉周期解耦训练,3D 分数不降反升,但 VBench 崩。这说明"<strong>3D 一致性指标本身可被 hack</strong>",任何后续工作都须复制这套分解奖励信号诊断。</li>
+    <li><strong>动态非刚性短板</strong> —— 增益最弱的恰是最有实际价值的场景(非刚性/长时序),与"世界模拟器"定位存在落差,需针对性奖励设计。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 14. 总结 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>总结</h2>
+<p>World-R1 把"视频生成 3D 一致性"问题从<em>改架构/加推理约束</em>重构为<em>RL 后训练对齐</em>问题,核心论断是"视频基础模型已内蕴 3D 感知,只需诱导"。它用 Flow-GRPO-Fast + 复合奖励(meta-view 几何 + 重建保真 + 轨迹对齐 + 美学),配合无参数噪声包裹相机条件化与周期解耦训练,在 Wan 2.1 上把 PSNR 拉高 7.9–10.2 dB 且 VBench 不降反升,用户研究几何一致胜率 92%。</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>最大亮点</h4>
+    <ul>
+      <li>表 J 的奖励黑客诊断:3D 指标可被静态化 hack,周期解耦训练是关键防线</li>
+      <li>不改架构 + 纯文本数据,RL 即生效</li>
+      <li>VBench 超越自身基线(对齐不损质量)</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>主要局限</h4>
+    <ul>
+      <li>RL 计算(rollout+奖励)成本高</li>
+      <li>受基线模型能力上界限制</li>
+      <li>动态非刚性/长时序增益最弱</li>
+      <li>多项超参未披露</li>
+    </ul>
+  </div>
+  <div class="card left-bar">
+    <h4>演进定位</h4>
+    <p>在本知识库"<a href="VideoGen-20260427-视频生成几何一致性调研.html">几何一致性技术方向调研</a>"中,World-R1 代表<strong>架构注入 → RL 强化</strong>的范式转向;后续 Robust Dreamer(潜空间 3D 记忆)、MVTrack4Gen(注意力层点追踪)分别从记忆与监督两端推进。三者共同把视频生成推向世界模拟器。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+  <h4>📝 阅读笔记 · 生成于 2026-08-13 · 领域:视频生成 / 3D 一致性 / 强化学习后训练</h4>
+  <p>关联知识库笔记:<a href="VideoGen-20260427-视频生成几何一致性调研.html">几何一致性调研</a> · <a href="VideoGen-20250326-Wan2.1.html">Wan 2.1(基础模型)</a> · <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础综述</a> · <a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a></p>
+</div>
+</section>
+
+</div>
+
+<div class="footer">
+  World-R1 · arXiv:2604.24764 · ICML 2026 · Microsoft Research + 浙江大学<br>
+  📝 阅读笔记 · 生成于 2026-08-13 · 知识库 media_paper
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+
+</body>
+</html>
