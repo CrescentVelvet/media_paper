@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF-GS 渐进式干扰过滤方法深度分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px;border-bottom:1px solid var(--border);position:relative;overflow:hidden;
+  }
+  .hero::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block;background:rgba(96,165,250,0.15);color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3);padding:4px 14px;border-radius:20px;
+    font-size:13px;margin-bottom:18px;letter-spacing:.5px;
+  }
+  .hero h1{font-size:33px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:820px}
+  .hero .authors{color:#cbd5e1;font-size:14px;margin-top:16px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent);text-decoration:none;font-size:13px;
+    border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent)}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{
+    font-size:25px;border-bottom:2px solid var(--border);padding-bottom:10px;
+    margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419;width:34px;height:34px;border-radius:8px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;
+  }
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent2)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{
+    background:var(--code-bg);padding:2px 7px;border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green);
+  }
+  pre{
+    background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+    padding:16px 20px;overflow-x:auto;margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:#e2e8f0;line-height:1.6;
+  }
+  pre code{background:none;padding:0;color:#e2e8f0}
+  .callout{background:var(--panel);border-left:4px solid var(--accent);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2);background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .callout h4{margin-top:0}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 24px;border-left:4px solid var(--accent)}
+  .card.warn{border-left-color:var(--orange)}
+  .card.red{border-left-color:var(--red)}
+  .card.green{border-left-color:var(--green)}
+  .card.purple{border-left-color:var(--accent2)}
+  .card h4{margin-top:0}
+  .card .num-big{font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--border)}
+  th{background:var(--panel2);color:var(--accent);font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green);font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{background:#fafafa;border-radius:10px;padding:20px;margin:18px 0;text-align:center}
+  .equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 24px;margin:16px 0;overflow-x:auto}
+  .equation .label{float:right;color:var(--muted);font-size:13px}
+  .figure{margin:18px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+  .figure .caption{color:var(--muted);font-size:13px;margin-top:8px;text-align:left}
+  .stage-tag{display:inline-block;padding:3px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:8px}
+  .stage-1{background:rgba(96,165,250,0.15);color:var(--accent);border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(251,146,60,0.15);color:var(--orange);border:1px solid rgba(251,146,60,0.3)}
+  .stage-4{background:rgba(167,139,250,0.15);color:var(--accent2);border:1px solid rgba(167,139,250,0.3)}
+  ul,ol{margin-left:24px;margin-bottom:14px}
+  li{margin-bottom:6px;color:#cbd5e1}
+  .footer{text-align:center;padding:30px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}
+  .quote{border-left:3px solid var(--accent2);padding-left:16px;margin:16px 0;color:var(--muted);font-style:italic}
+  hr{border:none;border-top:1px solid var(--border);margin:30px 0}
+  .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;background:var(--panel2);color:var(--muted);margin:0 3px}
+  .pill.hi{background:rgba(96,165,250,0.15);color:var(--accent);border:1px solid rgba(96,165,250,0.3)}
+  .pill.ok{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3)}
+  .pill.warn{background:rgba(251,146,60,0.15);color:var(--orange);border:1px solid rgba(251,146,60,0.3)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2604.12580 · 2026 · CVPR Findings 2026</span>
+    <h1>PDF-GS:面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h1>
+    <p class="subtitle">重新审视 3DGS 内禀的"自过滤"特性,通过 4 阶段渐进优化将其放大为 distractor 过滤器:filtering 阶段用 DINOv3 差异线索渐进剔除不一致像素,reconstruction 阶段从净化后的高斯恢复细粒度外观。即插即用、零额外推理成本、无需任何架构改动。</p>
+    <p class="authors">Kangmin Seo · MinKyu Lee · Tae-Young Kim · ByeongCheol Lee · JoonSeoung An · Jae-Pil Heo<br>
+    <span style="color:var(--muted);font-size:13px">成均馆大学 (Sungkyunkwan University, SKKU)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2604.12580" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2604.12580v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2604.12580" target="_blank">📥 PDF</a>
+      <a href="https://github.com/kangrnin/PDF-GS" target="_blank">💻 GitHub</a>
+      <a href="https://kangrnin.github.io/PDF-GS/" target="_blank">🌐 项目主页</a>
+      <a href="3D-20260812-3DGS多视角重建SOTA调研.html" target="_blank">🔗 知识库:3DGS 鲁棒重建调研</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机:3DGS 的自过滤现象</a></li>
+    <li><a href="#overview">算法总体框架:4 阶段渐进 pipeline</a></li>
+    <li><a href="#detect">Distractor 检测:DINOv3 差异线索与 mask 生成</a></li>
+    <li><a href="#progressive">渐进策略:阈值调度与重初始化</a></li>
+    <li><a href="#loss">各阶段损失与稀疏颜色更新</a></li>
+    <li><a href="#total-loss">总损失函数汇总</a></li>
+    <li><a href="#flowchart">逻辑流程图(Mermaid)</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#code-vs-paper">代码实现 vs 论文叙述(源码佐证)</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#conclusion">总结</a></li>
+  </ol>
+</div>
+
+<!-- ==================== ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">3D 高斯溅射(3DGS)已实现实时逼真渲染,但<em>常规训练 pipeline 内禀假设输入图像间完全多视角一致</em>——一旦出现破坏该假设的 <strong>distractor</strong>(行人、车辆、阴影、视角相关反光等 transient/view-dependent 内容),就会产生视觉伪影。</p>
+<div class="callout key">
+<p>本文重新审视了 3DGS 一个被忽视的内禀属性:<strong>它对不一致信号有天然的抑制能力</strong>。基于这一观察,作者提出 <strong>PDF-GS(Progressive Distractor Filtering for Robust 3D Gaussian Splatting)</strong>,通过<strong>多阶段渐进优化</strong>放大这种自过滤特性:</p>
+<ol>
+<li><strong>渐进过滤阶段(Progressive Filtering Phases)</strong>:利用 discrepancy 线索逐步剔除 distractor;</li>
+<li><strong>重建阶段(Reconstruction Phase)</strong>:从净化后的高斯表征恢复细粒度、视角一致的细节。</li>
+</ol>
+<p>通过这种迭代精炼,PDF-GS 在多种数据集和真实挑战条件下稳定超越基线。方法<strong>轻量、无架构改动、无额外推理开销</strong>,可直接挂到任意 3DGS 框架上,达到新的 SOTA。</p>
+</div>
+<div class="grid grid-3">
+  <div class="card green"><h4>核心洞察</h4><p>3DGS 训练本身就是个不一致信号过滤器——只需把它<em>迭代放大</em>,而非另起炉灶显式建模 distractor。</p></div>
+  <div class="card"><h4>关键机制</h4><p>DINOv3 patch 特征差异 → 渐进 mask → masked 监督 + 稀疏颜色更新 + 阶段间重 SfM 初始化。</p></div>
+  <div class="card purple"><h4>工程价值</h4><p>不引入新模块、不增加推理成本,4 个 phase 共 40K 迭代,wall-clock 时间与 30K 迭代的 RobustSplat 相当。</p></div>
+</div>
+</section>
+
+<!-- ==================== MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机:3DGS 的自过滤现象</h2>
+
+<h3>2.1 问题定义:distractor 为何伤害 3DGS</h3>
+<p>3DGS 用一组可学习 3D 高斯 $\mathcal{G}=\{(\mu_i,\Sigma_i,\alpha_i,c_i)\}$ 表示场景,通过可微光栅化最小化所有训练视角的渲染误差。其优化目标隐含一个强假设:<strong>所有输入图像观测的是同一静态场景</strong>。当输入含 distractor 时,它们只在少数视角出现、无法提供跨视角一致支持,优化器无法为其学到稳定高斯,反而以伪影(color bleeding、floater、ghosting)形式泄漏到新视角。</p>
+
+<h3>2.2 关键观察:3DGS 天然会"吃掉"distractor</h3>
+<p>作者在 Crab2 等场景上发现一个被忽视的现象:<strong>标准 3DGS 训练后,视角不一致的 distractor 往往在渲染图中自然消失或被模糊</strong>。直觉上,多视角监督会把所有视角"拉"向一致解,distractor 缺乏一致支持,就被一致性优化压力"抹平"。</p>
+<div class="figure">
+  <img src="https://kangrnin.github.io/PDF-GS/assets/images/motivation1.png" alt="3DGS 自过滤现象:多视角聚合使 distractor 消失" loading="lazy">
+  <div class="caption"><b>图 1(动机)</b>:通过聚合多视角监督,3DGS 常使视角不一致的 distractor 消失或模糊。这一经验观察是 PDF-GS 整个方法论的出发点。</div>
+</div>
+<div class="figure">
+  <img src="https://kangrnin.github.io/PDF-GS/assets/images/motivation2.png" alt="把 3DGS 重新用作 distractor 过滤器" loading="lazy">
+  <div class="caption"><b>图 2(动机)</b>:由此可把 3DGS 训练本身<em>重新解释</em>为一个 distractor 过滤器,而非为 distractor 另建显式模型。</div>
+</div>
+
+<div class="callout tip">
+<h4>但单次 pass 不够</h4>
+<p>单次标准优化不足以完全消除 distractor 残余(Fig.1 显示 vanilla 3DGS 训练后仍有痕迹)。<strong>这正是 PDF-GS 提出多阶段迭代精炼的直接动机</strong>:把"自过滤"做 K 次,每次用上一轮更纯净的渲染重新定位 distractor,mask 越来越准,过滤越来越干净。</p>
+</div>
+
+<h3>2.3 与现有鲁棒性方法范式的对比</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>思路</th><th>局限</th></tr>
+<tr><td>显式 mask 预测</td><td>WildGaussians, RobustSplat</td><td>训练一个 predictor 预测 distractor mask</td><td>需额外训练/MLP,predictor 本身可能误判</td></tr>
+<tr><td>静态+transient 分解</td><td>DeSplat, NeRF-W</td><td>把场景拆成静态场 + 瞬态场,仅对静态场监督</td><td>双场表示膨胀,仅光度损失难解耦</td></tr>
+<tr><td>语义聚类</td><td>SpotLessSplats</td><td>SD 语义特征 + 空间/时空聚类分离 distractor</td><td>依赖 SD 特征,聚类阈值敏感</td></tr>
+<tr><td class="best">自过滤放大(本文)</td><td class="best">PDF-GS</td><td class="best">不预测 mask,把 3DGS 本身当 filter,迭代放大</td><td class="best">无额外模块、零推理开销</td></tr>
+</table>
+</section>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架:4 阶段渐进 pipeline</h2>
+<p>PDF-GS 把一次 3DGS 训练拆成 <strong>K=4 个 phase</strong>:前 K-1=3 个是<strong>渐进过滤阶段</strong>,最后 1 个是<strong>重建阶段</strong>。每个 phase 跑 10K 迭代,合计 40K。</p>
+
+<div class="figure">
+  <img src="https://kangrnin.github.io/PDF-GS/assets/images/method_overview.png" alt="PDF-GS 方法总览:4 阶段渐进过滤 + 重建" loading="lazy">
+  <div class="caption"><b>图 3(方法总览)</b>:Phase 1 无 mask 用结构损失得到粗糙一致的 Θ⁽¹⁾;Phase 2/3 基于 Θ⁽ᵏ⁻¹⁾ 渲染与 GT 的 DINOv3 差异生成 mask,masked 监督下重 SfM 初始化训练;distractor 逐 phase 消失;Phase 4 继承 Θ⁽³⁾,用最终 mask 恢复细粒度外观。</div>
+</div>
+
+<h3>3.1 阶段总览表</h3>
+<table>
+<tr><th>Phase</th><th>名称</th><th>k</th><th>是否有 mask</th><th>初始化来源</th><th>训练步数</th><th>损失</th></tr>
+<tr><td><span class="stage-tag stage-1">P1</span></td><td>Progressive Filtering</td><td>1</td><td>❌ 无(prev_feat 为 None)</td><td>SfM 点云</td><td>10K</td><td>纯 SSIM(结构损失)</td></tr>
+<tr><td><span class="stage-tag stage-2">P2</span></td><td>Progressive Filtering</td><td>2</td><td>✅ 基于 Θ⁽¹⁾ 的 mask</td><td><strong>重新 SfM</strong></td><td>10K</td><td>L_3DGS(masked)</td></tr>
+<tr><td><span class="stage-tag stage-3">P3</span></td><td>Progressive Filtering</td><td>3</td><td>✅ 基于 Θ⁽²⁾ 的 mask</td><td><strong>重新 SfM</strong></td><td>10K</td><td>L_3DGS(masked)</td></tr>
+<tr><td><span class="stage-tag stage-4">P4</span></td><td>Reconstruction</td><td>K=4</td><td>✅ 用 Θ⁽³⁾ 的最终 mask M★</td><td><strong>继承 Θ⁽³⁾</strong></td><td>10K</td><td>L_3DGS(masked)</td></tr>
+<tr><td colspan="3"><strong>合计</strong></td><td></td><td></td><td><strong>40K</strong></td><td></td></tr>
+</table>
+
+<h3>3.2 两大阶段划分的设计动机</h3>
+<div class="grid grid-2">
+<div class="card">
+<h4>渐进过滤阶段(1 ≤ k &lt; K)</h4>
+<p>目标:<strong>精炼、净化 distractor</strong>,不追求细粒度外观。每个 phase:(a) 用上一 phase 的 Θ⁽ᵏ⁻¹⁾ 渲染图与 GT 比较,生成 discrepancy map → mask;(b) <strong>从 SfM 点重新初始化</strong>高斯 Θ⁽ᵏ⁾,在 masked 图像监督下训练。</p>
+<p class="quote">为何重新 SfM 而非继承?防止色彩漂移和几何偏差跨 phase 累积(消融 Fig.7:无重初始化会出现持续伪影)。</p>
+</div>
+<div class="card purple">
+<h4>重建阶段(k = K = 4)</h4>
+<p>目标:从净化后的 Θ⁽ᴷ⁻¹⁾ 出发,<strong>恢复细粒度外观/纹理/着色</strong>。</p>
+<p>关键设计:(1) <strong>不重新 SfM</strong>,直接继承 Θ⁽ᴷ⁻¹⁾——它已过 K-1 轮过滤,作初始化比 SfM 更可靠;(2) 把所有 1 阶以上球谐(SH)系数重置为零、active_sh_degree 归零,让外观从头学;(3) 用最终 mask M★ 防止 distractor 复活。</p>
+</div>
+</div>
+</section>
+
+<!-- ==================== DETECTION ==================== -->
+<section id="detect">
+<h2><span class="num">4</span>Distractor 检测:DINOv3 差异线索与 mask 生成</h2>
+
+<h3>4.1 差异线索计算(式 1)</h3>
+<p>对训练视角 $v$、phase $k$,比较 GT 与上一 phase 的渲染:</p>
+<div class="equation">
+$$ D_v^{(k-1)}(p) \;=\; \big\|\, F\!\left(I_v^{gt}\right)(p) \;-\; F\!\left(I_v^{r}(\Theta^{(k-1)})\right)(p) \,\big\|_2 $$
+<span class="label">(式 1)</span>
+</div>
+<p>其中 $F(\cdot)$ 是<strong>语义特征提取器</strong>。论文默认用 <strong>DINOv3 ViT-B/16</strong> 的 patch token。选用语义特征而非低级指标(PSNR/SSIM)的理由:patch 级语义差异对光照、颜色等低级变化鲁棒,能抓住"语义级不一致"——静态区域即使光照变化也不会被判为 distractor。</p>
+<div class="callout tip">
+<h4>递推逻辑</h4>
+<p>Θ⁽ᵏ⁻¹⁾ 在 phase 推进中越来越纯净,所以 $D_v^{(k-1)}$ 对真 distractor 的定位也越来越准——这是"渐进"能放大于"单次"的核心。</p>
+</div>
+
+<h3>4.2 二值 mask 生成(式 2-3)</h3>
+<div class="equation">
+$$ M_v^{(k-1)}(p) \;=\; \mathds{1}\!\left[\, D_v^{(k-1)}(p) \;\leq\; \tau_k \,\right] $$
+<span class="label">(式 2)</span>
+</div>
+<p>注意符号方向:$D(p) \leq \tau_k$ 的像素<strong>保留</strong>(视为视角一致),$D(p) > \tau_k$ 的像素<strong>mask 掉</strong>(视为 distractor)。随后对 mask <strong>膨胀 7 像素</strong>再应用,防止 distractor 边缘泄漏。masked 图像:</p>
+<div class="equation">
+$$ \tilde{I}_v^{gt,(k)} = M_v^{(k-1)} \odot I_v^{gt}, \qquad \tilde{I}_v^{r,(k)} = M_v^{(k-1)} \odot I_v^{r}(\Theta^{(k)}) $$
+<span class="label">(式 3)</span>
+</div>
+
+<h3>4.3 mask 在 phase 间的传递/累积</h3>
+<p>论文不直接累加 mask:每个 phase $k$ 用 Θ⁽ᵏ⁻¹⁾<strong>重新计算</strong> $D$ 与 $M$。但存在<strong>间接累积</strong>——Θ⁽ᵏ⁻¹⁾ 越纯,后续 phase 的 mask 越准(Fig.8 可视化)。最终重建阶段用 $M_v^\star$ = 来自 $k=K-1=3$ 的最终 mask。</p>
+<div class="figure">
+  <img src="https://kangrnin.github.io/PDF-GS/assets/images/figure_mask.png" alt="渐进 distractor mask 精炼" loading="lazy">
+  <div class="caption"><b>图 4</b>:渐进 distractor mask 精炼。每行从左到右:训练视角 → Phase 1 → 2 → 3 的 mask 演化,红 overlay = masked 像素。早期未 mask 的背景车辆在后期被正确识别。</div>
+</div>
+</section>
+
+<!-- ==================== PROGRESSIVE ==================== -->
+<section id="progressive">
+<h2><span class="num">5</span>渐进策略:阈值调度与重初始化</h2>
+
+<h3>5.1 阈值递减(decreasing τ_k)</h3>
+<p>论文 4.3.3 节明确:<em>"we progressively decrease the threshold τ_k used in Eq. 2"</em>。</p>
+<div class="grid grid-2">
+<div class="card"><h4>早期 phase(保守)</h4><p>τ_k 大,只把"差异非常明显"的极端 outlier 标为 distractor,避免误杀静态区域(此时 Θ 还不纯,$D$ 不可靠)。</p></div>
+<div class="card green"><h4>后期 phase(严格)</h4><p>τ_k 小,把之前容忍的"边缘 borderline"区域也排除。此时 Θ 已净化、$D$ 准确,可以放心用严格阈值。</p></div>
+</div>
+<p>消融验证:递减调度 vs 静态固定阈值,<strong>ΔPSNR = +0.26 dB</strong>。</p>
+
+<div class="callout key">
+<h4>★ 代码佐证:阈值方向的等价表述(避免误读)</h4>
+<p>论文用 <strong>L2 距离</strong> $D$ + 阈值 $\tau_k$(keep if $D \leq \tau_k$),称"<strong>递减</strong> τ_k"。而代码 <code>train.py:25-32</code> 用的是 <strong>余弦相似度</strong> <code>cos</code> + 阈值 <code>sim_thr</code>(keep if <code>cos &gt;= sim_thr</code>),README 默认 <code>--sim_thr 0.6 0.7 0.8</code>——<strong>递增</strong>。</p>
+<p>这<strong>并不矛盾</strong>:对归一化特征,余弦相似度与 L2 距离单调反相关($\|x-y\|^2 = 2-2\cos$)。<strong>递增的相似度阈值 = 递减的等价距离阈值</strong>,两者都表达"渐进收紧过滤"。子代理初读时曾误判为矛盾,实为同一策略的两种等价数学表述。</p>
+</div>
+
+<h3>5.2 重初始化策略</h3>
+<table>
+<tr><th>策略</th><th>filtering 阶段间</th><th>reconstruction 阶段</th><th>PSNR</th><th>ΔPSNR</th></tr>
+<tr><td class="best">默认(filtering 重 SfM、reconstruction 继承)</td><td>重 SfM</td><td>继承 Θ⁽ᴷ⁻¹⁾</td><td class="best">23.32</td><td>0</td></tr>
+<tr><td>Always(每 phase 都重 SfM,含 reconstruction)</td><td>重 SfM</td><td>重 SfM</td><td>23.08</td><td>-0.24</td></tr>
+<tr><td>Never(全程继承,不重 SfM)</td><td>继承</td><td>继承</td><td>22.95</td><td>-0.37</td></tr>
+</table>
+<p>默认策略最优。"Never" 在 LPIPS 上反而最好(0.13)但 PSNR 大幅下降,说明色彩漂移让 LPIPS 略好但整体几何受损。</p>
+
+<h3>5.3 Phase 数量选择</h3>
+<p>消融(Fig.5):<strong>1→2 phases 提升最显著</strong>(单次 pass 不足以抑制 distractor);2→3 继续提升但幅度减小;<strong>3 phases 之后饱和</strong>。默认 K=4(3 个 filtering + 1 reconstruction),平衡质量与效率。</p>
+</section>
+
+<!-- ==================== LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">6</span>各阶段损失与稀疏颜色更新</h2>
+
+<h3>6.1 Filtering Phase 1:纯结构损失(式 4 第一行)</h3>
+<div class="equation">
+$$ \mathcal{L}_{\text{filter}}^{(k=1)} \;=\; \sum_{v \in \mathcal{V}} \mathcal{L}_{\text{ssim}}\!\left(I_v^{r,(1)},\, I_v^{gt}\right) $$
+<span class="label">(式 4, k=1)</span>
+</div>
+<p><strong>仅 SSIM 损失,无 L1,无 mask</strong>。动机:SSIM 强调 patch 级几何一致性,对局部颜色变化/transient 不敏感,防止过早拟合 distractor。论文特别说明该结构损失被<strong>量级对齐到标准 3DGS 损失</strong>以稳定优化。</p>
+
+<h3>6.2 Filtering Phase 2/3:masked 3DGS 损失(式 4 第二行)</h3>
+<div class="equation">
+$$ \mathcal{L}_{\text{filter}}^{(k)} \;=\; \sum_{v \in \mathcal{V}} \mathcal{L}_{\text{3DGS}}\!\left(\tilde{I}_v^{r,(k)},\, \tilde{I}_v^{gt,(k)}\right), \quad \mathcal{L}_{\text{3DGS}} = \mathcal{L}_1 + \mathcal{L}_{\text{ssim}} $$
+<span class="label">(式 4, 1&lt;k&lt;K)</span>
+</div>
+<p>标准 3DGS 组合损失(L1 + SSIM),作用于 masked 图像(distractor 区域被零化)。</p>
+
+<h3>6.3 Reconstruction Phase:最终 mask + 细节恢复(式 6-7)</h3>
+<div class="equation">
+$$ \tilde{I}_v^{gt,\star} = M_v^\star \odot I_v^{gt}, \quad \tilde{I}_v^{r,\star} = M_v^\star \odot I_v^{r}(\Theta^{(K)}) $$
+$$ \mathcal{L}_{\text{rec}} \;=\; \sum_{v \in \mathcal{V}} \mathcal{L}_{\text{3DGS}}\!\left(\tilde{I}_v^{r,\star},\, \tilde{I}_v^{gt,\star}\right) $$
+<span class="label">(式 6-7)</span>
+</div>
+<p>用 $M_v^\star$(来自 $k=K-1$ 的最终 mask)防止 distractor 复活,同时恢复细粒度外观。</p>
+
+<h3>6.4 稀疏颜色更新(Sparse Color Updates,式 5)</h3>
+<div class="equation">
+$$ \Theta_{\text{color}}^{t,k} \;\leftarrow\; \begin{cases} \Theta_{\text{color}}^{t,k} - \eta\,\nabla_{\Theta_{\text{color}}^{t,k}} \mathcal{L}_{\text{filter}}^{(k)}, & t \bmod N = 0 \\[3pt] \Theta_{\text{color}}^{t,k}, & \text{otherwise} \end{cases} $$
+<span class="label">(式 5)</span>
+</div>
+<p><strong>几何与 opacity 参数每步都更新;只有 color(SH 系数)每 N 步更新一次。</strong>动机:SfM 初始化的高斯颜色本就跨视角稳定,频繁 color 更新会让高斯漂移到单视角 transient 外观;稀疏更新维持多视角一致性。</p>
+<div class="callout warn">
+<h4>作用范围</h4>
+<p>稀疏颜色更新<strong>仅在 filtering 阶段(1 ≤ k &lt; K)生效</strong>;reconstruction 阶段每步都更新 color,以便充分恢复细粒度外观(代码 <code>train.py:191</code>:<code>if phase != num_phases and ...</code>)。</p>
+</div>
+
+<div class="callout tip">
+<h4>无额外正则化</h4>
+<p>论文<strong>未引入任何显式正则化</strong>(无 TV、无 opacity 正则、无 scale 正则、无 anchor loss)。所有鲁棒性都通过四机制隐式实现:(1) 多阶段迭代;(2) mask;(3) 稀疏 color 更新;(4) 结构损失。这点在代码中亦得到证实——<code>train.py</code> 损失段无任何 reg 项。</p>
+</div>
+</section>
+
+<!-- ==================== TOTAL LOSS ==================== -->
+<section id="total-loss">
+<h2><span class="num">7</span>总损失函数汇总</h2>
+<table>
+<tr><th>阶段</th><th>损失式</th><th>公式</th><th>作用</th></tr>
+<tr><td><span class="stage-tag stage-1">P1</span></td><td>结构损失</td><td>$\mathcal{L}_{\text{ssim}}(I^r, I^{gt})$</td><td>得到粗糙但视角一致的 Θ⁽¹⁾,作后续 baseline</td></tr>
+<tr><td><span class="stage-tag stage-2">P2</span></td><td>masked 3DGS</td><td>$\mathcal{L}_1 + \mathcal{L}_{\text{ssim}}$,作用于 $M \odot I$</td><td>剔除第一轮后仍显著的 distractor</td></tr>
+<tr><td><span class="stage-tag stage-3">P3</span></td><td>masked 3DGS</td><td>同上,但 mask 更准</td><td>进一步剔除 borderline distractor</td></tr>
+<tr><td><span class="stage-tag stage-4">P4</span></td><td>masked 3DGS</td><td>同上,用最终 mask $M^\star$</td><td>恢复细粒度外观,防 distractor 复活</td></tr>
+<tr><td>跨阶段</td><td>稀疏 color 更新</td><td>$\Theta_{\text{color}}$ 每 N 步更新</td><td>维持多视角外观一致性,仅 filtering 阶段</td></tr>
+<tr><td>跨阶段</td><td>损失重缩放</td><td>$\mathcal{L} \leftarrow \mathcal{L}\cdot\frac{\mathcal{L}_{\text{3DGS}}^{\text{default}}}{\max(\mathcal{L},\epsilon)}$</td><td>量级对齐到默认 3DGS 损失,稳定优化</td></tr>
+</table>
+</section>
+
+<!-- ==================== FLOWCHART ==================== -->
+<section id="flowchart">
+<h2><span class="num">8</span>逻辑流程图(Mermaid)</h2>
+
+<h3>8.1 总 pipeline(4 阶段)</h3>
+<div class="mermaid">
+flowchart TD
+    SFM["SfM 点云初始化"] --> P1
+    subgraph P1["Phase 1: 渐进过滤 (无 mask)"]
+        P1A["纯 SSIM 结构损失<br/>dssim=1.0"] --> P1B["Θ⁽¹⁾: 粗糙一致"]
+    end
+    P1 -->|渲染 → DINOv3 差异| M1["mask M¹<br/>sim_thr=0.6"]
+    M1 --> RE1["重新 SfM 初始化"]
+    RE1 --> P2
+    subgraph P2["Phase 2: 渐进过滤 (masked)"]
+        P2A["L1+SSIM, masked<br/>稀疏 color 更新"] --> P2B["Θ⁽²⁾"]
+    end
+    P2 -->|渲染 → DINOv3 差异| M2["mask M²<br/>sim_thr=0.7 (更严)"]
+    M2 --> RE2["重新 SfM 初始化"]
+    RE2 --> P3
+    subgraph P3["Phase 3: 渐进过滤 (masked)"]
+        P3A["L1+SSIM, masked<br/>稀疏 color 更新"] --> P3B["Θ⁽³⁾"]
+    end
+    P3 -->|最终 mask M★| INH["★ 继承 Θ⁽³⁾<br/>重置高阶 SH"]
+    INH --> P4
+    subgraph P4["Phase 4: 重建阶段"]
+        P4A["L1+SSIM, masked by M★<br/>color 每步更新<br/>致密化仅前半程"] --> P4B["Θ⁽⁴⁾ = 最终模型"]
+    end
+    style P1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P2 fill:#d1fae5,stroke:#10b981,color:#065f46
+    style P3 fill:#fed7aa,stroke:#f97316,color:#7c2d12
+    style P4 fill:#e9d5ff,stroke:#a855f7,color:#4c1d95
+    style INH fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>8.2 单个 filtering phase 内的训练循环</h3>
+<div class="mermaid">
+flowchart LR
+    A["采样相机 v"] --> B["render(I_v^r)"]
+    B --> C{"prev_feat 是否存在?"}
+    C -->|否 (phase 1)| D["clean_mask = 全 1"]
+    C -->|是 (phase 2+)| E["compute_clean_mask<br/>cos = cos_sim(gt_feat, prev_feat)<br/>clean = cos &gt;= sim_thr<br/>distractor 膨胀 7px"]
+    E --> F
+    D --> F
+    F["mask 累积:<br/>clean_mask *= prev_mask_dict[v]"] --> G["masked 损失<br/>L1+SSIM × clean_mask"]
+    G --> H["重缩放到默认 3DGS 量级"]
+    H --> I["loss.backward()"]
+    I --> J["optimizer.step()"]
+    J --> K{"phase != K 且<br/>iter % N != 0?"}
+    K -->|是| L["撤销 SH 更新<br/>(稀疏 color)"]
+    K -->|否| M["保留 SH 更新"]
+    L --> A
+    M --> A
+    style D fill:#dbeafe,stroke:#3b82f6
+    style E fill:#d1fae5,stroke:#10b981
+    style L fill:#fed7aa,stroke:#f97316
+</div>
+
+<h3>8.3 mask 在 phase 内的累积逻辑(代码实现细节)</h3>
+<div class="mermaid">
+flowchart TD
+    V["访问相机 v (某次迭代)"] --> NEW["新计算 clean_mask_v"]
+    PREV["prev_mask_dict[v]<br/>(本 phase 之前对该相机的累积 mask)"] --> MUL
+    NEW --> MUL["clean_mask = NEW × PREV"]
+    MUL --> STORE["prev_mask_dict[v] = clean_mask<br/>(更新累积)"]
+    STORE --> USE["用于本次 masked 损失"]
+    style MUL fill:#e9d5ff,stroke:#a855f7
+</div>
+<div class="callout key">
+<h4>★ 代码佐证:phase 内 mask 累积(论文未述)</h4>
+<p>论文只描述了<strong>phase 之间</strong>的 mask 演进,但代码 <code>train.py:132-135</code> 显示:<strong>同一 phase 内,每次访问同一相机,新 mask 会与该相机的历史累积 mask <em>相乘</em></strong>。</p>
+<p>[0,1] mask 的乘积 = 交集(intersection),意味着 <strong>clean 区域随迭代只缩不涨</strong>——过滤在单 phase 内也是渐进收紧的。这是一个论文未明示、但实质影响行为的重要实现细节。</p>
+</div>
+</section>
+
+<!-- ==================== EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">9</span>实验结果</h2>
+
+<h3>9.1 实验设置</h3>
+<div class="grid grid-2">
+<div class="card"><h4>数据集</h4>
+<ul>
+<li><strong>NeRF On-the-go</strong>(Ren 2024):5 场景(Mountain/Fountain/Corner/Patio/Patio-High),按遮挡度分 Low/Med/High,主评测 + 全部消融</li>
+<li><strong>RobustNeRF</strong>(Sabour 2023):4 场景(Android/Crab2/Statue/Yoda)</li>
+</ul>
+</div>
+<div class="card"><h4>配置</h4>
+<ul>
+<li>输入图下采样 8×(Patio 因遮挡复杂用 4×)</li>
+<li>评价指标:PSNR↑ / SSIM↑ / LPIPS↓</li>
+<li>总 40K 迭代(K=4,每 phase 10K)</li>
+<li>对比:3DGS、SpotLessSplats、WildGaussians、DeSplat、RobustSplat</li>
+</ul>
+</div>
+</div>
+
+<h3>9.2 NeRF On-the-go 数据集(按遮挡度细分)</h3>
+<table>
+<tr><th>方法</th><th>Low PSNR</th><th>Med PSNR</th><th>High PSNR</th><th>Mean PSNR</th><th>SSIM</th><th>LPIPS</th></tr>
+<tr><td>3DGS</td><td>19.22/20.08/22.65</td><td>17.04</td><td>18.54/17.04</td><td>19.09</td><td>0.72</td><td>0.25</td></tr>
+<tr><td>SpotLessSplats</td><td>20.67/20.63/25.47</td><td>21.43</td><td>23.64/21.17</td><td>22.17</td><td>0.76</td><td>0.22</td></tr>
+<tr><td>WildGaussians</td><td>20.77/20.48/25.21</td><td>21.17</td><td>24.60/22.44</td><td>22.45</td><td>0.78</td><td>0.19</td></tr>
+<tr><td>DeSplat*</td><td>19.32/20.45/26.30</td><td>18.81</td><td>26.03/22.38</td><td>22.21</td><td>0.80</td><td>0.16</td></tr>
+<tr><td>RobustSplat</td><td>21.15/21.01/26.42</td><td>21.63</td><td>26.21/22.87</td><td>23.22</td><td>0.82</td><td>0.15</td></tr>
+<tr class="best"><td>PDF-GS (Ours)</td><td>21.82/21.19/26.41</td><td>21.54</td><td>25.94/23.00</td><td>23.32</td><td>0.82</td><td>0.15</td></tr>
+</table>
+<div class="callout tip">
+<p>对比 RobustSplat:Mean PSNR <strong>+0.10 dB</strong>,最显著提升在 <strong>Low Occlusion</strong>(+0.67 dB)。<strong>SSIM/LPIPS 持平</strong>。个别场景略低(Patio -0.09),但整体稳定不劣。</p>
+</div>
+
+<h3>9.3 RobustNeRF 数据集</h3>
+<table>
+<tr><th>方法</th><th>Android</th><th>Crab2</th><th>Statue</th><th>Yoda</th><th>Mean</th></tr>
+<tr><td>3DGS</td><td>23.32</td><td>31.76</td><td>20.83</td><td>28.92</td><td>26.21</td></tr>
+<tr><td>WildGaussians</td><td>24.67</td><td>30.52</td><td>22.54</td><td>30.55</td><td>27.07</td></tr>
+<tr><td>SpotLessSplats</td><td>24.20</td><td>33.90</td><td>21.97</td><td>34.24</td><td>28.58</td></tr>
+<tr><td>DeSplat*</td><td>24.20</td><td>34.12</td><td>22.93</td><td>34.15</td><td>28.85</td></tr>
+<tr><td>RobustSplat</td><td>24.62</td><td>34.88</td><td>22.80</td><td>35.14</td><td>29.36</td></tr>
+<tr class="best"><td>PDF-GS</td><td>24.74</td><td>35.35</td><td>22.98</td><td>35.54</td><td>29.65</td></tr>
+</table>
+<div class="callout tip">
+<p>对比 RobustSplat:Mean PSNR <strong>+0.29 dB</strong>(29.65 vs 29.36),LPIPS <strong>-0.01</strong>,SSIM 持平 0.90。各场景 PSNR 均不劣于 RobustSplat,最显著在 <strong>Crab2(+0.47)</strong> 与 <strong>Yoda(+0.40)</strong>。<strong>对比 vanilla 3DGS:+3.44 dB</strong>。</p>
+</div>
+
+<h3>9.4 训练速度对比(RobustNeRF)</h3>
+<table>
+<tr><th>场景</th><th>RobustSplat (30K)</th><th>PDF-GS (40K)</th></tr>
+<tr><td>Android</td><td>21.6 min</td><td>25.2 min</td></tr>
+<tr><td>Crab2</td><td>24.5 min</td><td class="best">23.5 min ✓</td></tr>
+<tr><td>Statue</td><td>28.7 min</td><td class="best">28.1 min ✓</td></tr>
+<tr><td>Yoda</td><td>24.2 min</td><td class="best">23.9 min ✓</td></tr>
+</table>
+<p>PDF-GS 用 40K 迭代 vs RobustSplat 30K,但 <strong>4 场景中 3 个更快</strong>。原因:RobustSplat 每 iteration 都做特征提取;PDF-GS 只在 phase 之间算一次,把特征提取从内层循环解耦。</p>
+
+<div class="figure">
+  <img src="https://kangrnin.github.io/PDF-GS/assets/images/figure_qualitative.png" alt="定性对比" loading="lazy">
+  <div class="caption"><b>图 5</b>:与基线的定性对比,红箭头标注处 PDF-GS 伪影最少、静态区域最准。</div>
+</div>
+</section>
+
+<!-- ==================== ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">10</span>消融实验</h2>
+
+<h3>10.1 Filtering Phase 组件消融(On-the-go)</h3>
+<table>
+<tr><th>设置</th><th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>ΔPSNR</th></tr>
+<tr class="best"><td>Struct. Loss + Sparse Color(默认)</td><td>23.32</td><td>0.82</td><td>0.15</td><td>0</td></tr>
+<tr><td>仅 Struct. Loss(去 sparse color)</td><td>23.06</td><td>0.82</td><td>0.15</td><td>-0.26</td></tr>
+<tr><td>仅 Sparse Color(phase1 用 3DGS loss)</td><td>23.20</td><td>0.82</td><td>0.15</td><td>-0.12</td></tr>
+<tr><td>两者都去掉(phase1 用 3DGS loss + 普通 color 更新)</td><td>23.02</td><td>0.81</td><td>0.15</td><td>-0.30</td></tr>
+</table>
+<p>两个组件<strong>联合最强</strong>;struct loss 贡献略大(0.26 vs 0.12)。</p>
+
+<h3>10.2 阈值调度</h3>
+<table>
+<tr><th>设置</th><th>PSNR</th><th>ΔPSNR</th></tr>
+<tr class="best"><td>Decreasing(默认,τ_k 递减)</td><td>23.32</td><td>0</td></tr>
+<tr><td>Static(固定 τ)</td><td>23.06</td><td>-0.26</td></tr>
+</table>
+
+<h3>10.3 Masking Metric 对比(RobustNeRF Mean)</h3>
+<table>
+<tr><th>F(·)</th><th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>ΔPSNR</th></tr>
+<tr class="best"><td>DINOv3(默认)</td><td>29.65</td><td>0.90</td><td>0.13</td><td>0</td></tr>
+<tr><td>DINOv2</td><td>29.42</td><td>0.89</td><td>0.14</td><td>-0.23</td></tr>
+<tr><td>SSIM</td><td>28.88</td><td>0.89</td><td>0.13</td><td>-0.77</td></tr>
+<tr><td>PSNR</td><td>28.71</td><td>0.89</td><td>0.14</td><td>-0.94</td></tr>
+<tr><td>(vanilla 3DGS,无 filtering)</td><td>26.21</td><td>0.86</td><td>0.17</td><td>-3.44</td></tr>
+</table>
+<div class="callout key">
+<h4>关键发现</h4>
+<p>DINOv3 &gt; DINOv2 &gt; SSIM &gt; PSNR(语义特征优于低级指标)。<strong>即便用最弱的 PSNR metric</strong>(无任何预训练模型),PDF-GS 仍 <strong>28.71 vs vanilla 26.21 = +2.50 dB</strong>。这说明 <em>progressive filtering 本身就有效</em>,DINOv3 只是放大效果——印证了"自过滤放大"的核心论点。</p>
+</div>
+
+<h3>10.4 附录补充消融</h3>
+<div class="grid grid-2">
+<div class="card"><h4>A.2 给 RobustSplat 加 progressive filtering(RobustNeRF)</h4>
+<p>RobustSplat(DINOv2)29.24 → +PF 29.32;RobustSplat(DINOv3)29.14 → +PF <strong>29.43</strong>。证明机制普适,可叠加到 single-pass 方法上。</p></div>
+<div class="card"><h4>A.3 用 learned predictor 替换 discrepancy mask(On-the-go)</h4>
+<p>Discrepancy-based 23.32;用 RobustSplat 的 learned MLP predictor <strong>23.39</strong>(+0.07)。更强的 mask 方法在 PDF-GS 框架内还能进一步提升,说明<strong>框架与 predictor 互补</strong>。</p></div>
+</div>
+</section>
+
+<!-- ==================== CODE VS PAPER ==================== -->
+<section id="code-vs-paper">
+<h2><span class="num">11</span>代码实现 vs 论文叙述(源码佐证)</h2>
+<p class="quote">本节是知识库特色分析:克隆 <code>kangrnin/PDF-GS</code> 仓库,对照 <code>train.py</code> 与 <code>utils/mask_utils.py</code>,检验论文"宣称 vs 实现"差异。</p>
+
+<h3>11.1 sim_thr 方向:看似矛盾,实为等价 ★</h3>
+<div class="card green">
+<p>论文式 2 用 <strong>L2 距离</strong> $D$ + 阈值 $\tau_k$,keep if $D \leq \tau_k$,称"递减 τ_k"。</p>
+<p>代码 <code>train.py:26-27</code> 用 <strong>余弦相似度</strong>:<code>cos = cosine_similarity(gt_feat, prev_feat)</code>;<code>clean = (cos &gt;= sim_thr)</code>。README 默认 <code>--sim_thr 0.6 0.7 0.8</code>(递增)。</p>
+<p><strong>两者等价</strong>:归一化特征下 $\|x-y\|^2 = 2 - 2\cos(x,y)$,递增相似度阈值 = 递减距离阈值。子代理初读时误判为矛盾,实为同一策略的两种数学表述。</p>
+</div>
+
+<h3>11.2 phase 内 mask 累积相乘(论文未述)★</h3>
+<div class="card purple">
+<p>论文只描述 phase 间 mask 演进。代码 <code>train.py:132-135</code>:</p>
+<pre><code>prev = prev_mask_dict.get(viewpoint_cam.image_name)
+if prev is not None:
+    clean_mask = clean_mask * prev.to(clean_mask.device)
+prev_mask_dict[viewpoint_cam.image_name] = clean_mask.detach().cpu()</code></pre>
+<p>同一 phase 内每次访问相机,新 mask 与历史累积 mask <strong>相乘</strong>。乘积=交集,clean 区域只缩不涨——过滤在单 phase 内也渐进收紧。这是论文未明示但实质影响行为的关键细节。</p>
+</div>
+
+<h3>11.3 损失重缩放作用于所有 phase(非仅 phase 1)</h3>
+<div class="card">
+<p>论文称 phase 1 的结构损失"量级对齐到标准 3DGS 损失"。但代码 <code>train.py:143-146</code> 显示重缩放<strong>作用于所有 phase</strong>:</p>
+<pre><code>dssim = 1.0 if phase == 1 else 0.2
+loss = (1.0 - dssim) * Ll1 + dssim * (1.0 - ssim_value)
+loss_dssim_default = 0.8 * Ll1 + 0.2 * (1.0 - ssim_value)
+loss = loss * (loss_dssim_default.item() / max(loss.item(), 1e-8))</code></pre>
+<p>phase 1: <code>dssim=1.0</code> → 纯 SSIM(符合论文);phase 2+: <code>dssim=0.2</code> → 标准 3DGS 权重(0.8 L1 + 0.2 SSIM)。最后用 <code>.item()</code> 标量缩放梯度量级。</p>
+</div>
+
+<h3>11.4 reconstruction 阶段致密化只跑半程</h3>
+<div class="card">
+<p>代码 <code>train.py:314-315</code>:<code>if phase == args.num_phases: opt.densify_until_iter = args.iter_per_phase // 2</code>。重建阶段致密化仅在迭代前半程(5K/10K)进行,论文未述此细节——合理,因为 Θ⁽ᴷ⁻¹⁾ 已是良好初始化,无需大量致密化。</p>
+</div>
+
+<h3>11.5 prev_model 传递控制重初始化</h3>
+<div class="card">
+<p>代码 <code>train.py:332-333</code>:<code>if phase != args.num_phases - 1: prev_model = None</code>。除 phase K-1 外,每 phase 后 prev_model 置 None → 下个 phase 从 SfM 默认初始化;仅 phase K-1 后保留 → reconstruction 阶段继承 Θ⁽ᴷ⁻¹⁾。这以最简方式实现了"filtering 重 SfM、reconstruction 继承"的非对称设计。同时 <code>train.py:74-77</code> 继承时重置 <code>_features_rest</code>(高阶 SH)= 论文所述"1 阶以上 SH 重新初始化"。</p>
+</div>
+
+<h3>11.6 DINOv3 提取器细节</h3>
+<div class="card">
+<p><code>utils/mask_utils.py</code>:DINOv3 ViT-B/16,<strong>1 CLS + 4 register tokens</strong> 前置于 patch token(<code>_DINOV3_NUM_SPECIAL = 1 + 4</code>)。<code>feature_size=50</code> → 把图 Resize 到 $50\times16=800$ 分辨率,取 2500 个 patch token 重排为 $50\times50\times C$ 特征图。特征<strong>每 phase 提取一次</strong>(<code>train.py:55-66</code>),完全解耦内层循环——这是 wall-clock 反而更快的原因。</p>
+</div>
+
+<h3>11.7 膨胀参数</h3>
+<div class="card">
+<p><code>train.py:31</code>:<code>F.max_pool2d(distractor, kernel_size=15, stride=1, padding=7)</code>。padding=7 = kernel//2 → 膨胀半径 7 像素,与论文"膨胀 7 像素"一致。</p>
+</div>
+</section>
+
+<!-- ==================== IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">12</span>可改进方向分析</h2>
+
+<div class="card red">
+<h4>[高优先级] phase 内 mask 单调累积可能误杀静态区域</h4>
+<p><strong>问题</strong>:代码 <code>train.py:134</code> 在 phase 内对同相机的 mask 做<strong>乘积累积</strong>,clean 区域只缩不涨。若某次迭代因 Θ 临时欠拟合导致某静态区域被误判为 distractor,该区域将被永久 mask,后续无法"翻案"。</p>
+<p><strong>代码佐证</strong>:<code>prev_mask_dict</code> 无衰减/重置机制,一旦乘进 0 就回不来。</p>
+<p><strong>改进</strong>:引入 EMA 累积(<code>mask = α·new + (1-α)·prev</code>)或 phase 内周期性重置,允许 clean 区域恢复。或设下限 <code>mask.clamp(min=ε)</code> 保留少量监督。</p>
+</div>
+
+<div class="card warn">
+<h4>[高优先级] 关键超参未在论文公开,需读代码</h4>
+<p><strong>问题</strong>:τ_k 各 phase 具体值、稀疏 color 更新的 N 值,论文仅用符号 $\tau_k$、$N$ 表示,无数字。读者无法仅凭论文复现,必须读 GitHub <code>README.md</code> 才知默认 <code>--sim_thr 0.6 0.7 0.8</code>、<code>--color_update_interval 30</code>。</p>
+<p><strong>改进</strong>:在论文附录显式列出各 phase 阈值表与 N 值,并给敏感性分析。当前 N=30 与 phase 1=10K 迭代的关系意味着 color 仅更新 ~333 次,该选择的影响值得交代。</p>
+</div>
+
+<div class="card warn">
+<h4>[中优先级] 仅在 2 个数据集(9 场景)验证</h4>
+<p><strong>问题</strong>:RobustNeRF(4 场景)+ On-the-go(5 场景),均为受控采集,未在大规模野外采集数据(如 KITTI、DL3DV、TankandTemples)上验证。对真正复杂的 distractor(快速运动、大面积遮挡、动态光照)是否仍鲁棒未知。</p>
+<p><strong>改进</strong>:增加 DL3DV-10K 等野外场景测试;或与知识库内 <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 鲁棒重建调研</a> 中提到的微动人体场景结合验证。</p>
+</div>
+
+<div class="card">
+<h4>[中优先级] 结构损失导致细节损失,依赖 reconstruction 弥补</h4>
+<p><strong>问题</strong>:论文 §3.1.3 Remark 自承"filtering 阶段牺牲细粒度外观",需 reconstruction phase 弥补。但 reconstruction 仅 10K 迭代,且致密化只跑半程,对高频纹理恢复是否充分存疑。</p>
+<p><strong>改进</strong>:reconstruction 阶段可借鉴 2DGS/SuGaR 的表面先验或 Mip-Splatting 抗锯齿,提升高频细节;或动态分配各 phase 迭代数(filtering 少、reconstruction 多)。</p>
+</div>
+
+<div class="card">
+<h4>[中优先级] DINOv3 依赖增加部署门槛</h4>
+<p><strong>问题</strong>:默认依赖 DINOv3 ViT-B/16(HuggingFace <code>facebook/dinov3-vitb16-pretrain-lvd1689m</code>)。虽消融证明用 PSNR 也能跑赢 vanilla(+2.50 dB),但默认设置仍需下载预训练权重,离线/边缘部署不便。</p>
+<p><strong>改进</strong>:提供一个 PSNR-metric 的"零依赖"变体作为 fallback;或蒸馏一个轻量 patch 特征提取器替代 DINOv3。</p>
+</div>
+
+<div class="card green">
+<h4>[低优先级] 论文未讨论失败案例</h4>
+<p><strong>问题</strong>:论文无专门 Limitations 章节、无失败案例。从机制推断,对<strong>大面积、慢移动、半数视角都出现</strong>的 distractor(即"接近多视角一致"的 transient),自过滤机制可能失效——因为它依赖"distractor 缺乏跨视角支持",而半数视角出现就不算"缺乏"。</p>
+<p><strong>改进</strong>:补充失败案例分析,明确方法的 distractor 占比上限。</p>
+</div>
+
+<table>
+<tr><th>优先级</th><th>改进点</th><th>ΔPSNR 预估</th></tr>
+<tr><td class="fail">高</td><td>mask 累积误杀 + 超参不公开</td><td>复现门槛 / 边界场景</td></tr>
+<tr><td class="fail">中</td><td>数据集覆盖 + 细节恢复 + DINOv3 依赖</td><td>泛化性 / 部署性</td></tr>
+<tr><td>低</td><td>失败案例缺失</td><td>方法边界未明</td></tr>
+</table>
+<div class="callout key">
+<h4>个人认为最关键的三点</h4>
+<ol>
+<li><strong>mask 单调累积的脆弱性</strong>:这是论文未述而代码实存的机制,最可能在实际部署中产生不可逆的静态区域误杀,值得优先验证。</li>
+<li><strong>超参黑盒</strong>:τ_k 与 N 的具体值未公开,削弱了论文的可复现性与学术透明度。</li>
+<li><strong>大规模野外验证缺失</strong>:9 个受控场景不足以支撑"new state-of-the-art"的普适宣称。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">13</span>总结</h2>
+<p>PDF-GS 的核心贡献是<strong>认知层面的</strong>:它没有发明新模块,而是重新发现并放大了 3DGS 的内禀自过滤特性,通过 4 阶段渐进优化将其工程化为一个 distractor 过滤器。这种"不预测 mask、把训练本身当 filter"的范式,比 mask-predictor / 静态-瞬态分解等显式建模更轻量,且与任意 3DGS 框架即插即用。</p>
+<div class="grid grid-3">
+<div class="card green"><div class="num-big">+3.44</div><p>dB vs vanilla 3DGS(RobustNeRF Mean)</p></div>
+<div class="card"><div class="num-big">+0.29</div><p>dB vs RobustSplat(RobustNeRF),且 4 场景中 3 个更快</p></div>
+<div class="card purple"><div class="num-big">0</div><p>额外推理开销 / 架构改动</p></div>
+</div>
+<div class="callout key">
+<h4>技术路线定位</h4>
+<p>在 3DGS 鲁棒性谱系中:SpotLessSplats(语义聚类)→ WildGaussians/RobustSplat(显式 mask predictor)→ <strong>PDF-GS(自过滤放大)</strong>。PDF-GS 代表了"<em>化繁为简</em>"路线——不增加模型复杂度,而是<strong>调度</strong>已有的训练过程。它与 mask-predictor 路线并非互斥(消融 A.3 证明可叠加),为后续工作提供了干净的基座。</p>
+</div>
+<div class="callout tip">
+<h4>对知识库相关工作的意义</h4>
+<p>在 <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 鲁棒重建调研</a> 中,PDF-GS 被定位为"鲁棒性首选"——因为其即插即用、零推理成本,可直接挂到 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础综述</a> 提到的 2DGS/GaussianPro 等 baseline 上,处理肢体微动 + 生成帧不一致等 distractor 场景。</p>
+</div>
+
+<h3>资源链接</h3>
+<div class="grid grid-2">
+<div class="card">
+<h4>论文与代码</h4>
+<ul>
+<li><a href="https://arxiv.org/abs/2604.12580" target="_blank">📄 arXiv abs (2604.12580)</a></li>
+<li><a href="https://arxiv.org/html/2604.12580v2" target="_blank">🌐 arXiv HTML 全文 v2</a></li>
+<li><a href="https://arxiv.org/pdf/2604.12580" target="_blank">📥 PDF 下载</a></li>
+<li><a href="https://github.com/kangrnin/PDF-GS" target="_blank">💻 GitHub 仓库</a></li>
+<li><a href="https://kangrnin.github.io/PDF-GS/" target="_blank">🌐 项目主页</a></li>
+</ul>
+</div>
+<div class="card">
+<h4>依赖与数据</h4>
+<ul>
+<li>基于 <a href="https://github.com/fcyycf/RobustSplat" target="_blank">RobustSplat</a> 与 <a href="https://github.com/graphdeco-inria/gaussian-splatting" target="_blank">3DGS</a></li>
+<li>特征:<a href="https://huggingface.co/facebook/dinov3-vitb16-pretrain-lvd1689m" target="_blank">DINOv3 ViT-B/16</a></li>
+<li>数据:<a href="https://huggingface.co/datasets/fcy99/RobustSplat-data" target="_blank">RobustSplat 预处理数据 (HF)</a></li>
+<li>复现命令:<code>python train.py -r 8 -s &lt;scene&gt; -m &lt;out&gt; --num_phases 4 --iter_per_phase 10000 --sim_thr 0.6 0.7 0.8 --color_update_interval 30</code></li>
+</ul>
+</div>
+</div>
+
+<h3>关键超参速查(来自 README + 源码)</h3>
+<table>
+<tr><th>参数</th><th>默认值</th><th>含义</th><th>来源</th></tr>
+<tr><td><code>num_phases</code></td><td>4</td><td>总 phase 数(3 filtering + 1 reconstruction)</td><td>train.py:291</td></tr>
+<tr><td><code>iter_per_phase</code></td><td>10000</td><td>每 phase 迭代数(总 40K)</td><td>README</td></tr>
+<tr><td><code>sim_thr</code></td><td>0.6 0.7 0.8</td><td>phase 2/3/4 的余弦相似度阈值(递增=递减距离阈值)</td><td>README + train.py:316</td></tr>
+<tr><td><code>color_update_interval</code></td><td>30</td><td>稀疏 color 更新间隔 N(仅 filtering 阶段)</td><td>README + train.py:191</td></tr>
+<tr><td>(隐式)膨胀半径</td><td>7 px</td><td>max_pool kernel=15, padding=7</td><td>train.py:31</td></tr>
+<tr><td>(隐式)feature_size</td><td>50</td><td>DINOv3 patch 网格,800px 输入</td><td>mask_utils.py:19</td></tr>
+</table>
+</section>
+
+</div>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-13 · 领域: 3D 重建 / 3DGS 鲁棒性 / Novel View Synthesis · arXiv:2604.12580 · CVPR Findings 2026
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

@@ -1013,6 +1013,29 @@
             <a href="https://github.com/yangtiming/Fast-SAM-3D-Body" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card">
+            <h3>35. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2604.12580 (v2)</span>
+                <span>📅 2026-04-14</span>
+                <span>🏢 成均馆大学 (SKKU)</span>
+                <span>🏆 CVPR Findings 2026</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3DGS Robustness</span>
+                <span class="tag green">Distractor Filtering</span>
+                <span class="tag">DINOv3</span>
+                <span class="tag">Progressive Optimization</span>
+                <span class="tag">Plug-and-Play</span>
+            </div>
+            <p>重新审视 3DGS 内禀的"自过滤"特性(多视角监督天然抑制不一致信号),通过 4 阶段渐进优化将其放大为 distractor 过滤器:filtering 阶段用 DINOv3 patch 差异线索渐进剔除不一致像素,reconstruction 阶段从净化高斯恢复细粒度外观。零额外推理成本、无架构改动。RobustNeRF Mean PSNR 29.65(+0.29 vs RobustSplat,且 4 场景中 3 个更快);+3.44 dB vs vanilla 3DGS。源码佐证:论文"递减 τ_k"与代码 sim_thr 0.6→0.7→0.8(递增)等价;phase 内 mask 乘积累积(论文未述)等关键实现细节已纳入分析。</p>
+            <a href="3D-20260414-PDF-GS.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2604.12580" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/kangrnin/PDF-GS" target="_blank">💻 GitHub</a>
+            <a href="https://kangrnin.github.io/PDF-GS/" target="_blank">🌐 项目主页</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -1088,7 +1111,7 @@
         <h2>📖 图像超分辨率与图像复原 (Real-ISR + HYPIR)</h2>
 
         <div class="note-card">
-            <h3>35. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>36. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -1108,7 +1131,7 @@
         </div>
 
         <div class="note-card">
-            <h3>36. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>37. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -1148,7 +1171,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-08-12 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 36 篇笔记卡片（39 篇论文总数见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-08-13 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 37 篇笔记卡片（39 篇论文总数见 knowledge-index.json）
 </div>
 
 </body>
