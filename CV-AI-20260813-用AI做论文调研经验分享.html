@@ -170,6 +170,7 @@
     <li><a href="#case">真实案例:一篇笔记从 219 行到 876 行</a></li>
     <li><a href="#pitfall">踩坑与反模式</a></li>
     <li><a href="#toolchain">工具链与验证清单</a></li>
+    <li><a href="#retrieval">从论文库到知识库:让知识可检索</a></li>
     <li><a href="#summary">经验总结:知识沉淀的三层境界</a></li>
   </ol>
 </div>
@@ -606,9 +607,77 @@ foreach ($u in $urls) {
 </div>
 </section>
 
-<!-- ==================== 9. SUMMARY ==================== -->
+<!-- ==================== 9. RETRIEVAL ==================== -->
+<section id="retrieval">
+<h2><span class="num">9</span>从论文库到知识库:让知识可检索</h2>
+<p class="lead">论文调研做到 40 篇 × ~14 节 ≈ 560 个知识点时,新痛点浮现:<strong>知识点记不住、需要用时找不到在哪一篇</strong>。这不是记忆力问题,是索引粒度问题 —— 你需要的不是"背下来",而是"查得到"。</p>
+
+<h3>9.1 痛点本质:索引粒度太粗</h3>
+<p>当前 <code>knowledge-index.json</code> 是<strong>论文维度</strong>的索引 —— 每篇一个条目,带 tags/sections。查"3D 一致性"能定位到一批论文(p17/p27/p40...),但定位不到具体章节/段落。tag 到论文级,不到知识点级。</p>
+<table>
+  <tr><th>维度</th><th>当前(论文索引)</th><th>需要(知识点索引)</th></tr>
+  <tr><td>粒度</td><td>1 篇 = 1 条目</td><td>1 节/1 公式/1 表 = 1 条目</td></tr>
+  <tr><td>查"X 怎么做"</td><td class="fail">返回一批论文,需逐篇翻</td><td class="best">直接跳到相关段落</td></tr>
+  <tr><td>跨论文对比</td><td class="fail">手动翻多篇</td><td class="best">主题页自动聚合</td></tr>
+  <tr><td>条目数</td><td>40</td><td>~560</td></tr>
+</table>
+
+<h3>9.2 解法一:知识点索引(条目化)</h3>
+<p>把每篇笔记拆成条目,每条字段:</p>
+<pre><code>{
+  "id": "p27-s8",
+  "paper": "p27",
+  "title": "GEN3C",
+  "section": "§8 损失函数",
+  "keywords": ["denoising score matching", "深度对齐", "以架构替代损失堆叠"],
+  "summary": "仅 denoising score matching(式4)+ 深度对齐 s,t(式5),无感知/对抗/几何一致性损失",
+  "file": "VideoGen-20250305-GEN3C.html#loss"
+}</code></pre>
+<div class="callout key">
+<p>关键设计:<strong>条目要带章节锚点(<code>#loss</code>)</strong>。这样检索到条目后,点击直接跳到笔记对应章节,不是只看摘要。<code>keywords</code> 用自然语言短语(如"以架构替代损失堆叠"),不只术语 —— 你回忆时想的往往是短语而非关键词。</p>
+</div>
+<div class="mermaid">
+flowchart LR
+    P["1 篇论文笔记<br/>(~14 节)"] --> SPLIT["拆条目"]
+    SPLIT --> K1["§8 损失 条目"]
+    SPLIT --> K2["§10 实验 条目"]
+    SPLIT --> K3["§12 可改进 条目"]
+    SPLIT --> KN["..."]
+    K1 --> IDX["知识点索引<br/>(~560 条)"]
+    K2 --> IDX
+    K3 --> IDX
+    style P fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style IDX fill:#dcfce7,stroke:#34d399,color:#065f46
+</div>
+
+<h3>9.3 解法二:主题聚合(按问题入口)</h3>
+<p>在知识点索引之上,做<strong>主题入口页</strong> —— 按问题/主题聚合多篇论文的相关条目,附跨论文对比表。例:"3D 一致性怎么做"主题页:</p>
+<ul>
+  <li>GEN3C §8:3D cache + In-Layer+Max-Pool(显式几何约束)</li>
+  <li>World-R1:Flow-GRPO + 几何奖励(隐式 RL 对齐)</li>
+  <li>几何一致性综述 §3:范式分类(显式/隐式/学习式)</li>
+  <li>跨论文对比表:显式 vs 隐式 vs RL,各自先验与局限</li>
+</ul>
+<div class="callout tip">
+<p>主题页是<strong>可浏览的"专题综述"</strong>,不是论文列表。它把分散在 40 篇里的相关知识聚到一页,带对比表和引用 —— 这才是"需要用时找得到"的最终形态。</p>
+</div>
+
+<h3>9.4 落地路径:别一上来就 RAG</h3>
+<p>三阶段递进,前两阶段用关键词就够,不必向量检索:</p>
+<table>
+  <tr><th>阶段</th><th>做什么</th><th>检索方式</th><th>何时做</th></tr>
+  <tr><td><span class="stage-tag stage-1">一</span> 条目化</td><td>拆 40 篇为 ~560 条目,带锚点+关键词</td><td>grep / 关键词</td><td class="best">现在</td></tr>
+  <tr><td><span class="stage-tag stage-2">二</span> 主题聚合</td><td>按高频问题建主题入口页</td><td>浏览主题页</td><td>条目化后</td></tr>
+  <tr><td><span class="stage-tag stage-3">三</span> 向量检索</td><td>条目向量化,语义检索</td><td>RAG</td><td>关键词不够用时</td></tr>
+</table>
+<div class="callout warn">
+<p><strong>反模式</strong>:跳过条目化直接上 RAG。结果:向量检索返回片段缺上下文、缺章节锚点、难溯源。条目化是地基,地基不稳,RAG 之上建不起主题页和对比表。<strong>先把条目做扎实</strong>。</p>
+</div>
+</section>
+
+<!-- ==================== 10. SUMMARY ==================== -->
 <section id="summary">
-<h2><span class="num">9</span>经验总结:知识沉淀的三层境界</h2>
+<h2><span class="num">10</span>经验总结:知识沉淀的三层境界</h2>
 <p class="lead">回看这 40 篇笔记的演进,其实是知识沉淀的三层境界。</p>
 
 <div class="grid grid-3">
