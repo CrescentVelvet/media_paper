@@ -789,7 +789,28 @@
         </div>
 
         <div class="note-card">
-            <h3>22. 2D Gaussian Splatting: 几何准确的辐射场重建</h3>
+            <h3>22. 三维重建质量-速度 Pareto 全谱调研:谁最快、谁最质量、谁综合最优</h3>
+            <div class="meta">
+                <span>📄 综述: 2503.11651 / 2605.15195 / 2507.13347 / 2510.08575 / 2512.10267 / 2404.10772 / 2603.19682 / 2604.07337 / 2601.17835 等</span>
+                <span>📅 编撰 2026-08-14</span>
+                <span>📂 Survey · 全谱</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Pareto 全谱</span>
+                <span class="tag green">Quality vs Speed</span>
+                <span class="tag">Feed-Forward</span>
+                <span class="tag">Per-Scene Opt</span>
+                <span class="tag">Hybrid</span>
+            </div>
+            <p>回答"当前质量最好、速度最快的三维重建方法"。覆盖<strong>速度端:前馈亚秒~秒级</strong>(VGGT-Ω 几何 SOTA Sintel AUC@3°=40.0、π³ 57.4 FPS、ReSplat 0.8s 建+~1400 FPS 渲染 DL3DV 27.70、GS-LRM 0.23s、Long-LRM++ 14 FPS)↔ <strong>质量端:分钟级优化</strong>(NVS outdoor Gaussian Wrapping 26.49/GOF 24.82;表面 GGGS DTU 0.47+T&amp;T 0.60 效率之王、Gaussian Wrapping DTU 0.49)↔ <strong>中间地带:混合范式</strong>(ReSplat 1.7s 超 3DGS 13min 优化 +1.2dB、GenRecon 生成先验桥接 +16%)。<strong>关键结论:</strong>速度王 VGGT-Ω/ReSplat,质量王 GGGS/Gaussian Wrapping,综合 Pareto 最优 = 几何 VGGT-Ω / NVS≤16 视角 ReSplat / 表面 GGGS;甜点区 15-42min;评测分轨(几何/NVS/表面)+ 协议对齐是引用前提。</p>
+            <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2605.15195" target="_blank">📄 VGGT-Ω</a>
+            <a href="https://arxiv.org/abs/2510.08575" target="_blank">📄 ReSplat</a>
+            <a href="https://arxiv.org/abs/2601.17835" target="_blank">📄 GGGS</a>
+        </div>
+
+        <div class="note-card">
+            <h3>23. 2D Gaussian Splatting: 几何准确的辐射场重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2403.17888 (v3)</span>
                 <span>📅 2024-03-26</span>
@@ -812,7 +833,7 @@
         </div>
 
         <div class="note-card">
-            <h3>23. GOF: Gaussian Opacity Fields — 高效自适应表面重建</h3>
+            <h3>24. GOF: Gaussian Opacity Fields — 高效自适应表面重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2404.10772 (v2)</span>
                 <span>📅 2024-04-16</span>
@@ -835,7 +856,7 @@
         </div>
 
         <div class="note-card">
-            <h3>24. 2026 新一代高斯表面重建调研:GOF 之后的范式反超</h3>
+            <h3>25. 2026 新一代高斯表面重建调研:GOF 之后的范式反超</h3>
             <div class="meta">
                 <span>📄 综述: 2604.07337 / 2506.19139 / 2603.19682 / 2603.08503</span>
                 <span>📅 2025-06 ~ 2026-04(编撰 2026-08-14)</span>
@@ -858,7 +879,7 @@
         </div>
 
         <div class="note-card">
-            <h3>25. 前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D</h3>
+            <h3>26. 前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D</h3>
             <div class="meta">
                 <span>📄 综述: 2311.06214 → 2404.19702 → 2410.12781 → 2512.10267</span>
                 <span>📅 2023-11 ~ 2026-03</span>
@@ -877,7 +898,7 @@
         </div>
 
         <div class="note-card">
-            <h3>26. TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成</h3>
+            <h3>27. TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成</h3>
             <div class="meta">
                 <span>📄 arXiv: 2412.01506</span>
                 <span>📅 2024-12-02</span>
@@ -898,7 +919,7 @@
         </div>
 
         <div class="note-card">
-            <h3>27. Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统</h3>
+            <h3>28. Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统</h3>
             <div class="meta">
                 <span>📄 arXiv: 2501.12202 / 2506.15442 / 2509.21245</span>
                 <span>📅 2025-01 ~ 2025-09</span>
@@ -918,7 +939,7 @@
         </div>
 
         <div class="note-card">
-            <h3>28. 3D 生成: DreamGaussian / GaussianDreamer</h3>
+            <h3>29. 3D 生成: DreamGaussian / GaussianDreamer</h3>
             <div class="meta">
                 <span>📄 arXiv: 2309.16653 / 2310.08529</span>
                 <span>📅 2023-09 / 2023-10</span>
@@ -938,7 +959,7 @@
         </div>
 
         <div class="note-card">
-            <h3>29. 4D / 动态 3D 高斯: 动态场景重建与追踪</h3>
+            <h3>30. 4D / 动态 3D 高斯: 动态场景重建与追踪</h3>
             <div class="meta">
                 <span>📄 arXiv: 2308.09713 及后续</span>
                 <span>📅 2023-08 ~ 2026</span>
@@ -956,7 +977,7 @@
         </div>
 
         <div class="note-card">
-            <h3>30. π³: Permutation-Equivariant Visual Geometry Learning</h3>
+            <h3>31. π³: Permutation-Equivariant Visual Geometry Learning</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.13347</span>
                 <span>📅 2025-07-17</span>
@@ -978,7 +999,7 @@
         </div>
 
         <div class="note-card">
-            <h3>31. VGGT-Ω: 前馈3D重建的规模化里程碑</h3>
+            <h3>32. VGGT-Ω: 前馈3D重建的规模化里程碑</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.15195</span>
                 <span>📅 2026-05-14</span>
@@ -1001,7 +1022,7 @@
         </div>
 
         <div class="note-card">
-            <h3>32. GenRecon: 桥接生成式先验的多视角3D场景重建</h3>
+            <h3>33. GenRecon: 桥接生成式先验的多视角3D场景重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.23888</span>
                 <span>📅 2026-05-22</span>
@@ -1022,7 +1043,7 @@
         </div>
 
         <div class="note-card">
-            <h3>33. F3G-Avatar: Face Focused Full-body Gaussian Avatar</h3>
+            <h3>34. F3G-Avatar: Face Focused Full-body Gaussian Avatar</h3>
             <div class="meta">
                 <span>📄 arXiv: 2604.09835</span>
                 <span>📅 2026-04-10</span>
@@ -1044,7 +1065,7 @@
         </div>
 
         <div class="note-card">
-            <h3>34. GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians</h3>
+            <h3>35. GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians</h3>
             <div class="meta">
                 <span>📄 arXiv: 2312.02069</span>
                 <span>📅 2023-12-04</span>
@@ -1066,7 +1087,7 @@
         </div>
 
         <div class="note-card">
-            <h3>35. MHR: Momentum Human Rig — SMPL 升级版</h3>
+            <h3>36. MHR: Momentum Human Rig — SMPL 升级版</h3>
             <div class="meta">
                 <span>📄 arXiv: 2511.15586</span>
                 <span>📅 2025-11-19</span>
@@ -1087,7 +1108,7 @@
         </div>
 
         <div class="note-card">
-            <h3>36. SAM 3D Body: Robust Full-Body Human Mesh Recovery</h3>
+            <h3>37. SAM 3D Body: Robust Full-Body Human Mesh Recovery</h3>
             <div class="meta">
                 <span>📄 arXiv: 2602.15989</span>
                 <span>📅 2026-02-17</span>
@@ -1109,7 +1130,7 @@
         </div>
 
         <div class="note-card">
-            <h3>37. Fast SAM 3D Body: Accelerating SAM 3D Body for Real-Time HMR</h3>
+            <h3>38. Fast SAM 3D Body: Accelerating SAM 3D Body for Real-Time HMR</h3>
             <div class="meta">
                 <span>📄 arXiv: 2603.15603</span>
                 <span>📅 2026-03-16</span>
@@ -1132,7 +1153,7 @@
         </div>
 
         <div class="note-card">
-            <h3>38. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
+            <h3>39. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
             <div class="meta">
                 <span>📄 arXiv: 2604.12580 (v2)</span>
                 <span>📅 2026-04-14</span>
@@ -1229,7 +1250,7 @@
         <h2>📖 图像超分辨率与图像复原 (Real-ISR + HYPIR)</h2>
 
         <div class="note-card">
-            <h3>39. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>40. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -1249,7 +1270,7 @@
         </div>
 
         <div class="note-card">
-            <h3>40. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>41. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>

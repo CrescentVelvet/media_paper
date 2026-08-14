@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三维重建质量-速度 Pareto 全谱调研(2026 全景)</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#fbbf24; --accent2:#60a5fa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171; --purple:#a78bfa;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{background:linear-gradient(135deg,#451a03 0%,#1e3a5f 50%,#1a2029 100%);padding:56px 40px 46px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(251,191,36,0.16),transparent 40%),radial-gradient(circle at 80% 30%,rgba(96,165,250,0.14),transparent 40%)}
+  .hero-content{position:relative;max-width:1140px;margin:0 auto}
+  .hero .badge{display:inline-block;background:rgba(251,191,36,0.15);color:var(--accent);border:1px solid rgba(251,191,36,0.3);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:16px;letter-spacing:.5px}
+  .hero h1{font-size:32px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:920px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{color:var(--accent2);text-decoration:none;font-size:13px;border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1140px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent);border:none;padding:0}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{font-size:25px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .num{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent2)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:var(--text)}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{background:var(--code-bg);padding:2px 7px;border-radius:4px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green)}
+  .callout{background:var(--panel);border-left:4px solid var(--accent2);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent);background:linear-gradient(90deg,rgba(251,191,36,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 22px;border-left:4px solid var(--accent2)}
+  .card.warn{border-left-color:var(--orange)}
+  .card.key{border-left-color:var(--accent)}
+  .card.red{border-left-color:var(--red)}
+  .card.green{border-left-color:var(--green)}
+  .card.purple{border-left-color:var(--purple)}
+  .card h4{margin-top:0;color:var(--accent2)}
+  .card .pri{font-size:12px;color:var(--orange);font-weight:700;letter-spacing:.5px}
+  .stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;flex:1;min-width:130px;text-align:center}
+  .stat .v{font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:12px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:8px 9px;text-align:center;border-bottom:1px solid var(--border)}
+  th{background:var(--panel2);color:var(--accent);font-weight:600}
+  td{color:#cbd5e1}
+  tr.best{background:rgba(52,211,153,0.12)}
+  tr.best td{color:#fff;font-weight:600}
+  td.best{color:var(--green);font-weight:700}
+  td.fail{color:var(--red)}
+  .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;text-align:center}
+  .mtag{display:inline-block;padding:2px 9px;border-radius:11px;font-size:10.5px;font-weight:700;margin-right:6px}
+  .footer{text-align:center;color:var(--muted);font-size:13px;padding:28px;border-top:1px solid var(--border);margin-top:40px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">三维重建 · 质量-速度 Pareto 全谱 · 2026-08 编撰</span>
+    <h1>当前质量最好、速度最快的三维重建方法:全谱 Pareto 调研</h1>
+    <p class="subtitle">回答"谁最快、谁最质量、谁综合最优"。覆盖<strong>速度端:前馈亚秒~秒级</strong>(VGGT-Ω / Pi3 / GS-LRM / Long-LRM++ / ReSplat)↔ <strong>质量端:分钟级 per-scene 优化</strong>(3DGS / Mip-Splatting / GOF / GSPrior / Gaussian Wrapping / GGCS)↔ <strong>中间地带:前馈+循环精修混合范式</strong>(ReSplat / GenRecon)。含统一量化对比表、场景抉择、演进路线与甜点区分析。</p>
+    <div class="links">
+      <a href="3D-20240416-GOF.html">🔗 GOF 笔记</a>
+      <a href="3D-20240326-2DGS.html">🔗 2DGS 笔记</a>
+      <a href="3D-20260814-高斯表面重建2026新一代调研.html">🔗 2026 新一代表面重建</a>
+      <a href="3D-20260514-VGGT-Omega.html">🔗 VGGT-Ω 笔记</a>
+      <a href="3D-20231110-前馈3D重建模型综述.html">🔗 前馈综述</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">总览:质量-速度 Pareto 与评测分轨</a></li>
+    <li><a href="#s2">速度端:前馈式 3D 重建(亚秒~秒级)</a></li>
+    <li><a href="#s3">质量端:per-scene 优化(分钟级)</a></li>
+    <li><a href="#s4">中间地带:混合范式(前馈+精修)</a></li>
+    <li><a href="#s5">质量-速度 Pareto 统一大表</a></li>
+    <li><a href="#s6">场景抉择指南</a></li>
+    <li><a href="#s7">技术演进路线(Mermaid)</a></li>
+    <li><a href="#s8">个人分析与趋势</a></li>
+    <li><a href="#s9">总结</a></li>
+  </ol>
+</div>
+
+<!-- ===== 1 ===== -->
+<section id="s1">
+<h2><span class="num">1</span>总览:质量-速度 Pareto 与评测分轨</h2>
+<p class="lead">三维重建存在根本的<strong>质量-速度 trade-off</strong>:前馈式(feed-forward)通过大规模预训练单次前向直接预测 3D 表示,亚秒~秒级,但质量略低;per-scene 优化对每个场景单独训练,分钟~小时级,质量更高。本调研的目标是刻画 2026 年 8 月的 Pareto 前沿——哪些方法在"同速度下质量最高"或"同质量下速度最快"。</p>
+
+<div class="callout red"><p><strong>关键前提:评测分轨。</strong>三维重建方法分属<strong>两条不可直接对比</strong>的评测轨道,引用数字前必须先分清:</p>
+<p>① <strong>几何轨道</strong>(VGGT / VGGT-Ω / π³):输出点图+深度+相机位姿,基准 Sintel/ETH3D/ScanNet,指标 AUC@3°/30°(位姿)、δ1.25/AbsRel(深度)、Chamfer(点图),<em>不报 NVS PSNR</em>。</p>
+<p>② <strong>NVS 轨道</strong>(GS-LRM / Long-LRM / ReSplat / 3DGS / GOF...):输出 3D 高斯做新视角合成,基准 DL3DV/RE10K/Mip-NeRF360,指标 PSNR/SSIM/LPIPS + FPS。</p>
+<p>③ <strong>表面几何轨道</strong>(2DGS/GOF/GGGS/Gaussian Wrapping):输出 mesh,基准 DTU Chamfer / T&amp;T F1。</p>
+<p>下文严格按轨道分组对比,避免跨轨误读。</p></div>
+
+<div class="grid grid-3">
+  <div class="card green"><span class="mtag" style="background:rgba(52,211,153,0.15);color:var(--green)">速度最快</span><h4>亚秒级</h4><p><strong>GS-LRM 0.23s</strong>(2-4 视角,物体级 NVS)、<strong>VGGT/VGGT-Ω &lt;1s</strong>(几何轨道)、<strong>π³ 57.4 FPS</strong>、<strong>ReSplat 0.8s 建 + ~1400 FPS 渲染</strong>(NVS 双优)。</p></div>
+  <div class="card key"><span class="mtag" style="background:rgba(251,191,36,0.15);color:var(--accent)">质量最高</span><h4>分钟级优化</h4><p><strong>NVS outdoor:Gaussian Wrapping 26.49 / GOF 24.82</strong>;表面几何 <strong>GGGS DTU 0.47 + T&amp;T 0.60</strong>、<strong>Gaussian Wrapping DTU 0.49</strong>;<strong>Mip-NeRF360 overall 27.69</strong>(NeRF,48h)。</p></div>
+  <div class="card purple"><span class="mtag" style="background:rgba(167,139,250,0.15);color:var(--purple)">综合 Pareto</span><h4>双优</h4><p><strong>几何轨道:VGGT-Ω</strong>(质量断层领先 + 亚秒)、<strong>NVS ≤16 视角:ReSplat</strong>(27.70 PSNR + 1400 FPS)、<strong>表面:GGGS</strong>(0.47 + 15min 效率之王)。</p></div>
+</div>
+<div class="callout warn"><p><strong>甜点区:</strong>优化类 15–42 分钟(GGGS→GSPrior)覆盖了从表面几何 SOTA 到 NVS SOTA 的最优性价比;&gt;12h 隐式方法(Neuralangelo/NeuS)已被 GS 方法全面超越,仅 Mip-NeRF360 原版(indoor 31.72)仍因 48h 训练站住。</p></div>
+</section>
+
+<!-- ===== 2. 速度端 ===== -->
+<section id="s2">
+<h2><span class="num">2</span>速度端:前馈式 3D 重建(亚秒~秒级)</h2>
+
+<h3>2.1 几何轨道:VGGT 系与 π³</h3>
+<div class="grid grid-3">
+  <div class="card green"><h4>VGGT-Ω ★</h4><p><span class="mtag" style="background:rgba(251,191,36,0.15);color:var(--accent)">arXiv 2605.15195</span> CVPR 2026 Best Paper Finalist + Oral · Oxford VGG + Meta · 静态+动态(4D)· &lt;1s · 比 MegaSaM 快 50× · 单 A100 处理 200 帧(训练显存仅原版 ~30%)· <strong>Sintel 位姿 AUC@3°=40.0</strong>(次优 DA3 16.2,+77%)、ETH3D 56.3、Sintel 深度 δ1.25=93.5 · <a href="3D-20260514-VGGT-Omega.html">📝笔记</a> · <a href="https://github.com/facebookresearch/vggt-omega" target="_blank">💻代码</a></p></div>
+  <div class="card"><h4>VGGT</h4><p><span class="mtag" style="background:rgba(96,165,250,0.15);color:var(--accent2)">arXiv 2503.11651</span> CVPR 2025 Best Paper · 同机构 · 1~数百张 · &lt;1s(H100)· RE10K 位姿 AUC@30=85.3、DTU MVS Overall 0.382 · 几何基础模型奠基 · <a href="3D-20250314-VGGT.html">📝笔记</a></p></div>
+  <div class="card"><h4>π³ (Pi3)</h4><p><span class="mtag" style="background:rgba(96,165,250,0.15);color:var(--accent2)">arXiv 2507.13347</span> Shanghai AI Lab · 全排列等变(无参考帧)· <strong>57.4 FPS</strong>(VGGT 43.2)· Sintel ATE 0.074(vs VGGT 0.167,−55.7%)· 理论优雅但质量不及 VGGT-Ω · <a href="3D-20250717-Pi3.html">📝笔记</a></p></div>
+</div>
+<div class="callout tip"><p><strong>加速插件 AVGGT</strong>(arXiv 2512.02541):训练无关地加速 VGGT/π³——100 帧 2×、300 帧 4-5×、<strong>800 帧 8-10×</strong>,精度持平或略升,不改模型。多视图几何推理的速度 SOTA。</p></div>
+
+<h3>2.2 NVS 轨道:前馈高斯泼溅</h3>
+<div class="grid grid-3">
+  <div class="card green"><h4>ReSplat ★</h4><p><span class="mtag" style="background:rgba(251,191,36,0.15);color:var(--accent)">arXiv 2510.08575</span> ECCV 2026 Oral · ETH+Tübingen+MS · 前馈循环(4 iter,无梯度)· 重建 0.8s、<strong>渲染 ~1400 FPS</strong>(0.0007s/帧,16× 少高斯 246K)· <strong>DL3DV 8 视角 27.70 PSNR</strong>(vs 3DGS 23.46,+4.2dB;vs DepthSplat 24.17,+3.5dB)· RE10K 2 视角 29.75 · 循环模型仅 77M 超 1263M WorldMirror +5.5dB · <a href="3D-20251009-ReSplat.html">📝笔记</a></p></div>
+  <div class="card"><h4>Long-LRM++</h4><p><span class="mtag" style="background:rgba(96,165,250,0.15);color:var(--accent2)">arXiv 2512.10267</span> CVPR 2026 Findings · Adobe+Tripo · 16/32/64 视角 950×540 · 重建 1.6s/4.7s/16.3s、<strong>渲染 14 FPS</strong> · DL3DV 24.40/26.43/27.30 · 接近 LaCT 质量(26.90)但渲染 8× 快 · 多视图高分辨率 Pareto 优</p></div>
+  <div class="card"><h4>GS-LRM / Long-LRM</h4><p>GS-LRM(2404.19702,ECCV 2024,Adobe):<strong>0.23s</strong>(2-4 视角)· RE10K 2 视角 28.10 PSNR · 物体级前馈高斯奠基。Long-LRM(2410.12781,ICCV 2025):32 视角 960×540,<strong>1s</strong>重建 50+ FPS 渲染,DL3DV 24.10,比优化快 800×。</p></div>
+</div>
+<div class="callout warn"><p><strong>2026 下半年新挑战者(待核):</strong>ATSplat(arXiv 2607.20417)宣称 12 视角重建 &lt;1s + 渲染 1136 FPS;QuerySplat(2608.01186)宣称 DL3DV NVS SOTA(pose-free +2.30dB)——<em>绝对数字未在摘要公开</em>,ReSplat 的 27.70 dB 仍是已确认最高。</p></div>
+
+<h3>2.3 物体级 3D 生成(单图/少图,生成式)</h3>
+<div class="grid grid-3">
+  <div class="card"><h4>TRELLIS</h4><p><span class="mtag">arXiv 2412.01506</span> Microsoft · SLAT 统一表示(NeRF/Gaussian/Mesh)· 2B 参数 · 512³ 3s/1024³ 17s/1536³ 60s(H100)· CLIP Score 超越 Instant3D/Shape-E · <a href="3D-20241202-TRELLIS.html">📝笔记</a></p></div>
+  <div class="card"><h4>Hunyuan3D 2.0/2.1</h4><p>腾讯 · DiT 形状 + Paint 纹理两阶段 · 生产级 PBR 3D 资产 · 填补开源 3D 大模型空白 · <a href="3D-20250121-Hunyuan3D.html">📝笔记</a></p></div>
+  <div class="card"><h4>TripoSplat</h4><p>VAST-AI · DeG-VAE(262K 高斯)+ VecSeq Diffusion · 单图→3DGS · SIGGRAPH 2026 · 可学习 PDF 采样高斯中心 · <a href="3D-20260508-TripoSplat.html">📝笔记</a><br/><small>(注:非 arXiv 论文,VAST-AI 项目)</small></p></div>
+</div>
+</section>
+
+<!-- ===== 3. 质量端 ===== -->
+<section id="s3">
+<h2><span class="num">3</span>质量端:per-scene 优化(分钟级)</h2>
+
+<h3>3.1 NVS 质量(Mip-NeRF 360 数据集)</h3>
+<table>
+<tr><th>方法</th><th>arXiv/会议</th><th>Outdoor<br/>PSNR↑</th><th>Indoor<br/>PSNR↑</th><th>Outdoor<br/>LPIPS↓</th><th>训练</th><th>类型</th></tr>
+<tr><td>Mip-NeRF360(原版)</td><td>2111.12077 CVPR22</td><td>24.47</td><td class="best">31.72</td><td>0.283</td><td>48h</td><td>隐式 NeRF</td></tr>
+<tr><td>3DGS</td><td>2308.04079 TOG23</td><td>24.64</td><td>30.41</td><td>0.234</td><td>~41min</td><td>显式 GS</td></tr>
+<tr><td>Mip-Splatting</td><td>2311.16493 CVPR24</td><td>24.65</td><td>30.90</td><td>0.245</td><td>~13min</td><td>显式 GS(抗锯齿)</td></tr>
+<tr><td>2DGS</td><td>2403.17888 SG24</td><td>24.34</td><td>30.40</td><td>0.246</td><td>10.9min</td><td>显式(表面)</td></tr>
+<tr><td>GOF</td><td>2404.10772 SA24</td><td>24.82</td><td>30.79</td><td>0.202</td><td>~1h</td><td>显式(表面)</td></tr>
+<tr><td>GSPrior</td><td>2603.19682 CVPR26</td><td>24.81</td><td>30.56</td><td class="best">0.200</td><td>42min</td><td>显式(自约束先验)</td></tr>
+<tr class="best"><td><strong>Gaussian Wrapping</strong></td><td>2604.07337 2026</td><td class="best">26.49*</td><td>30.43</td><td>0.174*</td><td>~120min</td><td>显式(定向法向)</td></tr>
+</table>
+<p><small>*Gaussian Wrapping 的 outdoor 26.49 / LPIPS 0.174 为其论文 Table 6 自报(作者称"outdoor SOTA"),显著高于其他方法;不同论文对同一方法的复测值可能不同(GSPrior Tab 报 ~24.81 量级),引用时建议标注来源。<br/>Overall PSNR 最高仍是原版 Mip-NeRF360(27.69),但需 48h;显式 GS 方法 outdoor 由 GOF/GSPrior(24.8x)与 Gaussian Wrapping(26.49 自报)领衔。</small></p>
+<div class="grid grid-3">
+  <div class="card green"><h4>NVS outdoor 冠军</h4><p><strong>Gaussian Wrapping 26.49</strong>(自报 SOTA)/ <strong>GOF 24.82</strong> / GSPrior 24.81。</p></div>
+  <div class="card"><h4>NVS indoor 冠军</h4><p><strong>Mip-NeRF360 31.72</strong>(NeRF,48h);GS 方法最高 <strong>Mip-Splatting 30.90</strong>。</p></div>
+  <div class="card key"><h4>SSIM/LPIPS 全面最优</h4><p><strong>GSPrior</strong>(CVPR 2026):outdoor 0.754/0.200,indoor 0.933/0.155。42min 训练。</p></div>
+</div>
+
+<h3>3.2 表面几何质量(DTU Chamfer / Tanks &amp; Temples F1)</h3>
+<table>
+<tr><th>方法</th><th>arXiv/会议</th><th>DTU CD↓</th><th>T&amp;T F1↑<br/>(Legacy)</th><th>T&amp;T F1↑<br/>(Virtual Scan)</th><th>训练</th></tr>
+<tr><td>3DGS(TSDF)</td><td>2308.04079</td><td class="fail">1.96</td><td class="fail">0.09</td><td>—</td><td>11.2m</td></tr>
+<tr><td>2DGS</td><td>2403.17888</td><td>0.80</td><td>0.32</td><td>0.38</td><td>10.9m</td></tr>
+<tr><td>RaDe-GS</td><td>—</td><td>0.68</td><td>0.45</td><td>0.39</td><td>8.2m</td></tr>
+<tr><td>GOF</td><td>2404.10772</td><td>0.74</td><td>0.46</td><td>0.38</td><td>~1h</td></tr>
+<tr><td>PGSR</td><td>—</td><td>0.53</td><td>0.52(假高)</td><td>0.53</td><td>40m</td></tr>
+<tr><td>GSPrior</td><td>2603.19682 CVPR26</td><td>0.50</td><td>—</td><td>0.51</td><td>42m</td></tr>
+<tr><td>Gaussian Wrapping</td><td>2604.07337</td><td>0.49</td><td>0.54(9p)</td><td class="best">0.53</td><td>~120m</td></tr>
+<tr><td>GeoSVR</td><td>—</td><td>0.47</td><td>0.56</td><td>—</td><td>53m</td></tr>
+<tr class="best"><td><strong>GGGS</strong></td><td>2601.17835</td><td class="best">0.47</td><td class="best">0.60</td><td class="best">0.53</td><td>15-32m</td></tr>
+</table>
+<div class="callout red"><p><strong>评测协议偏差(Gaussian Wrapping 揭穿):</strong>T&amp;T Legacy 协议有"顶点密度偏差"(网格越密 F1 越高,9p vs 2p 凭空 +0.04)与"GT 采集偏差"(惩罚正确重建遮挡几何的方法,PGSR 的"高分"是 artifact,MBR PSNR 仅 15.63 曝光)。<strong>今后引用 T&amp;T F1 必须标注协议</strong>:Virtual Scanning(无偏)下 GGGS/Gaussian Wrapping 并列 0.53。</p></div>
+<div class="grid grid-3">
+  <div class="card green"><h4>DTU 冠军(显式)</h4><p><strong>GGGS 0.47</strong>(HKUST,15-25min)· GeoSVR 0.47(53m)· Gaussian Wrapping 0.49(120m)。</p></div>
+  <div class="card key"><h4>T&amp;T 冠军</h4><p>Legacy:<strong>GGGS 0.60</strong>;严格 Virtual Scanning:<strong>GGGS/Gaussian Wrapping 0.53 并列</strong>。</p></div>
+  <div class="card"><h4>效率之王</h4><p><strong>GGGS</strong>:15-32min 同时拿下 DTU 0.47 + T&amp;T 0.60,质量-速度综合 SOTA。</p></div>
+</div>
+</section>
+
+<!-- ===== 4. 中间地带 ===== -->
+<section id="s4">
+<h2><span class="num">4</span>中间地带:混合范式(前馈+精修)</h2>
+<p>真正"既快又好"的突破来自混合范式——前馈初始化 + 短时迭代精修,无需 per-scene 梯度优化。</p>
+<div class="grid grid-2">
+  <div class="card green"><h4>ReSplat:前馈循环精修 ★</h4><p>用学习式循环网络 + 渲染误差反馈<strong>模拟 3DGS 优化过程</strong>,但无梯度反传。DL3DV 16 视角 540×960 上的 Pareto 跃迁:</p>
+  <table>
+  <tr><th>配置</th><th>PSNR↑</th><th>时间</th><th>高斯数</th></tr>
+  <tr><td>ReSplat(0 步,纯前馈)</td><td>22.69</td><td>0.7s</td><td>518K</td></tr>
+  <tr><td>ReSplat(2 步)</td><td>23.51</td><td>1.7s</td><td>518K</td></tr>
+  <tr class="best"><td><strong>ReSplat(4 步,8 视角 512×960)</strong></td><td class="best">27.70</td><td>0.8s</td><td>246K</td></tr>
+  <tr><td>Long-LRM(纯前馈)</td><td>22.66</td><td>0.4s</td><td>2073K</td></tr>
+  <tr><td>3DGS(per-scene 13min)</td><td>21.20</td><td>13min</td><td>—</td></tr>
+  <tr><td>Mip-Splatting(per-scene 13min)</td><td>20.88</td><td>13min</td><td>—</td></tr>
+  </table>
+  <p><strong>1.7 秒达 23.51 PSNR,超过 3DGS 13 分钟优化的 21.20</strong>——前馈+循环范式首次在亚分钟级超越 per-scene 优化。4 步 8 视角更达 27.70。</p></div>
+  <div class="card purple"><h4>GenRecon:生成先验桥接</h4><p>把 TRELLIS.2 的物体级 3D 生成先验<strong>桥接到场景级多视角重建</strong>:场景分区用投影式多视角条件(视角无关、空间锚定),输出可编辑 PBR mesh。<strong>质量比 2DGS/MonoSDF/FineRecon 高 16%</strong>。继承 TRELLIS.2 速度:512³ 3s、1024³ 17s、1536³ 60s(H100)。代表"生成先验反向赋能重建"的新趋势。· <a href="3D-20260522-GenRecon.html">📝笔记</a></p></div>
+</div>
+<div class="callout tip"><p><strong>混合范式意义:</strong>纯前馈(秒级)质量略低,纯优化(分钟级)慢;ReSplat 证明"前馈 + 几步循环精修"可达到甚至超过优化质量——这可能是下一代 3D 重建的<strong>主流范式</strong>,把质量-速度曲线整体外推。</p></div>
+</section>
+
+<!-- ===== 5. Pareto 大表 ===== -->
+<section id="s5">
+<h2><span class="num">5</span>质量-速度 Pareto 统一大表</h2>
+<p>下表按"轨道 + 速度档"组织,横看同一速度档谁质量最高,纵看同质量谁最快。</p>
+
+<h3>5.1 前馈/混合(亚秒~秒级)</h3>
+<table>
+<tr><th>方法</th><th>轨道</th><th>输入</th><th>重建速度</th><th>渲染</th><th>质量数字</th><th>开源</th></tr>
+<tr><td><strong>VGGT-Ω</strong></td><td>几何</td><td>1-200帧 静态+动态</td><td>&lt;1s</td><td>—</td><td>Sintel AUC@3°=40.0</td><td>✅</td></tr>
+<tr><td>π³</td><td>几何</td><td>1-N帧</td><td><strong>57.4 FPS</strong></td><td>—</td><td>Sintel ATE 0.074</td><td>✅</td></tr>
+<tr><td>VGGT</td><td>几何</td><td>1-数百帧</td><td>&lt;1s(H100)</td><td>—</td><td>RE10K AUC@30=85.3</td><td>✅</td></tr>
+<tr><td>GS-LRM</td><td>NVS</td><td>2-4帧 物体级</td><td><strong>0.23s</strong></td><td>—</td><td>RE10K 2视图 28.10 PSNR</td><td>项目页</td></tr>
+<tr class="best"><td><strong>ReSplat</strong></td><td>NVS</td><td>8-32帧 场景级</td><td>0.8s</td><td class="best">~1400 FPS</td><td class="best">DL3DV 8视图 27.70 / RE10K 2视图 29.75</td><td>✅</td></tr>
+<tr><td>Long-LRM</td><td>NVS</td><td>32帧 960×540</td><td>1s</td><td>50+ FPS</td><td>DL3DV 32视图 24.10</td><td>✅</td></tr>
+<tr><td>Long-LRM++</td><td>NVS</td><td>16/32/64帧</td><td>1.6-16.3s</td><td>14 FPS</td><td>DL3DV 32视图 26.43 / 64视图 27.30</td><td>✅</td></tr>
+<tr><td>TRELLIS</td><td>生成</td><td>文本/单图 物体级</td><td>3-60s</td><td>—</td><td>CLIP Score(非PSNR)</td><td>✅</td></tr>
+</table>
+
+<h3>5.2 per-scene 优化(分钟~小时级)</h3>
+<table>
+<tr><th>方法</th><th>轨道</th><th>训练</th><th>GPU</th><th>质量数字</th><th>开源</th></tr>
+<tr><td>3DGS</td><td>NVS</td><td>~41min</td><td>A100</td><td>Mip-NeRF360 outdoor 24.64</td><td>✅</td></tr>
+<tr><td>Mip-Splatting</td><td>NVS</td><td>~13min</td><td>—</td><td>outdoor 24.65 / indoor 30.90</td><td>✅</td></tr>
+<tr><td>GOF</td><td>NVS+表面</td><td>~1h</td><td>A100</td><td>outdoor 24.82 / DTU 0.74 / T&amp;T 0.46</td><td>✅</td></tr>
+<tr><td>GSPrior</td><td>NVS+表面</td><td>42min</td><td>4090</td><td>outdoor 24.81 / SSIM/LPIPS最优 / DTU 0.50 / T&amp;T 0.51</td><td>待</td></tr>
+<tr><td>Gaussian Wrapping</td><td>NVS+表面</td><td>~120min</td><td>—</td><td>outdoor 26.49* / DTU 0.49 / T&amp;T VS 0.53</td><td>✅</td></tr>
+<tr class="best"><td><strong>GGGS</strong></td><td>表面</td><td class="best">15-32min</td><td>—</td><td class="best">DTU 0.47 / T&amp;T 0.60(Legacy)/0.53(VS)</td><td>✅</td></tr>
+<tr><td>2DGS</td><td>表面</td><td>10.9min</td><td>3090</td><td>DTU 0.80 / T&amp;T 0.32</td><td>✅</td></tr>
+<tr><td>RaDe-GS</td><td>表面</td><td>8.2min</td><td>—</td><td>DTU 0.68 / T&amp;T 0.45</td><td>✅</td></tr>
+<tr><td>Mip-NeRF360(原版)</td><td>NVS</td><td>48h</td><td>—</td><td>overall 27.69 / indoor 31.72(NeRF,站住)</td><td>✅</td></tr>
+</table>
+<p><small>*Gaussian Wrapping outdoor 26.49 为自报(论文 Table 6),引用需谨慎标注。GGGS = Geometry-Grounded Gaussian Splatting(arXiv 2601.17835,HKUST),表面几何效率之王。</small></p>
+</section>
+
+<!-- ===== 6. 场景抉择 ===== -->
+<section id="s6">
+<h2><span class="num">6</span>场景抉择指南</h2>
+<div class="grid grid-2">
+  <div class="card green"><h4>① 要几何/位姿/点图(SLAM、VLA、重建骨架)</h4><p><strong>VGGT-Ω</strong>(几何 SOTA + 亚秒 + 动态支持)。预算紧选 VGGT/π³;多视图加速挂 AVGGT。无位姿物体级选 FlexSplat。</p></div>
+  <div class="card green"><h4>② 要新视角合成 NVS(渲染画质)</h4><p>少中视角(≤16)<strong>ReSplat</strong>(27.70 + 1400 FPS 渲染,双优);多视角高分辨率(32-64)<strong>Long-LRM++</strong>(14 FPS 实时渲染,接近 LaCT 质量);要极致画质且有几分钟预算 → <strong>GOF/GSPrior</strong>(24.8x),有 ~2h 预算且信自报 → Gaussian Wrapping。</p></div>
+  <div class="card green"><h4>③ 要表面网格 mesh(几何精度)</h4><p>效率优先 <strong>GGGS</strong>(DTU 0.47 + T&amp;T 0.60,15-32min);质量优先 <strong>Gaussian Wrapping</strong>(DTU 0.49 + T&amp;T VS 0.53,严格协议);轻量/教学 <strong>2DGS</strong>(10.9min);快速粗几何 <strong>RaDe-GS</strong>(8.2min,DTU 0.68)。务必按 Virtual Scanning 协议对比。</p></div>
+  <div class="card green"><h4>④ 要物体级 3D 资产生成</h4><p>多格式输出/局部编辑 <strong>TRELLIS</strong>;生产级 PBR <strong>Hunyuan3D 2.1</strong>;单图→3DGS <strong>TripoSplat</strong>。</p></div>
+  <div class="card green"><h4>⑤ 既快又好(亚分钟超优化质量)</h4><p><strong>ReSplat</strong>(1.7s 达 23.51,超 3DGS 13min);生成先验桥接场景 <strong>GenRecon</strong>(+16% over 2DGS/MonoSDF/FineRecon)。</p></div>
+  <div class="card green"><h4>⑥ 全景/机器人场景</h4><p><strong>Spherical-GOF</strong>(IROS 2026,GOF 全景扩展,深度重投影误差 −57%)。</p></div>
+</div>
+</section>
+
+<!-- ===== 7. 演进路线 ===== -->
+<section id="s7">
+<h2><span class="num">7</span>技术演进路线</h2>
+<div class="mermaid">
+flowchart TD
+  subgraph OPT["质量端: per-scene 优化 (分钟级)"]
+    direction TB
+    NERF["Mip-NeRF360 (2022)<br/>overall 27.69 / indoor 31.72<br/>48h NeRF, 仍站住"]
+    GS["3DGS (2023)<br/>outdoor 24.64 / ~41min<br/>范式转变"]
+    MS["Mip-Splatting (2024)<br/>outdoor 24.65 / ~13min<br/>抗锯齿"]
+    TWO["2DGS (2024.03)<br/>DTU 0.80 / 10.9min<br/>表面范式奠基"]
+    GOF["GOF (2024.04)<br/>outdoor 24.82 / DTU 0.74<br/>opacity level-set"]
+    GSP["GSPrior (CVPR 2026)<br/>outdoor 24.81 / DTU 0.50<br/>自约束先验"]
+    GGGS["GGGS (2026.01)<br/>DTU 0.47 / TnT 0.60<br/>效率之王 ★"]
+    GW["Gaussian Wrapping (2026.04)<br/>outdoor 26.49* / DTU 0.49<br/>定向法向闭式场 ★"]
+  end
+  subgraph FF["速度端: 前馈 (亚秒~秒级)"]
+    direction TB
+    LRM["LRM (2023)<br/>单图~秒级 物体"]
+    GSLRM["GS-LRM (2024)<br/>0.23s 物体+场景"]
+    VGGT["VGGT (CVPR25 BP)<br/><1s 几何基础模型"]
+    LLRM["Long-LRM/++ (2025/26)<br/>1s/14FPS 场景360"]
+    PI3["π³ (2025)<br/>57.4 FPS 排列等变"]
+    VGTO["VGGT-Ω (CVPR26 BPF)<br/><1s 几何SOTA+动态 ★"]
+    RES["ReSplat (ECCV26 Oral)<br/>0.8s+1400FPS NVS双优 ★"]
+  end
+  GEN["3D 生成: TRELLIS/Hunyuan3D/TripoSplat<br/>物体级 单图~10s"]
+  NERF --> GS --> MS
+  GS --> TWO --> GOF
+  GOF --> GSP
+  GOF --> GW
+  GOF -.效率.-> GGGS
+  LRM --> GSLRM --> LLRM
+  LRM --> VGGT --> VGTO
+  VGGT --> PI3
+  GSLRM -.循环精修.-> RES
+  RES -.混合范式.-> MIX["中间地带: 前馈+精修<br/>ReSplat 1.7s 超 3DGS 13min<br/>GenRecon 生成先验桥接"]
+  GEN -.桥接.-> MIX
+  style VGTO fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style RES fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style GGGS fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style GW fill:#fef3c7,stroke:#f59e0b,color:#78350f
+  style MIX fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+</section>
+
+<!-- ===== 8. 个人分析 ===== -->
+<section id="s8">
+<h2><span class="num">8</span>个人分析与趋势</h2>
+<div class="grid grid-2">
+  <div class="card key"><h4>洞察 1:质量-速度曲线正在整体外推</h4><p>ReSplat 在 DL3DV 上 <strong>1.7 秒超 3DGS 13 分钟优化 +1.2dB</strong>——前馈+循环精修混合范式首次让亚分钟级反超 per-scene 优化。这意味着"必须分钟级优化才有质量"的旧假设被打破,质量-速度 Pareto 前沿整体左下移(更快更省)。</p></div>
+  <div class="card purple"><h4>洞察 2:Scaling Law 降临 3D 重建</h4><p>VGGT-Ω 首次验证前馈 3D 重建的 Scaling Law(质量随模型+数据可预测提升),1B/10B 两档,AUC@3° 较 VGGT +77%。3D 重建正从"专用模型"走向"通用基础模型"——与 LLM 路径平行,天花板远未触顶。</p></div>
+  <div class="card red"><h4>洞察 3:评测协议是"隐形 SOTA 制造机"</h4><p>表面重建 T&amp;T 的 Legacy 协议有顶点密度偏差 + GT 采集偏差,GGGS 0.60 含水分(Virtual Scanning 降至 0.53),PGSR 的"高分"是 artifact(MBR 15.63 曝光)。NVS 轨道同样因基准(DL3DV vs RE10K vs Mip-NeRF360)与视角数不可直接比。<strong>跨方法比数字前,先对齐协议。</strong></p></div>
+  <div class="card green"><h4>洞察 4:甜点区在 15-42 分钟</h4><p>优化类 GGGS(15-32min,DTU 0.47+T&amp;T 0.60)到 GSPrior(42min,outdoor 24.81+SSIM/LPIPS 最优)覆盖了表面与 NVS 的最高性价比;&gt;12h 隐式已被全面超越(仅 Mip-NeRF360 indoor 31.72 因 48h 站住)。资源受限优先落在此区。</p></div>
+  <div class="card warn"><h4>洞察 5:范式分裂而非收敛</h4><p>几何轨道(VGGT 系,点图+位姿)、NVS 轨道(高斯泼溅,PSNR)、表面轨道(mesh,Chamfer/F1)三条线原理不同、基准不同、代码不互通。GGGS/Gaussian Wrapping 走几何场,ReSplat 走循环精修,GenRecon 走生成桥接——<strong>短期内难有统一范式</strong>。</p></div>
+  <div class="card"><h4>洞察 6:实时渲染已成标配</h4><p>ReSplat ~1400 FPS、Long-LRM++ 14 FPS、3DGS 30+ FPS——前馈与优化方法在渲染端都已实时。<strong>瓶颈从渲染转到重建/训练</strong>:谁的重建快(ReSplat 0.8s)、谁的训练省(GGGS 15min),谁赢。</p></div>
+</div>
+<div class="callout key"><p><strong>个人最关键判断:</strong>① <strong>混合范式(前馈+精修)是下一代主流</strong>,ReSplat 已证明可行;② <strong>Scaling Law + 评测协议标准化</strong>是两个最大杠杆——前者抬天花板,后者让 SOTA 排名可信;③ <strong>15-42min 优化甜点区</strong>仍是当前工程落地最优解,但亚分钟混合方法正在侵蚀它。</p></div>
+</section>
+
+<!-- ===== 9. 总结 ===== -->
+<section id="s9">
+<h2><span class="num">9</span>总结</h2>
+<p class="lead">截至 2026 年 8 月,三维重建质量-速度 Pareto 前沿如下:</p>
+<div class="grid grid-3">
+  <div class="card green"><h4>速度最快</h4><p>几何:<strong>π³ 57.4 FPS</strong> / VGGT-Ω &lt;1s;NVS 重建:<strong>GS-LRM 0.23s</strong> / ReSplat 0.8s;NVS 渲染:<strong>ReSplat ~1400 FPS</strong>;多视图加速:<strong>AVGGT 8-10×</strong>。</p></div>
+  <div class="card key"><h4>质量最高</h4><p>NVS outdoor:<strong>Gaussian Wrapping 26.49</strong>(自报)/ GOF 24.82;表面:<strong>GGGS DTU 0.47 + T&amp;T 0.60</strong>;NVS overall:<strong>Mip-NeRF360 27.69</strong>(NeRF,48h,仍站住);几何:<strong>VGGT-Ω Sintel AUC@3°=40.0</strong>。</p></div>
+  <div class="card purple"><h4>综合 Pareto 最优</h4><p>几何轨道:<strong>VGGT-Ω</strong>;NVS ≤16 视角:<strong>ReSplat</strong>;NVS ≥32 视角:<strong>Long-LRM++</strong>;表面效率:<strong>GGGS</strong>;表面质量:<strong>Gaussian Wrapping</strong>;亚分钟超优化:<strong>ReSplat 混合范式</strong>。</p></div>
+</div>
+<div class="callout tip"><p><strong>一句话:</strong>速度端 VGGT-Ω(几何)与 ReSplat(NVS 双优 ~1400 FPS)领衔,质量端 GGGS(表面效率之王 15min)与 Gaussian Wrapping(NVS+表面质量之王)领衔;ReSplat 证明<strong>前馈+循环精修混合范式可在亚分钟级反超 per-scene 优化</strong>,是下一代主流方向;15-42min 优化甜点区仍是工程落地最优解。引用任何"质量 SOTA"前务必先对齐评测协议(轨道 + 数据集 + 视角数 + T&amp;T 协议)。</p></div>
+<h3>🔗 关联笔记</h3>
+<ul>
+<li><a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> · <a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20250717-Pi3.html">π³</a> — 几何轨道前馈三连</li>
+<li><a href="3D-20251009-ReSplat.html">ReSplat</a> · <a href="3D-20231110-前馈3D重建模型综述.html">前馈综述(GS-LRM/Long-LRM)</a> — NVS 轨道前馈</li>
+<li><a href="3D-20240416-GOF.html">GOF</a> · <a href="3D-20240326-2DGS.html">2DGS</a> · <a href="3D-20260814-高斯表面重建2026新一代调研.html">2026 新一代表面重建(Gaussian Wrapping/GSPrior)</a> — 质量端优化</li>
+<li><a href="3D-20230808-3DGS基础与改进综述.html">3DGS 综述</a> — 范式起源与改进脉络</li>
+</ul>
+</section>
+
+</div>
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-14 · 领域: 3D 重建 / 质量-速度 Pareto 全谱 · 综合 arXiv 2503.11651 / 2605.15195 / 2507.13347 / 2510.08575 / 2512.10267 / 2410.12781 / 2404.19702 / 2308.04079 / 2311.16493 / 2404.10772 / 2603.19682 / 2604.07337 / 2601.17835 等方法<br>
+  数据来源:各论文官方实验表 + 知识库现有笔记 + 子代理 arXiv 核实。跨方法数字仅在协议对齐时可比。
+</div>
+<script>mermaid.initialize({startOnLoad:true,theme:'default',flowchart:{curve:'basis',useMaxWidth:true}});</script>
+</body>
+</html>
