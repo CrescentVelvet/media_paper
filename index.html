@@ -1014,7 +1014,7 @@
                 <span class="tag">Dynamic Scenes</span>
                 <span class="tag">Self-Supervised</span>
             </div>
-            <p>VGGT (CVPR 2025 Best Paper) 的升级版。三大架构改进：单一 dense prediction head + Register Attention + 动态场景支持。训练显存降至原版 ~30%，可处理 200 帧/A100，用 15× 监督数据训练。Sintel 相机精度 +77%，ATE ↓60%，ARE ↓55%，AbsRel ↓40%。首次验证前馈3D重建的 Scaling Law，register 特征可增强 VLA 并与语言对齐（类似 CLIP CLS token）。</p>
+            <p>VGGT (CVPR 2025 Best Paper) 的官方升级版,CVPR 2026 Oral/Best Paper Finalist。三大架构改进:单一 dense head + Register Attention(显存压至原版 ~30%,省 70%)+ 动态场景支持;用 15× 监督数据(4M seq)+ 18M 无标注视频自监督训练 <strong>1B/10B</strong> 模型,首次验证前馈 3D 重建 Scaling Law(幂律)。6 基准断层领先:<strong>Sintel 位姿 AUC@3°=40.0(10B,vs 次优 MegaSaM 22.5,+77%)</strong>、ETH3D 56.3、Sintel 深度 δ1.25=93.5。Register 特征可增强 VLA(LIBERO 98.5%)并与语言对齐(InfoNCE top-1 76.8%,类 CLIP CLS token)。<em>本笔记为基于 arXiv HTML 全文的<strong>重写版</strong>,纠正旧版消融数字/Teacher-Student 协议/动态机制/MLP-only 等多处错误。</em></p>
             <a href="3D-20260514-VGGT-Omega.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2605.15195" target="_blank">📄 arXiv</a>
             <a href="https://vggt-omega.github.io/" target="_blank">🌐 项目主页</a>

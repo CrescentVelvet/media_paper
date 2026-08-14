@@ -1,499 +1,357 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VGGT-Ω: 前馈3D重建的规模化里程碑 — 静态+动态场景统一重建</title>
-    <style>
-        :root {
-            --bg: #0f1117;
-            --card: #1a1d27;
-            --accent: #76b900;
-            --accent-dim: #5a8f00;
-            --text: #e0e0e0;
-            --text-dim: #9a9a9a;
-            --border: #2a2d37;
-            --tag-bg: #252830;
-            --code-bg: #15171f;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.7;
-            padding: 0;
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
-            border-bottom: 3px solid var(--accent);
-            padding: 40px 30px;
-        }
-        .header h1 { font-size: 1.8em; color: var(--accent); margin-bottom: 10px; line-height: 1.3; }
-        .header .meta { color: var(--text-dim); font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 15px; }
-        .header .meta span { white-space: nowrap; }
-        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
-        .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 25px; margin-bottom: 20px; }
-        .section h2 { color: var(--accent); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-        .section h3 { color: #c8c8c8; font-size: 1.05em; margin: 15px 0 8px; }
-        .section p { margin-bottom: 12px; }
-        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-        .tag { background: var(--tag-bg); color: var(--text-dim); padding: 3px 10px; border-radius: 12px; font-size: 0.8em; border: 1px solid var(--border); }
-        .tag.green { border-color: var(--accent); color: var(--accent); }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em; }
-        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
-        th { background: var(--code-bg); color: var(--accent); }
-        tr:nth-child(even) { background: var(--code-bg); }
-        .highlight { background: rgba(118, 185, 0, 0.1); border-left: 3px solid var(--accent); padding: 12px 15px; margin: 12px 0; border-radius: 0 6px 6px 0; }
-        .resource-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .resource-links a { display: inline-block; padding: 6px 14px; background: var(--tag-bg); color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 5px; text-decoration: none; font-size: 0.85em; }
-        .resource-links a:hover { background: var(--accent-dim); color: #fff; }
-        .footer { text-align: center; color: var(--text-dim); font-size: 0.8em; padding: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
-        ul { margin-left: 20px; margin-bottom: 12px; }
-        li { margin-bottom: 6px; }
-        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent); }
-        .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
-        .stat {
-            flex: 1;
-            min-width: 120px;
-            text-align: center;
-            background: rgba(118, 185, 0, 0.08);
-            border: 1px solid rgba(118, 185, 0, 0.25);
-            border-radius: 8px;
-            padding: 14px 8px;
-        }
-        .stat .num { font-size: 1.8em; font-weight: 700; color: var(--accent); }
-        .stat .label { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
-        .card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-        .card h3 { color: var(--accent); font-size: 1em; margin-bottom: 8px; }
-        .card p { font-size: 0.9em; color: var(--text-dim); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
-        .verdict {
-            background: linear-gradient(135deg, rgba(118, 185, 0, 0.1), rgba(118, 185, 0, 0.05));
-            border: 1px solid rgba(118, 185, 0, 0.3);
-        }
-        .verdict h2 { color: var(--accent); }
-        .warn { color: #d29922; }
-        img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VGGT-Ω 调研:前馈 3D 重建的 Scaling Law 与几何 SOTA(重写版)</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#34d399;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171; --purple:#a78bfa;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{background:linear-gradient(135deg,#1e3a5f 0%,#0f3d2e 50%,#1a2029 100%);padding:56px 40px 46px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(96,165,250,0.15),transparent 40%),radial-gradient(circle at 80% 30%,rgba(52,211,153,0.15),transparent 40%)}
+  .hero-content{position:relative;max-width:1120px;margin:0 auto}
+  .hero .badge{display:inline-block;background:rgba(52,211,153,0.15);color:var(--accent2);border:1px solid rgba(52,211,153,0.3);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:16px;letter-spacing:.5px}
+  .hero h1{font-size:32px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:880px}
+  .hero .authors{color:#cbd5e1;font-size:14px;margin-top:16px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{color:var(--accent);text-decoration:none;font-size:13px;border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1120px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent);border:none;padding:0}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{font-size:25px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .num{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent2)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:var(--text)}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{background:var(--code-bg);padding:2px 7px;border-radius:4px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:14px 0;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:#e2e8f0;line-height:1.6}
+  .callout{background:var(--panel);border-left:4px solid var(--accent);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--purple);background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:18px 22px;margin:16px 0;overflow-x:auto;position:relative}
+  .equation .tag{position:absolute;right:18px;top:14px;color:var(--muted);font-size:12px}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 22px;border-left:4px solid var(--accent)}
+  .card.warn{border-left-color:var(--orange)}
+  .card.key{border-left-color:var(--purple)}
+  .card.red{border-left-color:var(--red)}
+  .card.green{border-left-color:var(--green)}
+  .card h4{margin-top:0;color:var(--accent2)}
+  .card .pri{font-size:12px;color:var(--orange);font-weight:700;letter-spacing:.5px}
+  .stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 20px;flex:1;min-width:120px;text-align:center}
+  .stat .v{font-size:24px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:12px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:8px 9px;text-align:center;border-bottom:1px solid var(--border)}
+  th{background:var(--panel2);color:var(--accent);font-weight:600}
+  td{color:#cbd5e1}
+  tr.best{background:rgba(52,211,153,0.12)}
+  tr.best td{color:#fff;font-weight:600}
+  td.best{color:var(--green);font-weight:700}
+  td.fail{color:var(--red)}
+  .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;text-align:center}
+  .figure{margin:22px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .cap{color:var(--muted);font-size:13px;margin-top:10px;text-align:left}
+  .footer{text-align:center;color:var(--muted);font-size:13px;padding:28px;border-top:1px solid var(--border);margin-top:40px}
+</style>
 </head>
 <body>
 
-<div class="header">
-    <h1>VGGT-Ω: Visual Geometry Grounded Transformer — Omega</h1>
-    <div class="meta">
-        <span>📄 arXiv: 2605.15195</span>
-        <span>📅 2026-05-14</span>
-        <span>🏢 Oxford VGG + Meta AI</span>
-        <span>🏆 CVPR 2026 Oral / Best Paper Finalist</span>
-        <span>✅ 开源</span>
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2605.15195 · 2026 · CVPR 2026 Oral / Best Paper Finalist · cs.CV</span>
+    <h1>VGGT-Ω:前馈 3D 重建的 Scaling Law 与几何 SOTA</h1>
+    <p class="subtitle">VGGT(CVPR 2025 Best Paper)的官方升级版。三大架构改进(单一 dense head + Register Attention + 动态场景)把训练显存压至原版 ~30%,从而用 <strong>15× 监督数据 + 18M 无标注视频自监督</strong> 训练 1B/10B 模型,首次验证前馈 3D 重建的 <strong>Scaling Law</strong>,并在 6 个基准(7Scenes/NRGBD/ETH3D/DyCheck/Sintel/TUM)上断层领先——Sintel 位姿 AUC@3°=40.0(vs 次优 MegaSaM 22.5,+77%)。本笔记为<strong>重写版</strong>,基于 arXiv HTML 全文纠正了旧版多处错误并补全准确数字。</p>
+    <p class="authors">Jianyuan Wang · Minghao Chen · Shangzhan Zhang · Nikita Karaev · Johannes Schönberger · Patrick Labatut · Piotr Bojanowski · David Novotny · Andrea Vedaldi · Christian Rupprecht(通讯)　Oxford VGG + Meta AI</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2605.15195" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2605.15195v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2605.15195" target="_blank">📥 PDF</a>
+      <a href="https://vggt-omega.github.io/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/facebookresearch/vggt-omega" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/facebook/VGGT-Omega" target="_blank">🤗 模型权重(1B)</a>
+      <a href="https://huggingface.co/spaces/facebook/vggt-omega" target="_blank">🎮 在线 Demo</a>
     </div>
+  </div>
 </div>
 
 <div class="container">
 
-    <!-- 概述 -->
-    <div class="section">
-        <h2>📋 论文概要</h2>
-        <div class="tags">
-            <span class="tag green">Feed-Forward 3D</span>
-            <span class="tag">Scaling Law</span>
-            <span class="tag">Register Attention</span>
-            <span class="tag">Dynamic Scenes</span>
-            <span class="tag">Self-Supervised</span>
-            <span class="tag">Foundation Model</span>
-        </div>
-        <p><strong>VGGT-Ω</strong>（Omega）是 <strong>VGGT (Visual Geometry Grounded Transformer)</strong> 的升级版，来自同一核心团队（Oxford VGG + Meta AI）。VGGT 是 CVPR 2025 最佳论文，而 Ω 版本进一步在架构效率、训练规模和场景覆盖上大幅提升，被评为 <strong>CVPR 2026 Best Paper Finalist</strong>（Oral）。</p>
-        <p>核心目标：证明 <strong>前馈式 3D 重建模型的质量可以随模型和数据规模可预测地扩展（Scaling Law）</strong>，并在此过程中建立新的 SOTA。名称中的"Ω"（Omega）来自一作 Jianyuan Wang 的最后一篇 PhD 论文——象征完整与终结。</p>
-        <div class="highlight">
-            <strong>核心贡献：</strong>通过架构简化（单一 dense prediction head + register attention）将训练显存降至原版的 ~30%，从而能够用 15× 更多的监督数据训练，并利用海量无标注视频数据进行自监督学习。同时支持静态和动态场景重建，在 Sintel 上相机估计精度提升 77%。
-        </div>
-    </div>
-
-    <!-- 核心架构改进 -->
-    <div class="section">
-        <h2>🔧 核心架构改进</h2>
-        <p>相比 VGGT 原版，Ω 版本引入了三大架构改进：</p>
-        <h3>1. 单一 Dense Prediction Head + 多任务监督</h3>
-        <ul>
-            <li>用多任务监督替代 VGGT 的多个专用 head（Camera Head + DPT Head）</li>
-            <li>去掉了昂贵的高分辨率卷积层（DPT 架构），大幅减少显存占用</li>
-            <li>Dense prediction head 可以只用 MLP，不需要复杂卷积，进一步简化架构</li>
-            <li>相机参数和深度图作为充分且紧凑的重建目标</li>
-        </ul>
-        <h3>2. Register Attention</h3>
-        <ul>
-            <li>引入 <strong>register 令牌</strong>聚合场景全局信息</li>
-            <li>帧间信息交换通过 register 进行，部分替代 global attention</li>
-            <li>Register 是全局信息的自然载体，使跨帧信息交换更高效</li>
-            <li>显著降低注意力矩阵的规模，从而降低显存</li>
-        </ul>
-        <p>原版 VGGT 的帧间全局注意力复杂度为 <code>O((F×P)²)</code>（F=帧数，P=每帧 patch 数）；VGGT-Ω 将帧间信息交换限制在 register tokens 之间，复杂度降至 <code>O(F×P² + F²×R²)</code>，其中 R = register 数量，远小于 P。</p>
-        <table>
-            <tr><th>方案</th><th>复杂度</th><th>信息交换路径</th></tr>
-            <tr><td>VGGT 原版</td><td>O((F×P)²)</td><td>所有帧所有 patch 间全局注意力</td></tr>
-            <tr><td><b>VGGT-Ω</b></td><td>O(F×P² + F²×R²)</td><td>帧内 patch→register + 帧间 register↔register</td></tr>
-        </table>
-        <p style="margin-top:8px; color:var(--text-dim); font-size:0.85em;">单张 A100 GPU 即可处理 <strong>200 帧</strong>输入序列（原版远达不到）。</p>
-        <h3>3. 动态场景支持</h3>
-        <ul>
-            <li>新增高质量数据标注流水线，支持动态场景重建</li>
-            <li>自监督学习协议利用大量无标注视频数据</li>
-            <li>使前馈 3D 重建从仅支持静态场景扩展到动态场景</li>
-        </ul>
-        <div class="highlight">
-            <strong>显存效率：</strong>训练时 GPU 显存仅约原版的 <strong>30%</strong>，这使得用 15× 更多的监督数据训练成为可能，并允许利用海量无标注视频数据进行自监督学习。
-        </div>
-    </div>
-
-    <!-- 关键数据 -->
-    <div class="section">
-        <h2>📊 关键数据</h2>
-        <div class="stat-row">
-            <div class="stat">
-                <div class="num">15×</div>
-                <div class="label">监督数据量提升</div>
-            </div>
-            <div class="stat">
-                <div class="num">~30%</div>
-                <div class="label">GPU 显存占比</div>
-            </div>
-            <div class="stat">
-                <div class="num">77%</div>
-                <div class="label">Sintel 相机估计精度提升</div>
-            </div>
-        </div>
-        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">对比对象：VGGT 原版及其他 SOTA 方法。77% 提升指在 Sintel benchmark 上相机估计误差的降低幅度。</p>
-        <h3>误差指标下降明细（Sintel）</h3>
-        <table>
-            <tr><th>指标</th><th>含义</th><th>下降幅度</th></tr>
-            <tr><td>ATE</td><td>绝对轨迹误差 (Absolute Trajectory Error)</td><td><b>↓ 60%</b></td></tr>
-            <tr><td>ARE</td><td>绝对旋转误差 (Absolute Rotation Error)</td><td><b>↓ 55%</b></td></tr>
-            <tr><td>AbsRel</td><td>深度相对误差</td><td><b>↓ 40%</b></td></tr>
-            <tr><td>支持帧数</td><td>单张 A100 可处理输入帧数</td><td><b>200 帧</b></td></tr>
-        </table>
-    </div>
-
-    <!-- 消融实验 -->
-    <div class="section">
-        <h2>🧪 消融实验</h2>
-        <table>
-            <tr><th>消融配置</th><th>精度变化</th><th>显存变化</th><th>说明</th></tr>
-            <tr><td><b>完整 VGGT-Ω</b></td><td>基准</td><td>基准</td><td>所有改进叠加</td></tr>
-            <tr><td>去掉 Register Attention</td><td>↓ 15%</td><td>↑ 2.3×</td><td>退回全局注意力，显存暴涨</td></tr>
-            <tr><td>去掉自监督训练</td><td>↓ 22%</td><td>—</td><td>仅用标注数据，精度大幅下降</td></tr>
-        </table>
-        <div class="highlight">
-            <strong>消融结论：</strong>
-            <ul style="margin-top:6px;">
-                <li>Register Attention 不仅降显存，还带来 15% 精度提升 —— 约束信息交换路径有正则化效果</li>
-                <li>自监督训练贡献 22% 精度提升 —— 无标注视频数据是关键的大规模训练资源</li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- Scaling Law -->
-    <div class="section">
-        <h2>📈 Scaling Law — 可预测的扩展性</h2>
-        <p>VGGT-Ω 的核心发现之一是：<strong>前馈式 3D 重建模型的质量随模型和数据规模可预测地提升</strong>。这类似于 LLM 领域的 Scaling Law，为后续更大规模训练提供了理论依据。</p>
-        <div class="highlight">
-            <strong>关键意义：</strong>这意味着 3D 重建可以像语言模型一样通过扩大规模持续受益，而不是停滞在当前精度。天花板远未触顶，未来更大的模型和数据将带来更好的重建质量。
-        </div>
-    </div>
-
-    <!-- 额外发现 -->
-    <div class="section">
-        <h2>💡 额外发现 — 重建作为空间理解的代理任务</h2>
-        <div class="grid">
-            <div class="card">
-                <h3>VLA 模型增强</h3>
-                <p>学到的 register 特征可以直接增强 Vision-Language-Action (VLA) 模型的空间理解能力。3D 重建不仅是一个独立任务，其学到的表征还能迁移到机器人等下游领域。</p>
-            </div>
-            <div class="card">
-                <h3>语言对齐 / CLIP CLS Token 类比</h3>
-                <p>重建 latents 可以与语言表示对齐，暗示重建是空间理解的可扩展代理任务（proxy task）。<strong>类比：</strong>如果说 CLIP 的 CLS token 是图像的语义摘要，那么 VGGT-Ω 的 register 就是 3D 场景的几何摘要 —— 都是经过大规模预训练学到的紧凑表示，可作为场景几何的 latent code 迁移到下游任务。</p>
-            </div>
-            <div class="card">
-                <h3>MLP-only 解码</h3>
-                <p>Dense prediction head 可以只用 MLP，不需要复杂卷积。这一发现来自与合作者的深入讨论（论文致谢中提到 Tianhong Li 和 JiT 的工作），进一步简化架构。</p>
-            </div>
-            <div class="card">
-                <h3>紧凑重建目标</h3>
-                <p>相机参数和深度图是充分且紧凑的重建目标。不需要预测过多冗余量（如点图、高斯参数等），简化了输出空间。</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 对比 -->
-    <div class="section">
-        <h2>⚖️ 与其他方法对比</h2>
-        <table>
-            <tr>
-                <th>方法</th>
-                <th>类型</th>
-                <th>速度</th>
-                <th>动态场景</th>
-                <th>综合精度</th>
-                <th>Scaling 特性</th>
-            </tr>
-            <tr>
-                <td><b>VGGT-Ω</b></td>
-                <td>前馈 Transformer + Register</td>
-                <td>极快（&lt;1s）</td>
-                <td>✅ 支持</td>
-                <td>SOTA</td>
-                <td>✅ 可预测</td>
-            </tr>
-            <tr>
-                <td>VGGT (原版)</td>
-                <td>前馈 Transformer</td>
-                <td>快（&lt;1s）</td>
-                <td>❌ 仅静态</td>
-                <td>强</td>
-                <td>受限显存</td>
-            </tr>
-            <tr>
-                <td>COLMAP + BA</td>
-                <td>优化方法</td>
-                <td>慢（分钟级）</td>
-                <td>❌</td>
-                <td>精度极限高</td>
-                <td>❌</td>
-            </tr>
-            <tr>
-                <td>Depth Anything v2/3</td>
-                <td>单目深度估计</td>
-                <td>快</td>
-                <td>部分</td>
-                <td>单任务强</td>
-                <td>部分</td>
-            </tr>
-            <tr>
-                <td>MoGe</td>
-                <td>单目几何</td>
-                <td>快</td>
-                <td>❌</td>
-                <td>单任务强</td>
-                <td>❌</td>
-            </tr>
-        </table>
-        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">VGGT-Ω 在定性对比中优于 Depth Anything 3 等专门方法，且综合能力（相机+深度+动态）最强。</p>
-    </div>
-
-    <!-- 与 VGGT 原版的对比 -->
-    <div class="section">
-        <h2>🔄 与 VGGT 原版的详细对比</h2>
-        <table>
-            <tr><th>维度</th><th>VGGT (CVPR 2025 Best Paper)</th><th>VGGT-Ω (CVPR 2026 Best Paper Finalist)</th></tr>
-            <tr><td>预测头</td><td>Camera Head + DPT Head (高分辨率卷积)</td><td>单一 dense prediction head (MLP-only)</td></tr>
-            <tr><td>帧间注意力</td><td>Global self-attention (O(N²))</td><td>Register attention (通过 register 聚合)</td></tr>
-            <tr><td>GPU 显存</td><td>100% (基准)</td><td>~30% (大幅降低)</td></tr>
-            <tr><td>监督数据量</td><td>基准</td><td>15× 更多</td></tr>
-            <tr><td>无标注数据</td><td>未使用</td><td>✅ 自监督学习协议</td></tr>
-            <tr><td>动态场景</td><td>❌ 仅静态</td><td>✅ 支持</td></tr>
-            <tr><td>Sintel 相机精度</td><td>基准</td><td>+77% 提升</td></tr>
-            <tr><td>Scaling Law</td><td>未验证</td><td>✅ 可预测扩展</td></tr>
-            <tr><td>VLA 迁移</td><td>部分</td><td>✅ Register 特征直接增强</td></tr>
-            <tr><td>语言对齐</td><td>未探索</td><td>✅ 支持</td></tr>
-        </table>
-    </div>
-
-    <!-- 训练策略 -->
-    <div class="section">
-        <h2>🏋️ 训练策略</h2>
-        <h3>架构效率提升</h3>
-        <ul>
-            <li><strong>单一预测头：</strong>多任务监督替代多个专用 head，去掉高分辨率卷积层</li>
-            <li><strong>Register Attention：</strong>限制帧间信息交换通过 register 进行，降低注意力矩阵规模</li>
-            <li><strong>显存降至 ~30%：</strong>使大规模训练成为可能</li>
-        </ul>
-        <h3>数据策略</h3>
-        <ul>
-            <li><strong>监督数据：</strong>15× 于原版的标注数据量</li>
-            <li><strong>无标注视频：</strong>自监督学习协议利用海量无标注视频数据</li>
-            <li><strong>动态场景标注：</strong>高质量数据标注流水线支持动态场景</li>
-        </ul>
-        <h3>自监督学习</h3>
-        <ul>
-            <li>利用视频序列的自然约束（时间一致性、多视角一致性）进行自监督</li>
-            <li>无需人工标注即可从互联网视频中学习 3D 几何</li>
-            <li>与 LLM 预训练类似：从海量无标注数据中学习通用表征</li>
-        </ul>
-        <h3>Teacher-Student 自监督协议</h3>
-        <ul>
-            <li><strong>教师模型训练：</strong>在少量高质量深度/相机真值标注上训练教师模型</li>
-            <li><strong>伪标签生成：</strong>教师模型为海量无标注视频打伪标签</li>
-            <li><strong>置信度加权：</strong>教师模型输出置信度，低置信度伪标签权重降低，避免噪声标签干扰训练</li>
-            <li><strong>几何一致性约束：</strong>利用多视图几何的内在约束（重投影一致性、深度尺度一致性）过滤不合理伪标签</li>
-            <li><strong>学生模型训练：</strong>在大规模标注 + 伪标签数据上联合训练</li>
-        </ul>
-        <p style="margin-top:6px; color:var(--text-dim); font-size:0.9em;">这种策略让模型从互联网级别视频中学习，而不仅仅依赖有限的标注数据 —— 是 22% 精度提升的来源。</p>
-    </div>
-
-    <!-- 核心创新点 -->
-    <div class="section">
-        <h2>⭐ 核心创新点</h2>
-        <div class="highlight">
-            <strong>创新 1：Register Attention</strong> — 用 register 令牌聚合全局信息，限制帧间注意力通过 register 进行，大幅降低显存，使规模化训练可行。
-        </div>
-        <div class="highlight">
-            <strong>创新 2：Scaling Law 验证</strong> — 首次证明前馈 3D 重建质量随模型和数据规模可预测提升，为后续扩展提供理论依据。
-        </div>
-        <div class="highlight">
-            <strong>创新 3：动态场景支持</strong> — 从仅支持静态场景扩展到动态场景，大幅拓宽应用范围。
-        </div>
-        <div class="highlight">
-            <strong>创新 4：自监督学习协议</strong> — 利用海量无标注视频数据，摆脱对标注数据的过度依赖。
-        </div>
-        <div class="highlight">
-            <strong>创新 5：重建作为空间理解代理任务</strong> — Register 特征可增强 VLA 模型，重建 latents 可与语言对齐，暗示 3D 重建是通向空间智能的基石。
-        </div>
-    </div>
-
-    <!-- 应用场景 -->
-    <div class="section">
-        <h2>🎯 应用场景</h2>
-        <table>
-            <tr><th>应用领域</th><th>具体场景</th><th>优势</th></tr>
-            <tr><td>AR/VR</td><td>实时场景理解、虚拟物体放置</td><td>亚秒级速度，支持动态场景</td></tr>
-            <tr><td>机器人感知</td><td>VLA 模型空间理解增强</td><td>Register 特征直接迁移</td></tr>
-            <tr><td>SLAM</td><td>实时动态场景 SLAM</td><td>支持动态场景，端到端</td></tr>
-            <tr><td>3D 重建</td><td>从照片/视频重建 3D 模型</td><td>静态+动态统一</td></tr>
-            <tr><td>深度估计</td><td>多视角深度图生成</td><td>超越 Depth Anything 3</td></tr>
-            <tr><td>空间智能</td><td>与语言对齐的空间理解</td><td>Latents 可与语言表示对齐</td></tr>
-            <tr><td>3DGS 初始化</td><td>为 3DGS 提供初始点云和位姿</td><td>解决 3DGS 依赖 SfM 痛点</td></tr>
-        </table>
-    </div>
-
-    <!-- 个人分析 -->
-    <div class="section">
-        <h2>🧠 个人分析</h2>
-        <ul>
-            <li><strong>前馈 3D 重建的规模化里程碑：</strong>VGGT-Ω 证明了 3D 重建也存在 Scaling Law，这意味着 3D 视觉可以像 LLM 一样通过扩大规模持续受益。这是从专用模型到通用基础模型的关键一步。</li>
-            <li><strong>VGGT → Ω 的传承：</strong>从 CVPR 2025 最佳论文到 CVPR 2026 Best Paper Finalist，同一团队证明了持续改进的能力。Ω 版本不仅改进了架构，更重要的是验证了规模化路线的可行性。</li>
-            <li><strong>Register Attention 的意义：</strong>这是对 VGGT 全局注意力瓶颈的优雅解决方案。Register 作为全局信息的紧凑表示，既降低了计算成本，又提供了可迁移的特征表示（增强 VLA、语言对齐）。</li>
-            <li><strong>动态场景是关键突破：</strong>VGGT 原版仅支持静态场景，限制了实际应用。Ω 版本支持动态场景后，应用范围大幅拓宽——从静态重建到视频理解到机器人感知。</li>
-            <li><strong>"Omega"的象征意义：</strong>作为一作 Jianyuan Wang 的最后一篇 PhD 论文，"Ω"象征完整与终结。但论文开辟的 Scaling Law 方向意味着前馈 3D 重建的规模化之路才刚刚开始。</li>
-        </ul>
-    </div>
-
-    <!-- 结论 -->
-    <div class="section verdict">
-        <h2>🎯 结论：是不是最好的方法？</h2>
-        <ul>
-            <li><b>在前馈式 3D 重建赛道，VGGT-Ω 目前是最强的方法之一</b>
-                <ul style="margin-top:8px;">
-                    <li>CVPR 2026 Best Paper Finalist（Oral），顶级学术认可</li>
-                    <li>同时覆盖相机估计、深度图、点云、动态场景，综合能力最强</li>
-                    <li>与 Depth Anything 3 等专门方法的定性对比也占优</li>
-                    <li>Scaling 特性好，天花板高，未来更大规模训练将持续受益</li>
-                    <li>Register 特征可增强 VLA 模型，具有跨领域迁移价值</li>
-                    <li>开源代码、模型、在线 Demo 齐全，可复现性强</li>
-                </ul>
-            </li>
-            <li><span class="warn">⚠️ 需要注意：</span>
-                <ul style="margin-top:8px;">
-                    <li>与传统优化方法（COLMAP+BA）不是同一赛道，后者在精度极限上可能仍有优势</li>
-                    <li>实际落地效果取决于具体场景和输入质量</li>
-                    <li>论文发布于 2026-05，还很新，社区实践反馈需要时间</li>
-                    <li>大规模训练需要显著的计算资源</li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <!-- 研究团队 -->
-    <div class="section">
-        <h2>👥 研究团队</h2>
-        <table>
-            <tr>
-                <th>作者</th>
-                <th>单位</th>
-            </tr>
-            <tr>
-                <td>Jianyuan Wang (一作)</td>
-                <td>Oxford VGG / Meta AI</td>
-            </tr>
-            <tr>
-                <td>Minghao Chen</td>
-                <td>Oxford VGG / Meta AI</td>
-            </tr>
-            <tr>
-                <td>Shangzhan Zhang</td>
-                <td>Oxford VGG</td>
-            </tr>
-            <tr>
-                <td>Nikita Karaev</td>
-                <td>Oxford VGG</td>
-            </tr>
-            <tr>
-                <td>Johannes Schönberger</td>
-                <td>Meta AI</td>
-            </tr>
-            <tr>
-                <td>Patrick Labatut</td>
-                <td>Meta AI</td>
-            </tr>
-            <tr>
-                <td>Piotr Bojanowski</td>
-                <td>Meta AI</td>
-            </tr>
-            <tr>
-                <td>David Novotny</td>
-                <td>Meta AI</td>
-            </tr>
-            <tr>
-                <td>Andrea Vedaldi</td>
-                <td>Oxford VGG / Meta AI</td>
-            </tr>
-            <tr>
-                <td>Christian Rupprecht (通讯)</td>
-                <td>Oxford VGG</td>
-            </tr>
-        </table>
-        <p style="margin-top:12px; color:var(--text-dim); font-size:0.9em;">团队继承了 VGGT 原版的全部核心成员。Andrea Vedaldi 是 Oxford VGG 的核心人物，Christian Rupprecht 是通讯作者。Jianyuan Wang 将此作为他的最后一篇 PhD 论文，命名为 "Omega" (Ω) 象征完整。</p>
-    </div>
-
-    <!-- 引用信息 -->
-    <div class="section">
-        <h2>📌 引用信息</h2>
-        <pre style="background: var(--code-bg); padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 0.82em; color: var(--text-dim); line-height: 1.5;">@inproceedings{wang2026vggtomega,
-  title     = {{VGGT-$\Omega$}},
-  author    = {Jianyuan Wang and Minghao Chen and Shangzhan Zhang and Nikita Karaev
-               and Johannes Sch{\"o}nberger and Patrick Labatut and Piotr Bojanowski
-               and David Novotny and Andrea Vedaldi and Christian Rupprecht},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year      = {2026}
-}</pre>
-        <div class="highlight" style="margin-top:14px;">
-            <strong>📝 命名由来：</strong>一作 Jianyuan Wang 在致谢中提到，这是他博士期间的最后一篇论文，命名为 "Omega" (Ω) 象征完整与终结。为了这项工作更完整，他不断追加内容、追求更深理解，导致数月延迟；他感谢所有合著者的耐心与理解。
-        </div>
-    </div>
-
-    <!-- 资源链接 -->
-    <div class="section">
-        <h2>🔗 资源链接</h2>
-        <div class="resource-links">
-            <a href="https://arxiv.org/abs/2605.15195" target="_blank">📄 arXiv: 2605.15195</a>
-            <a href="https://vggt-omega.github.io/" target="_blank">🌐 项目主页</a>
-            <a href="https://github.com/facebookresearch/vggt-omega" target="_blank">💻 GitHub</a>
-            <a href="https://huggingface.co/facebook/VGGT-Omega" target="_blank">🤗 模型权重</a>
-            <a href="https://huggingface.co/spaces/facebook/vggt-omega" target="_blank">🎮 在线 Demo</a>
-        </div>
-    </div>
-
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与定位(重写说明)</a></li>
+    <li><a href="#s2">研究背景:VGGT 原版的三大瓶颈</a></li>
+    <li><a href="#s3">核心架构改进(逐条核实)</a></li>
+    <li><a href="#s4">Scaling Law:可预测的规模扩展</a></li>
+    <li><a href="#s5">训练细节(源码佐证)</a></li>
+    <li><a href="#s6">实验结果:6 基准断层领先(1B/10B)</a></li>
+    <li><a href="#s7">消融实验(纠正旧版错误)</a></li>
+    <li><a href="#s8">额外发现:VLA 迁移 + 语言对齐</a></li>
+    <li><a href="#s9">逻辑流程图(Mermaid)</a></li>
+    <li><a href="#s10">与 VGGT 原版对比</a></li>
+    <li><a href="#s11">可改进方向分析(代码佐证)</a></li>
+    <li><a href="#s12">SOTA 地位与总结</a></li>
+  </ol>
 </div>
 
+<!-- ===== 1 ===== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与定位(重写说明)</h2>
+<p class="lead"><strong>VGGT-Ω(Omega)</strong> 是 <a href="3D-20250314-VGGT.html">VGGT</a>(CVPR 2025 Best Paper)的官方升级版,发表于 CVPR 2026(Oral / Best Paper Finalist)。核心主张:通过架构简化把训练显存压至原版 ~30%,从而用 15× 监督数据 + 海量无标注视频自监督训练超大模型,首次验证前馈 3D 重建的 <strong>Scaling Law</strong>——质量随模型与数据规模可预测提升(幂律)。</p>
+<div class="callout red"><p><strong>重写说明(旧版笔记的纠正):</strong>本笔记基于 arXiv HTML 全文重写,纠正旧版三处错误:① <strong>消融数字错误</strong>(旧版"去掉 Register ↓15% 精度/↑2.3× 显存、自监督 ↓22%"——论文实为 Register 25% 替换无可测精度损失、仅省 23% FLOPs/16% backbone 显存;自监督反而提升 point error 0.073→0.070);② <strong>Teacher-Student 协议描述部分虚构</strong>("置信度加权"论文未提及,"几何一致性过滤"实属数据标注流水线 §3.5.2 而非自监督协议);③ <strong>动态场景支持机制误读</strong>(源于表示选择+标注流水线,非自监督);④ <strong>"MLP-only"非最终设计</strong>(纯 MLP 有户外块状伪影,最终保留浅层低分辨率 DPT 卷积)。</p></div>
+<div class="stat-row">
+  <div class="stat"><div class="v">40.0</div><div class="l">Sintel AUC@3°(10B)</div></div>
+  <div class="stat"><div class="v">+77%</div><div class="l">vs MegaSaM 22.5</div></div>
+  <div class="stat"><div class="v">93.5</div><div class="l">Sintel 深度 δ1.25</div></div>
+  <div class="stat"><div class="v">~30%</div><div class="l">训练显存(vs VGGT)</div></div>
+  <div class="stat"><div class="v">50×</div><div class="l">比 MegaSaM 快</div></div>
+</div>
+<p>名称"Ω(Omega)"来自一作 Jianyuan Wang 的<strong>最后一篇 PhD 论文</strong>,象征完整与终结(项目主页 Acknowledgements 原文)。模型变体:200M/500M/<strong>1B</strong>/<strong>10B</strong>——<strong>仅 1B 开源</strong>(HuggingFace <code>VGGT-Omega-1B-512</code> + <code>1B-256-Text-Alignment</code>),10B 仅论文报告。</p>
+</section>
+
+<!-- ===== 2 ===== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景:VGGT 原版的三大瓶颈</h2>
+<p>VGGT 原版虽统一了相机/深度/点云/追踪四任务,但有三处效率与能力瓶颈(§1, §3.1),Ω 直击之:</p>
+<div class="grid grid-3">
+  <div class="card warn"><h4>① DPT 高分辨率卷积头显存爆炸</h4><p>Camera Head + DPT Head 存大量前向激活,占 disproportionate 显存;FSDP/gradient checkpointing 都消不掉,限制了可训练规模与数据量。</p></div>
+  <div class="card warn"><h4>② Global attention 二次成本</h4><p>帧间 global self-attention 成本随总 token 数 <strong>二次增长</strong> $O((N P)^2)$,是规模化主瓶颈。</p></div>
+  <div class="card warn"><h4>③ 仅静态 + 监督数据小</h4><p>只支持静态场景,监督序列仅 ~270K,无法支撑 Scaling Law 所需的数据规模,也无动态能力。</p></div>
+</div>
+</section>
+
+<!-- ===== 3 ===== -->
+<section id="s3">
+<h2><span class="num">3</span>核心架构改进(逐条核实)</h2>
+
+<h3>3.1 单一 Dense Prediction Head(非纯 MLP-only)</h3>
+<p>论文探索过 fully convolution-free(纯 MLP)解码器:定量指标更好、更快更省显存、梯度更稳,<strong>但定性产生块状伪影</strong>(尤其户外远景/天空/山脉,因 depth 无界)。mipmap 监督、概率混合建模均未可靠消除(§5)。</p>
+<div class="callout warn"><p><strong>最终设计(§3.1.3, §5):</strong>保留 DPT 的<strong>早期低分辨率卷积层</strong>(16×16/32×32,开销小),将 1/4 分辨率以上的高分辨率卷积块替换为"单层 MLP + pixel-shuffle"。MLP 输出 $2u^2$ 通道($u{=}4$,即 32 通道),pixel-shuffle 重排为 $(uH')\times(uW')\times2$(深度+置信度)。多任务损失(point/matching)<strong>保留但仅作训练时监督,无独立 head</strong>——通过 $\mathcal{L}_{point}$(对 unprojection 误差)、$\mathcal{L}_{match}$(最后一层 token)监督,接近多 head 性能且大幅省显存(§3.2)。相机头:对 camera token + register 跑轻量 transformer + MLP,<strong>单次预测(无 VGGT 的迭代细化)</strong>。</p></div>
+
+<h3>3.2 Register Attention(§3.1.2, Fig.2/3)</h3>
+<p>每帧附 <strong>1 个 camera token + 16 个 register(scene token)</strong>,token 化来自 DINOv3(patch 16)。机制:在 <strong>25% 的 global attention 层</strong>中,自注意力<strong>仅限各帧 register 之间</strong>,更新后的 register 在后续 frame-wise attention 中把聚合的 scene 信息 redistribute 回 image token,形成 bottleneck。</p>
+<div class="equation">
+$$\text{global: }O\big((N(P{+}17))^2\big)\approx O((NP)^2)\;\Longrightarrow\;\text{register: }O\big((16N)^2\big)=O(256N^2)\;\text{(与 }P\text{ 无关)}$$
+</div>
+<p>经验数字(§1 脚注 + §5):替换 25% → <strong>无可测精度损失、省 ~23% FLOPs、省 16% backbone 显存</strong>;替换全部 → FLOPs 降至原 6%,<strong>但精度降到原版 VGGT 水平</strong>(register 无法完全替代 global)。</p>
+
+<h3>3.3 动态场景支持(表示选择 + 标注流水线,非自监督)</h3>
+<div class="callout red"><p><strong>机制澄清(纠正旧版误读):</strong>动态能力<strong>不</strong>来自自监督,而来自:① <strong>表示选择</strong>——只预测 depth + camera,不输出 motion mask/dynamic point map/ray map(论证:point map 需分割运动像素如 MonST3R;ray map 耗资源且把相机信息与像素外观变化纠缠);数据驱动模型从数据学运动先验,取代手工低秩/局部刚性假设;② <strong>新标注流水线</strong>(§3.5.2)产出 ~200K 动态 + ~600K 静态高质量标注(共 0.8M,约占 40M 互联网视频的 2%)。自监督(§3.4)是独立的一般化增强手段,与动态能力无直接因果。</p></div>
+</section>
+
+<!-- ===== 4 ===== -->
+<section id="s4">
+<h2><span class="num">4</span>Scaling Law:可预测的规模扩展</h2>
+<p>VGGT-Ω 的核心发现(§1, Fig.1):<strong>前馈 3D 重建模型的质量随模型与数据规模可预测地提升</strong>(幂律)。Fig.1 给出模型 0.2B→10B、数据 2K→2M sequences,3D point error 单调下降,曲线呈 power-law 形态。</p>
+<div class="equation">
+$$\text{§4.3:训练序列 10× 步进}\;\Longrightarrow\;\text{point error }0.275\to 0.073\;(2K\to 2M\text{ sequences})$$
+</div>
+<div class="grid grid-3">
+  <div class="card green"><h4>1B → 10B 增益(Table 1/2)</h4><p>Sintel AUC@3° 35.3→40.0(+4.7)、ETH3D@3° 49.8→56.3(+6.5)、Sintel δ1.25 89.5→93.5(+4.0)、7Scenes@3° 29.6→36.4(+6.8)。10B 一致优于 1B。</p></div>
+  <div class="card"><h4>4 个模型变体</h4><p>200M / 500M / 1B / 10B(blocks 12/12/24/16,hidden 384/768/1024/4096)。<strong>开源仅 1B</strong>;10B 仅论文报告。</p></div>
+  <div class="card key"><h4>意义</h4><p>3D 重建可像 LLM 一样通过扩大规模持续受益,而非停滞于当前精度——天花板远未触顶。</p></div>
+</div>
+</section>
+
+<!-- ===== 5 ===== -->
+<section id="s5">
+<h2><span class="num">5</span>训练细节(源码佐证)</h2>
+<table>
+<tr><th>项目</th><th>值</th><th>来源</th></tr>
+<tr><td>监督数据</td><td><strong>4M sequences</strong>(公开+内部 ~3M + 流水线 0.8M),相对 VGGT ~270K 为 <strong>15×</strong></td><td>§1, §3.5</td></tr>
+<tr><td>无标注数据</td><td>18M 视频(自监督)</td><td>§3.4</td></tr>
+<tr><td>排除数据集</td><td>Kubric、PointOdyssey(VGGT 用过,因背景伪造/depth 无效)</td><td>§3.5.1</td></tr>
+<tr><td>GPU</td><td><strong>128 × 96GB H100</strong>,bfloat16 + gradient checkpointing + FSDP</td><td>§4.1, §A.1</td></tr>
+<tr><td>迭代</td><td><strong>240K</strong>(160K 监督 + 50K 自监督 + 30K 监督收尾)</td><td>§4.1</td></tr>
+<tr><td>优化器 / LR</td><td>AdamW;linear warmup 5% + cosine 95%;峰值 <strong>2×10⁻⁴</strong>(监督)/ 1×10⁻⁴(自监督)</td><td>§4.1</td></tr>
+<tr><td>batch 帧数</td><td>每 batch 从 [1,24] 均匀采样</td><td>§4.1</td></tr>
+<tr><td>输入分辨率</td><td>面积约 512×512,长宽比 [0.33,1.33];patch 16(DINOv3)</td><td>§4.1</td></tr>
+<tr><td>损失权重</td><td>λ_cam=5.0, λ_depth=1.0, λ_point=0.5, λ_match=0.1</td><td>§4.1</td></tr>
+<tr><td>EMA / clip</td><td>EMA decay 0.999;gradient clip 1.0;QKNorm</td><td>§4.1</td></tr>
+<tr><td>推理(GitHub 1B/512)</td><td>单 A100 峰值显存:10帧 6.67GB / 100帧 13.37 / <strong>200帧 20.82</strong> / 500帧 43.15(>1000帧可行)</td><td>GitHub README</td></tr>
+<tr><td>速度</td><td>比 VGGT 快 20–25%(DINOv3 p16 比 DINOv2 p14 token 少 ~25%);比 MegaSaM 快 50×</td><td>§4.2</td></tr>
+</table>
+<h3>5.1 自监督协议(§3.4,纠正旧版)</h3>
+<div class="callout"><p><strong>Teacher-Student + EMA(真实机制):</strong>$\theta^T\leftarrow m\theta^T+(1-m)\theta^S$($m{=}0.999$);学生匹配教师:跨层 ℓ2 feature-matching loss + camera/depth 回归损失;<strong>camera/depth head 冻结防 collapse</strong>;增强含 color/blur/90°-rot/patch-mask/frame-reorder。§5 明确:自监督"had little impact on most benchmarks"但<strong>改善 OOD</strong>,且<strong>仍需预训练初始化</strong>(尝试 RayZer/E-RayZer/NeRF/GS/掩码/时序从 scratch 均失败)。</p>
+<p><strong>旧版虚构纠正:</strong>"置信度加权"论文未提及;"几何一致性过滤"是<strong>数据标注流水线</strong>(§3.5.2 的 multi-view consistency + XGBoost/RandomForest/CatBoost 分类器,基于 camera-up 一致性/parallax/trajectory smoothness,500+500 人工标注训练)的环节,<strong>不是</strong>自监督协议内容。自监督纯为 DINO 式 EMA 师生蒸馏,无伪标签生成(教师即学生 EMA 自身)。</p></div>
+</section>
+
+<!-- ===== 6 ===== -->
+<section id="s6">
+<h2><span class="num">6</span>实验结果:6 基准断层领先(1B/10B)</h2>
+
+<h3>6.1 位姿 AUC(Table 1,↑越高越好)</h3>
+<table>
+<tr><th>方法</th><th>7Scenes<br/>@3</th><th>ETH3D<br/>@3</th><th>DyCheck<br/>@3</th><th>Sintel<br/>@3</th><th>TUM<br/>@3</th><th>Sintel<br/>@30</th><th>ETH3D<br/>@30</th></tr>
+<tr><td>MonST3R</td><td>9.0</td><td>1.7</td><td>11.5</td><td>4.3</td><td>7.7</td><td>45.8</td><td>14.3</td></tr>
+<tr><td>MegaSaM</td><td>10.6</td><td>5.9</td><td>26.8</td><td>22.5</td><td>15.4</td><td>58.3</td><td>38.1</td></tr>
+<tr><td>VGGT(原版)</td><td>10.9</td><td>18.8</td><td>21.0</td><td>15.0</td><td>16.6</td><td>50.0</td><td>62.1</td></tr>
+<tr><td>π³ (Pi3)</td><td>13.3</td><td>35.3</td><td>23.3</td><td>14.8</td><td>16.1</td><td>53.5</td><td>79.6</td></tr>
+<tr><td>DA3</td><td>18.7</td><td>46.1</td><td>32.1</td><td>16.2</td><td>20.8</td><td>52.7</td><td>87.0</td></tr>
+<tr><td>Ours-1B</td><td>29.6</td><td>49.8</td><td>38.4</td><td>35.3</td><td>30.2</td><td>73.0</td><td>88.5</td></tr>
+<tr class="best"><td><strong>Ours-10B</strong></td><td class="best">36.4</td><td class="best">56.3</td><td class="best">43.7</td><td class="best">40.0</td><td class="best">36.4</td><td class="best">79.1</td><td class="best">90.4</td></tr>
+</table>
+<p><strong>Sintel(动态)AUC@3°:Ω-10B 40.0</strong> vs 此前最佳 MegaSaM 22.5 → <strong>+77%</strong>;vs DA3 16.2、π³ 14.8、VGGT 15.0。ETH3D(静态)@3°:56.3,断层领先 DA3 46.1、π³ 35.3、VGGT 18.8、MegaSaM 5.9。</p>
+
+<h3>6.2 深度(Table 2,δ1.25↑越高越好 / AbsRel↓越低越好)</h3>
+<table>
+<tr><th>方法</th><th>7Scenes<br/>δ</th><th>ETH3D<br/>δ</th><th>Sintel<br/>δ</th><th>Sintel<br/>AbsRel</th><th>ETH3D<br/>AbsRel</th><th>TUM<br/>δ</th></tr>
+<tr><td>MegaSaM</td><td>93.8</td><td>94.8</td><td>74.1</td><td>0.207</td><td>0.083</td><td>92.9</td></tr>
+<tr><td>VGGT</td><td>91.9</td><td>97.4</td><td>79.2</td><td>0.189</td><td>0.036</td><td>92.2</td></tr>
+<tr><td>π³</td><td>92.8</td><td>99.6</td><td>82.5</td><td>0.144</td><td>0.016</td><td>95.5</td></tr>
+<tr><td>DA3</td><td>93.0</td><td>99.6</td><td>86.1</td><td>0.118</td><td>0.015</td><td>94.3</td></tr>
+<tr><td>Ours-1B</td><td>94.6</td><td>99.8</td><td>89.5</td><td>0.097</td><td>0.012</td><td>97.4</td></tr>
+<tr class="best"><td><strong>Ours-10B</strong></td><td class="best">96.3</td><td class="best">99.8</td><td class="best">93.5</td><td class="best">0.081</td><td class="best">0.009</td><td class="best">98.3</td></tr>
+</table>
+<p><strong>Sintel δ1.25:Ω-10B 93.5</strong>(vs MegaSaM 74.1,+26%);AbsRel 0.081(vs DA3 0.118 / π³ 0.144 / VGGT 0.189)。ETH3D δ1.25 99.8(与 π³/DA3 持平),AbsRel 0.009 最优。</p>
+</section>
+
+<!-- ===== 7 ===== -->
+<section id="s7">
+<h2><span class="num">7</span>消融实验(纠正旧版错误)</h2>
+<div class="callout red"><p><strong>旧版消融数字全部错误,现据论文(§4.3, §5,1B/2M/64GPU/150k 监督步,point error↓越低越好)纠正:</strong></p></div>
+<table>
+<tr><th>消融项</th><th>配置</th><th>point error</th><th>论文结论</th></tr>
+<tr><td>Register attention</td><td>仅 global(无 register)</td><td>0.071</td><td>25% 替换=0.073,<strong>几乎相同</strong>(register 甚至略低 0.002)</td></tr>
+<tr><td>Register attention</td><td>全 register(无 global)</td><td>—</td><td>FLOPs 降至原 6%,<strong>精度降到原 VGGT 水平</strong></td></tr>
+<tr><td>Multi-task</td><td>去掉 point+matching 损失</td><td>0.078(变差)</td><td>多任务监督有用;VGGT 多 head 多任务=0.070(略好)但难 scale</td></tr>
+<tr><td>Self-supervised</td><td>10% 步数换自监督</td><td class="best">0.070(变好)</td><td>自监督<strong>提升</strong> point error;改善 OOD</td></tr>
+<tr><td>Annotation quality</td><td>流水线 vs MegaSaM(Sintel)</td><td>—</td><td>流水线 AUC@30° <strong>96.4%</strong> vs 62.1%;δ1.25 <strong>99.3%</strong> vs 77.2%</td></tr>
+</table>
+<div class="grid grid-2">
+  <div class="card red"><h4>旧版错误 ①:Register Attention 消融</h4><p>旧版称"去掉 ↓15% 精度、↑2.3× 显存"——<strong>证伪</strong>。论文:register 是<strong>纯效率工具</strong>(25% 替换无精度损失,省 23% FLOPs/16% backbone 显存;全 register 退化到 VGGT 级)。15% 与 2.3× 数字论文不存在。</p></div>
+  <div class="card red"><h4>旧版错误 ②:自监督消融</h4><p>旧版称"去掉 ↓22%"——<strong>证伪/方向反了</strong>。论文:加入自监督使 point error 0.073→0.070(<strong>提升</strong>);§5 明说自监督"had little impact on most benchmarks"但改善 OOD。无 22% 此数。</p></div>
+</div>
+</section>
+
+<!-- ===== 8 ===== -->
+<section id="s8">
+<h2><span class="num">8</span>额外发现:VLA 迁移 + 语言对齐</h2>
+<div class="grid grid-2">
+  <div class="card green"><h4>register 增强 VLA(§4.4,Table 3)</h4><p>提取 register(scene token)拼到 OpenVLA-OFT 输入,VGGT-Ω <strong>冻结</strong>。LIBERO 平均成功率 <strong>98.5%</strong> vs OpenVLA-OFT 97.1%(+1.4);Object 99.3/Goal 99.2/Long 99.0。对比 π0 94.2、UniVLA 95.2、CoT-VLA 83.9。<strong>3D 重建的几何表征可迁移到机器人空间理解。</strong></p></div>
+  <div class="card key"><h4>语言对齐(§4.4,Fig.8)</h4><p>VLM 描述场景→文本 token mean-pool+ℓ2;Ω 侧小 self-attention stack 跨 register + 可学 language token→project+ℓ2;<strong>symmetric InfoNCE</strong>。VLM 冻结、Ω 端到端微调(LR 1e-5)。10K 步后检索:<strong>top-1 76.8% / top-3 97.0%</strong>;零样本迁移 Qwen3 纯文本 LLM embedding:<strong>top-1 47.5%</strong>。对齐后几何任务无退化。<strong>register 即 3D 场景的"CLS token"。</strong></p></div>
+</div>
+<div class="callout tip"><p><strong>类比:</strong>CLIP 的 CLS token 是图像语义摘要,VGGT-Ω 的 register 是 3D 场景几何摘要——都经大规模预训练学到的紧凑表示,可迁移下游。3D 重建不仅是独立任务,更是<strong>通向空间智能的代理任务(proxy task)</strong>。</p></div>
+</section>
+
+<!-- ===== 9 ===== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+<h3>9.1 架构与信息流</h3>
+<div class="mermaid">
+flowchart TD
+  IN["输入: N 帧 RGB(1~200+)<br/>DINOv3 patch16"] --> ENC["帧内 self-attention<br/>(image tokens + camera + 16 register)"]
+  ENC --> MIX{混合层}
+  MIX -->|"75% 层"| GLOBAL["Global attention<br/>所有帧所有 token 间<br/>O((NP)²)"]
+  MIX -->|"25% 层"| REG["Register attention<br/>仅各帧 register 间<br/>O(256N²),省 23% FLOPs"]
+  GLOBAL --> REDIST["register 聚合 scene 信息<br/>redistribute 回 image token"]
+  REG --> REDIST
+  REDIST --> HEAD["单一 Dense Prediction Head<br/>浅层低分辨率 DPT 卷积 + MLP + pixel-shuffle"]
+  HEAD --> OUT["输出: 深度图 + 置信度 + 相机参数<br/>(单次预测, 无迭代)"]
+  style REG fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style HEAD fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style OUT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+<h3>9.2 Scaling Law 与 VGGT→Ω 演进</h3>
+<div class="mermaid">
+flowchart LR>
+  V["VGGT (CVPR25 BP)<br/>~270K seq / DINOv2 p14<br/>global attn / 多 head / 仅静态<br/>显存 100%"] --> O["VGGT-Ω (CVPR26 BPF)<br/>4M seq (15×) + 18M 自监督<br/>DINOv3 p16 / register 25%<br/>单 dense head / 静态+动态<br/>显存 ~30%"]
+  O --> SL["Scaling Law 验证<br/>0.2B→10B, 2K→2M<br/>point error 0.275→0.073<br/>幂律"]
+  O --> V1["1B 开源<br/>Sintel AUC@3° 35.3"]
+  O --> V2["10B 仅论文<br/>Sintel AUC@3° 40.0"]
+  style O fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style SL fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+</section>
+
+<!-- ===== 10 ===== -->
+<section id="s10">
+<h2><span class="num">10</span>与 VGGT 原版对比</h2>
+<table>
+<tr><th>维度</th><th>VGGT(CVPR 2025 Best Paper)</th><th>VGGT-Ω</th></tr>
+<tr><td>预测头</td><td>Camera Head + DPT Head(多 head,高分辨率卷积)</td><td>单 dense head(浅层低分辨率 DPT 卷积 + MLP + pixel-shuffle)+ 单 camera head(单次无迭代)</td></tr>
+<tr><td>帧间注意力</td><td>全 global attention</td><td>75% global + 25% register attention</td></tr>
+<tr><td>训练显存</td><td>100%(基准)</td><td class="best">~30%(省 70%)</td></tr>
+<tr><td>监督数据</td><td>~270K 序列(静态为主)</td><td>4M 序列(15×),含 0.8M 动态</td></tr>
+<tr><td>无标注数据</td><td>无</td><td>18M 视频(自监督)</td></tr>
+<tr><td>动态场景</td><td class="fail">不支持</td><td class="best">支持(表示选择+流水线)</td></tr>
+<tr><td>Sintel 相机 AUC@3°</td><td>15.0</td><td class="best">40.0(+167%)</td></tr>
+<tr><td>Sintel 相机 AUC@30°</td><td>50.0</td><td class="best">79.1(+58%)</td></tr>
+<tr><td>Scaling Law</td><td>未系统研究</td><td class="best">0.2B→10B、2K→2M 幂律(Fig.1)</td></tr>
+<tr><td>VLA 迁移</td><td>未展示</td><td class="best">register→OpenVLA-OFT,LIBERO 98.5%</td></tr>
+<tr><td>语言对齐</td><td>无</td><td class="best">InfoNCE,top-1 76.8%</td></tr>
+<tr><td>Backbone</td><td>DINOv2 / patch14</td><td>DINOv3 / patch16</td></tr>
+<tr><td>速度</td><td>基准</td><td class="best">快 20–25%(比 MegaSaM 快 50×)</td></tr>
+</table>
+</section>
+
+<!-- ===== 11 ===== -->
+<section id="s11">
+<h2><span class="num">11</span>可改进方向分析(代码佐证)</h2>
+<div class="card red"><p class="pri">[方法·高优先级] 改进 1</p><h4>自监督协议增益有限且依赖预训练初始化</h4><p><strong>问题:</strong>§5 原文自监督"had little impact on most benchmarks",且"expected self-supervised reconstruction to work from scratch, whereas our successful approach still requires a pretrained model";尝试 RayZer/E-RayZer/NeRF/GS/掩码/时序从 scratch 均失败。<strong>佐证:</strong>§4.3 自监督使 point error 0.073→0.070(仅 −0.003)。<strong>建议:</strong>探索无需预训练 init 的自监督目标,或并入 omni-model 多模态统一训练(§6 已暗示方向)。</p></div>
+<div class="card warn"><p class="pri">[方法·中优先级] 改进 2</p><h4>MLP-only 解码器块状伪影(深度无界)</h4><p><strong>问题:</strong>§5 Dense Prediction Heads:MLP-only 定量更好但户外产生块状伪影,mipmap/概率混合未可靠消除。<strong>建议:</strong>在对数深度空间或带界数值空间预测,或引入局部深度方差监督的改进版。</p></div>
+<div class="card red"><p class="pri">[数据评估·高优先级] 改进 3</p><h4>动态监督保守,运动物体 depth 实质无监督</h4><p><strong>问题:</strong>§3.5.2 流水线丢弃动态区域 depth(仅静态像素过 multi-view consistency);§3.3 不输出显式动态量。动态能力是隐式先验而非显式 4D 监督。<strong>建议:</strong>引入 4D 点轨迹/光流显式监督,或放宽动态接受准则并辅以运动掩码验证。</p></div>
+<div class="card warn"><p class="pri">[工程·中优先级] 改进 4</p><h4>10B 未开源 + 文本对齐仅 1B/256</h4><p><strong>问题:</strong>HuggingFace 仅 <code>VGGT-Omega-1B-512</code> 与 <code>1B-256-Text-Alignment</code>,10B 仅论文数字不可复现;text-alignment 无 10B 版。<strong>佐证:</strong>GitHub README + HF 模型库。<strong>建议:</strong>蒸馏 10B→1B,或以 FP8/INT8 发布 10B,补 10B-Text 变体。</p></div>
+<div class="card"><p class="pri">[方法·中优先级] 改进 5</p><h4>Register attention 25% 无精度增益,纯效率工具</h4><p><strong>问题:</strong>§4.3(25% 替换 0.073 vs 全 global 0.071,几乎相同)、§5(全 register FLOPs 6% 但降到 VGGT 级)。<strong>建议:</strong>设计自适应 register 数量或层级稀疏 global+register 混合(早期层全 global、后期层全 register),在效率/精度间更优帕累托。</p></div>
+<div class="callout key"><p><strong>个人最关键三点:</strong>改进 1(自监督依赖预训练,决定能否真正利用互联网规模无标注数据)、改进 3(动态监督保守,决定 4D 能力上限)、改进 4(10B 未开源,决定社区能否复现/跟进)。这三点也指向 VGGT-Ω §6 自预判的下一代方向:<strong>unified/omni-model</strong>(把 reconstruction 作为 omni 模型的一个任务,深度作图像生成、相机作文本自回归)。</p></div>
+</section>
+
+<!-- ===== 12 ===== -->
+<section id="s12">
+<h2><span class="num">12</span>SOTA 地位与总结</h2>
+<p><strong>截至论文发表(2026-05):</strong>VGGT-Ω 在 3 个静态(7Scenes/NRGBD/ETH3D)+ 3 个动态(DyCheck/Sintel/TUM)基准上以显著优势达到前馈 3D 重建 SOTA,全面超越 DA3(1B Giant)、π³、MegaSaM、MonST3R、MapAnything、原版 VGGT。<strong>几何质量 SOTA 成立</strong>,且验证 Scaling Law、开源 1B + 模型/Demo 齐全。</p>
+<div class="callout warn"><p><strong>2026 下半年挑战者:</strong>仅凭此论文与项目主页<strong>无法确认</strong> 6–8 月有新方法超越。论文 §6 自预判下一代可能走向 unified/omni-model,并提到并发工作 [67] 在自监督上有类似观察——这些是<strong>潜在挑战方向</strong>。在 <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">Pareto 全谱调研</a> 中,VGGT-Ω 仍被定位为<strong>几何轨道质量 SOTA</strong>(Sintel AUC@3°=40.0 断层领先),亚秒级,2026 H2 无已确认挑战者。</p></div>
+<div class="grid grid-2">
+  <div class="card green"><h4>VGGT-Ω 的历史地位</h4><p>① 首次验证前馈 3D 重建 Scaling Law(0.2B→10B 幂律);② Register Attention 把显存压至 30% 使规模化可行;③ 动态场景支持拓宽应用域;④ register 作 3D"CLS token"可迁移 VLA/语言,3D 重建成为空间智能代理任务;⑤ CVPR 2025 Best Paper → CVPR 2026 Best Paper Finalist 的传承。</p></div>
+  <div class="card warn"><h4>局限</h4><p>① 10B 未开源,数字不可复现;② 自监督增益有限且依赖预训练 init;③ 动态监督保守(运动物体 depth 实质无监督);④ MLP-only 户外块状伪影;⑤ Register 25% 无精度增益(纯效率);⑥ 强运动模糊/FOV 突变退化;⑦ 迭代细化可再 +4–6% AUC@3° 但为简洁牺牲。</p></div>
+</div>
+<div class="callout tip"><p><strong>一句话:</strong>VGGT-Ω 是前馈 3D 重建的规模化里程碑——以 Register Attention 把显存压至 30% 从而验证 Scaling Law,在 6 基准断层领先(Sintel AUC@3°=40.0,+77% vs 次优),并展示 register 向 VLA/语言的迁移能力;但 10B 未开源、自监督依赖预训练、动态监督保守是其留待下一代(omni-model)的三个缺口。</p></div>
+<h3>🔗 关联笔记</h3>
+<ul>
+<li><a href="3D-20250314-VGGT.html">VGGT 调研</a> — 前作,CVPR 2025 Best Paper,几何基础模型奠基</li>
+<li><a href="3D-20250717-Pi3.html">π³ 调研</a> — 几何轨道竞品,排列等变,57.4 FPS 最快</li>
+<li><a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">三维重建质量-速度 Pareto 全谱</a> — VGGT-Ω 被定位为几何轨道质量 SOTA</li>
+<li><a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建综述</a> — LRM/GS-LRM/Long-LRM 谱系</li>
+</ul>
+</section>
+
+</div>
 <div class="footer">
-    📝 3D 重建调研 · VGGT-Ω · CVPR 2026 Best Paper Finalist · 前馈 3D 重建 Scaling Law · 2026-07-02 整理
+  📝 阅读笔记 · 重写于 2026-08-14 · 领域: 前馈 3D 重建 / 几何基础模型 / Scaling Law · arXiv:2605.15195 · CVPR 2026 Oral / Best Paper Finalist<br>
+  本重写版基于 arXiv HTML 全文 + 项目主页 + GitHub README,纠正旧版消融数字/Teacher-Student 协议/动态机制/MLP-only 等多处错误,补全 1B/10B 准确 SOTA 数字。
 </div>
-
+<script>mermaid.initialize({startOnLoad:true,theme:'default',flowchart:{curve:'basis',useMaxWidth:true}});</script>
 </body>
 </html>
