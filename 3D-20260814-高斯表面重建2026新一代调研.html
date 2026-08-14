@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 新一代高斯表面重建调研:GOF 之后的范式反超</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#a78bfa; --accent2:#60a5fa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{background:linear-gradient(135deg,#3b0764 0%,#1e3a5f 50%,#1a2029 100%);padding:56px 40px 46px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(167,139,250,0.18),transparent 40%),radial-gradient(circle at 80% 30%,rgba(96,165,250,0.15),transparent 40%)}
+  .hero-content{position:relative;max-width:1120px;margin:0 auto}
+  .hero .badge{display:inline-block;background:rgba(167,139,250,0.15);color:var(--accent);border:1px solid rgba(167,139,250,0.3);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:16px;letter-spacing:.5px}
+  .hero h1{font-size:32px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:900px}
+  .hero .authors{color:#cbd5e1;font-size:14px;margin-top:16px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{color:var(--accent2);text-decoration:none;font-size:13px;border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1120px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent);border:none;padding:0}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{font-size:25px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .num{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:var(--text)}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{background:var(--code-bg);padding:2px 7px;border-radius:4px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:14px 0;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:#e2e8f0;line-height:1.6}
+  .callout{background:var(--panel);border-left:4px solid var(--accent2);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent);background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:18px 22px;margin:16px 0;overflow-x:auto;position:relative}
+  .equation .tag{position:absolute;right:18px;top:14px;color:var(--muted);font-size:12px}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 22px;border-left:4px solid var(--accent2)}
+  .card.warn{border-left-color:var(--orange)}
+  .card.key{border-left-color:var(--accent)}
+  .card.red{border-left-color:var(--red)}
+  .card.green{border-left-color:var(--green)}
+  .card h4{margin-top:0;color:var(--accent)}
+  .card .pri{font-size:12px;color:var(--orange);font-weight:700;letter-spacing:.5px}
+  .stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 22px;flex:1;min-width:120px;text-align:center}
+  .stat .v{font-size:24px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:12.5px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--border)}
+  th{background:var(--panel2);color:var(--accent);font-weight:600}
+  td{color:#cbd5e1}
+  tr.best{background:rgba(52,211,153,0.12)}
+  tr.best td{color:#fff;font-weight:600}
+  td.best{color:var(--green);font-weight:700}
+  td.fail{color:var(--red)}
+  .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;text-align:center}
+  .figure{margin:22px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .cap{color:var(--muted);font-size:13px;margin-top:10px;text-align:left}
+  .method-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;margin:20px 0}
+  .method-card .mh{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .method-card .mtag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+  .footer{text-align:center;color:var(--muted);font-size:13px;padding:28px;border-top:1px solid var(--border);margin-top:40px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">高斯表面重建 · 2025–2026 新一代 · GOF 之后</span>
+    <h1>2026 新一代高斯表面重建:在 GOF 之后的范式反超</h1>
+    <p class="subtitle">GOF(2024)以"不透明度场 + Marching Tetrahedra"在 2DGS 强项上全面超越,但留下 Delaunay 效率瓶颈、SH 外观局限、评测协议偏差三大缺口。本调研覆盖四项后继工作:<strong>Gaussian Wrapping</strong>(SuGaR 团队,可学习定向法向 + Objects as Volumes 闭式场,原理性反超)、<strong>SOF</strong>(GOF 直接工程改良,逐像素排序 + 并行 MTet)、<strong>GSPrior</strong>(CVPR 2026,自约束 TSDF 先验)、<strong>Spherical-GOF</strong>(IROS 2026,全景扩展)。</p>
+    <p class="authors">本笔记为编撰型综述 · 整理于 2026-08-14 · 覆盖 arXiv 2604.07337 / 2506.19139 / 2603.19682 / 2603.08503</p>
+    <div class="links">
+      <a href="3D-20240416-GOF.html">🔗 GOF 笔记(前作)</a>
+      <a href="3D-20240326-2DGS.html">🔗 2DGS 笔记(范式起源)</a>
+      <a href="3D-20230808-3DGS基础与改进综述.html">🔗 3DGS 综述</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">总览:GOF 之后的四条路线</a></li>
+    <li><a href="#s2">Gaussian Wrapping:从 blob 到 spoke 的原理性反超</a></li>
+    <li><a href="#s3">SOF:GOF 的直接工程化改良</a></li>
+    <li><a href="#s4">GSPrior:自约束 TSDF 先验(CVPR 2026)</a></li>
+    <li><a href="#s5">Spherical-GOF:GOF 的全景扩展(IROS 2026)</a></li>
+    <li><a href="#s6">新一代横向对比(量化)</a></li>
+    <li><a href="#s7">技术演进路线(Mermaid)</a></li>
+    <li><a href="#s8">个人分析与可改进方向</a></li>
+    <li><a href="#s9">总结</a></li>
+  </ol>
+</div>
+
+<!-- ===== 1 ===== -->
+<section id="s1">
+<h2><span class="num">1</span>总览:GOF 之后的四条路线</h2>
+<p class="lead"><a href="3D-20240416-GOF.html">GOF</a> 把高斯表面重建推进到"训练-提取一致"(opacity level-set + Marching Tetrahedra),在 DTU(0.74)/TnT(0.46)超越 2DGS。但它留下三大缺口:① <strong>Delaunay 三角剖分</strong>在大场景慢(bicycle ~8min);② <strong>SH 外观建模</strong>致 DTU 落后 Neuralangelo;③ <strong>评测协议偏差</strong>(顶点密度偏差 + GT 采集偏差)使分数虚高。2025–2026 的四项后继从不同角度填补:</p>
+
+<div class="grid grid-4">
+  <div class="card key"><span class="mtag" style="background:rgba(167,139,250,0.15);color:var(--accent)">原理反超</span><h4>Gaussian Wrapping</h4><p><strong>arXiv 2604.07337</strong>(2026-04)<br/>SuGaR 团队(LIX)<br/>可学习定向法向 + 互易衰减 → OaV 闭式场;2 pivots;Primal Adaptive Meshing;揭穿评测偏差</p></div>
+  <div class="card green"><span class="mtag" style="background:rgba(52,211,153,0.15);color:var(--green)">工程改良</span><h4>SOF</h4><p><strong>arXiv 2506.19139</strong>(2025-06,SIGGRAPH Asia 2025)<br/>TU Graz + Stuttgart<br/>逐像素排序 + level-set 对齐正则 + 并行 MTet,网格化快 ~1 数量级</p></div>
+  <div class="card"><span class="mtag" style="background:rgba(96,165,250,0.15);color:var(--accent2)">先验约束</span><h4>GSPrior</h4><p><strong>arXiv 2603.19682</strong>(CVPR 2026)<br/>清华 + Wayne State<br/>自约束 TSDF 先验 + 带渐收紧,无额外网络</p></div>
+  <div class="card"><span class="mtag" style="background:rgba(251,146,36,0.15);color:var(--orange)">域扩展</span><h4>Spherical-GOF</h4><p><strong>arXiv 2603.08503</strong>(IROS 2026)<br/>GOF 全景球面射线扩展,深度重投影误差 −57%</p></div>
+</div>
+
+<div class="callout key"><p><strong>一句话定位:</strong>Gaussian Wrapping 是<strong>原理性反超</strong>(从"opacity level-set 启发式"升级到"OaV 闭式几何场"),SOF 是 GOF 的<strong>工程加速改良</strong>,GSPrior 是<strong>轻量先验约束</strong>的第三条路,Spherical-GOF 把 GOF <strong>扩展到全景域</strong>。前两者直接攻击 GOF 的 Delaunay/效率缺口,第三个绕开 GOF 走自约束路线,第四个扩域。</p></div>
+</section>
+
+<!-- ===== 2. Gaussian Wrapping ===== -->
+<section id="s2">
+<h2><span class="num">2</span>Gaussian Wrapping:从 blob 到 spoke 的原理性反超</h2>
+
+<div class="method-card">
+  <div class="mh"><span class="mtag" style="background:rgba(167,139,250,0.2);color:var(--accent)">arXiv:2604.07337 · 2026-04-08</span><span class="mtag" style="background:rgba(52,211,153,0.15);color:var(--green)">SuGaR 谱系</span></div>
+  <p><strong>From Blobs to Spokes: High-Fidelity Surface Reconstruction via Oriented Gaussians</strong> · Diego Gomez, Antoine Guédon, Nissim Maruani, Bingchen Gong, Maks Ovsjanikov(LIX, École Polytechnique / IP Paris)——<em>Guédon 是 SuGaR 一作、Maruani 是 PoNQ/VoroMesh 一作,SuGaR 团队续作</em>。<br/>项目主页:http://diego1401.github.io/BlobsToSpokesWebsite/ · 代码:https://github.com/diego1401/GaussianWrapping(基于 3DGS + GGGS + SOF + RaDe-GS + Nvdiffrast,<strong>非 GOF/2DGS 代码</strong>)。</p>
+</div>
+
+<h3>2.1 核心思想:为 3DGS 推导有原理的几何场</h3>
+<p>3DGS 的成像基于 <strong>opacity(不透明度)</strong>而非 attenuation(衰减),每个 Gaussian 贡献只取决于像素平面投影值 $G_i^*(p)$,<strong>与光线穿过原语的路径长度无关</strong>。故 opacity $\alpha\in[0,1]$ 有界,无法等同于 NeRF 那种可无界的衰减 $\sigma$。<strong>Objects as Volumes(OaV, Miller et al. CVPR 2024)</strong>框架给出 occupancy $\mathcal{O}$ 与衰减 $\sigma$ 的闭式桥梁(在互易假设下):</p>
+<div class="equation">
+$$\forall(\mathbf{x},\mathbf{w})\in\mathbb{R}^3\times\mathcal{S}^2,\quad \sigma(\mathbf{x},\mathbf{w})=|\mathbf{w}\cdot\nabla\log v(\mathbf{x})|,\quad v=1-\mathcal{O}$$
+<span class="tag">(式 1)</span>
+</div>
+<p>但 3DGS 不是 attenuation-based,OaV 不能直接套用,现有方法只能退而用 <strong>TSDF fusion of blended depth maps</strong> 启发式。GOF 用 ray-Gaussian 交平面法向 + opacity level-set,仍是<strong>启发式拼接(9 pivots/Gaussian)</strong>。GW 的破局:为 3DGS 推导一个<strong>满足互易性的 attenuation</strong>,让 OaV 严格适用——关键在于<em>让每个 Gaussian 携带一个可学习定向法向</em>,把"对称 blob"变成"有向表面元素"。</p>
+
+<h3>2.2 关键创新:可学习定向法向 + 闭式几何场</h3>
+<p><strong>第一步(式 2):</strong>证明在 Gaussian 统计独立且不重叠假设下,3DGS alpha-blending 等价于一个 ray-marching 体渲染,其连续衰减为</p>
+<div class="equation">
+$$\sigma(\mathbf{x},\mathbf{w})=\sum_{i=1}^N \max\bigl(0,-\mathbf{w}\cdot\nabla\log(1-G_i(\mathbf{x}))\bigr)$$
+</div>
+<p>但该 $\sigma$ <em>一般不互易</em>($\sigma(\mathbf{x},\mathbf{w})\neq\sigma(\mathbf{x},-\mathbf{w})$)。这正是 concurrent work <strong>GGGS</strong>(arXiv 2601.17835)用非定向 transmittance 导致表面侵蚀、多视角深度不一致的根因(附录 Fig 6)。</p>
+<p><strong>第二步 — Definition 1(核心):</strong>给每个 Gaussian $G_i$ 附加<strong>可学习定向法向</strong> $n_i\in\mathcal{S}^2$(全框架<strong>唯一新增可学习参数</strong>),定义<strong>定向衰减</strong>:</p>
+<div class="equation">
+$$\bar{\sigma}_i(\mathbf{x},\mathbf{w})=\mathbb{1}_{n_i^\top(\mathbf{x}-\mu_i)\geq 0}\,|\mathbf{w}\cdot\nabla\log(1-G_i(\mathbf{x}))|$$
+<span class="tag">(式 3)</span>
+</div>
+<p>直观:<strong>Gaussian 只在其法向所指的"外侧半空间"建模密度衰减,内侧视为完全占据</strong>。这把每个 Gaussian 重新解释为 <em>stochastic oriented surface element</em>,有明确"内/外"——既满足 OaV 几何性质,又在"Gaussians properly wrap the scene"假设下是 3DGS 成像的有效近似。</p>
+<p><strong>第三步 — Proposition 1(主结果):</strong>把 OaV 式 1 套用到互易的式 3,得到 <strong>Gaussian 向量场与法向场</strong>(<em>无需任何额外可学习参数</em>):</p>
+<div class="equation">
+$$V(\mathbf{x}):=\nabla\log v(\mathbf{x})=\sum_{i=1}^N \mathbb{1}_{n_i^\top(\mathbf{x}-\mu_i)\geq 0}\,\nabla\log(1-G_i(\mathbf{x})),\qquad \mathcal{N}(\mathbf{x})=\frac{V(\mathbf{x})}{\|V(\mathbf{x})\|}$$
+<span class="tag">(式 5–6)</span>
+</div>
+<p>$\mathcal{N}(\mathbf{x})$ 在表面邻域<strong>良定义且与真实随机表面期望法向重合</strong>。任意空间点查询 K 近邻 Gaussian 即可得 occupancy/vacancy/normal。这是相对 GOF(无显式全局几何场,靠 level-set + 9 pivots)的<strong>根本性原理升级</strong>。</p>
+<div class="callout warn"><p><strong>Vacancy 工程估计(式 7):</strong>对隐藏在几何内部、不参与渲染的 Gaussian(违反 wrapping 假设),直接沿光线积分 $V$ 会出伪影。作者改用沿训练相机光线集取 <strong>vacancy 下界</strong>(乘积沿光线单调不增,隐藏 floater 无法抬高 vacancy)→ 天然鲁棒。</p></div>
+
+<h3>2.3 一致性损失 + 定向 densification(让 Gaussians "wrap" 整个表面)</h3>
+<p><strong>Normal Alignment Loss(式 4):</strong>渲染出的 oriented normal $N(p)$ 即表面期望法向,渲染深度 $D(p)$ 的梯度即法向另一估计(不依赖定向假设),强制二者对齐。深度取 <strong>median</strong>(transmittance 降到 0.5,比期望更鲁棒)。</p>
+<div class="equation">
+$$\mathcal{L}_N=\sum_p 1-N(p)\cdot\nabla D(p)$$
+<span class="tag">(式 4)</span>
+</div>
+<p><strong>Normal-Aware Densification(定向克隆,关闭几何孔洞):</strong>wrapping shell 出现缺口时 $\mathcal{L}_N(p)$ 局部升高,每 $K$ 次迭代把 per-pixel 误差经 blending weights 传回各 Gaussian,<strong>高误差 Gaussian 被克隆并翻转法向</strong>——正好填补"另一侧"空缺,加固 shell。这是恢复<strong>薄结构(自行车辐条)</strong> 的关键:标准方法只能用几个无定向 primitive 拟合辐条外观,无法恢复几何;GW 通过翻转克隆形成完整定向 shell。</p>
+<div class="callout"><p><strong>4 参数法向参数化(源码佐证,附录 0.D):</strong>直接用 3 坐标单位向量参数化 $n_i$ 会优化不稳(翻转需旋转 180°,易陷局部极小)。改用 $n_i=\tanh(s_i)\cdot d_i/\|d_i\|$($s_i\in\mathbb{R}$ + $d_i\in\mathbb{R}^3$),改 $s_i$ 符号即可"翻转",稳定梯度。真实超参:$\lambda_{DN}=0.05,\lambda_N=0.05,\lambda_{pc}=0.6,\lambda_{gc}=0.02$。</p></div>
+
+<h3>2.4 Primal Adaptive Meshing:2 pivots vs GOF 的 9 pivots</h3>
+<p>在定向假设下,表面与每个 Gaussian 相交于"中心 $\mu_i$ 与低密度侧之间、平行于定向平面",故<strong>每 Gaussian 只 spawn 2 个 Delaunay pivots</strong>:$\mu_i$ 与 $\mu_i+3s_i n_i$($s_i=\|S_iR_i^\top n_i\|$ 为沿法向的椭球缩放)。GOF/GGGS/RaDe-GS/MILo 均<strong>每 Gaussian 9 pivots</strong>,GW 直接把顶点数压到约 <strong>1/4.5</strong>(项目主页 "4.5× Lighter Meshes")。</p>
+<div class="grid grid-2">
+  <div class="card"><h4>Pivot-Based MTet(默认,轻量)</h4><p>2 pivots/Gaussian + vacancy 下界取 occupancy,Marching Tetrahedra 后二分细化到 0.5-isosurface。</p></div>
+  <div class="card green"><h4>Primal Adaptive Meshing(高质量,ROI 任意分辨率)</h4><p>5 步:①顶点初始化(按距相机距离反比加权)→②Isosurface 细化(Newton 投影 $x_{i+1}=x_i+\tfrac{1}{2}(0.5-v(x_i))\mathcal{N}(x_i)$,式 8)→③过滤→④Delaunay 四面体化→⑤抽面。<strong>把网格分辨率与 Gaussian 分布解耦</strong>,可对 ROI 任意超分辨率(配 Blender Bounding Volume add-on)。</p></div>
+</div>
+
+<h3>2.5 评估协议偏差:本文最锋利的贡献之一</h3>
+<p>GW 揭露标准 T&amp;T 表面评估有两类根本偏差,并提出两个更严格替代:</p>
+<div class="grid grid-2">
+  <div class="card warn"><h4>偏差 1:顶点密度偏差</h4><p>常规把"预测表面点云"= <strong>网格顶点 + 各面中心</strong>拼接 → <strong>网格细分越密、F1 越高</strong>,与方法几何质量无关。GW 自证:用 9 pivots 代替 2 pivots,Legacy F1 从 0.50→0.54(纯加 pivots,几何没变,分数+0.04)。<strong>源码佐证:</strong>引用 RaDe-GS 官方仓库评测代码片段(Fig 13),即"拼接顶点+面中心"而非"均匀采样"。</p></div>
+  <div class="card warn"><h4>偏差 2:GT 采集偏差</h4><p>T&amp;T GT 是激光扫描,本身有遮挡/掠射角造成的孔洞,会<strong>惩罚"正确重建了被遮挡几何"的方法</strong>。代表案例:<strong>PGSR</strong> 用 depth filtering 移除掠射角点,产生的网格孔洞正好与 GT 孔洞对齐,在标准 F1 下被<strong>虚高打分</strong>。</p></div>
+</div>
+<div class="callout red"><p><strong>揭穿 PGSR:</strong>PGSR 在 Uniform Sampling 下看似最优(0.52),但一旦用 Virtual Scanning 把"孔洞对齐 GT 孔洞"的优势抵消,立刻跌到与 GW/GGGS 同档(0.53)。<strong>Mesh-Based Rendering(MBR)</strong> 进一步曝光 PGSR 不完整性:Mip-NeRF 360 上 PGSR 的 MBR PSNR 只有 <strong>15.63</strong>(GW 25.10,差近 10dB)!论文原话:"PGSR's strong geometric scores are an artifact of the evaluation protocol rather than true reconstruction quality."</p></div>
+<table>
+<tr><th>评估协议</th><th>PGSR</th><th>GW(2p)</th><th>GW(PAM)</th><th>GGGS</th><th>GOF</th></tr>
+<tr><td>Legacy(顶点拼接,有偏)</td><td>—</td><td>0.50</td><td>—</td><td>—</td><td>0.46</td></tr>
+<tr><td><strong>Uniform Sampling</strong>(无顶点偏差)</td><td>0.52</td><td>0.48</td><td>0.43</td><td>0.45</td><td class="fail">0.31</td></tr>
+<tr class="best"><td><strong>Virtual Scanning</strong>(再扣采集偏差)</td><td>0.53</td><td class="best">0.53</td><td class="best">0.53</td><td class="best">0.53</td><td>0.38</td></tr>
+</table>
+<p>两种替代方案(Uniform Sampling:在 GT crop 内均匀采样固定点数;Virtual Scanning:从输入位姿对重建网格渲染深度并反投影,模拟 GT 采集)已开仓 <code>diego1401/TNTUniScanEvals</code>。</p>
+
+<h3>2.6 实验数字(对比 GOF)</h3>
+<table>
+<tr><th>指标</th><th>GOF</th><th>GW (Ours)</th><th>优势</th></tr>
+<tr><td>DTU Chamfer (mm,↓)</td><td>0.74</td><td class="best">0.49</td><td class="best">-34%</td></tr>
+<tr><td>T&amp;T Legacy F1(↑)</td><td>0.46</td><td>0.50(2p)/0.54(9p)</td><td>+0.04/+0.08</td></tr>
+<tr><td>T&amp;T Uniform F1(↑,无偏)</td><td>0.31</td><td class="best">0.48</td><td class="best">+55%</td></tr>
+<tr><td>T&amp;T Virtual Scan F1(↑)</td><td>0.38</td><td class="best">0.53</td><td class="best">+39%</td></tr>
+<tr><td>Mip-NeRF360 MBR PSNR(↑)</td><td>24.25</td><td class="best">25.10</td><td>+0.85</td></tr>
+<tr><td>Mip-NeRF360 Outdoor NVS PSNR(↑)</td><td>24.82</td><td class="best">26.49</td><td class="best">+1.67dB</td></tr>
+<tr><td>T&amp;T #Verts(M,↓)</td><td>11.63</td><td class="best">5.80</td><td class="best">2.0×轻</td></tr>
+<tr><td>T&amp;T 训练时间</td><td>69m</td><td class="best">27m</td><td class="best">2.6×快</td></tr>
+</table>
+<div class="stat-row">
+  <div class="stat"><div class="v">0.49</div><div class="l">DTU CD(vs GOF 0.74)</div></div>
+  <div class="stat"><div class="v">+1.67dB</div><div class="l">Outdoor NVS vs GOF</div></div>
+  <div class="stat"><div class="v">2×~3×</div><div class="l">网格更轻</div></div>
+  <div class="stat"><div class="v">27m</div><div class="l">TnT 训练(vs 69m)</div></div>
+</div>
+<div class="callout warn"><p><strong>软肋:</strong>① DTU(0.49)仍微落后 GGGS(0.47);② Indoor NVS 略逊 Mip-Splatting(30.43 vs 30.90);③ README 注明评测指标用<strong>后处理 mesh</strong>、推荐给用户的纹理 mesh 却未后处理(评测与产物不一致);④ DTU benchmark 脚本 "Details Coming soon."(尚未发布)。</p></div>
+</section>
+
+<!-- ===== 3. SOF ===== -->
+<section id="s3">
+<h2><span class="num">3</span>SOF:GOF 的直接工程化改良</h2>
+<div class="method-card">
+  <div class="mh"><span class="mtag" style="background:rgba(52,211,153,0.2);color:var(--green)">arXiv:2506.19139 · SIGGRAPH Asia 2025</span></div>
+  <p><strong>SOF: Sorted Opacity Fields for Fast Unbounded Surface Reconstruction</strong> · Lukas Radl, Felix Windisch, Thomas Deixelberger, Jozef Hladky, Michael Steiner, Dieter Schmalstieg, Markus Steinberger(TU Graz + Universität Stuttgart)。<br/>项目主页:https://r4dl.github.io/SOF/ · 代码:https://github.com/r4dl/SOF/(完全开源,含预训练模型与提取网格)。</p>
+</div>
+<p>SOF 是 <strong>GOF 的直接改进后继</strong>,沿用"opacity field + Marching Tetrahedra"整体框架,作者团队前作 <em>StopThePop</em>(ACM TOG 43(4))。三大贡献:</p>
+<div class="grid grid-3">
+  <div class="card green"><h4>① 逐像素 hierarchical resorting</h4><p>提出新深度估计公式,在 GOF opacity field 内引入<strong>逐像素排序</strong>(hierarchical resorting),修正 GOF 全局排序启发式带来的伪影,更好对齐 level-set。</p></div>
+  <div class="card green"><h4>② extent-based loss + level-set 正则</h4><p>新 extent-based loss 鼓励高斯呈几何一致 primitive shapes;新正则化在优化中<strong>把 opacity field 的 level-set 与渲染深度显式对齐</strong>,使表面提取更准确。</p></div>
+  <div class="card green"><h4>③ 高度并行化 MTet</h4><p>针对其 opacity 表述定制并行化方案,网格化时间<strong>降低近一个数量级</strong>。</p></div>
+</div>
+<div class="callout tip"><p><strong>整体效果:</strong>在重建精度更高的同时,<strong>总处理时间减少 3 倍以上</strong>。项目主页专设 "Qualitative Mesh Comparison",在 Barn/Caterpillar/Courthouse/Ignatius/Meetingroom/Truck/Bonsai/Counter 等 8 个场景提供与 GOF 的并排网格对比(滑块式 + 视频)。</p></div>
+<p>SOF 把 GOF 的<strong>全局排序改为逐像素 hierarchical resorting</strong>、把 level-set 对齐从隐式变为显式正则——是"GOF 框架内的工程化精修",而非像 Gaussian Wrapping 那样的原理性范式重构。它直接攻击 GOF 的<strong>网格化效率</strong>缺口(Delaunay + MTet 慢)。</p>
+</section>
+
+<!-- ===== 4. GSPrior ===== -->
+<section id="s4">
+<h2><span class="num">4</span>GSPrior:自约束 TSDF 先验(CVPR 2026)</h2>
+<div class="method-card">
+  <div class="mh"><span class="mtag" style="background:rgba(96,165,250,0.2);color:var(--accent2)">arXiv:2603.19682 · CVPR 2026</span></div>
+  <p><strong>3D Gaussian Splatting with Self-Constrained Priors for High Fidelity Surface Reconstruction</strong> · Takeshi Noda, Yu-Shen Liu(清华大学软件学院), Zhizhong Han(Wayne State University)。<br/>项目主页:https://takeshie.github.io/GSPrior · 代码:https://github.com/takeshie/GSPrior(承诺接收后开源,论文 §5 "upon acceptance")。</p>
+</div>
+<p>GSPrior 走<strong>第三条路</strong>:不改光栅化、不建全局几何场,而是用 <strong>3DGS 自身渲染的深度图</strong>融合成 TSDF grid 作"自监督先验",对高斯施加 geometry-aware 约束。关键洞察:既然 3DGS 本就在渲染深度图,这些深度图融合后即<strong>自监督的隐式表面估计</strong>,无需任何外部先验或额外网络。</p>
+
+<h3>4.1 self-constrained prior 数学形式化</h3>
+<p>渲染深度图(式 1)$d_i'=\mathcal{S}(\{g_j\},\{z_{ji}\},p_i)$;TSDF grid 融合(式 2)$f^t=\mathcal{F}(\{d_i'(t)\})$。距离场 $f^t$ 的零水平集为粗表面估计,关注 $[-1,1]$ 窄带,阈值 $\sigma^t$ 控制带宽。<strong>三约束</strong>:</p>
+<div class="grid grid-3">
+  <div class="card"><h4>(a) 剔除 band 外高斯</h4><p>三线性插值得 $s_j=f^t(\mu_j)$,若 $s_j=\pm1$(带边界外)移除该高斯。</p></div>
+  <div class="card"><h4>(b) 移近表面</h4><p>有限差分算梯度(式 4,$\epsilon=10^{-4}$),直接更新位置(式 5):$\mu_j\leftarrow\mu_j-s_j\cdot\nabla f^t(\mu_j)$。<strong>非可微</strong>(post-densification 更新),作者称可稳定优化、避免梯度噪声。</p></div>
+  <div class="card"><h4>(c) geometry-aware opacity</h4><p>按 $\delta^t$ 划分:on-surface($|s_j|\le\delta^t$)鼓励 opacity→1;off-surface($\delta^t<|s_j|\le1$)鼓励 opacity→0。权重 $\varepsilon_j=1/(1+|s_j|)^2$,越近表面权重越大(式 3)。</p></div>
+</div>
+<div class="equation">
+$$L_{SCP}=\frac{1}{M}\Big(\sum_{g_k\in\mathcal{N}_{on}}\varepsilon_k(o_k-1)^2+\sum_{g_{k'}\in\mathcal{N}_{off}}\varepsilon_{k'}o_{k'}^2\Big)$$
+<span class="tag">(式 3)</span>
+</div>
+
+<h3>4.2 prior 定期更新 + 带渐进收紧(coarse-to-fine)</h3>
+<div class="grid grid-2">
+  <div class="card"><h4>定期更新</h4><p>每 5000 iter 用最近渲染深度图重新融合 TSDF grid $f^t$。训练后期高斯质量提升→深度更精确更完整→prior 更可靠→约束更具体。$L_{SCP}$ 在 iter 10000 起启用(前 1/3 训练无 prior)。</p></div>
+  <div class="card"><h4>带渐进收紧</h4><p>带宽 $\sigma^t$ 序列 $\{1,0.5,0.25\}$,对应 $f^t_0,f^t_1,f^t_2$ 三阶段。带越窄,约束越聚焦于表面附近。消融:CD 0.54→0.53→0.50,单调下降。</p></div>
+</div>
+<div class="callout"><p><strong>训练(源码佐证):</strong>基于 3DGS(planar Gaussians),<em>随机初始化</em>高斯属性(非 SfM),Adam 30000 iter,单卡 RTX 4090,DTU 42min。总损失 $L=L_{RGB}+\lambda_1L_{Depth}+\lambda_2L_{NS}+\lambda_3L_{NM}+\lambda_4L_{SCP}$($\lambda_1=0.01,\lambda_2=0.1,\lambda_3=0.1,\lambda_4=0.01$)。</p></div>
+
+<h3>4.3 实验数字(对比 GOF)</h3>
+<table>
+<tr><th>指标</th><th>GOF</th><th>GSPrior</th><th>提升</th></tr>
+<tr><td>DTU Chamfer (mm,↓)</td><td>0.74</td><td class="best">0.50</td><td class="best">-32%</td></tr>
+<tr><td>T&amp;T Mean F1(↑)</td><td>0.46</td><td class="best">0.51</td><td>+0.05</td></tr>
+<tr><td>NeRF-Synthetic CDL1×100(↓)</td><td>—</td><td class="best">1.87</td><td>—</td></tr>
+<tr><td>Mip-NeRF360 Outdoor PSNR(↑)</td><td>24.82</td><td>24.81</td><td>≈持平</td></tr>
+</table>
+<p>DTU 以 0.50 显著超 GOF(0.74,−32%),略优 PGSR(0.53)/QGS(0.54);TnT 0.51 略胜 GOF(0.46)。新视角合成(Mip-NeRF360)与 GOF 相当、个别指标互有胜负。<strong>DTU 42min 比 GOF 1h 快约 30%</strong>(GSPrior 论文 Tab.2,注:各论文报告的 GOF 时间略有差异)。</p>
+</section>
+
+<!-- ===== 5. Spherical-GOF ===== -->
+<section id="s5">
+<h2><span class="num">5</span>Spherical-GOF:GOF 的全景扩展(IROS 2026)</h2>
+<div class="method-card">
+  <div class="mh"><span class="mtag" style="background:rgba(251,146,36,0.2);color:var(--orange)">arXiv:2603.08503 · IROS 2026</span></div>
+  <p><strong>Spherical-GOF: Geometry-Aware Panoramic Gaussian Opacity Fields for 3D Scene Reconstruction</strong> · Zhe Yang, Guoqiang Zhao, Sheng Wu, Kai Luo, Kailun Yang。代码+数据集(GitHub 1170632760/Spherical-GOF)将发布。</p>
+</div>
+<p>把 GOF 扩展到<strong>全景(omnidirectional)相机模型</strong>。现有 3DGS 公式为透视投影设计,naive 适配全景会产生畸变与几何不一致。Spherical-GOF 在<strong>单位球的球面射线空间</strong>直接做 GOF ray sampling,实现一致的 ray-Gaussian 交互:</p>
+<div class="grid grid-3">
+  <div class="card"><h4>球面包围规则</h4><p>推导 conservative spherical bounding rule,做快速 ray-Gaussian culling。</p></div>
+  <div class="card"><h4>球面滤波方案</h4><p>自适应 Gaussian footprint 到畸变变化的全景像素采样。</p></div>
+  <div class="card"><h4>OmniRob 数据集</h4><p>本文引入的真实世界机器人全景数据集(UAV + 四足平台),验证泛化。</p></div>
+</div>
+<div class="callout tip"><p><strong>效果(OmniBlender + OmniPhotos 基准):</strong>光度质量具竞争力,几何一致性显著提升——相比最强基线,<strong>深度重投影误差降低 57%、cycle inlier ratio 提升 21%</strong>,定性显示更干净深度与更连贯法线,对全局全景旋转鲁棒。这是 GOF 范式<strong>向机器人/全景视觉域</strong>的扩展。</p></div>
+</section>
+
+<!-- ===== 6. 横向对比 ===== -->
+<section id="s6">
+<h2><span class="num">6</span>新一代横向对比(量化)</h2>
+<p class="lead">注:不同论文报告的 2DGS/GOF 数字略有差异(2DGS 自报 TnT F1=0.32,GSPrior Tab 报 0.30);且 GW 揭示<strong>评测协议</strong>对分数影响巨大。下表 Legacy 协议=GOF/2DGS 原报数字,Uniform/Virtual=GW 无偏协议。</p>
+
+<h3>6.1 DTU Chamfer Distance(mm,↓,越小越好)</h3>
+<table>
+<tr><th>方法</th><th>类型</th><th>CD↓</th><th>训练时间</th><th>日期</th></tr>
+<tr><td>Neuralangelo</td><td>隐式</td><td class="best">0.61</td><td>&gt;12h</td><td>2022</td></tr>
+<tr><td>3DGS</td><td>显式</td><td>1.96</td><td>11.2m</td><td>2023</td></tr>
+<tr><td>SuGaR</td><td>显式</td><td>1.33</td><td>~1h</td><td>2023</td></tr>
+<tr><td>2DGS</td><td>显式</td><td>0.80</td><td>10.9m</td><td>2024</td></tr>
+<tr><td>GaussianSurfels</td><td>显式</td><td>0.88</td><td>6.7m</td><td>2024</td></tr>
+<tr><td><a href="3D-20240416-GOF.html">GOF</a></td><td>显式</td><td>0.74</td><td>18.4m~1h*</td><td>2024</td></tr>
+<tr><td>RaDe-GS</td><td>显式</td><td>0.68</td><td>11.5m</td><td>2025</td></tr>
+<tr><td>MILo</td><td>显式</td><td>0.68</td><td>150m</td><td>2025</td></tr>
+<tr><td>GGGS</td><td>显式</td><td class="best">0.47</td><td>32m</td><td>2026</td></tr>
+<tr><td>PGSR</td><td>显式(fg)</td><td>0.52</td><td>40m</td><td>2024</td></tr>
+<tr><td>QGS</td><td>显式</td><td>0.54</td><td>48m</td><td>2025</td></tr>
+<tr><td><strong>GSPrior</strong></td><td>显式</td><td class="best">0.50</td><td>42m</td><td>2026</td></tr>
+<tr class="best"><td><strong>Gaussian Wrapping</strong></td><td>显式</td><td class="best">0.49</td><td>27m(TnT)</td><td>2026</td></tr>
+</table>
+<p><small>* GOF 训练时间各论文报告不一(GOF 自报 DTU 18.4m,GSPrior Tab 报 1h)。</small></p>
+
+<h3>6.2 Tanks &amp; Temples F1(↑,注意协议差异)</h3>
+<table>
+<tr><th>方法</th><th>Legacy F1(有偏)</th><th>Uniform(无偏)</th><th>Virtual Scan(无偏)</th><th>训练</th></tr>
+<tr><td>3DGS</td><td class="fail">0.09</td><td>—</td><td>—</td><td>14.3m</td></tr>
+<tr><td>SuGaR</td><td>0.19</td><td>—</td><td>—</td><td>73m</td></tr>
+<tr><td>2DGS</td><td>0.32</td><td>0.33</td><td>0.38</td><td>12.3m</td></tr>
+<tr><td>GOF</td><td>0.46</td><td class="fail">0.31</td><td>0.38</td><td>69m</td></tr>
+<tr><td>Neuralangelo</td><td>0.50</td><td>—</td><td>—</td><td>&gt;24h</td></tr>
+<tr><td>RaDe-GS</td><td>0.40</td><td>0.35</td><td>0.39</td><td>11.5m</td></tr>
+<tr><td>MILo</td><td>0.49</td><td>0.34</td><td>0.42</td><td>150m</td></tr>
+<tr><td>GGGS</td><td>—</td><td>0.45</td><td>0.53</td><td>32m</td></tr>
+<tr><td>PGSR</td><td>—</td><td>0.52(假高)</td><td>0.53</td><td>45m</td></tr>
+<tr><td>GSPrior</td><td>—</td><td>—</td><td>0.51</td><td>—</td></tr>
+<tr><td>SOF</td><td>—</td><td>0.32</td><td>0.37</td><td>17m</td></tr>
+<tr class="best"><td><strong>Gaussian Wrapping(2p)</strong></td><td>0.50</td><td>0.48</td><td class="best">0.53</td><td class="best">27m</td></tr>
+</table>
+<div class="callout red"><p><strong>协议偏差的杀伤力:</strong>GOF 在 Legacy 下 0.46,在 Uniform 下暴跌至 0.31(−0.15)——GOF 的"高分"很大程度来自顶点密度偏差。PGSR 在 Uniform 0.52 看似最优,但 Virtual Scanning 下回到 0.53 同档,MBR 更曝光其 PSNR 仅 15.63。<strong>今后引用 TnT F1 必须标注协议</strong>,否则数字不可比。</p></div>
+
+<h3>6.3 网格大小(watertight #Verts,越小越紧凑)</h3>
+<table>
+<tr><th>数据集</th><th>GW</th><th>GGGS</th><th>GOF</th><th>RaDe-GS</th><th>MILo</th><th>PGSR</th></tr>
+<tr><td>T&amp;T(#Verts M)</td><td class="best">5.80</td><td>21.81</td><td>11.63</td><td>10.06</td><td>4.36</td><td>11.79</td></tr>
+<tr><td>Mip-NeRF360(#Verts M)</td><td class="best">11.79</td><td>43.46</td><td>32.80</td><td>30.85</td><td>6.73</td><td>22.78</td></tr>
+</table>
+<p>GW 比 GGGS 轻 ~3.7–3.8×、比 GOF 轻 ~2.0–2.8×(印证 "fraction of the size")。MILo 顶点最少但其 F1 较低且训练 150m。</p>
+</section>
+
+<!-- ===== 7. 演进路线 ===== -->
+<section id="s7">
+<h2><span class="num">7</span>技术演进路线</h2>
+<div class="mermaid">
+flowchart TD
+  GS["3DGS (2023.08)<br/>渲染优先, 几何差<br/>无全局几何场"]
+  GS --> SuGaR["SuGaR (2023.11, ENS)<br/>3DGS+表面对齐+Poisson<br/>DTU 1.33"]
+  GS --> TWO["2DGS (2024.03, SIGGRAPH)<br/>2D 定向盘+ray-splat+TSDF<br/>DTU 0.80 · TnT 0.32<br/>范式奠基/轻量"]
+  TWO --> GSURF["GaussianSurfels (0.88)<br/>平行范式"]
+  TWO --> PGSR["PGSR (TVCG 2024)<br/>无偏深度+曝光补偿<br/>(评测假高分)"]
+  TWO --> GOF["GOF (2024.04, SIGGRAPH Asia) ★<br/>同实验室后继<br/>不透明度场+MTet+相交平面法向<br/>复用 2DGS 正则<br/>DTU 0.74 · TnT 0.46(Legacy)/0.31(Unif)<br/>Delaunay 瓶颈"]
+  GOF --> SOF["SOF (SIGGRAPH Asia 2025, TU Graz)<br/>逐像素排序+level-set 对齐正则<br/>+并行 MTet,网格化快~1数量级<br/>总时间↓3×+" style SOF fill:#dcfce7,stroke:#22c55e
+  GOF --> SPH["Spherical-GOF (IROS 2026)<br/>球面射线空间<br/>深度重投影误差−57%<br/>+OmniRob 数据集"] style SPH fill:#fef3c7,stroke:#f59e0b
+  GOF -.范式反超.-> GW["Gaussian Wrapping (2026.04, LIX/SuGaR 团队) ★★<br/>可学习定向法向+互易衰减<br/>→OaV 闭式 vacancy/normal 场<br/>2 pivots+Primal Adaptive Meshing<br/>揭穿评测偏差+PGSR<br/>DTU 0.49 · TnT VS 0.53<br/>网格轻2-3× · 训练27m"] style GW fill:#ede9fe,stroke:#8b5cf6
+  TWO -.第三条路.-> GSP["GSPrior (CVPR 2026, 清华/Wayne State)<br/>自约束 TSDF 先验+带渐收紧<br/>无额外网络<br/>DTU 0.50 · TnT 0.51"] style GSP fill:#dbeafe,stroke:#3b82f6
+  GW --> FUT["未来:EVER精确体渲染衰减<br/>4D 动态定向法向<br/>DTU benchmark 脚本公开"]
+  style TWO fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style GOF fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style GW fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+<div class="callout key"><p><strong>两条主线 + 两条支线:</strong>主线①<strong>图宾根系</strong>:2DGS → GOF(opacity level-set) → Spherical-GOF 扩域;主线②<strong>SuGaR 系(LIX)</strong>:SuGaR → Gaussian Wrapping(OaV 闭式场,原理反超)。支线① GOF 的工程改良:GOF → SOF(加速);支线② <strong>第三条路</strong>:GSPrior(自约束先验,绕开全局几何场)。Gaussian Wrapping 是迄今最彻底的范式重构,但 GGGS(0.47)在 DTU 上仍微领先。</p></div>
+</section>
+
+<!-- ===== 8. 个人分析 ===== -->
+<section id="s8">
+<h2><span class="num">8</span>个人分析与可改进方向</h2>
+
+<h3>8.1 核心洞察</h3>
+<div class="grid grid-2">
+  <div class="card key"><h4>洞察 1:从"启发式 level-set"到"原理性几何场"</h4><p>GOF 的 opacity field 本质是事后几何派生(9 pivots 猜表面);Gaussian Wrapping 用可学习定向法向 + 互易衰减让 OaV 闭式适用,<strong>无需额外参数即可查询任意点 occupancy/normal</strong>。这是范式跃迁而非渐进改良——解释了为何 GW 能用 2 pivots 取代 GOF 的 9(有闭式法向场指引,无需密集采样)。</p></div>
+  <div class="card red"><h4>洞察 2:评测协议是"隐形 SOTA 制造机"</h4><p>顶点密度偏差让网格越密 F1 越高(GW 自证:9p vs 2p,F1 +0.04 但几何没变);GT 采集偏差惩罚"正确重建遮挡几何"的方法。PGSR 的"高分"是协议 artifact(MBR PSNR 仅 15.63 曝光)。今后所有表面重建论文都应报告 Uniform + Virtual Scan + MBR 三套指标。</p></div>
+  <div class="card green"><h4>洞察 3:轻量化与效率成新战场</h4><p>2026 新一代不再只拼几何分数,而拼"同等几何下网格更轻、训练更快":GW 比 GOF 轻 2-3× + 快 2.6×;SOF 网格化快 ~1 数量级;GSPrior 比 GOF 快 30%。这预示表面重建从"学术刷榜"走向"工程落地"。</p></div>
+  <div class="card warn"><h4>洞察 4:范式分裂而非收敛</h4><p>2DGS→GOF→GW 并非一条单线:GOF(图宾根,opacity level-set)与 GW(SuGaR 系,OaV 闭式场)是<strong>两条原理不同的路线</strong>,代码也互不复用(GW 基于 GGGS/SOF/RaDe-GS 而非 GOF)。GSPrior 是第三条(自约束先验)。社区短期内难有统一范式。</p></div>
+</div>
+
+<h3>8.2 各方法可改进方向(精选)</h3>
+<div class="card key"><p class="pri">[Gaussian Wrapping · 高优先级]</p><h4>评测与产物不一致 + DTU 脚本缺失</h4><p>README 注明:评测指标用<strong>后处理 mesh</strong>(会删物体如吊灯),推荐纹理 mesh 却未后处理——读者无法用同一产物复现指标。DTU benchmark 章节是 "Details Coming soon."。<strong>建议:</strong>统一产物与评测;公开 DTU 脚本以缩小"论文 vs 仓库可复现"差距。</p></div>
+<div class="card key"><p class="pri">[Gaussian Wrapping · 高优先级]</p><h4>PAM 初始采样应几何自适应</h4><p>论文 §6 自承 PAM 用"均匀采样 MTet 网格面"作初始顶点,对高度细节场景次优。当前 <code>--mesh_sampling_method</code> 只支持 proportional/even,无几何自适应。<strong>建议:</strong>用闭式 $\|V(\mathbf{x})\|$ 或主曲率作采样密度权重——表面边界处 $\|V\|$ 大、薄结构附近变化剧烈,天然引导加密。</p></div>
+<div class="card"><p class="pri">[GSPrior · 高优先级]</p><h4>冷启动 prior 质量 + 带宽硬编码</h4><p>$L_{SCP}$ 在 iter 10000 起启用(前 1/3 训练无 prior,因高斯质量差、TSDF 噪声大);带宽 $\sigma$ 硬编码三档 $\{1,0.5,0.25\}$,无场景自适应。<strong>建议:</strong>用轻量 SfM 点云或预训练 depth 网络提供首帧 prior,前移约束启用时点;按 $f^t$ 梯度幅值自适应带宽。</p></div>
+<div class="card"><p class="pri">[GSPrior · 中优先级]</p><h4>position projection 不可微,阻断端到端</h4><p>式 5 的 pulling 在 post-densification 阶段执行,非可微(作者为稳定优化而妥协)。<strong>建议:</strong>借鉴 GS-Pull 的可微 pulling + stop-gradient/权重退火,兼得稳定与端到端。</p></div>
+<div class="card green"><p class="pri">[SOF · 跨方法]</p><h4>逐像素排序与并行化应回灌 GOF 生态</h4><p>SOF 的 hierarchical resorting + 并行 MTet 是 GOF 框架内的通用改良,理论上可被 Gaussian Wrapping 的 PAM 借鉴以加速 Delaunay/MTet 阶段。<strong>建议:</strong>社区推动 SOF 的并行 MTet 与 GW 的闭式场融合,得到"原理性 + 高效"的统一方案。</p></div>
+
+<h3>8.3 个人认为最关键的三点</h3>
+<div class="callout key"><p>① <strong>评测协议统一</strong>(GW 揭穿的偏差若不被社区采纳,SOTA 排名将持续失真);② <strong>Gaussian Wrapping 的闭式场</strong>是真正的范式跃迁,但其 DTU 仍落后 GGGS、Indoor NVS 略逊——原理性 vs 工程刷榜的张力;③ <strong>统一方案缺失</strong>:GOF 的 opacity level-set、GW 的 OaV 闭式场、GSPrior 的自约束先验三者原理不同,谁能率先融合"闭式场 + 自约束先验 + 并行高效 mesh"将定义下一代 SOTA。</p></div>
+</section>
+
+<!-- ===== 9. 总结 ===== -->
+<section id="s9">
+<h2><span class="num">9</span>总结</h2>
+<p>2025–2026 新一代在 GOF 之后形成<strong>四条路线</strong>:Gaussian Wrapping(原理性反超,可学习定向法向 + OaV 闭式场,DTU 0.49、TnT VS 0.53,轻 2-3×)、SOF(GOF 工程改良,逐像素排序 + 并行 MTet,网格化快 ~1 数量级)、GSPrior(第三条路,自约束 TSDF 先验,DTU 0.50、CVPR 2026)、Spherical-GOF(全景扩域,IROS 2026)。其中 Gaussian Wrapping 最彻底,但 DTU 仍微落后 GGGS、且揭穿了 TnT 评测协议的根本偏差——<strong>今后引用几何 SOTA 必须标注评测协议</strong>。</p>
+<div class="grid grid-2">
+<div class="card green"><h4>对前序笔记的更新</h4><p>本笔记更新了 <a href="3D-20240326-2DGS.html">2DGS 笔记</a> §13 与 <a href="3D-20240416-GOF.html">GOF 笔记</a> §12/§14 中"2026 新一代"的定性结论:GW 在 DTU/TnT/网格大小/训练时间<strong>全面超 GOF</strong>;SOF/GSPrior 从效率与先验角度补位;评测协议偏差被揭穿。</p></div>
+<div class="card warn"><h4>仍待解决</h4><p>① 评测协议统一(Uniform+Virtual+MBR);② DTU 上 GGGS(0.47)仍领先,谁能突破;③ 统一方案(闭式场+自约束+并行 mesh)缺失;④ Gaussian Wrapping 的 DTU benchmark 脚本与产物一致性;⑤ 大规模场景效率(MegaNeRF 级)未充分验证。</p></div>
+</div>
+<div class="callout tip"><p><strong>一句话:</strong>GOF 之后的 2026 新一代以 Gaussian Wrapping 为代表完成了"<em>从 opacity level-set 启发式到 OaV 闭式几何场</em>"的原理性反超,并揭穿了 TnT 评测协议的两类根本偏差;SOF 加速、GSPrior 走自约束第三路、Spherical-GOF 扩域。但 DTU 仍被 GGGS(0.47)微领先、统一方案缺失、评测协议亟待标准化——2026 年的高斯表面重建仍是<strong>范式分裂但工程落地加速</strong>的一年。</p></div>
+
+<h3>🔗 关联笔记</h3>
+<ul>
+<li><a href="3D-20240416-GOF.html">GOF 调研</a> — 本调研的直接前作,opacity level-set + Marching Tetrahedra,被新一代反超</li>
+<li><a href="3D-20240326-2DGS.html">2DGS 调研</a> — 范式起源,2D 定向盘 + 深度/法向正则</li>
+<li><a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础技术与改进综述</a> — 高斯泼溅生态全景</li>
+</ul>
+</section>
+
+</div>
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-14 · 领域: 3D 重建 / 高斯泼溅表面重建 / 新一代调研 · arXiv:2604.07337 / 2506.19139 / 2603.19682 / 2603.08503<br>
+  本分析基于上述四篇 arXiv 全文、项目主页与 GitHub 仓库(github.com/diego1401/GaussianWrapping · github.com/r4dl/SOF · github.com/takeshie/GSPrior)编写
+</div>
+<script>mermaid.initialize({startOnLoad:true,theme:'default',flowchart:{curve:'basis',useMaxWidth:true}});</script>
+</body>
+</html>

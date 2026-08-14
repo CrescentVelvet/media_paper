@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOF 调研:高斯不透明度场与自适应 Marching Tetrahedra 表面重建</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{background:linear-gradient(135deg,#0f3d2e 0%,#1a3a5f 50%,#1a2029 100%);padding:56px 40px 46px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(96,165,250,0.15),transparent 40%),radial-gradient(circle at 80% 30%,rgba(52,211,153,0.15),transparent 40%)}
+  .hero-content{position:relative;max-width:1120px;margin:0 auto}
+  .hero .badge{display:inline-block;background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:16px;letter-spacing:.5px}
+  .hero h1{font-size:33px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:880px}
+  .hero .authors{color:#cbd5e1;font-size:14px;margin-top:16px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{color:var(--accent);text-decoration:none;font-size:13px;border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1120px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent);border:none;padding:0}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{font-size:25px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .num{background:linear-gradient(135deg,var(--green),var(--accent));color:#0f1419;width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent2)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:var(--text)}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{background:var(--code-bg);padding:2px 7px;border-radius:4px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:14px 0;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:#e2e8f0;line-height:1.6}
+  .callout{background:var(--panel);border-left:4px solid var(--accent);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2);background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .callout h4{margin-top:0}
+  .equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:18px 22px;margin:16px 0;overflow-x:auto;position:relative}
+  .equation .tag{position:absolute;right:18px;top:14px;color:var(--muted);font-size:12px}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 22px;border-left:4px solid var(--accent)}
+  .card.warn{border-left-color:var(--orange)}
+  .card.key{border-left-color:var(--accent2)}
+  .card.red{border-left-color:var(--red)}
+  .card.green{border-left-color:var(--green)}
+  .card h4{margin-top:0;color:var(--accent2)}
+  .card .pri{font-size:12px;color:var(--orange);font-weight:700;letter-spacing:.5px}
+  .stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 22px;flex:1;min-width:130px;text-align:center}
+  .stat .v{font-size:26px;font-weight:700;background:linear-gradient(135deg,var(--green),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--border)}
+  th{background:var(--panel2);color:var(--accent);font-weight:600}
+  td{color:#cbd5e1}
+  tr.best{background:rgba(52,211,153,0.12)}
+  tr.best td{color:#fff;font-weight:600}
+  td.best{color:var(--green);font-weight:700}
+  td.fail{color:var(--red)}
+  .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;text-align:center}
+  .figure{margin:22px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .cap{color:var(--muted);font-size:13px;margin-top:10px;text-align:left}
+  .footer{text-align:center;color:var(--muted);font-size:13px;padding:28px;border-top:1px solid var(--border);margin-top:40px}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2404.10772 · 2024 · SIGGRAPH Asia / ACM TOG · cs.CV</span>
+    <h1>Gaussian Opacity Fields:高效自适应的无界场景表面重建</h1>
+    <p class="subtitle">用射线-高斯相交的体渲染为 3D 高斯建立连续<strong>不透明度场</strong>,对其 level-set 用<strong> Marching Tetrahedra</strong>(由高斯诱导的自适应四面体网格)直接提网格,摒弃 TSDF/Poisson 后处理;复用 2DGS 的深度畸变+法线一致性正则,在 DTU/TnT 双双超越 2DGS —— 是 2DGS 同实验室同作者的直接后继。</p>
+    <p class="authors">Zehao Yu¹² · Torsten Sattler³ · Andreas Geiger¹² 　(¹Univ. Tübingen　²Tübingen AI Center　³CTU Prague)</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2404.10772" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2404.10772v2" target="_blank">🌐 arXiv HTML 全文 v2</a>
+      <a href="https://arxiv.org/pdf/2404.10772" target="_blank">📥 PDF</a>
+      <a href="https://github.com/autonomousvision/gaussian-opacity-fields" target="_blank">💻 GitHub</a>
+      <a href="https://niujinshuchong.github.io/gaussian-opacity-fields" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与定位</a></li>
+    <li><a href="#s2">研究背景:3DGS 离散基元为何难提网格</a></li>
+    <li><a href="#s3">核心思想:不透明度场 = 射线-高斯相交的体渲染 level-set</a></li>
+    <li><a href="#s4">不透明度场的数学形式化</a></li>
+    <li><a href="#s5">表面法线:相交平面法线</a></li>
+    <li><a href="#s6">Marching Tetrahedra 自适应网格提取</a></li>
+    <li><a href="#s7">正则化损失与总损失</a></li>
+    <li><a href="#s8">训练与超参(源码佐证)</a></li>
+    <li><a href="#s9">逻辑流程图(Mermaid)</a></li>
+    <li><a href="#s10">实验结果(DTU / TnT / Mip-NeRF360)</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">可改进方向分析(代码佐证)</a></li>
+    <li><a href="#s13">与 2DGS 的关系:几何超越的具体体现</a></li>
+    <li><a href="#s14">总结与演进定位</a></li>
+  </ol>
+</div>
+
+<!-- ===== 1 ===== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与定位</h2>
+<p class="lead"><strong>Gaussian Opacity Fields (GOF)</strong> 是 2DGS(<a href="3D-20240326-2DGS.html">调研笔记</a>)同实验室同作者(Zehao Yu、Andreas Geiger,图宾根)的<strong>直接后继</strong>,发表于 SIGGRAPH Asia 2024 Journal Track / ACM TOG 43(6)。它瞄准 2DGS 遗留的核心矛盾:<em>训练用 alpha blending,提网格却另起一套 TSDF/Poisson,二者脱节</em>。GOF 的主张是用<strong>射线-高斯相交(ray-Gaussian intersection)的体渲染</strong>建立连续<strong>不透明度场</strong>,直接对其 level-set 提网格,使"网格提取"与"训练体渲染"在数学上保持一致。</p>
+<div class="callout key"><p>三大贡献:(1) 从 3D 高斯推导出连续不透明度场 $\mathbf{O}(\mathbf{x})$,用 <strong>Marching Tetrahedra</strong> 直接提取 level-set,无需 Poisson/TSDF;(2) 将"射线-高斯相交平面"法线作为高斯法线,使 3D 高斯也能复用 2DGS 的深度-法线一致性正则;(3) 四面体网格由 3D 高斯"诱导",分辨率自适应场景复杂度,紧凑且保留高频细节。</p></div>
+<div class="stat-row">
+  <div class="stat"><div class="v">0.74 mm</div><div class="l">DTU Chamfer ↓</div></div>
+  <div class="stat"><div class="v">-7.5%</div><div class="l">vs 2DGS(0.80)</div></div>
+  <div class="stat"><div class="v">0.46</div><div class="l">TnT F1 ↑</div></div>
+  <div class="stat"><div class="v">+43.75%</div><div class="l">vs 2DGS(0.32)</div></div>
+  <div class="stat"><div class="v">18.4 min</div><div class="l">DTU 训练(A100)</div></div>
+</div>
+<p>GOF 在所有显式方法中最优,仅次于隐式 SOTA Neuralangelo(DTU 0.61),但快 ~40×;且 TnT 上同时重建<strong>前景+背景</strong>(2DGS 的 TSDF 仅前景)。</p>
+</section>
+
+<!-- ===== 2 ===== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景:3DGS 离散基元为何难提网格</h2>
+<p>3DGS 用一组 3D 高斯 $\{\mathcal{G}_k\}$ 表示场景,这些高斯是 <strong>explicit(显式)且 disconnected(不连接)</strong>的离散基元——每个高斯独立、彼此无拓扑关系。要做表面重建输出三角形网格,传统后处理依赖三类启发式,各有硬伤:</p>
+<div class="grid grid-3">
+  <div class="card warn"><h4>TSDF fusion(2DGS 用)</h4><p>融合渲染深度图。难以建模薄结构、难以覆盖无界场景背景;高分辨率体素则产生上亿面片(BOG 需 ~4h 简化)。</p></div>
+  <div class="card warn"><h4>Poisson 重建(SuGaR/GaussianSurfels)</h4><p>从渲染深度图积分,<strong>忽略高斯的 opacity 和 scale</strong>,深度图本身不可靠时网格跟着错。</p></div>
+  <div class="card warn"><h4>Marching Cubes(隐式 SDF)</h4><p>均匀体素,全局固定分辨率;细节多时立方复杂度爆炸,平坦区浪费。</p></div>
+</div>
+<div class="callout red"><p><strong>根本矛盾:</strong>mesh extraction 与 volume rendering 在训练时不一致——渲染用 alpha blending,提网格却用另一套 TSDF/Poisson,二者脱节。GOF 要让<strong>网格提取直接来自体渲染本身</strong>。</p></div>
+</section>
+
+<!-- ===== 3 ===== -->
+<section id="s3">
+<h2><span class="num">3</span>核心思想:不透明度场 = 射线-高斯相交的体渲染 level-set</h2>
+<p>GOF 的破局三招:</p>
+<div class="grid grid-3">
+  <div class="card green"><h4>① 建立不透明度场</h4><p>摒弃 projection-based splatting,改用 <strong>ray-Gaussian intersection</strong> 的体渲染。任意 3D 点的 opacity 可解析计算 → 连续标量场 $\mathbf{O}(\mathbf{x})$ → 对其 level-set 直接提网格,<strong>不再需要 Poisson/TSDF</strong>。GOF 与训练时的 RGB 体渲染保持一致。</p></div>
+  <div class="card green"><h4>② 相交平面法线</h4><p>把"射线-高斯相交平面"的法线作为高斯法线,使 3D 高斯获得定义良好的可微法线,从而<strong>复用 2DGS 的深度-法线一致性正则</strong>。</p></div>
+  <div class="card green"><h4>③ Marching Tetrahedra 自适应网格</h4><p>四面体网格由 3D 高斯诱导(每个高斯 3×scale 包围盒中心+8 角点),CGAL Delaunay 剖分;密集处密、稀疏处疏,网格紧凑且保留高频细节。</p></div>
+</div>
+<div class="callout tip"><p><strong>与 NeuS/UNISURF 的关系:</strong>都用 occupancy/opacity 的 level-set 提表面,思路相近;但 UNISURF 基于 NeRF MLP,GOF 基于 3D 高斯——保留了高斯的显式可编辑性与实时渲染。</p></div>
+</section>
+
+<!-- ===== 4 ===== -->
+<section id="s4">
+<h2><span class="num">4</span>不透明度场的数学形式化</h2>
+
+<h3>4.1 射线-高斯相交(Eq.1–5)</h3>
+<p>第 $k$ 个高斯 $\mathcal{G}_k(\mathbf{x})=\exp\!\big(-\tfrac{1}{2}(\mathbf{x}-\mathbf{p}_k)^T\boldsymbol{\Sigma}_k^{-1}(\mathbf{x}-\mathbf{p}_k)\big)$,$\boldsymbol{\Sigma}_k=\mathbf{R}_k\mathbf{S}_k\mathbf{S}_k^T\mathbf{R}_k^T$。给定相机中心 $\mathbf{o}$、射线方向 $\mathbf{r}$,射线上点 $\mathbf{x}=\mathbf{o}+t\mathbf{r}$。变换到高斯局部坐标系并按 scale 归一化:</p>
+<div class="equation">
+$$\mathbf{o}_g=\mathbf{S}_k^{-1}\mathbf{R}_k(\mathbf{o}-\mathbf{p}_k),\quad \mathbf{r}_g=\mathbf{S}_k^{-1}\mathbf{R}_k\mathbf{r},\quad \mathbf{x}_g=\mathbf{o}_g+t\,\mathbf{r}_g$$
+</div>
+<p>在归一化坐标系中,高斯沿射线的值退化为 1D 高斯:</p>
+<div class="equation">
+$$\mathcal{G}_k^{1D}(t)=\exp\!\left(-\tfrac{1}{2}\big(A\,t^2+2B\,t+\mathbf{o}_g^T\mathbf{o}_g\big)\right),\quad A=\mathbf{r}_g^T\mathbf{r}_g,\;B=\mathbf{o}_g^T\mathbf{r}_g$$
+<span class="tag">(式 4)</span>
+</div>
+<p><strong>极大值点(相交深度)有闭式解</strong>:</p>
+<div class="equation">
+$$t^*=-\frac{B}{A},\qquad \mathcal{E}(\mathcal{G}_k,\mathbf{o},\mathbf{r})=\mathcal{G}_k^{1D}(t^*)$$
+<span class="tag">(式 5)</span>
+</div>
+
+<h3>4.2 体渲染(与 3DGS 的关系)</h3>
+<p>颜色渲染仍用 alpha blending(按深度排序):</p>
+<div class="equation">
+$$\mathbf{c}(\mathbf{o},\mathbf{r})=\sum_{k=1}^{K}\mathbf{c}_k\,\alpha_k\,\mathcal{E}(\mathcal{G}_k,\mathbf{o},\mathbf{r})\prod_{j=1}^{k-1}(1-\alpha_j\,\mathcal{E}(\mathcal{G}_j,\mathbf{o},\mathbf{r}))$$
+</div>
+<div class="callout"><p><strong>关键区别:</strong>3DGS 用 <em>projection</em>(把 3D 高斯投影到 2D 屏幕,3D 信息在投影中丢失);GOF 用 <em>ray-Gaussian intersection</em>,<strong>保留沿射线的完整 1D 高斯</strong>,因此能计算射线上任意点的 opacity——这是建立不透明度场的前提。</p></div>
+
+<h3>4.3 不透明度场 $\mathbf{O}(\mathbf{x})$ 的定义(Eq.7–9)</h3>
+<p>对单高斯,定义射线上任意点 $t$ 处的 opacity:$t\le t^*$ 时单调递增到峰值,$t>t^*$ 后保持恒定:</p>
+<div class="equation">
+$$\mathbf{O}_k(\mathcal{G}_k,\mathbf{o},\mathbf{r},t)=\begin{cases}\mathcal{G}_k^{1D}(t)&t\le t^*\\\mathcal{G}_k^{1D}(t^*)&t>t^*\end{cases}$$
+<span class="tag">(式 7)</span>
+</div>
+<p>多高斯时沿用体渲染累乘形式:</p>
+<div class="equation">
+$$\mathbf{O}(\mathbf{o},\mathbf{r},t)=\sum_{k=1}^{K}\alpha_k\,\mathbf{O}_k\prod_{j=1}^{k-1}(1-\alpha_j\,\mathbf{O}_j)$$
+<span class="tag">(式 8)</span>
+</div>
+<p><strong>3D 点的 opacity = 所有可能观测视角中 opacity 的最小值</strong>:</p>
+<div class="equation">
+$$\boxed{\mathbf{O}(\mathbf{x})=\min_{(\mathbf{o},\mathbf{r})}\,\mathbf{O}(\mathbf{o},\mathbf{r},t)}$$
+<span class="tag">(式 9)</span>
+</div>
+<div class="callout key"><p>取 min 实现 <strong>view independence(视角无关)</strong>——使 opacity 仅为位置 $\mathbf{x}$ 的函数,类比 visual hull / space carving,但用体渲染替代 0/1 轮廓。这把离散高斯"焊接"成一个连续标量场,表面即 $\mathbf{O}(\mathbf{x})=0.5$ 的 level-set。</p></div>
+</section>
+
+<!-- ===== 5 ===== -->
+<section id="s5">
+<h2><span class="num">5</span>表面法线:相交平面法线</h2>
+<h3>5.1 问题:3D 高斯的法线本就歧义</h3>
+<p>3D 高斯的梯度始终从中心指向外。把单个各向同性 3D 高斯投影到图像,得到 2D 高斯,其梯度从投影中心向外发散——<strong>不同像素法线不同,且投影中心处法线无定义</strong>。这使法线一致性正则难以直接施加。</p>
+<h3>5.2 GOF 的法线定义(图 3)</h3>
+<p>在归一化的高斯坐标系中,射线-高斯相交平面<strong>垂直于射线</strong>,法线即 $-\mathbf{r}_g$。逆变换回世界坐标:</p>
+<div class="equation">
+$$\mathbf{n}_i=-\mathbf{R}_k^T\,\mathbf{S}_k^{-1}\,\mathbf{r}_g\quad(\text{归一化为单位向量})$$
+<span class="tag">(式 10)</span>
+</div>
+<div class="callout tip"><p><strong>要点:</strong>在世界空间中,相交平面不一定垂直于射线方向,但平面法线始终垂直于相交平面。这让 3D 高斯也能拥有定义良好的可微法线。</p></div>
+<h3>5.3 与 2DGS 切向量叉积法线的区别</h3>
+<div class="grid grid-2">
+  <div class="card"><h4>2DGS</h4><p>用 2D 高斯(退化的 3D),法线由两切向量叉积 $\mathbf{t}_w=\mathbf{t}_u\times\mathbf{t}_v$ 得到,在 2D disk 平面上,几何意义明确但只适用于 2D 表示。</p></div>
+  <div class="card"><h4>GOF</h4><p>保留 3D 高斯,通过相交平面定义法线,使 3D 高斯也能获得可微法线,从而复用 2DGS 的深度-法线一致性正则。</p></div>
+</div>
+<div class="callout warn"><p><strong>消融佐证(Table 4,F vs H):</strong>把法线换成"最小 scale 轴方向"(SuGaR 做法),TnT F1 从 0.46 降到 0.40(−0.06),证明相交平面法线更优。</p></div>
+</section>
+
+<!-- ===== 6 ===== -->
+<section id="s6">
+<h2><span class="num">6</span>Marching Tetrahedra 自适应网格提取</h2>
+<h3>6.1 四面体网格由 3D 高斯"诱导"</h3>
+<p>核心洞察:3D 高斯的位置和 scale 是表面存在的可靠指示。对每个高斯定义 3D 包围盒(extent = 3× scale):<strong>中心 opacity 最高,8 角点 opacity 最低</strong>。用"中心+8 角点"作顶点集,经 CGAL 做 <strong>Delaunay 三角剖分</strong>生成四面体单元。</p>
+<p><strong>过滤:</strong>删除连接"不重叠高斯"的四面体——边长 > 两端高斯最大 3-sigma 尺度之和的单元被剔除,保证四面体只在表面附近聚集。<strong>自适应:</strong>细节丰富区高斯多→四面体密;平坦区高斯少→四面体疏,无需全局统一分辨率。</p>
+
+<h3>6.2 Binary Search 精确定位 level-set(图 5)</h3>
+<p>传统 MC/MT 用线性插值近似 level-set,但 GOF 的 opacity 场<strong>非线性</strong>,线性假设产生阶梯伪影。GOF 放松为"单调递增"假设,用 <strong>binary search</strong> 精确求 0.5 等值面:<strong>8 次迭代 ≈ 256 次稠密求值</strong>,消除阶梯伪影。提取输出 <code>mesh_binary_search_7.ply</code>(索引 7 = 8 步,README 与 <code>run_tnt.py</code> 佐证)。</p>
+<div class="grid grid-3">
+  <div class="card"><h4>Marching Cubes</h4><p>均匀体素,全局固定分辨率,高频细节→海量面片</p></div>
+  <div class="card"><h4>TSDF fusion</h4><p>深度融合,薄结构易丢失,无界背景难覆盖</p></div>
+  <div class="card green"><h4>Marching Tetrahedra (GOF)</h4><p>高斯诱导四面体,场景自适应 + binary search 精确 level-set,紧凑保细节</p></div>
+</div>
+</section>
+
+<!-- ===== 7 ===== -->
+<section id="s7">
+<h2><span class="num">7</span>正则化损失与总损失</h2>
+<p>GOF <strong>直接复用 2DGS 的两个正则</strong>,适配到 ray-Gaussian intersection:</p>
+<h3>7.1 深度畸变 Depth distortion</h3>
+<div class="equation">
+$$\mathcal{L}_d=\sum_{i,j}\omega_i\omega_j\,|t_i-t_j|$$
+<span class="tag">(式 11)</span>
+</div>
+<p>$\omega_i$ 为第 $i$ 个高斯的 blending weight,$t_i$ 为相交点深度。<strong>关键改动:detach $\omega_i$ 的梯度,只最小化高斯间距</strong>——否则最小化权重会让先 blend 的高斯 alpha 虚增,产生 floaters。</p>
+<h3>7.2 法线一致性 Normal consistency</h3>
+<div class="equation">
+$$\mathcal{L}_n=\sum_i\omega_i\,(1-\mathbf{n}_i^\top\mathbf{N})$$
+<span class="tag">(式 12)</span>
+</div>
+<p>$\mathbf{n}_i$ 为相交平面法线(式 10),$\mathbf{N}$ 为深度图梯度估计的法线(来自 2DGS)。</p>
+<h3>7.3 总损失</h3>
+<div class="equation">
+$$\mathcal{L}=\mathcal{L}_c+\alpha\,\mathcal{L}_d+\beta\,\mathcal{L}_n$$
+<span class="tag">(式 13)</span>
+</div>
+<p>$\mathcal{L}_c=L_1+\text{D-SSIM}$(同 3DGS)。<strong>无额外 opacity/SH 正则</strong>。TnT 额外用 <strong>VastGaussian 的 decoupled appearance</strong>(小 CNN 预测图像相关颜色)建模光照不均,避免把光照误造为几何。</p>
+</section>
+
+<!-- ===== 8 ===== -->
+<section id="s8">
+<h2><span class="num">8</span>训练与超参(源码佐证)</h2>
+<table>
+<tr><th>项目</th><th>值</th><th>来源</th></tr>
+<tr><td>初始化</td><td>SfM 稀疏点云(同 3DGS,非 3DGS finetune)</td><td>论文 §3.3 + README</td></tr>
+<tr><td>迭代数</td><td>30,000</td><td><code>arguments/__init__.py</code></td></tr>
+<tr><td>densify 起止</td><td>500 → 15,000(间隔 100)</td><td>同上</td></tr>
+<tr><td>opacity reset 间隔</td><td>3,000</td><td>同上</td></tr>
+<tr><td>position lr</td><td>1.6e-4 → 1.6e-6</td><td>同上</td></tr>
+<tr><td>feature / opacity / scaling / rotation lr</td><td>0.0025 / 0.05 / 0.005 / 0.001</td><td>同上</td></tr>
+<tr><td class="best">$\alpha$(distortion)</td><td class="best">1000(DTU 有界)/ 100(无界)</td><td><code>lambda_distortion</code> 默认 100;DTU 脚本显式传 1000</td></tr>
+<tr><td class="best">$\beta$(normal)</td><td class="best">0.05(全部场景)</td><td><code>lambda_depth_normal=0.05</code></td></tr>
+<tr><td>D-SSIM 权重</td><td>0.2</td><td><code>lambda_dssim=0.2</code></td></tr>
+<tr><td>正则启用 iter</td><td>15,000 起</td><td><code>distortion_from_iter</code></td></tr>
+<tr><td>opacity 剪枝阈值</td><td>0.05(高于 3DGS 的 0.005)</td><td>补偿改进 densify 带来的更多基元</td></tr>
+<tr><td>训练时间</td><td>DTU 18.4 min;TnT 24.2 min;Mip-NeRF360 bicycle ~45 min</td><td>Table 1/2 + README</td></tr>
+<tr><td>GPU</td><td>NVIDIA A100</td><td>论文 §4.1</td></tr>
+</table>
+
+<h3>改进的 densification</h3>
+<p>原 3DGS 用 $\|\frac{dL}{d\mathbf{x}}\|_2$($\mathbf{x}$ 为投影中心),梯度在不同像素间正负抵消导致漏检模糊区。GOF 改为<strong>逐像素梯度范数累加</strong>:</p>
+<div class="equation">
+$$M=\sum_i\left\|\frac{dL}{d\mathbf{p}_i}\frac{d\mathbf{p}_i}{d\mathbf{x}}\right\|$$
+<span class="tag">(式 14)</span>
+</div>
+<p>这使模糊区也能被 densify(消融:G→H,+0.02 F1;对 NVS 的 LPIPS 提升显著,3DGS outdoor 0.234→0.199)。</p>
+<pre>python extract_mesh.py -m exp/scene --iteration 30000      # Marching Tetrahedra + binary search
+python extract_mesh_tsdf.py -m exp/scene --iteration 30000   # 对照:TSDF fusion</pre>
+<div class="callout"><p><strong>代码继承关系:</strong>基于 3DGS + Mip-Splatting;自定义 CUDA kernel 实现 ray-tracing 体渲染/正则/opacity 求值;四面体剖分来自 Tetra-NeRF(<code>submodules/tetra-triangulation</code>,需 CGAL+GMP);Marching Tetrahedra 改编自 Kaolin;正则与可视化取自 2DGS——<strong>GOF 与 2DGS 共享代码血脉</strong>。</p></div>
+</section>
+
+<!-- ===== 9 ===== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+<h3>9.1 总流程:从图像到自适应网格</h3>
+<div class="mermaid">
+flowchart TD
+  IMG["输入:多视角 RGB 图像"] --> SfM["COLMAP SfM<br/>稀疏点云+位姿"]
+  SfM --> INIT["3D 高斯初始化"]
+  INIT --> RAY["ray-Gaussian intersection 体渲染<br/>保留沿射线完整 1D 高斯"]
+  RAY --> OUT["颜色图 / 深度图 / 相交平面法线图"]
+  OUT --> LOSS["L = L1+DSSIM + α·L_dist + β·L_norm<br/>(复用 2DGS 正则, detach ω)"]
+  LOSS --> DENS["改进 densification<br/>逐像素梯度范数累加 M"]
+  DENS -->|迭代 30k 步| RAY
+  LOSS -->|训练收敛| GRID["四面体网格诱导<br/>中心+8角点 → CGAL Delaunay"]
+  GRID --> MT["Marching Tetrahedra<br/>+ binary search 8 步"]
+  MT --> MESH["自适应 watertight mesh<br/>O(x)=0.5 level-set"]
+  style RAY fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+  style GRID fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style MT fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style MESH fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+<h3>9.2 不透明度场求值(单点 $\mathbf{x}$)</h3>
+<div class="mermaid">
+flowchart LR>
+  X["3D 点 x"] --> VIEWS["遍历训练视角 o,r"]
+  VIEWS --> RAYG["ray-Gaussian intersection<br/>算 t* 与 1D 高斯"]
+  RAYG --> OFIELD["O(o,r,t) 单视角 opacity"]
+  OFIELD --> MIN["取 min over views"]
+  MIN --> OX["O(x) 连续标量场"]
+  OX --> LS["O(x)=0.5 level-set = 表面"]
+  style MIN fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+  style OX fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<h3>9.3 方法模块组成</h3>
+<div class="mermaid">
+flowchart TD
+  subgraph A["3D 高斯原语"]
+    A1["中心 p · 旋转 R · 缩放 S"] --> A2["球谐 SH 外观 c · α"]
+    A1 --> A3["相交平面法线 n_i(派生)"]
+  end
+  subgraph B["ray-Gaussian 体渲染 (CUDA)"]
+    B1["ray-Gaussian intersection"] --> B2["颜色 alpha blending"]
+    B1 --> B3["不透明度场 O(x) = min over views"]
+  end
+  subgraph C["网格提取"]
+    C1["高斯诱导四面体(Delaunay)"] --> C2["Marching Tetrahedra"] --> C3["binary search level-set"]
+  end
+  subgraph D["损失"]
+    D1["光度 L1+DSSIM"]
+    D2["深度畸变 L_dist (detach ω)"]
+    D3["法线一致 L_norm"]
+  end
+  A --> B
+  B2 --> D1
+  B2 --> D2
+  B3 --> D3
+  B3 --> C
+  D1 --> A
+  D2 --> A
+  D3 --> A
+  style A fill:#dbeafe,stroke:#3b82f6
+  style B fill:#ede9fe,stroke:#8b5cf6
+  style C fill:#dcfce7,stroke:#22c55e
+  style D fill:#fef3c7,stroke:#f59e0b
+</div>
+</section>
+
+<!-- ===== 10 ===== -->
+<section id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+<h3>10.1 DTU — Chamfer Distance mm(Table 2,越低越好)</h3>
+<table>
+<tr><th>方法</th><th>类型</th><th>Mean CD ↓</th><th>时间</th></tr>
+<tr><td>Neuralangelo</td><td>隐式</td><td class="best">0.61</td><td>&gt;12h</td></tr>
+<tr><td>NeuS</td><td>隐式</td><td>0.84</td><td>&gt;12h</td></tr>
+<tr class="best"><td><strong>GOF (Ours)</strong></td><td>显式</td><td class="best">0.74</td><td>18.4 min</td></tr>
+<tr><td>2DGS</td><td>显式</td><td>0.80</td><td>10.9 min</td></tr>
+<tr><td>GaussianSurfels</td><td>显式</td><td>0.88</td><td>6.7 min</td></tr>
+<tr><td>SuGaR</td><td>显式</td><td>1.33</td><td>~1h</td></tr>
+<tr><td>3DGS</td><td>显式</td><td>1.96</td><td>11.2 min</td></tr>
+</table>
+<p>GOF 在所有显式方法中最优,<strong>比 2DGS 改进 0.06mm(0.80→0.74)</strong>,仅次于隐式 SOTA Neuralangelo(0.61),但快 ~40×。论文归因:DTU 强 view-dependent 外观,SH 建模不足。</p>
+
+<h3>10.2 Tanks &amp; Temples — F1(Table 1,越高越好)</h3>
+<table>
+<tr><th>方法</th><th>类型</th><th>Barn</th><th>Cater.</th><th>Court.</th><th>Ignat.</th><th>Meet.</th><th>Truck</th><th>Mean ↑</th><th>时间</th></tr>
+<tr><td>Neuralangelo</td><td>隐式</td><td>0.70</td><td>0.36</td><td>0.28</td><td>0.89</td><td>0.32</td><td>0.48</td><td class="best">0.50</td><td>&gt;24h</td></tr>
+<tr class="best"><td><strong>GOF (Ours)</strong></td><td>显式</td><td>0.51</td><td>0.41</td><td>0.28</td><td>0.68</td><td>0.28</td><td>0.59</td><td class="best">0.46</td><td>24.2m</td></tr>
+<tr><td>2DGS</td><td>显式</td><td>0.41</td><td>0.23</td><td>0.16</td><td>0.51</td><td>0.17</td><td>0.45</td><td>0.32</td><td>15.5m</td></tr>
+<tr><td>SuGaR</td><td>显式</td><td>0.14</td><td>0.16</td><td>0.08</td><td>0.33</td><td>0.15</td><td>0.26</td><td>0.19</td><td>&gt;1h</td></tr>
+<tr><td>3DGS</td><td>显式</td><td>0.13</td><td>0.08</td><td>0.09</td><td>0.04</td><td>0.01</td><td>0.19</td><td class="fail">0.09</td><td>14.3m</td></tr>
+</table>
+<p>GOF 是显式方法中最优,<strong>Mean F1 比 2DGS 提升 0.14(0.32→0.46,+43.75%)</strong>;Caterpillar 0.23→0.41(+78%)、Truck 0.45→0.59(+0.14)。且 implicit Neuralangelo 只重建前景,GOF <strong>同时重建前景+背景</strong>。</p>
+
+<h3>10.3 Mip-NeRF360 外观(Table 3)</h3>
+<table>
+<tr><th>场景</th><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr>
+<tr><td>Outdoor</td><td>3DGS</td><td>24.64</td><td>0.731</td><td>0.234</td></tr>
+<tr><td>Outdoor</td><td>2DGS</td><td>24.34</td><td>0.717</td><td>0.246</td></tr>
+<tr class="best"><td>Outdoor</td><td><strong>GOF</strong></td><td class="best">24.82</td><td class="best">0.750</td><td class="best">0.202</td></tr>
+<tr><td>Indoor</td><td>Mip-Splatting</td><td>30.90</td><td>0.921</td><td>0.194</td></tr>
+<tr><td>Indoor</td><td><strong>GOF</strong></td><td>30.79</td><td class="best">0.924</td><td class="best">0.184</td></tr>
+</table>
+<p>Outdoor PSNR <strong>比 2DGS +0.48dB(24.34→24.82)</strong>、LPIPS −0.044(0.246→0.202),LPIPS 在 outdoor 显著优于所有方法。Indoor 与 Mip-Splatting 接近(正则带来 NVS-几何 trade-off)。</p>
+</section>
+
+<!-- ===== 11 ===== -->
+<section id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+<h3>11.1 网格提取与各组件(TnT,Table 4,F1)</h3>
+<table>
+<tr><th>配置</th><th>Precision</th><th>Recall</th><th>F1</th><th>Δ vs Full</th></tr>
+<tr><td>A. Mip-Splatting + TSDF</td><td>0.15</td><td>0.25</td><td>0.16</td><td>−0.30</td></tr>
+<tr><td>B. Mip-Splatting + GOF 提取</td><td>0.40</td><td>0.33</td><td>0.36</td><td>−0.10</td></tr>
+<tr><td>C. Ours w/o GOF(用 TSDF)</td><td>0.37</td><td>0.45</td><td>0.39</td><td>−0.07</td></tr>
+<tr><td>D. Ours w/o normal consistency</td><td>0.41</td><td>0.35</td><td>0.37</td><td>−0.09</td></tr>
+<tr><td>E. Ours w/o decoupled appearance</td><td>0.49</td><td>0.39</td><td>0.43</td><td>−0.03</td></tr>
+<tr><td>F. Ours w/ 最小轴法线(SuGaR 式)</td><td>0.46</td><td>0.36</td><td>0.40</td><td>−0.06</td></tr>
+<tr><td>G. Ours w/o improved densification</td><td>0.52</td><td>0.39</td><td>0.44</td><td>−0.02</td></tr>
+<tr class="best"><td><strong>H. Full GOF</strong></td><td class="best">0.54</td><td class="best">0.42</td><td class="best">0.46</td><td>—</td></tr>
+</table>
+<div class="callout key"><p><strong>关键结论:</strong>① <strong>GOF 提取 vs TSDF</strong>:A(0.16)→B(0.36),+0.20;C(0.39)→H(0.46),+0.07——GOF 提取代 TSDF 是<strong>最大单项提升</strong>。② <strong>法线正则</strong>:D(0.37)→H(0.46),+0.09;且 D≈B(0.37 vs 0.36),说明不用法线正则时 GOF 与 Mip-Splatting+GOF 相当——几何提升主要来自正则。③ <strong>法线定义</strong>:相交平面法线(0.46) vs 最小轴法线(0.40),+0.06。④ decoupled appearance +0.03;improved densify +0.02。</p></div>
+<h3>11.2 Binary search 步数(图 9,DTU)</h3>
+<p>Step 0(线性插值)→ Step 1/3/7 逐步消除阶梯伪影,8 步收敛。</p>
+<h3>11.3 改进 densification 对 NVS 的影响(Table 5,Mip-NeRF360)</h3>
+<table>
+<tr><th>方法</th><th>Outdoor PSNR</th><th>Outdoor LPIPS</th><th>Indoor PSNR</th><th>Indoor LPIPS</th></tr>
+<tr><td>3DGS</td><td>24.64</td><td>0.234</td><td>30.41</td><td>0.189</td></tr>
+<tr><td>3DGS + our densify</td><td>24.62</td><td class="best">0.199</td><td>31.10</td><td class="best">0.174</td></tr>
+<tr><td>Mip-Splatting</td><td>24.65</td><td>0.245</td><td>30.90</td><td>0.194</td></tr>
+<tr class="best"><td><strong>GOF (Ours)</strong></td><td class="best">24.82</td><td>0.202</td><td>30.79</td><td>0.184</td></tr>
+</table>
+<p>改进 densification 对 LPIPS 提升最显著(3DGS outdoor 0.234→0.199)。GOF ≈ Mip-Splatting+densify,说明 ray-Gaussian intersection 渲染质量与光栅化相当,<strong>优势在几何而非外观</strong>。</p>
+</section>
+
+<!-- ===== 12 ===== -->
+<section id="s12">
+<h2><span class="num">12</span>可改进方向分析(代码佐证)</h2>
+<div class="card red"><p class="pri">[高优先级] 改进 1 · 方法</p><h4>SH 外观建模不足导致 DTU 落后 Neuralangelo</h4><p><strong>问题:</strong>DTU 上 GOF(0.74)仍逊于 Neuralangelo(0.61),论文 §4.2 自述归因于"DTU 强 view-dependent 外观,SH 把反射误建为几何"。消融 Table 4 E→H 显示 decoupled appearance 仅 +0.03 F1,说明外观建模改进空间大。</p><p><strong>建议:</strong>引入 Ref-NeRF 的 reflected radiance direction 参数化或 NeRD 的 BRDF 分解替代 SH,减少反射-几何耦合。</p></div>
+<div class="card red"><p class="pri">[高优先级] 改进 2 · 工程</p><h4>Delaunay 三角剖分是无界大场景的效率瓶颈</h4><p><strong>问题:</strong>论文 §5 自述 bicycle 场景建四面体需 ~8 分钟;CGAL $O(N\log N)$ 在高斯数多时显著拖慢。<code>run_tnt.py</code> 与 <code>extract_mesh.py</code> 分离两步,网格提取无法与训练端到端。</p><p><strong>代码佐证:</strong>需 CGAL+GMP 编译 <code>submodules/tetra-triangulation</code>。</p><p><strong>建议:</strong>利用高斯空间局部性做近邻 Delaunay(局部剖分)或 GPU 并行;训练中渐进式维护四面体而非训后一次性重建。</p></div>
+<div class="card warn"><p class="pri">[中优先级] 改进 3 · 工程</p><h4>min-opacity 多视角求值的冗余计算</h4><p><strong>问题:</strong>binary search 时对所有训练视角求 opacity 再取 min(论文 §5 + Algorithm 1/2),但一个点往往只需少数视角即可确定最小值。<code>arguments/__init__.py</code> 无相关优化开关。</p><p><strong>建议:</strong>为每个顶点预先关联"影响视角集"(可见且贡献大的视角),只对这些视角求值;预期可数倍加速 mesh 提取。</p></div>
+<div class="card warn"><p class="pri">[中优先级] 改进 4 · 方法</p><h4>无观测区域 / 天空的 level-set 选择缺乏自适应</h4><p><strong>问题:</strong>固定取 0.5 level-set;图 10 展示不同 level-set(0.1~0.9)产生不同厚度网格,但论文未给自动选择准则。背景/天空观测不足→ min opacity 低→网格膨胀或缺失。</p><p><strong>建议:</strong>按局部观测密度/置信度自适应选择 level-set,或对无观测区域做 inpainting/语义引导。</p></div>
+<div class="card green"><p class="pri">[低优先级] 改进 5 · 工程</p><h4>提取的网格未用于 mesh-based rendering</h4><p><strong>问题:</strong>论文 §5 自述,提取的紧凑自适应网格未用于实时渲染(BOG 路线)。当前 GOF 渲染仍走高斯 splatting。</p><p><strong>建议:</strong>将 GOF 网格做纹理烘焙 + LOD,实现 mesh-based 实时渲染,可受益于 GOF 的紧凑网格(相比 BOG 的亿级面片)。</p></div>
+<div class="callout key"><p><strong>个人最关键三点:</strong>改进 1(SH 外观,决定能否追赶 Neuralangelo)、改进 2(Delaunay 效率,决定能否扩展到大场景)、改进 4(无观测区域,决定无界场景重建完整度)。这三点也恰是后续 Gaussian Wrapping(可学习定向法向 + Primal Adaptive Meshing,绕开 Delaunay)与 GSPrior(自约束 band)主要攻克的方向——见 <a href="3D-20260814-高斯表面重建2026新一代调研.html">2026 新一代调研</a>。</p></div>
+</section>
+
+<!-- ===== 13 ===== -->
+<section id="s13">
+<h2><span class="num">13</span>与 2DGS 的关系:几何超越的具体体现</h2>
+<table>
+<tr><th>维度</th><th>2DGS</th><th>GOF</th><th>提升</th></tr>
+<tr><td>DTU Chamfer (mm)</td><td>0.80</td><td class="best">0.74</td><td>−0.06mm</td></tr>
+<tr><td>TnT Mean F1</td><td>0.32</td><td class="best">0.46</td><td>+0.14(+43.75%)</td></tr>
+<tr><td>TnT Caterpillar F1</td><td>0.23</td><td class="best">0.41</td><td>+0.18(+78%)</td></tr>
+<tr><td>TnT Truck F1</td><td>0.45</td><td class="best">0.59</td><td>+0.14</td></tr>
+<tr><td>Mip-NeRF360 Outdoor PSNR</td><td>24.34</td><td class="best">24.82</td><td>+0.48dB</td></tr>
+<tr><td>Mip-NeRF360 Outdoor LPIPS</td><td>0.246</td><td class="best">0.202</td><td>−0.044</td></tr>
+<tr><td>背景区域网格</td><td class="fail">失败(TSDF 仅前景)</td><td class="best">完整重建</td><td>定性(图 6/7/8)</td></tr>
+<tr><td>薄结构(自行车辐条)</td><td class="fail">丢失</td><td class="best">保留</td><td>定性(图 7)</td></tr>
+<tr><td>网格提取一致性</td><td>TSDF 与训练脱节</td><td class="best">GOF 与体渲染一致</td><td>根本性</td></tr>
+</table>
+<div class="callout tip"><p><strong>核心超越点:</strong>① 不再依赖 TSDF,opacity level-set 与训练体渲染<strong>一致</strong>(根因性);② 四面体网格自适应→背景+前景同建(修复 2DGS 显式短板);③ 相交平面法线让 3D 高斯获几何正则能力。消融显示<strong>纯 GOF 提取(A→B,+0.20 F1)和法线正则(D→H,+0.09)是两大增益来源</strong>。</p></div>
+<div class="callout warn"><p><strong>代价:</strong>训练更慢(DTU 10.9→18.4 min)、需自定义 CUDA ray-tracing 内核、需 CGAL+GMP 编译四面体剖分;DTU 仍逊于隐式 SOTA Neuralangelo。这些是后续 Gaussian Wrapping(绕开 Delaunay,Primal Adaptive Meshing)与 GSPrior(更轻量自约束先验)的改进入口。</p></div>
+</section>
+
+<!-- ===== 14 ===== -->
+<section id="s14">
+<h2><span class="num">14</span>总结与演进定位</h2>
+<p>GOF 把高斯表面重建从"训练-提取脱节"推进到"一致":以射线-高斯相交体渲染建立连续不透明度场,以 Marching Tetrahedra 自适应提取 level-set,以相交平面法线复用 2DGS 正则。在 DTU(0.74)/TnT(0.46)双双超越 2DGS,且修复了 2DGS 无法重建背景几何的短板,是高斯泼溅表面重建路线的<strong>范式跃迁</strong>。</p>
+<div class="grid grid-2">
+<div class="card green"><h4>GOF 的历史地位</h4><p>① 首个让"网格提取与体渲染一致"的高斯方法;② 相交平面法线定义被后续沿用;③ 同实验室 2DGS 的官方后继,确立"opacity level-set + 自适应 mesh"范式;④ 改进 densification(逐像素梯度范数累加)被独立证明提升 NVS LPIPS。</p></div>
+<div class="card warn"><h4>GOF 的局限与被超越</h4><p>① Delaunay 剖分在大场景慢(bicycle ~8min);② SH 外观建模致 DTU 落后 Neuralangelo;③ 无观测区 level-set 固定;④ 网格未用于实时渲染。这些被 2026 年 Gaussian Wrapping(Primal Adaptive Meshing 绕开 Delaunay)、GSPrior(CVPR 2026 自约束先验)等进一步推远。</p></div>
+</div>
+<div class="callout key"><p><strong>一句话:</strong>GOF 是 2DGS 同实验室同作者的后继,以"不透明度场 + Marching Tetrahedra"在 2DGS 强项(几何)上全面超越(DTU 0.74、TnT 0.46),并修复背景/薄结构短板;但其 Delaunay 效率与 SH 外观局限又被 2026 年新一代(Gaussian Wrapping / GSPrior)进一步推远——GOF 在"3DGS → 2DGS → GOF → 2026 新一代"的演进链中是承上启下的关键节点。</p></div>
+<h3>🔗 关联笔记</h3>
+<ul>
+<li><a href="3D-20240326-2DGS.html">2D Gaussian Splatting 调研</a> — GOF 的直接前作,2D 盘 + 深度/法向正则,GOF 复用其正则</li>
+<li><a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础技术与改进综述</a> — GOF 是 3DGS 几何/表面分支的范式跃迁</li>
+<li><a href="3D-20260814-高斯表面重建2026新一代调研.html">2026 新一代高斯表面重建调研</a> — Gaussian Wrapping / GSPrior / Spherical-GOF 如何在 GOF 基础上进一步推远</li>
+</ul>
+</section>
+
+</div>
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-14 · 领域: 3D 重建 / 高斯泼溅表面重建 / 不透明度场 · arXiv:2404.10772 · SIGGRAPH Asia 2024<br>
+  本分析基于论文 arXiv:2404.10772v2、官方代码 github.com/autonomousvision/gaussian-opacity-fields 编写
+</div>
+<script>mermaid.initialize({startOnLoad:true,theme:'default',flowchart:{curve:'basis',useMaxWidth:true}});</script>
+</body>
+</html>
