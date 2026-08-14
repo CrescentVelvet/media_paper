@@ -789,7 +789,30 @@
         </div>
 
         <div class="note-card">
-            <h3>22. 前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D</h3>
+            <h3>22. 2D Gaussian Splatting: 几何准确的辐射场重建</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2403.17888 (v3)</span>
+                <span>📅 2024-03-26</span>
+                <span>🏢 ShanghaiTech / Univ. Tübingen</span>
+                <span>🏆 SIGGRAPH 2024</span>
+                <span>✅ 开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Surface Reconstruction</span>
+                <span class="tag green">2D Gaussian Disk</span>
+                <span class="tag">Ray-Splat Intersection</span>
+                <span class="tag">TSDF Mesh</span>
+                <span class="tag">Normal Consistency</span>
+            </div>
+            <p>把 3D 体积塌缩为 2D 定向平面高斯盘,以显式 ray-splat 求交实现透视正确泼溅,配深度畸变+法线一致性正则恢复无噪声几何。DTU Chamfer 0.80mm(比 3DGS 降 59%)、存储 52MB、训练 10.9min。<strong>【是否过时辨析】</strong>作为几何 SOTA 刷榜方法已被同实验室后继 GOF(DTU 0.74/TnT 0.46)及 2026 年 Gaussian Wrapping 等取代;但作为"2D 盘+深度/法向正则"范式奠基者与轻量可微分几何前端,2026 年仍被 SLAM/4D/数字人/逆向渲染大量顶会工作沿用,有不可替代价值。</p>
+            <a href="3D-20240326-2DGS.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2403.17888" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/hbb1/2d-gaussian-splatting" target="_blank">💻 GitHub</a>
+            <a href="https://surfsplatting.github.io" target="_blank">🌐 项目主页</a>
+        </div>
+
+        <div class="note-card">
+            <h3>23. 前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D</h3>
             <div class="meta">
                 <span>📄 综述: 2311.06214 → 2404.19702 → 2410.12781 → 2512.10267</span>
                 <span>📅 2023-11 ~ 2026-03</span>
@@ -808,7 +831,7 @@
         </div>
 
         <div class="note-card">
-            <h3>23. TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成</h3>
+            <h3>24. TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成</h3>
             <div class="meta">
                 <span>📄 arXiv: 2412.01506</span>
                 <span>📅 2024-12-02</span>
@@ -829,7 +852,7 @@
         </div>
 
         <div class="note-card">
-            <h3>24. Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统</h3>
+            <h3>25. Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统</h3>
             <div class="meta">
                 <span>📄 arXiv: 2501.12202 / 2506.15442 / 2509.21245</span>
                 <span>📅 2025-01 ~ 2025-09</span>
@@ -849,7 +872,7 @@
         </div>
 
         <div class="note-card">
-            <h3>25. 3D 生成: DreamGaussian / GaussianDreamer</h3>
+            <h3>26. 3D 生成: DreamGaussian / GaussianDreamer</h3>
             <div class="meta">
                 <span>📄 arXiv: 2309.16653 / 2310.08529</span>
                 <span>📅 2023-09 / 2023-10</span>
@@ -869,7 +892,7 @@
         </div>
 
         <div class="note-card">
-            <h3>26. 4D / 动态 3D 高斯: 动态场景重建与追踪</h3>
+            <h3>27. 4D / 动态 3D 高斯: 动态场景重建与追踪</h3>
             <div class="meta">
                 <span>📄 arXiv: 2308.09713 及后续</span>
                 <span>📅 2023-08 ~ 2026</span>
@@ -887,7 +910,7 @@
         </div>
 
         <div class="note-card">
-            <h3>27. π³: Permutation-Equivariant Visual Geometry Learning</h3>
+            <h3>28. π³: Permutation-Equivariant Visual Geometry Learning</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.13347</span>
                 <span>📅 2025-07-17</span>
@@ -909,7 +932,7 @@
         </div>
 
         <div class="note-card">
-            <h3>28. VGGT-Ω: 前馈3D重建的规模化里程碑</h3>
+            <h3>29. VGGT-Ω: 前馈3D重建的规模化里程碑</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.15195</span>
                 <span>📅 2026-05-14</span>
@@ -932,7 +955,7 @@
         </div>
 
         <div class="note-card">
-            <h3>29. GenRecon: 桥接生成式先验的多视角3D场景重建</h3>
+            <h3>30. GenRecon: 桥接生成式先验的多视角3D场景重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.23888</span>
                 <span>📅 2026-05-22</span>
@@ -953,7 +976,7 @@
         </div>
 
         <div class="note-card">
-            <h3>30. F3G-Avatar: Face Focused Full-body Gaussian Avatar</h3>
+            <h3>31. F3G-Avatar: Face Focused Full-body Gaussian Avatar</h3>
             <div class="meta">
                 <span>📄 arXiv: 2604.09835</span>
                 <span>📅 2026-04-10</span>
@@ -975,7 +998,7 @@
         </div>
 
         <div class="note-card">
-            <h3>31. GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians</h3>
+            <h3>32. GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians</h3>
             <div class="meta">
                 <span>📄 arXiv: 2312.02069</span>
                 <span>📅 2023-12-04</span>
@@ -997,7 +1020,7 @@
         </div>
 
         <div class="note-card">
-            <h3>32. MHR: Momentum Human Rig — SMPL 升级版</h3>
+            <h3>33. MHR: Momentum Human Rig — SMPL 升级版</h3>
             <div class="meta">
                 <span>📄 arXiv: 2511.15586</span>
                 <span>📅 2025-11-19</span>
@@ -1018,7 +1041,7 @@
         </div>
 
         <div class="note-card">
-            <h3>33. SAM 3D Body: Robust Full-Body Human Mesh Recovery</h3>
+            <h3>34. SAM 3D Body: Robust Full-Body Human Mesh Recovery</h3>
             <div class="meta">
                 <span>📄 arXiv: 2602.15989</span>
                 <span>📅 2026-02-17</span>
@@ -1040,7 +1063,7 @@
         </div>
 
         <div class="note-card">
-            <h3>34. Fast SAM 3D Body: Accelerating SAM 3D Body for Real-Time HMR</h3>
+            <h3>35. Fast SAM 3D Body: Accelerating SAM 3D Body for Real-Time HMR</h3>
             <div class="meta">
                 <span>📄 arXiv: 2603.15603</span>
                 <span>📅 2026-03-16</span>
@@ -1063,7 +1086,7 @@
         </div>
 
         <div class="note-card">
-            <h3>35. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
+            <h3>36. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
             <div class="meta">
                 <span>📄 arXiv: 2604.12580 (v2)</span>
                 <span>📅 2026-04-14</span>
@@ -1160,7 +1183,7 @@
         <h2>📖 图像超分辨率与图像复原 (Real-ISR + HYPIR)</h2>
 
         <div class="note-card">
-            <h3>36. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>37. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -1180,7 +1203,7 @@
         </div>
 
         <div class="note-card">
-            <h3>37. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>38. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>

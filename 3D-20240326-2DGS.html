@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2D Gaussian Splatting 调研:几何准确的辐射场与"是否过时"辨析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:56px 40px 46px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1120px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:16px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:33px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:860px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1120px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:22px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:25px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:34px; height:34px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:var(--text)}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .callout h4{margin-top:0}
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 22px; margin:16px 0; overflow-x:auto; position:relative;
+  }
+  .equation .tag{position:absolute; right:18px; top:14px; color:var(--muted); font-size:12px}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 22px; border-left:4px solid var(--accent);
+  }
+  .card.warn{border-left-color:var(--orange)}
+  .card.key{border-left-color:var(--accent2)}
+  .card.red{border-left-color:var(--red)}
+  .card.green{border-left-color:var(--green)}
+  .card h4{margin-top:0; color:var(--accent2)}
+  .card .pri{font-size:12px; color:var(--orange); font-weight:700; letter-spacing:.5px}
+  .stat-row{display:flex; gap:16px; flex-wrap:wrap; margin:18px 0}
+  .stat{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:16px 22px; flex:1; min-width:140px; text-align:center;
+  }
+  .stat .v{
+    font-size:26px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .stat .l{color:var(--muted); font-size:12px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr.best{background:rgba(52,211,153,0.12)}
+  tr.best td{color:#fff; font-weight:600}
+  td.best{color:var(--green); font-weight:700}
+  td.fail{color:var(--red)}
+  .mermaid{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px; margin:20px 0; text-align:center;
+  }
+  .figure{margin:22px 0; text-align:center}
+  .figure img{max-width:100%; border-radius:8px; border:1px solid #333}
+  .figure .cap{color:var(--muted); font-size:13px; margin-top:10px; text-align:left}
+  .stage-tag{
+    display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px;
+    margin-right:8px; font-weight:600;
+  }
+  .stage-tag.s1{background:rgba(96,165,250,0.15); color:var(--accent)}
+  .stage-tag.s2{background:rgba(167,139,250,0.15); color:var(--accent2)}
+  .stage-tag.s3{background:rgba(52,211,153,0.15); color:var(--green)}
+  .footer{
+    text-align:center; color:var(--muted); font-size:13px;
+    padding:28px; border-top:1px solid var(--border); margin-top:40px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2403.17888 · 2024 · SIGGRAPH · cs.CV / cs.GR</span>
+    <h1>2D Gaussian Splatting:几何准确的辐射场重建</h1>
+    <p class="subtitle">把 3D 体积"塌缩"为一组 2D 定向平面高斯盘,以显式 ray-splat 求交实现透视正确泼溅,配合深度畸变 + 法线一致性正则,从多视角图像恢复噪声-free 的细致几何,同时保持竞争力外观、分钟级训练与实时渲染。</p>
+    <p class="authors">Binbin Huang¹ · Zehao Yu²³ · Anpei Chen²³ · Andreas Geiger²³ · Shenghua Gao¹ 　(¹ShanghaiTech　²Univ. Tübingen　³Tübingen AI Center)</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2403.17888" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2403.17888v3" target="_blank">🌐 arXiv HTML 全文 v3</a>
+      <a href="https://arxiv.org/pdf/2403.17888" target="_blank">📥 PDF</a>
+      <a href="https://github.com/hbb1/2d-gaussian-splatting" target="_blank">💻 GitHub</a>
+      <a href="https://surfsplatting.github.io" target="_blank">🌐 项目主页</a>
+      <a href="https://colab.research.google.com/drive/1qoclD7HJ3-o0O1R8cvV3PxLhoDCMsH8W" target="_blank">🧪 Colab Demo</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与定位</a></li>
+    <li><a href="#s2">研究背景与动机:3DGS 的几何缺陷</a></li>
+    <li><a href="#s3">算法总体框架:2D 定向盘 + 三阶段</a></li>
+    <li><a href="#s4">2D 高斯表示的数学形式化</a></li>
+    <li><a href="#s5">渲染:透视正确的 2D 泼溅(ray-splat 求交)</a></li>
+    <li><a href="#s6">训练与自适应控制</a></li>
+    <li><a href="#s7">正则化损失与总损失</a></li>
+    <li><a href="#s8">网格提取:TSDF + median depth</a></li>
+    <li><a href="#s9">逻辑流程图(Mermaid)</a></li>
+    <li><a href="#s10">实验结果(DTU / TnT / Mip-NeRF360)</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">可改进方向分析(代码佐证)</a></li>
+    <li><a href="#s13">2DGS 是否过时?更先进的方法辨析</a></li>
+    <li><a href="#s14">总结</a></li>
+  </ol>
+</div>
+
+<!-- ===================== 1. 摘要 ===================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与定位</h2>
+<p class="lead"><strong>2D Gaussian Splatting (2DGS)</strong> 是高斯泼溅路线从"渲染"迈向"<strong>几何准确重建</strong>"的里程碑工作。3DGS 虽以可微光栅化实现实时新视角合成,却因 3D 高斯的多视角不一致性而无法准确表示表面。2DGS 的核心主张是:将 3D 体积塌缩为一组 <strong>2D 定向平面高斯盘(oriented planar Gaussian disks)</strong>,每个盘内嵌于 3D 空间、原生具备法线,从而在本质上是表面元素(surfel),保证不同视角下对同一原语求值一致。</p>
+<div class="callout key">
+<p>论文三大贡献:(1) 以齐次坐标 <strong>ray-splat intersection</strong> 实现 <em>perspective-correct 2D splatting</em>,避免 3DGS 仿射近似的边缘深度失真;(2) 引入 <strong>深度畸变损失</strong> 与 <strong>法线一致性损失</strong> 推动高斯在射线上聚拢、与渲染深度法线自洽;(3) 演示该可微渲染器可恢复无噪声、细节丰富的几何,外观与 3DGS 打平,训练快、渲染实时。</p>
+</div>
+<div class="stat-row">
+  <div class="stat"><div class="v">0.80 mm</div><div class="l">DTU Chamfer ↓(30k)</div></div>
+  <div class="stat"><div class="v">-59%</div><div class="l">vs 3DGS(1.96)</div></div>
+  <div class="stat"><div class="v">10.9 min</div><div class="l">单场景训练(RTX3090)</div></div>
+  <div class="stat"><div class="v">52 MB</div><div class="l">存储(SuGaR 的 1/24)</div></div>
+</div>
+<p>发表:<strong>SIGGRAPH 2024 Conference Papers</strong>(DOI 10.1145/3641519.3657428)。arXiv v1 提交于 2024-03-26,v3 修订于 2025-02-22(校正 Eq.7)。本文同时回答用户核心问题:<strong>2DGS 在 2026 年是否仍先进?</strong> 详见第 13 节。</p>
+</section>
+
+<!-- ===================== 2. 背景与动机 ===================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机:3DGS 的几何缺陷</h2>
+<p>3DGS 以各向异性 3D 高斯椭球体表示场景,渲染时用仿射矩阵 <code>J</code> 把 3D 协方差投影到 ray space 再做 alpha blending。这一"近似可微渲染"(Keselman &amp; Hebert 2023)在<em>渲染</em>上够好,但在<em>几何</em>上存在四连击缺陷。论文 §3 明确列出:</p>
+
+<div class="grid grid-3">
+  <div class="card"><h4>① 体积-表面冲突</h4><p>3D 高斯把辐辐度建模在一个"团块"立体里,与表面"薄"的本质相矛盾——同一表面被一团带体积的高斯拟合,几何厚度不为零。</p></div>
+  <div class="card warn"><h4>② 多视角不一致(致命)</h4><p>同一 3D 高斯在不同视角下,与<em>不同的 2D 相交平面</em>求值,导致渲染深度视角间不一致。直接从 3DGS 抽 mesh 会出现层叠伪影。</p></div>
+  <div class="card"><h4>③ 无法原生建模法线</h4><p>3DGS 原语没有法线概念,而高质量表面重建依赖法线约束。法线只能事后从协方差特征向量近似,不稳定。</p></div>
+</div>
+<div class="callout warn"><p><strong>④ 仿射投影近似误差:</strong>用 <code>Σ' = J W Σ Wᵀ Jᵀ</code> 把 3D 高斯变换到 ray space 只在<em>高斯中心</em>附近准确,边缘存在透视失真(Zwicker 2004),违反法线一致性,在薄结构处尤其明显。</p></div>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2403.17888v3/x2.png" alt="2DGS Fig.2 多视角不一致" loading="lazy">
+  <div class="cap"><b>图1(论文 Fig.2)</b> 左:3DGS 在不同视角用不同 2D 相交平面评估同一 3D 高斯,渲染深度多视角不一致;右:2DGS 的 2D 盘内蕴法线,任意视角下求值一致。</div>
+</div>
+
+<p><strong>2DGS 的解法</strong>:把 3D 体积"塌缩"成 2D 定向盘——第三维缩放强制为 0,法线定义为两切向量叉积 <code>t_w = t_u × t_v</code>。2D 盘本质即 surfel,天然对齐薄表面;用<em>显式 ray-splat 求交</em>替代仿射近似,保证多视角一致;内蕴法线可直接作为正则约束。与经典 surfel 方法(Pfister 2000, Zwicker 2001, DSS/Yifan 2019)的区别在于:2DGS <strong>不需要稠密点云或 GT 法线</strong>,仅凭 SfM 稀疏点 + 光度监督即可端到端梯度优化。</p>
+</section>
+
+<!-- ===================== 3. 总体框架 ===================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架:2D 定向盘 + 三阶段</h2>
+<p>2DGS 继承 3DGS 的"可微光栅化 + 自适应密度控制"骨架,但把原语从 3D 椭球换成 2D 盘,并扩展光栅器同时输出 <em>颜色图 / 深度图 / 法线图</em> 供正则使用。整体可视为三阶段:</p>
+
+<div class="grid grid-3">
+  <div class="card green"><span class="stage-tag s1">阶段一</span><h4>2D 高斯参数化</h4><p>每个高斯由中心 <code>p</code>、两切向量 <code>t_u,t_v</code>(叉积得法线)、缩放 <code>s_u,s_v</code>(第三维=0)、不透明度 <code>α</code>、球谐 SH 外观定义。</p></div>
+  <div class="card green"><span class="stage-tag s2">阶段二</span><h4>透视正确光栅化</h4><p>齐次坐标下用 ray-splat intersection 求像素射线与 2D 盘的交点 (u,v),算深度 z 与高斯值;低通滤波兜底退化;前向 alpha blending 出颜色/深度/法线。</p></div>
+  <div class="card green"><span class="stage-tag s3">阶段三</span><h4>正则 + TSDF 提网格</h4><p>深度畸变损失 + 法线一致性损失约束几何;训练完后渲染多视角深度图,用 truncated TSDF fusion(+ median depth)融合成 mesh。</p></div>
+</div>
+
+<p>关键关系:2D 原语本身解决"多视角一致 + 内蕴法线";ray-splat 求交解决"透视正确";两个正则解决"表面聚拢与自洽";TSDF 解决"mesh 化"。四者缺一不可,消融见第 11 节。</p>
+</section>
+
+<!-- ===================== 4. 2D 高斯表示 ===================== -->
+<section id="s4">
+<h2><span class="num">4</span>2D 高斯表示的数学形式化</h2>
+<p>每个 2D 高斯(论文 §4.1, Eq.4–6)由以下可学习参数定义:中心点 $\mathbf{p}_k \in \mathbb{R}^3$;两个切向量 $\mathbf{t}_u, \mathbf{t}_v$(构成旋转矩阵 $\mathbf{R}=[\mathbf{t}_u,\mathbf{t}_v,\mathbf{t}_w]$,法线 $\mathbf{t}_w=\mathbf{t}_u\times\mathbf{t}_v$);缩放 $\mathbf{S}=\mathrm{diag}(s_u,s_v,\mathbf{0})$(第三维强制 0,即"塌缩");不透明度 $\alpha$;球谐外观 $c$(代码 <code>sh_degree=3</code>)。</p>
+
+<h3>局部切平面参数化(Eq.4–5)</h3>
+<div class="equation">
+$$P(u,v)=\mathbf{p}_k+s_u\mathbf{t}_u\,u+s_v\mathbf{t}_v\,v=\mathbf{H}(u,v,1,1)^\top$$
+$$\mathbf{H}=\begin{bmatrix}s_u\mathbf{t}_u & s_v\mathbf{t}_v & \mathbf{0} & \mathbf{p}_k\\0&0&0&1\end{bmatrix}=\begin{bmatrix}\mathbf{R}\mathbf{S}&\mathbf{p}_k\\\mathbf{0}&1\end{bmatrix}$$
+<span class="tag">(式 4–5)</span>
+</div>
+
+<h3>2D 高斯密度(Eq.6)</h3>
+<div class="equation">
+$$\mathcal{G}(\mathbf{u})=\exp\!\left(-\frac{u^2+v^2}{2}\right)$$
+<span class="tag">(式 6)</span>
+</div>
+<div class="callout tip"><p><strong>设计要点:</strong>2DGS 不显式写世界空间协方差 $\boldsymbol{\Sigma}^{-1}$(与 3DGS 不同),而是通过 $\mathbf{H}$ 矩阵隐式定义切平面几何,密度直接在局部 $uv$ 坐标用标准高斯求值。法线由切向量叉积得到,而非协方差特征向量——更稳定、更直观。</p></div>
+</section>
+
+<!-- ===================== 5. 渲染 ===================== -->
+<section id="s5">
+<h2><span class="num">5</span>渲染:透视正确的 2D 泼溅</h2>
+
+<h3>5.1 齐次坐标下的世界→屏幕投影(Eq.7)</h3>
+<p>设 $\mathbf{W}\in\mathbb{R}^{4\times4}$ 为世界到屏幕的组合变换,屏幕齐次点:</p>
+<div class="equation">
+$$\mathbf{x}=(xz,yz,z,z)^\top=\mathbf{W}\,P(u,v)=\mathbf{W}\mathbf{H}(u,v,1,1)^\top$$
+<span class="tag">(式 7)</span>
+</div>
+<p>$\mathbf{x}$ 表示一条从相机出发、过像素 $(x,y)$、在深度 $z$ 处与 splat 相交的齐次射线。</p>
+
+<h3>5.2 Ray-splat intersection(Eq.8–10,核心创新)</h3>
+<p>Zwicker 原方案用 $\mathbf{M}=(\mathbf{W}\mathbf{H})^{-1}$ 隐式投影 conic,但<em>逆矩阵在 splat 退化为线段(侧视)时数值不稳定</em>——传统做法是阈值丢弃,这在可微渲染里会让优化抖动。2DGS 改用 Sigg 2006 / Weyrich 2007 启发的<strong>显式三平面求交</strong>:</p>
+<p>把像素 $(x,y)$ 的射线参数化为两个正交齐次平面:x-plane $\mathbf{h}_x=(-1,0,0,x)^\top$、y-plane $\mathbf{h}_y=(0,-1,0,y)^\top$。用 <strong>Blinn 1977 的 $\mathbf{M}^{-\top}$ 法则</strong>把平面变到 splat 局部 $uv$ 坐标(对点用 $\mathbf{M}$ 等价于对平面参数用 $\mathbf{M}^{-\top}$,从而<strong>避免显式矩阵求逆</strong>):</p>
+<div class="equation">
+$$\mathbf{h}_u=(\mathbf{W}\mathbf{H})^\top\mathbf{h}_x,\qquad \mathbf{h}_v=(\mathbf{W}\mathbf{H})^\top\mathbf{h}_y$$
+<span class="tag">(式 8–9)</span>
+</div>
+<p>交点须同时落在两个变换后的平面上,解出:</p>
+<div class="equation">
+$$u(\mathbf{x})=\frac{\mathbf{h}_u^2\mathbf{h}_v^4-\mathbf{h}_u^4\mathbf{h}_v^2}{\mathbf{h}_u^1\mathbf{h}_v^2-\mathbf{h}_u^2\mathbf{h}_v^1},\qquad v(\mathbf{x})=\frac{\mathbf{h}_u^4\mathbf{h}_v^1-\mathbf{h}_u^1\mathbf{h}_v^4}{\mathbf{h}_u^1\mathbf{h}_v^2-\mathbf{h}_u^2\mathbf{h}_v^1}$$
+<span class="tag">(式 10)</span>
+</div>
+<p>拿到 $(u,v)$ 后,代入式 7 算深度 $z$,代入式 6 算高斯值。</p>
+
+<h3>5.3 退化处理 + 低通滤波(Eq.11)</h3>
+<p>侧视时 2D 高斯在屏幕上退化成线段,可能被光栅化漏掉。用 Botsch 2005 的 object-space 低通滤波兜底:</p>
+<div class="equation">
+$$\hat{\mathcal{G}}(\mathbf{x})=\max\!\left\{\mathcal{G}(\mathbf{u}(\mathbf{x})),\;\mathcal{G}\!\left(\frac{\mathbf{x}-\mathbf{c}}{\sigma}\right)\right\},\quad \sigma=\tfrac{\sqrt{2}}{2}$$
+<span class="tag">(式 11)</span>
+</div>
+<div class="callout warn"><p><strong>工程权衡:</strong>$\sigma=\sqrt{2}/2$ 是<em>固定经验值</em>。在薄结构(植物叶、毛发)处仍可能漏渲或 banding,这是 2DGS 的固有脆弱点,也是后续 Mip-Splatting 式自适应滤波的改进入口(见 §12 改进 3)。</p></div>
+
+<h3>5.4 前向 alpha blending(Eq.12)</h3>
+<div class="equation">
+$$\mathbf{c}(\mathbf{x})=\sum_{i=1}^{K}\mathbf{c}_i\,\alpha_i\,\hat{\mathcal{G}}_i(\mathbf{u}(\mathbf{x}))\prod_{j=1}^{i-1}\bigl(1-\alpha_j\hat{\mathcal{G}}_j(\mathbf{u}(\mathbf{x}))\bigr)$$
+<span class="tag">(式 12)</span>
+</div>
+<p>按中心深度排序、分 tile、前向 alpha-blending,累积不透明度饱和时提前终止(同 3DGS)。深度图、法线图以同样累积方式渲染,供正则使用。</p>
+
+<div class="callout key"><p><strong>与 3DGS 投影对比:</strong>3DGS 用 $\boldsymbol{\Sigma}'=\mathbf{J}\mathbf{W}\boldsymbol{\Sigma}\mathbf{W}^\top\mathbf{J}^\top$ 仿射近似,删第 3 行 3 列得 2D 协方差;2DGS 用齐次坐标显式 ray-splat 求交。论文 Fig.7 直观显示仿射近似在边缘产生深度失真、违反法线一致性。</p></div>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2403.17888v3/x7.png" alt="2DGS Fig.7 仿射近似深度失真" loading="lazy">
+  <div class="cap"><b>图2(论文 Fig.7)</b> 仿射近似 vs 透视正确 ray-splat:边缘处仿射近似的深度失真导致法线不一致,2DGS 的显式求交避免此问题。</div>
+</div>
+</section>
+
+<!-- ===================== 6. 训练与自适应控制 ===================== -->
+<section id="s6">
+<h2><span class="num">6</span>训练与自适应控制</h2>
+<p>继承 3DGS 的 CUDA 自定义算子框架,基于 <code>hbb1/diff-surfel-rasterization</code> 光栅器扩展输出 depth distortion / depth / normal 三张图供正则。初始化用 SfM(COLMAP)稀疏点云。</p>
+
+<h3>自适应密度控制(Densification,与 3DGS 的关键差异)</h3>
+<p>由于 2DGS 不直接依赖"投影后 2D 中心的梯度",它把 3D 中心 $\mathbf{p}_k$ 的梯度投影到屏幕空间作为近似——这是 2DGS 在 densification 上对 3DGS 做的<em>工程妥协</em>,也是 §7 Limitations 中"densification 偏向纹理丰富区"的根因(见 §12 改进 1)。</p>
+
+<table>
+<tr><th>超参</th><th>默认值</th><th>说明</th></tr>
+<tr><td><code>iterations</code></td><td>30,000</td><td>同时报告 15k 与 30k 两档</td></tr>
+<tr><td><code>densify_grad_threshold</code></td><td>0.0002</td><td>与 3DGS 同源,光度梯度驱动</td></tr>
+<tr><td><code>densification_interval</code></td><td>100 步</td><td>每 100 步做一次 densify</td></tr>
+<tr><td><code>densify_from_iter / until</code></td><td>500 / 15,000</td><td>densify 窗口</td></tr>
+<tr><td><code>opacity_reset_interval</code></td><td>3,000 步</td><td>定期重置不透明度</td></tr>
+<tr><td><code>opacity_cull</code></td><td>0.05</td><td>删除 α&lt;0.05 的 splat</td></tr>
+<tr><td><code>position_lr_init/final</code></td><td>1.6e-4 / 1.6e-6</td><td>位置学习率指数衰减</td></tr>
+<tr><td><code>feature_lr / opacity_lr</code></td><td>0.0025 / 0.05</td><td>SH / 不透明度</td></tr>
+<tr><td><code>scaling_lr / rotation_lr</code></td><td>0.005 / 0.001</td><td>缩放 / 旋转</td></tr>
+</table>
+<p>光度损失 $\mathcal{L}_c = \mathcal{L}_1 + 0.2\cdot\text{D-SSIM}$(<code>lambda_dssim=0.2</code>,与 3DGS 一致)。硬件:单卡 RTX 3090。</p>
+</section>
+
+<!-- ===================== 7. 正则化损失 ===================== -->
+<section id="s7">
+<h2><span class="num">7</span>正则化损失与总损失</h2>
+
+<h3>7.1 深度畸变损失 Depth distortion(Eq.13)</h3>
+<p>3DGS 体渲染忽略高斯原语之间的距离,沿射线分散的高斯可能产生相同颜色和深度,不像表面渲染那样"射线恰好击中可见表面一次"。借鉴 Mip-NeRF360,但<em>关键区别</em>:Mip-NeRF360 的 $z_i$ 是预定义采样点不可优化,2DGS 的 $z_i$ 是 ray-splat 交点的深度<strong>可微</strong>,直接推动 splat 在射线上聚拢。</p>
+<div class="equation">
+$$\mathcal{L}_d=\sum_{i,j}\omega_i\omega_j\,|z_i-z_j|,\qquad \omega_i=\alpha_i\hat{\mathcal{G}}_i\prod_{j=1}^{i-1}(1-\alpha_j\hat{\mathcal{G}}_j)$$
+<span class="tag">(式 13)</span>
+</div>
+<div class="callout"><p><strong>CUDA 实现细节(附录 A,式 17):</strong>由于交点深度可能不按顺序,采用 $\mathcal{L}_2$ 形式并把 $z$ 转到 NDC 空间($m=\mathrm{NDC}(z)$,near=0.2/far=1000)以降权远处高斯。把嵌套求和重排为单次前向:令 $A_i=\sum_{j\le i}\omega_j$、$D_i=\sum_{j\le i}\omega_j m_j$,则 $e_i=m_i^2 A_{i-1}+D_{i-1}^2-2m_iD_{i-1}$,$\mathcal{L}_i=\sum_{j\le i}\omega_j e_j$。marching front-to-back 累加 $A_i,D_i$,梯度 back-to-front 反传——这是 2DGS 光栅器扩展的核心算法工程。</p></div>
+
+<h3>7.2 法线一致性损失 Normal consistency(Eq.14–15)</h3>
+<p>在体渲染中,把<em>累积不透明度达到 0.5 的中位交点</em> $\mathbf{p}_s$ 视为真实表面位置,让 splat 法线对齐渲染深度图的梯度法线:</p>
+<div class="equation">
+$$\mathcal{L}_n=\sum_i\omega_i\bigl(1-\mathbf{n}_i^\top\mathbf{N}\bigr),\qquad \mathbf{N}(x,y)=\frac{\nabla_x\mathbf{p}_s\times\nabla_y\mathbf{p}_s}{|\nabla_x\mathbf{p}_s\times\nabla_y\mathbf{p}_s|}$$
+<span class="tag">(式 14–15)</span>
+</div>
+<p>直觉:让"高斯自己定义的法线 $\mathbf{n}_i$"与"渲染深度反推的法线 $\mathbf{N}$"一致,从而深度与法线两套几何自洽。Fig.6 显示:关掉 normal consistency → 法线方向错乱;关掉 depth distortion → 表面噪声;两者都开 → 锐利且平坦。</p>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2403.17888v3/x6.png" alt="2DGS Fig.6 正则消融" loading="lazy">
+  <div class="cap"><b>图3(论文 Fig.6)</b> 正则化消融:关闭法线一致性 → 法线错乱;关闭深度畸变 → 表面噪声;两者全开 → 锐利平坦。</div>
+</div>
+
+<h3>7.3 总损失与权重(Eq.16)</h3>
+<div class="equation">
+$$\boxed{\mathcal{L}=\mathcal{L}_c+\alpha\,\mathcal{L}_d+\beta\,\mathcal{L}_n}$$
+<span class="tag">(式 16)</span>
+</div>
+<table>
+<tr><th>权重</th><th>论文设定</th><th>代码默认</th><th>备注</th></tr>
+<tr><td>$\alpha$(深度畸变)</td><td><strong>1000</strong>(bounded)/<strong>100</strong>(unbounded)</td><td class="fail"><code>lambda_dist=0.0</code></td><td>⚠️ 代码默认关闭!</td></tr>
+<tr><td>$\beta$(法线一致)</td><td>0.05</td><td><code>lambda_normal=0.05</code></td><td>与论文一致</td></tr>
+<tr><td>D-SSIM</td><td>0.2</td><td><code>lambda_dssim=0.2</code></td><td>同 3DGS</td></tr>
+</table>
+<div class="callout red"><p><strong>论文-代码差异(重要佐证):</strong><code>arguments/__init__.py</code> 中 <code>lambda_dist</code> 默认 <strong>0.0</strong>,意味着官方仓库<strong>开箱即用时不启用深度畸变正则</strong>;而论文报告的所有 DTU/TnT 数值是在 $\alpha=1000$(DTU bounded)下取得。README 文档还把 flag 写成 <code>--lambda_distortion</code>(实际是 <code>--lambda_dist</code>,疑似笔误)。复现论文结果必须手动 <code>--lambda_dist 1000</code>(DTU)或 <code>100</code>(Mip-NeRF360/TnT),并设 <code>--depth_ratio 1</code>(用 median depth)。详见 §12 改进 5。</p></div>
+</section>
+
+<!-- ===================== 8. 网格提取 ===================== -->
+<section id="s8">
+<h2><span class="num">8</span>网格提取:TSDF + median depth</h2>
+<p><strong>方法:Truncated TSDF fusion</strong>(基于 Open3D),不是 Poisson、不是双边滤波。流程:渲染训练视角深度图 → TSDF 融合成 mesh。关键参数(§6.1):体素大小 <code>0.004</code>、截断阈值 <code>0.02</code>。</p>
+<p>深度用 <strong>median depth</strong>(Eq.19)而非 mean/expected depth:</p>
+<div class="equation">
+$$z_{\text{median}}=\max\{z_i\mid T_i>0.5\}$$
+<span class="tag">(式 19)</span>
+</div>
+<p>即累积透射率降到 0.5 之前的最大深度,比 mean/expected 对离群点更鲁棒(消融:+0.11 mm)。法线来源:2D 高斯自带 $\mathbf{t}_w$ 法线,但 mesh 提取阶段实际只用深度图做 TSDF;法线一致性损失已在训练阶段让深度法线与高斯法线对齐,因此隐式保证 TSDF 输入深度质量。</p>
+<div class="callout tip"><p><strong>Unbounded mesh(后续更新,README "2024/05/05"):</strong>对无界场景(Mip-NeRF360)用<strong>空间收缩(space contraction)+ 自适应 TSDF 截断</strong>,命令 <code>python render.py -m &lt;model&gt; -s &lt;data&gt; --unbounded --skip_train --skip_test --mesh_res 1024</code>。</p></div>
+</section>
+
+<!-- ===================== 9. 流程图 ===================== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 总流程:从图像到 mesh</h3>
+<div class="mermaid">
+flowchart TD
+  IMG["输入:多视角 RGB 图像"] --> SfM["COLMAP SfM<br/>稀疏点云 + 位姿"]
+  SfM --> INIT["2D 高斯初始化<br/>每个点 → 一个 2D 盘"]
+  INIT --> RASTER["透视正确光栅化<br/>ray-splat 求交"]
+  RASTER --> OUT["输出:颜色图 / 深度图 / 法线图"]
+  OUT --> LOSS["损失 = L1+DSSIM + α·L_dist + β·L_norm"]
+  LOSS --> DENS["自适应密度控制<br/>clone/split/prune"]
+  DENS -->|迭代 30k 步| RASTER
+  LOSS -->|"训练收敛"| TSDF["渲染多视角深度图<br/>median depth"]
+  TSDF --> MESH["Truncated TSDF Fusion<br/>→ 纹理 mesh"]
+  style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style RASTER fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+  style LOSS fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style MESH fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>9.2 ray-splat 光栅化内部数据流</h3>
+<div class="mermaid">
+flowchart LR
+  PX["像素 (x,y)"] --> RAY["相机射线"]
+  RAY --> XPL["x-plane h_x"]
+  RAY --> YPL["y-plane h_y"]
+  XPL --> M["用 (WH)ᵀ 变换<br/>避免求逆"]
+  YPL --> M
+  M --> UV["解 2×2 线性系<br/>得交点 (u,v)"]
+  UV --> DEP["代入式7 算深度 z"]
+  UV --> GAU["代入式6 算高斯值"]
+  DEP --> BLEND["前向 alpha blending<br/>按深度排序"]
+  GAU --> BLEND
+  BLEND --> RENDER["颜色 / 深度 / 法线"]
+  style M fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+  style UV fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style BLEND fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.3 模块组成与正则流向</h3>
+<div class="mermaid">
+flowchart TD
+  subgraph A["2D 高斯原语"]
+    A1["中心 p · 切向量 t_u,t_v"] --> A2["法线 t_w=t_u×t_v"]
+    A1 --> A3["缩放 s_u,s_v (第三维=0)"]
+    A2 --> A4["球谐 SH 外观 c · α"]
+  end
+  subgraph B["光栅器 (CUDA)"]
+    B1["ray-splat 求交"] --> B2["低通滤波兜底退化"]
+    B2 --> B3["alpha blending"]
+    B3 --> B4["颜色图 / 深度图 / 法线图"]
+  end
+  subgraph C["损失"]
+    C1["光度 L1+DSSIM"]
+    C2["深度畸变 L_dist"]
+    C3["法线一致 L_norm"]
+  end
+  A --> B
+  B4 --> C1
+  B4 --> C2
+  B4 --> C3
+  C1 --> A
+  C2 --> A
+  C3 --> A
+  style A fill:#dbeafe,stroke:#3b82f6
+  style B fill:#ede9fe,stroke:#8b5cf6
+  style C fill:#dcfce7,stroke:#22c55e
+</div>
+</section>
+
+<!-- ===================== 10. 实验结果 ===================== -->
+<section id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 DTU 几何重建(Table 1,Chamfer Distance mm,越小越好)</h3>
+<table>
+<tr><th>方法</th><th>类型</th><th>Mean CD ↓</th><th>时间</th></tr>
+<tr><td>NeRF</td><td>隐式</td><td>1.49</td><td>&gt;12h</td></tr>
+<tr><td>VolSDF</td><td>隐式</td><td>0.86</td><td>&gt;12h</td></tr>
+<tr><td>NeuS</td><td>隐式</td><td>0.84</td><td>&gt;12h</td></tr>
+<tr><td>3DGS</td><td>显式</td><td>1.96</td><td>11.2 min</td></tr>
+<tr><td>SuGaR</td><td>显式</td><td>1.33</td><td>~1h</td></tr>
+<tr class="best"><td><strong>2DGS-15k (Ours)</strong></td><td>显式</td><td class="best">0.83</td><td>5.5 min</td></tr>
+<tr class="best"><td><strong>2DGS-30k (Ours)</strong></td><td>显式</td><td class="best">0.80</td><td>10.9 min</td></tr>
+</table>
+<p>2DGS 在 DTU 上 CD 0.80,比 3DGS(1.96)降 <strong>59%</strong>,甚至略优于 NeuS(0.84);训练时间比隐式快 ~100×,比 SuGaR 快 3×+。复现版(README 公开数据)甚至 <strong>0.74 mm</strong>(修了 TSDF half-pixel bug 使几何更好)。</p>
+
+<h3>10.2 DTU 综合(Table 3)</h3>
+<table>
+<tr><th>方法</th><th>CD ↓</th><th>PSNR ↑(训练视角)</th><th>时间</th><th>存储 ↓</th></tr>
+<tr><td>3DGS</td><td>1.96</td><td>35.76</td><td>11.2m</td><td>113 MB</td></tr>
+<tr><td>SuGaR</td><td>1.33</td><td>34.57</td><td>~1h</td><td>1247 MB</td></tr>
+<tr class="best"><td><strong>2DGS-15k</strong></td><td class="best">0.83</td><td>33.42</td><td>5.5m</td><td class="best">52 MB</td></tr>
+<tr class="best"><td><strong>2DGS-30k</strong></td><td class="best">0.80</td><td>34.52</td><td>10.9m</td><td class="best">52 MB</td></tr>
+</table>
+<p>2DGS 存储仅 52MB(SuGaR 的 1/24),PSNR 比 3DGS 略低 ~1.2 dB——为几何质量做的取舍。</p>
+
+<h3>10.3 Tanks &amp; Temples(Table 2,F1 score,越高越好)</h3>
+<table>
+<tr><th>场景</th><th>NeuS</th><th>Neuralangelo</th><th>SuGaR</th><th>3DGS</th><th>2DGS</th></tr>
+<tr><td>Barn</td><td>0.29</td><td>0.70</td><td>0.14</td><td>0.13</td><td>0.41</td></tr>
+<tr><td>Caterpillar</td><td>0.29</td><td>0.36</td><td>0.16</td><td>0.08</td><td>0.23</td></tr>
+<tr><td>Ignatius</td><td>0.83</td><td>0.89</td><td>0.33</td><td>0.04</td><td>0.51</td></tr>
+<tr><td>Truck</td><td>0.45</td><td>0.48</td><td>0.26</td><td>0.19</td><td>0.45</td></tr>
+<tr class="best"><td><strong>Mean</strong></td><td>0.38</td><td class="best">0.50</td><td>0.19</td><td class="fail">0.09</td><td>0.32</td></tr>
+</table>
+<p>2DGS 远超所有显式方法(3DGS 0.09、SuGaR 0.19),但仍输给最强 SDF 方法 <strong>Neuralangelo(0.50)</strong>,尤其在 Barn/Ignatius 差距明显——这是 2DGS 的短板,也是后续 GOF 重点修复之处(见 §13)。</p>
+
+<h3>10.4 Mip-NeRF360 外观质量(Table 4,30k iter)</h3>
+<table>
+<tr><th>场景</th><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr>
+<tr><td>Outdoor</td><td>Mip-NeRF360</td><td>24.47</td><td>0.691</td><td>0.283</td></tr>
+<tr><td>Outdoor</td><td>3DGS</td><td class="best">24.64</td><td class="best">0.731</td><td class="best">0.234</td></tr>
+<tr><td>Outdoor</td><td>2DGS</td><td>24.34</td><td>0.717</td><td>0.246</td></tr>
+<tr><td>Indoor</td><td>3DGS</td><td class="best">30.41</td><td class="best">0.920</td><td class="best">0.189</td></tr>
+<tr><td>Indoor</td><td>2DGS</td><td>30.40</td><td>0.916</td><td>0.195</td></tr>
+</table>
+<p>外观上 2DGS 与 3DGS 几乎打平(PSNR 差 ~0.3 dB),略输 3DGS——为换取几何精度付出的代价。但显著优于 SuGaR / Instant-NGP / MERF。</p>
+</section>
+
+<!-- ===================== 11. 消融 ===================== -->
+<section id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+
+<h3>11.1 正则与网格提取消融(Table 5,DTU,15k,CD mm)</h3>
+<table>
+<tr><th>配置</th><th>Accuracy ↓</th><th>Completion ↓</th><th>Average ↓</th><th>Δ</th></tr>
+<tr><td>w/o normal consistency</td><td>1.35</td><td>1.13</td><td>1.24</td><td class="fail">+0.41</td></tr>
+<tr><td>w/o depth distortion</td><td>0.89</td><td>0.87</td><td>0.88</td><td>+0.05</td></tr>
+<tr><td>w/ expected depth (mean)</td><td>0.88</td><td>1.01</td><td>0.94</td><td>+0.11</td></tr>
+<tr><td>w/ SPSR(替代 TSDF)</td><td>1.25</td><td>0.89</td><td>1.07</td><td>+0.24</td></tr>
+<tr class="best"><td><strong>Full model</strong></td><td class="best">0.79</td><td class="best">0.86</td><td class="best">0.83</td><td>—</td></tr>
+</table>
+<p>去掉 normal consistency:0.83→1.24(<strong>+0.41,恶化 49%</strong>),Accuracy 暴涨到 1.35——法线正则对几何精度最关键;depth distortion 影响较小但 Completion 受益;median &gt; mean depth;TSDF &gt; SPSR(因 SPSR 无法利用高斯不透明度与尺寸)。</p>
+
+<h3>11.2 2D vs 3D 高斯 + 投影方式(Table 6,附录 C,DTU,30k)</h3>
+<table>
+<tr><th>配置</th><th>Accuracy ↓</th><th>Completion ↓</th><th>Average ↓</th></tr>
+<tr><td>SuGaR</td><td>1.48</td><td>1.17</td><td>1.33</td></tr>
+<tr><td>3DGS + TSDF(mean)</td><td>1.93</td><td>1.99</td><td>1.96</td></tr>
+<tr><td>2DGS + SPSR(center)</td><td>1.25</td><td>0.89</td><td>1.07</td></tr>
+<tr><td>2DGS(affine 近似)+ TSDF(mean)</td><td>0.96</td><td>1.20</td><td>1.08</td></tr>
+<tr><td>2DGS(ray-splat)+ TSDF(mean)</td><td>0.79</td><td>0.98</td><td>0.88</td></tr>
+<tr class="best"><td><strong>2DGS(ray-splat)+ TSDF(median) ← Full</strong></td><td class="best">0.78</td><td class="best">0.83</td><td class="best">0.80</td></tr>
+</table>
+<div class="callout key"><p><strong>关键结论:</strong>① <strong>2D vs 3D</strong>:2DGS(affine)+TSDF 已达 1.08,远超 3DGS+TSDF 的 1.96——2D 原语本身贡献巨大;② <strong>透视正确 vs 仿射</strong>:affine 1.08 → ray-splat 0.88(−0.20,降 19%),证明 ray-splat 求交的透视精度提升明显;③ <strong>mean vs median depth</strong>:0.88→0.80(−0.08);④ SuGaR+TSDF 反而比 SuGaR+SPSR 差很多(2.18 vs 1.33),因 SuGaR 的 flat Gaussian 深度图稀疏不连续,TSDF 不适配——说明<em>光栅器质量决定下游 mesh 质量</em>。</p></div>
+</section>
+
+<!-- ===================== 12. 可改进方向 ===================== -->
+<section id="s12">
+<h2><span class="num">12</span>可改进方向分析(代码佐证)</h2>
+<p class="lead">本节从<strong>方法、数据与评估、工程实用性</strong>三个维度分析 2DGS 的可改进方向,每点附论文/代码佐证与改进建议。</p>
+
+<div class="card red">
+<p class="pri">[高优先级] 改进 1 · 方法层面</p>
+<h4>Densification 对"几何-纹理"偏差的根治</h4>
+<p><strong>问题:</strong>论文 §7 Limitations 自承"densification favors texture-rich over geometry-rich areas",导致薄结构和弱纹理区几何差。根因:2DGS 复用 3DGS 的"投影 2D 中心梯度"近似作为 densification 信号(§6.1),而该信号本质是<em>光度</em>梯度,几何欠拟合区(如平面白墙)梯度小、不被 densify。</p>
+<p><strong>代码佐证:</strong><code>arguments/__init__.py</code> 的 <code>densify_grad_threshold = 0.0002</code> 与 3DGS 同源,无几何感知项。</p>
+<p><strong>建议:</strong>引入几何不确定性引导的 densification——基于渲染深度残差(多视角深度一致性)、法线方差或 SDF 距离场作为补充 densify 信号;或用体素锚点(Scaffold-GS 思路)在几何稀疏区强制 densify。这是 2DGS 留给后续 GOF/Scaffold-2DGS 等工作的最大接口。</p>
+</div>
+
+<div class="card red">
+<p class="pri">[高优先级] 改进 2 · 方法层面</p>
+<h4>半透明 / 反射 / 玻璃表面的物理建模</h4>
+<p><strong>问题:</strong>Limitations 第 1 条明确:假设完全不透明表面,玻璃等半透明表面无法处理(附录 Fig.12)。2D 盘只有单一 $\alpha$,无法表达透射/折射。</p>
+<p><strong>建议:</strong>引入透射率 $\tau$ 与折射法线(GaussianShader / GS-IR 思路)或神经 BRDF 分解;对透明表面用多高斯层叠加(前景+背景),TSDF 阶段对半透明区域跳过融合或用概率占用。</p>
+</div>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2403.17888v3/x12.png" alt="2DGS Fig.12 玻璃局限" loading="lazy">
+  <div class="cap"><b>图4(论文 Fig.12)</b> 半透明/玻璃表面是 2DGS 的明确局限:假设完全不透明,无法处理透射/折射。</div>
+</div>
+
+<div class="card warn">
+<p class="pri">[中优先级] 改进 3 · 方法/工程</p>
+<h4>ray-splat intersection 在大倾角/极薄结构的退化鲁棒性</h4>
+<p><strong>问题:</strong>式 10 分母 $\mathbf{h}_u^1\mathbf{h}_v^2-\mathbf{h}_u^2\mathbf{h}_v^1$ 在 splat 接近平行视线时趋于 0;式 11 低通滤波兜底,但 $\sigma=\sqrt{2}/2$ 是固定经验值,薄结构(叶、毛发)仍可能漏渲或 banding。</p>
+<p><strong>代码佐证:</strong>§4.2 "Degenerate Solutions" 坦承阈值丢弃在可微框架下不稳定,改用 max 低通,但 $\sigma$ 固定。</p>
+<p><strong>建议:</strong>$\sigma$ 自适应于 splat 屏幕投影面积(类 Mip-Splatting 的 2D Mip filter);或改用可微 ray-tracing(社区 <code>diff-surfel-tracing</code> by xbillowy 可参考);对极薄结构引入多尺度 splat。</p>
+</div>
+
+<div class="card warn">
+<p class="pri">[中优先级] 改进 4 · 数据/评估</p>
+<h4>TnT 大场景上对 SDF 方法的追赶</h4>
+<p><strong>问题:</strong>Table 2 显示 2DGS TnT mean F1=0.32,落后 Neuralangelo(0.50)达 0.18,尤其 Barn(0.41 vs 0.70)、Ignatius(0.51 vs 0.89)差距大。根因:大场景 densification 不充分 + TSDF 截断阈值固定 0.02 不适配多尺度。</p>
+<p><strong>代码佐证:</strong>Mesh 提取 <code>voxel_size=0.004, depth_trunc=0.02</code> 全局固定;无界 mesh 用空间收缩但仍不及 SDF 全局优化。</p>
+<p><strong>建议:</strong>多尺度 TSDF(近场细体素 + 远场粗体素);引入 SDF 一致性损失(让 2D 盘对齐隐式 SDF,类 NeuSG 但保持 2D 原语);或对大场景做分块重建 + 融合(VOP-GS 思路)。</p>
+</div>
+
+<div class="card green">
+<p class="pri">[低优先级] 改进 5 · 工程</p>
+<h4><code>lambda_dist</code> 默认值与文档一致性</h4>
+<p><strong>问题:</strong><code>arguments/__init__.py</code> 中 <code>lambda_dist = 0.0</code>(关闭深度畸变),而论文结果在 $\alpha=1000$ 下取得;README 文档写成 <code>--lambda_distortion</code>(实际 flag 是 <code>--lambda_dist</code>)。新用户直接 <code>python train.py</code> 会得到几何退化的模型,且参数名找不到。</p>
+<p><strong>代码佐证:</strong><code>OptimizationParams.lambda_dist = 0.0</code>,<code>PipelineParams.depth_ratio = 0.0</code>(DTU 需手动设 1)。</p>
+<p><strong>建议:</strong>把 <code>lambda_dist</code> 默认改为场景自适应(检测有界/无界自动设 1000/100);修正 README 文档;<code>train.py</code> 启动时打印当前正则权重警告。低成本、高用户体验收益。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>#</th><th>方向</th><th>层面</th><th>优先级</th><th>佐证</th></tr>
+<tr><td>1</td><td>densification 几何-纹理偏差</td><td>方法</td><td>高</td><td>§7 Limitations + <code>densify_grad_threshold</code></td></tr>
+<tr><td>2</td><td>半透明/玻璃表面</td><td>方法</td><td>高</td><td>§7 + 附录 Fig.12</td></tr>
+<tr><td>3</td><td>ray-splat 退化鲁棒性</td><td>方法/工程</td><td>中</td><td>§4.2 + $\sigma=\sqrt{2}/2$ 固定</td></tr>
+<tr><td>4</td><td>TnT 大场景追赶 SDF</td><td>数据/评估</td><td>中</td><td>Table 2 (0.32 vs 0.50)</td></tr>
+<tr><td>5</td><td><code>lambda_dist</code> 默认值与文档</td><td>工程</td><td>低</td><td><code>arguments/__init__.py</code> + README</td></tr>
+</table>
+<div class="callout key"><p><strong>个人认为最关键的三点:</strong>改进 1(densification 几何感知,根因性)、改进 2(半透明表面,扩展应用域)、改进 4(大场景追赶 SDF,决定 2DGS 能否取代 NeuS/Neuralangelo 成为通用重建方案)。这三点恰好也是后续 GOF / PGSR 等方法主要攻克的方向。</p></div>
+</section>
+
+<!-- ===================== 13. 是否过时 ===================== -->
+<section id="s13">
+<h2><span class="num">13</span>2DGS 是否过时?更先进的方法辨析</h2>
+<p class="lead">这是用户的核心问题。结论是<strong>分场景</strong>:作为"DTU/TnT 纯表面重建 SOTA 刷榜方法"已在 2024 下半年被取代;作为"2D 定向盘 + 深度/法向正则"的<strong>范式奠基者与轻量可微分几何前端</strong>,2026 年仍有不可替代价值。</p>
+
+<h3>13.1 关键后继:GOF — Gaussian Opacity Fields ★</h3>
+<p><strong>GOF</strong>(arXiv <a href="https://arxiv.org/abs/2404.10772" target="_blank">2404.10772</a>,SIGGRAPH Asia 2024 / ACM TOG)是 2DGS <em>同实验室同作者</em>(Zehao Yu, Andreas Geiger — 图宾根 + Tübingen AI Center)的官方后继。它用<strong>射线-高斯相交的体渲染</strong>建立"高斯不透明度场",对其 level-set 用 <strong>Marching Tetrahedra</strong> 直接提网格,摒弃 2DGS 依赖的 TSDF/Poisson 后处理;并直接<em>复用 2DGS 的深度畸变 + 法向一致性正则</em>。</p>
+
+<table>
+<tr><th>指标</th><th>2DGS</th><th>GOF</th><th>差距</th></tr>
+<tr><td>DTU Chamfer ↓(15 场均值 mm)</td><td>0.80</td><td class="best">0.74</td><td>GOF 好 7.5%</td></tr>
+<tr><td>Tanks &amp; Temples F1 ↑(6 场均值)</td><td>0.32</td><td class="best">0.46</td><td>GOF 好 44%</td></tr>
+<tr><td>训练时间</td><td class="best">10.9 min</td><td>18.4 min</td><td>2DGS 更快</td></tr>
+<tr><td>背景几何重建</td><td class="fail">失败</td><td class="best">支持</td><td>GOF 修复 2DGS 短板</td></tr>
+</table>
+<div class="callout red"><p>GOF 项目页原文:"<em>2DGS fails to reconstruct background geometry, while our method can reconstruct more detailed geometry for both foreground objects and backgrounds</em>"。GOF 在 2DGS 自己的强项(几何质量)上全面超越,且来自同实验室同作者——这是让 2DGS 在"纯表面重建 SOTA 榜单"上过时的<strong>决定性方法</strong>。代价:训练更慢、需自定义 CUDA ray-tracing 内核。</p></div>
+
+<h3>13.2 同代并行方法(未取代 2DGS)</h3>
+<table>
+<tr><th>方法</th><th>arXiv / 日期</th><th>机构 / 发表</th><th>与 2DGS 关系</th></tr>
+<tr><td>SuGaR</td><td>2311.12775 / 2023-11</td><td>ENS Paris / 3DV 2024</td><td>不同范式(3DGS+表面对齐+Poisson),DTU 1.33 远差于 2DGS,未取代</td></tr>
+<tr><td>GaussianSurfels</td><td>2404.17774 / 2024-04</td><td>阿里 / 浙大</td><td>平行范式(3D→2D 盘),DTU 0.88 仍差于 2DGS,未取代</td></tr>
+<tr><td>PGSR</td><td>2406.06521 / 2024-06</td><td>浙大 / 上海AI Lab / 商汤,TVCG 2024</td><td>同类范式竞争者,主打效率+大光照变化鲁棒,多项指标互有胜负=平级替代</td></tr>
+<tr><td>3DGS-MCMC</td><td>2404.09591 / 2024-04</td><td>UBC / Google DeepMind</td><td>不同赛道(优化 densification/渲染质量,非表面重建),不构成取代</td></tr>
+<tr><td>GaussianShader / SpecGaussian</td><td>2311.17977 / 2409.05868</td><td>—</td><td>面向反射/镜面外观,非几何方法,与 2DGS 正交</td></tr>
+</table>
+
+<h3>13.3 2025–2026 新一代(进一步推远 2DGS)</h3>
+<table>
+<tr><th>方法</th><th>arXiv / 发表</th><th>核心改进</th><th>相对 2DGS</th></tr>
+<tr><td>Gaussian Wrapping / From Blobs to Spokes</td><td>2604.07337 / 2026-04</td><td>给高斯加可学习定向法向,闭式 vacant/normal 场,Primal Adaptive Meshing 抽水密网格,恢复辐条等薄结构</td><td>声称 DTU/TnT F-score SOTA;水密、网格更轻 4.5×</td></tr>
+<tr><td>SOF — Sorted Opacity Fields</td><td>项目页 r4dl.github.io/SOF</td><td>在 GOF 基础上改进高斯排序,更快更好</td><td>GOF 直接改良</td></tr>
+<tr><td>GSPrior / Self-Constrained Priors</td><td>2603.19682 / <strong>CVPR 2026</strong></td><td>用当前深度图融合 TSDF 网格作"自约束先验",渐进收紧约束带</td><td>新一代正则化路线</td></tr>
+<tr><td>Spherical-GOF</td><td>2603.08503 / <strong>IROS 2026</strong></td><td>把 GOF 推广到全景/球面射线空间</td><td>GOF 全景扩展</td></tr>
+</table>
+
+<h3>13.4 "2D 盘/surfel 范式"正蓬勃发展(非但不过时)</h3>
+<p>虽然 2DGS <em>方法本身</em>在 DTU/TnT 榜单已被超越,但"2D 定向盘/surfel"这一范式正被 SLAM/4D/数字人/逆向渲染等大量 2025–2026 顶会工作沿用:</p>
+<table>
+<tr><th>领域</th><th>代表工作</th><th>arXiv / 发表</th><th>说明</th></tr>
+<tr><td>SLAM</td><td>EGG-Fusion / GauS-SLAM / FGO-SLAM</td><td>2512.01296 / 2505.01934 / 2509.01547</td><td>几何感知 surfel SLAM;2D surfel 稠密 RGB-D SLAM;GOF 式不透明度场 SLAM</td></tr>
+<tr><td>动态/4D</td><td>AT-GS / Vidu4D</td><td>2411.06602 / 2405.16822</td><td>时间一致 surfel 动态表面;单视频→4D 文生 4D</td></tr>
+<tr><td>数字人/avatar</td><td>SurFhead / SGIA</td><td>2410.11682 / 2407.15212</td><td>2D surfel 可绑定头部 avatar(ICLR 2025);surfel 逆向渲染可重光照人体(TPAMI 2025)</td></tr>
+<tr><td>逆向渲染</td><td>RadioGS / Geometry Field Splatting</td><td>2603.01491 / 2411.17067</td><td>辐射度量一致 surfel 逆向渲染(ICLR 2026 Oral);精确重建不透明固体</td></tr>
+</table>
+
+<h3>13.5 技术演进路线(Mermaid)</h3>
+<div class="mermaid">
+flowchart TD
+  GS["3DGS (2023.08, Kerbl)<br/>渲染优先, 几何差"] --> SuGaR["SuGaR (2023.11)<br/>3DGS+表面对齐+Poisson<br/>DTU 1.33 网格 noisy"]
+  GS --> TWO["2DGS (2024.03, SIGGRAPH) ★<br/>2D 定向盘 + ray-splat + TSDF<br/>DTU 0.80 · TnT 0.32 · 轻量"]
+  TWO --> GSURF["GaussianSurfels (0.88)<br/>平行范式"]
+  TWO --> PGSR["PGSR (TVCG 2024)<br/>无偏深度 + 曝光补偿<br/>平级竞争者"]
+  TWO -.范式外延.-> EXT["SLAM: EGG-Fusion/GauS-SLAM<br/>4D: Vidu4D/AT-GS<br/>Avatar: SurFhead/SGIA<br/>IR: RadioGS"]
+  TWO --> GOF["GOF (2024.04, SIGGRAPH Asia) ★<br/>同实验室后继, 不透明度场 + MTet<br/>复用 2DGS 正则, DTU 0.74 TnT 0.46<br/>修复背景/薄结构"]
+  GOF --> SOF["SOF (排序改良)"]
+  GOF --> SPH["Spherical-GOF (IROS 2026)<br/>全景扩展"]
+  GOF --> GW["Gaussian Wrapping (2026.04) ★<br/>定向高斯+闭式场+PAM<br/>声称 DTU/TnT F-score SOTA<br/>水密, 恢复辐条"]
+  GW --> GSP["GSPrior (CVPR 2026)<br/>自约束先验"]
+  style TWO fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+  style GOF fill:#dcfce7,stroke:#22c55e,color:#14532d
+  style GW fill:#fef3c7,stroke:#f59e0b,color:#78350f
+  style EXT fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+
+<h3>13.6 场景抉择建议</h3>
+<table>
+<tr><th>场景</th><th>推荐</th><th>理由</th></tr>
+<tr><td>刷 DTU/TnT/unbounded 几何 SOTA</td><td class="best">GOF → Gaussian Wrapping / SOF / GSPrior</td><td>2DGS 在 Chamfer/F1 上均落后,背景/薄结构失败</td></tr>
+<tr><td>大规模 / unbounded 重建</td><td class="best">GOF(或 SOF)</td><td>GOF 自适应 Marching Tetrahedra,修复 2DGS 显式短板</td></tr>
+<tr><td>轻量、快速、可微分 2D 几何前端</td><td class="best">2DGS 仍合理</td><td>无复杂后处理,训练快,范式成熟</td></tr>
+<tr><td>SLAM</td><td>EGG-Fusion / GauS-SLAM / FGO-SLAM</td><td>2D surfel 范式已被专门工程化</td></tr>
+<tr><td>动态/4D、文生 4D</td><td>AT-GS / Vidu4D</td><td>2D surfel 的时间一致/可形变扩展</td></tr>
+<tr><td>数字人/可绑定 avatar</td><td>SurFhead / SGIA</td><td>2D surfel 几何 + 形变绑定</td></tr>
+</table>
+
+<div class="callout key">
+<p><strong>最终判断:</strong></p>
+<p>① <strong>过时成立的部分:</strong>作为"在 benchmark 上刷几何质量"的方法,2DGS 自 2024 下半年已被同实验室的 GOF 取代(DTU 0.80→0.74、TnT 0.32→0.46),2026 年又被 Gaussian Wrapping / SOF / GSPrior 进一步推远。</p>
+<p>② <strong>未过时的部分:</strong>作为"2D 定向盘 + 深度/法向正则"的<strong>范式奠基者</strong>——其提出的深度畸变 + 法向一致性正则被 GOF 直接复用,2D 盘思想被 PGSR/GaussianSurfels 及几乎所有 surfel 系(SLAM/4D/avatar/IR)继承——它已是<em>基础设施</em>而非可丢弃的旧物。同时<strong>轻量与简洁</strong>(纯 2D 盘、无需 ray-tracing CUDA 内核、无需 Marching Tetrahedra、训练 10.9 min vs GOF 18.4 min)使其在资源受限、教学/原型、或作为更大系统的可微分前端时仍是合理选择。</p>
+<p>③ <strong>推荐主线:</strong><code>3DGS → 2DGS(范式奠基/轻量)→ GOF(同实验室后继,几何超越)→ Gaussian Wrapping / SOF / GSPrior(2026 新一代)</code>,并按场景向 surfel-SLAM / 4D / avatar 分支演化。</p>
+</div>
+</section>
+
+<!-- ===================== 14. 总结 ===================== -->
+<section id="s14">
+<h2><span class="num">14</span>总结</h2>
+<p>2DGS 把高斯泼溅从"渲染优先"推进到"几何准确":以 2D 定向盘解决多视角不一致与内蕴法线,以 ray-splat 求交解决透视正确,以深度畸变+法线一致性正则解决表面聚拢与自洽,以 TSDF + median depth 解决 mesh 化。在 DTU 上 CD 0.80(比 3DGS 降 59%)、存储 52MB、训练 10.9 min,确立了"轻量几何准确辐射场"的范式。</p>
+<div class="grid grid-2">
+<div class="card green"><h4>2DGS 的历史地位</h4><p>① 范式奠基者:深度畸变 + 法向一致性正则被 GOF 直接复用;② 2D 盘思想被 PGSR/GaussianSurfels 及 surfel-SLAM/4D/avatar/IR 大量继承;③ 轻量基准:纯 2D 盘、无 ray-tracing 内核、训练快。</p></div>
+<div class="card warn"><h4>2DGS 的局限与被超越</h4><p>① 大场景 TnT 落后 SDF(0.32 vs 0.50);② 半透明/玻璃无法处理;③ densification 偏向纹理区;④ 同实验室后继 GOF 在 DTU/TnT 双双超越(0.74/0.46),2026 年 Gaussian Wrapping 等进一步推远。</p></div>
+</div>
+<div class="callout tip"><p><strong>一句话:</strong>2DGS 作为"几何 SOTA 刷榜方法"在 2024 下半年已被 GOF 取代、2026 年又被 Gaussian Wrapping 等推远——在此意义上"过时"成立;但作为"2D 定向盘 + 深度/法向正则"的<strong>范式奠基者与轻量可微分几何前端</strong>,其思想正被 SLAM/4D/数字人/逆向渲染等大量 2025–2026 顶会工作沿用,2026 年仍有不可替代价值。</p></div>
+
+<h3>🔗 关联笔记</h3>
+<ul>
+<li><a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础技术与改进综述</a> — 2DGS 是 3DGS 改进脉络"几何/表面"分支的代表,该综述将其与 SuGaR 并列</li>
+<li><a href="3D-20260414-PDF-GS.html">PDF-GS:渐进式干扰过滤</a> — 鲁棒 3DGS 方向,可挂到 2DGS 等 baseline 上处理 distractor 场景</li>
+<li><a href="3D-20230922-Deformable-3DGS.html">Deformable 3D Gaussians</a> — 3DGS 向动态扩展,2D 盘思想同样可向 4D/avatar 演化</li>
+</ul>
+</section>
+
+</div>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-14 · 领域: 3D 重建 / 高斯泼溅表面重建 / Novel View Synthesis · arXiv:2403.17888 · SIGGRAPH 2024<br>
+  本分析基于论文 arXiv:2403.17888v3、官方代码 github.com/hbb1/2d-gaussian-splatting、以及后继 GOF(arXiv:2404.10772)对比数据编写
+</div>
+
+<script>
+  mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
