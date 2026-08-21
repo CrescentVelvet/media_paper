@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArtiFixer:用自回归扩散模型增强和扩展 3D 重建</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">SIGGRAPH 2026 · 3D 重建增强 · NVIDIA</span>
+    <h1>ArtiFixer:用自回归扩散模型增强和扩展 3D 重建</h1>
+    <div class="subtitle">ArtiFixer: Enhancing and Extending 3D Reconstruction with Auto-Regressive Diffusion Models</div>
+    <div class="authors">Riccardo de Lutio* · Tobias Fischer · Yen-Yu Chang · Yuxuan Zhang · Jay Zhangjie Wu · Xuanchi Ren · Tianchang Shen · Katarina Tóthová · Zan Gojcic · Haithem Turki*</div>
+    <div class="org">NVIDIA · ETH Zurich · Cornell · University of Toronto · Vector Institute　(*Equal Contribution)</div>
+    <div class="links">
+      <a href="https://research.nvidia.com/labs/sil/projects/artifixer/" target="_blank">🌐 项目主页</a>
+      <a href="https://research.nvidia.com/labs/sil/projects/artifixer/assets/paper.pdf" target="_blank">📄 论文 PDF</a>
+      <a href="https://github.com/nv-tlabs/ArtiFixer" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/nvidia/ArtiFixer" target="_blank">🤗 HuggingFace</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">阶段一:双向教师训练</a></li>
+    <li><a href="#s5">阶段二:因果自回归蒸馏</a></li>
+    <li><a href="#s6">数学形式化:Opacity Mixing 与 Flow Matching</a></li>
+    <li><a href="#s7">训练与实现细节</a></li>
+    <li><a href="#s8">逻辑流程图</a></li>
+    <li><a href="#s9">实验结果</a></li>
+    <li><a href="#s10">消融与诊断分析</a></li>
+    <li><a href="#s11">可改进方向分析</a></li>
+    <li><a href="#s12">总结与领域定位</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p>ArtiFixer 来自 NVIDIA Spatial Intelligence Lab,发表于 SIGGRAPH 2026。它要解决的核心问题是:<b>逐场景优化的 3D 重建(如 3DGS)在稀疏观测/未观测区域会产生伪影、空洞和不可信几何</b>,而用生成式先验修复这些区域时,现有方法在「可扩展性」和「质量」上都有短板。</p>
+
+<div class="callout key">
+<b>一句话概括:</b>把预训练的双向视频扩散模型(Wan 2.1 T2V)改造成「损坏渲染 → 干净图像」的生成器,再用 <b>opacity mixing</b> 解决未观测区 mode collapse,最后蒸馏成<b>因果自回归</b>模型一次性生成数百帧——既可直接出图,也可作为伪监督回灌 3D 表示。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">+1~3 dB</div><div class="l">PSNR 超越所有 SOTA</div></div>
+  <div class="stat"><div class="v">70×</div><div class="l">相对双向骨干加速</div></div>
+  <div class="stat"><div class="v">8.36 / 34.4</div><div class="l">FPS (14B / 1.3B)</div></div>
+  <div class="stat"><div class="v">~15k</div><div class="l">GPU-hours (H100)</div></div>
+</div>
+
+<h3>两个关键创新</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>① Opacity Mixing(透明度混合)</h4>
+    <p>不纯从高斯噪声出发、也不直接用损坏渲染,而是按渲染 opacity 图<b>逐像素混合</b>:已观测区保留渲染潜变量,未观测区退化为标准高斯先验。一个连续的 opacity 信号把「保持一致性」和「保留生成能力」统一在一个源分布里。</p>
+  </div>
+  <div class="card">
+    <h4>② 因果自回归蒸馏</h4>
+    <p>把双向教师蒸馏成<b>因果自回归</b>模型,用 KV cache 滚动推理一次生成任意长视频帧序列,摆脱双向模型「单次帧数有限」的瓶颈,也省去昂贵的迭代式渐进蒸馏。3D 蒸馏因此可<b>单次生成所有视角</b>再统一重建,而非反复交替。</p>
+  </div>
+</div>
+
+<h3>三个评估变体</h3>
+<div class="grid-3">
+  <div class="card"><h4>ArtiFixer</h4><p>直接用自回归生成器渲染新视角,最锐利。</p></div>
+  <div class="card"><h4>ArtiFixer3D</h4><p>把生成结果回灌 3D 表示(3DGUT),最一致但略糊。</p></div>
+  <div class="card"><h4>ArtiFixer3D+</h4><p>在 3D 重建上再用生成器后处理,兼顾锐度与一致性。</p></div>
+</div>
+
+<div class="note">本文与本知识库 <a href="VideoGen-20250326-Wan2.1.html">Wan 2.1</a>、<a href="3D-20230808-3DGS及其进阶与改进.html">3DGS</a> 系列紧密相关——ArtiFixer 正是以 Wan 2.1 T2V-14B 为骨干,在 3DGUT(3D Gaussian Rasterization with Unbounded and Tortured cameras)重建之上做生成式增强。</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>两条主导范式</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>显式 3D 神经重建</h4>
+    <p>NeRF / 3DGS 从稠密图像集合逐场景优化,在训练视角附近照片级真实、可实时渲染。但<b>外推性差</b>:稀疏观测或缺失区域出现伪影、空洞、不可信几何,自由导航时必然暴露。</p>
+  </div>
+  <div class="card">
+    <h4>相机控制视频生成</h4>
+    <p>视频生成模型能合成照片级真实、时序连贯的内容。但<b>精确相机控制、长期一致性、漂移与幻觉</b>仍是开放难题,难以直接用于交互式视角合成。</p>
+  </div>
+</div>
+
+<h3>现有「生成先验修复重建」方法的两个根本权衡</h3>
+<p>近期工作([Fischer 2025 FlowR]、[Gao 2024 CAT3D]、[Wu 2025d Difix3D+]、[Wu 2025b GenFusion]、[Yu 2024 ReconFusion])尝试把生成模型当成修复重建的先验,但必须在两组权衡间走钢丝:</p>
+
+<table>
+<thead><tr><th>权衡维度</th><th>一极</th><th>另一极</th><th>ArtiFixer 的破局</th></tr></thead>
+<tbody>
+<tr><td><b>时序一致性 vs 效率</b></td><td>大双向视频模型:一致性强但计算贵、单次帧数有限</td><td>(多视角)图像生成模型:高效但一致性弱,需渐进蒸馏</td><td>蒸馏成因果自回归,<b>一次出数百帧</b>,接近图像模型效率</td></tr>
+<tr><td><b>条件强度 vs 生成能力</b></td><td>拼接/交叉注意力条件化:易篡改已观测内容</td><td>直接映射损坏→干净:未观测区 mode collapse(全黑→学不出东西)</td><td><b>opacity mixing</b> 逐像素混合,已观测保一致、未观测保生成</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<b>关键洞察:</b>把重建和生成当对立二选一是错的。ArtiFixer <b>闭合了这个回路</b>——重建条件化生成器,生成器反过来增强和扩展重建。近期 [Chen 2025b FlexWorld]、[Wu 2025c]、[Zhai 2025 StarGen] 也把 3D 表示作为自回归视频生成的条件,但它们把 3D 当<b>固定输入</b>,而非<b>要改进的输出</b>。ArtiFixer 把输出也纳入改进对象。
+</div>
+
+<p>另外,ArtiFixer 发现<b>即便是高度退化的 3D 重建,也提供了足够强的条件信号</b>,能显著简化蒸馏过程——这是它能用简单初始化(而非复杂 ODE 轨迹数据集生成)就完成因果化的基础。</p>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+
+<p>ArtiFixer 是一个<b>两阶段流水线</b>,输入是初始 3D 重建(来自 3DGUT + MCMC 致密化)+ 可选参考视角 + 文本 prompt,输出是数百张时序一致的新视角,可直接渲染或回灌 3D 表示。</p>
+
+<div class="figure">
+  <img src="https://research.nvidia.com/labs/sil/projects/artifixer/assets/method.png" alt="ArtiFixer method overview" loading="lazy" style="max-width:100%;border-radius:10px;border:1px solid var(--border)">
+  <div class="caption"><b>图 1(论文 Fig.2)</b> 方法总览。Phase I 训练双向流匹配模型,把损坏 RGB 渲染搬运到干净输出;用 opacity 图把潜变量与高斯噪声混合,避免未观测区 mode collapse;注入细粒度 opacity、相机控制、可选干净参考视角与文本 prompt。Phase II 用 Self-Forcing 式 DMD 蒸馏成因果自回归模型,可直接渲染或作为伪监督回灌 3D 表示。</div>
+</div>
+
+<h3>Mermaid 总览</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph IN["输入"]
+        I1["初始 3D 重建<br/>(3DGUT + MCMC)"]
+        I2["参考视角<br/>(0-12 张)"]
+        I3["文本 prompt<br/>(VLM 生成)"]
+    end
+    subgraph P1["Phase I: 双向教师训练"]
+        P1A["VAE 编码损坏渲染 z_deg"]
+        P1B["Opacity Mixing<br/>z_mix = O_z·z_deg + (1-O_z)·ε"]
+        P1C["注入 opacity + Plücker ray<br/>+ 参考视角 cross-attn + prompt"]
+        P1D["双向流匹配损失<br/>L_cfm 训练"]
+    end
+    subgraph P2["Phase II: 因果自回归蒸馏"]
+        P2A["因果掩码初始化<br/>(block-causal + Diffusion Forcing)"]
+        P2B["Self-Forcing 式 rollout<br/>(KV cache 滚动)"]
+        P2C["DMD 蒸馏<br/>→ 4 步生成器"]
+    end
+    subgraph OUT["输出(三种变体)"]
+        O1["ArtiFixer<br/>直接渲染"]
+        O2["ArtiFixer3D<br/>回灌 3D 表示"]
+        O3["ArtiFixer3D+<br/>再后处理一次"]
+    end
+    IN --> P1
+    P1A --> P1B --> P1C --> P1D
+    P1D --> P2A --> P2B --> P2C
+    P2C --> OUT
+    style P1B fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P2C fill:#ede9fe,stroke:#8b5cf6,color:#3b1f6e
+    style IN fill:#f0fdf4,stroke:#22c55e,color:#14532d
+    style OUT fill:#fff7ed,stroke:#f97316,color:#7c2d12
+</div>
+
+<h3>与现有方法的范式对比</h3>
+<table>
+<thead><tr><th>方法</th><th>生成模型类型</th><th>单次帧数</th><th>条件方式</th><th>未观测区能力</th><th>3D 回灌</th></tr></thead>
+<tbody>
+<tr><td>Difix3D+ [Wu 2025d]</td><td>图像扩散</td><td>1</td><td>直接映射</td><td><span style="color:var(--red)">mode collapse</span></td><td>渐进交替</td></tr>
+<tr><td>GenFusion [Wu 2025b]</td><td>双向视频(16帧)</td><td>16</td><td>拼接</td><td><span style="color:var(--orange)">有限</span></td><td>迭代蒸馏</td></tr>
+<tr><td>CAT3D [Gao 2024]</td><td>多视角扩散</td><td>有限</td><td>拼接</td><td><span style="color:var(--orange)">有限</span></td><td>迭代蒸馏</td></tr>
+<tr><td>FlowR [Fischer 2025]</td><td>双向视频</td><td>有限</td><td>直接映射</td><td><span style="color:var(--red)">mode collapse</span></td><td>迭代蒸馏</td></tr>
+<tr><td>Gen3C [Ren 2025]</td><td>视频生成</td><td>长</td><td>3D cache 条件</td><td>受限于深度估计</td><td>无(直接出图)</td></tr>
+<tr class="best"><td>ArtiFixer(本文)</td><td>因果自回归</td><td>数百</td><td>opacity mixing</td><td>✅ 强</td><td>单次生成</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>阶段一:双向教师训练</h2>
+
+<p>从预训练文本到视频模型 <b>Wan 2.1 T2V-14B</b> 出发,冻结其 VAE 和文本编码器,微调其余组件。目标是把「损坏渲染 → 干净输出」学成一个双向流匹配(flow matching)搬运。</p>
+
+<h3>4.1 网络架构:条件注入</h3>
+<p>损坏渲染经冻结 VAE 编码,按 $(t,h,w)=(1,2,2)$ 做 3D-patchify。两个关键信号<b>绕过 VAE</b> 直接注入到每个 transformer block:</p>
+<ul>
+<li><b>Opacity 图 $O$</b>:渲染的不透明度图,指示哪里有/无内容;</li>
+<li><b>Plücker ray maps $R$</b>:每像素六向量 $(d,\, o\times d)$,由射线方向 $d$(经相机内外参反投影)和相机中心 $o$ 构成,提供逐像素相机控制。</li>
+</ul>
+<p>二者用 <code>PixelUnshuffle</code> 下采样到 VAE 空间压缩率,经每 block 线性层 $f_r, f_o$ 加到视觉 token:</p>
+
+<div class="equation">
+$$T_r := T_s + f_r(\text{PixelUnshuffle}(R)) \tag{1}$$
+$$T_o := T_r + f_o(\text{PixelUnshuffle}(O)) \tag{2}$$
+<span class="tag">(式 1-2)</span>
+</div>
+
+<p>其中 $T_s$ 是自注意力 + LayerNorm 后的 token。这种方式比「VAE 编码 $R, O$」更高效,且<b>即便输入渲染全空</b>也能提供相机控制。</p>
+
+<h4>参考视角与 PRoPE</h4>
+<p>干净参考视角用冻结 VAE 编码,按图像批次维度 patchify(无时间压缩)。每个 transformer block 从目标 token($Q$)对拼接的参考 token 做<b>交叉注意力</b>,经额外 $K_n, V_n$ 投影映射。仅在交叉注意力内用 <b>PRoPE</b>(相对位置编码):$Q$ 用目标内外参,$K_n/V_n$ 用参考内外参。$f_r, f_o, V_n$ 均<b>零初始化</b>以保证与预训练初始化兼容。</p>
+
+<div class="figure">
+<div class="caption"><b>图 2(论文 Fig.3)Transformer block 结构。</b>自注意力后经 LayerNorm,叠加相机 ray 与 opacity 注入;交叉注意力从目标 token attend 到参考视角 token;PRoPE 仅在交叉注意力内施加。零初始化 $f_r, f_o, V_n$ 确保训练初期不破坏预训练权重。</div>
+</div>
+
+<div class="mermaid">
+flowchart TD
+    VT["视觉 Token V-Tokens<br/>(损坏渲染 VAE 编码)"] --> SA["Self-Attention + LayerNorm"]
+    SA -->|+ f_r of R| T1["T_r"]
+    R["Plücker Ray Maps R"] --> fR["f_r 线性层(零初始化)"]
+    fR --> T1
+    T1 -->|+ f_o of O| T2["T_o"]
+    O["Opacity 图 O"] --> fO["f_o 线性层(零初始化)"]
+    fO --> T2
+    T2 --> CA["Cross-Attention"]
+    REF["参考视角 V-Tokens"] --> Kn["K_n 线性层"]
+    REF --> Vn["V_n 线性层(零初始化)"]
+    Kn --> CA
+    Vn --> CA
+    PR["PRoPE 相对位置<br/>(目标 vs 参考内外参)"] -.-> CA
+    CA --> MLP["MLP / FFN"]
+    PROMPT["Prompt T-Tokens"] --> CA2["Cross-Attention(prompt)"]
+    TIME["Timestep"] --> CA2
+    MLP --> OUT["输出 Token"]
+    style T2 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CA fill:#ede9fe,stroke:#8b5cf6,color:#3b1f6e
+</div>
+
+<h3>4.2 Opacity Mixing:核心创新</h3>
+<div class="callout key">
+<b>问题根源:</b>大多数生成模型从高斯噪声 $\epsilon\sim\mathcal{N}(0,I)$ 出发迭代去噪。先前工作要么(a)从噪声出发、把损坏潜变量 $z_{deg}$ <b>通道拼接</b>或做 CFG 条件化——结果 $z_{enh}$ 虽语义相似但高伪影区仍不一致;要么(b)直接从 $z_{deg}$ 出发——一致性好,但<b>未观测区 mode collapse</b>:源分布退化为 Dirac 点质量(全黑输入),无法外推。
+</div>
+
+<p>ArtiFixer 的解法:把 opacity 图 $O$ max-pool 下采样到 $O_z$(匹配 $z_{deg}$ 空间尺寸;细粒度信息通过式 2 保留),然后<b>逐像素线性混合</b>:</p>
+
+<div class="equation">
+$$z_{mix} = O_z \cdot z_{deg} + (1 - O_z)\cdot \epsilon,\quad \epsilon\sim\mathcal{N}(0,I) \tag{3}$$
+<span class="tag">(式 3)</span>
+</div>
+
+<ul>
+<li>已观测区($O_z\to 1$):$z_{mix}\to z_{deg}$,保留一致性;</li>
+<li>未观测区($O_z\to 0$):$z_{mix}\to \epsilon$,退化为标准先验,保留生成能力;</li>
+<li>用<b>连续 opacity 信号</b>而非二值掩码,实现已知区→未知区的平滑过渡。</li>
+</ul>
+
+<div class="callout tip">
+<b>与 inpainting 的类比:</b>该策略概念上类似于 [Avrahami 2022]、[Kim 2025 RAD]、[Mayet 2025 TD-Paint] 等修复方法——已知区低噪声保留、未知区推向生成先验。区别:ArtiFixer 用<b>连续 opacity</b> 而非二值掩码,且在<b>潜变量空间</b>而非像素空间操作。式 (3) 与 flow matching 的严格相容性见 <a href="#s6">§6</a>。
+</div>
+
+<h3>4.3 数据构造</h3>
+<p>目标不只是修复欠观测区(如先前工作),还要在<b>完全未见区</b>生成可信内容。因此从 <b>DL3DV-10K</b> 构造配对「重建-GT」样本,用专门的相机选择策略制造大块空白区域。</p>
+
+<h4>相机位姿距离度量</h4>
+<div class="equation">
+$$d_{ij} = \frac{\theta_{ij}}{\pi} + \lambda_t\,\frac{\lVert t_i - t_j\rVert_2}{\bar{r}} \tag{距离}$$
+<span class="tag">(式 距离)</span>
+</div>
+<p>其中 $\theta_{ij}\in[0,\pi]$ 是旋转 $R_i, R_j$ 间的 SO(3) 测地角(弧度);$\bar{r}=\tfrac{1}{N}\sum_k\lVert t_k\rVert_2$ 是场景相机位置均方根半径;$\lambda_t=1$,使旋转项 $\in[0,1]$、平移项归一到同量级。</p>
+
+<h4>采样流程(论文 Algorithm 1)</h4>
+<ol>
+<li>找全局最远相机对 $(P_1, P_2)$ 作为两簇种子;</li>
+<li>把剩余相机按到最近种子分到 $G_1$ / $G_2$;</li>
+<li>每簇内做<b>最远点采样(FPS)</b>选 2~12 张,生成不同稀疏度的重建;</li>
+<li>用预训练度量深度估计器 [MoGe-2] 对齐相机尺度,用 VLM [Qwen3-VL] 生成场景描述。</li>
+</ol>
+
+<h3>4.4 优化</h3>
+<p>给定初始潜变量编码渲染 $z_{deg}$(转成 $z_{mix}$),用<b>条件流匹配损失</b> $L_{cfm}$ [Lipman 2023] 训练预测增强版本 $z_{enh}$。批采样 $N=81$ 帧 + 对应相机位姿 + 文本 prompt(10% 概率丢弃)+ 均匀变化的参考视角数(0-12)。</p>
+
+<div class="callout warn">
+<b>训练时 dropout:</b>为进一步增强生成能力与视角可控性,随机选末尾 $K\le N$ 帧把其 RGB 渲染<b>与 opacity 图都置零</b>,但<b>保留 Plücker ray maps</b>——迫使模型仅凭 prompt、参考视角和相机条件重建 GT。这个设计很关键:它让模型既学「修复」也学「无中生有」。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>阶段二:因果自回归蒸馏</h2>
+
+<p>双向教师质量高但<b>单次帧数有限</b>,且推理慢。本阶段把它蒸馏成<b>因果自回归</b>模型,一次生成数百帧,接近图像模型效率。</p>
+
+<h3>5.1 初始化</h3>
+<p>从双向教师权重初始化因果模型。为稳定训练,采用<b>比先前工作更简单的策略</b>:[Huang 2025 Self-Forcing]、[Shin 2025]、[Yin 2025b] 需要「从教师生成 ODE 轨迹数据集」来初始化,ArtiFixer 直接:</p>
+<ul>
+<li>施加 <b>block-causal 掩码</b>;</li>
+<li>对每帧施加<b>不同噪声水平</b>(如 Diffusion Forcing [Chen 2025a]);</li>
+<li>其余输入与训练协议同 §4.1。</li>
+</ul>
+<div class="callout tip">
+<b>为什么能这么简化?</b>因为即便是高度退化的 3D 重建也提供了足够强的条件信号——损坏渲染 + 参考视角已经把生成空间大幅约束,蒸馏不需要复杂的轨迹对齐。<b>这是「退化重建是强条件」这一核心洞察的工程红利。</b>
+</div>
+
+<h3>5.2 自回归 rollout</h3>
+<p>初始化后采用类似 <b>Self-Forcing [Huang 2025]</b> 的策略:顺序生成视频块(chunk),通过 <b>KV cache</b> 用先前生成的块做条件。关键区别:继续保留 §4.1 的 dropout,否则相机控制与纯噪声生成会退化。</p>
+<p>然后用 <b>分布匹配蒸馏(DMD)[Yin 2024]</b> 转成少步生成器(实验中 $N=4$ 步;在非完全新区域常可减到更少步而几乎无可见差异,见 <a href="#s10">§10</a> 消融)。</p>
+
+<h3>5.3 长视频生成</h3>
+<p>现有方法靠<b>长时序训练</b> [Hong 2025 RELIC]、[Yang 2025 LongLive] 减小长 rollout 的误差累积。ArtiFixer 发现<b>条件信号(损坏渲染 + 参考视角)本身就足以防止误差累积</b>,因此:</p>
+<ul>
+<li>训练时用与 §4.1 相同帧数,不额外做长时序训练;</li>
+<li>推理时用<b>滚动 KV cache</b>,可泛化到任意长度视频;</li>
+<li>训练在相同算力下收敛更快(更短的多样化视频),且长视频实验证明有效。</li>
+</ul>
+
+<h3>5.4 3D 蒸馏</h3>
+<p>先前方法把扩散输出蒸馏进 3D 表示 [3DGS] 是为了<b>一致性</b>——否则会有时序不稳定 [Wu 2025d],或受限于双向模型单次帧数 [Fischer 2025; Wu 2025b]。由于 ArtiFixer 自回归模型可<b>顺序生成任意长度</b>渲染,不受这些约束。但 3D 蒸馏仍<b>从效率角度</b>值得(3D 表示渲染快几个数量级)。</p>
+
+<div class="callout key">
+<b>效率关键:</b>现有方法需「视角生成 ↔ 3D 重建」渐进交替蒸馏,训练开销大。ArtiFixer 因能一次性一致地生成所有所需新视角,采用更高效的策略——<b>单次生成所有视角 → 标准 3D 重建</b>,省去交替循环。
+</div>
+
+<div class="note">GitHub README 进一步澄清:ArtiFixer3D 阶段在「真实锚点视角 + ArtiFixer 生成的目标视角」之并集上训练<b>全新的 3DGRUT 优化</b>;源/选中帧保持原始 GT 锚点,NerfBusters 可见性掩码<b>仅用于评估</b>不进训练。ArtiFixer3D+ 则在 ArtiFixer3D 渲染结果上再用 ArtiFixer 跑一遍后处理。</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>数学形式化:Opacity Mixing 与 Flow Matching</h2>
+
+<p>论文附录 A 严格证明 opacity mixing 与条件流匹配(CFM)框架<b>完全相容</b>。核心论据:</p>
+
+<p>CFM 损失对<b>任意联合分布</b> $q(z_0, z_1)$ 都有效,不要求 $z_0\sim\mathcal{N}(0,I)$:</p>
+
+<div class="equation">
+$$\mathcal{L}_{cfm} = \mathbb{E}_{t,z_0,z_1}\left\lVert v_\theta(z_t, t, \text{cond}) - (z_1 - z_0)\right\rVert_2^2 \tag{CFM}$$
+<span class="tag">(式 CFM)</span>
+</div>
+
+<p>本文定义源样本(即 opacity mixing,式 3 重述):</p>
+<div class="equation">
+$$z_0 := O_z\, z_{deg} + (1 - O_z)\,\epsilon,\quad \epsilon\sim\mathcal{N}(0,I) \tag{3}$$
+</div>
+<p>其中 $O_z$ 是空间变化的下采样 opacity 图,$z_{deg}$ 是 VAE 编码的损坏渲染。设 $z_1$ 为干净目标潜变量。采样全局标量 $t\sim U[0,1]$,构造插值:</p>
+<div class="equation">
+$$z_t = (1-t)\,z_0 + t\, z_1, \quad v_t = z_1 - z_0 \tag{4}$$
+<span class="tag">(式 4)</span>
+</div>
+
+<div class="callout tip">
+<b>关键细节:</b>$O_z$ 引入的空间变化<b>完全编码在 $z_0$ 中</b>,进而传播到 $z_t$ 与目标速度 $v_t$,<b>不作用于标量时间变量 $t$</b>。因此<b>无需逐位置时间步条件化</b>——网络接收 $(z_t, t, \text{cond})$,$t$ 是单一全局量,与标准 flow matching 完全一致。推理时用同样的 opacity mixing 采 $z_0\sim q(z_0)$,从 $t=0$ 积分到 $t=1$。
+</div>
+
+<p>这个相容性证明很重要:它说明 opacity mixing <b>不是对 flow matching 的 hack</b>,而是把源分布从「固定高斯」推广到「数据相关的混合分布」的<b>合法广义</b>——只要 $z_0$ 的分布定义清楚,CFM 的概率路径与向量场拟合目标都成立。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>训练与实现细节</h2>
+
+<p>论文 5.1 节与附录 G、GitHub README 共同给出完整超参与流程。下表综合论文与代码线索:</p>
+
+<h3>训练超参(主实验)</h3>
+<table>
+<thead><tr><th>项</th><th>值</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td>骨干模型</td><td>Wan 2.1 T2V-14B(也支持 1.3B)</td><td>论文 5.1 + README</td></tr>
+<tr><td>GPU</td><td>128 × H100</td><td>论文 5.1</td></tr>
+<tr><td>批大小</td><td>1 / GPU(共 128);<code>num_processes × gradient_accumulation_steps = 128</code></td><td>论文 + README</td></tr>
+<tr><td>注意力加速</td><td>FlashAttention-3</td><td>论文 5.1</td></tr>
+<tr><td>双向训练迭代</td><td>15,000(主)/ 10,000(消融)</td><td>论文 5.1</td></tr>
+<tr><td>因果初始化迭代</td><td>5,000(主)/ 2,000(消融)</td><td>论文 5.1</td></tr>
+<tr><td>rollout+DMD 迭代</td><td>2,000(主)/ 600(消融)</td><td>论文 5.1</td></tr>
+<tr><td>学习率</td><td>1e-5(双向+因果初始化)/ 2e-6(生成器)/ 4e-7(fake score)</td><td>论文 5.1</td></tr>
+<tr><td>优化器</td><td>AdamW</td><td>论文 5.1</td></tr>
+<tr><td>总训练算力</td><td>≈15k GPU-hours(主)/ ≈4k(消融,64 GPU)</td><td>论文 5.1</td></tr>
+<tr><td>每批帧数 N</td><td>81</td><td>论文 4.1</td></tr>
+<tr><td>参考视角数</td><td>0-12(训练);6(Difix3D+ 协议)/ 全部可用(其他)</td><td>论文 4.1+5.1</td></tr>
+<tr><td>文本 prompt 丢弃率</td><td>10%</td><td>论文 4.1</td></tr>
+<tr><td>DMD 生成步数</td><td>4(可降到 1)</td><td>论文 4.2 + 附录 C</td></tr>
+<tr><td>初始重建</td><td>3DGUT + MCMC 致密化,10,000 迭代(~10 分钟/场景)</td><td>论文 5.1 + 附录 G</td></tr>
+</tbody>
+</table>
+
+<h3>GitHub 揭示的三阶段训练结构</h3>
+<div class="callout key">
+<b>代码佐证(README 「Training」节):</b>ArtiFixer 训练分<b>三个阶段</b>,比论文 4.1/4.2 的二分叙述更细:
+<ol>
+<li><b>Stage 1 — 监督微调</b>(<code>model_training.train</code>):在重建条件化的 DL3DV 片段上监督微调,产出 Stage1 检查点(README 示例 <code>checkpoint_25000</code>);</li>
+<li><b>Stage 2 — Diffusion Forcing 微调</b>(<code>model_training.diffusion_forcing</code>):从 Stage1 出发,block-causal 掩码 + Diffusion Forcing 式逐帧异噪声,产出 <code>checkpoint_10000</code>;</li>
+<li><b>Stage 3 — DMD 蒸馏</b>(<code>model_training.distillation</code>):Stage2 作 student/generator 初始化,Stage1 作 critic(real-score 固定 + fake-score 可训),DMD 蒸馏成少步生成器。</li>
+</ol>
+README 的示例检查点迭代数(25k / 10k)高于论文主实验的(15k / 5k / 2k),暗示<b>实际发布的检查点训练得更久</b>,或这些只是示例路径。
+</div>
+
+<h3>检查点与骨干</h3>
+<table>
+<thead><tr><th>检查点</th><th>骨干</th><th>参数量</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><code>artifixer-14b.pt</code></td><td>Wan-AI/Wan2.1-T2V-14B-Diffusers</td><td>~16.9B</td><td>最高质量</td></tr>
+<tr><td><code>artifixer-1.3b.pt</code></td><td>Wan-AI/Wan2.1-T2V-1.3B-Diffusers</td><td>~1.68B</td><td>单 80GB GPU 可跑全流程</td></tr>
+</tbody>
+</table>
+<div class="note">检查点<b>只存 transformer 权重</b>,推理/评估命令必须用 <code>--model_id</code> 指定骨干模型来构建;1.3B 检查点若不传对应 <code>--model_id</code> 会因 shape 不匹配报错(README 明确警告)。也支持 DCP/FSDP 检查点目录(<code>--checkpoint_dir</code>)。</div>
+
+<h3>数据流水线(GitHub <code>data_processing/</code>)</h3>
+<ol>
+<li><b>下载 DL3DV-ALL-960P</b>(HuggingFace 数据集)→ 场景 zip;</li>
+<li><b>生成 prompt HDF5</b>(<code>run_captioning</code>):Qwen3-VL-30B-A3B-Instruct 给每个场景不同帧子集生成描述,鼓励 prompt 多样性,并抑制对相机运动的描述(避免与 ray 条件纠缠);</li>
+<li><b>生成稀疏重建 HDF5</b>(<code>run_sparse_reconstruction</code>):半共可见性相机划分 → 3DGRUT 稀疏重建(按 view count 2/3/6/12)→ MoGe 度量尺度对齐 → 转 HDF5;</li>
+<li><b>构建 train/test split</b>(<code>trainval_test_split</code>):校验源存档、所需重建划分、重复文件、已知坏场景后写出 split JSON。</li>
+</ol>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>逻辑流程图</h2>
+
+<h3>总流程:从输入到三个变体</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: 初始 3D 重建 + 可选参考视角 + 文本 prompt"]
+    IN --> DEG["渲染损坏视角<br/>VAE 编码 → z_deg"]
+    DEG --> MIX["Opacity Mixing<br/>z_mix = O_z·z_deg + (1-O_z)·ε"]
+    MIX --> TEACHER["双向教师模型<br/>(Phase I 训练得到)"]
+    TEACHER --> CAU["因果自回归模型<br/>(Phase II 蒸馏得到)"]
+    CAU --> GEN["生成数百帧一致新视角"]
+    GEN --> V1["ArtiFixer<br/>(直接渲染)"]
+    GEN --> DIST3D["单次生成所有视角<br/>→ 标准 3D 重建"]
+    DIST3D --> V2["ArtiFixer3D<br/>(回灌 3DGUT)"]
+    V2 --> POST["再用自回归模型后处理"]
+    POST --> V3["ArtiFixer3D+<br/>(3D+后处理)"]
+    style MIX fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CAU fill:#ede9fe,stroke:#8b5cf6,color:#3b1f6e
+    style V1 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style V2 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style V3 fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>训练流程(三阶段,据 GitHub README)</h3>
+<div class="mermaid">
+flowchart LR
+    WAN["预训练<br/>Wan2.1 T2V-14B"] --> S1
+    subgraph S1["Stage 1: 监督微调 (model_training.train)"]
+        S1A["重建条件化 DL3DV 片段"]
+        S1B["opacity mixing + 条件注入"]
+        S1C["双向 CFM 损失 L_cfm"]
+        S1A --> S1B --> S1C
+    end
+    S1 -->|checkpoint_25k| S2
+    subgraph S2["Stage 2: Diffusion Forcing 微调"]
+        S2A["block-causal 掩码"]
+        S2B["逐帧异噪声水平<br/>(Diffusion Forcing 式)"]
+        S2C["继续 dropout 训练"]
+        S2A --> S2B --> S2C
+    end
+    S2 -->|checkpoint_10k| S3
+    subgraph S3["Stage 3: DMD 蒸馏"]
+        S3A["Stage2 → student/generator 初始化"]
+        S3B["Stage1 → real-score critic(固定)"]
+        S3C["fake-score critic(可训)"]
+        S3D["Self-Forcing rollout + DMD"]
+        S3A --> S3D
+        S3B --> S3D
+        S3C --> S3D
+    end
+    S3 --> OUT["少步(4步)因果生成器<br/>(ArtiFixer 推理模型)"]
+    style S1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style S3 fill:#ede9fe,stroke:#8b5cf6,color:#3b1f6e
+</div>
+
+<h3>条件信号注入到 Transformer block(模块组成)</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph BYPASS["绕过 VAE 的逐像素信号"]
+        R["Plücker ray maps R<br/>每像素 6 向量 (d, o×d)"]
+        O["Opacity 图 O<br/>渲染不透明度"]
+    end
+    BYPASS -->|PixelUnshuffle 下采样| INJ
+    subgraph INJ["每个 transformer block 内注入"]
+        T0["V-Tokens(损坏渲染 VAE 编码)"] --> SA["Self-Attention + LN"]
+        SA --> ADD1["+ f_r(R)"]
+        ADD1 --> ADD2["+ f_o(O)"]
+        ADD2 --> CA["Cross-Attention(参考视角)"]
+        CA --> FFN["MLP/FFN"]
+    end
+    subgraph REF["参考视角路径"]
+        RV["参考视角 VAE 编码<br/>按图像 batch patchify(无时间压缩)"]
+        RV -->|K_n, V_n 投影| CA
+        PR["PRoPE 相对位置<br/>(目标 vs 参考内外参)"] -.-> CA
+    end
+    PROMPT["Prompt T-Tokens<br/>(10% 丢弃)"] --> CA
+    style ADD2 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CA fill:#ede9fe,stroke:#8b5cf6,color:#3b1f6e
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>实验结果</h2>
+
+<p>在 Nerfbusters、DL3DV、Mip-NeRF 360 三个基准上,所有 ArtiFixer 变体均以显著优势超越全部基线。<b>三个变体渲染相近</b>:ArtiFixer 略锐利,ArtiFixer3D 与源图像更一致但略糊(显式 3D 表示所致,PSNR/SSIM 微升、LPIPS/FID 微降),ArtiFixer3D+ 重新恢复锐度。</p>
+
+<h3>表 1:伪影去除(Nerfbusters & DL3DV)</h3>
+<p>所有 ArtiFixer 变体比先前方法 PSNR 提升约 <b>2 dB</b>。</p>
+<table>
+<thead><tr><th>方法</th><th>NB PSNR↑</th><th>NB SSIM↑</th><th>NB LPIPS↓</th><th>NB FID↓</th><th>DL3DV PSNR↑</th><th>DL3DV FID↓</th></tr></thead>
+<tbody>
+<tr><td>Nerfacto</td><td>17.29</td><td>0.621</td><td>0.402</td><td>134.65</td><td>17.16</td><td>112.30</td></tr>
+<tr><td>3DGS</td><td>17.66</td><td>0.678</td><td>0.327</td><td>113.84</td><td>17.18</td><td>107.23</td></tr>
+<tr><td>Difix3D+(3DGS)</td><td>18.51</td><td>0.686</td><td>0.264</td><td>41.77</td><td>17.99</td><td>40.86</td></tr>
+<tr class="best"><td>ArtiFixer</td><td>19.83</td><td>0.701</td><td>0.254</td><td>37.78</td><td>19.73</td><td>20.85</td></tr>
+<tr class="best"><td>ArtiFixer3D</td><td>20.24</td><td>0.729</td><td>0.267</td><td>39.67</td><td>20.14</td><td>24.27</td></tr>
+<tr class="best"><td>ArtiFixer3D+</td><td>20.12</td><td>0.713</td><td>0.264</td><td>41.17</td><td>20.06</td><td>22.61</td></tr>
+</tbody>
+</table>
+
+<h3>表 2:稀疏视角重建(Mip-NeRF 360,3/6/9-view)</h3>
+<p>跨所有视角 split 与所有指标大幅领先。3-view 下 ArtiFixer3D+ 比 CAT3D 高 <b>0.89 dB</b>。</p>
+<table>
+<thead><tr><th>方法</th><th>3-view PSNR↑</th><th>6-view PSNR↑</th><th>9-view PSNR↑</th><th>3-view LPIPS↓</th></tr></thead>
+<tbody>
+<tr><td>Zip-NeRF</td><td>12.77</td><td>13.61</td><td>14.30</td><td>0.705</td></tr>
+<tr><td>FSGS</td><td>14.17</td><td>16.12</td><td>17.94</td><td>0.578</td></tr>
+<tr><td>ReconFusion</td><td>15.50</td><td>16.93</td><td>18.19</td><td>0.585</td></tr>
+<tr><td>GenFusion</td><td>15.29</td><td>17.16</td><td>18.36</td><td>0.585</td></tr>
+<tr><td>GSFixer</td><td>15.61</td><td>17.27</td><td>18.63</td><td>0.559</td></tr>
+<tr><td>CAT3D</td><td>16.62</td><td>17.72</td><td>18.67</td><td>0.515</td></tr>
+<tr class="best"><td>ArtiFixer</td><td>17.06</td><td>18.64</td><td>19.96</td><td>0.437</td></tr>
+<tr class="best"><td>ArtiFixer3D</td><td>17.29</td><td>18.95</td><td>20.24</td><td>0.440</td></tr>
+<tr class="best"><td>ArtiFixer3D+</td><td>17.51</td><td>18.95</td><td>20.16</td><td>0.441</td></tr>
+</tbody>
+</table>
+
+<h3>表 3:新内容生成(DL3DV,大块未观测区)</h3>
+<p>比次优 GenFusion 高近 <b>3 dB</b>。Gen3C 渲染较锐但常不尊重源内容、几何错误、色偏;Difix3D+/Fixer 因确定性条件化无法 inpaint 合理上下文。</p>
+<table>
+<thead><tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th></tr></thead>
+<tbody>
+<tr><td>3DGUT(初始)</td><td>16.12</td><td>0.537</td><td>0.445</td><td>92.94</td></tr>
+<tr><td>Difix3D+(3DGS)</td><td>16.34</td><td>0.564</td><td>0.382</td><td>21.77</td></tr>
+<tr><td>Fixer(offline)</td><td>13.09</td><td>0.355</td><td>0.584</td><td>135.43</td></tr>
+<tr><td>Gen3C</td><td>15.50</td><td>0.491</td><td>0.476</td><td>68.36</td></tr>
+<tr><td>GenFusion</td><td>17.03</td><td>0.624</td><td>0.392</td><td>132.91</td></tr>
+<tr class="best"><td>ArtiFixer</td><td>19.75</td><td>0.643</td><td>0.303</td><td>12.22</td></tr>
+<tr class="best"><td>ArtiFixer3D</td><td>19.92</td><td>0.673</td><td>0.306</td><td>16.28</td></tr>
+<tr class="best"><td>ArtiFixer3D+</td><td>20.15</td><td>0.662</td><td>0.307</td><td>13.91</td></tr>
+</tbody>
+</table>
+
+<h3>表 5:推理速度(单 GB300 GPU)</h3>
+<p>因果蒸馏 + KV cache + 少步采样 = 相对双向 Wan 2.1 <b>70× 加速</b>。ArtiFixer3D 以原生 3DGUT 速度渲染。</p>
+<table>
+<thead><tr><th>方法</th><th>FPS↑</th></tr></thead>
+<tbody>
+<tr class="fail"><td>Wan 2.1 T2V-14B(双向)</td><td>0.12</td></tr>
+<tr class="fail"><td>Wan 2.1 T2V-1.3B(双向)</td><td>0.49</td></tr>
+<tr><td>ArtiFixer / 3D+ (14B)</td><td>8.36</td></tr>
+<tr><td>ArtiFixer / 3D+ (1.3B)</td><td>34.38</td></tr>
+<tr class="best"><td>ArtiFixer3D(原生 3DGUT)</td><td>268</td></tr>
+</tbody>
+</table>
+
+<h3>表 11:多视角一致性(MEt3R,越低越好)</h3>
+<p>用 MEt3R [Asim 2025] 经 MASt3R 深度重投影与 RAFT 光流 warping 两个 backbone 评估。所有 ArtiFixer 变体领先,ArtiFixer3D 因显式 3D 表示最佳。</p>
+<table>
+<thead><tr><th>方法</th><th>MASt3R↓</th><th>RAFT↓</th></tr></thead>
+<tbody>
+<tr><td>Fixer</td><td>0.1288</td><td>0.1236</td></tr>
+<tr><td>Difix3D+</td><td>0.0974</td><td>0.0959</td></tr>
+<tr><td>GenFusion</td><td>0.0817</td><td>0.0786</td></tr>
+<tr><td>Gen3C</td><td>0.0766</td><td>0.0757</td></tr>
+<tr><td>ArtiFixer</td><td>0.0749</td><td>0.0749</td></tr>
+<tr><td>ArtiFixer3D+</td><td>0.0697</td><td>0.0697</td></tr>
+<tr class="best"><td>ArtiFixer3D</td><td>0.0646</td><td>0.0647</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>额外基准:</b>Tanks and Temples 2-view(论文表 10)ArtiFixer3D+ 14.75 dB 超过 ReconX 14.28;1.3B 变体(表 8/9)在 3-view Mip-NeRF 360 与 CAT3D 差距仅 0.02 dB,却用更少参数超越其他视频模型基线。
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>消融与诊断分析</h2>
+
+<h3>表 4:组件消融(Mip-NeRF 360)</h3>
+<p>证明「从初始渲染出发(Direct Input + Opacity Mixing)」而非「通道拼接条件化」是产出与源图像一致输出的<b>关键</b>;因果初始化提供适度增益。</p>
+<table>
+<thead><tr><th>方法</th><th>Direct Input</th><th>Opacity Mixing</th><th>Diffusion Forcing</th><th>PSNR↑</th><th>FID↓</th></tr></thead>
+<tbody>
+<tr class="fail"><td>Channel Concatenation</td><td>✗</td><td>✗</td><td>✓</td><td>14.52</td><td>87.55</td></tr>
+<tr><td>w/o Opacity Mixing</td><td>✓</td><td>✗</td><td>✓</td><td>17.34</td><td>87.06</td></tr>
+<tr><td>w/o Initialization</td><td>✓</td><td>✓</td><td>✗</td><td>17.58</td><td>74.92</td></tr>
+<tr class="best"><td>Full Method</td><td>✓</td><td>✓</td><td>✓</td><td>17.99</td><td>69.43</td></tr>
+</tbody>
+</table>
+<div class="callout warn">
+<b>核心发现:</b>通道拼接(从噪声出发、拼接损坏渲染)只有 14.52 dB——<b>比完整方法低 3.47 dB</b>,证明「直接从渲染出发」对源一致性至关重要。去掉 opacity mixing 掉 0.65 dB(17.34 vs 17.99),但更关键的是它<b>解锁了未观测区生成能力</b>(图 4 定性可见,无 mixing 的「Direct Input」在未观测区质量明显退化)。
+</div>
+
+<h3>条件信号剥离</h3>
+<ul>
+<li><b>去掉初始渲染</b>(仅靠参考视角 + 相机 ray):保真度下降但<b>仍能恢复高层场景结构</b>(图 6)——证明 opacity mixing + 训练 dropout 赋予的强生成能力;</li>
+<li><b>去掉所有条件仅留文本</b>:退化为标准文生视频,质量与基座 Wan 2.1 相当(图 7)——说明 opacity mixing 不损害原模型的纯生成能力。</li>
+</ul>
+
+<h3>模型规模(表 8/9)</h3>
+<p>为区分方法贡献与骨干容量,用 Wan 2.1 T2V-1.3B 训练全流程。1.3B 变体在 3-view Mip-NeRF 360 与 CAT3D 差距仅 <b>0.02 dB</b>(16.60 vs 16.62),却超越其他所有视频模型基线(GenFusion 1.4B、GSFixer 5B、Gen3C 7B 参数更多却更差)。</p>
+
+<h3>去噪步数(表 7、图 11)</h3>
+<p>因从渲染而非纯噪声出发,大多数情况下 <b>4 步以内</b>即可生成可信视觉。减少步数 + 多 GPU 上下文并行可进一步提升吞吐(1.3B + 4 GPU + 1 步达 <b>101.77 FPS</b>)。但空旷区锐度与时序一致性略损,ArtiFixer3D/3D+ 因 3D 蒸馏提供强条件而大幅缓解。</p>
+
+<h3>文本条件贡献(表 6)</h3>
+<p>VLM 生成 prompt 在最稀疏设定下有小收益(+0.14 dB on 3-view),随观测变密逐渐消失。说明<b>图像/几何条件是主驱动,文本是辅助</b>。</p>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>可改进方向分析</h2>
+
+<p>本节从方法、数据与评估、工程实用性三维度,结合论文实验与 GitHub 代码证据,分析可改进点。</p>
+
+<h3>方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] Opacity Mixing 的二值化脆弱性:连续信号在极端区的退化</h4>
+<p><b>问题:</b>opacity mixing $z_{mix}=O_z z_{deg}+(1-O_z)\epsilon$ 在 $O_z\to 0$ 与 $O_z\to 1$ 两端行为良好,但<b>中间过渡区</b>(部分观测、半透明、浮点数 opacity)的源分布是 $z_{deg}$ 与 $\epsilon$ 的凸组合。若 $z_{deg}$ 本身在半透明区已严重退化(如飘浮伪影),混合后仍带噪声;且 max-pool 下采样 $O\to O_z$ 会<b>放大高 opacity 区域</b>(取 max),可能把小面积实心区扩展,反之把细窄缝状未观测区吞掉。<b>代码佐证:</b>论文 §4.1 用 max-pool 下采样 $O_z$(为匹配 $z_{deg}$ 空间尺寸),细粒度信息才需经式 (2) 二次注入——这本身承认了下采样有损信息。</p>
+<p><b>改进:</b>① 改用可学习的 opacity 重映射(如轻量 MLP 学 $O_z\to\alpha$ 的非线性映射),而非固定 max-pool;② 在过渡区用<b>更高分辨率</b>的 $O_z$(牺牲部分效率换精度);③ 探索各向异性下采样(保留边界)而非 max-pool。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 因果自回归的误差累积:条件兜底但未根治</h4>
+<p><b>问题:</b>论文 5.3 声称「条件信号足以防止误差累积,无需长时序训练」。但这是<b>经验性声明</b>,消融未直接量化「超长(数百帧)rollout 下 PSNR 随帧数的衰减曲线」。Self-Forcing [Huang 2025] 原文与 Rolling Forcing [Liu 2025]、RELIC [Hong 2025] 都专门针对长时序误差累积做训练侧改进,ArtiFixer 只用「相同帧数训练 + 滚动 KV cache」绕过。<b>代码佐证:</b>GitHub README Stage 2/3 用固定帧数训练(<code>model_training.diffusion_forcing</code> 与 <code>distillation</code> 未暴露 <code>num_frames</code> 之外的长度调度参数),且附录 C 承认「空旷区少步会损时序一致性」——暗示长 rollout 在未观测区仍脆弱。</p>
+<p><b>改进:</b>① 增加「帧数 vs 一致性(MEt3R)」曲线实验,定位误差累积的临界长度;② 在 Stage 3 DMD 时引入<b>长程一致性 critic</b>(如 MEt3R 作为额外分布匹配目标);③ 探索 sliding-window 训练 + 推理的帧数解耦。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<h4>[中优先级] 三个变体的「选择」缺乏自适应机制</h4>
+<p><b>问题:</b>ArtiFixer(直接)/3D(回灌)/3D+(后处理)三个变体是<b>固定三选一</b>的离散选择,且 3D+ 恒定地多跑一次生成。但论文表 1 显示:在 Nerfbusters 上 ArtiFixer3D 的 PSNR(20.24)> 3D+(20.12),而 DL3DV 上 3D+ 的 FID(13.91)< 3D(16.28)——<b>最优变体随数据集/指标而变</b>。论文未给出自动选择策略,用户需手动试三种。<b>代码佐证:</b>GitHub README 的推理流程是显式串行(先 <code>run_inference</code> → 再 <code>run_artifixer3d</code> → 再 <code>run_inference</code> 跑 3D+),无统一决策入口。</p>
+<p><b>改进:</b>① 训练一个轻量「场景稀疏度/质量预测器」自动选变体;② 把 3D+ 的后处理改成<b>条件触发</b>(仅当 3D 重建的 opacity 在某些区域仍低才再跑一次);③ 把三变体统一成「渐进增强直到质量收敛」的自适应循环。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] 仅在合成/半合成数据集验证,缺乏真实野外捕获的系统性评估</h4>
+<p><b>问题:</b>Nerfbusters、DL3DV、Mip-NeRF 360、Tanks&Temples 虽是常用基准,但多为<b>受控采集</b>场景,相机位姿已知、光照相对稳定。论文虽标题含「in-the-wild captures」,但评估的「野外」仍是这些数据集的测试 split,未覆盖手机随手拍、极端光照、动态元素、运动模糊等真实退化。<b>代码佐证:</b>GitHub 的 <code>data_processing.prepare_colmap_artifixer_inputs</code> 假设输入是规整的 COLMAP 输出(images/ + sparse/0/*.bin),对真实手机视频的 COLMAP 失败(如纹理弱区)无兜底;NerfBusters 评估对不同场景用不同分辨率(<code>images_2</code> vs <code>images</code>),暗示数据预处理需要人工适配。</p>
+<p><b>改进:</b>① 在真实手机采集(如 ScanNet++、自定义手机序列)上系统评估;② 增加「COLMAP 失败/位姿噪声」鲁棒性消融;③ 引入动态场景评估(当前方法对动态内容无专门处理)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 文本条件贡献微弱,但 VLM caption 仍是硬依赖</h4>
+<p><b>问题:</b>表 6 显示文本 prompt 在 3-view 仅 +0.14 dB,随观测变密消失。但训练数据构造<b>强依赖</b> Qwen3-VL-30B 生成 caption(附录 G 给出长 prompt 模板,且要求 80-100 词、抑制相机运动描述)。<b>代码佐证:</b>GitHub <code>data_processing.run_captioning</code> 是训练数据准备的必经步骤,产出的 prompt HDF5 是训练三要素之一;若 VLM 生成质量差或场景描述错误,虽影响小但仍是流程瓶颈。这种「影响小但硬依赖」是不对称设计。</p>
+<p><b>改进:</b>① 既然文本贡献微弱,可训练一个<b>无文本</b>变体简化流程,验证是否能持平;② 用更轻量的场景分类标签(几类:室内/室外/自然)替代长 caption;③ 探索把 caption 降级为可选输入而非训练硬依赖。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<h4>[低优先级] 缺乏与最新自回归世界模型的直接对比</h4>
+<p><b>问题:</b>基线主要对比 Difix3D+/GenFusion/CAT3D/FlowR/Gen3C,但 2025-2026 年涌现的自回归世界模型(如 RELIC [Hong 2025]、Voyager [Wan 2025b]、WorldWarp [Kong 2025]、StarGen [Zhai 2025])在 related work 提及却<b>未进量化对比</b>。这些方法与 ArtiFixer 同属「3D 条件自回归视频生成」,是更直接的竞品。</p>
+<p><b>改进:</b>补齐与 RELIC/StarGen/Voyager 的量化对比,尤其在长视频生成与多视角一致性维度。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] 720p 分辨率上限与骨干绑死</h4>
+<p><b>问题:</b>论文附录 E 明确:ArtiFixer 与 ArtiFixer3D+ 受骨干视频模型限制<b>最高 720p</b>;仅 ArtiFixer3D 能以 3D 表示原生分辨率渲染。且方法<b>与 Wan 2.1 骨干绑死</b>——opacity/ray 注入层是针对 Wan 2.1 transformer block 设计的,换骨干需重写注入逻辑。<b>代码佐证:</b>GitHub README 的检查点表把「骨干模型」与「检查点」一一绑定,且警告「1.3B 检查点不传对应 <code>--model_id</code> 会 shape 不匹配报错」——检查点只存 transformer 权重,完全依赖骨干 diffusers 模型重建。</p>
+<p><b>改进:</b>① 用视频超分(Zhuang 2026 FlashVSR,论文已提及)作为后处理闭合分辨率差距;② 把条件注入抽象成<b>骨干无关的 adapter 模块</b>(如 IP-Adapter 式),支持即插即用其他视频模型;③ 探索单帧解码 + 时序连贯的混合策略降低分辨率瓶颈。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 训练算力门槛高,数据流水线重</h4>
+<p><b>问题:</b>15k GPU-hours(128 × H100)的训练成本远超学术小实验室能力;数据准备需下载 DL3DV-ALL-960P、跑 Qwen3-VL captioning、3DGRUT 稀疏重建(每场景 ~10 分钟 × 数千场景)、MoGe 尺度对齐、HDF5 转换——<b>数据流水线比训练本身更重</b>。<b>代码佐证:</b>GitHub <code>data_processing/</code> 有 5 个子步骤(download → captioning → sparse_reconstruction → trainval_test_split → 准备路径),每步都产大量中间文件;<code>run_sparse_reconstruction</code> 的 <code>--num_selected_indices 2 3 6 12</code> 意味着每场景跑 4 种稀疏度 × 2 半共可见划分 = 8 次重建。</p>
+<p><b>改进:</b>① 发布预处理好的 HDF5 数据集子集降低复现门槛;② 提供「小规模复现配置」(如 16 GPU + 截断 schedule,论文已有 4k GPU-hours 消融版);③ 把 captioning 改为可选(配合上一条无文本变体)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<h4>[低优先级] 3D 蒸馏用 3DGUT,生态绑定单一</h4>
+<p><b>问题:</b>3D 蒸馏阶段固定用 3DGUT [Wu 2025a] + MCMC,未支持其他 3D 表示(如 3DGS、2DGS、GOF)。<b>代码佐证:</b>GitHub 需 <code>git clone --recurse-submodules</code> 拉「ArtiFixer-compatible 3DGRUT 子模块」,且 Docker 镜像把 3DGRUT 构建固化;ArtiFixer3D 阶段(<code>data_processing.run_artifixer3d</code>)直接调用 3DGRUT 优化。这意味着想换 3D 后端需改子模块与脚本。</p>
+<p><b>改进:</b>抽象出 3D 蒸馏接口,支持可插拔的 3DGS/2DGS/GOF 后端,扩大适用面。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<thead><tr><th>改进点</th><th>维度</th><th>优先级</th><th>代码/实验佐证</th></tr></thead>
+<tbody>
+<tr><td>Opacity Mixing 中间过渡区脆弱性</td><td>方法</td><td>高</td><td>max-pool 下采样 + 式(2)二次注入</td></tr>
+<tr><td>仅合成数据集验证</td><td>数据评估</td><td>高</td><td>prepare_colmap_artifixer_inputs 假设规整 COLMAP</td></tr>
+<tr><td>720p 上限 + 骨干绑死</td><td>工程</td><td>高</td><td>附录 E + 检查点-骨干一一绑定</td></tr>
+<tr><td>因果自回归误差累积未根治</td><td>方法</td><td>中</td><td>固定帧数训练 + 附录 C 空旷区一致性损失</td></tr>
+<tr><td>三变体无自适应选择</td><td>方法</td><td>中</td><td>表 1 最优变体随指标变 + 串行推理流程</td></tr>
+<tr><td>文本贡献微弱但硬依赖</td><td>数据</td><td>中</td><td>表 6 +0.14 dB;run_captioning 必经步骤</td></tr>
+<tr><td>训练算力高 + 数据流水线重</td><td>工程</td><td>中</td><td>15k GPU-h;data_processing 5 步 + 8 次重建/场景</td></tr>
+<tr><td>缺最新自回归世界模型对比</td><td>评估</td><td>低</td><td>related work 提及未量化</td></tr>
+<tr><td>3D 蒸馏生态单一</td><td>工程</td><td>低</td><td>3DGRUT 子模块固化</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>个人认为最关键的三点:</b>
+<ol>
+<li><b>Opacity Mixing 的过渡区与下采样信息损失</b>——这是方法的核心创新,其脆弱性直接决定未观测/半观测区质量,且 max-pool 是可工程改进的具体抓手;</li>
+<li><b>720p 分辨率上限与骨干绑死</b>——这是落地的硬约束,直接影响 VR/AR 与闭环仿真(论文自己列的首要应用场景),不解决则应用面受限;</li>
+<li><b>误差累积的经验性声明缺乏系统量化</b>——因果自回归是论文第二大贡献,「条件兜底」若在超长 rollout 失效,会动摇「数百帧一致」的核心卖点,需补充帧数-一致性曲线实验。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>总结与领域定位</h2>
+
+<p>ArtiFixer 的核心贡献是把「3D 重建 ↔ 生成」从单向条件化推进为<b>双向闭环</b>:重建条件化生成器、生成器增强并扩展重建。两个关键创新——opacity mixing 与因果自回归蒸馏——分别解决了「未观测区生成能力」与「单次帧数可扩展性」两个根本权衡。</p>
+
+<h3>技术路线定位</h3>
+<table>
+<thead><tr><th>范式</th><th>代表方法</th><th>先验来源</th><th>核心局限</th></tr></thead>
+<tbody>
+<tr><td>手工几何先验</td><td>RegNeRF、SparseNeRF</td><td>深度/法向估计器</td><td>对噪声敏感、密集采集增益微</td></tr>
+<tr><td>前馈多场景网络</td><td>MVSNeRF、SCube、<a href="3D-20241002-EVA-Gaussian.html">EVA-Gaussian</a></td><td>学习的多视角先验</td><td>模糊区多模态、视角外推弱</td></tr>
+<tr><td>扩散 SDS 优化</td><td>DreamFusion、ReconFusion</td><td>2D 扩散 SDS</td><td>计算开销大</td></tr>
+<tr><td>图像扩散修复</td><td>Difix3D+、GSFixer</td><td>图像扩散直接映射</td><td>未观测区 mode collapse</td></tr>
+<tr><td>双向视频扩散</td><td>GenFusion、CAT3D、FlowR</td><td>视频模型一致性</td><td>单次帧数有限、需迭代蒸馏</td></tr>
+<tr><td>3D 条件自回归(非闭环)</td><td>Gen3C、StarGen、RELIC</td><td>3D 作固定条件</td><td>3D 不被改进、受深度估计限</td></tr>
+<tr class="best"><td>闭环自回归(本文)</td><td>ArtiFixer</td><td>opacity mixing + 因果蒸馏</td><td>720p 上限、骨干绑死</td></tr>
+</tbody>
+</table>
+
+<h3>局限(论文自述,附录 E)</h3>
+<ul>
+<li>虽达交互速率,仍显著慢于直接从神经场景表示渲染;</li>
+<li>按时序块解码引入延迟,对具身 AI 等应用不理想;</li>
+<li>ArtiFixer/3D+ 受骨干限 <b>720p</b>,仅 ArtiFixer3D 可原生分辨率;</li>
+<li>可能模糊细细节与文字,渲染条件缺失/高度退化时偶有色偏;</li>
+<li>未来方向:减少去噪步、单帧解码保时序连贯、视频超分闭合分辨率差。</li>
+</ul>
+
+<div class="callout tip">
+<b>知识库关联:</b>ArtiFixer 的骨干是 <a href="VideoGen-20250326-Wan2.1.html">Wan 2.1 T2V-14B</a>;其 3D 后端 3DGUT 是 3DGS 的扩展;与 <a href="3D-20230808-3DGS及其进阶与改进.html">3DGS</a>、<a href="3D-20240326-2DGS.html">2DGS</a>、<a href="3D-20240416-GOF.html">GOF</a> 同属高斯表示家族;与 <a href="3D-20241002-EVA-Gaussian.html">EVA-Gaussian</a>(前馈重建)、<a href="3D-20250314-VGGT.html">VGGT</a>、<a href="3D-20250717-Pi3.html">Pi3</a>(前馈多视角)形成「生成式增强 vs 前馈预测」的路线对照。
+</div>
+
+<h3>结论</h3>
+<p>ArtiFixer 在「重建增强生成、生成改进重建」的闭环路线上迈出了坚实一步。opacity mixing 用一个简洁的连续信号把一致性与生成能力统一在一个源分布里,因果蒸馏则把双向模型的可扩展性瓶颈解开。1-3 dB 的提升幅度与 70× 加速在同类方法中罕见。但 720p 上限、骨干绑死、误差累积的经验性兜底,是它从「研究标杆」走向「通用工具」前需要跨越的工程门槛。</p>
+</section>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-21 · 领域:3D 重建增强 / 自回归视频扩散 · SIGGRAPH 2026
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
