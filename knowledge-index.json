@@ -1,7 +1,7 @@
 {
   "version": "1.1",
   "updated": "2026-08-12",
-  "paper_count": 40,
+  "paper_count": 41,
   "categories": ["CV/AI", "VideoGen", "3D", "SR"],
   "papers": [
     {
@@ -403,6 +403,16 @@
       "category": "3D",
       "tags": ["3D Reconstruction", "3D Gaussian Splatting", "Non-rigid Deformation", "Motion-to-Static", "Geometric Consistency", "Video Generation", "Pose Guidance", "Generative 3D Reconstruction", "Wan 2.2", "SMPL", "动转静", "骨骼引导", "萌宠数字人", "技术调研", "综述"],
       "sections": ["结论先行：技术路线判断", "人体微动三维重建经典方法", "视频生成中的几何一致性", "骨骼/姿态引导的视频生成与重建", "动转静/姿态归一化方向", "生成式三维重建", "Wan模型几何一致性特性", "技术路线对比表", "综述正文示例段", "参考文献", "相关资源链接"]
+    },
+    {
+      "id": "p41",
+      "file": "3D-20260512-VidSplat.html",
+      "title": "VidSplat: 视频扩散先验驱动的稀疏视角高斯重建",
+      "arxiv": "2605.11424",
+      "date": "2026-05-12",
+      "category": "3D",
+      "tags": ["Sparse-View Reconstruction", "Video Diffusion Prior", "Gaussian Splatting", "Stage-wise Denoising", "Single-View Reconstruction", "Training-free", "Wan2.1", "MAtCha", "DUSt3R", "Geometry-Guided Generation", "Confidence Weighted Refinement", "Marching Tetrahedra", "Flow Matching", "SIGGRAPH 2026", "清华", "快手", "Wayne State Univ", "Surface Reconstruction", "Novel View Synthesis", "TNT", "Replica", "DL3DV"],
+      "sections": ["论文摘要", "研究背景与动机", "算法总体框架", "阶段一:初始化与点云补全", "基于可见性的相机位姿采样", "几何引导的视频生成(核心)", "阶段二:迭代训练精修", "损失函数", "实验结果", "消融实验", "单视角重建应用", "可改进方向分析", "技术路线对比与演进", "总结", "研究团队与资源链接"]
     }
   ],
   "topic_index": {
@@ -415,7 +425,7 @@
     "3D Gaussian Splatting": ["p20", "p21", "p22", "p23", "p26", "p17", "p28", "p29", "p35", "p36", "p40"],
     "Camera Pose Estimation": ["p26", "p18", "p30", "p31"],
     "Point Tracking": ["p26", "p15", "p17", "p18"],
-    "Novel View Synthesis": ["p20", "p21", "p23", "p27", "p28", "p29"],
+    "Novel View Synthesis": ["p20", "p21", "p23", "p27", "p28", "p29", "p41"],
     "Feed-Forward 3D": ["p23", "p26", "p29", "p30", "p31"],
     "Single-View 3D Reconstruction": ["p29"],
     "Learned Density Control": ["p29"],
@@ -423,7 +433,7 @@
     "Latent Diffusion 3D": ["p29", "p24"],
     "Octree/Adaptive Sampling": ["p29"],
     "Sobol Sequence": ["p29"],
-    "SIGGRAPH 2026": ["p29"],
+    "SIGGRAPH 2026": ["p29", "p41"],
     "VAST AI": ["p29"],
     "Score Distillation (SDS)": ["p22", "p33"],
     "Triplane Representation": ["p23", "p24", "p29"],
@@ -563,7 +573,14 @@
     "3DPW": ["p39"],
     "EMDB": ["p39"],
     "Harmony4D": ["p39"],
-    "LSPET": ["p39"]
+    "LSPET": ["p39"],
+    "Sparse-View Reconstruction": ["p41"],
+    "Video Diffusion Prior": ["p02", "p41"],
+    "Stage-wise Denoising": ["p41"],
+    "Geometry-Guided Generation": ["p41"],
+    "Confidence Weighted Refinement": ["p41"],
+    "MAtCha": ["p41"],
+    "DUSt3R": ["p41"]
   },
   "usage": "当用户提问某知识点时，先读取此索引文件，根据 topic_index 或 tags 定位到具体论文(pXX)，再读取对应 HTML 的特定章节。避免每次全量读取论文。"
 }

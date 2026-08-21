@@ -1175,6 +1175,30 @@
             <a href="https://kangrnin.github.io/PDF-GS/" target="_blank">🌐 项目主页</a>
         </div>
 
+        <div class="note-card">
+            <h3>40. VidSplat: 视频扩散先验驱动的稀疏视角高斯重建</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2605.11424</span>
+                <span>📅 2026-05-12</span>
+                <span>🏢 清华大学软件学院 · 快手 · Wayne State Univ.</span>
+                <span>🏆 SIGGRAPH 2026 Conference Paper</span>
+                <span>🔧 Training-free · Code Coming Soon</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Sparse-View Reconstruction</span>
+                <span class="tag green">Video Diffusion Prior</span>
+                <span class="tag">Gaussian Splatting</span>
+                <span class="tag">Stage-wise Denoising</span>
+                <span class="tag">Single-View</span>
+                <span class="tag">Wan2.1</span>
+            </div>
+            <p>用视频扩散先验(Wan2.1 I2V)迭代合成新视角、补偿稀疏输入覆盖缺失的 training-free 生成式重建框架。核心创新:① <strong>几何引导的分阶段去噪</strong>(式 9 三阶段 mask 调度——早期严格锚定渲染几何、中期渐松、晚期解冻生成),解决视频生成的内容漂移与 3D 不一致;② <strong>迭代优化框架</strong>(可见性相机采样 + 单目深度反投影新增高斯 + 置信度加权融合)。表面重建断层领先:Replica F-Score <strong>80.79</strong>(vs 次优 MAtCha 71.77)、TNT <strong>12.80</strong>(vs 6.47,+98%);DL3DV NVS 室内 <strong>19.78</strong>(vs 17.87,+1.91dB);视频生成 PSNR <strong>25.80</strong> 全面最优。支持单图重建。<em>基于 2DGS/MAtCha/DUSt3R/Wan2.1;代码 Coming Soon,三阶段超参 T0/T1/T2/ρ 未公开是主要可复现性硬伤。</em></p>
+            <a href="3D-20260512-VidSplat.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2605.11424" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/tangjm24/VidSplat" target="_blank">💻 GitHub</a>
+            <a href="https://tangjm24.github.io/VidSplat" target="_blank">🌐 项目主页</a>
+        </div>
+
     </div>
 
     <div class="section">

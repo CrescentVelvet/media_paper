@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VidSplat 算法原理与逻辑框图分析 — 视频扩散先验驱动的稀疏视角高斯重建</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7; padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:32px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:850px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card.red{border-left:4px solid var(--red)}
+  .card.orange{border-left:4px solid var(--orange)}
+  .card.green{border-left:4px solid var(--green)}
+  .card.purple{border-left:4px solid var(--accent2)}
+  .card.blue{border-left:4px solid var(--accent)}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(251,191,36,0.15); color:var(--orange); border:1px solid rgba(251,191,36,0.3)}
+  .stage-3{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .loss-tag{
+    display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px;
+    margin:2px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .figure{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:14px; margin:18px 0; text-align:center;
+  }
+  .figure img{width:100%; border-radius:8px; border:1px solid var(--border)}
+  .figure .caption{
+    color:var(--muted); font-size:13px; margin-top:10px; text-align:left; padding:0 6px;
+  }
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2605.11424 · 2026 · SIGGRAPH 2026</span>
+    <h1>VidSplat:视频扩散先验驱动的稀疏视角高斯重建</h1>
+    <p class="subtitle">一个 training-free 的生成式重建框架——用视频扩散模型的几何先验迭代合成新视角、补偿稀疏输入的覆盖缺失,从而从 5 视角甚至单图恢复完整 3D 场景。核心是"几何引导的分阶段去噪"策略,让视频生成在已知区域严格跟随渲染几何、在未知区域自由生成,实现 3D 一致的补全。</p>
+    <p class="authors">Jimin Tang* · Wenyuan Zhang* · Junsheng Zhou · Zian Huang · Kanle Shi · Shenkun Xu · Yu-Shen Liu† · Zhizhong Han<br>
+    <span style="color:var(--muted);font-size:13px">清华大学软件学院 · 快手 · Wayne State University(* 共同一作,† 通讯作者)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2605.11424" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2605.11424v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2605.11424" target="_blank">📥 PDF</a>
+      <a href="https://github.com/tangjm24/VidSplat" target="_blank">💻 GitHub (Coming Soon)</a>
+      <a href="https://tangjm24.github.io/VidSplat" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#init">阶段一:初始化与点云补全</a></li>
+    <li><a href="#sampling">基于可见性的相机位姿采样</a></li>
+    <li><a href="#gen">几何引导的视频生成(核心)</a></li>
+    <li><a href="#iter">阶段二:迭代训练精修</a></li>
+    <li><a href="#loss">损失函数</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#singleview">单视角重建应用</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#evolution">技术路线对比与演进</a></li>
+    <li><a href="#conclusion">总结</a></li>
+    <li><a href="#team">研究团队与资源链接</a></li>
+  </ol>
+</div>
+
+<!-- 项目主页图 (from https://tangjm24.github.io/VidSplat) -->
+<div class="figure">
+  <img src="https://tangjm24.github.io/VidSplat/static/images/teaser.png" alt="VidSplat Teaser: 5视角大场景重建与单图补全" loading="lazy">
+  <div class="caption"><b>Figure 1</b> VidSplat 仅用 5 输入视角即可完成大尺度场景的表面重建与新视角合成(上行),而近期稀疏视角重建方法无法恢复合理表面。下行展示从单张输入图像生成完整场景的能力:全方位覆盖(左下)与向外扩展补全(右下)。</div>
+</div>
+
+<!-- ==================== ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">Gaussian Splatting 在多视角表面重建中取得显著进展,但在可用视角稀少时严重退化。近期工作虽通过增强多视角一致性来产生"看似合理"的表面,却<strong>无法推断输入覆盖之外的未见、遮挡或弱约束区域</strong>——这正是稀疏重建走向"完整场景"的根本瓶颈。</p>
+<div class="callout key">
+<p>VidSplat 提出一个 <strong>training-free 的生成式重建框架</strong>,利用视频扩散先验(Wan2.1 I2V)迭代合成补偿缺失覆盖的新视角,从稀疏输入恢复完整 3D 场景。其两大核心设计:</p>
+<ol>
+<li><strong>3D 一致生成</strong>:设计 training-free 的<strong>分阶段去噪策略(stage-wise denoising)</strong>,用渲染的 RGB 与 mask 图像在每个视角上自适应地将去噪方向引导至底层几何;</li>
+<li><strong>增强重建</strong>:设计<strong>迭代机制</strong>——采样相机轨迹、探索未观测区域、合成新视角,并通过置信度加权精修(confidence weighted refinement)补充训练。</li>
+</ol>
+</div>
+<p>在 TNT / Replica / DL3DV 等真实世界基准上,VidSplat 在稀疏视角表面重建与新视角合成上均取得 SOTA,且对单图输入依然稳健。该工作已被 <strong>SIGGRAPH 2026 Conference Paper</strong> 收录(DOI: 10.1145/3799902.3811138)。</p>
+</section>
+
+<!-- ==================== MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>3D 表面重建的核心范式——NeRF 与 3DGS——都<strong>依赖多视角光度一致性</strong>。当视角稀疏时,这种一致性约束变得病态且欠定,导致表面破碎、孔洞、伪影。<strong>关键洞察</strong>:现有稀疏视角方法即使引入先验,也仍被限制在"输入视角可见区域"内,无法推断视野之外的几何——这限制了它们在更广 3D 场景中的适用性。</p>
+
+<h3>现有稀疏视角重建的两条路线及其局限</h3>
+<div class="grid grid-2">
+  <div class="card blue">
+    <h4>① Generalizable 方法</h4>
+    <p>在大规模数据集上预训练体积表示,学习跨视角对应,再推断未见场景(如 <em>Retr, UFORecon, MeshSplat</em>)。</p>
+    <p style="color:var(--red)"><strong>局限</strong>:泛化性与对大而复杂环境的可扩展性不足;且只能恢复给定视角的可见区域,无法推断视野外几何。</p>
+  </div>
+  <div class="card blue">
+    <h4>② Overfitting 方法</h4>
+    <p>对单场景优化,引入单目(<em>DPT/Metric3D</em>)或 MVS 先验、点云、法向、语义特征等(如 <em>MAtCha, FatesGS, PGSR, NeuSurf, Sparse2DGS</em>)。</p>
+    <p style="color:var(--red)"><strong>局限</strong>:仍受限于输入视角可见区域,稀疏条件下表面不完整、碎片化。</p>
+  </div>
+</div>
+
+<h3>生成式新视角合成方法的三大缺陷</h3>
+<p>更近的工作引入生成先验为新视角提供额外监督,与 VidSplat 概念上最相关,但有三个关键局限:</p>
+<div class="grid grid-3">
+  <div class="card red">
+    <h4>缺陷一:需预训练大模型</h4>
+    <p>需预训练大规模 I2I 或 V2V 扩散模型(<em>DIFIX3D+, 3DGS-Enhancer, GuidedVD</em>),计算成本巨大。</p>
+  </div>
+  <div class="card red">
+    <h4>缺陷二:只能修内插,不能补外推</h4>
+    <p>能修复插值视角的渲染伪影,却<strong>无法恢复外推视角的未见区域</strong>(渲染常呈空洞/voids)。</p>
+  </div>
+  <div class="card red">
+    <h4>缺陷三:视觉合理但几何不一致</h4>
+    <p>产出视觉合理的渲染,但<strong>缺乏一致的底层几何</strong>——只为 NVS 设计,不适合表面重建。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+<h4>VidSplat 的破局思路</h4>
+<p>通用视频扩散模型(<em>Wan2.1</em>)预训练于大规模视频数据,<strong>天然编码跨场景外观与视角的丰富几何先验</strong>。VidSplat 的主张是:用相机控制的视频扩散去<strong>外推</strong>未见区域(而非仅修内插),并通过渲染几何<strong>引导去噪方向</strong>来保证 3D 一致性——从而把生成先验真正融入表面重建管线。</p>
+</div>
+</section>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p class="lead">VidSplat 是一个"生成 + 重建"耦合的迭代框架。给定稀疏输入视角,它先用 DUSt3R 建初始点云,再用相机控制的视频扩散模型(VDM)配合几何引导去噪生成额外视角;这些生成视角在<strong>初始化阶段</strong>补全点云、在<strong>训练阶段</strong>扩展训练视角集,如此迭代直至恢复完整场景。</p>
+
+<div class="figure">
+  <img src="https://tangjm24.github.io/VidSplat/static/images/method_overview.png" alt="VidSplat Method Overview: 两阶段优化框架" loading="lazy">
+  <div class="caption"><b>Figure 2</b> 优化框架总览。给定稀疏输入,采样新相机轨迹并用几何引导去噪的 VDM 生成额外视角。<strong>初始化阶段</strong>:点云渲染的 RGB+mask 作 VDM 输入,生成视角用于补全初始点云;<strong>训练阶段</strong>:Gaussian 渲染 RGB + mesh 渲染 mask 作输入,生成视角用于扩展训练视角集。新增点云与网格面以蓝色高亮。</div>
+</div>
+
+<h3>数学形式化:视角集的迭代更新</h3>
+<p>记第 $t$ 轮的输入视角集与新生成视角集为 $\{V_{input}\}^t$ 与 $\{V_{gen}\}^t$,则:</p>
+<div class="equation">
+$$\{V_{input}\}^{t+1}=\{V_{input}\}^t\cup\{V_{gen}\}^t$$
+<span class="label">(式 4)</span>
+</div>
+<p>首次更新 $\{V_{input}\}^0\!\rightarrow\!\{V_{input}\}^1$ 在初始化时执行一次;后续更新 $\{V_{input}\}^t\!\rightarrow\!\{V_{input}\}^{t+1}$ 在 Gaussian 训练中迭代。这把"生成—重建"表达为一个<strong>视角集单调扩张</strong>的闭环。</p>
+
+<h3>两阶段概览</h3>
+<div class="grid grid-2">
+  <div class="card green">
+    <span class="stage-tag stage-1">初始化阶段</span>
+    <h4>DUsTR 点云 + VDM 补全</h4>
+    <ol>
+      <li>DUSt3R 从 $\{V_{input}\}^0$ 建初始点云</li>
+      <li>采样可见性相机轨迹,渲染点云的 RGB+mask</li>
+      <li>VDM 几何引导去噪生成 3D 一致视频片段</li>
+      <li>关键帧组成 $\{V_{gen}\}^0$,与输入合并得 $\{V_{input}\}^1$</li>
+      <li>重跑 DUSt3R 得稠密点云,初始化 2D Gaussian</li>
+    </ol>
+  </div>
+  <div class="card purple">
+    <span class="stage-tag stage-3">训练阶段(迭代)</span>
+    <h4>Gaussian 训练 + 置信度精修</h4>
+    <ol>
+      <li>多轮 refinement:每轮采样新轨迹+VDM 生成 $\{V_{gen}\}^t$</li>
+      <li>合并入 $\{V_{input}\}^{t+1}$ 扩展视角覆盖</li>
+      <li>Gaussian 渲染 RGB + mesh 渲染 mask(非 alpha)</li>
+      <li>生成视角经单目深度反投影创建额外 Gaussian 中心</li>
+      <li>置信度加权 $U$ 融合,优化后 Marching Tetrahedra 提网格</li>
+    </ol>
+  </div>
+</div>
+
+<h3>总体 Pipeline 框图</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["稀疏输入视角 {V_input}^0<br/>(5 视角 / 单图)"] --> DUST3R["DUSt3R 建初始点云"]
+    DUST3R --> SAMPLING["可见性相机位姿采样<br/>(球面轨道 + 式5 约束)"]
+    SAMPLING --> REND_P["点云渲染 RGB + mask"]
+    REND_P --> VDM1["VDM 几何引导去噪<br/>(stage-wise denoising)"]
+    VDM1 --> KEYF1["选 4 关键帧 {V_gen}^0"]
+    KEYF1 --> MERGE1["合并 {V_input}^1"]
+    MERGE1 --> DUST3R2["重跑 DUSt3R 稠密点云"]
+    DUST3R2 --> INIT2DGS["初始化 2D Gaussian"]
+    INIT2DGS --> TRAIN["2DGS 训练 (15000 iter)"]
+    TRAIN --> REFINEMENT{"迭代精修<br/>7000/11000 iter 两轮"}
+    REFINEMENT -->|是| TRAJ2["采样新轨迹"]
+    TRAJ2 --> REND_G["Gaussian 渲染 RGB<br/>+ mesh 渲染 mask"]
+    REND_G --> VDM2["VDM 几何引导去噪"]
+    VDM2 --> KEYF2["选关键帧 {V_gen}^t"]
+    KEYF2 --> BP["单目深度反投影<br/>新增 Gaussian 中心"]
+    BP --> CONF["置信度加权融合 U"]
+    CONF --> MERGE2["合并 {V_input}^{t+1}"]
+    MERGE2 --> TRAIN
+    REFINEMENT -->|否| MTET["Marching Tetrahedra 提网格"]
+    MTET --> OUT["完整 3D 场景表面"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style VDM1 fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style VDM2 fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+
+<!-- ==================== INIT ==================== -->
+<section id="init">
+<h2><span class="num">4</span>阶段一:初始化与点云补全</h2>
+<p>初始化阶段解决"稀疏输入下点云过于稀疏、不足以初始化高斯"的问题。其做法是用视频扩散先验<strong>补全点云</strong>,再重新跑 DUSt3R 得到稠密点云。</p>
+<div class="callout">
+<h4>初始化流程</h4>
+<ol>
+<li><strong>DUSt3R 建点云</strong>:从稀疏输入 $\{V_{input}\}^0$ 用 DUSt3R 构建初始(稀疏)点云;</li>
+<li><strong>渲染参考</strong>:基于 $\{V_{input}\}^0$ 采样可见性相机轨迹,把点云渲染成 RGB 与 mask 图像(标记已知/可见区域);</li>
+<li><strong>VDM 生成</strong>:把渲染结果送入相机控制的 VDM,用几何引导去噪合成 3D 一致视频片段(详见 §6);</li>
+<li><strong>关键帧选取</strong>:从生成序列里选视觉锐利、位姿变化大的关键帧组成 $\{V_{gen}\}^0$;</li>
+<li><strong>补全点云</strong>:$\{V_{gen}\}^0$ 与 $\{V_{input}\}^0$ 合并得 $\{V_{input}\}^1$,重跑 DUSt3R 得到<strong>稠密点云</strong>,用于初始化 2D Gaussian。</li>
+</ol>
+</div>
+<p>消融(§10)表明:若跳过初始化补全(w/o Init. Comp.),由于起始缺乏足够几何先验,重建质量明显下降(Replica F-Score 77.92 vs Full 80.80)——<strong>初始点云的稠密度是后续 Gaussian 优化的几何基石</strong>。</p>
+</section>
+
+<!-- ==================== SAMPLING ==================== -->
+<section id="sampling">
+<h2><span class="num">5</span>基于可见性的相机位姿采样</h2>
+<p class="lead">选择合适的相机轨迹是探索"欠覆盖区域"的关键。轨迹应捕获尽可能多的新信息,同时保留可靠的几何参考。现有方法多从输入视角构造插值或环形路径,不能适应多样场景布局,也难以有效探索未见区域。VidSplat 提出<strong>可见性驱动的相机位姿采样</strong>策略。</p>
+
+<h3>球形轨道构造</h3>
+<p>对某个输入视角,找到相机射线与场景表面的<strong>交点</strong>,在以该点为中心的球面上构造多条轨道,让相机绕该点 orbit。一条"轨迹"指在输入视角之外构造的虚拟相机路径,VDM 沿该路径生成相机应观测到的内容。</p>
+
+<h3>轨迹有效性约束(式 5)</h3>
+<div class="equation">
+$$S_{low}<\text{area}(M_{i})<S_{high},\quad \min_{p\in\Omega}D_{i}(p)>d_{0}$$
+<span class="label">(式 5)</span>
+</div>
+<p>其中 $D_i$、$M_i$ 为该轨迹关键帧的深度与 mask。一条轨迹<strong>有效</strong>当且仅当其视角既无近平面遮挡、又有适当比例的未见区域覆盖。其中:</p>
+<ul>
+<li><strong>区域上下界 $S_{low}, S_{high}$</strong>:约束 mask 面积在合理区间——太小意味着几乎全已知(无新信息),太大意味着几乎全未知(无可信参考);</li>
+<li><strong>最小深度 $d_0$</strong>:"近平面遮挡"指相机移出场景边界、被墙/地挡住的情况(而非近距离捕捉场景)。</li>
+</ul>
+
+<div class="figure">
+  <img src="https://tangjm24.github.io/VidSplat/static/images/method_overview.png" alt="Visibility-based camera pose sampling" loading="lazy" style="opacity:0.6">
+  <div class="caption"><b>Figure 3</b> 可见性相机位姿采样示意。在球面上构造相机轨迹并评估关键帧可见性:(a) 因未见区域覆盖过多被丢弃,(b) 因被墙遮挡被丢弃,(c) 被采纳。论文图 3。</div>
+</div>
+
+<h3>轨迹扩展与关键帧选择</h3>
+<div class="callout warn">
+<h4>抑制视频幻觉的工程细节</h4>
+<ul>
+<li><strong>轨迹延长 25%</strong>:在生成前把轨迹刻意延长 25%,生成后丢弃这些额外帧——因为观察到<strong>尾部帧常因误差累积产生幻觉</strong>;</li>
+<li><strong>关键帧筛选</strong>:从剩余序列中选视觉锐利(无运动模糊)且位姿变化大的帧,作为新视角。</li>
+</ul>
+</div>
+<p>每个轨迹采样 <strong>16 个视角</strong>,从生成视频中选 <strong>4 帧</strong>组成 $\{V_{gen}\}^t$。这些新视角在初始化阶段用于点云估计,在训练阶段作为额外监督。</p>
+</section>
+
+<!-- ==================== GEN ==================== -->
+<section id="gen">
+<h2><span class="num">6</span>几何引导的视频生成(核心)</h2>
+<p class="lead">这是 VidSplat 最核心的创新。问题在于:直接用相机控制的 VDM 生成,其随机去噪过程会引入显著的<strong>内容漂移(content drift)</strong>,破坏 3D 一致性(见消融 w/o Guiding:PSNR 暴跌至 15.67)。VidSplat 的解法是<strong>训练免费的几何引导去噪</strong>——在已知区域用渲染结果作参考、调整去噪方向,在未知区域则放手让模型生成。</p>
+
+<h3>前置:训练免费的相机控制(CamTrol 策略)</h3>
+<p>采用 CamTrol 的 training-free 策略:对渲染图像做扩散 <strong>inversion</strong> 得到一系列带噪 latent,这些 latent 编码了由相机运动诱导的布局先验,从而<strong>无需任何微调或额外注入层</strong>即可实现相机可控。设渲染 RGB 与 mask 为 $x_0^{ref}$ 与 $M^{ref}$(后者标记指定视角的可见区域),inversion 到时间步 $T_0$ 的带噪 latent 为:</p>
+<div class="equation">
+$$x_{T_0}=(1-T_0)\,x_0^{ref}+T_0\,\epsilon,\quad \epsilon\sim\mathcal{N}(0,I)$$
+<span class="label">(式 6)</span>
+</div>
+
+<h3>Flow Matching 去噪(式 7)</h3>
+<p>从 $x_{T_0}$ 出发执行 flow matching 去噪,得到干净 latent $x_0$:</p>
+<div class="equation">
+$$x'_{t-1}=x_t-\Delta t\, v_\theta(x_t,t,c)$$
+<span class="label">(式 7)</span>
+</div>
+<p>其中 $v_\theta(x_t,t,c)$ 是在 $x_t$ 处估计的速度场。但如前所述,这种无约束生成会产生内容漂移,不能直接用于重建。</p>
+
+<h3>核心:几何引导的 latent 混合(式 8)</h3>
+<p>受图像修复(image inpainting)启发,在已知区域用渲染结果作参考、调整去噪方向。具体:把 $x_0^{ref}$ 用相同 inversion 过程反演到 $t-1$ 得 $x_{t-1}^{ref}$,再把自由去噪结果 $x'_{t-1}$ 与参考 $x_{t-1}^{ref}$ 混合,得到下一步去噪用的带噪 latent:</p>
+<div class="equation">
+$$x_{t-1}=M(t)\,x_{t-1}^{ref}+(1-M(t))\,x'_{t-1}$$
+<span class="label">(式 8)</span>
+</div>
+<p>其中 $M(t)$ 是控制两种 latent 混合的空间 mask。<strong>关键设计</strong>在于 $M(t)$ 的<strong>分阶段调度</strong>。</p>
+
+<h3>分阶段去噪调度(式 9)</h3>
+<p>基于一个重要观察:<strong>扩散去噪在早期建立全局语义,在后期精修空间细节</strong>。据此设计三阶段控制:</p>
+<div class="equation">
+$$M(t)=\begin{cases}M^{ref} & T_1<t\leq T_0\\[2pt]\left(\dfrac{T_1-t}{T_1-T_2}\right)^{\rho}M^{ref} & T_2<t\leq T_1\\[2pt]0 & 0\leq t\leq T_2\end{cases}$$
+<span class="label">(式 9)</span>
+</div>
+
+<div class="grid grid-3">
+  <div class="card blue">
+    <span class="stage-tag stage-1">早期 T0 → T1</span>
+    <h4>严格锚定</h4>
+    <p>$M(t)=M^{ref}$:在已知区域<strong>强制去噪方向严格跟随渲染参考</strong>。锚定场景结构,抑制动态与内容漂移。</p>
+  </div>
+  <div class="card orange">
+    <span class="stage-tag stage-2">中期 T1 → T2</span>
+    <h4>渐松约束</h4>
+    <p>$M(t)=\left(\frac{T_1-t}{T_1-T_2}\right)^\rho M^{ref}$:幂 $\rho$ 控制松弛速度,约束随 $t$ 减小而渐弱,过渡平滑。</p>
+  </div>
+  <div class="card green">
+    <span class="stage-tag stage-3">晚期 T2 → 0</span>
+    <h4>解冻精修</h4>
+    <p>$M(t)=0$:<strong>完全解除约束</strong>,让模型精修不完美的渲染、合成逼真的局部细节,修复渲染伪影、填补缺失区域。</p>
+  </div>
+</div>
+
+<div class="mermaid">
+flowchart LR
+    subgraph EARLY["早期 T0→T1 严格锚定"]
+        direction TB
+        E1["M = M_ref<br/>已知区严格跟随渲染"] --> E2["锚定场景结构<br/>抑制 content drift"]
+    end
+    subgraph MID["中期 T1→T2 渐松约束"]
+        direction TB
+        M1["M = ((T1-t)/(T1-T2))^ρ · M_ref"] --> M2["幂 ρ 控制松弛<br/>平滑过渡"]
+    end
+    subgraph LATE["晚期 T2→0 解冻精修"]
+        direction TB
+        L1["M = 0<br/>完全解除约束"] --> L2["精修渲染伪影<br/>合成逼真细节<br/>填补缺失区域"]
+    end
+    EARLY --> MID --> LATE
+    style EARLY fill:#dbeafe,stroke:#3b82f6
+    style MID fill:#fef3c7,stroke:#f59e0b
+    style LATE fill:#d1fae5,stroke:#10b981
+</div>
+
+<div class="callout key">
+<h4>设计精髓:为什么是三阶段?</h4>
+<p>这是一条在<strong>"忠实渲染几何"</strong>与<strong>"自由生成补全"</strong>之间的精妙权衡:</p>
+<ul>
+<li><strong>只做早期严格</strong>(Only Stage 1,消融):输出无法修复渲染伪影、无法填补缺失区域,PSNR 24.30;</li>
+<li><strong>完全不做引导</strong>(w/o Guiding):生成视觉合理但 3D 不一致、内容漂移严重,PSNR 暴跌至 15.67;</li>
+<li><strong>不用 mask、用全图作参考</strong>(w/o Mask):PSNR 21.02,因过度约束反而退化;</li>
+<li><strong>完整三阶段</strong>:PSNR 25.80,既保 3D 一致又忠实底层几何,显著优于所有相机控制视频生成基线。</li>
+</ul>
+</div>
+</section>
+
+<!-- ==================== ITER ==================== -->
+<section id="iter">
+<h2><span class="num">7</span>阶段二:迭代训练精修</h2>
+<p class="lead">Gaussian 训练阶段执行多轮 refinement。每轮采样新轨迹、生成新序列得 $\{V_{gen}\}^t$,合并入 $\{V_{input}\}^{t+1}$ 扩展视角覆盖。这里有几个关键工程决策决定了生成结果能否被无缝融入重建。</p>
+
+<h3>关键设计一:为什么用 mesh 渲染 mask 而非 Gaussian alpha</h3>
+<p>RGB 图像通过 Gaussian 光栅化渲染,但 <strong>mask 不用 Gaussian 渲染的 alpha 图,而是通过对周期性评估的 mesh 做光线追踪得到</strong>。原因是:在未见区域,Gaussian 原语往往过大(oversized primitives),其 alpha 图会产生伪影,误导 VDM 的几何引导。用 mesh 的光线追踪 mask 更干净、更符合真实几何边界。</p>
+
+<h3>关键设计二:生成视角如何补充 Gaussian(单目深度反投影)</h3>
+<p>$\{V_{gen}\}^t$ 不能用于重新初始化(会破坏已有几何),而是通过<strong>单目深度估计</strong>把它们反投影到 3D 空间、创建额外的 Gaussian 中心。新增 Gaussian 初始时可能因深度估计误差与现有高斯不完全对齐,但其位置在优化过程中会被逐步精修、趋于对齐。</p>
+
+<h3>关键设计三:置信度加权融合</h3>
+<p>生成视角通过 per-pixel 置信度图 $U$ 融入训练(详见 §8 损失函数)。$U$ 来源于点云融合过程——融合度高(多视角一致)的区域置信度高,孤立的生成像素置信度低。这避免幻觉/噪声污染主重建。</p>
+
+<h3>实现细节:迭代节奏</h3>
+<div class="callout tip">
+<ul>
+<li>总训练 <strong>15000 iterations</strong>;</li>
+<li>从 <strong>7000 iteration</strong> 起执行 mesh 评估与视频生成,每 <strong>4000 iterations</strong> 一轮,共 <strong>2 轮</strong>(即第 7000、11000 iteration);</li>
+<li>每轨迹采样 16 视角,选 4 帧作新视角;</li>
+<li>基础 VDM:<strong>Wan2.1 I2V</strong>;表面重建 backbone:<strong>MAtCha</strong>;</li>
+<li>优化结束后用 <strong>Marching Tetrahedra</strong> 提取最终表面。</li>
+</ul>
+</div>
+
+<h3>迭代精修流程框图</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph CYCLE["每轮 refinement (t → t+1)"]
+        A["采样新相机轨迹"] --> B["Gaussian 渲染 RGB<br/>+ mesh 光线追踪 mask"]
+        B --> C["VDM 几何引导去噪生成"]
+        C --> D["选 4 关键帧 {V_gen}^t"]
+        D --> E["单目深度反投影<br/>新增 Gaussian 中心"]
+        E --> F["置信度图 U 加权融合"]
+        F --> G["合并 {V_input}^{t+1}<br/>扩展训练视角集"]
+        G --> H["继续 2DGS 训练"]
+    end
+    H -->|未达下一轮阈值| H
+    H -->|达到终止| I["Marching Tetrahedra"]
+    style C fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style F fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+
+<!-- ==================== LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">8</span>损失函数</h2>
+<p class="lead">总优化目标 $\mathcal{L}=\mathcal{L}_{input}+\mathcal{L}_{gen}$,分别用于 GT 稀疏输入视角与生成视角。两者共享正则项,但主损失不同——输入视角用光度损失,生成视角用 Laplacian 损失以抑制高频生成伪影。</p>
+
+<h3>输入视角损失(式 10)</h3>
+<div class="equation">
+$$\mathcal{L}_{input}=\mathcal{L}_{c}+\lambda_{1}\mathcal{L}_{reg}+\lambda_{2}\mathcal{L}_{n}$$
+<span class="label">(式 10)</span>
+</div>
+
+<h3>生成视角损失(式 11)</h3>
+<div class="equation">
+$$\mathcal{L}_{gen}=U\odot(\mathcal{L}_{lap}+\lambda_{1}\mathcal{L}_{reg}+\lambda_{2}\mathcal{L}_{n})$$
+<span class="label">(式 11)</span>
+</div>
+<p>其中 $U$ 为来自点云融合过程的 per-pixel 置信度图,通过 $\odot$ 逐像素加权整条生成视角损失。</p>
+
+<table>
+<tr><th>损失项</th><th>公式</th><th>用于</th><th>作用</th></tr>
+<tr><td><code>L_c</code> 光度损失</td><td>3DGS 光度损失</td><td>仅 L_input</td><td>对 GT 输入视角的多视角光度监督</td></tr>
+<tr><td><code>L_lap</code> Laplacian 损失</td><td>Laplacian (Yu 2024)</td><td>仅 L_gen</td><td>替代 L_c,抑制生成视角的高频伪影</td></tr>
+<tr><td><code>L_reg</code> 正则损失</td><td>2DGS + MAtCha 正则</td><td>两者共享</td><td>高斯/几何正则化</td></tr>
+<tr><td><code>L_n</code> 法向先验损失</td><td>$|1-N^T\hat{N}|$</td><td>两者共享</td><td>渲染法向与单目法向(Hu 2024)的一致性</td></tr>
+<tr><td><code>U</code> 置信度图</td><td>点云融合导出</td><td>仅 L_gen</td><td>逐像素加权:融合度高则信,孤立生成像素降权</td></tr>
+</table>
+
+<div class="callout key">
+<h4>设计要点</h4>
+<p><strong>L_c → L_lap 的替换</strong>是关键:GT 视角可信,用标准光度损失;但生成视角含高频伪影,直接用 L_c 会把伪影当真值学进去。Laplacian 损失更关注结构而非像素级细节,配合置信度加权 $U$,把"生成内容的不确定性"显式编码进优化目标。</p>
+</div>
+</section>
+
+<!-- ==================== EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">9</span>实验结果</h2>
+<p>在三个真实世界数据集上评估,覆盖室内外:TNT(6 场景,5 视角)、Replica(8 场景,10 视角)、DL3DV(4 室内+4 室外,6 视角)。基线分三类:稠密重建、稀疏重建、生成先验 NVS 方法,并对比相机控制视频扩散方法。</p>
+
+<h3>表面重建(TNT + Replica)</h3>
+<table>
+<tr><th>方法</th><th>TNT CD↓</th><th>TNT F-Score↑</th><th>Replica CD↓</th><th>Replica NC↑</th><th>Replica F-Score↑</th></tr>
+<tr><td>FSGS</td><td>0.93</td><td>3.00</td><td>0.12</td><td>67.36</td><td>39.46</td></tr>
+<tr><td>FatesGS</td><td>1.04</td><td>1.68</td><td>0.74</td><td>52.47</td><td>3.47</td></tr>
+<tr><td>PGSR</td><td>0.92</td><td>2.61</td><td>0.59</td><td>55.01</td><td>17.76</td></tr>
+<tr><td>Sparse2DGS</td><td>1.35</td><td>0.49</td><td>0.82</td><td>49.64</td><td>2.83</td></tr>
+<tr><td>DIFIX3D+</td><td>0.82</td><td>0.21</td><td>0.70</td><td>51.11</td><td>4.77</td></tr>
+<tr><td>GuidedVD</td><td>0.81</td><td>2.91</td><td>0.12</td><td>67.91</td><td>40.45</td></tr>
+<tr><td>MAtCha</td><td>0.84</td><td>6.47</td><td>0.08</td><td>83.18</td><td>71.77</td></tr>
+<tr><td>QGS</td><td>0.93</td><td>2.72</td><td>0.23</td><td>60.73</td><td>28.66</td></tr>
+<tr class="best"><td><strong>VidSplat (Ours)</strong></td><td class="best">0.66</td><td class="best">12.80</td><td class="best">0.06</td><td class="best">88.42</td><td class="best">80.79</td></tr>
+</table>
+<div class="callout tip">
+<p><strong>结果</strong>:VidSplat 在所有指标上断层领先。TNT F-Score <strong>12.80</strong> vs 次优 MAtCha 6.47(<strong>+98%</strong>);Replica F-Score <strong>80.79</strong> vs 次优 MAtCha 71.77,NC 高达 <strong>88.42</strong>。这验证了"用生成先验外推未见区域"对表面完整性的巨大价值。</p>
+</div>
+
+<div class="grid grid-2">
+  <div class="figure">
+    <img src="https://tangjm24.github.io/VidSplat/static/images/results_tnt.png" alt="TanksAndTemples 表面重建对比" loading="lazy">
+    <div class="caption"><b>Figure 5</b> TNT 数据集表面重建可视化。仅用 5 视角,VidSplat 产生完整、高保真表面。</div>
+  </div>
+  <div class="figure">
+    <img src="https://tangjm24.github.io/VidSplat/static/images/results_replica.png" alt="Replica 表面重建对比" loading="lazy">
+    <div class="caption"><b>Figure 6</b> Replica 数据集 10 视角表面重建。VidSplat 重建出无孔洞的精细表面。</div>
+  </div>
+</div>
+
+<h3>新视角合成(DL3DV,6 视角)</h3>
+<table>
+<tr><th>方法</th><th>室内 PSNR↑</th><th>室内 SSIM↑</th><th>室内 LPIPS↓</th><th>室外 PSNR↑</th><th>室外 SSIM↑</th><th>室外 LPIPS↓</th></tr>
+<tr><td>FSGS</td><td>16.30</td><td>0.622</td><td>0.411</td><td>15.56</td><td>0.507</td><td>0.435</td></tr>
+<tr><td>FatesGS</td><td>14.07</td><td>0.505</td><td>0.454</td><td>13.81</td><td>0.412</td><td>0.444</td></tr>
+<tr><td>PGSR</td><td>16.31</td><td>0.616</td><td>0.386</td><td>15.61</td><td>0.544</td><td>0.426</td></tr>
+<tr><td>Sparse2DGS</td><td>12.96</td><td>0.276</td><td>0.535</td><td>13.12</td><td>0.260</td><td>0.593</td></tr>
+<tr><td>DIFIX3D+</td><td>16.36</td><td>0.549</td><td>0.391</td><td>14.66</td><td>0.422</td><td>0.419</td></tr>
+<tr><td>GuidedVD</td><td>17.87</td><td>0.649</td><td>0.387</td><td>17.02</td><td>0.516</td><td>0.430</td></tr>
+<tr><td>MAtCha</td><td>16.83</td><td>0.598</td><td>0.326</td><td>15.23</td><td>0.453</td><td>0.384</td></tr>
+<tr><td>QGS</td><td>16.73</td><td>0.599</td><td>0.359</td><td>15.35</td><td>0.526</td><td>0.387</td></tr>
+<tr class="best"><td><strong>VidSplat (Ours)</strong></td><td class="best">19.78</td><td class="best">0.699</td><td class="best">0.292</td><td class="best">17.49</td><td class="best">0.561</td><td class="best">0.376</td></tr>
+</table>
+<p>室内 PSNR <strong>19.78</strong> vs 次优 GuidedVD 17.87(<strong>+1.91 dB</strong>),在输入视角稀疏/未覆盖区域同样产出高质量渲染。</p>
+<div class="figure">
+  <img src="https://tangjm24.github.io/VidSplat/static/images/results_dl3dv.png" alt="DL3DV 表面重建与新视角合成" loading="lazy">
+  <div class="caption"><b>Figure 7</b> DL3DV 6 视角表面重建与 NVS。VidSplat 成功重建并渲染高保真完整场景。</div>
+</div>
+
+<h3>视频生成质量(条件于渲染结果与相机轨迹)</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>FVD↓</th></tr>
+<tr><td>CamTrol</td><td>14.53</td><td>0.639</td><td>0.462</td><td>110.42</td><td>625.99</td></tr>
+<tr><td>ViewCrafter</td><td>23.85</td><td>0.810</td><td>0.297</td><td>60.78</td><td>178.93</td></tr>
+<tr><td>TrajectoryCrafter</td><td>21.42</td><td>0.781</td><td>0.323</td><td>74.04</td><td>164.28</td></tr>
+<tr><td>DIFIX3D+</td><td>20.14</td><td>0.762</td><td>0.301</td><td>66.11</td><td>220.08</td></tr>
+<tr class="best"><td><strong>VidSplat (Ours)</strong></td><td class="best">25.80</td><td class="best">0.847</td><td class="best">0.238</td><td class="best">56.42</td><td class="best">114.42</td></tr>
+</table>
+<p>VidSplat 在一致性(PSNR/SSIM/LPIPS)与生成多样性(FID/FVD)上<strong>同时</strong>达到最优——这很难得,因为两者通常此消彼长。基线要么填不上缺失区域,要么产生幻觉内容;而 VidSplat 因显式几何引导去噪,生成结果既高保真又忠实底层几何。</p>
+</section>
+
+<!-- ==================== ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">10</span>消融实验</h2>
+
+<h3>消融一:Completion 模块(初始化补全 + 训练补全)</h3>
+<table>
+<tr><th>Init. Comp.</th><th>Train. Comp.</th><th>Replica CD↓</th><th>Replica F-Score↑</th></tr>
+<tr><td>✗</td><td>✗</td><td>0.0784</td><td>72.100</td></tr>
+<tr><td>✓</td><td>✗</td><td>0.0711</td><td>74.490</td></tr>
+<tr><td>✗</td><td>✓</td><td>0.0674</td><td>77.923</td></tr>
+<tr class="best"><td><strong>✓</strong></td><td><strong>✓</strong></td><td class="best">0.0631</td><td class="best">80.797</td></tr>
+</table>
+<div class="callout">
+<ul>
+<li><strong>两者都无</strong>:场景多孔洞;</li>
+<li><strong>只 Init 不 Train</strong>:缓解但仍留孔洞——仅从稀疏输入难以把轨迹扩到覆盖全场景;</li>
+<li><strong>只 Train 不 Init</strong>:因起始缺足够几何先验而效果差;</li>
+<li><strong>两者都开(Full)</strong>:恢复完整高质表面。<strong>两阶段是互补的</strong>。</li>
+</ul>
+</div>
+
+<h3>消融二:分阶段去噪策略</h3>
+<table>
+<tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>FVD↓</th></tr>
+<tr class="best"><td><strong>Full(完整三阶段)</strong></td><td class="best">25.80</td><td class="best">0.847</td><td class="best">0.238</td><td class="best">56.42</td><td class="best">114.42</td></tr>
+<tr><td>w/o Guiding</td><td class="fail">15.67</td><td>0.691</td><td>0.382</td><td>89.24</td><td>261.97</td></tr>
+<tr><td>w/o Mask</td><td>21.02</td><td>0.798</td><td>0.266</td><td>84.48</td><td>231.20</td></tr>
+<tr><td>Only Stage 1</td><td>24.30</td><td>0.835</td><td>0.265</td><td>75.40</td><td>241.04</td></tr>
+</table>
+<div class="callout key">
+<ul>
+<li><strong>w/o Guiding(15.67)</strong>:无控制地反演去噪,视觉合理但内容错位、3D 不一致——暴跌 <strong>10.13 dB</strong>,印证"必须引导";</li>
+<li><strong>w/o Mask(21.02)</strong>:用全渲染 RGB 作参考(不分已知/未知),过度约束反而退化 <strong>4.78 dB</strong>——mask 区分"该锚定/该生成"是关键;</li>
+<li><strong>Only Stage 1(24.30)</strong>:全程严格跟随渲染,无法修复伪影、填补缺失——<strong>晚期解冻</strong>不可省;</li>
+<li>三阶段缺一不可,完整版显著最优。</li>
+</ul>
+</div>
+
+<h3>消融三:视频扩散 backbone</h3>
+<table>
+<tr><th>backbone</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>FVD↓</th></tr>
+<tr class="best"><td><strong>Wan 2.1(默认)</strong></td><td class="best">25.80</td><td class="best">0.847</td><td>0.238</td><td class="best">56.42</td><td class="best">114.42</td></tr>
+<tr><td>HunyuanVideo 1.0</td><td>24.40</td><td>0.808</td><td class="best">0.292</td><td>62.64</td><td>119.54</td></tr>
+<tr><td>SVD</td><td>21.80</td><td>0.740</td><td>0.324</td><td>59.96</td><td>169.52</td></tr>
+</table>
+<p>backbone 越强效果越好,但<strong>即使换上早期 SVD,VidSplat 仍显著优于所有现有相机控制方法</strong>(SVD 21.80 > ViewCrafter 23.85 的反例:PSNR 视角 SVD 略低,但 FID/FVD 更优)。这证明几何引导策略高度鲁棒,能有效释放各种视频基础模型的能力而无需模型特定微调。</p>
+
+<h3>消融四:曝光一致性预处理</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>w/o BracketDiffusion</td><td>19.748</td><td class="best">0.7541</td><td>0.2623</td></tr>
+<tr class="best"><td><strong>w/ BracketDiffusion</strong></td><td class="best">19.872</td><td>0.7466</td><td class="best">0.2548</td></tr>
+</table>
+<p>真实稀疏视角常有不同曝光,会破坏光度一致性。用 BracketDiffusion 把输入转为曝光一致图像再训练,即使训练视角曝光差异显著,也能在新视角产出更和谐光照——增强曝光一致性为优化提供了更鲁棒的光度约束。</p>
+</section>
+
+<!-- ==================== SINGLE VIEW ==================== -->
+<section id="singleview">
+<h2><span class="num">11</span>单视角重建应用</h2>
+<p>VidSplat 还展示了从<strong>单张输入图像</strong>重建完整场景的应用,凸显强泛化能力。</p>
+<div class="callout tip">
+<h4>单视角流程</h4>
+<ol>
+<li>用 Metric3D v2 估计单目度量深度,反投影成 3D 点云初始化 Gaussian 原语;</li>
+<li>Gaussian 训练中,迭代构造轨道相机轨迹,逐步扩展 Gaussian 原语 $\{G_i\}$ 与训练视角 $\{V_{input}\}^t$,直至覆盖大部分场景;</li>
+<li>展示:DTU 物体 + AIGC 室内场景,成功恢复输入图中不可见的大片区域。</li>
+</ol>
+</div>
+<div class="figure">
+  <img src="https://tangjm24.github.io/VidSplat/static/images/singleview_recon.png" alt="单视角重建结果" loading="lazy">
+  <div class="caption"><b>Figure 1(下)</b> 单图重建:全方位覆盖(左下)与向外扩展补全(右下),从单张输入恢复大片不可见区域。</div>
+</div>
+</section>
+
+<!-- ==================== IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">12</span>可改进方向分析</h2>
+<p class="lead">基于论文方法与实验的深入研读,本节从<strong>方法、数据与评估、工程实用性</strong>三个维度分析 VidSplat 的可改进方向,并标注优先级与实验/论文佐证。由于代码标注 "Coming Soon" 尚未开源,本节以论文实验与叙述为佐证基线。</p>
+
+<h3>方法层面</h3>
+
+<div class="card orange">
+<h4>[高优先级] training-free 策略对 VDM backbone 的强依赖</h4>
+<p><strong>问题</strong>:VidSplat 的 "training-free" 是把几何引导做在推理路径上、不动 VDM 权重。这虽优雅,但效果上限被 backbone 决定。消融(§10 表)显示:SVD <strong>21.80</strong> → HunyuanVideo 1.0 <strong>24.40</strong> → Wan 2.1 <strong>25.80</strong>,backbone 跨越带来 <strong>4 dB</strong> 差距。虽然策略"鲁棒"(SVD 仍超多数基线),但绝对性能对 backbone 高度敏感,且<strong>无法针对重建场景做任务特定优化</strong>。</p>
+<p><strong>改进</strong>:在重建过程中对 VDM 做轻量场景自适应(如 LoRA / test-time 微调于已重建高置信区域),把"training-free"升级为"minimally-trained",可能在不失泛化下再榨几个 dB。</p>
+</div>
+
+<div class="card orange">
+<h4>[高优先级] 三阶段去噪的固定超参 T0/T1/T2/ρ 缺乏自适应</h4>
+<p><strong>问题</strong>:式 9 的阶段边界 $T_0,T_1,T_2$ 与幂指数 $\rho$ 是<strong>预定义超参</strong>(论文未给出具体数值)。但不同场景的"已知区可信度"差异巨大:纹理丰富区渲染可信、可在早期更早解冻;平坦/弱纹理区渲染不可信、应延长严格锚定。固定超参无法适配这种差异。</p>
+<p><strong>改进</strong>:让 $M(t)$ 的调度由渲染置信度图 $U$ 或 mask 面积自适应:已知区小(几乎全未知)则提前解冻以多生成;已知区大则延长锚定以保一致性。也可把 $\rho$ 设为随 mask 覆盖率变化的函数。</p>
+</div>
+
+<div class="card blue">
+<h4>[中优先级] 球形轨道假设对非凸/复杂室内场景的局限</h4>
+<p><strong>问题</strong>:§5 的可见性采样在"射线与表面交点"为中心的<strong>球面</strong>上构造轨道。这对近似凸/中室外景合理,但在复杂室内(多房间、走廊、家具遮挡)下,球面轨道会频繁穿过墙壁、产生大量近平面遮挡而被式 5 丢弃,导致有效轨迹稀少、覆盖不足。</p>
+<p><strong>改进</strong>:用基于可见性图的可行驶表面(free-space / navigable manifold)替代球面,或用场景拓扑引导的自适应轨道形状(如沿走廊延伸的椭球轨道)。</p>
+</div>
+
+<div class="card blue">
+<h4>[中优先级] 轨迹延长 25% + 丢弃尾部帧的启发式</h4>
+<p><strong>问题</strong>:§5 把轨迹刻意延长 25% 再丢弃尾部帧以抑制误差累积幻觉。25% 是固定启发式;对长序列或快速运动的相机,误差累积更早,25% 不足以覆盖;对短序列又过度浪费生成预算。</p>
+<p><strong>改进</strong>:用生成帧间光流/特征一致性做<strong>动态截断</strong>——当相邻帧特征距离超阈值即截断,而非固定 25%。</p>
+</div>
+
+<div class="card blue">
+<h4>[中优先级] 生成视角仅用单目深度反投影,深度误差未显式校正</h4>
+<p><strong>问题</strong>:§7 生成视角通过<strong>单目深度</strong>反投影创建 Gaussian 中心。论文承认"初始可能因深度估计误差与现有高斯不对齐,需逐步精修"。但单目深度在遮挡/未见区可靠性低,若反投影深度系统性偏差,精修可能收敛慢甚至引入漂浮高斯。</p>
+<p><strong>改进</strong>:用已重建几何做<strong>深度对齐</strong>(如把单目深度在重叠区与 Gaussian 渲染深度对齐/scale 校正),或用多生成视角间的多视角几何(MVS-like)交叉验证深度,降低反投影误差。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card red">
+<h4>[高优先级] 缺乏 DTU / ScanNet 等主流表面重建基准</h4>
+<p><strong>问题</strong>:表面重建只在 TNT(大尺度室外)与 Replica(室内合成)评估,<strong>未覆盖 DTU(物体级、行业标杆)与 ScanNet(真实室内)</strong>。与知识库内 GOF(DTU 0.74)、Gaussian Wrapping(DTU 0.49)、2DGS(DTU 0.80)等无直接可比数字,难以判断其在物体级精细表面的竞争力。</p>
+<p><strong>改进</strong>:补充 DTU/ScanNet 评测,并明确评测协议(知识库已揭穿 TnT 存在顶点密度偏差 + GT 采集偏差两类协议偏差,VidSplat 的 TNT F-Score 12.80 需注明协议)。</p>
+</div>
+
+<div class="card red">
+<h4>[高优先级] 单视角应用仅定性展示,无量化</h4>
+<p><strong>问题</strong>:§11 单图重建只展示 DTU 物体与 AIGC 室内场景的<strong>定性结果</strong>,无 PSNR/CD/F-Score 等量化对比。作为论文宣称的"强泛化能力"亮点,缺乏量化削弱说服力。</p>
+<p><strong>改进</strong>:补充与 GEN3C、TripoSplat(单图→3DGS)、DreamGaussian 等单图方法的量化对比。</p>
+</div>
+
+<div class="card purple">
+<h4>[中优先级] 缺乏时序一致性评估</h4>
+<p><strong>问题</strong>:VidSplat 用视频扩散生成,理应评估<strong>生成视频的时序一致性</strong>,但 Table 3 只报告逐帧 PSNR/SSIM/LPIPS 与 FID/FVD,无显式时序一致性指标(如 temporal warping error、T-MAP)。</p>
+<p><strong>改进</strong>:补充时序指标,验证几何引导去噪对时序稳定性的贡献。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card red">
+<h4>[高优先级] 多大模型依赖,部署门槛高</h4>
+<p><strong>问题</strong>:完整管线依赖 <strong>Wan2.1 I2V + DUSt3R + MAtCha + Metric3D v2 + BracketDiffusion</strong>(可选)等多个大模型,显存与工程链路重。论文<strong>未报告总耗时与显存</strong>,不利于实用评估。</p>
+<p><strong>改进</strong>:报告端到端耗时与峰值显存;考虑用更轻量的 backbone(如 SVD,消融已验证可行)做效率-质量可配置版本。</p>
+</div>
+
+<div class="card red">
+<h4>[高优先级] 代码未开源(Coming Soon),复现门槛高</h4>
+<p><strong>问题</strong>:GitHub 仓库 README 标注 "Code coming soon!",当前仅含 assets/docs/LICENSE/README,无训练/推理源码。<strong>无法验证</strong>论文超参(如 $T_0,T_1,T_2,\rho,\lambda_1,\lambda_2,S_{low},S_{high},d_0$ 的具体值)、也无法复现实验。知识库 AGENTS.md 强调"代码佐证是检验宣称 vs 实现差异的关键",此处缺失。</p>
+<p><strong>改进</strong>:尽快开源;在开源前至少在 supplementary 给出完整超参表。</p>
+</div>
+
+<div class="card purple">
+<h4>[中优先级] 迭代 2 轮视频生成的计算成本</h4>
+<p><strong>问题</strong>:15000 iter 训练中,7000 与 11000 各做一轮 mesh 评估+视频生成(每轮多轨迹、每轨迹 16 视角的 VDM 推理)。视频扩散推理成本高,两轮迭代的<strong>额外生成开销</strong>可能占总耗时大头,但论文未拆解。</p>
+<p><strong>改进</strong>:报告"重建训练耗时 vs VDM 生成耗时"的拆解;探索提前终止或异步生成策略降本。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>维度</th><th>改进点</th><th>优先级</th><th>佐证</th></tr>
+<tr><td>方法</td><td>VDM backbone 强依赖,无任务特定优化</td><td>高</td><td>消融:SVD 21.80 vs Wan2.1 25.80,差 4dB</td></tr>
+<tr><td>方法</td><td>三阶段超参 T0/T1/T2/ρ 固定不自适应</td><td>高</td><td>式 9 未给具体值,未讨论场景适配</td></tr>
+<tr><td>数据</td><td>缺 DTU/ScanNet 主流表面基准</td><td>高</td><td>仅 TNT/Replica,与 GOF/GW 无可比</td></tr>
+<tr><td>数据</td><td>单视角应用无量化</td><td>高</td><td>§11 仅定性展示</td></tr>
+<tr><td>工程</td><td>多大模型依赖,未报耗时显存</td><td>高</td><td>Wan2.1+DUSt3R+MAtCha+Metric3D+BD</td></tr>
+<tr><td>工程</td><td>代码未开源,无法复现/验证超参</td><td>高</td><td>README "Coming Soon"</td></tr>
+<tr><td>方法</td><td>球面轨道假设不适复杂室内</td><td>中</td><td>§5 球面 orbit + 式 5 近平面丢弃</td></tr>
+<tr><td>方法</td><td>轨迹延长 25% 启发式固定</td><td>中</td><td>§5 尾部帧幻觉处理</td></tr>
+<tr><td>方法</td><td>单目深度反投影无显式校正</td><td>中</td><td>§7 论文自述初始不对齐</td></tr>
+<tr><td>数据</td><td>缺时序一致性指标</td><td>中</td><td>Table 3 无 temporal metric</td></tr>
+<tr><td>工程</td><td>2 轮 VDM 生成成本未拆解</td><td>中</td><td>15000 iter,7000/11000 两轮</td></tr>
+</table>
+
+<div class="callout key">
+<h4>个人认为最关键的三点</h4>
+<ol>
+<li><strong>三阶段去噪超参固定且未公开</strong>:这是方法核心(式 9),但 $T_0/T_1/T_2/\rho$ 具体值与场景自适应机制缺失,既是可复现性硬伤,也是最大改进空间;</li>
+<li><strong>training-free 的天花板被 backbone 锁死</strong>:消融已证明 4dB 的 backbone 差距,从 training-free 走向 minimally-trained(场景自适应 LoRA)是质变机会;</li>
+<li><strong>代码未开源 + 缺 DTU/ScanNet</strong>:复现不可验证 + 与主流表面重建 SOTA 无可比,严重限制学术影响力与被采纳度。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== EVOLUTION ==================== -->
+<section id="evolution">
+<h2><span class="num">13</span>技术路线对比与演进</h2>
+<p>把 VidSplat 放在"稀疏视角 3D 重建/生成"的脉络中,可见它是"生成先验融入重建"路线的一次范式跃迁。</p>
+
+<h3>稀疏视角表面重建范式对比</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>先验来源</th><th>能否外推未见区</th><th>局限</th></tr>
+<tr><td>Generalizable 前馈</td><td>Retr, UFORecon, MeshSplat</td><td>大规模预训练</td><td class="fail">✗(仅可见区)</td><td>泛化/可扩展性,仅可见区</td></tr>
+<tr><td>Overfitting + 单目/MVS 先验</td><td>MAtCha, FatesGS, PGSR, Sparse2DGS</td><td>单目深度/法向/MVS</td><td class="fail">✗(仅可见区)</td><td>表面碎片化,无法外推</td></tr>
+<tr><td>I2I/V2V 生成先验</td><td>DIFIX3D+, GuidedVD, 3DGS-Enhancer</td><td>预训练 I2I/V2V 扩散</td><td class="fail">✗(仅内插修复)</td><td>需预训练大模型,无外推,几何不一致</td></tr>
+<tr class="best"><td><strong>视频扩散外推(VidSplat)</strong></td><td>VidSplat</td><td>通用视频扩散(Wan2.1)</td><td class="best">✅(外推未见区)</td><td>training-free 但依赖 backbone,超参固定</td></tr>
+</table>
+
+<h3>与 GEN3C 的对比(知识库内兄弟笔记)</h3>
+<p><a href="VideoGen-20250305-GEN3C.html">GEN3C</a> 同样用 3D cache 渲染作视频扩散的强条件做 3D 一致生成,但思路相反:GEN3C 把几何约束从<strong>损失项移到架构条件</strong>(3D cache 渲染作强条件,损失保持最简),且面向<strong>新视角合成/世界模型</strong>而非表面重建;VidSplat 则在<strong>去噪 latent 空间</strong>做分阶段混合引导,损失端用 Laplacian + 置信度加权,面向<strong>完整表面重建</strong>。两者是"几何引导视频扩散"的两种正交实现。</p>
+
+<h3>演进定位</h3>
+<div class="callout tip">
+<ul>
+<li><strong>稀疏重建演进</strong>:单目/MVS 先验(仅可见区) → I2I/V2V 生成先验(仅内插) → <strong>视频扩散外推(VidSplat,可见+未见全覆盖)</strong>;</li>
+<li><strong>几何引导生成演进</strong>:CamTrol(inversion 布局先验,无几何约束) → ViewCrafter/TrajectoryCrafter(轨迹条件) → <strong>VidSplat(渲染几何 + 三阶段去噪引导)</strong>;</li>
+<li><strong>与知识库内关联</strong>:基于 <a href="3D-20240326-2DGS.html">2DGS</a>(2D 盘+正则)、<a href="3D-20240416-GOF.html">GOF</a> 同脉的表面重建 backbone MAtCha;视频先验来自 <a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a>;点云用 DUSt3R;单目深度用 Metric3D v2;与前馈重建 <a href="3D-20250314-VGGT.html">VGGT</a>/<a href="3D-20251009-ReSplat.html">ReSplat</a>/<a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> 互补(前者快但仅可见区,后者慢但能外推补全);与 <a href="3D-20260522-GenRecon.html">GenRecon</a>(TRELLIS.2 生成先验桥接)同属"生成先验融入重建"路线但走视频扩散而非 DiT。</li>
+</ul>
+</div>
+
+<h3>技术路线演进框图</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph RECON["稀疏视角表面重建"]
+        R1["Generalizable 前馈<br/>Retr/UFORecon/MeshSplat<br/>仅可见区"] --> R2["Overfitting+先验<br/>MAtCha/FatesGS/PGSR<br/>仅可见区"]
+        R2 --> R3["I2I/V2V 生成先验<br/>DIFIX3D+/GuidedVD<br/>仅内插修复"]
+        R3 --> R4["<strong>视频扩散外推<br/>VidSplat<br/>可见+未见全覆盖 ★</strong>"]
+    end
+    subgraph VGEN["几何引导视频生成"]
+        V1["CamTrol<br/>inversion 布局<br/>无几何约束"] --> V2["ViewCrafter/<br/>TrajectoryCrafter<br/>轨迹条件"]
+        V2 --> V3["<strong>VidSplat<br/>渲染几何+三阶段去噪 ★</strong>"]
+    end
+    R4 -.耦合.-> V3
+    style R4 fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style V3 fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+
+<!-- ==================== CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">14</span>总结</h2>
+<p>VidSplat 把"视频扩散先验"真正融入了 Gaussian Splatting 表面重建管线,解决了稀疏视角下"无法推断输入覆盖之外区域"的根本瓶颈。其两大贡献:一是 <strong>training-free 的分阶段去噪策略</strong>,用渲染 RGB+mask 在早期锚定几何、晚期解冻生成,在"忠实渲染"与"自由补全"间取得精妙平衡;二是<strong>迭代优化框架</strong>,通过可见性相机采样、单目深度反投影新增高斯、置信度加权融合,把生成视角无缝融入重建闭环。</p>
+<p>实验上,VidSplat 在 TNT/Replica 表面重建与 DL3DV 新视角合成上断层领先(Replica F-Score 80.79 vs 次优 71.77;DL3DV 室内 19.78 vs 17.87),且对单图稳健。消融证明三阶段缺一不可、backbone 可替换且策略鲁棒。主要待改进项集中在:三阶段超参公开与自适应、从 training-free 走向 minimally-trained、代码开源与主流基准补全。作为"生成先验外推未见区"路线的代表作,VidSplat 为稀疏视角重建指明了从"修内插"到"补外推"的范式转向。</p>
+</section>
+
+<!-- ==================== TEAM ==================== -->
+<section id="team">
+<h2><span class="num">15</span>研究团队与资源链接</h2>
+
+<div class="grid grid-2">
+  <div class="card blue">
+    <h4>研究团队</h4>
+    <ul>
+      <li><strong>Jimin Tang*</strong> / <strong>Wenyuan Zhang*</strong>(共同一作)— 清华大学软件学院</li>
+      <li>Junsheng Zhou / Zian Huang — 清华大学软件学院</li>
+      <li>Kanle Shi / Shenkun Xu — 快手</li>
+      <li><strong>Yu-Shen Liu†</strong>(通讯)— 清华大学软件学院</li>
+      <li>Zhizhong Han — Wayne State University(同 <a href="3D-20260720-MHR.html">MHR</a>/<a href="3D-20260720-SAM-3D-Body.html">SAM-3D-Body</a> 系列)</li>
+    </ul>
+    <p style="color:var(--muted)">注:Yu-Shen Liu 与 Zhizhong Han 团队在点云法向估计(PFF-Net)、无符号距离(GaussianUDF)、稀疏重建(SparseRecon)等有深厚积累,MAtCha 即为该团队前作,VidSplat 是其稀疏重建路线的生成式延伸。</p>
+  </div>
+  <div class="card green">
+    <h4>资源链接</h4>
+    <ul>
+      <li>📄 <a href="https://arxiv.org/abs/2605.11424" target="_blank">arXiv:2605.11424 abs</a></li>
+      <li>🌐 <a href="https://arxiv.org/html/2605.11424v1" target="_blank">arXiv HTML 全文</a></li>
+      <li>📥 <a href="https://arxiv.org/pdf/2605.11424" target="_blank">PDF 下载</a></li>
+      <li>🌐 <a href="https://tangjm24.github.io/VidSplat" target="_blank">项目主页</a>(含 teaser/method/results 图)</li>
+      <li>💻 <a href="https://github.com/tangjm24/VidSplat" target="_blank">GitHub</a>(Code Coming Soon,Apache 2.0)</li>
+      <li>🏆 SIGGRAPH 2026 Conference Paper · DOI: 10.1145/3799902.3811138</li>
+    </ul>
+    <p style="color:var(--muted)">基于 2DGS / MAtCha / DUSt3R / Wan2.1 构建。</p>
+  </div>
+</div>
+
+<div class="callout">
+<h4>与知识库内相关笔记的关联</h4>
+<ul>
+<li><a href="3D-20240326-2DGS.html">2DGS</a> / <a href="3D-20240416-GOF.html">GOF</a> — VidSplat 的表面重建 backbone MAtCha 与之同脉(2D 盘 + 深度/法向正则)</li>
+<li><a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a> — VidSplat 的视频扩散 backbone</li>
+<li><a href="VideoGen-20250305-GEN3C.html">GEN3C</a> — 几何引导视频扩散的正交实现(架构条件 vs 去噪引导)</li>
+<li><a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20251009-ReSplat.html">ReSplat</a> / <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> — 前馈重建(快但仅可见区)与 VidSplat(慢但能外推)互补</li>
+<li><a href="3D-20260522-GenRecon.html">GenRecon</a> — 同属"生成先验融入重建"但走 DiT(TRELLIS.2)而非视频扩散</li>
+<li><a href="3D-20260508-TripoSplat.html">TripoSplat</a> — 单图→3DGS 生成,VidSplat 单视角应用的参照</li>
+</ul>
+</div>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>📝 VidSplat 算法原理分析 · 视频扩散先验驱动的稀疏视角高斯重建 · 生成于 2026-08-21 · 领域: 3D 重建 / Gaussian Splatting / Video Diffusion</p>
+  <p>基于 arXiv:2605.11424v1 HTML 全文与项目主页编写 · 代码 "Coming Soon" 未开源,超参以论文实验/叙述为佐证</p>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
