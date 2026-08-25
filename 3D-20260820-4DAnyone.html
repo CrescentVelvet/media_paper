@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4DAnyone:从单目随意视频创建 4D 人体 — 算法逻辑与思路分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .loss-tag{
+    display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px;
+    margin:2px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+  .prio{display:inline-block; padding:1px 8px; border-radius:4px; font-size:11px; font-weight:700; margin-right:6px}
+  .prio-h{background:rgba(248,113,113,0.15); color:var(--red); border:1px solid rgba(248,113,113,0.3)}
+  .prio-m{background:rgba(251,146,60,0.15); color:var(--orange); border:1px solid rgba(251,146,60,0.3)}
+  .prio-l{background:rgba(148,163,184,0.15); color:var(--muted); border:1px solid rgba(148,163,184,0.3)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2608.20335 · 2026 · SIGGRAPH Asia</span>
+    <h1>4DAnyone:从单目随意视频创建 4D 人体</h1>
+    <p class="subtitle">无需 rig、无需标定、无需三脚架 —— 通过生成"阵列相机本应记录的多视角视频"再 4DGS 重建,核心攻克 DiT 注意力上下文有界导致的"重建规模一致性崩坏"难题:Reference Context Packing 把参考上下文从 O(N) 压到 O(1),Target Context Routing 旋转分组让跨组结构在去噪中传播。</p>
+    <p class="authors">Yudong Jin* · Tao Xie* · Qihang Zhang · Zehong Shen · Zhen Xu · Yujun Shen · Hujun Bao · Xiaowei Zhou† · Yinghao Xu†<br>
+    <span style="color:var(--muted);font-size:13px">浙大 CAD&CG 国家重点实验室 · Robbyant · Ant Group · HKUST · CUHK　(*等贡献,†通讯)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.20335" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2608.20335v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2608.20335" target="_blank">📥 PDF</a>
+      <a href="https://ant-research.github.io/4DAnyone/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/ant-research/4DAnyone" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/AntResearch/4DAnyone" target="_blank">🤗 HuggingFace</a>
+    </div>
+  </div>
+</div>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2608.20335v1) -->
+<div class="container" style="padding-bottom:0">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:30px; text-align:center">
+    <img src="https://arxiv.org/html/2608.20335v1/teaser.png" alt="4DAnyone Figure 1: Teaser — 单目视频环绕 24 视角生成 + 4DGS 自由视角渲染" style="max-width:100%;border-radius:8px;border:1px solid #333;" loading="lazy">
+    <p style="color:var(--muted); font-size:13px; margin-top:10px"><b>Figure 1 (Teaser)</b>:一部智能手机拍摄的单目视频 → 24 个生成相机视角环绕主体 → 4DGS 重建后从自由视角渲染。整个 3D 场景一气呵成。</p>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要与核心命题</a></li>
+    <li><a href="#motivation">研究背景与动机:为何一致性在重建规模崩坏</a></li>
+    <li><a href="#overview">算法总体框架:生成-then-重建 + 三大支柱</a></li>
+    <li><a href="#skeleton">支柱一:3D-Aware Skeleton Conditioning (精度优先于密度)</a></li>
+    <li><a href="#rcp">支柱二:Reference Context Packing (参考上下文 O(N)→O(1))</a></li>
+    <li><a href="#tcr">支柱三:Target Context Routing (跨组结构传播)</a></li>
+    <li><a href="#training">训练协议:三阶段 Curriculum 与损失</a></li>
+    <li><a href="#loss">总损失函数</a></li>
+    <li><a href="#flowchart">逻辑流程图 (Mermaid)</a></li>
+    <li><a href="#experiments">实验结果:三维评估 + SOTA 对比</a></li>
+    <li><a href="#ablation">消融实验:RCP/TCR/路由策略/切换时刻</a></li>
+    <li><a href="#improvements">可改进方向分析 (代码佐证 + 优先级表)</a></li>
+    <li><a href="#conclusion">总结与知识库定位</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要与核心命题</h2>
+<p class="lead">4DAnyone 要解决的是一个长期被认为"不可能三角"的问题:<strong>从单目随意视频</strong>(未标定、未知相机内参与位姿、仅有轻微相机运动)<strong>重建可自由视角渲染的 4D 人体</strong>。论文一句话定位:<em>"Single video in, 4D human out. No rig, no calibration, no tripod."</em></p>
+
+<div class="callout key">
+<h4>核心命题:一致性崩坏的根因是 DiT 注意力上下文有界</h4>
+<p>现有相机控制视频扩散能合成"看似合理"的新视角视频,但放大到 4DGS 重建所需的<strong>数十目标视角</strong>时,跨视角一致性立刻崩坏 —— 表现为外观不一致与结构漂移,直接劣化下游 4D 重建。4DAnyone 把这一失败根因诊断为 <strong>bounded-attention-context problem</strong>:单次 DiT forward pass 的注意力上下文受内存/算力预算有界,当目标视角数 $N$ 超过容量就必须分组,暴露两个耦合瓶颈:</p>
+<ol>
+<li><strong>参考上下文侧 (Reference-side)</strong>:每组需条件于所有已生成视角,参考上下文长度随 $O(N)$ 增长超出容量 → 跨视角外观引导被削弱;</li>
+<li><strong>目标上下文侧 (Target-side)</strong>:不同组的 target context 不相交,跨组视角无法直接 attend → 全局结构漂移。</li>
+</ol>
+</div>
+
+<h3>三大支柱设计</h3>
+<div class="grid grid-3">
+  <div class="card" style="border-top:3px solid var(--accent)">
+    <span class="stage-tag stage-1">PILLAR 1</span>
+    <h4>3D-Aware Skeleton Conditioning</h4>
+    <p style="font-size:14px">遵循 <strong>accuracy-over-density</strong> 原则:用稀疏但可靠的 3D 骨架替代脆弱的稠密深度/噪声相机参数,作为几何引导信号。</p>
+    <p style="font-size:13px;color:var(--muted)">深度缓冲骨架渲染 + 40-keypoint 子集</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--green)">
+    <span class="stage-tag stage-2">PILLAR 2</span>
+    <h4>Reference Context Packing (RCP)</h4>
+    <p style="font-size:14px">用多尺度 patchify 把增长的参考视角压缩进<strong>固定长度混合分辨率上下文</strong>,参考上下文复杂度从 $O(N)$ 降到 $O(1)$。</p>
+    <p style="font-size:13px;color:var(--muted)">受 FramePack 启发,r∈{2,4}</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--accent2)">
+    <span class="stage-tag stage-3">PILLAR 3</span>
+    <h4>Target Context Routing (TCR)</h4>
+    <p style="font-size:14px">去噪时旋转 target-view 分组:高噪声阶段跨组共享上下文传播全局结构,低噪声阶段固定相邻组稳定细节。</p>
+    <p style="font-size:13px;color:var(--muted)">切换阈值 t_s/T = 0.2</p>
+  </div>
+</div>
+
+<div class="callout tip">
+<h4>生成-then-重建范式</h4>
+<p>4DAnyone 不直接从单目视频做 4D 重建(那条路线受限于已知相机参数假设、遮挡区无法幻觉外观),而是走 <strong>"生成多视角一致视频 → 标准 4DGS 重建"</strong> 的两阶段范式:先用骨架条件视频扩散生成"阵列相机本应记录的多视角视频",再用 FreeTimeGS 标准管线把这些视频重建为 4DGS 模型。本质是<strong>把几何重建难题转化为视频生成一致性问题</strong>,再用 RCP/TCR 攻克一致性。</p>
+</div>
+</section>
+
+<!-- ==================== 2. MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机:为何一致性在重建规模崩坏</h2>
+
+<h3>2.1 现有三条路线的局限</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--orange)">直接单目 4D 重建</h4>
+    <ul>
+      <li>代表:Yu et al. 2023、Hu et al. 2024</li>
+      <li><strong>需已知相机参数</strong>,难以处理真实随意视频</li>
+      <li>无法可靠幻觉遮挡区外观,质量天花板低</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">隐式相机条件视频扩散</h4>
+    <ul>
+      <li>代表:CameraCtrl (Plücker rays)、MotionCtrl、ReCamMaster、CAT4D</li>
+      <li>隐式相机控制<strong>无硬几何约束</strong>,大视角变化时漂移</li>
+      <li>难以满足下游 3D 重建的精度要求</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">显式几何条件视频扩散</h4>
+    <ul>
+      <li>代表:Gen3C (点云投影)、TrajectoryCrafter (深度 warp)、WVD</li>
+      <li><strong>依赖稠密度量深度/3D 坐标</strong>,真实视频难以可靠估计</li>
+      <li>动态场景与大幅视角变化下仍受限</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 多视角扩散路线的"分组漂移"顽疾</h3>
+<p>多视角扩散是 generation-then-reconstruction 的另一条候选,但 <strong>GPU 内存限制单次 forward 的视角数</strong>,独立 batch 又导致跨 batch 不一致:</p>
+<ul>
+<li><strong>CAT3D</strong>:每个 batch 选稀疏 anchor 视角作上下文,但子集选择丢失外观信息;</li>
+<li><strong>CAT4D / Diffuman4D</strong>:用 sliding-window 去噪 + 重叠聚合,但大视角数时跨窗口漂移持续存在;</li>
+<li><strong>Diffuman4D</strong>:面向 4D 人体但<strong>需同步稀疏视角视频 + 已知相机参数</strong>,不适用单目输入。</li>
+</ul>
+
+<div class="callout key">
+<h4>4DAnyone 的诊断与处方</h4>
+<p>根因不是"视角控制精度不够",而是 <strong>如何在高视角数下维持跨视角一致性</strong>。论文指出,现有方法<strong>没有联合解决参考侧与目标侧两个瓶颈</strong>:仅限参考上下文会削弱外观引导,仅独立去噪目标组会阻断跨组结构通信。RCP+TCR 是首次对两侧同时开刀的设计。</p>
+</div>
+
+<h3>2.3 几何引导信号的选择:为什么是 3D 骨架</h3>
+<p>论文提出 <strong>accuracy-over-density(精度优先于密度)</strong> 原则:对重建级多视角一致性而言,几何信号的<strong>精度比密度更关键</strong>。稠密深度从不受约束视频难以可靠估计,误差会引入冲突的几何约束使生成发散;而 3D 骨架:</p>
+<ul>
+<li>提供<strong>准确的结构线索</strong>,把外观细节留给视频模型;</li>
+<li>可由现代 HMR (如 GVHMR) 从单目视频<strong>可靠恢复</strong>;</li>
+<li>稀疏但视频模型仍能学会关键点与生成内容的精确空间对应,维持身体结构、服装、表情一致性。</li>
+</ul>
+</section>
+
+<!-- ==================== 3. OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架:生成-then-重建 + 三大支柱</h2>
+
+<div style="background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; margin:18px 0; text-align:center">
+  <img src="https://arxiv.org/html/2608.20335v1/pipeline.png" alt="4DAnyone Figure 2: Pipeline — 源视频→骨架条件→RCP 参考 token+TCR 目标组→4DGS" style="max-width:100%;border-radius:8px;border:1px solid #333;" loading="lazy">
+  <p style="color:var(--muted); font-size:13px; margin-top:10px"><b>Figure 2 (Pipeline)</b>:HMR 估 3D 骨架 → 渲染成深度缓冲骨架视频 → 3D 骨架编码器产生残差 skeleton tokens 加到目标 latent → 源 token + RCP 参考 token + 目标 token 沿视角维拼接 → DiT(video attention + multiview attention + text cross-attention) → 生成的目标视频回灌 RCP,TCR 在分组生成中提升一致性 → FreeTimeGS 重建 4DGS。</p>
+</div>
+
+<h3>3.1 形式化定义</h3>
+<p>给定单目源视频 $\mathbf{V}_{\text{src}} \in \mathbb{R}^{F \times 3 \times H \times W}$,相机内参与位姿未知,4DAnyone 生成 $v$ 个在主体周围规定静态视点上<strong>重建级一致性</strong>的人体视频 $\{\mathbf{V}_i\}_{i=1}^{v}$,用于高保真 4DGS 重建。</p>
+
+<div class="equation">
+$$\{\mathbf{V}_i\}_{i=1}^{v} = \text{DiT}\Big(\mathbf{z}^t_i + g_\phi(\mathbf{S}_i),\ \mathcal{C}_{\text{R}},\ \text{TCR}(\mathcal{V})\Big),\quad \mathcal{C}_{\text{R}} = \big[\mathcal{P}_1(\mathbf{V}_{\text{src}}),\ \{\mathcal{P}_2(\mathbf{V}_{a_j})\},\ \{\mathcal{P}_4(\mathbf{V}_{b_j})\}\big] \quad \text{(式 1)}$$
+</div>
+<p>其中 $\mathbf{S}_i$ 是目标视角 $i$ 的深度缓冲骨架视频,$g_\phi$ 是骨架编码器(§4),$\mathcal{C}_{\text{R}}$ 是 RCP 固定参考上下文(§5),TCR 在去噪中旋转目标组(§6)。</p>
+
+<h3>3.2 三阶段推理流程</h3>
+<table>
+<tr><th>阶段</th><th>输入</th><th>产出</th><th>关键模块</th><th>耗时*</th></tr>
+<tr><td><strong>0. 预处理</strong></td><td>单目源视频</td><td>多视角深度缓冲骨架视频</td><td>GVHMR + 40-keypoint 子集 + z-buffer 渲染</td><td>~2 min (RTX 4090)</td></tr>
+<tr><td><strong>1. RCP 参考生成</strong></td><td>骨架 + 源视频</td><td>8 个参考视频(2 轮 × 4 视角)</td><td>farthest-point sampling + 多尺度 patchify</td><td>—</td></tr>
+<tr><td><strong>2. 目标视角生成</strong></td><td>骨架 + 固定 RCP 上下文</td><td>$v$ 个目标视角视频</td><td>DiT + TCR (4-view groups, t_s/T=0.2)</td><td>~7 min (H20, 20 步)</td></tr>
+<tr><td><strong>3. 4DGS 重建</strong></td><td>$v$ 个生成视频</td><td>4DGS 模型</td><td>FreeTimeGS (space carving 初始化)</td><td>~30 min (RTX 4090)</td></tr>
+</table>
+<p style="color:var(--muted);font-size:13px">*单 H20/RTX 4090 上的经验时长。多 GPU 可并行 TCR 组;去噪步数可降至 10 步,质量损失极小。</p>
+
+<div class="callout">
+<h4>关键工程亮点</h4>
+<ul>
+<li><strong>基座选择</strong>:基于 <code>Wan2.2-TI2V-5B</code>(5B 参数 DiT 视频扩散),其高压缩 VAE 对多视角生成特别高效;</li>
+<li><strong>训练规模</strong>:128 张 H20-3E GPU,分辨率 704×1280,三阶段 0.5/1/1.5 天;</li>
+<li><strong>开源完整度</strong>:代码 + 模型权重 (HuggingFace) + 示例视频均开源,GVHMR 作为 submodule 集成。</li>
+</ul>
+</div>
+</section>
+
+<!-- ==================== 4. SKELETON ==================== -->
+<section id="skeleton">
+<h2><span class="num">4</span>支柱一:3D-Aware Skeleton Conditioning</h2>
+
+<h3>4.1 深度缓冲骨架渲染 (Depth-buffered Skeleton Rendering)</h3>
+<div class="callout key">
+<h4>关键观察:2D 骨架的固有歧义</h4>
+<p>朴素 2D 骨架渲染丢失身体部位间遮挡,导致<strong>前后配置歧义</strong> —— 例如"手臂在躯干前还是后"产生相同渲染,造成跨视角不一致。4DAnyone 对 3D 骨架做<strong>像素级 z-buffer 光栅化</strong>,使近处部位正确遮挡远处部位,把歧义 2D 骨架升级为<strong>遮挡感知渲染</strong>,无需额外输入通道。</p>
+</div>
+
+<h3>4.2 关键点选择 (Keypoint Selection)</h3>
+<p>从 Goliath 词汇表 308 个关键点中取 <strong>40-keypoint 子集</strong>:</p>
+<table>
+<tr><th>类别</th><th>数量</th><th>内容</th></tr>
+<tr><td>Body</td><td>17</td><td>主体骨架</td></tr>
+<tr><td>Foot</td><td>6</td><td>足部</td></tr>
+<tr><td>Palm-level Hand</td><td>10</td><td>每手 5 个指节(wrist + 5 knuckles)</td></tr>
+<tr><td>Auxiliary</td><td>7</td><td>颈/肩/肘辅助标记</td></tr>
+<tr><td><strong>排除</strong></td><td>238 facial + 30 finger</td><td>面部与指节由源视频外观学习,避免噪声检测伪影</td></tr>
+</table>
+<p>排除 238 个面部 + 30 个指节关键点的理由:面部表情与精细手部细节<strong>从源视频参考学习</strong>更可靠,避免噪声大的细粒度关键点检测引入伪影。</p>
+
+<h3>4.3 骨架编码器 g_φ</h3>
+<p>骨架编码器 $g_\phi$ 把骨架条件作为<strong>DiT 分辨率残差</strong>注入到噪声 latent token:</p>
+<div class="equation">
+$$\tilde{\mathbf{z}}^{t}_{i} = \mathbf{z}^{t}_{i} + g_\phi\!\left(\mathbf{S}_{i}\right) \quad \text{(式 2)}$$
+</div>
+
+<h4>网络结构(附录 A.3)</h4>
+<table>
+<tr><th>组件</th><th>配置</th><th>说明</th></tr>
+<tr><td>主体</td><td>10 层 Conv3d</td><td>5 层 strided + 5 层 non-strided,均带 SiLU</td></tr>
+<tr><td>通道进展</td><td>3 → 16 → 32 → 64 → 128 → 256 → d</td><td>逐步下采样</td></tr>
+<tr><td>strided conv</td><td>kernel (3,4,4)</td><td><strong>32× 空间下采样 + 4× 时间下采样</strong></td></tr>
+<tr><td>final projection</td><td>1×1×1 Conv3d</td><td>投影到 DiT 维度 d</td></tr>
+<tr><td>帧对齐</td><td>第一帧复制 3 份前置</td><td>匹配 Wan2.2 VAE 的 <code>4n+1 → n+1</code> latent 映射</td></tr>
+</table>
+
+<div class="callout warn">
+<h4>Zero-init 稳定化(关键训练技巧)</h4>
+<p><strong>$g_\phi$ 的 final projection 零初始化</strong> → 残差初始为 0 → 训练起点保留预训练 DiT 行为。这是从预训练视频扩散模型出发、加入新条件模块时避免破坏预训练分布的标准稳定化设计,与 ControlNet 的 zero-conv 思路同源。</p>
+</div>
+
+<h3>4.4 HMR 流程(附录 D)</h3>
+<div class="grid grid-2">
+<div class="card">
+<h4>多视角数据集</h4>
+<ul>
+<li>2D keypoint 检测:<code>Sapiens2-1B</code></li>
+<li>3D skeleton:<strong>cross-view triangulation</strong></li>
+<li>reproject 到每个相机视角做 z-buffer 渲染</li>
+</ul>
+</div>
+<div class="card">
+<h4>单目数据集</h4>
+<ul>
+<li>GVHMR → ground-aligned <strong>SMPL-X</strong> mesh 序列</li>
+<li>sparse vertex-to-keypoint regressor → Goliath 70 keypoints</li>
+<li>从 <strong>Sapiens2 pointmap</strong> 预测逐 keypoint 采样 depth 驱动 z-buffer</li>
+<li>过滤相机运动过大的序列</li>
+</ul>
+</div>
+</div>
+
+<div class="callout tip">
+<h4>SMPL-X → Goliath70 regressor 的精度</h4>
+<p>该 regressor 把每个 Goliath keypoint 表达为"固定邻近 SMPL-X 顶点的凸组合",用 Smooth-L1 loss 优化。在 DNA-Rendering 跑 SAM 3D Body 得 MHR 参数提供配对监督,转换误差 > <strong>1 mm</strong> 的帧丢弃。Held-out 场景精度 <strong>3.5 mm</strong> mean keypoint error,对比 nearest-vertex baseline 的 <strong>14.0 mm</strong> —— 4× 精度提升,这是"精度优先于密度"原则的工程支撑。</p>
+</div>
+</section>
+
+<!-- ==================== 5. RCP ==================== -->
+<section id="rcp">
+<h2><span class="num">5</span>支柱二:Reference Context Packing (RCP)</h2>
+
+<p>RCP 攻克<strong>参考侧瓶颈</strong>:多轮目标视角生成中,早期输出可作为后续轮的外观参考,但这些参考跨视角冗余(尤其邻近视角),直接拼接每个生成视角为完整 DiT 上下文低效 —— 上下文长度与算力随参考数 $O(N)$ 线性增长。</p>
+
+<h3>5.1 多尺度 Patchify 压缩</h3>
+<p>受 <strong>FramePack</strong> 启发,RCP 用多尺度 patchify 层把增长的参考视角打包进<strong>固定 token 槽位</strong>:</p>
+<table>
+<tr><th>Patchify 层</th><th>kernel / stride</th><th>token 数</th><th>用途</th></tr>
+<tr><td>标准 Wan2.2 $\mathcal{P}_1$</td><td>(1, 2, 2)</td><td>1×</td><td>源视频(全分辨率)</td></tr>
+<tr><td>RCP $\mathcal{P}_2$ (2× 压缩)</td><td>(1, 4, 4)</td><td>1/4</td><td>3 个参考视角 {V_a_j}</td></tr>
+<tr><td>RCP $\mathcal{P}_4$ (4× 压缩)</td><td>(1, 8, 8)</td><td>1/16</td><td>4 个参考视角 {V_b_j}</td></tr>
+</table>
+
+<div class="equation">
+$$\mathcal{C}_{\text{R}} = \big[\mathcal{P}_1(\mathbf{V}_{\text{src}}),\ \{\mathcal{P}_2(\mathbf{V}_{a_j})\}_{j=1}^{3},\ \{\mathcal{P}_4(\mathbf{V}_{b_j})\}_{j=1}^{4}\big] \quad \text{(式 3)}$$
+</div>
+
+<p>打包的参考 token 沿<strong>空间维度</strong>拼装,再与源/目标 token 沿<strong>视角维度</strong>拼接。因为 token 槽位预算固定,RCP 以 $O(1)$ 开销提供可扩展外观引导。</p>
+
+<div class="callout tip">
+<h4>初始化策略(附录 A.2,FramePack 同源)</h4>
+<p>多尺度 patchify 层的初始化:把预训练 <code>(1,2,2)</code> kernel 在空间上 <strong>tile</strong>(平铺),再除以面积比(2× 用 4,4× 用 16)以保持 activation 方差。这让 RCP 模块从预训练 DiT 平滑起步,而非从头学多尺度编码。</p>
+</div>
+
+<h3>5.2 训练时的 RCP dropout</h3>
+<p>为支持<strong>渐进式推理</strong>(不同轮次参考数不同),训练时对 $\mathcal{C}_{\text{R}}$ 做 dropout:</p>
+<ul>
+<li>以概率 0.1 仅清零 $\{\mathcal{P}_4(\mathbf{V}_{b_j})\}_{j=1}^{4}$(仅保留源 + 2× 参考);</li>
+<li>以概率 0.1 同时清零 $\{\mathcal{P}_2(\mathbf{V}_{a_j})\}$ 与 $\{\mathcal{P}_4(\mathbf{V}_{b_j})\}$(仅保留源)。</li>
+</ul>
+<p>训练时随机采样 $\mathbf{V}_{\text{src}}$、$\{\mathbf{V}_{a_j}\}$、$\{\mathbf{V}_{b_j}\}$ 来自每个训练序列。</p>
+
+<h3>5.3 推理时的两轮参考生成</h3>
+<div class="mermaid">
+flowchart LR
+    SRC["源视频 V_src<br/>P_1 全分辨率"] --> R1["Round 1<br/>生成 4 个参考视频<br/>{V_j}_{j=1}^4"]
+    SRC --> R1
+    R1 --> FPS1["farthest-point<br/>sampling 选视角"]
+    FPS1 --> R1
+    R1 --> R2["Round 2<br/>生成 4 个额外参考<br/>条件: P_1(src) + 3 个 P_2(a_j)"]
+    R1 --> R2
+    R2 --> CR["固定 RCP 上下文 C_R<br/>1 src + 3×2x + 4×4x"]
+    CR --> TGT["所有目标视角生成<br/>4-view groups + TCR"]
+    style SRC fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style R1 fill:#fef3c7,stroke:#d97706
+    style R2 fill:#fef3c7,stroke:#d97706
+    style CR fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style TGT fill:#ddd6fe,stroke:#7c3aed,color:#2d1b4e
+</div>
+
+<p><strong>farthest-point sampling</strong>:从源视角和已有参考视角出发,迭代加入"与已选视角最小角距离最大"的候选,提升视角覆盖。Round 1 条件仅为 $\mathcal{P}_1(\mathbf{V}_{\text{src}})$,Round 2 条件为 $[\mathcal{P}_1(\mathbf{V}_{\text{src}}), \{\mathcal{P}_2(\mathbf{V}_{a_j})\}_{j=1}^{3}]$,其中 $\{\mathbf{V}_{a_j}\}_{j=1}^{3} \subset \{\mathbf{V}_j\}_{j=1}^{4}$ 从 Round 1 选。</p>
+</section>
+
+<!-- ==================== 6. TCR ==================== -->
+<section id="tcr">
+<h2><span class="num">6</span>支柱三:Target Context Routing (TCR)</h2>
+
+<p>TCR 攻克<strong>目标侧瓶颈</strong>:RCP 给每组提供了可扩展外观参考,但目标组仍独立去噪无信息交换,全局结构仍可能跨组漂移。TCR 在推理时旋转 target-view 分组,让信息在相同 per-group 内存预算下跨组传播。</p>
+
+<div style="background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; margin:18px 0; text-align:center">
+  <img src="https://arxiv.org/html/2608.20335v1/scale.png" alt="4DAnyone Figure 3: 三阶段渐进推理 — RCP 固定多尺度参考 + TCR 高噪声轮转/低噪声固定" style="max-width:100%;border-radius:8px;border:1px solid #333;" loading="lazy">
+  <p style="color:var(--muted); font-size:13px; margin-top:10px"><b>Figure 3</b>:先生成参考视频并打包成固定 RCP 上下文 → 目标视角生成时所有组共享该固定 RCP → TCR 把 v 个目标视角分成 m 个 4-view groups,高噪声阶段轮转分组传播全局结构,低噪声阶段固定相邻组稳定细节。</p>
+</div>
+
+<h3>6.1 核心观察:扩散的时间结构</h3>
+<div class="callout key">
+<h4>关键洞察:全局结构 vs 局部细节的分阶段性</h4>
+<p><strong>高噪声步骤主导全局结构</strong>,此时孤立目标组最容易在结构上发散,最终导致多视角外观不一致。<strong>低噪声步骤主要精修局部细节</strong>。TCR 据此把推理分成两阶段,用切换时刻 $t_s$ 切换。</p>
+</div>
+
+<h3>6.2 两阶段去噪策略</h3>
+<table>
+<tr><th>阶段</th><th>条件</th><th>分组策略</th><th>目的</th></tr>
+<tr><td><strong>高噪声阶段</strong></td><td>$t > t_s$</td><td>每步循环移位视角索引 + 重新划分为 4-view groups</td><td>跨组交换上下文,传播全局结构(同 per-group 预算)</td></tr>
+<tr><td><strong>低噪声阶段</strong></td><td>$t \le t_s$</td><td>固定相邻 4-view groups</td><td>相邻视角联合精修细节,稳定外观与跨视角过渡</td></tr>
+</table>
+
+<h3>6.3 Algorithm 1: Target Context Routing 伪代码</h3>
+<pre>输入: 目标视角集 V, 固定 RCP 上下文 C_R, 切换时刻 t_s, 去噪调度 {t_T, ..., t_0}, 骨架条件 {S_i}_{i∈V}
+1:  为所有视角 i∈V 初始化 z_i^T ~ N(0, I)
+2:  for n = T, T-1, ..., 1 do
+3:    if t_n > t_s then           ▷ 高噪声: 轮转分组
+4:      G ← RotatingGroups(V, 4, n)
+5:    else                         ▷ 低噪声: 固定相邻组
+6:      G ← AdjacentGroups(V, 4)
+7:    end if
+8:    for 每个组 G ∈ 𝒢 do
+9:      联合去噪 {z_i^n}_{i∈G} (条件: C_R 与 {S_i}_{i∈G}) → {z_i^{n-1}}_{i∈G}
+10:   end for
+11: end for
+12: 解码 {z_i^0}_{i∈V} 为目标视角视频 {V_i}_{i∈V}
+13: return {V_i}_{i∈V}</pre>
+
+<h3>6.4 路由策略对比 (Sliding vs Random vs Strided)</h3>
+<p>消融(见 §11)对比三种动态路由策略,前 16 步用动态路由,最后 4 步用固定相邻组:</p>
+<ul>
+<li><strong>Sliding</strong>(默认):每动态步 $n$ 累积位移一位 circular shift —— <strong>最优</strong>;</li>
+<li><strong>Random</strong>:用 seed <code>42+n</code> 的确定性 permutation —— 无可测增益;</li>
+<li><strong>Strided</strong>:用 stride <code>4 - (n mod 4)</code> 重排后分组 —— 全面退化。</li>
+</ul>
+<p>结论:<strong>保留局部视角相邻性</strong>对路由至关重要,Sliding 是唯一全面优于固定分组者。</p>
+
+<h3>6.5 切换时刻 t_s/T 的扫描 (附录 F.1 表 7)</h3>
+<table>
+<tr><th>t_s / T</th><th>Sliding 步数</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>1.00</td><td>0</td><td>22.2079</td><td>0.7880</td><td>0.1964</td></tr>
+<tr><td>0.50</td><td>10</td><td>22.4575</td><td>0.7925</td><td>0.1933</td></tr>
+<tr class="best"><td>0.20</td><td>16</td><td>22.6294</td><td>0.7963</td><td>0.1906</td></tr>
+<tr><td>0.05</td><td>19</td><td>22.6367</td><td>0.7972</td><td>0.1903</td></tr>
+<tr><td>0.00</td><td>20</td><td>22.6414</td><td>0.7971</td><td>0.1903</td></tr>
+</table>
+<p style="color:var(--green);font-size:14px">默认值 <code>t_s/T = 0.2</code> 是<strong>饱和区起点</strong>:增加到 16 步 sliding 一致性持续提升;进一步减小 $t_s/T$ 无可测一致性增益,甚至个别指标略降(与 4DGS 优化方差相当)。</p>
+</section>
+
+<!-- ==================== 7. TRAINING ==================== -->
+<section id="training">
+<h2><span class="num">7</span>训练协议:三阶段 Curriculum 与损失</h2>
+
+<h3>7.1 全局超参 (附录 C.1)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>说明</th></tr>
+<tr><td>基座</td><td>Wan2.2-TI2V-5B</td><td>5B 参数 DiT 视频扩散,高压缩 VAE 利好多视角</td></tr>
+<tr><td>分辨率</td><td>704 × 1280</td><td>—</td></tr>
+<tr><td>学习率</td><td>1 × 10⁻⁵</td><td>—</td></tr>
+<tr><td>LPIPS 权重 λ</td><td>0.25</td><td>缓解 Wan2.2 VAE 高空间压缩伪影</td></tr>
+<tr><td>GPU</td><td>128 × H20-3E</td><td>≥32 GPU 即可稳定收敛,128 用于加速</td></tr>
+<tr><td>三阶段时长</td><td>0.5 / 1 / 1.5 天</td><td>Stage 1 / 2 / 3</td></tr>
+</table>
+
+<h3>7.2 三阶段 Curriculum (附录 C.4 表 5)</h3>
+<table>
+<tr><th>Stage</th><th>数据集</th><th>背景去除</th><th>独立 Src 概率</th><th>Skeleton*</th><th>目的</th></tr>
+<tr><td><strong>1</strong></td><td>DNA-Rendering</td><td>✓</td><td>0.2</td><td>B+H+F+Fi</td><td>前景-only 学 skeleton 条件相机控制;20% 概率独立采样 source 帧范围 → <strong>解耦 pose 与 appearance</strong></td></tr>
+<tr><td><strong>2</strong></td><td>+ MVGameHuman, SynCamVideo</td><td>–</td><td>0.0</td><td>B+H+F+Fi</td><td>移除背景 masking:避免 mask 边缘噪声 + 启用背景光照/阴影学习</td></tr>
+<tr><td><strong>3</strong></td><td>+ Pexels, TedTalk</td><td>–</td><td>0.0</td><td>B+H+F</td><td>加单目数据提升野外泛化;移除 finger keypoints(单目 finger 检测噪声大)</td></tr>
+</table>
+<p style="font-size:12px;color:var(--muted)">*Skeleton: B=body, H=hands, F=feet, Fi=fingers</p>
+
+<div class="callout key">
+<h4>Curriculum 设计意图</h4>
+<ul>
+<li><strong>Stage 1 解耦</strong>:20% 概率从不同时间窗采样 source 帧范围 → 模型学骨架 pose,同时参考"可能不同时间窗"的 source appearance,避免 pose 与 appearance 强绑定;</li>
+<li><strong>Stage 2 反 masking</strong>:先前方法在绿幕数据上用前景 mask 避免过拟合均匀背景,但引入两个缺陷 —— mask 边缘噪声 + 缺背景无法学光照阴影。Stage 2 用真实背景数据(MVGameHuman、SynCamVideo)同时解决这两个问题;</li>
+<li><strong>Stage 3 减 keypoint</strong>:单目视频 finger keypoint 检测噪声大,移除后模型转从 source video 推断手部细节,提升野外泛化鲁棒性。</li>
+</ul>
+</div>
+
+<h3>7.3 数据采样配置 (附录 C.3 表 4)</h3>
+<p>每次迭代按 sampling weight 随机选数据集与相机配置。为保持算力近似恒定,<strong>target cameras × frame count 乘积近似常数</strong>(<code>6×41 ≈ 4×61 ≈ 1×121</code>):</p>
+<table>
+<tr><th>Dataset</th><th>Tgt Cam</th><th>Src Cam</th><th>Frame</th><th>Weight</th></tr>
+<tr><td>MVGameHuman</td><td>6</td><td>1/4/8</td><td>41</td><td>0.4</td></tr>
+<tr><td>MVGameHuman</td><td>4</td><td>1/4/8</td><td>61</td><td>0.4</td></tr>
+<tr><td>MVGameHuman</td><td>1</td><td>1/4/8</td><td>121</td><td>0.2</td></tr>
+<tr><td>SynCamVideo</td><td>4</td><td>1/4</td><td>61</td><td>0.8</td></tr>
+<tr><td>SynCamVideo</td><td>1</td><td>1/4/8</td><td>81</td><td>0.2</td></tr>
+<tr><td>DNA-Rendering</td><td>6</td><td>1/4/8</td><td>41</td><td>0.4</td></tr>
+<tr><td>DNA-Rendering</td><td>4</td><td>1/4/8</td><td>61</td><td>0.4</td></tr>
+<tr><td>DNA-Rendering</td><td>1</td><td>1/4/8</td><td>121</td><td>0.2</td></tr>
+<tr><td>Pexels</td><td>1</td><td>1</td><td>121</td><td>1.0</td></tr>
+<tr><td>TedTalk</td><td>1</td><td>1</td><td>121</td><td>1.0</td></tr>
+</table>
+<p>Source cameras 在列出选项中均匀采样,以训练 RCP 多尺度 patchify:1 源视角用 <code>1×</code>,4 源视角用 <code>2×</code>,8 源视角组合 <code>1×/2×/4×</code>。</p>
+
+<h3>7.4 Body-part-aware LPIPS 裁剪 (附录 C.2)</h3>
+<p>为降低全分辨率 LPIPS 在长 clip 上的显存密集,从 target-view 2D keypoints 推导 clip 级 boxes(full body / face / hands),每 clip 解码一个 <strong>256×256 空间 crop</strong>:</p>
+<table>
+<tr><th>Crop 类型</th><th>采样概率</th><th>中心</th></tr>
+<tr><td>Full body</td><td>0.2</td><td>box 内随机采样</td></tr>
+<tr><td>Face</td><td>0.2</td><td>box 中心</td></tr>
+<tr><td>Left hand</td><td>0.1</td><td>box 中心</td></tr>
+<tr><td>Right hand</td><td>0.1</td><td>box 中心</td></tr>
+<tr><td>Uniform(回退)</td><td>0.4</td><td>—</td></tr>
+</table>
+</section>
+
+<!-- ==================== 8. LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">8</span>总损失函数</h2>
+
+<p>4DAnyone 用<strong>两类损失联合</strong>训练:</p>
+<div class="equation">
+$$\mathcal{L} = \mathcal{L}_{\text{latent}} + \lambda\,\mathcal{L}_{\text{LPIPS}},\quad \lambda = 0.25 \quad \text{(式 4)}$$
+</div>
+
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重</th><th>作用</th></tr>
+<tr><td><strong>$\mathcal{L}_{\text{latent}}$</strong></td><td>latent 空间标准 MSE flow-matching loss</td><td>1.0</td><td>主监督:flow-matching 目标</td></tr>
+<tr><td><strong>$\mathcal{L}_{\text{LPIPS}}$</strong></td><td>decoded frames 上的 LPIPS 感知损失 (body-part-aware crops)</td><td>0.25</td><td>缓解 Wan2.2 VAE 高空间压缩伪影</td></tr>
+</table>
+
+<div class="callout tip">
+<h4>设计要点:LPIPS 在 decoded 像素空间而非 latent 空间</h4>
+<p>Wan2.2 VAE 空间压缩比高,latent MSE 无法完全捕捉解码后的感知差异。在 decoded frames 上算 LPIPS 能直接监督最终视觉质量。但全分辨率 LPIPS 显存密集,故用 body-part-aware 语义 crop(脸/手/全身),既降显存又强化语义重要区域监督。</p>
+</div>
+</section>
+
+<!-- ==================== 9. FLOWCHART ==================== -->
+<section id="flowchart">
+<h2><span class="num">9</span>逻辑流程图 (Mermaid)</h2>
+
+<h3>9.1 总推理流程</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: 单目随意视频 V_src<br/>(未知相机参数,轻微相机运动)"] --> HMR["GVHMR 人体动作恢复<br/>→ ground-aligned SMPL-X mesh"]
+    HMR --> KPS["sparse vertex-to-keypoint regressor<br/>→ Goliath 70 keypoints → 40 子集"]
+    KPS --> RENDER["深度缓冲骨架渲染<br/>(z-buffer 解决前后歧义)"]
+    RENDER --> ENC["骨架编码器 g_φ<br/>10 层 Conv3d + zero-init final proj"]
+    ENC --> ZTILDE["z̃_i^t = z_i^t + g_φ(S_i)"]
+
+    INPUT --> RCP_R1["RCP Round 1<br/>farthest-point sampling 选 4 视角<br/>条件: P_1(V_src)"]
+    RCP_R1 --> RCP_R2["RCP Round 2<br/>选 4 视角<br/>条件: P_1(src) + 3×P_2(a_j)"]
+    RCP_R2 --> RCP_CTX["固定 RCP 上下文 C_R<br/>1 src + 3×2x + 4×4x = O(1)"]
+
+    ZTILDE --> DIT
+    RCP_CTX --> DIT["DiT 去噪 (20 步)<br/>video attn + multiview attn + text attn"]
+    DIT --> TCR["TCR 分组去噪<br/>高噪声 t>t_s: 轮转 4-view groups<br/>低噪声 t≤t_s: 固定相邻 4-view groups"]
+    TCR --> VOUT["输出: v 个目标视角视频 {V_i}"]
+    VOUT --> FTGS["FreeTimeGS 4DGS 重建<br/>space carving 初始化 + Adam 50k iter"]
+    FTGS --> OUT["4DGS 模型 (自由视角渲染)"]
+
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style HMR fill:#fef3c7,stroke:#d97706
+    style RCP_R1 fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style RCP_R2 fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style RCP_CTX fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style DIT fill:#ddd6fe,stroke:#7c3aed,color:#2d1b4e
+    style TCR fill:#fce7f3,stroke:#ec4899,color:#831843
+    style FTGS fill:#fef3c7,stroke:#d97706
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>9.2 RCP + TCR 数据流详解</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph RCP["Reference Context Packing (O(1) 参考上下文)"]
+        direction TB
+        SRC["V_src<br/>P_1 (1×, 全分辨率)"]
+        A2["V_a1..3<br/>P_2 (1/4 token)"]
+        A4["V_b1..4<br/>P_4 (1/16 token)"]
+        SRC & A2 & A4 -.->. CR["沿视角维拼接<br/>→ 固定 C_R"]
+    end
+
+    subgraph TCR["Target Context Routing (跨组结构传播)"]
+        direction TB
+        HI["高噪声阶段 t > t_s (16 步)"]
+        HI --> HI1["circular shift 视角索引 by n"]
+        HI1 --> HI2["重新划分 4-view groups<br/>(每步组员不同)"]
+        HI2 --> HI3["跨组上下文传播全局结构"]
+        LO["低噪声阶段 t ≤ t_s (4 步)"]
+        LO --> LO1["固定相邻 4-view groups"]
+        LO1 --> LO2["相邻视角联合精修细节"]
+    end
+
+    CR --> DIT["DiT 联合去噪<br/>源 + RCP + 目标组"]
+    DIT --> TCR
+
+    style SRC fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style A2 fill:#bfdbfe,stroke:#3b82f6
+    style A4 fill:#93c5fd,stroke:#3b82f6
+    style CR fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style HI fill:#fef3c7,stroke:#d97706
+    style LO fill:#ddd6fe,stroke:#7c3aed,color:#2d1b4e
+</div>
+
+<h3>9.3 三阶段训练 Curriculum</h3>
+<div class="mermaid">
+flowchart LR
+    S1["Stage 1 (~0.5 天)<br/>DNA-Rendering 前景-only<br/>20% 独立 src 采样<br/>skeleton: B+H+F+Fi"] --> S2["Stage 2 (~1 天)<br/>+ MVGameHuman + SynCamVideo<br/>移除背景 masking<br/>skeleton: B+H+F+Fi"]
+    S2 --> S3["Stage 3 (~1.5 天)<br/>+ Pexels + TedTalk 单目<br/>移除 finger keypoints<br/>skeleton: B+H+F<br/>野外泛化"]
+
+    style S1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S2 fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style S3 fill:#ddd6fe,stroke:#7c3aed,color:#2d1b4e
+</div>
+</section>
+
+<!-- ==================== 10. EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">10</span>实验结果:三维评估 + SOTA 对比</h2>
+
+<h3>10.1 评估设置</h3>
+<ul>
+<li><strong>基准</strong>:DNA-Rendering (10 scenes) + DyMVHumans (3 scenes, OOD);</li>
+<li><strong>规模</strong>:每场景 16 个近似均匀分布相机 + 98 帧;</li>
+<li><strong>三个评估维度</strong>:
+<ol>
+<li><strong>4DGS Reconstruction</strong>:16 个生成视角全用 FreeTimeGS 重建,渲染对比 GT;</li>
+<li><strong>Gen. Video Consistency</strong>:留出 4 视角,12 视角训 4DGS,在留出视角对比 4DGS 渲染 vs 生成视频 —— 测生成视频的 3D 一致性;</li>
+<li><strong>Gen. Video Reconstruction</strong>:16 个生成视频直接对比 GT 视频。</li>
+</ol>
+</li>
+</ul>
+
+<h3>10.2 量化对比 (Table 2)</h3>
+<table>
+<tr><th>评估维度</th><th>Method</th><th>PSNR↑ (DNA)</th><th>SSIM↑ (DNA)</th><th>LPIPS↓ (DNA)</th><th>PSNR↑ (DyMV)</th><th>SSIM↑ (DyMV)</th><th>LPIPS↓ (DyMV)</th></tr>
+<tr><td rowspan="4"><strong>Gen. Video<br/>Consistency</strong></td><td>MV-Performer</td><td>21.25</td><td>0.799</td><td>0.222</td><td>19.98</td><td>0.797</td><td>0.182</td></tr>
+<tr><td>TrajectoryCrafter</td><td class="fail">13.56</td><td class="fail">0.641</td><td class="fail">0.331</td><td>15.19</td><td>0.769</td><td>0.204</td></tr>
+<tr><td>ReCamMaster†</td><td>21.47</td><td>0.806</td><td>0.210</td><td>21.94</td><td>0.833</td><td>0.142</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>24.33</b></td><td><b>0.862</b></td><td><b>0.163</b></td><td><b>24.48</b></td><td><b>0.862</b></td><td><b>0.109</b></td></tr>
+<tr><td rowspan="4"><strong>4DGS<br/>Reconstruction</strong></td><td>MV-Performer</td><td>20.38</td><td>0.826</td><td>0.191</td><td>18.69</td><td>0.787</td><td>0.158</td></tr>
+<tr><td>TrajectoryCrafter</td><td class="fail">14.81</td><td class="fail">0.718</td><td class="fail">0.331</td><td>15.11</td><td>0.748</td><td>0.217</td></tr>
+<tr><td>ReCamMaster†</td><td>20.55</td><td>0.807</td><td>0.214</td><td>19.86</td><td>0.795</td><td>0.159</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>24.15</b></td><td><b>0.863</b></td><td><b>0.159</b></td><td><b>23.28</b></td><td><b>0.846</b></td><td><b>0.117</b></td></tr>
+<tr><td rowspan="4"><strong>Gen. Video<br/>Reconstruction</strong></td><td>MV-Performer</td><td>19.33</td><td>0.803</td><td>0.204</td><td>14.36</td><td>0.731</td><td>0.230</td></tr>
+<tr><td>TrajectoryCrafter</td><td class="fail">13.68</td><td class="fail">0.698</td><td class="fail">0.358</td><td>14.11</td><td>0.725</td><td>0.247</td></tr>
+<tr><td>ReCamMaster†</td><td>20.74</td><td>0.809</td><td>0.204</td><td>19.18</td><td>0.778</td><td>0.168</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>23.69</b></td><td><b>0.850</b></td><td><b>0.165</b></td><td><b>21.03</b></td><td><b>0.808</b></td><td><b>0.143</b></td></tr>
+</table>
+
+<div class="callout key">
+<h4>关键解读</h4>
+<ul>
+<li><strong>ReCamMaster† 是公平对照</strong>:† 表示在与 4DAnyone 相同训练数据和设置下 fine-tune,且<strong>装备相同 RCP 模块和 TCR 策略</strong> —— 这是 implicit camera-param conditioning vs explicit skeleton-geometry conditioning 的对照。4DAnyone 在三大维度全面领先 ReCamMaster† 2.5-3 dB,证明<strong>3D 骨架条件优于隐式相机参数条件</strong>;</li>
+<li><strong>TrajectoryCrafter 全面失败</strong>:depth-warp 在前后视角变化下崩溃,验证稠密几何条件在真实视频的脆弱性;</li>
+<li><strong>MV-Performer 侧后视角畸变</strong>:训练多样性不足导致侧/后视角身体形状与 pose 畸变;</li>
+<li><strong>DyMVHumans(OOD)优势保持</strong>:证明野外泛化能力。</li>
+</ul>
+</div>
+
+<h3>10.3 训练数据统计 (Table 1)</h3>
+<table>
+<tr><th>Dataset</th><th>Videos</th><th>Cameras</th><th>Actors</th><th>Resolution</th><th>Type</th></tr>
+<tr><td><strong>MVGameHuman</strong> (自建)</td><td>38k</td><td>24</td><td>318</td><td>2560×1440</td><td>多视角</td></tr>
+<tr><td>SynCamVideo</td><td>34k</td><td>10</td><td>66</td><td>1280×1280</td><td>多视角</td></tr>
+<tr><td>DNA-Rendering</td><td>51k</td><td>48</td><td>548</td><td>2048×2048</td><td>多视角</td></tr>
+<tr><td>TedTalk</td><td>42k</td><td>1</td><td>413</td><td>2160×1620</td><td>单目</td></tr>
+<tr><td>Pexels</td><td>20k</td><td>1</td><td>1,411</td><td>3840×2160</td><td>单目</td></tr>
+</table>
+<p>其中 <strong>MVGameHuman</strong> 是用 in-house game engine(游戏引擎)采集的同步多视角人体视频数据集,提供 actor、服装、动作、光照、虚拟场景、背景等多维度多样性。</p>
+</section>
+
+<!-- ==================== 11. ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">11</span>消融实验:RCP/TCR/路由策略/切换时刻</h2>
+
+<h3>11.1 核心组件消融 (Table 3, Gen. Video Consistency on DNA-Rendering)</h3>
+<table>
+<tr><th>Configuration</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>ΔPSNR vs Full(Sliding)</th></tr>
+<tr><td>w/o TCR & RCP</td><td class="fail">21.09</td><td class="fail">0.766</td><td class="fail">0.216</td><td>−1.54</td></tr>
+<tr><td>w/o RCP</td><td>22.03</td><td>0.780</td><td>0.203</td><td>−0.60</td></tr>
+<tr><td>w/o TCR</td><td>22.21</td><td>0.788</td><td>0.196</td><td>−0.42</td></tr>
+<tr><td>Full (Random)</td><td>22.20</td><td>0.788</td><td>0.197</td><td>−0.43</td></tr>
+<tr><td>Full (Strided)</td><td>22.06</td><td>0.786</td><td>0.198</td><td>−0.57</td></tr>
+<tr class="best"><td><b>Full (Sliding)</b></td><td><b>22.63</b></td><td><b>0.796</b></td><td><b>0.191</b></td><td>0</td></tr>
+</table>
+
+<div class="grid grid-3">
+<div class="card">
+<h4>RCP 的作用</h4>
+<p>移除 RCP → 模型仅靠单目上下文,缺乏已生成视角的外观引导 → <strong>未见视角幻觉不一致</strong>,全指标退化。说明 RCP 提供的跨视角外观参考是关键。</p>
+</div>
+<div class="card">
+<h4>TCR 的作用</h4>
+<p>移除 TCR → 固定视角组独立去噪 → <strong>跨组结构与外观不一致</strong>。TCR 在高噪声轮转分组共享上下文,提升全部三项指标。</p>
+</div>
+<div class="card">
+<h4>RCP + TCR 互补</h4>
+<p>同时移除 RCP 和 TCR → 全指标大幅退化,证明两者<strong>互补不可替代</strong>:RCP 解决外观参考,TCR 解决结构传播。</p>
+</div>
+</div>
+
+<h3>11.2 路由策略对比</h3>
+<ul>
+<li><strong>Random</strong> 无可测增益 —— 随机重排破坏局部相邻性;</li>
+<li><strong>Strided</strong> 全面退化 —— stride 重排同样破坏相邻性;</li>
+<li><strong>Sliding</strong> 唯一全面优于固定分组 —— <strong>保留局部视角相邻性是路由关键</strong>。</li>
+</ul>
+
+<h3>11.3 3D-Aware Skeleton Conditioning 消融</h3>
+<p>对比朴素 2D 渲染,depth buffering 解决了重叠身体部位的前后歧义(Figure 5),提升几何一致性。z-buffer 仅依赖相对深度排序 → <strong>对绝对 scale 和 shift 不变</strong>,这是野外泛化的关键鲁棒性来源。</p>
+</section>
+
+<!-- ==================== 12. IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">12</span>可改进方向分析 (代码佐证 + 优先级表)</h2>
+
+<p>本节从论文 <strong>Limitations (Appendix H)</strong>、信息不透明处、设计哲学反推三个维度展开,每点含<strong>问题描述 + 代码/实验佐证 + 改进建议</strong>。</p>
+
+<h3>方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red); margin-bottom:18px">
+<h4><span class="prio prio-h">高优先级</span>宽松服装 (Loose garments) 失败:skeleton 对布料动力学无能为力</h4>
+<p><strong>问题</strong>:论文 Appendix H.1 明确指出,skeleton guidance 对<strong>远离身体运动的服装</strong>(如飘动的大块布料)不提供信息。Figure 10(左)中大块飘动布料在各视角间生成不一致,导致重建退化。</p>
+<p><strong>佐证</strong>:论文 §3.2 选 40-keypoint 子集(17 body + 6 foot + 10 palm + 7 aux),本质是<strong>刚性骨架结构</strong>,无法表征布料动力学。Stage 3 又移除 finger keypoints 转从 source video 学手部细节,但<strong>未对服装布料做类似处理</strong>。</p>
+<p><strong>改进</strong>:① 引入布料/外观流先验条件(如对飘动区域加 appearance-flow 监督);② 把 source video 的 Dense Pose Mapping 或 soft-body 仿真作为附加条件;③ 在 LPIPS crop 中专门为服装边缘区域加权。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red); margin-bottom:18px">
+<h4><span class="prio prio-h">高优先级</span>Pose 误差直接继承放大:"忠实跟随 skeleton"是双刃剑</h4>
+<p><strong>问题</strong>:论文 Appendix H.2 指出,HMR 对异常 pose 误估时,生成会<strong>忠实跟随错误的 skeleton</strong>。Figure 10(右)中源视频舞者 en pointe(足尖站立),但 HMR 预测为 flat feet,所有生成视角继承此 pose error。</p>
+<p><strong>佐证</strong>:论文 §3.2 强调 skeleton 是"<strong>稀疏但可靠</strong>"的几何引导,但 H.2 暴露其失败模式 —— 当"可靠"前提不成立,误差被多视角放大。SMPL-X→Goliath70 regressor 精度虽达 3.5mm,但 HMR 本身在异常 pose(如足尖、极端关节角度)下仍可能误估。</p>
+<p><strong>改进</strong>:① 引入 pose 不确定性估计,在 HMR 输出置信度低的区域降权 skeleton 条件;② 多假设 pose 采样 + 平均化;③ 在训练时加 pose 噪声 augmentation 提升对 HMR 误差的鲁棒性;④ 对足尖等极端 pose 用专门子网络校正。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:18px">
+<h4><span class="prio prio-m">中优先级</span>4-view groups 硬编码:视角数非 4 倍数时不灵活</h4>
+<p><strong>问题</strong>:论文 §3.3 与 Algorithm 1 把 target views 硬分成 <strong>four-view groups</strong>,README 中 <code>views_per_layer</code> 参数要求"必须 divisible by 4 or 6"。</p>
+<p><strong>佐证</strong>:GitHub README 原文 <code>views_per_layer: number of evenly spaced views per pitch layer; must be divisible by 4 or 6</code>。这种硬编码限制了视角数选择灵活性。</p>
+<p><strong>改进</strong>:① 支持动态 group size(如 3-6 view groups 自适应);② 用变长分组策略覆盖任意视角数;③ 推理时按视角密度自适应选 group size。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:18px">
+<h4><span class="prio prio-m">中优先级</span>评估局限:仅在合成 + 受控数据验证,缺乏野外 GT</h4>
+<p><strong>问题</strong>:量化评估仅在 DNA-Rendering(合成阵列) + DyMVHumans(受控)上做,野外视频无 GT 无法量化评估。§4.4 的 in-the-wild 评估仅定性。</p>
+<p><strong>佐证</strong>:论文 §4.1 evaluation protocol 仅用 10 DNA + 3 DyMVHumans 场景;§4.4 in-the-wild 仅展示可视化,无量化指标。</p>
+<p><strong>改进</strong>:① 设计野外视频的 proxy GT(如多手机拍摄 + SfM 重建作参考);② 引入感知质量指标(FID/FVD)做无 GT 评估;③ 增加时序一致性评估指标(目前只测空间一致性)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--muted); margin-bottom:18px">
+<h4><span class="prio prio-l">低优先级</span>训练超参不透明:batch size/优化器/混合精度未公开</h4>
+<p><strong>问题</strong>:附录 C.1 仅给 lr/resolution/GPU/时长/LPIPS 权重,但<strong>每阶段 batch size、优化器类型、混合精度配置</strong>未明示。</p>
+<p><strong>佐证</strong>:附录 C 全文未提 batch size,仅 4DGS 重建部分提到 Adam optimizer;DiT 训练的优化器未明示。</p>
+<p><strong>改进</strong>:论文补充训练配置表(类似 Table 4/5 的细化),开源 training config yaml。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red); margin-bottom:18px">
+<h4><span class="prio prio-h">高优先级</span>推理时长 ~40 min:难实时化,需 TensorRT + sparse attention</h4>
+<p><strong>问题</strong>:总推理 ~2 min(preprocess) + ~7 min(multi-view gen) + ~30 min(4DGS) ≈ <strong>40 min</strong>,难以实时/交互式应用。论文 Todos 已列"Low-memory inference (<32 GB)"和"Faster inference with TensorRT and sparse attention"。</p>
+<p><strong>佐证</strong>:附录 E.5 三阶段时间分解;GitHub README Todos 明确列未完成项。去噪步数虽可降至 10 步(质量损失极小),但 4DGS 重建 30 min 是大头。</p>
+<p><strong>改进</strong>:① 用 TensorRT 加速 DiT;② 用 sparse attention 降显存;③ 用前馈 4DGS(如 4D-LRM)替代 FreeTimeGS 优化式重建;④ 多 GPU 并行 TCR 组(已支持但未充分利用)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:18px">
+<h4><span class="prio prio-m">中优先级</span>4DGS 重建依赖 FreeTimeGS:非完全开源,生态绑定</h4>
+<p><strong>问题</strong>:论文 Todos 列"Support 4DGS reconstruction with an open-source method",说明当前 4DGS 重建步骤<strong>未用完全开源方法</strong>,与 FreeTimeGS/LongVolcap 绑定。</p>
+<p><strong>佐证</strong>:附录 E.4 4DGS reconstruction 配置明确用 FreeTimeGS;GitHub README Todos <code>[ ] Support 4DGS reconstruction with an open-source method</code>。</p>
+<p><strong>改进</strong>:① 集成完全开源 4DGS 重建(如 4DGS 原版、Deformable-3DGS);② 提供重建步骤的独立可运行 demo。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--muted); margin-bottom:18px">
+<h4><span class="prio prio-l">低优先级</span>显存占用未公开:6-view 推理显存数据在文档未提取</h4>
+<p><strong>问题</strong>:论文未给推理时 VRAM 具体数字,仅 README 提到 <code>docs/inference_performance.md</code> 有 H20-3E/H200/RTX A6000 的 6-view runtime 和 peak GPU memory。</p>
+<p><strong>佐证</strong>:附录 E.2 表 6 仅列 GPU 数量分配,无显存数字;README Todos <code>[ ] Low-memory inference (<32 GB)</code> 暗示当前显存 >32 GB。</p>
+<p><strong>改进</strong>:论文补充显存表;开源 benchmark 脚本。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--muted); margin-bottom:18px">
+<h4><span class="prio prio-l">低优先级</span>camera layout 的 layer_pitches 角度未公开</h4>
+<p><strong>问题</strong>:README 示例给 <code>--layer_pitches '[-10,15,35]'</code>,但论文附录 E.2 仅定性描述"limited pitch angles / broader coverage / extreme motions",未给推荐值表。</p>
+<p><strong>佐证</strong>:附录 E.2 文本仅定性,无数值表;README 示例值散落。</p>
+<p><strong>改进</strong>:论文补充不同场景(标准/极端运动/复杂服装)的推荐 camera layout 表。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>类别</th><th>佐证</th></tr>
+<tr><td><span class="prio prio-h">高</span></td><td>宽松服装布料动力学</td><td>方法</td><td>Appendix H.1 + §3.2 keypoint 选择</td></tr>
+<tr><td><span class="prio prio-h">高</span></td><td>Pose 误差继承放大</td><td>方法</td><td>Appendix H.2 + §3.2 accuracy-over-density</td></tr>
+<tr><td><span class="prio prio-h">高</span></td><td>推理 40min 难实时化</td><td>工程</td><td>附录 E.5 + README Todos</td></tr>
+<tr><td><span class="prio prio-m">中</span></td><td>4-view groups 硬编码</td><td>方法</td><td>§3.3 + README views_per_layer 限制</td></tr>
+<tr><td><span class="prio prio-m">中</span></td><td>评估仅合成数据</td><td>数据</td><td>§4.1 + §4.4 in-the-wild 仅定性</td></tr>
+<tr><td><span class="prio prio-m">中</span></td><td>4DGS 依赖 FreeTimeGS</td><td>工程</td><td>附录 E.4 + README Todos</td></tr>
+<tr><td><span class="prio prio-l">低</span></td><td>训练超参不透明</td><td>数据</td><td>附录 C.1 缺字段</td></tr>
+<tr><td><span class="prio prio-l">低</span></td><td>显存占用未公开</td><td>工程</td><td>附录 E.2 + README Todos</td></tr>
+<tr><td><span class="prio prio-l">低</span></td><td>layer_pitches 角度未公开</td><td>工程</td><td>附录 E.2 定性 + README 散落</td></tr>
+</table>
+
+<div class="callout key">
+<h4>个人认为最关键的三点</h4>
+<ol>
+<li><strong>宽松服装失败</strong> —— skeleton 表征的固有边界。这是"精度优先于密度"原则的代价:稀疏骨架精确,但<strong>仅限于身体结构</strong>,对衣物、头发、配饰等非刚性部分无能为力。补这一块需要引入布料/外观流先验,是方法层面的核心扩展方向。</li>
+<li><strong>Pose 误差继承放大</strong> —— "忠实跟随 skeleton"的双刃剑。4DAnyone 的鲁棒性完全依赖 HMR 准确性,一旦 HMR 在极端 pose 误估,误差被多视角放大。引入 pose 不确定性估计或多假设采样是必要的安全阀。</li>
+<li><strong>推理 40min 难实时化</strong> —— 落地瓶颈。40min 单次重建对交互式应用(直播、即时数字人)不可接受。4DGS 重建 30min 是大头,用前馈 4DGS(如 4D-LRM 类)替代优化式重建是降时关键。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== 13. CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">13</span>总结与知识库定位</h2>
+
+<h3>13.1 论文贡献小结</h3>
+<div class="callout tip">
+<ul>
+<li>提出 <strong>4DAnyone</strong>,4D 人体视频生成框架,从单目视频实现重建级多视角一致性;</li>
+<li>提出 <strong>Reference Context Packing (RCP)</strong>,把参考上下文从 $O(N)$ 压到 $O(1)$,保留跨视角外观引导;</li>
+<li>提出 <strong>Target Context Routing (TCR)</strong>,动态路由目标分组,跨组共享上下文,减少结构漂移;</li>
+<li>提出 <strong>3D-aware skeleton conditioning</strong>,用稀疏但可靠的 3D 骨架替代脆弱的稠密深度/噪声相机参数;</li>
+<li>自建 <strong>MVGameHuman</strong> 数据集(游戏引擎,38k 视频/24 相机/318 actors),结合 light-stage 和野外视频训练,实现野外鲁棒泛化。</li>
+</ul>
+</div>
+
+<h3>13.2 技术路线对比与演进</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>几何先验</th><th>主要局限</th></tr>
+<tr><td>直接单目 4D 重建</td><td>Yu 2023、Hu 2024</td><td>参数化身体先验 (SMPL)</td><td>需已知相机参数;遮挡区无法幻觉外观</td></tr>
+<tr><td>隐式相机条件视频扩散</td><td>CameraCtrl、ReCamMaster、CAT4D</td><td>Plücker rays / 学习表征</td><td>无硬几何约束;大视角漂移;重建规模一致性崩坏</td></tr>
+<tr><td>显式稠密几何条件视频扩散</td><td>Gen3C、TrajectoryCrafter、WVD</td><td>稠密深度 / 3D 坐标</td><td>深度估计在野外不可靠;前后视角变化失败</td></tr>
+<tr><td>多视角扩散(滑动窗口)</td><td>CAT3D、CAT4D、Diffuman4D</td><td>多视角图像本身</td><td>稀疏 anchor 丢外观;跨窗口漂移;Diffuman4D 需同步多视角</td></tr>
+<tr class="best"><td><strong>4DAnyone (骨架条件 + RCP/TCR)</strong></td><td>4DAnyone</td><td><strong>3D 骨架 (稀疏精确)</strong></td><td>宽松服装;pose 误差继承;推理 40min</td></tr>
+</table>
+
+<h3>13.3 与知识库内兄弟笔记的关联</h3>
+<ul>
+<li><a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a> — 4DAnyone 是"生成-then-重建"范式在 4D 人体方向的代表,补充了综述中"从渲染涌现追踪"之外的另一条路线;</li>
+<li><a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a> — 4DAnyone 对应该调研 §2"视频生成中的几何一致性"与 §3"骨骼/姿态引导的视频生成"的交叉,是该路线当前 SOTA;</li>
+<li><a href="3D-20260810-微动人体三维重建思路辨析.html">微动人体三维重建思路辨析</a> — 4DAnyone 验证了"骨架引导 > 稠密深度引导"在野外场景的判断;</li>
+<li><a href="VideoGen-20250728-Wan2.2.html">Wan 2.2</a> — 4DAnyone 基于 Wan2.2-TI2V-5B 构建,是 Wan 系列在 3D/4D 重建方向的关键下游应用;</li>
+<li><a href="3D-20260720-高斯人物与人脸重建调研.html">3D 高斯人物与人脸重建调研</a> — 4DAnyone 是单目→4D 数字人方向的代表,与 F3G-Avatar (多视角→3D 静态) 形成输入模态互补;</li>
+<li><a href="3D-20260720-MHR.html">MHR</a> / <a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> — 4DAnyone 的 HMR 流程用 SAM 3D Body 得 MHR 参数提供 SMPL-X→Goliath70 regressor 训练对,是 MHR 在 4D 重建下游的关键应用;</li>
+<li><a href="VideoGen-20260427-视频生成几何一致性调研.html">视频生成几何一致性调研</a> — 4DAnyone 的 RCP/TCR 是"重建规模一致性"问题的新解法;</li>
+<li><a href="3D-20260821-ArtiFixer.html">ArtiFixer</a> — 同为"视频扩散 + 4DGS"路线,4DAnyone 走"骨架条件生成多视角",ArtiFixer 走"opacity mixing 修复 + 因果蒸馏",两者互补;</li>
+<li><a href="3D-20260512-VidSplat.html">VidSplat</a> — 同为视频扩散重建,4DAnyone 是人体专用 + 多视角生成,VidSplat 是通用场景 + 单视角前馈。</li>
+</ul>
+
+<h3>13.4 个人核心洞察</h3>
+<div class="callout key">
+<ol>
+<li><strong>"bounded-attention-context problem"诊断精准</strong>:把"重建规模一致性崩坏"根因从"视角控制精度"转向"注意力上下文有界 + 分组",是 RCP/TCR 设计的起点。这一诊断比解决方案本身更有价值 —— 它揭示了视频扩散用于重建的<strong>架构性瓶颈</strong>,适用于任何多视角生成任务。</li>
+<li><strong>"accuracy-over-density"是野外泛化关键</strong>:用稀疏但可靠的 3D 骨架替代脆弱的稠密深度,是 4DAnyone 在野外视频鲁棒的根本原因。这与 TrajectoryCrafter(稠密深度)全面失败、ReCamMaster†(隐式相机)即使装备 RCP/TCR 仍落后形成对照 —— 几何信号的<strong>精度比密度更重要</strong>。</li>
+<li><strong>RCP/TCR 是"扩散 + 重建"通用范式</strong>:RCP(参考打包)+ TCR(动态分组)本质是<strong>解决"长上下文 + 分组去噪"的一致性范式</strong>,不局限于人体。可迁移到任意多视角/多视角视频生成 + 重建场景(如场景级 4D 重建、多物体 4D)。</li>
+<li><strong>"生成-then-重建" vs "直接重建"的权衡</strong>:4DAnyone 选前者,代价是推理 40min + 生成幻觉风险(宽松服装),收益是无需已知相机参数 + 可幻觉遮挡区外观。这与直接单目 4D 重建(快但质量天花板低)形成范式对照,定位清晰。</li>
+<li><strong>MVGameHuman 数据集是隐藏贡献</strong>:用游戏引擎采 38k 多视角视频,提供 actor/服装/动作/光照/场景/背景多维度多样性,弥补了 light-stage 数据多样性不足。这一数据集可能比方法本身更影响后续工作。</li>
+<li><strong>Wan2.2 作为 3D/4D 重建基础设施</strong>:4DAnyone 基于 Wan2.2-TI2V-5B,ArtiFixer 基于 Wan2.1,证明 Wan 系列正成为"视频扩散 + 几何重建"的事实基座。其高压缩 VAE 对多视角生成特别友好。</li>
+</ol>
+</div>
+
+<h3>13.5 应用场景</h3>
+<ul>
+<li><strong>单图 → 4D 头像</strong>(附录 G.1):Wan-Animate 把单图+动作视频 → 单目主体视频 → 4DAnyone → 多视角 → FreeTimeGS → 4DGS avatar,完整单图到 4D pipeline;</li>
+<li><strong>抖音/Pexels 随意视频 → 4D 数字人</strong>:项目主页展示 36+ 野外片段(舞蹈/角色/体育/舞台/演讲/时尚)的 4D 重建;</li>
+<li><strong>VR/AR 内容创作</strong>:无需阵列相机,手机拍摄即可生成可自由视角渲染的 4D 人体;</li>
+<li><strong>具身 AI 数据生成</strong>:为 embodied AI 生成 4D 人体训练数据;</li>
+<li><strong>数字人/虚拟主播</strong>:从单目直播视频生成可驱动 4D 数字人。</li>
+</ul>
+
+<div class="callout warn">
+<h4>伦理与影响(论文原文)</h4>
+<p>4DAnyone 合成逼真人体视频,存在 deepfake 滥用、身份隐私侵犯、版权侵权风险。论文明确反对任何恶意使用,倡导生成结果须清楚披露为合成,并需被拍摄主体同意。</p>
+</div>
+</section>
+
+<hr>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-08-25 · 领域: 3D 重建 / 4D 人体 / 视频扩散 / 高斯溅射 · arXiv:2608.20335v1 · SIGGRAPH Asia 2026<br>
+  论文:4DAnyone: Create Anyone in 4D from a Casual Monocular Video · 浙大 / Robbyant / Ant Group / HKUST / CUHK
+</div>
+
+</div>
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

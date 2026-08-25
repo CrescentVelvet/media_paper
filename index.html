@@ -771,6 +771,31 @@
         </div>
 
         <div class="note-card">
+            <h3>42. 4DAnyone: Create Anyone in 4D from a Casual Monocular Video</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2608.20335</span>
+                <span>📅 2026-08-20</span>
+                <span>🏢 浙大 / Robbyant / Ant Group / HKUST / CUHK</span>
+                <span>🏆 SIGGRAPH Asia 2026</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">4D 人体重建</span>
+                <span class="tag">单目视频</span>
+                <span class="tag">多视角视频扩散</span>
+                <span class="tag">RCP / TCR</span>
+                <span class="tag">3D 骨架条件</span>
+                <span class="tag">Wan2.2-TI2V-5B</span>
+                <span class="tag">4DGS</span>
+            </div>
+            <p>无需 rig、无需标定、无需三脚架，从单目随意视频创建 4D 人体。核心诊断"bounded-attention-context problem":DiT 注意力上下文有界导致重建规模(数十视角)一致性崩坏。三大支柱:① 3D-Aware Skeleton Conditioning(精度优先于密度,稀疏骨架替代稠密深度);② Reference Context Packing(多尺度 patchify 把参考上下文从 O(N) 压到 O(1));③ Target Context Routing(高噪声轮转 4-view groups 传播全局结构,低噪声固定相邻组稳定细节, t_s/T=0.2)。基于 Wan2.2-TI2V-5B,128×H20-3E 训练,三阶段 curriculum(0.5/1/1.5 天)。自建 MVGameHuman 数据集(游戏引擎,38k 视频/24 相机/318 actors)。DNA-Rendering/DyMVHumans 三维评估全面超越 ReCamMaster†(同数据同 RCP/TCR 对照) 2.5-3 dB PSNR。</p>
+            <a href="3D-20260820-4DAnyone.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2608.20335" target="_blank">📄 arXiv</a>
+            <a href="https://ant-research.github.io/4DAnyone/" target="_blank">🌐 项目主页</a>
+            <a href="https://github.com/ant-research/4DAnyone" target="_blank">💻 GitHub</a>
+            <a href="https://huggingface.co/AntResearch/4DAnyone" target="_blank">🤗 HuggingFace</a>
+        </div>
+
+        <div class="note-card">
             <h3>20. VGGT: Visual Geometry Grounded Transformer</h3>
             <div class="meta">
                 <span>📄 arXiv: 2503.11651</span>
@@ -1357,7 +1382,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-08-13 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 37 篇笔记卡片（39 篇论文总数见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-08-25 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 42 篇笔记卡片（含 4DAnyone 单目→4D 人体重建，详见 knowledge-index.json）
 </div>
 
 </body>
