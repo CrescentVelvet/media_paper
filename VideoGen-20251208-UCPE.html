@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCPE:统一相机位置编码 — 算法原理与逻辑框图分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange); background:linear-gradient(90deg,rgba(251,146,60,0.08),var(--panel))}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card.left-bar{border-left:4px solid var(--accent)}
+  .card.left-bar.warn{border-left-color:var(--orange)}
+  .card.left-bar.red{border-left-color:var(--red)}
+  .card.left-bar.green{border-left-color:var(--green)}
+  .card h4{margin-top:0}
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:18px 0}
+  @media(max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center}
+  .stat .v{font-size:24px; font-weight:700; color:var(--accent)}
+  .stat .v.green{color:var(--green)}
+  .stat .l{color:var(--muted); font-size:13px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  tr.best td{background:rgba(52,211,153,0.08); color:var(--green); font-weight:600}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0; text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:8px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2512.07237v2) -->
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2512.07237 · 2025 · CVPR 2026</span>
+    <h1>UCPE:统一相机位置编码 — 跨任意镜头的视频生成相机控制</h1>
+    <p class="subtitle">将相机条件从"相机级"重构为"光线级",为每个 token 建立局部光线坐标系,支持针孔/广角/鱼眼/折反射等任意镜头模型;辅以 Lat-Up 绝对方向图解决首帧 pitch/roll 歧义,通过 LoRA 风格轻量适配器(< 1% 参数)注入预训练 Wan DiT。</p>
+    <p class="authors">Cheng Zhang, Boying Li<sup>†</sup>, Meng Wei, Yan-Pei Cao, Camilo Cruz Gambardella, Dinh Phung, Jianfei Cai &nbsp;|&nbsp; Monash University · Building 4.0 CRC · VAST</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2512.07237" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2512.07237v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2512.07237" target="_blank">📥 PDF</a>
+      <a href="https://github.com/chengzhag/UCPE" target="_blank">💻 GitHub</a>
+      <a href="https://chengzhag.github.io/publication/ucpe/" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与核心数据</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">相对光线编码(Relative Ray)</a></li>
+    <li><a href="#s5">绝对方向编码(Lat-Up Map)</a></li>
+    <li><a href="#s6">空间注意力适配器</a></li>
+    <li><a href="#s7">损失函数与训练目标</a></li>
+    <li><a href="#s8">数据集与评测协议</a></li>
+    <li><a href="#s9">逻辑流程图</a></li>
+    <li><a href="#s10">实验结果</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">技术路线对比与演进</a></li>
+    <li><a href="#s13">核心洞察</a></li>
+    <li><a href="#s14">可改进方向分析</a></li>
+    <li><a href="#s15">总结与资源</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与核心数据</h2>
+<p class="lead">现有视频生成的相机控制方法<em>普遍依赖简化的针孔假设</em>:无论是绝对位姿参数化还是相对编码(GTA / PRoPE),都假设整张图共享一个线性投影函数,这导致它们<strong>无法建模鱼眼/折反射/等距柱面等非线性镜头畸变</strong>。UCPE 的核心论断是:<strong>把"相机级"条件化下沉到"光线级"</strong> —— 为每个 token 单独构造局部光线坐标系,从而自然捕获镜头畸变在像素间的空间变化;同时引入 Lat-Up Map 提供重力对齐的绝对方向,解决首帧 pitch/roll 歧义。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v green">4.12°</div><div class="l">RotErr↓(有绝对方向)</div></div>
+  <div class="stat"><div class="v green">35.6M</div><div class="l">可训练参数(< 1%)</div></div>
+  <div class="stat"><div class="v green">1/10 ~ 1/42</div><div class="l">vs ReCamMaster / Wan-Ctrl 参数</div></div>
+  <div class="stat"><div class="v green">~48K</div><div class="l">UCM 合成片段</div></div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>四点贡献</h4>
+    <ol>
+      <li><strong>Relative Ray Encoding</strong>:从相机级编码改为光线级编码,每个 token 有独立视线光线</li>
+      <li><strong>Absolute Orientation Encoding</strong>:Lat-Up Map 捕获重力对齐 pitch/roll,解决首帧方向歧义</li>
+      <li><strong>Lightweight Spatial Attention Adapter</strong>:LoRA 启发并行分支,零初始化残差,新增参数 < 1%</li>
+      <li><strong>大规模多样化相机数据集</strong>:~48K 片段,UCM 随机化 FoV 与畸变,覆盖针孔/广角/鱼眼</li>
+    </ol>
+  </div>
+  <div class="card left-bar">
+    <h4>关键事实</h4>
+    <ul>
+      <li><strong>会议</strong>:CVPR 2026</li>
+      <li><strong>基础模型</strong>:Wan(视频扩散 Transformer)</li>
+      <li><strong>arXiv 提交</strong>:2025-12-08,v2: 2026-03-26</li>
+      <li><strong>GitHub Stars</strong>:~225</li>
+      <li><strong>评测数据</strong>:合成 UCM 测试集 + RE10K(OOD)</li>
+      <li><strong>核心镜头模型</strong>:Unified Camera Model (UCM)</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>一句话定位</h4>
+    <p>把相机编码从"<em>整图一个针孔变换</em>"下沉到"<em>每 token 一条光线</em>",使任意镜头类型成为可控的一等公民 —— 这是相机控制从"<strong>针孔假设</strong>"向"<strong>光线空间几何</strong>"的范式下沉,与 SCoPE 的"光线即 token 的第二地址"思路同源。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 2. 背景动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>相机可控视频生成在自动驾驶 / 机器人 / 世界模型中需求强烈,但真实部署中常遇到鱼眼、折反射、等距柱面等多样化镜头。已有相机编码方法在镜头泛化与方向定义上均有显著短板:</p>
+
+<table>
+<tr><th>路线</th><th>代表方法</th><th>编码方式</th><th>关键局限</th></tr>
+<tr><td>绝对编码</td><td>直接参数化 / Plücker</td><td>绝对位姿参数或 6D 光线</td><td class="fail">坐标依赖,泛化性差;Plücker 虽物理可解释但绑绝对坐标,跨数据集难迁移</td></tr>
+<tr><td>相对编码(针孔)</td><td>GTA / PRoPE</td><td>整图相对首帧的相机变换</td><td class="fail">仅支持针孔投影,无法建模非线性镜头畸变的空间变化</td></tr>
+<tr><td>相机外参注入</td><td>ReCamMaster</td><td>直接 [R,t] 注入骨干</td><td class="partial">全量微调,354M 可训练参数;无镜头控制能力</td></tr>
+<tr><td>Plücker + 适配器</td><td>Wan CameraCtrl / AC3D</td><td>Plücker + 卷积/ControlNet</td><td class="partial">针孔假设,适配器参数大(1.5B),泛化弱</td></tr>
+<tr class="best"><td>光线级相对编码(本文)</td><td>UCPE</td><td>每 token 独立光线坐标系</td><td class="best">支持任意镜头(含畸变),首帧方向可显式控制,新增参数 35.6M</td></tr>
+</table>
+
+<h3>两个核心痛点</h3>
+<div class="grid grid-2">
+  <div class="card left-bar red">
+    <h4>痛点一:针孔假设的空间刚体性</h4>
+    <p>GTA/PRoPE 假设同一视图内所有 token 共享单一线性投影函数 → 整张图作为一个刚体做变换 → <strong>无法表达鱼眼镜头中"图像边缘光线方向逐渐弯曲"的空间变化</strong>。这是结构性局限,不能通过数据增强解决。</p>
+  </div>
+  <div class="card left-bar red">
+    <h4>痛点二:首帧 pitch/roll 歧义</h4>
+    <p>相对编码只定义"<em>相对于首帧的位姿</em>",但首帧本身的全局旋转方向不明确。若世界系未对齐重力,模型无法区分相机是"<em>向左倾斜看风景</em>"还是"<em>正看一面斜墙</em>" → pitch 和 roll 无法唯一确定。</p>
+  </div>
+</div>
+
+<div class="callout key">
+  <h4>💡 核心洞察:从相机空间下沉到光线空间</h4>
+  <p>所有相机模型可统一为<strong>光线映射函数</strong> $\Phi_\psi:(u,v)\to(\mathbf{o}_{\text{cam}},\mathbf{d}_{\text{cam}})$。UCPE 的关键观察是:<em>与其在相机空间做位姿变换,不如直接在光线空间做坐标变换</em>。同一帧内不同像素的光线方向不同 → 自动捕获畸变;每 token 建立局部光线坐标系 → 相对变换自然定义。这与 SCoPE 的"Plücker 光线作为 token 的第二地址"思路在本知识库内形成<strong>同源呼应</strong>(见兄弟笔记 <a href="VideoGen-20260625-SCoPE.html">SCoPE</a>)。</p>
+</div>
+</section>
+
+<!-- ==================== 3. 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p>UCPE 由三个核心模块构成,围绕"<strong>不改 Wan 预训练 DiT 主体</strong>"这一约束展开,通过 LoRA 风格的轻量并行适配器注入:</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <span class="stage-tag stage-1">模块 A · 相对光线编码</span>
+    <p>每 token 的光线 $(\mathbf{o}_t,\mathbf{d}_t)$ → 构造局部光线坐标系 $\mathbf{T}_t^{wr}$(z 轴沿 $\mathbf{d}_t$) → 逆变换 $\mathbf{T}_t^{rw}$ 作为注意力层的几何算子,在<strong>光线空间</strong>而非相机空间推理。</p>
+  </div>
+  <div class="card left-bar green">
+    <span class="stage-tag stage-2">模块 B · 绝对方向编码</span>
+    <p>Lat-Up Map:Latitude Map(纬度角 $\text{Lat}_t$)+ Up Map(像素位移方向)→ 每 token 的全局方向上下文,实现显式 pitch/roll 控制。</p>
+  </div>
+  <div class="card left-bar warn">
+    <span class="stage-tag stage-r">模块 C · 轻量适配器</span>
+    <p>块对角算子 $\mathbf{D}_t^{\text{UCPE}}=\text{blkdiag}(\mathbf{D}_t^{\text{Ray}},\mathbf{D}_t^{\text{RoPE}})$ 注入自注意力;1/C 降维 + 零初始化残差;新增参数 < 1%。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+  <h4>🔑 设计哲学:零侵入 + 零初始化</h4>
+  <p>原始自注意力<strong>保留不变</strong>,UCPEAttn 作为<strong>并行旁路</strong>注入;输出经零初始化线性层映射回 → 训练初始时模型输出与原 Wan 完全一致 → 不破坏预训练先验。这一原则与 SCoPE 的 $\alpha=0$ 初始化、World-R1 的"elicit not inject"思路在知识库内形成<strong>一致的零侵入范式</strong>(见 <a href="VideoGen-20260427-World-R1.html">World-R1</a>)。</p>
+</div>
+</section>
+
+<!-- ==================== 4. 相对光线编码 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>相对光线编码(Relative Ray Encoding)</h2>
+<p>所有相机模型可统一为光线映射函数:</p>
+<div class="equation">
+$$\Phi_\psi:(u,v)\mapsto(\mathbf{o}_{\text{cam}},\mathbf{d}_{\text{cam}}) \qquad \text{(式 1)}$$
+<span class="label">ψ 为模型参数(焦距、畸变系数等)</span>
+</div>
+<p>中心相机(针孔)所有光线共享原点;非中心相机(折反射)光线原点随像素变化。UCPE 采用 <strong>Unified Camera Model (UCM)</strong> 作代表示例。通过相机位姿 $\mathbf{T}_{wc}\in SE(3)$ 变换到世界空间:</p>
+<div class="equation">
+$$\mathbf{d}_{\text{world}}=\mathbf{R}\,\mathbf{d}_{\text{cam}},\qquad \mathbf{o}_{\text{world}}=\mathbf{t}. \qquad \text{(式 2)}$$
+</div>
+
+<h3>每 token 局部光线坐标系</h3>
+<p>现有相对编码(GTA/PRoPE)假设同一视图内所有 token 共享单一线性投影函数 → 整张图作为一个刚体 → <strong>无法处理镜头畸变的空间变化</strong>。UCPE 的解决:<strong>从相机级变换改为光线级变换</strong>。为每个 token $t$ 构造局部光线到世界矩阵 $\mathbf{T}_t^{wr}$。</p>
+
+<p>每个 token 的光线 $\mathbf{r}_t=(\mathbf{o}_t,\mathbf{d}_t)$,构造局部坐标系:</p>
+<div class="equation">
+$$\mathbf{z}_t=\mathbf{d}_t\;(\text{光线方向}),\quad \mathbf{x}_t=\mathbf{y}_{\text{cam}}\times\mathbf{z}_t,\quad \mathbf{y}_t=\mathbf{z}_t\times\mathbf{x}_t. \qquad \text{(式 3)}$$
+</div>
+
+<ul>
+  <li><strong>z 轴</strong>:光线方向 $\mathbf{d}_t$ — 每 token 不同!→ 直接捕获镜头畸变(鱼眼边缘光线弯曲)</li>
+  <li><strong>x 轴</strong>:相机向下方向 $\mathbf{y}_{\text{cam}}$ 与 $\mathbf{z}_t$ 的叉积</li>
+  <li><strong>y 轴</strong>:$\mathbf{z}_t$ 与 $\mathbf{x}_t$ 的叉积(右手系补全)</li>
+  <li>旋转 $\mathbf{R}_t^{wr}$ + 平移 $\mathbf{t}_t^{wr}=\mathbf{o}_t$ → 构成 $\mathbf{T}_t^{wr}$</li>
+</ul>
+<p>逆变换 $\mathbf{T}_t^{rw}=(\mathbf{T}_t^{wr})^{-1}$ 将世界坐标映射到局部光线空间,作为注意力层特征变换的几何算子。</p>
+
+<div class="callout key">
+  <h4>🎯 核心创新:注意力在光线空间推理</h4>
+  <p>注意力机制在<strong>光线空间</strong>而非相机空间推理。同一帧内不同 token 有不同位置编码(因为光线方向不同),从而<strong>自然支持鱼眼/广角等非线性投影</strong>。这是把镜头畸变从"问题"变为"几何不变量"的关键一步。</p>
+</div>
+</section>
+
+<!-- ==================== 5. 绝对方向编码 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>绝对方向编码(Lat-Up Map)</h2>
+<p>相对光线编码无法提供绝对方向 → 首帧 pitch/roll 歧义。UCPE 引入 <strong>Lat-Up Map</strong>(纬度-上方向图),为每个 token 提供全局重力对齐上下文:</p>
+
+<h3>纬度图(Latitude Map)</h3>
+<div class="equation">
+$$\text{Lat}_t=\arctan2\!\left(-d_{t,y},\,\sqrt{d_{t,x}^2+d_{t,z}^2}\right). \qquad \text{(式 4)}$$
+</div>
+<p>光线方向相对水平面的角高度(正值=向上看)。捕获天地分离等外观线索,对广角镜头也有畸变感知。</p>
+
+<h3>上方向图(Up Map)</h3>
+<p>将世界空间光线绕局部轴 $\mathbf{k}_t=\mathbf{d}_t\times\mathbf{u}_{\text{wld}}$ 旋转小角度 $\delta$(Rodrigues 公式),投影回图像平面,归一化像素位移定义上方向:</p>
+<div class="equation">
+$$\mathbf{U p}_t=\frac{[\Delta u,\Delta v]}{\|[\Delta u,\Delta v]\|}. \qquad \text{(式 5)}$$
+</div>
+
+<div class="callout tip">
+  <h4>💡 Lat-Up 的物理意义</h4>
+  <p>Lat-Up 编码提供每 token 的<strong>全局方向上下文</strong>,实现显式 pitch/roll 控制。Latitude 直接告诉模型"这个 token 看的是天还是地",Up Map 告诉模型"图像上方向在世界中偏向哪里" → 通过外观线索(天地分离、物体对齐)提供首帧的全局方向锚定。</p>
+</div>
+
+<table>
+<tr><th>变体</th><th>Pitch Err↓</th><th>Roll Err↓</th><th>说明</th></tr>
+<tr><td>无绝对方向</td><td>8.03°</td><td>6.64°</td><td class="partial">首帧方向歧义未解</td></tr>
+<tr class="best"><td>有 Lat-Up Map</td><td class="best">4.35°</td><td class="best">3.74°</td><td class="best">pitch/roll 误差大幅降低</td></tr>
+</table>
+</section>
+
+<!-- ==================== 6. 适配器 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>空间注意力适配器</h2>
+
+<h3>混合编码:块对角算子</h3>
+<p>将相对光线编码与 RoPE 融合,构建块对角算子:</p>
+<div class="equation">
+$$\mathbf{D}_t^{\text{UCPE}}=\text{blkdiag}\!\left(\mathbf{D}_t^{\text{Ray}},\,\mathbf{D}_t^{\text{RoPE}}\right), \qquad \text{(式 6)}$$
+</div>
+<ul>
+  <li><strong>$\mathbf{D}_t^{\text{Ray}}=\mathbf{I}_{d/8}\otimes\mathbf{T}_t^{rw}$</strong>:光线空间变换(一半维度)</li>
+  <li><strong>$\mathbf{D}_t^{\text{RoPE}}$</strong>:图像空间 RoPE(另一半维度)</li>
+  <li>Lat-Up 特征经线性层投影后作为 token 偏置项加入</li>
+</ul>
+
+<h3>LoRA 启发的轻量适配器</h3>
+<ul>
+  <li>以 Wan 为预训练 DiT,在自注意力层旁路引入<strong>并行分支</strong> $\text{UCPEAttn}(\cdot)$</li>
+  <li>原始自注意力<strong>保留不变</strong>,预训练先验不受干扰</li>
+  <li>UCPEAttn 将 token 投影到 <strong>$1/C$ 原始维度</strong>(降维),注意力头数成比例减少</li>
+  <li>输出经<strong>零初始化线性层</strong>映射回 → 初始时模型完全不变</li>
+  <li><strong>新增可训练参数 < 1%</strong>(仅适配器,骨干冻结或微调)</li>
+</ul>
+
+<div class="callout tip">
+  <h4>🔧 工程要点:1/8 压缩的甜点</h4>
+  <p>消融实验显示 1/8 维度压缩(默认)$\to$ 192×1 头,35.6M 参数,在 FVD 上反而<strong>优于 1/4 和 1/2 压缩</strong>。说明 UCPE 的几何信号高度可压缩 —— 这与"光线坐标是低自由度几何先验"的物理直觉一致。</p>
+</div>
+</section>
+
+<!-- ==================== 7. 损失函数 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>损失函数与训练目标</h2>
+<p>UCPE 沿用 Wan 预训练的<strong>Flow Matching 损失</strong>(速度回归),不修改训练目标,仅通过位置编码与适配器改变几何信号注入路径。这意味着 UCPE 的所有增益都来自"<em>更对的几何条件</em>"而非"<em>更强的优化目标</em>"。</p>
+
+<table>
+<tr><th>项</th><th>公式</th><th>作用</th></tr>
+<tr><td><strong>Flow Matching</strong></td><td>$\mathcal{L}_{\text{FM}}=\mathbb{E}_{t,\epsilon}\|\mathbf{v}_\theta(\mathbf{x}_t,t)-\mathbf{v}_t^*\|_2^2$</td><td>标准速度回归损失(Wan 原始)</td></tr>
+<tr><td><strong>UCPE 适配器</strong></td><td>$\mathbf{D}_t^{\text{UCPE}}\cdot\mathbf{q},\mathbf{D}_t^{\text{UCPE}}\cdot\mathbf{k}$</td><td>位置编码注入(可学习部分)</td></tr>
+<tr><td><strong>零初始化残差</strong></td><td>$\alpha=0$ @ init</td><td>保证初始时模型与原 Wan 等价</td></tr>
+</table>
+
+<div class="callout warn">
+  <h4>⚠️ 与 SCoPE 的损失设计差异</h4>
+  <p>SCoPE 同样不改训练目标,但用<strong>加法注入</strong>产生独立的几何×几何注意力项;UCPE 用<strong>乘法块对角算子</strong>将几何信号路由进 Q/K。前者让几何独立计分,后者让几何调制内容 — 这是同代方法的设计分叉(详见第 12 节技术路线对比)。</p>
+</div>
+</section>
+
+<!-- ==================== 8. 数据集 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>数据集与评测协议</h2>
+
+<h3>8.1 数据集</h3>
+<table>
+<tr><th>数据集</th><th>规模</th><th>说明</th></tr>
+<tr><td><strong>合成 UCM 数据集</strong></td><td>~48K 片段</td><td>从 360° 视频合成,UCM 随机化 xFoV 和畸变 $\xi$,覆盖针孔/广角/鱼眼</td></tr>
+<tr><td><strong>RealEstate10K (RE10K)</strong></td><td>100 测试片段</td><td>OOD 泛化测试,固定 100° xFoV 针孔,无适配/微调</td></tr>
+</table>
+
+<h3>8.2 合成流程(附录 A)</h3>
+<ul>
+  <li><strong>360° 全景视频策展</strong>:片段分割 → 相机位姿/旋转分数提取 → 质量过滤 → 轨迹尺度归一化</li>
+  <li><strong>真实相机旋转模拟</strong>:候选旋转提取 → 轨迹匹配和旋转转移</li>
+  <li><strong>多样化相机视频合成</strong>:相机旋转增强 → UCM → 内参/畸变采样 → 全景到 UCM 投影 → 虚拟相机位姿合成 → UCM 视频标注</li>
+</ul>
+
+<h3>8.3 评测指标</h3>
+<table>
+<tr><th>维度</th><th>指标</th><th>说明</th></tr>
+<tr><td>视频质量</td><td>FID, FVD, CLIP, Q-Align</td><td>数据集级保真度、文本-视频对齐、用户中心质量</td></tr>
+<tr><td>相对相机位姿</td><td>TransErr, RotErr, CamMC</td><td>ViPE 估计位姿对比</td></tr>
+<tr><td>绝对方向</td><td>Pitch Err, Roll Err</td><td>GeoCalib 估计 pitch/roll 对比</td></tr>
+<tr><td>镜头控制</td><td>FoV Err, $k_1$ Err, $k_2$ Err</td><td>径向模型标定对比</td></tr>
+</table>
+
+<h3>8.4 基线方法</h3>
+<table>
+<tr><th>方法</th><th>机制</th><th>骨干</th></tr>
+<tr><td>ReCamMaster</td><td>相机外参 $[\mathbf{R},\mathbf{t}]$ 注入</td><td>Wan(同骨干)</td></tr>
+<tr><td>Wan CameraCtrl</td><td>Plücker + 卷积适配器</td><td>Wan(同骨干)</td></tr>
+<tr><td>AC3D</td><td>Plücker + ControlNet</td><td>CogVideoX</td></tr>
+<tr><td>CameraCtrl</td><td>Plücker + 时序注意力</td><td>AnimateDiff</td></tr>
+</table>
+</section>
+
+<!-- ==================== 9. 流程图 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 总推理流水线</h3>
+<div class="mermaid">
+flowchart LR
+    IN["文本 + 相机参数<br/>位姿 / 内参 / 畸变 ξ"] --> UCM["UCM 光线映射 Φψ<br/>(u,v) → (o, d)"]
+    UCM --> RAY["相对光线编码<br/>每 token 局部光线系 T_t^rw"]
+    UCM --> LATUP["Lat-Up Map<br/>纬度角 + 上方向向量"]
+    RAY --> BLK["块对角算子<br/>D_UCPE = blkdiag(D_Ray, D_RoPE)"]
+    LATUP --> BIAS["线性投影<br/>作为 token 偏置"]
+    BLK --> ADP["Spatial Attention Adapter<br/>并行分支 / 1/C 降维 / 零初始化"]
+    BIAS --> ADP
+    ADP --> WAN["Wan 预训练 DiT<br/>相机可控视频生成"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style UCM fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style RAY fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style LATUP fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style ADP fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style WAN fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.2 模块组成与数据流</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph CAM["相机输入解析"]
+        C1["位姿 T_wc ∈ SE(3)"] --> C2["内参 / 畸变 ψ"]
+        C2 --> C3["UCM 光线映射"]
+    end
+    subgraph RAY["光线级几何编码"]
+        R1["每像素光线 (o_t, d_t)"] --> R2["局部光线系 z=d_t, x=y×z, y=z×x"]
+        R2 --> R3["T_t^wr (光线→世界)"]
+        R3 --> R4["T_t^rw = (T_t^wr)^-1 (逆变换)"]
+    end
+    subgraph ABS["绝对方向"]
+        A1["Lat = arctan2(-d_y, sqrt(d_x²+d_z²))"]
+        A2["Up = 像素位移归一化"]
+        A1 --> A3["Lat-Up Map"]
+        A2 --> A3
+    end
+    CAM --> RAY
+    CAM --> ABS
+    RAY --> MIX["块对角混合 D_UCPE"]
+    ABS --> BIAS["线性偏置项"]
+    MIX --> ATTN["UCPEAttn 并行分支"]
+    BIAS --> ATTN
+    ATTN --> OUT["输出 = 0·init + α·UCPEAttn → 原始注意力"]
+    style CAM fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style RAY fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style ABS fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style MIX fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style OUT fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+</section>
+
+<!-- ==================== 10. 实验结果 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 合成 UCM 数据集主对比(无绝对方向控制)</h3>
+<table>
+<tr><th>方法</th><th>FoV↓</th><th>$k_1$↓</th><th>$k_2$↓</th><th>Pitch↓</th><th>Roll↓</th><th>RotErr↓</th><th>TransErr↓</th><th>CamMC↓</th><th>FVD↓</th><th>CLIP↑</th><th>参数</th></tr>
+<tr><td>ReCamMaster</td><td>10.25</td><td>0.210</td><td>0.143</td><td>10.00</td><td>7.42</td><td>10.89</td><td>31.44</td><td>37.38</td><td>555.54</td><td>24.86</td><td>354M</td></tr>
+<tr><td>Wan CameraCtrl</td><td>10.05</td><td>0.222</td><td>0.142</td><td>9.35</td><td>7.31</td><td>17.04</td><td>35.09</td><td>46.10</td><td>593.10</td><td>25.05</td><td>1.5B</td></tr>
+<tr class="best"><td>UCPE</td><td class="best">9.62</td><td class="best">0.174</td><td class="best">0.120</td><td>8.03</td><td>6.64</td><td class="best">4.29</td><td class="best">13.46</td><td class="best">15.94</td><td>569.31</td><td class="best">25.11</td><td class="best">35.5M</td></tr>
+</table>
+
+<h3>10.2 合成 UCM 数据集主对比(有绝对方向控制)</h3>
+<table>
+<tr><th>方法</th><th>FoV↓</th><th>$k_1$↓</th><th>$k_2$↓</th><th>Pitch↓</th><th>Roll↓</th><th>RotErr↓</th><th>TransErr↓</th><th>CamMC↓</th><th>FVD↓</th><th>CLIP↑</th><th>参数</th></tr>
+<tr><td>ReCamMaster</td><td>10.04</td><td>0.183</td><td>0.136</td><td>6.62</td><td>5.29</td><td>9.23</td><td>28.95</td><td>33.88</td><td>605.83</td><td>24.84</td><td>354M</td></tr>
+<tr><td>Wan CameraCtrl</td><td>9.86</td><td>0.230</td><td>0.162</td><td>6.25</td><td>6.01</td><td>17.92</td><td>39.16</td><td>50.32</td><td>554.43</td><td>25.01</td><td>1.5B</td></tr>
+<tr class="best"><td>UCPE</td><td class="best">8.22</td><td class="best">0.129</td><td class="best">0.102</td><td class="best">4.35</td><td class="best">3.74</td><td class="best">4.12</td><td class="best">15.21</td><td class="best">17.59</td><td class="best">495.14</td><td class="best">25.12</td><td class="best">35.6M</td></tr>
+</table>
+<ul>
+  <li>UCPE 在<strong>镜头控制、绝对方向、相对位姿、视频质量</strong>所有维度全面领先</li>
+  <li>RotErr <strong>4.12°</strong>(ReCamMaster 9.23°,Wan CameraCtrl 17.92°)→ 相对位姿误差降低 55–77%</li>
+  <li>可训练参数仅 <strong>35.6M</strong>(ReCamMaster 354M 的 1/10,Wan CameraCtrl 1.5B 的 1/42)</li>
+  <li>FoV 误差从 10.04° 降至 8.22°,$k_1/k_2$ 畸变系数误差均显著降低 → 真正实现了<strong>镜头级</strong>控制</li>
+</ul>
+
+<h3>10.3 RealEstate10K OOD 泛化</h3>
+<p>UCPE 在未适配/微调的 RE10K 上生成更锐利、更详细的帧,更好地跟随目标相机运动。CameraCtrl 产生严重伪影,ReCamMaster 相机一致性不足。这验证了<strong>光线级编码的跨域泛化</strong>:即便测试集全是针孔,UCPE 在鱼眼数据上学到的几何不变量仍优于针孔专用方法。</p>
+
+<div class="callout key">
+  <h4>🎯 OOD 泛化的反直觉发现</h4>
+  <p>UCPE 在多样化镜头上训练,却在纯针孔的 RE10K 上超过针孔专用方法。这说明<strong>光线级编码学到的不是"镜头模型",而是"几何不变量"</strong> —— 这正是把相机条件下沉到光线空间的理论红利。</p>
+</div>
+</section>
+
+<!-- ==================== 11. 消融 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+
+<h3>11.1 适配器压缩比</h3>
+<table>
+<tr><th>压缩比</th><th>维度×头数</th><th>参数</th><th>RotErr↓</th><th>TransErr↓</th><th>FVD↓</th></tr>
+<tr><td>1/2-dim</td><td>128×6</td><td>141M</td><td class="best">3.69</td><td class="best">16.06</td><td>534.44</td></tr>
+<tr><td>1/4-dim</td><td>128×3</td><td>71.0M</td><td>3.43</td><td>16.02</td><td>512.85</td></tr>
+<tr class="best"><td>1/8-dim(默认)</td><td>192×1</td><td class="best">35.6M</td><td>4.12</td><td>17.59</td><td class="best">495.14</td></tr>
+</table>
+<p>1/8 压缩在 FVD 上最优且参数最少,RotErr 略高于 1/4 但可接受 → <strong>最佳平衡</strong>在可控性和保真度之间。这说明 UCPE 的几何信号<strong>高度可压缩</strong>,过大的适配器反而引入冗余噪声。</p>
+
+<h3>11.2 关键设计验证</h3>
+<table>
+<tr><th>设计</th><th>结论</th><th>佐证</th></tr>
+<tr><td>光线级 vs 相机级编码</td><td class="best">光线级在所有镜头类型上泛化(含畸变)</td><td>跨镜头模型测试</td></tr>
+<tr><td>绝对方向编码</td><td class="best">有 > 无,pitch/roll 误差大幅降低</td><td>4.35° vs 8.03°</td></tr>
+<tr><td>零初始化</td><td class="best">不破坏预训练先验,训练稳定</td><td>训练曲线</td></tr>
+<tr><td>鲁棒性</td><td class="best">文本-相机冲突时仍保持控制</td><td>冲突实验</td></tr>
+<tr><td>未见相机模型</td><td class="best">泛化到训练外镜头</td><td>OOD 测试</td></tr>
+</table>
+</section>
+
+<!-- ==================== 12. 技术路线对比与演进 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>技术路线对比与演进</h2>
+
+<p>UCPE 处于"相机可控视频生成"技术脉络中,其设计可与同代方法对比定位:</p>
+
+<table>
+<tr><th>范式</th><th>代表方法</th><th>几何先验</th><th>关键局限</th></tr>
+<tr><td>外参直接注入</td><td>ReCamMaster</td><td>绝对 $[\mathbf{R},\mathbf{t}]$</td><td class="fail">全量微调,无镜头控制,坐标依赖</td></tr>
+<tr><td>Plücker + 适配器</td><td>Wan CameraCtrl / AC3D / CameraCtrl</td><td>6D 光线</td><td class="fail">针孔假设,适配器大,畸变不可建模</td></tr>
+<tr><td>相对编码(相机级)</td><td>GTA / PRoPE</td><td>相对相机变换</td><td class="fail">线性投影假设,无镜头控制,首帧方向歧义</td></tr>
+<tr><td>相对编码(光线级,本文)</td><td>UCPE</td><td>每 token 光线坐标系 + Lat-Up</td><td class="best">支持任意镜头,显式绝对方向,< 1% 参数</td></tr>
+<tr><td>加法注入(同代)</td><td><a href="VideoGen-20260625-SCoPE.html">SCoPE</a>(2026-06)</td><td>Plücker 翻转 + 互反积</td><td class="partial">仅针孔(RE10K 测试),无畸变支持;但参数更少(< 0.1%)且无额外推理开销</td></tr>
+</table>
+
+<h3>演进定位</h3>
+<div class="callout key">
+  <h4>📈 三次范式下沉</h4>
+  <ol>
+    <li><strong>绝对位姿 → 相对位姿</strong>:从依赖全局坐标到相对首帧(GTA/PRoPE),提升跨数据集泛化,但保留针孔假设。</li>
+    <li><strong>相机级 → 光线级</strong>(UCPE):从"整图一个变换"到"每 token 一个光线坐标系",解锁任意镜头支持。这是<strong>结构性突破</strong>,不能通过数据增强绕过。</li>
+    <li><strong>相对 → 相对+绝对</strong>:UCPE 引入 Lat-Up Map,补全相对编码缺失的全局方向锚定,解决首帧 pitch/roll 歧义。</li>
+  </ol>
+  <p>UCPE 与 SCoPE 代表相机编码的<strong>两代同源思路</strong>:都把"光线"作为几何单元,但 UCPE 在<strong>光线空间做坐标变换(乘法)</strong>,SCoPE 在<strong>注意力分数做加法展开</strong>。前者支持任意镜头但仅相机控制;后者仅针孔但产生独立几何项。两者形成知识库内值得关注的<strong>设计对偶</strong>。</p>
+</div>
+</section>
+
+<!-- ==================== 13. 核心洞察 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>核心洞察</h2>
+
+<div class="grid grid-2">
+  <div class="card left-bar green">
+    <h4>洞察一:畸变不是问题,而是几何不变量</h4>
+    <p>传统思路把镜头畸变视为"需要校正的失真",UCPE 把它视为"<strong>光线方向的空间变化</strong>"。一旦下沉到光线空间,畸变不再是问题,而是每 token 几何坐标的自然输入。这解释了 UCPE 在纯针孔 RE10K 上的 OOD 泛化优势 —— 它学到的不是镜头模型,而是几何不变量。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察二:相对 + 绝对的必要性</h4>
+    <p>纯相对编码在方向上欠定。Lat-Up Map 的引入揭示了一个普适原则:<strong>任何相对几何推理都需要一个全局锚定</strong>。这与 SLAM 中"回环检测提供全局一致性"的思路同构 —— 相对编码对应里程计,绝对方向对应回环约束。</p>
+  </div>
+  <div class="card left-bar warn">
+    <h4>洞察三:零侵入 + 零初始化的范式红利</h4>
+    <p>UCPE / SCoPE / World-R1 都遵循"不改骨干 + 零初始化残差"原则。这不是巧合 —— 当预训练 DiT 已内蕴丰富先验时,<strong>最优策略是"诱导"而非"覆盖"</strong>。UCPE 的 35.6M 参数(1/42 of Wan CameraCtrl)即说明几何信号远比视觉信号低自由度,适配器应小而精。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察四:1/8 压缩的甜点 = 几何信号低自由度</h4>
+    <p>消融显示 1/8 维度压缩在 FVD 上最优 —— 比这更强反而退化。这印证光线几何是<strong>低自由度先验</strong>,过大会引入冗余噪声、过小则信息丢失。35.6M 这个数字本身是"几何信号容量"的标定。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 14. 可改进方向 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<p>本节为知识库特色分析章节,从方法/数据评估/工程实用性三维度分点,每点含<em>问题描述 + 论文/实验佐证 + 改进建议</em>,标优先级。</p>
+
+<h3>方法层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 乘法块对角 vs 加法注入的设计权衡未充分论证</h4>
+  <p><strong>问题:</strong>UCPE 采用乘法块对角算子 $\mathbf{D}_t^{\text{UCPE}}=\text{blkdiag}(\mathbf{D}_t^{\text{Ray}},\mathbf{D}_t^{\text{RoPE}})$,将几何信号通过 Q/K 变换进入注意力。但同代 SCoPE 证明<strong>加法注入</strong>能产生独立的"几何×几何"注意力项(不依赖内容),理论上信号更纯粹。UCPE 论文未对比加法注入的变体,无法判断乘法是否真的更优,还是仅为工程选择。</p>
+  <p><strong>改进:</strong>补做加法注入变体消融(如将 $\mathbf{T}_t^{rw}$ 加到 Q/K 投影后),对比两者在镜头控制/视频质量上的差异;若有独立几何项的方法更优,UCPE 的乘法设计需重新论证。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 仅在 UCM 一种镜头模型上验证"统一性"</h4>
+  <p><strong>问题:</strong>UCPE 名为"Unified",但论文核心示例是 Unified Camera Model(UCM)。虽然 $\Phi_\psi$ 形式上支持任意镜头,但<strong>未在折反射/等距柱面等其他镜头模型上做实验验证</strong>。"统一"的论断强度依赖于镜头模型多样性测试。</p>
+  <p><strong>改进:</strong>补充至少 2 种非 UCM 镜头模型(如 omnidirectional CataCAM、equi-angular equirectangular)的合成数据集训练 + 测试,验证光线级编码的镜头无关性。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] Lat-Up Map 的外观线索假设在极端场景可能失效</h4>
+  <p><strong>问题:</strong>Lat-Up 依赖"天地分离、物体对齐"等外观线索推断绝对方向。但在<strong>对称场景</strong>(室内天花板/地板对称)、<strong>微距/抽象艺术</strong>、<strong>空中俯瞰</strong>等场景,这些线索缺失,pitch/roll 推断可能退化。论文未报告此类失败案例。</p>
+  <p><strong>改进:</strong>补充极端场景的方向误差分析;或引入 IMU / 元数据等非外观线索作为 Lat-Up 的补充。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card left-bar warn">
+  <h4>[高优先级] 合成数据集的分布偏移未量化</h4>
+  <p><strong>问题:</strong>训练数据 ~48K 片段全部从 360° 视频合成 UCM 投影。这种合成存在系统性偏移:360° 视频本身有特定内容偏好(户外景观/旅行),UCM 投影又引入特定畸变模式。<strong>合成 → 真实</strong>的 distribution gap 未量化,RE10K OOD 测试虽好但不充分。</p>
+  <p><strong>改进:</strong>补充真实鱼眼镜头数据集(如 KITTI 360°、Omnidata)的零样本评测;报告合成数据的内容/轨迹分布直方图与真实数据的差异。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 评测指标依赖外部估计器(ViPE/GeoCalib),存在循环风险</h4>
+  <p><strong>问题:</strong>RotErr/TransErr 用 ViPE 估计位姿对比,Pitch/Roll 用 GeoCalib 估计。但<strong>估计器本身在畸变视频上可能有偏</strong> → UCPE 生成的低畸变视频可能让估计器更准,从而"自利"地放大指标差距。论文未做估计器鲁棒性消融。</p>
+  <p><strong>改进:</strong>用多个独立位姿估计器(ViPE + DUSt3R + VGGT 见 <a href="3D-20250314-VGGT.html">VGGT</a>)交叉验证;或用合成 GT 位姿做主指标,真实估计器仅作辅助。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 仅报告 RE10K 一个 OOD 测试集</h4>
+  <p><strong>问题:</strong>RE10K 是相对简单的针孔房地产视频。论文未在更难的 OOD 数据(MVImgNet 多视角、RealEstate10K-Temporal 长序列)上测试,泛化性论断可能偏乐观。</p>
+  <p><strong>改进:</strong>补充 2-3 个不同领域 OOD 测试集,报告跨域性能衰减曲线。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 推理时是否带来额外开销未明确披露</h4>
+  <p><strong>问题:</strong>UCPE 是并行适配器,理论上有额外前向开销。论文强调"< 1% 参数",但<strong>未报告推理 FPS / 延迟</strong>。与 SCoPE 的"零额外推理开销"对比时,这是关键工程指标缺失。</p>
+  <p><strong>改进:</strong>补充推理延迟对比表(原 Wan vs +UCPE vs +SCoPE),明确适配器在产品部署中的开销。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 1/8 压缩的甜点是否随骨干规模变化未知</h4>
+  <p><strong>问题:</strong>1/8 压缩在 Wan(假设 14B)上最优,但<strong>不同骨干规模(HunyuanVideo 8.3B / Mochi 10B)的最优压缩比可能不同</strong>。论文仅基于 Wan 给出 1/8,未做规模敏感性分析。</p>
+  <p><strong>改进:</strong>跨骨干规模(1.3B/5B/14B)扫压缩比;若甜点稳定,论证"几何信号容量"的骨干无关性;否则给出规模-压缩比经验公式。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>佐证类型</th></tr>
+<tr><td class="fail">高</td><td>乘法 vs 加法注入设计未充分论证</td><td>论文缺失(对比 SCoPE)</td></tr>
+<tr><td class="fail">高</td><td>合成数据分布偏移未量化</td><td>评测协议</td></tr>
+<tr><td class="partial">中</td><td>仅 UCM 一种镜头模型验证"统一性"</td><td>实验范围</td></tr>
+<tr><td class="partial">中</td><td>评测指标依赖外部估计器(循环风险)</td><td>评测协议</td></tr>
+<tr><td class="partial">中</td><td>推理开销未明确披露</td><td>论文缺失</td></tr>
+<tr><td>低</td><td>Lat-Up 极端场景失效</td><td>理论分析</td></tr>
+<tr><td>低</td><td>仅一个 OOD 测试集</td><td>实验范围</td></tr>
+<tr><td>低</td><td>1/8 压缩甜点的规模敏感性</td><td>消融范围</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>🎯 个人认为最关键的三点</h4>
+  <ol>
+    <li><strong>乘法 vs 加法的设计权衡</strong> —— UCPE 与 SCoPE 是同代同思路(光线级)但不同实现(乘法 vs 加法)的两条路径,UCPE 论文未对比加法变体。这一对比不仅决定 UCPE 设计是否最优,也是相机控制方法学的关键实验。建议参考 <a href="VideoGen-20260625-SCoPE.html">SCoPE</a> 复现加法注入变体做对照。</li>
+    <li><strong>合成 → 真实鱼眼的泛化验证</strong> —— "支持任意镜头"是 UCPE 卖点,但仅在合成 UCM 上验证,真实鱼眼镜头数据(KITTI 360°)的零样本性能才是落地关键。这是论文从"学术 SOTA"走向"产品可用"的关键解锁。</li>
+    <li><strong>评测循环风险</strong> —— 主指标依赖 ViPE/GeoCalib,而这些估计器本身在畸变视频上可能有偏。需用 VGGT/DUSt3R 等独立 3D 重建器交叉验证,否则"镜头控制 SOTA"的论断强度存疑。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 15. 总结 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>总结与资源</h2>
+<p>UCPE 把相机条件从<strong>相机级</strong>下沉到<strong>光线级</strong>,为每个 token 建立独立光线坐标系,从而支持任意镜头模型(针孔/广角/鱼眼/折反射);Lat-Up Map 解决首帧 pitch/roll 歧义;LoRA 风格适配器以 < 1% 参数零侵入注入 Wan。在合成 UCM 与 OOD RE10K 上,UCPE 以 35.6M 参数全面超越 ReCamMaster(354M)和 Wan CameraCtrl(1.5B),RotErr 降低 55–77%,且支持 FoV/畸变系数级控制 — 是相机可控视频生成从"针孔假设"向"光线空间几何"的范式下沉。</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>最大亮点</h4>
+    <ul>
+      <li>光线级编码结构性支持任意镜头(无法通过数据增强绕过)</li>
+      <li>OOD 反直觉优势:鱼眼训练 → 针孔测试反超针孔专用方法</li>
+      <li>1/8 压缩甜点 = 几何信号低自由度的实证标定</li>
+      <li>零初始化 + LoRA 风格,< 1% 参数,不破坏预训练先验</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>主要局限</h4>
+    <ul>
+      <li>乘法 vs 加法注入设计未对比 SCoPE 加法变体</li>
+      <li>仅 UCM 一种镜头模型实证验证"统一性"</li>
+      <li>合成 → 真实鱼眼的分布偏移未量化</li>
+      <li>推理开销未明确披露</li>
+    </ul>
+  </div>
+  <div class="card left-bar">
+    <h4>演进定位</h4>
+    <p>在本知识库"相机可控视频生成"脉络中,UCPE 代表<strong>相机级 → 光线级</strong>的范式下沉;同代 <a href="VideoGen-20260625-SCoPE.html">SCoPE</a>(2026-06)在光线级思路上采用<strong>加法注入</strong>对偶设计 — 两者形成知识库内值得追踪的<strong>设计对偶</strong>。后续若出现"光线级 + 加法 + 任意镜头"的融合方法,将收敛这一代技术。</p>
+  </div>
+</div>
+
+<h3>关键资源</h3>
+<table>
+<tr><th>资源</th><th>链接</th></tr>
+<tr><td>📄 arXiv abs</td><td><a href="https://arxiv.org/abs/2512.07237" target="_blank">arxiv.org/abs/2512.07237</a></td></tr>
+<tr><td>🌐 arXiv HTML 全文</td><td><a href="https://arxiv.org/html/2512.07237v2" target="_blank">arxiv.org/html/2512.07237v2</a></td></tr>
+<tr><td>📥 PDF</td><td><a href="https://arxiv.org/pdf/2512.07237" target="_blank">arxiv.org/pdf/2512.07237</a></td></tr>
+<tr><td>💻 GitHub</td><td><a href="https://github.com/chengzhag/UCPE" target="_blank">github.com/chengzhag/UCPE</a>(~225 Stars)</td></tr>
+<tr><td>🌐 项目主页</td><td><a href="https://chengzhag.github.io/publication/ucpe/" target="_blank">chengzhag.github.io/publication/ucpe</a></td></tr>
+<tr><td>🏆 会议</td><td>CVPR 2026</td></tr>
+<tr><td>🏢 机构</td><td>Monash University · Building 4.0 CRC · VAST</td></tr>
+<tr><td>🎯 骨干模型</td><td>Wan(视频扩散 Transformer)</td></tr>
+</table>
+
+<h3>关键指标速查</h3>
+<table>
+<tr><th>指标</th><th>成绩</th><th>对比</th></tr>
+<tr><td>RotErr↓(有绝对方向)</td><td class="best">4.12°</td><td>ReCamMaster 9.23°,Wan CameraCtrl 17.92°</td></tr>
+<tr><td>Pitch Err↓</td><td class="best">4.35°</td><td>ReCamMaster 6.62°</td></tr>
+<tr><td>Roll Err↓</td><td class="best">3.74°</td><td>ReCamMaster 5.29°</td></tr>
+<tr><td>FoV Err↓</td><td class="best">8.22°</td><td>ReCamMaster 10.04°</td></tr>
+<tr><td>可训练参数</td><td class="best">35.6M</td><td>ReCamMaster 354M(1/10),Wan CameraCtrl 1.5B(1/42)</td></tr>
+<tr><td>FVD↓</td><td class="best">495.14</td><td>ReCamMaster 605.83</td></tr>
+</table>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>📝 UCPE 阅读笔记 · 生成于 2026-08-26 · 领域:视频生成 / 相机可控 / 位置编码</p>
+  <p>📄 arXiv:2512.07237 · CVPR 2026 · Monash University · VAST</p>
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>

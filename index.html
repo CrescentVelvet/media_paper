@@ -425,6 +425,50 @@
             <a href="https://aka.ms/world-r1" target="_blank">🌐 项目主页</a>
         </div>
 
+        <div class="note-card">
+            <h3>12. UCPE: 统一相机位置编码 — 跨任意镜头的视频生成相机控制</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2512.07237</span>
+                <span>📅 2025-12-08</span>
+                <span>🏢 Monash University · VAST</span>
+                <span>🏆 CVPR 2026</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Camera Control</span>
+                <span class="tag">Ray-Level Encoding</span>
+                <span class="tag">Fisheye / Wide-Angle</span>
+                <span class="tag">Lat-Up Map</span>
+                <span class="tag">LoRA Adapter</span>
+                <span class="tag">Wan DiT</span>
+            </div>
+            <p>把相机条件从"相机级"下沉到"光线级",每 token 建立局部光线坐标系,自然支持针孔/广角/鱼眼/折反射等任意镜头;Lat-Up Map 解决首帧 pitch/roll 歧义;LoRA 风格适配器 < 1% 参数零侵入注入 Wan。RotErr 4.12°(ReCamMaster 9.23°,Wan-Ctrl 17.92°),仅 35.6M 参数(ReCamMaster 1/10、Wan-Ctrl 1/42)。OOD 反直觉:鱼眼训练 → 针孔 RE10K 测试反超针孔专用方法,说明学到的是几何不变量而非镜头模型。与 SCoPE 形成"乘法 vs 加法"设计对偶。</p>
+            <a href="VideoGen-20251208-UCPE.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2512.07237" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/chengzhag/UCPE" target="_blank">💻 GitHub</a>
+            <a href="https://chengzhag.github.io/publication/ucpe/" target="_blank">🌐 项目主页</a>
+        </div>
+
+        <div class="note-card">
+            <h3>13. SCoPE: 视线坐标位置编码 — 让光线成为 token 的第二地址</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2606.27345</span>
+                <span>📅 2026-06-25</span>
+                <span>🏢 ARC Lab, Tencent · HKU · HKUST</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Camera Control</span>
+                <span class="tag green">Additive Injection</span>
+                <span class="tag">Plücker Ray</span>
+                <span class="tag">Reciprocal Product</span>
+                <span class="tag">NGI</span>
+                <span class="tag">Wan2.2 DiT</span>
+            </div>
+            <p>每条 Plücker 光线坐标 r=(d,m) 加法注入预训练注意力的 Q/K(Q 侧 (d,m),K 侧翻转 (m,d)),注意力分数自然分解出"仅依赖两条光线"的几何项(互反积:零=相交,增大=偏离)。NGI 处理尺度异构,RoPE 逐位不变 + &lt; 0.1% 参数 + 零推理开销。14B 上 RotErr 0.058(UCPE 0.082,−29%),FVD 280(ReRoPE 493,−43%),闭环重访返回平移比 0.090(UCPE 0.433)。消融实证几何项 (D) 最关键(FVD +190 退化)。与 UCPE 形成"加法 vs 乘法"设计对偶,若融合将收敛这一代相机编码技术。</p>
+            <a href="VideoGen-20260625-SCoPE.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2606.27345" target="_blank">📄 arXiv</a>
+            <a href="https://visual-ai.github.io/scope/" target="_blank">🌐 项目主页</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -1247,6 +1291,27 @@
             <a href="https://tangjm24.github.io/VidSplat" target="_blank">🌐 项目主页</a>
         </div>
 
+        <div class="note-card">
+            <h3>43. Stipple: 实时增量高斯泼溅与视觉惯性跟踪</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2608.00931</span>
+                <span>📅 2026-08-02</span>
+                <span>🏢 Technical University of Munich (TUM)</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3DGS SLAM</span>
+                <span class="tag">VIO / Basalt</span>
+                <span class="tag">Incremental</span>
+                <span class="tag">SSIM Densify</span>
+                <span class="tag">Rigid Loop Closure</span>
+                <span class="tag">Rust / CubeCL</span>
+            </div>
+            <p>基于 Basalt VIO + Brush(Rust/CubeCL 跨平台 3DGS),实现跟踪与重建异步并行。仅锚帧(~10% 关键帧,未重建&gt;5% 触发)执行 5 步高斯添加(深度播种→占用剪枝→突发拟合→SSIM 致密化→收敛);回环修正用刚体变换 O(n) 批量更新锚帧高斯,无需重训。Vicon Room PSNR 23.49(+1.08 vs CaRtGS)、跟踪 211 FPS(3×);MSD 264 FPS,MGO 序列 +4.3~5.4 dB。Machine Hall 上 SSIM 致密化过度触发致高斯爆炸(394k),是已知失败模式。代表 3DGS SLAM 从"离线 SfM 后训"向"VIO+增量重建"的范式转向。</p>
+            <a href="3D-20260802-Stipple.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2608.00931" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/ArthurBrussee/brush" target="_blank">💻 Brush (3DGS 引擎)</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -1382,7 +1447,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-08-25 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 42 篇笔记卡片（含 4DAnyone 单目→4D 人体重建，详见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-08-26 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 45 篇笔记卡片（含 SCoPE/UCPE 相机编码对偶、Stipple 实时 3DGS SLAM，详见 knowledge-index.json）
 </div>
 
 </body>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCoPE:视线坐标位置编码 — 算法原理与逻辑框图分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange); background:linear-gradient(90deg,rgba(251,146,60,0.08),var(--panel))}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card.left-bar{border-left:4px solid var(--accent)}
+  .card.left-bar.warn{border-left-color:var(--orange)}
+  .card.left-bar.red{border-left-color:var(--red)}
+  .card.left-bar.green{border-left-color:var(--green)}
+  .card h4{margin-top:0}
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:18px 0}
+  @media(max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center}
+  .stat .v{font-size:24px; font-weight:700; color:var(--accent)}
+  .stat .v.green{color:var(--green)}
+  .stat .l{color:var(--muted); font-size:13px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  tr.best td{background:rgba(52,211,153,0.08); color:var(--green); font-weight:600}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0; text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:8px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2606.27345v3) -->
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2606.27345 · 2026 · 相机可控视频生成</span>
+    <h1>SCoPE:视线坐标位置编码 — 让光线成为 token 的第二地址</h1>
+    <p class="subtitle">将每个 token 的完整 Plücker 光线坐标 r=(d,m) 以加法注入预训练注意力的 Q/K,Q 侧接收 (d,m),K 侧接收翻转的 (m,d),使注意力分数自然分解出"仅依赖两条光线"的几何项(互反积);通过 NGI(归一化-门控-注入)处理尺度异构性,新增参数 < 0.1%,无额外推理开销。</p>
+    <p class="authors">Minghao Yin*, Jiahao Lu*, Wenbo Hu, Wang Zhao, Shan Ying<sup>†</sup>, Kai Han<sup>‡</sup> &nbsp;|&nbsp; ARC Lab, Tencent · The University of Hong Kong · HKUST &nbsp;(*等贡献, †项目主导, ‡通讯作者)</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2606.27345" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2606.27345v3" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2606.27345" target="_blank">📥 PDF</a>
+      <a href="https://visual-ai.github.io/scope/" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与核心数据</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">Plücker 翻转位置编码</a></li>
+    <li><a href="#s5">Normalize-Gate-Inject (NGI)</a></li>
+    <li><a href="#s6">注意力分数四项分解</a></li>
+    <li><a href="#s7">损失函数与训练目标</a></li>
+    <li><a href="#s8">基线方法对比</a></li>
+    <li><a href="#s9">逻辑流程图</a></li>
+    <li><a href="#s10">实验结果</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">技术路线对比与演进</a></li>
+    <li><a href="#s13">核心洞察</a></li>
+    <li><a href="#s14">可改进方向分析</a></li>
+    <li><a href="#s15">总结与资源</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与核心数据</h2>
+<p class="lead">视频扩散 Transformer(DiT)通过<strong>像素-时间网格</strong> $(u,v,t)$ 上的 RoPE 编码地址 token —— 这是"<em>张量中的地址,而非世界中的地址</em>"。两个从不同视角拍摄同一表面的 token,仅通过网格偏移关联位置,模型必须仅从外观恢复 3D 对应关系。SCoPE 的核心论断:<strong>相机控制不应是附加模块,而应是坐标系的固有属性</strong> —— 把每条相机光线作为 token 的"第二地址"加法注入注意力,使分数自然出现仅依赖两条光线的几何项(互反积),实现"<em>仅从两条光线判断两个 token 是否可能看到同一点</em>"。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v green">0.058</div><div class="l">RotErr↓(14B,UCPE 0.082,−29%)</div></div>
+  <div class="stat"><div class="v green">280.17</div><div class="l">FVD↓(14B,ReRoPE 493,−43%)</div></div>
+  <div class="stat"><div class="v green">&lt;0.1%</div><div class="l">新增参数(无额外推理开销)</div></div>
+  <div class="stat"><div class="v green">0.090</div><div class="l">闭环重访返回平移比(UCPE 0.433)</div></div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>四点贡献</h4>
+    <ol>
+      <li><strong>Plücker 翻转位置编码</strong>:加法注入 Q/K,Q 侧 (d,m),K 侧 (m,d)</li>
+      <li><strong>互反积作为几何分数</strong>:零=两光线相交,随偏离增大</li>
+      <li><strong>Normalize-Gate-Inject (NGI)</strong>:方向/幅度分解 + 尺度感知门控 + RMSNorm</li>
+      <li><strong>零侵入式改造</strong>:RoPE 逐位不变,新增参数 < 0.1%,无推理开销</li>
+    </ol>
+  </div>
+  <div class="card left-bar">
+    <h4>关键事实</h4>
+    <ul>
+      <li><strong>arXiv 提交</strong>:2026-06-25,v3: 2026-08-12</li>
+      <li><strong>基础模型</strong>:Wan2.2 TI2V-5B(消融)+ I2V-14B(主结果)</li>
+      <li><strong>分辨率</strong>:480×832,T=81 帧($T_z=21$ latent 帧)</li>
+      <li><strong>训练数据</strong>:四数据集混合(含 RE10K)</li>
+      <li><strong>推理</strong>:50 去噪步,CFG 5.0(text)/1.0(camera)</li>
+      <li><strong>机构</strong>:ARC Lab, Tencent · HKU · HKUST</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>一句话定位</h4>
+    <p>把相机条件从"<em>内容的变换</em>"变为 token 的"<em>坐标</em>",加法注入产生独立几何项 —— 这是相机控制从<strong>乘法路由</strong>(UCPE/CameraCtrl)向<strong>加法几何</strong>的范式转向。与 <a href="VideoGen-20251208-UCPE.html">UCPE</a> 形成"加法 vs 乘法"的设计对偶。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 2. 背景动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>视频 DiT 通过 RoPE 在 $(u,v,t)$ 网格上地址 token。当用户指定相机轨迹时,模型需要把"两条相机光线可能看到同一点"的几何先验注入注意力,但已有方法均<strong>乘法进入</strong> —— 几何通过内容路由,无法产生仅依赖光线的项。下表对比:</p>
+
+<table>
+<tr><th>路线</th><th>代表方法</th><th>几何注入方式</th><th>关键局限</th></tr>
+<tr><td>Plücker + ControlNet</td><td>CameraCtrl</td><td>额外 ControlNet 编码器</td><td class="fail">参数大,几何乘法路由,无独立几何项</td></tr>
+<tr><td>视频到视频重渲染</td><td>ReCamMaster</td><td>骨干微调</td><td class="fail">全量微调,几何乘法,推理开销大</td></tr>
+<tr><td>零初始化并行分支</td><td>ProPE</td><td>额外并行注意力分支</td><td class="fail">几何乘法路由,~额外分支开销</td></tr>
+<tr><td>GTA 风格适配器</td><td><a href="VideoGen-20251208-UCPE.html">UCPE</a></td><td>乘法块对角算子</td><td class="partial">支持任意镜头但几何乘法路由,~0.5% + 额外注意力</td></tr>
+<tr><td>低频 RoPE 替换</td><td>ReRoPE</td><td>修改 RoPE 低频为相机位姿</td><td class="partial">破坏 RoPE 逐位不变,几何与时间耦合</td></tr>
+<tr class="best"><td>加法注入(本文)</td><td>SCoPE</td><td>Plücker 加法到 Q/K</td><td class="best">独立几何项,< 0.1% 参数,零推理开销,RoPE 逐位不变</td></tr>
+</table>
+
+<div class="grid grid-2">
+  <div class="card left-bar red">
+    <h4>痛点一:RoPE 是张量地址,不是世界地址</h4>
+    <p>$(u,v,t)$ 网格上的 RoPE 只能描述 token 在视频张量中的位置,无法表达"<em>这条光线指向世界何处</em>"。两个从不同视角拍同一表面的 token,模型必须仅从外观恢复 3D 对应关系 —— 几何先验缺位。</p>
+  </div>
+  <div class="card left-bar red">
+    <h4>痛点二:乘法几何无法独立计分</h4>
+    <p>已有方法都把几何通过内容路由(乘法),注意力分数中<strong>没有"仅依赖两条光线"的项</strong>。几何信号必须经内容调制才能影响分数,信号被内容稀释。</p>
+  </div>
+</div>
+
+<div class="callout key">
+  <h4>💡 核心洞察:光线是 token 的第二地址</h4>
+  <p>两条光线只有在<strong>近乎相交</strong>时,两个 token 才可能看到同一个世界点。光线比世界点弱(固定视线但不固定深度),但它提供了仅凭外观无法获得的约束。SCoPE 的关键论断:<strong>相机控制不是附加模块,而是坐标系的固有属性</strong> —— 把光线作为 token 的"第二地址"加法注入,几何项自然独立。</p>
+</div>
+
+<table>
+<tr><th>理想地址</th><th>现实困境</th><th>SCoPE 的解决</th></tr>
+<tr><td><strong>世界点</strong>(token 描绘的 3D 表面点)</td><td class="fail">该点在尚未生成的表面上,无法预知</td><td>—</td></tr>
+<tr><td><strong>视线光线</strong>(相机射线,固定于用户轨迹)</td><td class="best">光线属于相机而非内容,轨迹一旦指定即可确定</td><td class="best"><strong>将光线作为 token 的第二地址</strong></td></tr>
+</table>
+</section>
+
+<!-- ==================== 3. 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p>SCoPE 由三个核心模块构成,围绕"<strong>RoPE 逐位不变 + 零初始化</strong>"这一约束展开:</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <span class="stage-tag stage-1">模块 A · Plücker 翻转 PE</span>
+    <p>每层投影矩阵 $\mathbf{E}_q,\mathbf{E}_k\in\mathbb{R}^{d\times6}$,在 RoPE 编码后<strong>加法</strong>注入:Q 侧 $(d,m)$,K 侧翻转 $(m,d)$ → 几何项为互反积。</p>
+  </div>
+  <div class="card left-bar green">
+    <span class="stage-tag stage-2">模块 B · NGI</span>
+    <p>方向/幅度分解(前6维尺度不变 + 第7维 log 幅度)+ 尺度感知门控(每通道 sigmoid)+ RMSNorm 匹配内容分支,处理异构位姿来源。</p>
+  </div>
+  <div class="card left-bar warn">
+    <span class="stage-tag stage-r">模块 C · 零初始化残差</span>
+    <p>$\alpha$ 与 $\mathbf{E}_q,\mathbf{E}_k$ 初始化使 $t=0$ 时残差为零 → 从未改变的预训练注意力出发,与 ControlNet 零初始化原则一致。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+  <h4>🔑 设计哲学:加法 = 不破坏</h4>
+  <p>SCoPE 用<strong>加法注入</strong>而非乘法替换,使预训练 $(u,v,t)$ RoPE <strong>逐位完全保留</strong>。这是与 ReRoPE(替换低频 RoPE)的根本差异 —— 后者破坏了 RoPE 的逐位不变性。加法 + 零初始化 = <em>从预训练 DiT 出发的最小侵入扩展</em>。</p>
+</div>
+</section>
+
+<!-- ==================== 4. Plücker 翻转 PE ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>Plücker 翻转位置编码</h2>
+
+<h3>4.1 Plücker 坐标</h3>
+<p>每条光线用 Plücker 坐标 $\mathbf{r}=(\mathbf{d},\mathbf{m})\in\mathbb{R}^6$ 表示:</p>
+<ul>
+  <li><strong>$\mathbf{d}$</strong>:光线方向(单位向量)</li>
+  <li><strong>$\mathbf{m}=\mathbf{o}\times\mathbf{d}$</strong>:力矩(携带平移信息,$\mathbf{o}$ 为相机原点)</li>
+</ul>
+
+<h3>4.2 加法注入 + Q/K 翻转</h3>
+<p>每层两个投影矩阵 $\mathbf{E}_q,\mathbf{E}_k\in\mathbb{R}^{d\times6}$,在 RoPE 编码后<strong>加法</strong>注入:</p>
+<div class="equation">
+$$\mathbf{q}_i=\mathcal{R}(u_i,v_i,t_i)\,\mathbf{W}_Q\,\mathbf{x}_i+\mathbf{E}_q\,(\mathbf{d}_i,\mathbf{m}_i), \qquad \text{(式 1)}$$
+</div>
+<div class="equation">
+$$\mathbf{k}_j=\mathcal{R}(u_j,v_j,t_j)\,\mathbf{W}_K\,\mathbf{x}_j+\mathbf{E}_k\,(\mathbf{m}_j,\mathbf{d}_j)\;\;\text{(翻转!)}. \qquad \text{(式 2)}$$
+</div>
+<ul>
+  <li>加法形式 → 预训练 $(u,v,t)$ RoPE <strong>完全保留不变</strong></li>
+  <li>Q 侧 $(\mathbf{d},\mathbf{m})$ vs K 侧 $(\mathbf{m},\mathbf{d})$ 的<strong>翻转</strong>使 $\mathbf{M}=\mathbf{E}_q^\top\mathbf{E}_k=\mathbf{I}$ 时几何项恰好为互反积</li>
+</ul>
+
+<h3>4.3 翻转作为规范基选择</h3>
+<p>翻转不是算法必需品,而是几何 Q/K 投影空间的<strong>基选择</strong>:对于可学习的 $\mathbf{E}_q,\mathbf{E}_k$,翻转和非翻转实现<strong>相同的假设类</strong>(任意一种形式的 $\mathbf{E}_k$ 等价于另一种的某个 $\mathbf{E}_k'$)。翻转使单位矩阵 $\mathbf{M}=\mathbf{I}$ 自然对应互反积,便于初始化与解释。</p>
+
+<div class="callout key">
+  <h4>🎯 关键设计:加法 vs 乘法</h4>
+  <p>UCPE 用乘法块对角算子 $\text{blkdiag}(\mathbf{D}^{\text{Ray}},\mathbf{D}^{\text{RoPE}})$ 将几何通过 Q/K 变换路由;SCoPE 用加法 $\mathbf{q}\leftarrow\mathbf{q}+\mathbf{E}_q\mathbf{r}$ 注入。<strong>加法让注意力分数自然展开出独立几何项,乘法则把几何与内容耦合</strong>。这是同代方法的<strong>设计分叉</strong>(详见第 12 节)。</p>
+</div>
+</section>
+
+<!-- ==================== 5. NGI ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>Normalize-Gate-Inject (NGI)</h2>
+<p>NGI 解决两个实际问题:<strong>尺度异构性</strong>(不同数据集的力矩尺度不同)和<strong>与内容分支的幅度不匹配</strong>。</p>
+
+<h3>Step 1:方向/幅度分解</h3>
+<div class="equation">
+$$\hat{\mathbf{m}}=\frac{\mathbf{m}}{\max(\|\mathbf{m}\|,\varepsilon)},\qquad s=\log\max(\|\mathbf{m}\|,\varepsilon). \qquad \text{(式 3)}$$
+</div>
+<ul>
+  <li>前 6 维 $(\mathbf{d},\hat{\mathbf{m}})$ <strong>对全局重缩放不变</strong> — 不同尺度约定下结果一致</li>
+  <li>第 7 维 $s=\log\|\mathbf{m}\|$ 保留位姿尺度线索</li>
+  <li>7D 输入 $\mathbf{f}^{(q)}=(\mathbf{d},\hat{\mathbf{m}},s)$,K 侧翻转 $\mathbf{f}^{(k)}=(\hat{\mathbf{m}},\mathbf{d},s)$</li>
+</ul>
+
+<h3>Step 2:尺度感知门控</h3>
+<div class="equation">
+$$\mathbf{g}_i=\sigma\!\left(\mathbf{G}_s(s_i)\right)\in(0,1)^d. \qquad \text{(式 4)}$$
+</div>
+<ul>
+  <li>两层 MLP 将 log 幅度映射为<strong>每通道 sigmoid 门</strong></li>
+  <li>初始偏置使 $\mathbf{g}\approx 0.5$($s=0$ 时),允许按编码力矩幅度调整注入强度</li>
+</ul>
+
+<h3>Step 3:归一化注入</h3>
+<div class="equation">
+$$\mathbf{pe}_i^q=\mathbf{g}_i\odot\mathcal{N}_q(\mathbf{E}_q\,\mathbf{f}_i^{(q)}),\qquad \mathbf{q}_i=\text{QKNorm}(\tilde{\mathbf{W}}_Q\mathbf{x}_i)+\alpha\cdot\mathbf{pe}_i^q. \qquad \text{(式 5)}$$
+</div>
+<ul>
+  <li>$\mathcal{N}_q,\mathcal{N}_k$:每层可学习 RMSNorm(类比内容侧 QKNorm)</li>
+  <li>$\alpha$:标量,初始化为<strong>零</strong>,控制几何/内容平衡</li>
+  <li>两侧都归一化 → $\alpha$ 在层间和训练样本间具有一致含义</li>
+</ul>
+
+<div class="callout tip">
+  <h4>🔧 零初始化原则</h4>
+  <p>$\alpha$ 和 $\mathbf{E}_q,\mathbf{E}_k$ 初始化为使残差在 $t=0$ 时为零 → 从<strong>未改变的预训练注意力</strong>出发,与 ControlNet 的零初始化残差原则一致。这让 SCoPE 可在<strong>度量位姿</strong>与<strong>仅知比例的位姿</strong>来源上单一编码可训练。</p>
+</div>
+</section>
+
+<!-- ==================== 6. 注意力分数四项分解 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>注意力分数四项分解</h2>
+<p>由于加法展开,注意力分数分解为四项:</p>
+<div class="equation">
+$$\langle\mathbf{q}_i,\mathbf{k}_j\rangle=\underbrace{\langle\mathbf{q}_i^{\text{cnt}},\mathbf{k}_j^{\text{cnt}}\rangle}_{(A)\,\text{内容}\times\text{内容}}+\underbrace{\langle\mathbf{q}_i^{\text{cnt}},\mathbf{k}_j^{\text{geo}}\rangle}_{(B)\,\text{内容}\to\text{几何}}+\underbrace{\langle\mathbf{q}_i^{\text{geo}},\mathbf{k}_j^{\text{cnt}}\rangle}_{(C)\,\text{几何}\to\text{内容}}+\underbrace{\langle\mathbf{q}_i^{\text{geo}},\mathbf{k}_j^{\text{geo}}\rangle}_{(D)\,\text{几何}\leftrightarrow\text{几何}}. \qquad \text{(式 6)}$$
+</div>
+
+<table>
+<tr><th>项</th><th>含义</th><th>作用</th></tr>
+<tr><td>(A) 内容×内容</td><td>原始预训练内容注意力</td><td>保持不变</td></tr>
+<tr><td>(B) 内容→几何</td><td>内容与投影光线的交叉项</td><td>让兼容性依赖内容+视角</td></tr>
+<tr><td>(C) 几何→内容</td><td>投影光线与内容的交叉项</td><td>同 (B) 对称方向</td></tr>
+<tr class="best"><td>(D) 几何↔几何</td><td>仅读取两条光线,无内容</td><td class="best"><strong>互反积:零=相交,增大=偏离</strong></td></tr>
+</table>
+
+<div class="callout key">
+  <h4>🎯 项 (D) 的核心:互反积</h4>
+  <p>$\mathbf{r}_i^\top\mathbf{M}\tilde{\mathbf{r}}_j$,当 $\mathbf{M}=\mathbf{I}_6$ 时 $=\mathbf{d}_i\cdot\mathbf{m}_j+\mathbf{m}_i\cdot\mathbf{d}_j=\langle\mathbf{r}_i,\mathbf{r}_j\rangle_{\text{Pl}}$(<strong>互反积</strong>)。这是唯一<strong>不依赖内容</strong>的几何项,实现了"<em>仅从两条光线判断两个 token 是否可能看到同一点</em>"。线几何的经典关联度量,双线性于两条光线 — 恰好是展开后几何项的形状。互反积<strong>为零当且仅当两光线相交</strong>(共面),随偏离程度增大。</p>
+</div>
+
+<div class="callout warn">
+  <h4>⚠️ 消融实证:项 (D) 是最关键组件</h4>
+  <p>消融实验显示 <strong>w/o (D) 几何项</strong> → 最大退化:CLIP −1.0, FVD +190。仅光线-光线的几何配对是最关键组件,远比内容↔几何交叉项重要 — 这是 SCoPE 设计的有力实证。</p>
+</div>
+</section>
+
+<!-- ==================== 7. 损失 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>损失函数与训练目标</h2>
+<p>SCoPE 沿用 Wan2.2 的标准<strong>Flow Matching 损失</strong>(速度回归),不修改训练目标,仅改变注意力中的位置编码。训练时各注意力层的几何项从零初始化逐步学习。</p>
+
+<table>
+<tr><th>项</th><th>公式</th><th>作用</th></tr>
+<tr><td><strong>Flow Matching</strong></td><td>$\mathcal{L}_{\text{FM}}=\mathbb{E}_{t,\epsilon}\|\mathbf{v}_\theta(\mathbf{x}_t,t)-\mathbf{v}_t^*\|_2^2$</td><td>Wan2.2 原始速度回归</td></tr>
+<tr><td><strong>SCoPE 注入</strong></td><td>$\mathbf{q}\leftarrow\text{QKNorm}(\mathbf{W}_Q\mathbf{x})+\alpha\cdot\mathbf{pe}^q$</td><td>位置编码加法注入</td></tr>
+<tr><td><strong>零初始化</strong></td><td>$\alpha=0$ @ init</td><td>保证 $t=0$ 模型等价于原 Wan2.2</td></tr>
+</table>
+
+<div class="callout tip">
+  <h4>🔑 与 UCPE 损失设计的同构</h4>
+  <p>UCPE / SCoPE 都不改训练目标,完全靠位置编码注入几何信号 → 增益全部来自"<em>更对的几何条件</em>"。这说明同代相机编码方法的瓶颈不在损失,而在几何信号如何进入注意力。</p>
+</div>
+</section>
+
+<!-- ==================== 8. 基线对比 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>基线方法对比</h2>
+
+<h3>8.1 训练设置</h3>
+<table>
+<tr><th>维度</th><th>规格</th></tr>
+<tr><td>骨干模型</td><td>Wan2.2 TI2V-5B(消融)+ I2V-14B(主结果)</td></tr>
+<tr><td>分辨率</td><td>480×832,T=81 帧($T_z=21$ latent 帧)</td></tr>
+<tr><td>训练数据</td><td>四数据集混合(含 RE10K 等,见附录 C)</td></tr>
+<tr><td>轨迹尺度对齐</td><td>每数据集独立归一化 + 可选 per-clip 近深度归一化</td></tr>
+<tr><td>优化器</td><td>AdamW,混合精度训练</td></tr>
+<tr><td>推理</td><td>50 去噪步,CFG scale 5.0(text)/1.0(camera)</td></tr>
+<tr><td>新增参数</td><td><strong>低于 0.1%</strong>($\mathbf{E}_q,\mathbf{E}_k,\mathcal{N}_q,\mathcal{N}_k,\mathbf{G}_s,\alpha$)</td></tr>
+<tr><td>预训练权重</td><td>所有变体共享各自预训练权重,仅相机条件模块不同</td></tr>
+</table>
+
+<h3>8.2 基线方法对比</h3>
+<table>
+<tr><th>方法</th><th>机制</th><th>参数开销</th><th>RoPE 改动</th></tr>
+<tr><td>CameraCtrl</td><td>Plücker maps via ControlNet</td><td class="fail">额外 ControlNet 编码器</td><td>无</td></tr>
+<tr><td>ReCamMaster</td><td>视频到视频重渲染</td><td class="fail">完整骨干微调</td><td>无</td></tr>
+<tr><td>ProPE</td><td>零初始化并行分支</td><td class="partial">~额外分支</td><td>无</td></tr>
+<tr><td><a href="VideoGen-20251208-UCPE.html">UCPE</a></td><td>GTA 风格空间注意力适配器</td><td class="partial">~0.5% + 额外注意力</td><td>无</td></tr>
+<tr><td>ReRoPE</td><td>低频时间 RoPE 替换为相对相机位姿</td><td class="partial">修改 RoPE</td><td class="fail">破坏逐位不变</td></tr>
+<tr class="best"><td><strong>SCoPE</strong></td><td><strong>加法注入 Plücker 项</strong></td><td class="best"><strong>~0.1% 无额外分支</strong></td><td class="best">逐位不变</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>💡 关键区别:加法 vs 乘法</h4>
+  <p>所有基线中几何<strong>乘法</strong>进入(通过内容路由),分数没有仅依赖两条光线的项。SCoPE 将几何从<strong>内容的变换</strong>变为 token 的<strong>坐标</strong>,加法注入产生独立几何项(项 D)。</p>
+</div>
+</section>
+
+<!-- ==================== 9. 流程图 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 SCoPE 注入到自注意力层</h3>
+<div class="mermaid">
+flowchart LR
+    IN["输入特征 x"] --> CNT["内容路径(预训练不变)<br/>W_Q → QKNorm → RoPE"]
+    IN --> GEO["几何路径(SCoPE 新增)"]
+    subgraph GEO["几何路径 NGI 三步"]
+        G1["Step 1: 方向/幅度分解<br/>d, m̂ (尺度不变)<br/>s = log‖m‖"]
+        G2["Step 2: 尺度感知门控<br/>g = σ(G_s(s))<br/>每通道 sigmoid"]
+        G3["Step 3: 归一化注入<br/>pe = g ⊙ RMSNorm(E_q · f)<br/>q ← QKNorm(W̃_Q x) + α·pe"]
+        G1 --> G2 --> G3
+    end
+    CNT --> SUM["+ 加法合并"]
+    GEO --> SUM
+    SUM --> ATT["注意力分数"]
+    subgraph ATT["注意力分数四项分解"]
+        A["(A) 内容×内容<br/>预训练保留"]
+        B["(B) 内容→几何"]
+        C["(C) 几何→内容"]
+        D["(D) 几何↔几何<br/>互反积 ★最关键"]
+    end
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CNT fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style GEO fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style D fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style ATT fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<h3>9.2 训练/推理流水线</h3>
+<div class="mermaid">
+flowchart TD
+    IN["相机轨迹 → 每像素光线 (o, d)"] --> PL["Plücker 坐标 r = (d, m)<br/>m = o × d"]
+    PL --> NGI["NGI 模块<br/>方向/幅度分解 → 门控 → RMSNorm"]
+    NGI --> Q["Q 侧注入 E_q · (d, m̂, s)"]
+    NGI --> K["K 侧注入 E_k · (m̂, d, s) [翻转]"]
+    Q --> ATT["预训练 Wan2.2 DiT 注意力层<br/>+ 加法 (α=0 初始化)"]
+    K --> ATT
+    ATT --> VID["生成相机可控视频"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style PL fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style NGI fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style ATT fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style VID fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+</section>
+
+<!-- ==================== 10. 实验 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 主对比(RE10K 留出集 · 5B 规模)</h3>
+<table>
+<tr><th>方法</th><th>CLIP↑</th><th>RotErr↓</th><th>TransErr↓</th><th>CamMC↓</th><th>ATE↓</th><th>FVD↓</th><th>FVDc↓</th><th>FID↓</th></tr>
+<tr><td>CameraCtrl</td><td>25.04</td><td>0.152</td><td>1.292</td><td>1.355</td><td>1.501</td><td>824.37</td><td>805.62</td><td>64.08</td></tr>
+<tr><td>ProPE</td><td>24.90</td><td>0.117</td><td>1.653</td><td>1.694</td><td>1.915</td><td>717.20</td><td>611.50</td><td>58.33</td></tr>
+<tr><td>ReCamMaster</td><td>24.97</td><td>0.131</td><td>1.226</td><td>1.279</td><td>1.460</td><td>874.30</td><td>890.52</td><td>62.53</td></tr>
+<tr><td>ReRoPE</td><td>25.20</td><td>0.137</td><td>1.109</td><td>1.215</td><td>1.350</td><td>684.57</td><td>650.31</td><td>60.77</td></tr>
+<tr><td><a href="VideoGen-20251208-UCPE.html">UCPE</a></td><td>25.39</td><td>0.113</td><td>0.856</td><td>0.909</td><td>0.990</td><td>703.41</td><td>755.83</td><td>61.50</td></tr>
+<tr class="best"><td><strong>SCoPE</strong></td><td class="best">26.05</td><td class="best">0.085</td><td class="best">0.751</td><td class="best">0.802</td><td class="best">0.884</td><td class="best">543.17</td><td class="best">588.62</td><td class="best">57.83</td></tr>
+</table>
+
+<h3>10.2 主对比(RE10K · 14B 规模)</h3>
+<table>
+<tr><th>方法</th><th>CLIP↑</th><th>RotErr↓</th><th>TransErr↓</th><th>CamMC↓</th><th>ATE↓</th><th>FVD↓</th><th>FVDc↓</th><th>FID↓</th></tr>
+<tr><td>ReCamMaster</td><td>25.31</td><td>0.109</td><td>0.976</td><td>1.012</td><td>0.995</td><td>675.23</td><td>697.10</td><td>59.21</td></tr>
+<tr><td>ReRoPE</td><td>25.85</td><td>0.114</td><td>0.820</td><td>0.905</td><td>0.859</td><td>493.30</td><td>525.61</td><td>49.18</td></tr>
+<tr><td><a href="VideoGen-20251208-UCPE.html">UCPE</a></td><td>25.72</td><td>0.082</td><td>0.693</td><td>0.760</td><td>0.788</td><td>529.42</td><td>558.70</td><td>54.75</td></tr>
+<tr class="best"><td><strong>SCoPE</strong></td><td class="best">26.30</td><td class="best">0.058</td><td class="best">0.517</td><td class="best">0.530</td><td class="best">0.605</td><td class="best">280.17</td><td class="best">354.52</td><td class="best">41.01</td></tr>
+</table>
+<ul>
+  <li>SCoPE 在<strong>所有 8 项指标</strong>上超越所有基线</li>
+  <li>14B 规模优势更大:RotErr <strong>降 29%</strong>(0.058 vs UCPE 0.082),FVD <strong>降 43%</strong>(280 vs 493)</li>
+  <li><strong>模型越大优势越大</strong>:5B→14B 的改进幅度随规模扩大</li>
+</ul>
+
+<h3>10.3 闭环重访一致性</h3>
+<p>Revisit 协议:从同一参考图出发,沿相机环路移动后返回起始位姿。</p>
+<table>
+<tr><th>方法</th><th>返回平移比↓</th><th>返回旋转°↓</th><th>归一 ATE↓</th><th>返回 LPIPS↓</th><th>LPIPS 恢复↑</th><th>DINOv2 相似↑</th></tr>
+<tr><td>ProPE</td><td>0.784</td><td>4.90</td><td>0.533</td><td>0.603</td><td>−0.176</td><td>0.874</td></tr>
+<tr><td>ReCamMaster</td><td>0.859</td><td>3.80</td><td>0.625</td><td>0.653</td><td>0.094</td><td>0.890</td></tr>
+<tr><td><a href="VideoGen-20251208-UCPE.html">UCPE</a></td><td>0.433</td><td>3.42</td><td>0.391</td><td>0.403</td><td>0.102</td><td>0.910</td></tr>
+<tr class="best"><td><strong>SCoPE</strong></td><td class="best">0.090</td><td class="best">1.89</td><td class="best">0.275</td><td class="best">0.230</td><td class="best">0.587</td><td class="best">0.952</td></tr>
+</table>
+<p>SCoPE 在<strong>所有闭环重访指标上领先</strong>:返回平移比仅 0.090(UCPE 0.433),LPIPS 恢复 0.587(远超其他方法的 0.1)。这说明加法几何项不仅控位姿,还<strong>内化了 3D 几何一致性</strong>。</p>
+
+<h3>10.4 泛化能力</h3>
+<ul>
+  <li><strong>艺术绘画</strong>(训练中未见):SCoPE 正确执行相机运动和视差,基线无法跟随轨迹</li>
+  <li><strong>手绘概念艺术</strong>:保留艺术风格同时精确执行相机路径</li>
+  <li><strong>电影剧照多轨迹</strong>:同一帧通过多条不同轨迹驱动,几何编码跨内容域和轨迹多样性泛化</li>
+</ul>
+
+<div class="callout key">
+  <h4>🎯 规模红利 = 几何信号放大</h4>
+  <p>SCoPE 在 14B 上的优势(5B→14B 改进幅度随规模扩大)说明加法几何项与预训练 DiT 容量正相关 — <strong>骨干越强,几何项越能被利用</strong>。这与 UCPE 的"1/8 压缩甜点"形成有趣对比:几何信号低自由度,但需要强骨干解码。</p>
+</div>
+</section>
+
+<!-- ==================== 11. 消融 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+
+<h3>11.1 相机感知 PE 设计空间(对比乘法 FreqSplit-RoPE 变体)</h3>
+<table>
+<tr><th>PE 设计</th><th>CLIP↑</th><th>RotErr↓</th><th>TransErr↓</th><th>CamMC↓</th><th>ATE↓</th><th>FVD↓</th><th>FID↓</th></tr>
+<tr><td>FreqSplit + 4×4 投影</td><td>25.09</td><td>0.175</td><td>1.227</td><td>1.308</td><td>1.584</td><td>675.03</td><td>62.98</td></tr>
+<tr><td>FreqSplit + Camera-UV</td><td>25.39</td><td>0.141</td><td>1.205</td><td>1.394</td><td>1.602</td><td>685.20</td><td>60.74</td></tr>
+<tr><td>FreqSplit + Plücker-RoPE</td><td>25.61</td><td>0.159</td><td>1.018</td><td>1.323</td><td>1.447</td><td>671.45</td><td>59.31</td></tr>
+<tr><td>FreqSplit + 4DOF Plücker</td><td>25.52</td><td>0.137</td><td>0.976</td><td>1.228</td><td>1.419</td><td>638.31</td><td>58.54</td></tr>
+<tr class="best"><td><strong>SCoPE(加法)</strong></td><td class="best">26.05</td><td class="best">0.085</td><td class="best">0.751</td><td class="best">0.802</td><td class="best">0.884</td><td class="best">543.17</td><td class="best">57.83</td></tr>
+</table>
+<p>SCoPE 的加法注入在所有指标上超越所有乘法变体,即使最近变体(Plücker-RoPE,使用相同光线坐标)也明显落后 — <strong>证明加法(而非乘法)是让几何项独立进入分数的关键</strong>。</p>
+
+<h3>11.2 组件消融</h3>
+<table>
+<tr><th>变体</th><th>CLIP↑</th><th>RotErr↓</th><th>CamMC↓</th><th>ATE↓</th><th>FVD↓</th><th>Δ FVD</th></tr>
+<tr class="best"><td><strong>完整 SCoPE</strong></td><td class="best">26.05</td><td class="best">0.085</td><td class="best">0.802</td><td class="best">0.884</td><td class="best">543.17</td><td>—</td></tr>
+<tr><td>w/o Q/K flip</td><td>25.93</td><td>0.091</td><td>0.817</td><td>0.929</td><td>579.83</td><td class="partial">+37</td></tr>
+<tr><td>w/o Normalize-Gate-Inject</td><td>25.86</td><td>0.086</td><td>0.865</td><td>0.933</td><td>560.37</td><td class="partial">+17</td></tr>
+<tr><td>w/o PE RMSNorm</td><td>25.62</td><td>0.090</td><td>0.874</td><td>0.913</td><td>601.39</td><td class="partial">+58</td></tr>
+<tr><td>w/o log-scale aug.</td><td>25.94</td><td>0.083</td><td>0.823</td><td>0.890</td><td>557.92</td><td class="partial">+15</td></tr>
+<tr><td>w/o zero init</td><td>25.68</td><td>0.086</td><td>0.837</td><td>0.899</td><td>635.42</td><td class="fail">+92</td></tr>
+<tr><td>with V transform</td><td>25.57</td><td>0.090</td><td>0.855</td><td>0.949</td><td>724.10</td><td class="fail">+181</td></tr>
+<tr><td>w/o (B)+(C) 交叉项</td><td>25.21</td><td>0.135</td><td>1.174</td><td>1.358</td><td>695.41</td><td class="fail">+152</td></tr>
+<tr><td>w/o (D) 几何项</td><td>24.08</td><td>0.159</td><td>1.382</td><td>1.440</td><td>733.08</td><td class="fail">+190 ★</td></tr>
+</table>
+<ul>
+  <li><strong>w/o (D) 几何项</strong> → 最大退化:CLIP −1.0, FVD +190 → <strong>仅光线-光线的几何配对是最关键组件</strong></li>
+  <li><strong>w/o (B)+(C) 交叉项</strong> → 次大退化 → 内容↔几何混合交互也重要</li>
+  <li><strong>w/o zero init</strong> → FVD +92 → 破坏预训练均衡代价高昂</li>
+  <li><strong>with V transform</strong> → FVD +181 → 将几何注入 V 反而有害(光线适合作为注意力偏置而非值)</li>
+  <li><strong>w/o NGI</strong> → FVD +17 → 处理尺度异构性重要</li>
+</ul>
+
+<div class="callout key">
+  <h4>🎯 消融的核心结论</h4>
+  <p>消融完整支持 SCoPE 的设计:(D) 几何项最关键(+190),证明加法注入独立几何项是方法核心;(B)(C) 交叉项次之,内容↔几何交互也是有效信号;V 变换有害(+181),说明光线适合作为注意力偏置而非值;零初始化必要(+92),破坏预训练均衡代价高昂。</p>
+</div>
+</section>
+
+<!-- ==================== 12. 技术路线对比与演进 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>技术路线对比与演进</h2>
+
+<p>SCoPE 处于"相机可控视频生成 + 视频几何一致性"双重脉络中:</p>
+
+<table>
+<tr><th>范式</th><th>代表方法</th><th>几何注入</th><th>关键局限</th></tr>
+<tr><td>Plücker + 适配器</td><td>CameraCtrl / AC3D / Wan CameraCtrl</td><td>乘法,通过 ControlNet/卷积</td><td class="fail">参数大,无独立几何项,针孔假设</td></tr>
+<tr><td>骨干直接微调</td><td>ReCamMaster</td><td>乘法,外参注入骨干</td><td class="fail">全量微调,几何乘法,无镜头控制</td></tr>
+<tr><td>并行注意力分支</td><td>ProPE</td><td>乘法,零初始化并行分支</td><td class="fail">额外推理开销,几何乘法</td></tr>
+<tr><td>低频 RoPE 替换</td><td>ReRoPE</td><td>修改 RoPE 低频</td><td class="partial">破坏 RoPE 逐位不变</td></tr>
+<tr><td>乘法块对角(同代)</td><td><a href="VideoGen-20251208-UCPE.html">UCPE</a>(2025-12)</td><td>乘法,光线级坐标变换</td><td class="partial">支持任意镜头但无独立几何项,~0.5% 参数 + 额外注意力</td></tr>
+<tr class="best"><td>加法注入(本文)</td><td>SCoPE</td><td>加法,Plücker 翻转</td><td class="best">独立几何项(互反积),< 0.1% 参数,零推理开销,逐位不变</td></tr>
+<tr><td>RL 后训练对齐</td><td><a href="VideoGen-20260427-World-R1.html">World-R1</a></td><td>不改架构,RL 诱导</td><td class="partial">3D 一致性而非相机控制,RL 计算成本高</td></tr>
+</table>
+
+<h3>演进定位</h3>
+<div class="callout key">
+  <h4>📈 相机编码的三次范式演进</h4>
+  <ol>
+    <li><strong>外参注入 → 相机适配器</strong>:从直接骨干微调(ReCamMaster)到挂载额外编码器(CameraCtrl),减少骨干干扰但参数大。</li>
+    <li><strong>绝对编码 → 相对编码</strong>:从依赖全局坐标到相对首帧(GTA/PRoPE),提升跨数据集泛化,但保留针孔假设与乘法路由。</li>
+    <li><strong>乘法路由 → 加法注入</strong>(SCoPE):从"几何通过内容调制"到"几何独立计分",产生仅依赖两条光线的几何项(互反积)。</li>
+  </ol>
+  <p>SCoPE 与 <a href="VideoGen-20251208-UCPE.html">UCPE</a> 是<strong>同代同思路不同实现</strong>:都把光线作为几何单元,但 UCPE 用乘法块对角算子(支持任意镜头但无独立几何项),SCoPE 用加法注入(独立几何项但仅针孔 RE10K 测试)。两者形成知识库内<strong>设计对偶</strong> — 若融合"加法注入 + 任意镜头",将收敛这一代技术。</p>
+</div>
+</section>
+
+<!-- ==================== 13. 核心洞察 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>核心洞察</h2>
+
+<div class="grid grid-2">
+  <div class="card left-bar green">
+    <h4>洞察一:加法 = 独立几何项</h4>
+    <p>加法注入使注意力分数自然展开为四项,其中 (D) 项仅依赖两条光线,不含任何内容。这是 SCoPE 与所有乘法方法(UCPE/CameraCtrl/ProPE)的根本差异 — <strong>乘法让几何与内容耦合,加法让几何独立计分</strong>。消融实证 (D) 项是最关键组件(FVD +190 退化)。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察二:互反积 = 几何的经典关联</h4>
+    <p>线几何早有"<em>互反积</em>"作为两条光线关联的度量(零=相交,增大=偏离)。SCoPE 不是发明新度量,而是<strong>让注意力分数自然出现这个经典度量</strong> — 这是从线几何到注意力机制的理论映射,而非经验设计。</p>
+  </div>
+  <div class="card left-bar warn">
+    <h4>洞察三:规模红利 = 几何信号需强骨干解码</h4>
+    <p>SCoPE 在 14B 上优势远大于 5B(RotErr −29%, FVD −43%)。这与 UCPE 的"1/8 压缩甜点"形成有趣对比:几何信号<strong>低自由度但需强骨干解码</strong>。预训练 DiT 越强,加法几何项越能被利用 — 这与 <a href="VideoGen-20260427-World-R1.html">World-R1</a>"elicit latent awareness"思路一致。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察四:V 变换有害 → 光线是偏置而非值</h4>
+    <p>消融显示"with V transform"→ FVD +181(最大有害退化之一)。这说明光线适合作为注意力<strong>偏置</strong>(影响谁关注谁),不适合作为<strong>值</strong>(影响输出内容)。这是对"位置编码"角色的精确边界 — PE 是路由信号,不是内容信号。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 14. 可改进方向 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<p>本节为知识库特色分析章节,从方法/数据评估/工程实用性三维度分点,每点含<em>问题描述 + 论文/实验佐证 + 改进建议</em>,标优先级。</p>
+
+<h3>方法层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 仅针孔 RE10K 测试,任意镜头支持能力未知</h4>
+  <p><strong>问题:</strong>SCoPE 用 Plücker 光线坐标,形式上支持任意镜头(因 $\mathbf{r}=(\mathbf{d},\mathbf{m})$ 对镜头模型不敏感)。但<strong>所有实验仅在 RE10K(纯针孔房地产视频)上</strong> — 未在鱼眼/广角/折反射数据上验证。这与 <a href="VideoGen-20251208-UCPE.html">UCPE</a> 形成鲜明对比:UCPE 在合成 UCM 多镜头上训练测试,SCoPE 仅针孔。"加法几何"的论断强度依赖测试集多样性。</p>
+  <p><strong>改进:</strong>在 UCPE 的合成 UCM 数据集(~48K 片段,覆盖针孔/广角/鱼眼)上复现 SCoPE,验证加法注入是否在非线性镜头下仍产生有效互反积项。若支持,SCoPE + UCPE 数据集将收敛两代技术。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] NGI 的尺度门控是否在真实异构数据上充分验证</h4>
+  <p><strong>问题:</strong>NGI 设计为处理"<em>度量位姿</em>"与"<em>仅知比例的位姿</em>"两种来源的尺度异构。论文说训练用"四数据集混合",但<strong>未给出每数据集的尺度分布直方图 + 门控响应曲线</strong>。门控 $\mathbf{g}=\sigma(\mathbf{G}_s(s))$ 是否真按 $s$ 调节,还是退化为常数?</p>
+  <p><strong>改进:</strong>报告 $\mathbf{g}$ 在不同数据集 / 不同 $s$ 值的统计分布;消融门控是否真按 $s$ 变化(对比 $\mathbf{g}$=常数的退化变体)。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] Q/K 翻转是基选择,理论上等价于不翻转</h4>
+  <p><strong>问题:</strong>论文自承翻转和非翻转"实现相同的假设类"(任意 $\mathbf{E}_k$ 等价于另一种的 $\mathbf{E}_k'$)。<strong>翻转的实证增益来自初始化便利,而非表达能力</strong>。这意味着翻转不是方法核心,但论文标题与小节强调了它,可能让读者误解为算法必需。</p>
+  <p><strong>改进:</strong>明确标注翻转为"规范基选择"(论文已部分说明),但应在摘要中弱化;消融显示翻转仅 FVD +37 退化(远小于 (D) 项 +190)。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card left-bar warn">
+  <h4>[高优先级] 仅 RE10K 一个测试集,泛化论断过强</h4>
+  <p><strong>问题:</strong>RE10K 是相对简单的针孔房地产视频,场景同质化高。论文据此称"SCoPE 在所有 8 项指标上超越所有基线",但<strong>未在更难的 OOD 数据(MVImgNet 多视角、长序列、艺术内容)上系统测试</strong>。艺术绘画泛化只是定性展示,无量化。</p>
+  <p><strong>改进:</strong>补充至少 2 个 OOD 量化测试集;报告跨域性能衰减;艺术绘画的相机跟随精度应量化(如用 ViPE 估计位姿对比)。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 闭环重访指标设计是否过度有利</h4>
+  <p><strong>问题:</strong>SCoPE 在闭环重访上巨大优势(返回平移比 0.090 vs UCPE 0.433,LPIPS 恢复 0.587 vs 0.1)。<strong>但闭环协议本身就是几何一致性测试,而 SCoPE 显式注入几何</strong> — 这是结构性有利,不一定是方法学优势。需对比隐式几何方法(如 World-R1 的 RL)在闭环协议上的表现。</p>
+  <p><strong>改进:</strong>与 <a href="VideoGen-20260427-World-R1.html">World-R1</a>(RL 诱导几何一致)在闭环重访上对比;若 World-R1 闭环也强,则闭环指标更多反映"几何是否被注入"而非"如何注入"。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 模型越大优势越大的论断仅 5B→14B 两点</h4>
+  <p><strong>问题:</strong>论文称"模型越大优势越大",但<strong>仅 5B 与 14B 两个数据点</strong>。无法判断是单调扩展还是 14B 恰好是甜点。若 30B 上优势不再扩大,论断需修正。</p>
+  <p><strong>改进:</strong>补充 1.3B 或 30B+ 规模测试,绘规模-优势曲线。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card left-bar green">
+  <h4>[低优先级] 零推理开销的论断需明确披露延迟</h4>
+  <p><strong>问题:</strong>论文强调"无额外推理开销",但<strong>未报告推理 FPS / 延迟对比表</strong>。加法注入理论上零开销,但 NGI 的 RMSNorm + 门控 MLP 仍有少量计算,应量化。</p>
+  <p><strong>改进:</strong>补充原 Wan2.2 vs +SCoPE 的推理延迟 / FPS 表;若延迟增加 < 1%,论断成立;否则修正"零推理开销"为"近零"。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 训练数据混合未充分披露</h4>
+  <p><strong>问题:</strong>论文提"四数据集混合(含 RE10K 等,见附录 C)",但正文未列每数据集比例、轨迹尺度归一化细节。<strong>NGI 的尺度门控是否依赖数据混合比例</strong>未知 — 若比例改变,门控是否需重训?</p>
+  <p><strong>改进:</strong>附录补全数据集比例表;做数据混合敏感性消融(如 80% RE10K + 20% 其他 vs 均匀混合)。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>佐证类型</th></tr>
+<tr><td class="fail">高</td><td>仅针孔 RE10K 测试,任意镜头支持未验证</td><td>实验范围(对比 UCPE)</td></tr>
+<tr><td class="fail">高</td><td>仅 RE10K 一个测试集,泛化论断过强</td><td>实验范围</td></tr>
+<tr><td class="partial">中</td><td>NGI 门控是否真按尺度调节未充分验证</td><td>消融缺失</td></tr>
+<tr><td class="partial">中</td><td>闭环重访指标对 SCoPE 结构性有利</td><td>评测协议分析</td></tr>
+<tr><td class="partial">中</td><td>训练数据混合未充分披露</td><td>论文缺失</td></tr>
+<tr><td>低</td><td>Q/K 翻转是基选择,论文表述易误解</td><td>论文自承</td></tr>
+<tr><td>低</td><td>规模红利仅两点,曲线未知</td><td>实验范围</td></tr>
+<tr><td>低</td><td>零推理开销论断需明确披露延迟</td><td>论文缺失</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>🎯 个人认为最关键的三点</h4>
+  <ol>
+    <li><strong>任意镜头支持未验证</strong> —— SCoPE 用 Plücker 光线坐标,形式上镜头无关,但仅针孔 RE10K 测试。这与 <a href="VideoGen-20251208-UCPE.html">UCPE</a> 形成尖锐对比:UCPE 在多镜头合成数据上验证,SCoPE 没有。需在 UCPE 数据集上复现 SCoPE,验证"加法几何"是否普适 — 这是收敛两代技术的关键实验。</li>
+    <li><strong>泛化论断过强</strong> —— "所有 8 项指标超越所有基线"仅基于 RE10K 一个相对简单的针孔测试集。艺术绘画泛化仅定性,无量化。需补 OOD 量化测试集 + 跨域衰减曲线。</li>
+    <li><strong>闭环指标结构性有利</strong> —— 闭环重访本质是几何一致性测试,SCoPE 显式注入几何 → 结构性占优。需与 <a href="VideoGen-20260427-World-R1.html">World-R1</a> 等隐式几何方法对比,判断闭环优势是"几何被注入"还是"加法注入路径"。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 15. 总结 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>总结与资源</h2>
+<p>SCoPE 把每条 Plücker 光线坐标加法注入预训练注意力的 Q/K(Q 侧 (d,m),K 侧翻转 (m,d)),使注意力分数自然分解出"<em>仅依赖两条光线</em>"的几何项(互反积)。NGI 处理尺度异构性,零初始化保证 RoPE 逐位不变。在 RE10K 上以 < 0.1% 参数、零推理开销,在所有 8 项指标上超越所有基线(14B: RotErr −29%, FVD −43% vs UCPE/ReRoPE),闭环重访返回平移比 0.090(UCPE 0.433)— 是相机控制从乘法路由向加法几何的范式转向。</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>最大亮点</h4>
+    <ul>
+      <li>加法注入产生独立几何项(互反积),消融实证最关键(+190)</li>
+      <li>RoPE 逐位不变 + < 0.1% 参数 + 零推理开销</li>
+      <li>闭环重访 LPIPS 恢复 0.587(远超基线 0.1)</li>
+      <li>规模红利:骨干越强,几何项越被利用</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>主要局限</h4>
+    <ul>
+      <li>仅针孔 RE10K 测试,任意镜头支持未验证</li>
+      <li>泛化论断基于单一测试集,过强</li>
+      <li>闭环指标对显式几何方法结构性有利</li>
+      <li>训练数据混合细节未充分披露</li>
+    </ul>
+  </div>
+  <div class="card left-bar">
+    <h4>演进定位</h4>
+    <p>在本知识库相机控制脉络中,SCoPE 代表<strong>乘法 → 加法</strong>的范式转向;同代 <a href="VideoGen-20251208-UCPE.html">UCPE</a>(2025-12)在光线级思路上采用<strong>乘法块对角</strong>对偶设计 — 两者形成"加法 vs 乘法"的设计对偶。若后续工作融合"加法注入 + 任意镜头",将收敛这一代技术;与 <a href="VideoGen-20260427-World-R1.html">World-R1</a> 的 RL 几何一致性路径正交。</p>
+  </div>
+</div>
+
+<h3>关键资源</h3>
+<table>
+<tr><th>资源</th><th>链接</th></tr>
+<tr><td>📄 arXiv abs</td><td><a href="https://arxiv.org/abs/2606.27345" target="_blank">arxiv.org/abs/2606.27345</a></td></tr>
+<tr><td>🌐 arXiv HTML 全文</td><td><a href="https://arxiv.org/html/2606.27345v3" target="_blank">arxiv.org/html/2606.27345v3</a></td></tr>
+<tr><td>📥 PDF</td><td><a href="https://arxiv.org/pdf/2606.27345" target="_blank">arxiv.org/pdf/2606.27345</a></td></tr>
+<tr><td>🌐 项目主页</td><td><a href="https://visual-ai.github.io/scope/" target="_blank">visual-ai.github.io/scope</a></td></tr>
+<tr><td>🏢 机构</td><td>ARC Lab, Tencent · HKU · HKUST</td></tr>
+<tr><td>🎯 骨干模型</td><td>Wan2.2 TI2V-5B(消融)+ I2V-14B(主结果)</td></tr>
+</table>
+
+<h3>关键指标速查</h3>
+<table>
+<tr><th>指标</th><th>5B 成绩</th><th>14B 成绩</th><th>对比 (14B)</th></tr>
+<tr><td>CLIP↑</td><td>26.05</td><td class="best">26.30</td><td>UCPE 25.72</td></tr>
+<tr><td>RotErr↓</td><td>0.085</td><td class="best">0.058</td><td>UCPE 0.082(−29%)</td></tr>
+<tr><td>FVD↓</td><td>543.17</td><td class="best">280.17</td><td>ReRoPE 493(−43%)</td></tr>
+<tr><td>闭环返回平移比↓</td><td colspan="2">0.090</td><td>UCPE 0.433</td></tr>
+<tr><td>新增参数</td><td colspan="2" class="best">低于 0.1%</td><td>UCPE ~0.5%</td></tr>
+<tr><td>RoPE 修改</td><td colspan="2">无(逐位不变)</td><td>ReRoPE 修改低频</td></tr>
+<tr><td>额外推理开销</td><td colspan="2">零</td><td>UCPE 额外注意力</td></tr>
+</table>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>📝 SCoPE 阅读笔记 · 生成于 2026-08-26 · 领域:视频生成 / 相机可控 / 位置编码</p>
+  <p>📄 arXiv:2606.27345 · ARC Lab, Tencent · HKU · HKUST</p>
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>

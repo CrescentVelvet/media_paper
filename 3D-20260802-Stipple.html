@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stipple:实时增量高斯泼溅与视觉惯性跟踪 — 算法原理与逻辑框图分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange); background:linear-gradient(90deg,rgba(251,146,60,0.08),var(--panel))}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card.left-bar{border-left:4px solid var(--accent)}
+  .card.left-bar.warn{border-left-color:var(--orange)}
+  .card.left-bar.red{border-left-color:var(--red)}
+  .card.left-bar.green{border-left-color:var(--green)}
+  .card h4{margin-top:0}
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:18px 0}
+  @media(max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center}
+  .stat .v{font-size:24px; font-weight:700; color:var(--accent)}
+  .stat .v.green{color:var(--green)}
+  .stat .l{color:var(--muted); font-size:13px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  tr.best td{background:rgba(52,211,153,0.08); color:var(--green); font-weight:600}
+  tr.fail td{background:rgba(248,113,113,0.06); color:var(--red)}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .stage-r{background:rgba(251,146,60,0.15); color:var(--orange); border:1px solid rgba(251,146,60,0.3)}
+  .figure{margin:18px 0; text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:8px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2608.00931 · 2026 · 实时 SLAM + 3DGS</span>
+    <h1>Stipple:实时增量高斯泼溅与视觉惯性跟踪</h1>
+    <p class="subtitle">基于 Basalt VIO + Brush(Rust/CubeCL 实现的 GPU 厂商无关 3DGS),实现跟踪与重建<strong>同时实时运行</strong>:仅锚帧(~10% 关键帧)触发 5 步高斯添加流程(深度播种 → 占用剪枝 → 突发拟合 → SSIM 致密化 → 收敛),SSIM 驱动精准定位小型重建差区域;回环修正通过刚体变换批量更新锚帧高斯,无需重训。</p>
+    <p class="authors">Kilian Northoff, Mateo de Mayo, Daniel Cremers &nbsp;|&nbsp; Technical University of Munich (TUM) · Munich Center for Machine Learning</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.00931" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2608.00931v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2608.00931" target="_blank">📥 PDF</a>
+      <a href="https://github.com/ArthurBrussee/brush" target="_blank">💻 Brush(3DGS 引擎)</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与核心数据</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">阶段一:锚帧选择</a></li>
+    <li><a href="#s5">阶段二:5 步高斯添加流程</a></li>
+    <li><a href="#s6">阶段三:SSIM 驱动致密化</a></li>
+    <li><a href="#s7">阶段四:回环检测与位姿修正</a></li>
+    <li><a href="#s8">阶段五:持续优化</a></li>
+    <li><a href="#s9">损失函数汇总</a></li>
+    <li><a href="#s10">逻辑流程图</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">技术路线对比与演进</a></li>
+    <li><a href="#s14">核心洞察</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与资源</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与核心数据</h2>
+<p class="lead">3DGS 提供高效渲染的逼真场景表示,但其<strong>重预处理和训练步骤</strong>使其不适合需要实时重建的机器人/XR 应用 —— 标准 3DGS 需先用 COLMAP 做 SfM 估计位姿和点云,再做大量批量优化迭代。Stipple 的核心论断:<strong>实时跟踪(VIO)与实时重建(3DGS)可以解耦并行</strong> —— 直接复用 VIO 输出的位姿和关键帧,采用增量式训练策略,仅在锚帧(~10% 关键帧)上运行深度估计与高斯添加,与跟踪线程异步并行,mutex 仅序列化 GPU 访问。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v green">211 FPS</div><div class="l">Vicon Room 跟踪(CaRtGS 69,3×)</div></div>
+  <div class="stat"><div class="v green">+1.08 dB</div><div class="l">Vicon PSNR vs CaRtGS</div></div>
+  <div class="stat"><div class="v green">~10%</div><div class="l">锚帧占关键帧比例</div></div>
+  <div class="stat"><div class="v green">264 FPS</div><div class="l">MSD 跟踪速度</div></div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>四点贡献</h4>
+    <ol>
+      <li><strong>实时跟踪+泼溅并行管线</strong>:Basalt VIO + Brush(Rust/CubeCL),两线程无阻塞</li>
+      <li><strong>增量式高斯添加流程</strong>:5 步,仅在锚帧(未重建 &gt; 5% 的关键帧)上执行</li>
+      <li><strong>SSIM 驱动致密化</strong>:逐像素 SSIM 而非 L1/L2,精准定位小型重建差区域</li>
+      <li><strong>多种实用改进</strong>:鱼眼支持、立体深度、回环同步、反针状/尺度正则、位姿优化</li>
+    </ol>
+  </div>
+  <div class="card left-bar">
+    <h4>关键事实</h4>
+    <ul>
+      <li><strong>arXiv 提交</strong>:2026-08-02</li>
+      <li><strong>机构</strong>:TUM · Munich Center for Machine Learning</li>
+      <li><strong>基础</strong>:Basalt(VIO)+ Brush(Rust/CubeCL 3DGS)</li>
+      <li><strong>数据集</strong>:EuRoC(Vicon Room + Machine Hall)+ MSD</li>
+      <li><strong>硬件</strong>:RTX 5060 Ti(深度估计基准)</li>
+      <li><strong>GPU 厂商</strong>:无关(Rust/CubeCL 跨平台)</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>一句话定位</h4>
+    <p>把 3DGS 从"<em>离线批处理</em>"重构为"<em>在线增量流式</em>",与 VIO 跟踪<strong>异步并行</strong>。这是 3DGS SLAM 从"<em>离线 SfM 后训</em>"向"<em>实时 VIO 联训</em>"的范式转向,与 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 综述</a> 中"在线化"主线呼应。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 2. 背景动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>3DGS 已成为场景表示 SOTA,但其训练流程依赖<strong>离线 SfM(COLMAP)估计位姿与点云</strong> + 大量批量优化迭代。机器人/XR 等实时场景需"<em>边走边建</em>",标准 3DGS 不适用。下表对比 3DGS 局限与 VIO/SLAM 的互补优势:</p>
+
+<table>
+<tr><th>3DGS 的局限</th><th>VIO/SLAM 的优势</th><th>Stipple 的解决</th></tr>
+<tr><td class="fail">需 SfM(COLMAP)估计位姿和点云</td><td>VIO 实时跟踪位姿</td><td class="best">直接复用 VIO 输出的位姿和关键帧</td></tr>
+<tr><td class="fail">训练需大量批量优化迭代</td><td>SLAM 天生面向实时</td><td class="best">增量式训练,与跟踪线程并行</td></tr>
+<tr><td class="fail">深度估计需对每帧运行</td><td>SLAM 已有关键帧选择</td><td class="best">仅在锚帧(~10% 关键帧)上运行深度估计</td></tr>
+</table>
+
+<h3>已有 3DGS SLAM 路线对比</h3>
+<table>
+<tr><th>路线</th><th>代表方法</th><th>跟踪 + 重建关系</th><th>关键局限</th></tr>
+<tr><td>SplaTAM</td><td>SplaTAM</td><td>3DGS 自跟踪(无 VIO)</td><td class="fail">3DGS 跟踪不稳,大运动易失败</td></tr>
+<tr><td>PhotoSLAM</td><td>PhotoSLAM</td><td>ORB-SLAM + 3DGS</td><td class="partial">PSNR 低(20.22),高斯数多(228k)</td></tr>
+<tr><td>CaRtGS</td><td>CaRtGS</td><td>立体输入 + 3DGS</td><td class="partial">PSNR 22.41,跟踪慢(69 FPS)</td></tr>
+<tr class="best"><td>VIO + 增量 3DGS(本文)</td><td>Stipple</td><td>VIO 跟踪 + 锚帧增量重建</td><td class="best">PSNR 23.49,跟踪 211 FPS,Vicon Room SOTA</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>💡 核心洞察:解耦并行 + 锚帧稀疏化</h4>
+  <p>已有 3DGS SLAM 要么"<em>3DGS 自跟踪</em>"(不稳),要么"<em>VIO 跟踪 + 全帧重建</em>"(开销大)。Stipple 的关键是<strong>双重解耦</strong>:① <strong>跟踪与重建异步并行</strong>(mutex 仅序列化 GPU 访问,SLAM 线程不在训练上阻塞);② <strong>锚帧稀疏化</strong>(仅 ~10% 关键帧触发深度估计与高斯添加,大幅减少计算)。这是把"3DGS 在线化"问题从"<em>加速</em>"重构为"<em>稀疏化触发</em>"。</p>
+</div>
+</section>
+
+<!-- ==================== 3. 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p>Stipple 由五个核心模块构成,围绕"<strong>VIO 实时跟踪 + 锚帧增量重建</strong>"这一约束展开:</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <span class="stage-tag stage-1">模块 A · Basalt VIO 跟踪</span>
+    <p>立体图像 + IMU → Basalt VIO 实时输出位姿 + 关键帧 + 回环检测。两线程无阻塞,传入视图排队给异步训练器。</p>
+  </div>
+  <div class="card left-bar green">
+    <span class="stage-tag stage-2">模块 B · 锚帧判断</span>
+    <p>从当前地图渲染该位姿,测量 $\alpha<0.05$ 的像素比例(未重建区域)。若 &gt; <strong>5%</strong> → 成为锚帧,分配立体深度图并播种新高斯。</p>
+  </div>
+  <div class="card left-bar">
+    <span class="stage-tag stage-3">模块 C · 5 步高斯添加</span>
+    <p>仅在锚帧执行:深度播种 → 占用剪枝 → 突发拟合 → SSIM 致密化 → 收敛训练。</p>
+  </div>
+  <div class="card left-bar warn">
+    <span class="stage-tag stage-r">模块 D · 回环修正</span>
+    <p>VIO 输出位姿修正 → 仅锚帧"拥有"高斯 → 对锚帧高斯施加<strong>刚体变换</strong>(平移均值 + 旋转协方差),内存中连续 → 顺序操作。</p>
+  </div>
+  <div class="card left-bar">
+    <span class="stage-tag stage-1">模块 E · 持续优化</span>
+    <p>无锚帧待处理 → 从所有关键帧均匀随机采样一帧,执行单步训练;附 gsplat 位姿精修(局部光度对齐,不反馈 SLAM)。</p>
+  </div>
+  <div class="card left-bar green">
+    <span class="stage-tag stage-2">模块 F · 鱼眼 + 立体</span>
+    <p>为 Brush 添加 Kannala-Brandt 鱼眼相机模型支持(消除去畸变与立体校正需求);FoundationStereo / BM / SGBM-WLS 立体深度。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+  <h4>🔑 设计哲学:异步 + 稀疏 + 刚体</h4>
+  <p>三个关键原则贯穿 Stipple:<strong>异步</strong>(跟踪线程不阻塞训练)、<strong>稀疏</strong>(仅锚帧触发重建)、<strong>刚体</strong>(回环修正用刚体变换而非重训)。这三者共同实现"<em>实时 + 增量 + 闭环一致</em>"。Rust/CubeCL 实现还解锁了 GPU 厂商无关(对比 CUDA-only 方法)。</p>
+</div>
+</section>
+
+<!-- ==================== 4. 锚帧选择 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>阶段一:锚帧选择</h2>
+<p>Stipple 的<strong>稀疏触发</strong>核心:不是每关键帧都做重建,而是仅当未重建区域足够大时才触发:</p>
+
+<ul>
+  <li>Basalt 跟踪每帧;高斯仅从<strong>关键帧</strong>创建</li>
+  <li>提交前,从当前地图渲染该位姿,测量 $\alpha<0.05$ 的像素比例(未重建区域)</li>
+  <li>若未重建比例 &gt; <strong>5%</strong> → 成为<strong>锚帧</strong>:分配立体深度图并播种新高斯</li>
+  <li>否则 → 仅加入持续优化视图池</li>
+  <li>锚帧通常仅占<strong>~10% 关键帧</strong> → 保持管线实时(深度估计是主要瓶颈,FoundationStereo ~150ms on RTX 5060 Ti)</li>
+</ul>
+
+<div class="callout key">
+  <h4>🎯 锚帧判断的几何意义</h4>
+  <p>5% 阈值不是经验选择,而是<strong>信息增量</strong>度量:已重建区域不会带来新几何信息,只有未重建区域才需要新高斯。这与传统 3DGS 的"全帧致密化"形成对比 — Stipple 把致密化触发从<em>全局误差</em>改为<em>局部未覆盖</em>。</p>
+</div>
+
+<table>
+<tr><th>判断标准</th><th>动作</th><th>占比</th></tr>
+<tr><td>未重建区域 &gt; 5%</td><td class="best">成为锚帧,触发 5 步流程</td><td>~10% 关键帧</td></tr>
+<tr><td>未重建区域 ≤ 5%</td><td>加入持续优化视图池</td><td>~90% 关键帧</td></tr>
+</table>
+</section>
+
+<!-- ==================== 5. 5 步高斯添加 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>阶段二:5 步高斯添加流程</h2>
+
+<table>
+<tr><th>步骤</th><th>操作</th><th>目的</th></tr>
+<tr><td><strong>① 深度播种</strong></td><td>立体深度估计(FoundationStereo / BM / SGBM-WLS)→ 反投影每像素为 3D 点</td><td>生成密集候选高斯均值</td></tr>
+<tr><td><strong>② 占用剪枝</strong></td><td>CPU 占用哈希集(网格 0.1m),丢弃已重建区域的候选</td><td>避免重复,保持新增高斯数小</td></tr>
+<tr><td><strong>③ 突发拟合</strong></td><td>高学习率短优化(仅锚帧)</td><td>平坦/纹理少区域在此步已足够好</td></tr>
+<tr><td><strong>④ SSIM 致密化</strong></td><td>逐像素 SSIM → $n_{\text{add}}=\text{MAX}\times(1-\overline{\text{SSIM}})/2$ → 权重采样低 SSIM 位置</td><td>精准定位小、重建差区域</td></tr>
+<tr><td><strong>⑤ 收敛</strong></td><td>锚帧较长训练 + 无锚帧时随机关键帧训练</td><td>新高斯收敛 + 全局持续优化</td></tr>
+</table>
+
+<h3>5.1 深度播种(FoundationStereo / BM / SGBM-WLS)</h3>
+<p>锚帧分配立体深度图,通过三种立体匹配方法估计密集深度,反投影为 3D 点作为候选高斯均值。FoundationStereo 在 RTX 5060 Ti 上 ~150ms,是主要计算瓶颈 → 这正是锚帧稀疏化(10%)的关键理由。</p>
+
+<h3>5.2 占用剪枝(CPU 哈希集)</h3>
+<p>CPU 端维护占用哈希集,网格 0.1m,丢弃已重建区域的候选 → <strong>避免重复高斯</strong>,保持新增高斯数小。这是 CPU/GPU 协作:CPU 做几何判断,GPU 做渲染与训练。</p>
+
+<h3>5.3 突发拟合(Burst Fitting)</h3>
+<p>高学习率、短步数的优化(仅锚帧)。平坦/纹理少区域在此步已足够好,不需进入致密化。这一步是"<em>快速占位</em>",后续步骤做"<em>精准补强</em>"。</p>
+
+<div class="callout tip">
+  <h4>🔧 工程要点:突发拟合的分工</h4>
+  <p>突发拟合用<strong>高学习率</strong>快速收敛平坦区域 → 让 SSIM 致密化能聚焦于真正的差区域。若没有突发拟合,SSIM 致密化会被全局误差主导,失去"局部精准"特性。这是 5 步流程的<strong>分工哲学</strong>:前 3 步做粗,后 2 步做精。</p>
+</div>
+</section>
+
+<!-- ==================== 6. SSIM 致密化 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>阶段三:SSIM 驱动致密化</h2>
+
+<p>Stipple 的<strong>致密化准则</strong>核心创新:用<strong>逐像素 SSIM</strong> 而非 L1/L2 误差驱动。</p>
+
+<div class="equation">
+$$n_{\text{add}}=\text{MAX\_SAMPLES}\cdot\frac{1.0-\overline{\text{SSIM}}}{2}. \qquad \text{(式 1)}$$
+</div>
+
+<p>其中 $\overline{\text{SSIM}}$ 是渲染图与图像的逐像素 SSIM 均值。$n_{\text{add}}$ 个新高斯通过<strong>权重采样</strong>放置在低 SSIM 位置(权重与 $1-\text{SSIM}$ 成正比)。新高斯尺度从 $k$ 近邻距离初始化(稀疏区域更大)。</p>
+
+<div class="grid grid-2">
+  <div class="card left-bar green">
+    <h4>为什么用 SSIM 而非 L1/L2?</h4>
+    <ul>
+      <li><strong>有界性</strong>:SSIM 在 $[-1,1]$ 范围有界 → $n_{\text{add}}$ 自然有界,无需 clip</li>
+      <li><strong>局部结构</strong>:SSIM 捕获<strong>局部结构差异</strong>而非全局一致性(L1 偏好)</li>
+      <li><strong>精准定位</strong>:小型、渲染与图像仍不一致的区域被 SSIM 高亮,而 L1 会被大面积平坦区域主导</li>
+      <li><strong>致密化尺度自适应</strong>:$k$ 近邻距离初始化让稀疏区域自动用更大高斯</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>SSIM 致密化的潜在病理</h4>
+    <p>SSIM 在<strong>纹理复杂区域</strong>可能过度触发(因结构高频差异),添加超过实时训练预算能收敛的高斯数。Machine Hall 上 Stipple 落后(CaRtGS 21.80 vs Stipple 19.48)正是此问题:<strong>高斯数爆炸</strong>(394k vs CaRtGS 118k),尺度正则损失仅部分缓解。</p>
+  </div>
+</div>
+
+<div class="callout warn">
+  <h4>⚠️ 实验佐证:Machine Hall 落后是 SSIM 致密化的失败模式</h4>
+  <p>Machine Hall 上 Stipple PSNR 19.48(落后 CaRtGS 21.80),高斯数 394k(CaRtGS 118k 的 3.3×),GPU 显存 4.7GB(CaRtGS 2.9GB)。论文假设 SSIM 致密化准则过度触发,添加了远超实时训练预算能收敛的高斯数 → <strong>这是 SSIM 驱动策略的已知失败模式</strong>。尺度正则损失 $\mathcal{L}_{\text{scale-reg}}$ 部分缓解但不完全解决。</p>
+</div>
+</section>
+
+<!-- ==================== 7. 回环检测 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>阶段四:回环检测与位姿修正</h2>
+
+<ul>
+  <li>回环检测和位姿图修正<strong>完全由 VIO 跟踪器处理</strong>(Basalt 内建)</li>
+  <li>修正到达时:更新所有关键帧存储位姿(非锚帧仍用于训练,位姿重要)</li>
+  <li>仅锚帧"拥有"高斯 → 仅其高斯接收几何更新:施加与锚帧位姿相同的<strong>刚体变换</strong>(平移均值 + 旋转协方差)</li>
+  <li>因每帧仅播种一次,锚帧高斯在内存中连续 → 回环更新是<strong>简单顺序操作</strong></li>
+</ul>
+
+<div class="equation">
+$$\boldsymbol{\mu}_i'=\mathbf{R}_{\text{loop}}\boldsymbol{\mu}_i+\mathbf{t}_{\text{loop}},\qquad \boldsymbol{\Sigma}_i'=\mathbf{R}_{\text{loop}}\boldsymbol{\Sigma}_i\mathbf{R}_{\text{loop}}^\top. \qquad \text{(式 2)}$$
+</div>
+
+<div class="callout key">
+  <h4>🎯 刚体变换的优雅性</h4>
+  <p>回环修正不需要重训高斯,只需对锚帧高斯施加刚体变换。<strong>每帧仅播种一次 → 锚帧高斯在内存中连续 → 顺序操作</strong>。这是 Stipple 数据结构(锚帧拥有高斯)与算法(刚体修正)的<strong>协同设计</strong>:数据结构为算法服务。对比需要重训的方法,这是 O(n) vs O(n×训练步数)的差距。</p>
+</div>
+
+<table>
+<tr><th>修正对象</th><th>更新方式</th><th>说明</th></tr>
+<tr><td>关键帧位姿</td><td>直接更新存储值</td><td>所有关键帧(锚帧 + 非锚帧)</td></tr>
+<tr><td>锚帧高斯</td><td>刚体变换(式 2)</td><td>仅锚帧拥有高斯,内存连续</td></tr>
+<tr><td>非锚帧高斯</td><td>—</td><td>不拥有高斯,无需更新</td></tr>
+</table>
+</section>
+
+<!-- ==================== 8. 持续优化 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>阶段五:持续优化</h2>
+<ul>
+  <li>无锚帧待处理时 → 从所有关键帧中<strong>均匀随机采样一个</strong>,执行单步训练</li>
+  <li>从 gsplat 移植<strong>位姿精修</strong>(局部光度对齐,不反馈到 SLAM 轨迹)</li>
+  <li>上游贡献:为 Brush 添加 Kannala-Brandt 鱼眼相机模型支持(消除去畸变和立体校正需求)</li>
+</ul>
+
+<div class="callout tip">
+  <h4>🔧 持续优化的工程意义</h4>
+  <p>持续优化让<strong>跟踪间隙不浪费 GPU</strong>:VIO 在做位姿估计时,GPU 不闲着,持续优化已有高斯。这是异步并行的另一面 — 不仅训练不阻塞跟踪,跟踪间隙也让训练跑。位姿精修不反馈 SLAM 是为了<strong>避免循环依赖</strong>(3DGS 优化过的位姿不应反过来影响 SLAM 估计)。</p>
+</div>
+</section>
+
+<!-- ==================== 9. 损失函数 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>损失函数汇总</h2>
+
+<div class="equation">
+$$\mathcal{L}=\lambda_1\mathcal{L}_1+\lambda_2\mathcal{L}_{\text{SSIM}}+\lambda_3\mathcal{L}_{\text{depth}}+\lambda_4\mathcal{L}_{\text{anti-needle}}+\lambda_5\mathcal{L}_{\text{scale-reg}}. \qquad \text{(式 3)}$$
+</div>
+
+<table>
+<tr><th>损失</th><th>公式</th><th>作用</th><th>触发范围</th></tr>
+<tr><td><strong>$\mathcal{L}_1$</strong></td><td>L1 像素重建</td><td>标准 3DGS 重建损失</td><td>所有训练帧</td></tr>
+<tr><td><strong>$\mathcal{L}_{\text{SSIM}}$</strong></td><td>结构相似性</td><td>标准 3DGS 重建损失</td><td>所有训练帧</td></tr>
+<tr><td><strong>$\mathcal{L}_{\text{depth}}$</strong></td><td>$\|1/\mathbf{D}-1/\mathbb{E}[\hat{\mathbf{D}}]\|_1$(逆深度 L1)</td><td>深度监督</td><td class="partial">仅锚帧(参考深度图仅锚帧有)</td></tr>
+<tr><td><strong>$\mathcal{L}_{\text{anti-needle}}$</strong></td><td>$\text{mean}(\max(s)/\min(s))=\text{mean}(\exp(\max\log s-\min\log s))$</td><td>正则化高斯向各向同性,防"针状"退化</td><td>所有锚帧训练</td></tr>
+<tr><td><strong>$\mathcal{L}_{\text{scale-reg}}$</strong></td><td>$\sum s^2\cdot\mathbb{1}\{s>\text{threshold}\}$</td><td>防高斯爆炸(Machine Hall 问题)</td><td>所有锚帧训练</td></tr>
+</table>
+
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <h4>$\mathcal{L}_{\text{depth}}$:逆深度 L1</h4>
+    <p>从 gsplat 移植,用逆深度而非原始深度 — <strong>远处深度误差相对容差更大</strong>,符合视觉感知。仅对锚帧(参考深度图仅锚帧有)。</p>
+  </div>
+  <div class="card left-bar warn">
+    <h4>$\mathcal{L}_{\text{anti-needle}}$:反针状正则</h4>
+    <p>正则化高斯向各向同性协方差 → 防止边缘区域高斯退化为针状(needle)导致渲染模糊。max/min 尺度比的指数形式。</p>
+  </div>
+  <div class="card left-bar red">
+    <h4>$\mathcal{L}_{\text{scale-reg}}$:尺度正则</h4>
+    <p>惩罚超阈值尺度的高斯 → 专门解决 EuRoC Machine Hall 上的"<strong>高斯爆炸</strong>"病理。但 Machine Hall 落后说明该正则<strong>不够强</strong>。</p>
+  </div>
+</div>
+
+<div class="callout key">
+  <h4>💡 损失设计的层次</h4>
+  <p>Stipple 的损失分三层:<strong>重建</strong>($\mathcal{L}_1+\mathcal{L}_{\text{SSIM}}$,所有帧)、<strong>几何监督</strong>($\mathcal{L}_{\text{depth}}$,仅锚帧)、<strong>形态正则</strong>($\mathcal{L}_{\text{anti-needle}}+\mathcal{L}_{\text{scale-reg}}$,防退化)。这种层次化反映"<em>不同信息在不同帧上可得</em>" — 深度监督仅在锚帧,形态正则在所有锚帧训练。</p>
+</div>
+</section>
+
+<!-- ==================== 10. 流程图 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>逻辑流程图</h2>
+
+<h3>10.1 Stipple 系统架构(跟踪 + 重建并行)</h3>
+<div class="mermaid">
+flowchart TD
+    IN["立体图像 + IMU<br/>实时输入"] --> VIO["Basalt VIO 跟踪线程<br/>位姿 + 关键帧 + 回环"]
+    VIO --> ANC{"锚帧判断<br/>渲染当前地图<br/>未重建 > 5%?"}
+    ANC -->|是,~10%| ANCHOR["锚帧: 分配深度图"]
+    ANC -->|否,~90%| POOL["加入持续优化视图池"]
+    ANCHOR --> STEPS["5 步高斯添加流程"]
+    subgraph STEPS["5 步高斯添加(仅锚帧)"]
+        S1["① 深度播种<br/>FoundationStereo/BM/SGBM-WLS<br/>反投影为 3D 点"]
+        S2["② 占用剪枝<br/>CPU 哈希集 网格 0.1m 去重"]
+        S3["③ 突发拟合<br/>高学习率短优化"]
+        S4["④ SSIM 致密化<br/>n_add = MAX×(1-SSIM̄)/2<br/>权重采样低 SSIM 区域"]
+        S5["⑤ 收敛训练<br/>锚帧较长训练 + 随机关键帧训练"]
+        S1 --> S2 --> S3 --> S4 --> S5
+    end
+    STEPS --> MAP["3DGS 地图<br/>实时增量更新"]
+    POOL --> MAP
+    MAP --> RENDER["渲染用于锚帧判断"]
+    RENDER --> ANC
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style VIO fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style ANCHOR fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style STEPS fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style MAP fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>10.2 回环修正数据流</h3>
+<div class="mermaid">
+flowchart LR
+    LOOP["VIO 回环检测<br/>位姿图修正"] --> KF["更新所有关键帧位姿"]
+    KF --> AG["仅锚帧拥有高斯"]
+    AG --> RIGID["刚体变换<br/>μ' = R·μ + t<br/>Σ' = R·Σ·R^T"]
+    RIGID --> CONTIG["锚帧高斯内存连续<br/>顺序操作 O(n)"]
+    CONTIG --> FIXED["修正后地图<br/>回环一致"]
+    style LOOP fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style RIGID fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style FIXED fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>10.3 5 步高斯添加的分工哲学</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph ROUGH["粗: 快速占位"]
+        R1["① 深度播种"] --> R2["② 占用剪枝"] --> R3["③ 突发拟合<br/>高学习率短步"]
+    end
+    subgraph FINE["精: 精准补强"]
+        F1["④ SSIM 致密化<br/>局部精准"] --> F2["⑤ 收敛训练<br/>全局优化"]
+    end
+    ROUGH --> FINE
+    style ROUGH fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style FINE fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+</section>
+
+<!-- ==================== 11. 实验 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 实验设置</h3>
+<table>
+<tr><th>维度</th><th>规格</th></tr>
+<tr><td>数据集</td><td>EuRoC(Vicon Room + Machine Hall)+ Monado SLAM Dataset (MSD)</td></tr>
+<tr><td>输入</td><td>立体图像 + IMU(双目前置传感器)</td></tr>
+<tr><td>基线</td><td>PhotoSLAM, CaRtGS(支持立体输入的最佳基线)</td></tr>
+<tr><td>评测指标</td><td>PSNR, SSIM, LPIPS, 跟踪 FPS, 高斯数, 峰值 GPU 显存</td></tr>
+<tr><td>协议</td><td>原始录制速率回放(不给额外处理时间),最佳 3 次运行</td></tr>
+<tr><td>硬件</td><td>RTX 5060 Ti(深度估计基准)</td></tr>
+</table>
+
+<h3>11.2 EuRoC Vicon Room(Stipple 领先)</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>跟踪 FPS↑</th><th>高斯数↓</th><th>GPU 显存↓</th></tr>
+<tr><td>PhotoSLAM</td><td>20.22</td><td>0.78</td><td>0.48</td><td>72</td><td>228k</td><td>2.8GB</td></tr>
+<tr><td>CaRtGS</td><td>22.41</td><td>0.82</td><td>0.45</td><td>69</td><td class="best">65k</td><td class="best">2.6GB</td></tr>
+<tr class="best"><td><strong>Stipple</strong></td><td class="best">23.49</td><td class="best">0.86</td><td class="best">0.39</td><td class="best">211</td><td>82k</td><td>2.9GB</td></tr>
+</table>
+<ul>
+  <li>PSNR 比 CaRtGS <strong>+1.08 dB</strong>,比 PhotoSLAM <strong>+3.27 dB</strong></li>
+  <li>跟踪速度 <strong>211 FPS</strong>(CaRtGS 69,PhotoSLAM 72)→ <strong>3× 更快</strong></li>
+  <li>高斯数 82k(少于 PhotoSLAM 228k,多于 CaRtGS 65k)— Stipple 在 PSNR 与高斯数间取得平衡</li>
+</ul>
+
+<h3>11.3 EuRoC Machine Hall(Stipple 落后 — 失败模式)</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>跟踪 FPS↑</th><th>高斯数</th><th>GPU 显存</th></tr>
+<tr><td>PhotoSLAM</td><td>19.96</td><td>0.70</td><td>66</td><td>327k</td><td>3.1GB</td></tr>
+<tr class="best"><td><strong>CaRtGS</strong></td><td class="best">21.80</td><td class="best">0.76</td><td>64</td><td class="best">118k</td><td class="best">2.9GB</td></tr>
+<tr class="fail"><td>Stipple</td><td>19.48</td><td>—</td><td>173</td><td>394k</td><td>4.7GB</td></tr>
+</table>
+<p><strong>Machine Hall 上 Stipple 落后</strong>:假设 SSIM 致密化准则过度触发,添加了远超实时训练预算能收敛的高斯数(394k vs CaRtGS 118k)。尺度正则损失部分缓解但不完全解决。但<strong>跟踪速度仍领先</strong>(173 FPS vs 64 FPS)。</p>
+
+<h3>11.4 Monado SLAM Dataset(Stipple 领先)</h3>
+<ul>
+  <li>大多数 MSD 场景上 Stipple 在 PSNR/SSIM/LPIPS 上超越两个基线</li>
+  <li>PhotoSLAM 和 CaRtGS 在<strong>多个 MOO/MGO 序列上完全失败</strong>,Stipple 全部完成</li>
+  <li>在有基线结果的 MGO 序列上,PSNR 优势达 <strong>4.3-5.4 dB</strong></li>
+  <li>MSD 上跟踪速度高达 <strong>264 FPS</strong></li>
+</ul>
+
+<div class="callout key">
+  <h4>🎯 实验的二元结论</h4>
+  <p>Stipple 的实验呈现<strong>清晰的二元结论</strong>:在<strong>纹理丰富、合理运动</strong>的场景(Vicon Room、MSD)上,Stipple 全面领先(PSNR +1~5 dB,FPS 3-4×);在<strong>纹理少、Machine Hall</strong> 类型场景上,SSIM 致密化过度触发导致高斯爆炸,PSNR 落后。<strong>这是 SSIM 驱动策略的已知失败模式,不是方法本身缺陷</strong>。</p>
+</div>
+</section>
+
+<!-- ==================== 12. 消融 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+<p>在 EuRoC V1_01 上消融位姿优化和尺度正则损失:</p>
+<table>
+<tr><th>位姿优化</th><th>尺度正则损失</th><th>PSNR↑</th><th>Δ PSNR</th></tr>
+<tr><td>✗</td><td>✗</td><td>24.13</td><td>—</td></tr>
+<tr><td>✓</td><td>✗</td><td>24.36</td><td class="partial">+0.23</td></tr>
+<tr class="best"><td>✓</td><td>✓</td><td class="best">25.00</td><td class="best">+0.87</td></tr>
+</table>
+<ul>
+  <li><strong>位姿优化</strong>:+0.23 dB → 贡献最大单点</li>
+  <li><strong>尺度正则损失</strong>:额外 +0.64 dB → 与位姿优化互补</li>
+  <li>两者结合 <strong>+0.87 dB</strong>(从 24.13 到 25.00)</li>
+</ul>
+
+<div class="callout warn">
+  <h4>⚠️ 消融的局限</h4>
+  <p>论文仅消融了位姿优化与尺度正则损失两项,<strong>未消融</strong>:SSIM 致密化 vs L1 致密化、锚帧阈值 5% 敏感性、突发拟合学习率、占用网格 0.1m 敏感性、FoundationStereo vs BM vs SGBM-WLS 深度方法对比。这些关键设计选择<strong>缺乏定量佐证</strong>,主要靠工程直觉。</p>
+</div>
+</section>
+
+<!-- ==================== 13. 技术路线对比与演进 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>技术路线对比与演进</h2>
+
+<p>Stipple 处于"3DGS SLAM / 实时场景重建"技术脉络中:</p>
+
+<table>
+<tr><th>范式</th><th>代表方法</th><th>跟踪 + 重建关系</th><th>关键局限</th></tr>
+<tr><td>3DGS 自跟踪</td><td>SplaTAM / MonoGS</td><td>3DGS 同时做跟踪与重建</td><td class="fail">3DGS 跟踪不稳,大运动易失败,无 IMU 鲁棒性</td></tr>
+<tr><td>VIO + 全帧 3DGS</td><td>PhotoSLAM</td><td>ORB-SLAM 跟踪 + 全帧重建</td><td class="partial">PSNR 低(20.22),高斯数多(228k),无致密化策略</td></tr>
+<tr><td>立体 + 3DGS</td><td>CaRtGS</td><td>立体输入 + 3DGS</td><td class="partial">PSNR 22.41,跟踪慢(69 FPS),无回环处理</td></tr>
+<tr><td>离线 SfM + 批量 3DGS</td><td>原版 3DGS</td><td>COLMAP 后训</td><td class="fail">非实时,需 SfM 预处理</td></tr>
+<tr class="best"><td>VIO + 增量 3DGS(本文)</td><td>Stipple</td><td>VIO 跟踪 + 锚帧增量重建</td><td class="best">实时(211 FPS),回环一致,PSNR 23.49;但 Machine Hall 上 SSIM 过度触发</td></tr>
+</table>
+
+<h3>演进定位</h3>
+<div class="callout key">
+  <h4>📈 3DGS SLAM 的三次范式演进</h4>
+  <ol>
+    <li><strong>离线 SfM + 批量 3DGS</strong>(原版 3DGS):需 COLMAP 预处理 + 大量迭代,非实时。</li>
+    <li><strong>3DGS 自跟踪</strong>(SplaTAM/MonoGS):3DGS 同时做跟踪与重建,避免 SfM 但跟踪不稳。</li>
+    <li><strong>VIO + 增量 3DGS</strong>(Stipple):VIO 提供鲁棒跟踪,3DGS 仅在锚帧增量重建 → 实时 + 闭环一致。这是把 3DGS SLAM 从"<em>3DGS 包打天下</em>"重构为"<em>VIO 做跟踪,3DGS 做表示</em>"的<strong>解耦分工</strong>。</li>
+  </ol>
+  <p>Stipple 与知识库 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 综述</a>、<a href="3D-20230922-Deformable-3DGS.html">Deformable 3DGS</a> 等离线 3DGS 工作形成<strong>在线 vs 离线</strong>对比;与 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建</a>、<a href="3D-20250314-VGGT.html">VGGT</a> 等前馈方法形成<strong>增量 vs 前馈</strong>对比 — Stipple 是 SLAM 路线的代表,前馈方法是数据驱动路线的代表。</p>
+</div>
+</section>
+
+<!-- ==================== 14. 核心洞察 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>核心洞察</h2>
+
+<div class="grid grid-2">
+  <div class="card left-bar green">
+    <h4>洞察一:解耦并行 &gt; 联合优化</h4>
+    <p>Stipple 不试图让 3DGS 同时做跟踪与重建,而是<strong>VIO 做跟踪(擅长),3DGS 做表示(擅长)</strong>。这与"3DGS 自跟踪"路线的根本差异是<strong>分工</strong>:让每个模块做最擅长的事。3× 的 FPS 优势(211 vs 69)是这种分工的红利。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察二:稀疏触发 = 信息增量度量</h4>
+    <p>锚帧判断(未重建 &gt; 5%)本质是<strong>信息增量</strong>度量:已重建区域不带来新几何信息,只有未重建区域才需新高斯。这把致密化从"<em>全局误差</em>"改为"<em>局部未覆盖</em>" — 这与 <a href="3D-20240326-2DGS.html">2DGS</a> 等离线方法的"全局致密化"形成对比。</p>
+  </div>
+  <div class="card left-bar warn">
+    <h4>洞察三:SSIM 致密化的双刃剑</h4>
+    <p>SSIM 在 Vicon Room 上精准定位小型重建差区域(PSNR +1.08),但在 Machine Hall 上过度触发导致高斯爆炸(394k vs 118k)。这说明<strong>局部结构度量</strong>在纹理丰富场景是优势,在纹理少场景是病根 — 致密化准则需<strong>场景自适应</strong>。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察四:刚体回环修正 = 数据结构 + 算法协同</h4>
+    <p>回环修正用刚体变换而非重训,关键是<strong>锚帧高斯在内存中连续</strong>(因每帧仅播种一次)。这是数据结构(锚帧拥有高斯)为算法(顺序刚体变换)服务的<strong>协同设计</strong>。O(n) vs O(n×训练步数)的差距让回环修正真正实时。</p>
+  </div>
+  <div class="card left-bar green">
+    <h4>洞察五:GPU 厂商无关是工程红利</h4>
+    <p>Rust/CubeCL 实现(Brush)让 Stipple 不锁 CUDA,可跑在 AMD/Intel GPU 上。这在 XR/机器人场景(常需移动端 GPU)是关键工程红利。对比 CUDA-only 的 CaRtGS,Stipple 的部署灵活性更高。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>洞察六:失败模式与正则互补</h4>
+    <p>Machine Hall 落后是<strong>SSIM 致密化过度触发</strong> + <strong>尺度正则不够强</strong>的合谋。消融显示尺度正则 +0.64 dB,但 Machine Hall 上仍落后 CaRtGS 2.32 dB → 正则<strong>部分缓解但不完全解决</strong>。这指出后续工作方向:自适应致密化 + 更强正则。</p>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 15. 可改进方向 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<p>本节为知识库特色分析章节,从方法/数据评估/工程实用性三维度分点,每点含<em>问题描述 + 论文/实验佐证 + 改进建议</em>,标优先级。</p>
+
+<h3>方法层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] SSIM 致密化准则在纹理少场景过度触发</h4>
+  <p><strong>问题:</strong>Machine Hall 上 Stipple PSNR 19.48(落后 CaRtGS 21.80),高斯数 394k(CaRtGS 118k 的 3.3×),GPU 显存 4.7GB(CaRtGS 2.9GB)。论文假设 SSIM 致密化准则过度触发,但<strong>未给出 SSIM 阈值/触发的统计分布</strong>。<code>n_add = MAX×(1-SSIM̄)/2</code> 在纹理复杂区域 SSIM̄ 天然偏低 → $n_{\text{add}}$ 过大 → 超过训练预算能收敛。</p>
+  <p><strong>改进:</strong>① 致密化准则<strong>场景自适应</strong>:根据场景纹理统计动态调整 MAX_SAMPLES 或阈值;② 引入高斯数预算硬上限(如 max 200k),触发后切换为优化已有高斯而非新增;③ 改用 SSIM + L1 联合准则(SSIM 主导局部,L1 主导全局)。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[高优先级] 锚帧阈值 5% 与占用网格 0.1m 是经验值,未做敏感性消融</h4>
+  <p><strong>问题:</strong>论文给出锚帧阈值 5%(未重建像素比例)与占用网格 0.1m,但<strong>均为经验值,未报告敏感性消融</strong>。5% 阈值过高(漏锚帧)或过低(过度触发)的影响未知;0.1m 网格在不同尺度场景(室内 vs 室外)的适用性也未知。</p>
+  <p><strong>改进:</strong>扫描阈值(1%/3%/5%/10%/20%)与网格(0.05m/0.1m/0.2m/0.5m),报告 PSNR/FPS/高斯数的权衡曲线。室外大场景应自适应更大网格。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 深度估计方法选择(FoundationStereo vs BM vs SGBM-WLS)未对比</h4>
+  <p><strong>问题:</strong>论文提供三种立体深度方法(FoundationStereo / BM / SGBM-WLS),但<strong>未报告三者精度/速度/鲁棒性对比</strong>。FoundationStereo ~150ms 是主要瓶颈,但其在弱纹理/重复纹理场景的失败模式未分析。</p>
+  <p><strong>改进:</strong>报告三种方法在 EuRoC 各序列的深度精度 + 速度;分析 FoundationStereo 失败时是否回退到 BM/SGBM-WLS;或设计场景自适应方法选择。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 突发拟合的学习率/步数未披露</h4>
+  <p><strong>问题:</strong>突发拟合用"高学习率短优化",但<strong>具体学习率与步数未披露</strong>。这影响可复现性,也影响"突发拟合 vs SSIM 致密化"分工的边界判断。</p>
+  <p><strong>改进:</strong>附录补全突发拟合超参表;报告突发拟合步数对最终 PSNR 的影响。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card left-bar warn">
+  <h4>[高优先级] 仅 EuRoC + MSD 两个数据集,真实世界泛化未验证</h4>
+  <p><strong>问题:</strong>EuRoC 是无人机室内序列(Vicon Room + Machine Hall),MSD 是 VR 头显室内序列。<strong>均无室外/大尺度/动态场景</strong>。Stipple 在室外大尺度场景(自主驾驶 / 大型室外 SLAM)的适用性未知 — 锚帧阈值 5% 与占用网格 0.1m 均基于室内尺度。</p>
+  <p><strong>改进:</strong>补充 KITTI / NuScenes 等室外大尺度数据集测试;报告跨域性能衰减;或自适应调整锚帧阈值与网格尺度。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 评测协议"原始速率回放"未充分分析</h4>
+  <p><strong>问题:</strong>协议是"原始录制速率回放(不给额外处理时间)",但<strong>未报告各方法的实际处理延迟与帧率的关系</strong>。211 FPS 跟踪速度是否意味着每帧 4.7ms 内完成?深度估计 ~150ms 如何不阻塞?异步队列的延迟特性未量化。</p>
+  <p><strong>改进:</strong>报告端到端延迟(从帧到达到地图更新);分析异步队列长度分布;明确"实时"的具体定义(跟踪实时 vs 重建实时)。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 无动态场景评估</h4>
+  <p><strong>问题:</strong>EuRoC 与 MSD 均为静态场景。<strong>Stipple 假设场景静态</strong>(锚帧高斯刚体变换),但真实机器人场景含动态物体(行人/车辆)。动态物体如何处理?是否会被错误播种为新高斯?</p>
+  <p><strong>改进:</strong>补充动态场景测试(如 KITTI 序列);或引入动态物体检测与过滤模块。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] GPU 显存波动大(2.6-4.7GB),XR 头显部署边界</h4>
+  <p><strong>问题:</strong>Stipple GPU 显存在 Vicon Room 2.9GB,Machine Hall 4.7GB(CaRtGS 2.9GB 稳定)。<strong>波动大且峰值高</strong>,在 XR 头显(典型 4-8GB 共享显存)上可能爆显存。SSIM 过度触发时尤为严重。</p>
+  <p><strong>改进:</strong>显存硬上限机制(达到上限切换为优化模式);高斯数/显存自适应控制;分块加载策略。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 反针状正则在 Machine Hall 不够强</h4>
+  <p><strong>问题:</strong>消融显示尺度正则 +0.64 dB,但 Machine Hall 仍落后 CaRtGS 2.32 dB。说明 <code>L_anti-needle</code> 与 <code>L_scale-reg</code> <strong>不足以遏制 SSIM 过度触发的高斯爆炸</strong>。</p>
+  <p><strong>改进:</strong>增强正则强度;或引入致密化预算硬约束(优先于损失);或动态调整 SSIM 阈值。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 鱼眼支持仅 Kannala-Brandt 一种模型</h4>
+  <p><strong>问题:</strong>为 Brush 添加 Kannala-Brandt 鱼眼模型支持,但<strong>未支持其他鱼眼/折反射模型</strong>(如 equidistant、equisolid、stereographic)。这与 <a href="VideoGen-20251208-UCPE.html">UCPE</a> 支持任意镜头形成对比。</p>
+  <p><strong>改进:</strong>扩展到统一相机模型(UCM)框架,支持任意镜头;或报告 KB 模型在常见鱼眼镜头上的近似误差。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>佐证类型</th></tr>
+<tr><td class="fail">高</td><td>SSIM 致密化在纹理少场景过度触发</td><td>Machine Hall 实验(394k 高斯)</td></tr>
+<tr><td class="fail">高</td><td>锚帧阈值 5% 与网格 0.1m 无敏感性消融</td><td>论文缺失</td></tr>
+<tr><td class="fail">高</td><td>仅 EuRoC+MSD 室内数据集,室外泛化未知</td><td>实验范围</td></tr>
+<tr><td class="partial">中</td><td>三种深度方法未对比</td><td>论文缺失</td></tr>
+<tr><td class="partial">中</td><td>"原始速率回放"延迟未量化</td><td>评测协议</td></tr>
+<tr><td class="partial">中</td><td>GPU 显存波动大,XR 边界</td><td>实验数据(2.9-4.7GB)</td></tr>
+<tr><td class="partial">中</td><td>反针状正则在 Machine Hall 不够强</td><td>消融 + 主实验</td></tr>
+<tr><td>低</td><td>突发拟合超参未披露</td><td>论文缺失</td></tr>
+<tr><td>低</td><td>无动态场景评估</td><td>实验范围</td></tr>
+<tr><td>低</td><td>仅 Kannala-Brandt 鱼眼模型</td><td>实验范围</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>🎯 个人认为最关键的三点</h4>
+  <ol>
+    <li><strong>SSIM 致密化过度触发</strong> —— 这是 Stipple 在 Machine Hall 落后的根因,也是论文自承的失败模式。需<strong>场景自适应致密化准则</strong>:根据纹理统计动态调整 MAX_SAMPLES 或阈值,或引入高斯数预算硬上限。这是把 Stipple 从"Vicon Room SOTA"推向"通用 SLAM SOTA"的关键解锁。</li>
+    <li><strong>仅室内数据集验证</strong> —— EuRoC + MSD 均室内,室外大尺度(KITTI/NuScenes)未测。锚帧阈值 5% 与占用网格 0.1m 均基于室内尺度,室外需自适应。这是从"学术 demo"到"机器人产品"的关键缺口。</li>
+    <li><strong>关键超参无敏感性消融</strong> —— 5% 锚帧阈值、0.1m 网格、突发拟合学习率/步数均为经验值,未报告敏感性。这是可复现性与可比较性的硬缺口,需补全扫描曲线。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 16. 总结 ==================== -->
+<section id="s16">
+<h2><span class="num">16</span>总结与资源</h2>
+<p>Stipple 把 3DGS 从<strong>离线批处理</strong>重构为<strong>在线增量流式</strong>:Basalt VIO 提供鲁棒跟踪,3DGS 仅在锚帧(~10% 关键帧)增量重建,5 步流程(深度播种 → 占用剪枝 → 突发拟合 → SSIM 致密化 → 收敛)分工"粗-精",回环修正用刚体变换 O(n) 更新。在 EuRoC Vicon Room 上以 211 FPS 跟踪(CaRtGS 3×)、PSNR 23.49(+1.08 dB)领先;在 Machine Hall 上因 SSIM 致密化过度触发落后 — 是已知失败模式而非方法缺陷。Rust/CubeCL 实现解锁 GPU 厂商无关,适合 XR/机器人部署。</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>最大亮点</h4>
+    <ul>
+      <li>VIO + 3DGS 解耦并行,跟踪 211 FPS(3×)</li>
+      <li>锚帧稀疏化(~10%)让深度估计瓶颈可控</li>
+      <li>刚体回环修正 O(n),内存连续顺序操作</li>
+      <li>GPU 厂商无关(Rust/CubeCL),跨平台部署</li>
+      <li>SSIM 致密化在纹理丰富场景精准定位</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>主要局限</h4>
+    <ul>
+      <li>SSIM 致密化在 Machine Hall 过度触发(394k 高斯)</li>
+      <li>仅 EuRoC + MSD 室内数据集,室外泛化未知</li>
+      <li>锚帧阈值/网格/突发拟合超参无敏感性消融</li>
+      <li>GPU 显存波动大(2.9-4.7GB),XR 边界</li>
+      <li>无动态场景评估</li>
+    </ul>
+  </div>
+  <div class="card left-bar">
+    <h4>演进定位</h4>
+    <p>在本知识库 3DGS 脉络中,Stipple 代表<strong>离线 → 在线</strong>的范式转向(VIO + 增量 3DGS);与 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 综述</a> 离线方法、<a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建</a> 前馈方法形成<strong>三路线对比</strong>:离线精度高、前馈速度快、SLAM 实时闭环。后续若融合 Stipple 锚帧稀疏化 + 前馈深度(如 <a href="3D-20250314-VGGT.html">VGGT</a>),可推进实时 3DGS 落地。</p>
+  </div>
+</div>
+
+<h3>关键资源</h3>
+<table>
+<tr><th>资源</th><th>链接</th></tr>
+<tr><td>📄 arXiv abs</td><td><a href="https://arxiv.org/abs/2608.00931" target="_blank">arxiv.org/abs/2608.00931</a></td></tr>
+<tr><td>🌐 arXiv HTML 全文</td><td><a href="https://arxiv.org/html/2608.00931v1" target="_blank">arxiv.org/html/2608.00931v1</a></td></tr>
+<tr><td>📥 PDF</td><td><a href="https://arxiv.org/pdf/2608.00931" target="_blank">arxiv.org/pdf/2608.00931</a></td></tr>
+<tr><td>💻 Brush(3DGS 引擎)</td><td><a href="https://github.com/ArthurBrussee/brush" target="_blank">github.com/ArthurBrussee/brush</a>(~4,974 Stars,Rust/CubeCL)</td></tr>
+<tr><td>🔧 Basalt(VIO 跟踪)</td><td>视觉惯性跟踪系统</td></tr>
+<tr><td>🏢 机构</td><td>Technical University of Munich (TUM) · Munich Center for Machine Learning</td></tr>
+<tr><td>📊 数据集</td><td>EuRoC(Vicon Room + Machine Hall)+ Monado SLAM Dataset (MSD)</td></tr>
+</table>
+
+<h3>关键指标速查</h3>
+<table>
+<tr><th>指标</th><th>成绩</th><th>对比</th></tr>
+<tr><td>Vicon Room PSNR</td><td class="best">23.49</td><td>CaRtGS 22.41(+1.08),PhotoSLAM 20.22(+3.27)</td></tr>
+<tr><td>Vicon Room 跟踪 FPS</td><td class="best">211</td><td>CaRtGS 69,PhotoSLAM 72(3×)</td></tr>
+<tr><td>MSD 跟踪 FPS</td><td class="best">264</td><td>—</td></tr>
+<tr><td>MSD PSNR 优势(MGO)</td><td class="best">+4.3~5.4 dB</td><td>基线在该序列有结果时</td></tr>
+<tr><td>Machine Hall PSNR</td><td class="fail">19.48</td><td>CaRtGS 21.80(落后 2.32,失败模式)</td></tr>
+<tr><td>GPU 厂商锁定</td><td class="best">无</td><td>Rust/CubeCL,跨平台</td></tr>
+<tr><td>跟踪线程阻塞</td><td class="best">无</td><td>异步训练器</td></tr>
+</table>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>📝 Stipple 阅读笔记 · 生成于 2026-08-26 · 领域:3D 重建 / 高斯泼溅 / SLAM / VIO</p>
+  <p>📄 arXiv:2608.00931 · Technical University of Munich (TUM)</p>
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
