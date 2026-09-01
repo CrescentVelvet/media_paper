@@ -452,7 +452,7 @@
   T_j   = 关节 j 的刚体变换 (旋转+平移+缩放)
   w_ij  = 蒙皮权重 (顶点 i 受关节 j 影响的程度, Σ_j w_ij = 1)
   v'_i  = 顶点 i 在目标 pose 下的位置</pre>
-        <p>直觉：每个顶点被若干关节"拉扯"，按权重加权混合得到新位置。MHR 的设置（见 <a href="3D-20260720-MHR.html">MHR 论文</a> 156-161 行）：</p>
+        <p>直觉：每个顶点被若干关节"拉扯"，按权重加权混合得到新位置。MHR 的设置（见 <a href="3D-20251109-MHR.html">MHR 论文</a> 156-161 行）：</p>
         <ul>
             <li>LoD 1-4：每顶点 <strong>4 关节</strong>影响</li>
             <li>LoD 0：每顶点 <strong>8 关节</strong>影响</li>
@@ -643,7 +643,7 @@
         <h4>同事的"骨骼 pose 监督"思路分析</h4>
         <p>同事说"用骨骼 pose 来监督，让网络学出来手应该长什么样"。本质是<strong>用 MHR 当强先验</strong>，学 <code>f(pose) → 手应该长什么样</code>，是 pose-conditional decoder。</p>
         <div class="highlight warn">
-            <strong>⚠️ 但 MHR 的手部身份空间只有 5 维</strong>（见 <a href="3D-20260720-MHR.html">MHR 论文</a> 181 行），表达力有限 —— 这就是为什么<strong>形状能修，衣物细节修不了</strong>。
+            <strong>⚠️ 但 MHR 的手部身份空间只有 5 维</strong>（见 <a href="3D-20251109-MHR.html">MHR 论文</a> 181 行），表达力有限 —— 这就是为什么<strong>形状能修，衣物细节修不了</strong>。
         </div>
 
         <h4>完整解法分层</h4>

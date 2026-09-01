@@ -814,7 +814,7 @@
 
         <h3>代码示意</h3>
         <div class="algo-ref">
-            <strong>AvatarGaussianModel</strong>：同事 pipeline 的代码类名。本质是把 3D 高斯绑到 3DMM（FLAME）三角面上（rig），让高斯跟随 mesh 形变。这是 <a href="3D-20260720-GaussianAvatars.html">GaussianAvatars (SIGGRAPH 2024)</a> 的核心思路：每个高斯定义在三角面局部坐标系 + displacement offset，端到端联合优化 FLAME + 高斯参数。<br>
+            <strong>AvatarGaussianModel</strong>：同事 pipeline 的代码类名。本质是把 3D 高斯绑到 3DMM（FLAME）三角面上（rig），让高斯跟随 mesh 形变。这是 <a href="3D-20231204-GaussianAvatars.html">GaussianAvatars (SIGGRAPH 2024)</a> 的核心思路：每个高斯定义在三角面局部坐标系 + displacement offset，端到端联合优化 FLAME + 高斯参数。<br>
             <span style="color:var(--text-dim);">FaceAlignment 类继承第 6 步的全局 SRT + 身份系数作为初始化，然后渲染 + 训练。</span>
         </div>
 
@@ -1208,8 +1208,8 @@
         <p>参见：</p>
         <ul>
             <li><a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
-            <li><a href="3D-20260720-MHR.html">MHR 论文</a> — 参数化人体模型（SMPL 升级版）</li>
-            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 数字人的开山工作</li>
+            <li><a href="3D-20251109-MHR.html">MHR 论文</a> — 参数化人体模型（SMPL 升级版）</li>
+            <li><a href="3D-20260410-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 数字人的开山工作</li>
         </ul>
     </div>
 
@@ -1425,10 +1425,10 @@
         <h3>知识库相关笔记</h3>
         <ul>
             <li><a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事方案分析（MHR 版）</a> — 含静态 vs 动态重建基础、LBS 解码、5 大问题解法、路线选型</li>
-            <li><a href="3D-20260720-GaussianAvatars.html">GaussianAvatars</a> — FLAME + rigged Gaussians 人脸方案原型</li>
-            <li><a href="3D-20260720-MHR.html">MHR</a> — SMPL 升级版参数化人体模型</li>
-            <li><a href="3D-20260720-SAM-3D-Body.html">SAM 3D Body</a> — 单图预测 MHR 参数的 HMR 模型</li>
-            <li><a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 全身数字人</li>
+            <li><a href="3D-20231204-GaussianAvatars.html">GaussianAvatars</a> — FLAME + rigged Gaussians 人脸方案原型</li>
+            <li><a href="3D-20251109-MHR.html">MHR</a> — SMPL 升级版参数化人体模型</li>
+            <li><a href="3D-20260217-SAM-3D-Body.html">SAM 3D Body</a> — 单图预测 MHR 参数的 HMR 模型</li>
+            <li><a href="3D-20260410-F3G-Avatar.html">F3G-Avatar</a> — MHR 集成到 3DGS 全身数字人</li>
             <li><a href="3D-20260720-高斯人物与人脸重建调研.html">3D 高斯人物与人脸重建调研</a> — 40+ 篇全景</li>
             <li><a href="SR-20250728-HYPIR.html">HYPIR</a> — 扩散先验图像复原模型</li>
             <li><a href="SR-20260629-RealISR-Evolution.html">Real-ISR 综述</a> — 图像增强算法选型</li>

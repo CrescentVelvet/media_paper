@@ -1,0 +1,1088 @@
+{
+ "version": 1,
+ "created": "2026-09-01",
+ "note_count": 62,
+ "topics": {
+  "微动与非刚性人体重建": 6,
+  "人体先验与参数化模型": 6,
+  "数字人 Pipeline 工程": 4,
+  "人脸手部细节与增强": 6,
+  "稀疏与少视角重建": 6,
+  "前馈式大重建模型": 7,
+  "表面与几何重建": 5,
+  "3D 生成": 4,
+  "视频扩散先验用于 3D": 4,
+  "质量速度权衡与实时": 6,
+  "鲁棒性与干扰过滤": 3,
+  "相机控制与位姿条件": 6,
+  "几何与时序一致性": 5,
+  "视频生成模型谱系": 13
+ },
+ "notes": [
+  {
+   "file": "3D-20230808-3DGS基础与改进综述.html",
+   "title": "3D Gaussian Splatting: 基础技术与改进综述 (2023-2026)",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "表面与几何重建",
+    "质量速度权衡与实时"
+   ],
+   "arxiv": "2308.04079",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20230818-4D动态高斯综述.html",
+   "title": "4D / 动态 3D 高斯: 动态场景重建与追踪",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "arxiv": "2308.09713",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20230922-Deformable-3DGS.html",
+   "title": "Deformable 3D Gaussians: 高保真单目动态场景重建",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "arxiv": "2309.13101",
+   "github": "ingra14m/Deformable-3D-Gaussians",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20230928-3D生成高斯方法综述.html",
+   "title": "3D 生成: DreamGaussian / GaussianDreamer — 高斯表示驱动的高效 3D 内容创建",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "3D 生成"
+   ],
+   "arxiv": "2309.16653",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20231110-前馈3D重建模型综述.html",
+   "title": "前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "arxiv": "2311.06214",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20231204-GaussianAvatars.html",
+   "title": "GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians — FLAME+高斯头部 avatar 开山之作",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型"
+   ],
+   "arxiv": "2312.02069",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20240326-2DGS.html",
+   "title": "2D Gaussian Splatting 调研:几何准确的辐射场与\"是否过时\"辨析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建",
+    "鲁棒性与干扰过滤"
+   ],
+   "arxiv": "2403.17888",
+   "github": "hbb1/2d-gaussian-splatting",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20240416-GOF.html",
+   "title": "GOF 调研:高斯不透明度场与自适应 Marching Tetrahedra 表面重建",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建"
+   ],
+   "arxiv": "2404.10772",
+   "github": "autonomousvision/gaussian-opacity-fields",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20241002-EVA-Gaussian.html",
+   "title": "EVA-Gaussian 算法原理与逻辑框图分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "人脸手部细节与增强",
+    "稀疏与少视角重建"
+   ],
+   "arxiv": "2410.01425",
+   "github": "zhenliuZJU/EVA-Gaussian",
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "stage1",
+    "stage2",
+    "stage3",
+    "anchor",
+    "loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "conclusion"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20241202-TRELLIS.html",
+   "title": "TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "3D 生成"
+   ],
+   "arxiv": "2412.01506",
+   "github": "Microsoft/TRELLIS",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20250121-Hunyuan3D.html",
+   "title": "Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "3D 生成"
+   ],
+   "arxiv": "2501.12202",
+   "github": "Tencent/Hunyuan3D-2",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20250314-VGGT.html",
+   "title": "VGGT: Visual Geometry Grounded Transformer — 前馈3D重建的全能基础模型",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建",
+    "前馈式大重建模型",
+    "相机控制与位姿条件"
+   ],
+   "arxiv": "2503.11651",
+   "github": "facebookresearch/vggt",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20250717-Pi3.html",
+   "title": "π³: Permutation-Equivariant Visual Geometry Learning — 排列等变视觉几何学习",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "arxiv": "2507.13347",
+   "github": "yyfz/Pi3",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20250918-FMGS-Avatar.html",
+   "title": "FMGS-Avatar:基础模型先验驱动的单目人体数字人重建 — 算法原理与逻辑框图分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "人体先验与参数化模型",
+    "数字人 Pipeline 工程",
+    "稀疏与少视角重建"
+   ],
+   "arxiv": "2509.14739",
+   "github": null,
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "canonical",
+    "sampling",
+    "distilling",
+    "skinning",
+    "loss",
+    "total-loss",
+    "cts",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "conclusion"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20251009-ReSplat.html",
+   "title": "ReSplat 论文详解 — Learning Recurrent Gaussian Splatting",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "稀疏与少视角重建",
+    "前馈式大重建模型"
+   ],
+   "arxiv": "2510.08575",
+   "github": "cvg/resplat",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20251109-MHR.html",
+   "title": "MHR: Momentum Human Rig — Meta 新一代参数化人体模型（SMPL 升级版）",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型"
+   ],
+   "arxiv": "2511.1558",
+   "github": "facebookresearch/MHR",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260217-SAM-3D-Body.html",
+   "title": "SAM 3D Body: Robust Full-Body Human Mesh Recovery — 单图预测 MHR 参数的可提示 HMR 模型",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型"
+   ],
+   "arxiv": "2602.15989",
+   "github": "facebookresearch/sam-3d-body",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260316-Fast-SAM-3D-Body.html",
+   "title": "Fast SAM 3D Body: Accelerating SAM 3D Body — 训练免费实时加速 + 人形机器人遥操作",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型",
+    "质量速度权衡与实时"
+   ],
+   "arxiv": "2603.15603",
+   "github": "yangtiming/Fast-SAM-3D-Body",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260410-F3G-Avatar.html",
+   "title": "F3G-Avatar: Face Focused Full-body Gaussian Avatar — 全身高斯数字人的脸部焦点重建",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型",
+    "人脸手部细节与增强"
+   ],
+   "arxiv": "2604.09835",
+   "github": "wjmenu/F3G-avatar",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260414-PDF-GS.html",
+   "title": "PDF-GS 渐进式干扰过滤方法深度分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建",
+    "鲁棒性与干扰过滤"
+   ],
+   "arxiv": "2604.12580",
+   "github": "kangrnin/PDF-GS",
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "detect",
+    "progressive",
+    "loss",
+    "total-loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "code-vs-paper",
+    "improvements",
+    "conclusion"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260508-TripoSplat.html",
+   "title": "TripoSplat: Generative 3D Gaussians with Learned Density Control",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "稀疏与少视角重建",
+    "前馈式大重建模型"
+   ],
+   "arxiv": "2605.16355",
+   "github": "VAST-AI-Research/TripoSplat",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260512-VidSplat.html",
+   "title": "VidSplat 算法原理与逻辑框图分析 — 视频扩散先验驱动的稀疏视角高斯重建",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "稀疏与少视角重建",
+    "视频扩散先验用于 3D"
+   ],
+   "arxiv": "2605.11424",
+   "github": "tangjm24/VidSplat",
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "init",
+    "sampling",
+    "gen",
+    "iter",
+    "loss",
+    "experiments",
+    "ablation",
+    "singleview",
+    "improvements",
+    "evolution",
+    "conclusion",
+    "team"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260514-VGGT-Omega.html",
+   "title": "VGGT-Ω 调研:前馈 3D 重建的 Scaling Law 与几何 SOTA(重写版)",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "arxiv": "2605.15195",
+   "github": "facebookresearch/vggt-omega",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260522-GenRecon.html",
+   "title": "GenRecon: 桥接生成式先验的多视角3D场景重建",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型",
+    "3D 生成"
+   ],
+   "arxiv": "2605.23888",
+   "github": "kasothaphie/GenRecon",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260720-同事人体重建Pipeline详解.html",
+   "title": "同事人体重建 Pipeline 详细流程（初学者友好版）",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程"
+   ],
+   "arxiv": null,
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260720-同事方案MHR高斯数字人分析.html",
+   "title": "同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline（含静态/动态重建基础与问题解法）",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程"
+   ],
+   "arxiv": "2312.02069",
+   "github": "facebookresearch/sam-3d-body",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260720-高斯人物与人脸重建调研.html",
+   "title": "3D 高斯人物与人脸重建研究现状调研 — 2023-2026",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程",
+    "人脸手部细节与增强"
+   ],
+   "arxiv": "2311.17910",
+   "github": "apple/ml-hugs",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260802-Stipple.html",
+   "title": "Stipple:实时增量高斯泼溅与视觉惯性跟踪 — 算法原理与逻辑框图分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "质量速度权衡与实时",
+    "鲁棒性与干扰过滤"
+   ],
+   "arxiv": "2608.00931",
+   "github": "ArthurBrussee/brush",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260810-微动人体三维重建思路辨析.html",
+   "title": "微动人体三维重建 — 思路辨析与研究规划",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "arxiv": null,
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260810-微动人体三维重建调研.html",
+   "title": "微动人体三维重建调研",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "arxiv": null,
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260812-3DGS多视角重建SOTA调研.html",
+   "title": "3DGS 多视角重建 SOTA 调研 — 2025-2026",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "稀疏与少视角重建"
+   ],
+   "arxiv": "2403.17888",
+   "github": "hbb1/2d-gaussian-splatting",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260814-三维重建质量速度Pareto全谱调研.html",
+   "title": "三维重建质量-速度 Pareto 全谱调研(2026 全景)",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "arxiv": null,
+   "github": "facebookresearch/vggt-omega",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260814-高斯表面重建2026新一代调研.html",
+   "title": "2026 新一代高斯表面重建调研:GOF 之后的范式反超",
+   "kind": "survey",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建"
+   ],
+   "arxiv": null,
+   "github": "diego1401/GaussianWrapping",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260820-4DAnyone.html",
+   "title": "4DAnyone:从单目随意视频创建 4D 人体 — 算法逻辑与思路分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "微动与非刚性人体重建",
+    "几何与时序一致性"
+   ],
+   "arxiv": "2608.20335",
+   "github": "ant-research/4DAnyone",
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "skeleton",
+    "rcp",
+    "tcr",
+    "training",
+    "loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "conclusion"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "3D-20260821-ArtiFixer.html",
+   "title": "ArtiFixer:用自回归扩散模型增强和扩展 3D 重建",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "视频扩散先验用于 3D"
+   ],
+   "arxiv": null,
+   "github": "nv-tlabs/ArtiFixer",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "CV-AI-20260625-Cosmos3.html",
+   "title": "Cosmos 3: Omnimodal World Models for Physical AI",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2606.02800",
+   "github": "user-attachments/assets",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "CV-AI-20260813-用AI做论文调研经验分享.html",
+   "title": "用 AI 做论文调研:从链接到深度分析笔记的工作流",
+   "kind": "methodology",
+   "depth": "deep",
+   "topics": [],
+   "arxiv": "2410.01425",
+   "github": null,
+   "anchors": [
+    "why",
+    "workflow",
+    "agents",
+    "subagent",
+    "diagram",
+    "case",
+    "pitfall",
+    "toolchain",
+    "retrieval",
+    "summary"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "SR-20240220-RetouchFormer.html",
+   "title": "RetouchFormer 论文详解",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人脸手部细节与增强"
+   ],
+   "arxiv": null,
+   "github": "Davidcoach/RetouchFormer_AAAI_24",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "SR-20250728-HYPIR.html",
+   "title": "HYPIR 论文总结 - Harnessing Diffusion-Yielded Score Priors for Image Restoration",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人脸手部细节与增强"
+   ],
+   "arxiv": "2507.20590",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "SR-20260629-RealISR-Evolution.html",
+   "title": "Real-ISR 技术演进调研 — 从 ESRGAN 到 OSEDiff 及未来方向",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人脸手部细节与增强"
+   ],
+   "arxiv": "1809.00219",
+   "github": "XPixelGroup/DiffBIR",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20231018-DynamiCrafter.html",
+   "title": "DynamiCrafter: 视频扩散先验驱动的图像动画化",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "视频扩散先验用于 3D"
+   ],
+   "arxiv": "2310.12190",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20240812-CogVideoX.html",
+   "title": "CogVideoX: 智谱文本到视频扩散模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2408.06072",
+   "github": "THUDM/CogVideo",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20241015-Mochi1.html",
+   "title": "Mochi 1: Genmo 开源视频生成模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": null,
+   "github": "genmoai/mochi",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20241230-LTX.html",
+   "title": "LTX-Video / LTX-2: 实时视频与音视频联合生成",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "arxiv": "2501.00103",
+   "github": "Lightricks/LTX-Video",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250305-GEN3C.html",
+   "title": "GEN3C:3D 缓存引导的世界一致视频生成",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "相机控制与位姿条件",
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2503.03751",
+   "github": "nv-tlabs/GEN3C",
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "stage1",
+    "stage2",
+    "stage3",
+    "control",
+    "loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "evolution",
+    "conclusion"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250310-VACE.html",
+   "title": "VACE: All-in-One Video Creation and Editing",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2503.07598",
+   "github": "ali-vilab/VACE",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250326-Wan2.1.html",
+   "title": "Wan2.1: Open and Advanced Large-Scale Video Generative Models",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2503.20314",
+   "github": "Wan-Video/Wan2.1",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250331-RunwayGen4.html",
+   "title": "Runway Gen-4: 下一代视频生成模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": null,
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250520-Veo3.html",
+   "title": "Veo 3 / 3.1: Google DeepMind 视频生成模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": null,
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250620-Kling2.html",
+   "title": "Kling 2.0 / 2.1: 快手视频生成模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2506.19774",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250728-Wan2.2.html",
+   "title": "Wan2.2: Major Upgrade with MoE Architecture",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2503.20314",
+   "github": "Wan-Video/Wan2.2",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20250930-Sora2.html",
+   "title": "Sora 2: OpenAI 旗舰视频与音频生成模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": null,
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20251119-Kandinsky5.html",
+   "title": "Kandinsky 5.0: 图像与视频生成基础模型家族",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2511.14993",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20251124-HunyuanVideo1.5.html",
+   "title": "HunyuanVideo 1.5: 轻量级高性能视频生成模型",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "arxiv": "2511.18870",
+   "github": "Tencent-Hunyuan/HunyuanVideo-1.5",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20251208-UCPE.html",
+   "title": "UCPE:统一相机位置编码 — 算法原理与逻辑框图分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "arxiv": "2512.07237",
+   "github": "chengzhag/UCPE",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20251209-Wan-Move.html",
+   "title": "Wan-Move: Motion-controllable Video Generation via Latent Trajectory Guidance",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "arxiv": "2512.08765",
+   "github": "ali-vilab/Wan-Move",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20260329-Wan-R1.html",
+   "title": "Wan-R1: Verifiable-Reinforcement Learning for Video Reasoning",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "arxiv": "2603.27866",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20260427-World-R1.html",
+   "title": "World-R1:用强化学习为视频生成注入 3D 约束 — 算法原理与逻辑框图分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "arxiv": "2604.24764",
+   "github": "microsoft/World-R1",
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+   ],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20260427-视频生成几何一致性调研.html",
+   "title": "视频生成中的几何一致性技术方向调研",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "arxiv": "2604.24764",
+   "github": "microsoft/World-R1",
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20260618-视频生成相机可控性调研.html",
+   "title": "视频生成中的相机可控性技术方向调研",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "arxiv": "2606.20774",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20260623-Wan-Streamer.html",
+   "title": "Wan-Streamer v0.1: End-to-end Real-time Interactive Foundation Models",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "arxiv": "2606.25041",
+   "github": null,
+   "anchors": [],
+   "in_index": true
+  },
+  {
+   "file": "VideoGen-20260625-SCoPE.html",
+   "title": "SCoPE:视线坐标位置编码 — 算法原理与逻辑框图分析",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "相机控制与位姿条件",
+    "几何与时序一致性"
+   ],
+   "arxiv": "2606.27345",
+   "github": null,
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15"
+   ],
+   "in_index": true
+  }
+ ],
+ "updated": "2026-09-01"
+}

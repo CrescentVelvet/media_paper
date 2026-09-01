@@ -792,7 +792,7 @@
         <h2>📖 三维重建与生成 (2026-06-25 新增)</h2>
 
         <div class="note-card">
-            <h3>41. ArtiFixer: 用自回归扩散模型增强和扩展 3D 重建</h3>
+            <h3>42. ArtiFixer: 用自回归扩散模型增强和扩展 3D 重建</h3>
             <div class="meta">
                 <span>📄 NVIDIA Research PDF</span>
                 <span>📅 2026-08-21</span>
@@ -815,7 +815,7 @@
         </div>
 
         <div class="note-card">
-            <h3>42. 4DAnyone: Create Anyone in 4D from a Casual Monocular Video</h3>
+            <h3>43. 4DAnyone: Create Anyone in 4D from a Casual Monocular Video</h3>
             <div class="meta">
                 <span>📄 arXiv: 2608.20335</span>
                 <span>📅 2026-08-20</span>
@@ -1151,7 +1151,7 @@
                 <span class="tag">Adversarial Loss</span>
             </div>
             <p>全身高斯数字人方法的<strong>脸部焦点</strong>专用分支。在全身 pipeline 中独立预测一整套脸部 3D 高斯，与身体高斯融合后 LBS 摆姿态、可微高斯渲染。首次把 clothed MHR 模板集成到 3DGS 数字人流程。双分支 + StyleGAN2 对抗损失使 AvatarReX 脸部 PSNR 26.24、LPIPS 0.084 全面 SOTA。与同事方案（MHR+双分支+face loss）高度重合，是直接可复用的学术实现。</p>
-            <a href="3D-20260720-F3G-Avatar.html">📖 阅读笔记</a>
+            <a href="3D-20260410-F3G-Avatar.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2604.09835" target="_blank">📄 arXiv</a>
             <a href="https://github.com/wjmenu/F3G-avatar" target="_blank">💻 GitHub</a>
         </div>
@@ -1173,7 +1173,7 @@
                 <span class="tag">Binding Inheritance</span>
             </div>
             <p>3DGS 头部 avatar <strong>开山之作</strong>。每个高斯绑定到 FLAME mesh 一个三角面，用局部坐标系参数化 + 显式 displacement offset。Binding Inheritance 策略在自适应密度控制时保持绑定关系。带阈值的位置/缩放正则化抑制动画伪影。端到端联合优化 FLAME + 高斯。NeRSemble novel-view PSNR 31.6，大幅超越 INSTA/PointAvatar/AvatarMAV。triangle-local 参数化被后续广泛沿用。</p>
-            <a href="3D-20260720-GaussianAvatars.html">📖 阅读笔记</a>
+            <a href="3D-20231204-GaussianAvatars.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2312.02069" target="_blank">📄 arXiv</a>
             <a href="https://shenhanqian.github.io/gaussian-avatars" target="_blank">🌐 项目主页</a>
         </div>
@@ -1194,7 +1194,7 @@
                 <span class="tag">Multi-LoD</span>
             </div>
             <p>SMPL 的<strong>正式升级版</strong>。基于 ATLAS 解耦骨架/形状范式 + Momentum 蒙皮库。127 关节 + 204 pose 参数 + 72 FACS 表情 + 6 级 LoD（971~73639 顶点）。稀疏非线性 pose corrective（局部 MLP + geodesic mask）融合 STAR 与 GHUM 优势。分区身份空间（body/head/hand 各用专用数据集）。3DBodyTex 拟合误差低于 SMPL/SMPL-X。工业友好许可 + FBX/GLTF + Momentum 库。</p>
-            <a href="3D-20260720-MHR.html">📖 阅读笔记</a>
+            <a href="3D-20251109-MHR.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2511.15586" target="_blank">📄 arXiv</a>
             <a href="https://github.com/facebookresearch/MHR" target="_blank">💻 GitHub</a>
         </div>
@@ -1216,7 +1216,7 @@
                 <span class="tag">Body+Hands+Feet</span>
             </div>
             <p><strong>首个使用 MHR 的单图全身 HMR 模型</strong>。encoder-decoder 架构 + SAM 风格 promptable 推理（2D keypoint / mask 辅助）。多阶段标注流水线（手动 keypoint + 可微优化 + 多视角几何 + 密集检测）+ 主动数据引擎收集罕见姿态。新评测集按 pose/appearance 分类，支持细粒度分析。野外泛化 SOTA。3DB 是 MHR 界的 HMR/SMPLify，与 MHR 构成完整"模型+预测器"生态。</p>
-            <a href="3D-20260720-SAM-3D-Body.html">📖 阅读笔记</a>
+            <a href="3D-20260217-SAM-3D-Body.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2602.15989" target="_blank">📄 arXiv</a>
             <a href="https://github.com/facebookresearch/sam-3d-body" target="_blank">💻 GitHub</a>
         </div>
@@ -1239,13 +1239,36 @@
                 <span class="tag">Humanoid Teleoperation</span>
             </div>
             <p>SAM 3D Body 的<strong>训练免费实时加速版</strong>。3DB 权重完全冻结，通过推理路径重构实现 10.9× 端到端加速：① YOLO11 关键点解耦 hand bbox 串行依赖 → 批化多 crop 编码（3→1 前向）；② 静态图（TensorRT FP16 / CUDA Graph）；③ decoder 剪枝（中间预测层选择 + 去自精化）；④ 用 2.5M 参数 3 层 MLP 替代迭代 MHR→SMPL 转换，<strong>10000× 加速</strong>。部署于 Unitree G1 人形机器人遥操作，单 RGB 65ms 延迟，40 演示微调 VLA 达 80% 成功率。精度持平甚至略超原版。</p>
-            <a href="3D-20260720-Fast-SAM-3D-Body.html">📖 阅读笔记</a>
+            <a href="3D-20260316-Fast-SAM-3D-Body.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2603.15603" target="_blank">📄 arXiv</a>
             <a href="https://github.com/yangtiming/Fast-SAM-3D-Body" target="_blank">💻 GitHub</a>
         </div>
 
         <div class="note-card">
-            <h3>39. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
+            <h3>39. FMGS-Avatar: 基础模型先验驱动的单目人体数字人重建</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2509.14739</span>
+                <span>📅 2025-09-18</span>
+                <span>🏢 杭州电子科技大学 / 深圳职院 / 武大</span>
+                <span>🏆 Pattern Recognition</span>
+                <span>❌ 暂无公开代码</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Monocular Avatar</span>
+                <span class="tag green">Mesh-Guided 2DGS</span>
+                <span class="tag">Sapiens Foundation Model</span>
+                <span class="tag">Multi-Field Distilling</span>
+                <span class="tag">Coordinated Training</span>
+                <span class="tag">Gradient Isolation</span>
+            </div>
+            <p>把 2D 高斯 surfel 1-to-1 绑定到 SMPL 上采样 mesh 面(位置=重心/旋转=切平面+面法线),替代体积式 3D 高斯攻几何保真度;用 Sapiens 蒸馏深度/法线/语义三模态先验补单目信息,核心创新是<strong>协调训练策略</strong>——选择性梯度隔离(深度→位置、法线→旋转、语义→两者皆隔)消解多损失争抢同参数的优化冲突。ZJU-MoCap 三项 SOTA(PSNR 30.89),训练 10min/55FPS。需注意:固定高斯数锁死容量、1D 法向位移缺切向、无开源+权重未披露。</p>
+            <a href="3D-20250918-FMGS-Avatar.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2509.14739" target="_blank">📄 arXiv</a>
+            <a href="https://arxiv.org/html/2509.14739v1" target="_blank">🌐 HTML 全文</a>
+        </div>
+
+        <div class="note-card">
+            <h3>40. PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤</h3>
             <div class="meta">
                 <span>📄 arXiv: 2604.12580 (v2)</span>
                 <span>📅 2026-04-14</span>
@@ -1268,7 +1291,7 @@
         </div>
 
         <div class="note-card">
-            <h3>40. VidSplat: 视频扩散先验驱动的稀疏视角高斯重建</h3>
+            <h3>41. VidSplat: 视频扩散先验驱动的稀疏视角高斯重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.11424</span>
                 <span>📅 2026-05-12</span>
@@ -1292,7 +1315,7 @@
         </div>
 
         <div class="note-card">
-            <h3>43. Stipple: 实时增量高斯泼溅与视觉惯性跟踪</h3>
+            <h3>44. Stipple: 实时增量高斯泼溅与视觉惯性跟踪</h3>
             <div class="meta">
                 <span>📄 arXiv: 2608.00931</span>
                 <span>📅 2026-08-02</span>
@@ -1310,6 +1333,203 @@
             <a href="3D-20260802-Stipple.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2608.00931" target="_blank">📄 arXiv</a>
             <a href="https://github.com/ArthurBrussee/brush" target="_blank">💻 Brush (3DGS 引擎)</a>
+        </div>
+
+        <div class="note-card">
+            <h3>45. 微动人体三维重建调研 (六大维度综述)</h3>
+            <div class="meta">
+                <span>📅 2026-08-10</span>
+                <span>📂 微动 / 非刚性人体重建 — 项目主线</span>
+                <span>📑 调研综述</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">微动人体重建</span>
+                <span class="tag">非刚性形变</span>
+                <span class="tag">可变形 3DGS</span>
+                <span class="tag">视频生成几何一致性</span>
+                <span class="tag">姿态引导</span>
+                <span class="tag">动转静</span>
+                <span class="tag">生成式三维重建</span>
+            </div>
+            <p>人体微动（非刚性形变）是三维重建中的经典挑战：传统 NeRF 用 MLP 变形场处理非刚性运动但速度慢，3DGS 的出现为实时动态重建提供了新可能。本调研覆盖六大维度：(1) 可变形 3DGS、(2) 视频生成几何一致性、(3) 骨骼/姿态引导、(4) 动转静与姿态归一化、(5) 生成式三维重建、(6) Wan 模型几何一致性特性。</p>
+            <a href="3D-20260810-微动人体三维重建调研.html">📖 阅读笔记</a>
+        </div>
+
+        <div class="note-card">
+            <h3>46. 微动人体三维重建 — 思路辨析与研究规划</h3>
+            <div class="meta">
+                <span>📅 2026-08-10</span>
+                <span>📂 研究规划 / 思路辨析</span>
+                <span>⚠️ 含对前篇推理的质疑</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">思路辨析</span>
+                <span class="tag">命名混淆</span>
+                <span class="tag">逻辑闭环</span>
+                <span class="tag">研究规划</span>
+            </div>
+            <p>承接上篇调研，逐条审辨六大维度的定位与推理链。两处关键质疑：其一，「生成式三维重建」实际是 Image-to-3D via Video Generation（VideoMV / Hi3D 同类），与 PersonNeRF 式动转静属不同任务，命名混淆会误导研究定位；其二，原调研以「SMAL 不成熟」为由不推荐骨骼路线，但推荐路线里又要求「姿态条件」——2D 关键点本身即是一种骨骼先验，若不要姿态条件则无法保证生成视频的姿态一致，逻辑闭环有缺陷。</p>
+            <a href="3D-20260810-微动人体三维重建思路辨析.html">📖 阅读笔记</a>
+        </div>
+
+        <div class="note-card">
+            <h3>47. 同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline</h3>
+            <div class="meta">
+                <span>📅 2026-07-20</span>
+                <span>📂 工程方案 / 静态与动态重建</span>
+                <span>🏢 HUGS + GaussianAvatars 混合路线</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">MHR</span>
+                <span class="tag">3DMM</span>
+                <span class="tag">3DGS 数字人</span>
+                <span class="tag">静态重建</span>
+                <span class="tag">动态重建</span>
+                <span class="tag">入门基础</span>
+            </div>
+            <p>逐句解码同事的 MHR + 3DMM + 3D 高斯数字人方案，对应到具体论文与算法，并给出精读建议。先补齐基础区分：静态重建与动态重建是两个不同任务，参数化人体模型（SMPL / MHR / FLAME）在其中角色不同；核心论断是动态重建的 canonical（规范）空间本质上是某种静态重建结果——选一帧或 K 帧联合优化得到模板高斯，再靠参数化模型驱动其他帧，静态重建是动态重建的地基。文末另设深度解析与解法章节。</p>
+            <a href="3D-20260720-同事方案MHR高斯数字人分析.html">📖 阅读笔记</a>
+        </div>
+
+        <div class="note-card">
+            <h3>48. 同事人体重建 Pipeline 详细流程（9 步，初学者友好版）</h3>
+            <div class="meta">
+                <span>📅 2026-07-20</span>
+                <span>📂 工程方案 / 9 步流程</span>
+                <span>⚠️ 按口述整理，存在误差风险</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">人体重建 Pipeline</span>
+                <span class="tag">前处理</span>
+                <span class="tag">对齐</span>
+                <span class="tag">初始化</span>
+                <span class="tag">训练</span>
+                <span class="tag">含误差标注</span>
+            </div>
+            <p>按同事口述记忆整理的 9 步人体重建流程，配色分组：蓝色=前处理（1-5）、绿色=对齐（6）、紫色=初始化（7-8）、橙色=训练（9），并附 SVG 矢量总览图。整体框架与社区主流数字人 pipeline（HUGS + GaussianAvatars 混合）一致，对理解研究方向有参考价值。<strong>注意：本流程按口述整理，文末设有「可能的笔记误差」小节，引用前请先核对。</strong></p>
+            <a href="3D-20260720-同事人体重建Pipeline详解.html">📖 阅读笔记</a>
+        </div>
+
+        <div class="note-card">
+            <h3>49. 3D 高斯人物与人脸重建研究现状调研 (2023.11–2026.07)</h3>
+            <div class="meta">
+                <span>📅 2026-07-20</span>
+                <span>📂 调研综述 / 40+ 篇核心论文</span>
+                <span>📑 含精读优先级建议</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">人体重建</span>
+                <span class="tag">人脸与头部</span>
+                <span class="tag">全身表达</span>
+                <span class="tag">单图前馈</span>
+                <span class="tag">远程在场</span>
+                <span class="tag">精读优先级</span>
+            </div>
+            <p>3DGS 自 2023 年 SIGGRAPH 提出后迅速被应用到可动画人体/人脸数字化。相比 NeRF，3DGS 提供实时渲染（60-100 FPS）、显式可编辑表示与分钟级（vs 小时级）训练，成为数字人、虚拟试衣、远程在场、talking head 等场景的主流路线。本调研按人体重建 / 人脸与头部 / 全身表达 / 单图前馈 / 远程在场五个子方向组织，文末给出精读优先级建议供决策深读顺序。</p>
+            <a href="3D-20260720-高斯人物与人脸重建调研.html">📖 阅读笔记</a>
+        </div>
+
+        <div class="note-card">
+            <h3>50. 3DGS 多视角重建 SOTA 调研 (2025-2026)</h3>
+            <div class="meta">
+                <span>📅 2026-08-12</span>
+                <span>📂 调研综述 / 静态多视角人体</span>
+                <span>🎯 含选型结论</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">多视角重建</span>
+                <span class="tag">密度控制改进</span>
+                <span class="tag">稀疏视角</span>
+                <span class="tag">2DGS</span>
+                <span class="tag">PDF-GS</span>
+                <span class="tag">HUGS</span>
+            </div>
+            <p>面向静态多视角人体的 SOTA 选型调研，覆盖改进密度控制机制的方法（原版 3DGS 的 split/clone/prune 是启发式的，易产生漂浮点与过度增长）与稀疏视角（2-12 视角）重建方法（引入深度/法线几何先验或大规模预训练先验）。<strong>选型结论：</strong>对静态多视角人体与已有的 SMPL/SAM2 mask 天然适配；若只需静态资产，2DGS + PDF-GS 已足够，HUGS 可作为升级路线；若需要可驱动数字人则是 HUGS / GaussianAvatars 的强项。当前 12-16 视角属中度稀疏，稀疏视角方法可选但非必需。</p>
+            <a href="3D-20260812-3DGS多视角重建SOTA调研.html">📖 阅读笔记</a>
+        </div>
+
+        <div class="note-card">
+            <h3>51. Deformable 3D Gaussians: 高保真单目动态场景重建</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2309.13101</span>
+                <span>📅 2023-09-22</span>
+                <span>🏢 浙江大学 (Xiaogang Jin 组) / 腾讯</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3D Gaussian Splatting</span>
+                <span class="tag">Dynamic Scene</span>
+                <span class="tag">Deformation Field</span>
+                <span class="tag">Monocular Video</span>
+                <span class="tag">Canonical Space</span>
+                <span class="tag">Real-time Rendering</span>
+            </div>
+            <p>将 3DGS 扩展到单目动态场景重建：在规范空间（canonical space）学习一组 3D 高斯，通过变形场将高斯映射到任意时间步。优化从 COLMAP SfM 点云开始作为初始状态，以高斯位置编码与时间编码作为变形场网络输入，输出位置偏移与旋转偏移。相比 D-NeRF 等隐式神经表示难以捕捉细节、无法实时渲染，本方法同时实现了更高渲染质量与实时渲染速度，并支持时间插值。</p>
+            <a href="3D-20230922-Deformable-3DGS.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2309.13101" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/ingra14m/Deformable-3D-Gaussians" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>52. EVA-Gaussian: 基于 3D 高斯的实时人体新视角合成</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2410.01425</span>
+                <span>📅 2024-10-02</span>
+                <span>🏢 香港科技大学 · 天翼智脑 (TeleAI, 中国电信)</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Feed-Forward 3DGS</span>
+                <span class="tag">跨视角注意力</span>
+                <span class="tag">特征溅射</span>
+                <span class="tag">循环精修</span>
+                <span class="tag">稀疏视角</span>
+                <span class="tag">实时人体</span>
+            </div>
+            <p>面向多样化多视角相机设置的实时前馈式 3D 人体重建。针对现有方法要么局限于稠密视角配置、要么受限于较低图像分辨率（无法在大视角差下自由视角渲染、也无法在常用 GPU 上实时恢复精细人体细节）的痛点，提出三阶段方案：EVA 高效跨视角注意力模块做高斯位置估计 → 高斯属性估计 → 特征溅射与循环精修，并引入锚点损失做属性正则化。</p>
+            <a href="3D-20241002-EVA-Gaussian.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2410.01425" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/zhenliuZJU/EVA-Gaussian" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>53. ReSplat: Learning Recurrent Gaussian Splatting</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2510.08575</span>
+                <span>📅 2025-10-09</span>
+                <span>🏢 CVG / ETH Zurich · University of Tübingen · Microsoft</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Feed-Forward 3DGS</span>
+                <span class="tag">循环高斯更新</span>
+                <span class="tag">渲染误差反馈</span>
+                <span class="tag">Gradient-Free</span>
+                <span class="tag">紧凑初始化</span>
+            </div>
+            <p>前馈式高斯泼溅能直接从输入图像预测 3D 高斯参数、无需昂贵的逐场景优化，但受限于固定的单次前馈。ReSplat 的核心洞察：<strong>高斯泼溅的渲染误差本身是一个丰富的反馈信号</strong>——渲染当前预测后与真实输入图比较，用误差指导网络学习如何循环更新高斯参数，无需显式计算梯度（gradient-free）。作者 Haofei Xu, Daniel Barath, Andreas Geiger, Marc Pollefeys。</p>
+            <a href="3D-20251009-ReSplat.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2510.08575" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/cvg/resplat" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card">
+            <h3>54. TripoSplat: Generative 3D Gaussians with Learned Density Control</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2605.16355</span>
+                <span>📅 2026-05-08</span>
+                <span>🏢 清华大学 (IIIS) / VAST AI Research</span>
+                <span>🏆 SIGGRAPH 2026</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">3D Gaussian Splatting</span>
+                <span class="tag">Learned Density Control</span>
+                <span class="tag">Generative Model</span>
+                <span class="tag">Latent Diffusion</span>
+                <span class="tag">Octree</span>
+                <span class="tag">Optimal Transport</span>
+            </div>
+            <p>提出 Density-Sampled Gaussians (DeG)——专为生成式建模设计的 3D 表示，解决一个关键矛盾：<strong>3DGS 的密度控制（densification/pruning）是非可微的，无法直接用于生成模型训练</strong>。此前所有生成式 3DGS 方法都在回避该问题，改用固定数量/固定结构的高斯，牺牲了 3DGS 最核心的自适应能力。TripoSplat 用 PDF 采样 + 渲染损失贡献梯度把密度控制变成可微操作：高斯中心从可学习概率密度函数采样，密度自动集中在几何复杂区域，单个潜码可解码任意数量的高斯。</p>
+            <a href="3D-20260508-TripoSplat.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2605.16355" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/VAST-AI-Research/TripoSplat" target="_blank">💻 GitHub</a>
         </div>
 
     </div>
@@ -1426,6 +1646,47 @@
             <a href="https://arxiv.org/abs/2507.20590" target="_blank">📄 arXiv</a>
         </div>
 
+        <div class="note-card">
+            <h3>55. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <div class="meta">
+                <span>📅 2024-02-20</span>
+                <span>🏆 AAAI 2024</span>
+                <span>📂 Face Retouching</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">Face Retouching</span>
+                <span class="tag">Semi-Supervised</span>
+                <span class="tag">Prior-Based Selective Self-Attention</span>
+                <span class="tag">Inpainting</span>
+            </div>
+            <p>Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，<strong>在单一网络中联合完成瑕疵定位与内容合成</strong>，不同于先检测后修复的两阶段硬修复方案。</p>
+            <a href="SR-20240220-RetouchFormer.html">📖 阅读笔记</a>
+            <a href="https://github.com/Davidcoach/RetouchFormer_AAAI_24" target="_blank">💻 GitHub</a>
+        </div>
+
+    </div>
+
+    <div class="section">
+        <h2>🛠️ 方法论与工作流</h2>
+
+        <div class="note-card">
+            <h3>56. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <div class="meta">
+                <span>📅 2026-08-13</span>
+                <span>📂 方法论 / 元文档</span>
+                <span>🛠️ 与 AGENTS.md 配套</span>
+            </div>
+            <div class="tags">
+                <span class="tag green">5 步调研工作流</span>
+                <span class="tag">AGENTS.md 规范</span>
+                <span class="tag">子代理协作</span>
+                <span class="tag">框图演进</span>
+                <span class="tag">知识资产</span>
+            </div>
+            <p>基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成<strong>可累积、可检索、可复用</strong>的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
+            <a href="CV-AI-20260813-用AI做论文调研经验分享.html">📖 阅读笔记</a>
+        </div>
+
     </div>
 
     <div class="section">
@@ -1447,7 +1708,7 @@
 </div>
 
 <div class="footer">
-    📝 调研索引 · 更新于 2026-08-26 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 45 篇笔记卡片（含 SCoPE/UCPE 相机编码对偶、Stipple 实时 3DGS SLAM，详见 knowledge-index.json）
+    📝 调研索引 · 更新于 2026-08-31 · 领域: CV/AI/Video Generation + 3D Reconstruction & Generation + Real-ISR/Image Restoration · 涵盖 46 篇笔记卡片（含 SCoPE/UCPE 相机编码对偶、Stipple 实时 3DGS SLAM、FMGS-Avatar 单目人体数字人多模态蒸馏，详见 knowledge-index.json）
 </div>
 
 </body>
