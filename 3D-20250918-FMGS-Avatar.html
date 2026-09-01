@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMGS-Avatar:基础模型先验驱动的单目人体数字人重建 — 算法原理与逻辑框图分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:860px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .loss-tag{
+    display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px;
+    margin:2px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+  .figure{margin:20px 0; text-align:center}
+  .figure img{max-width:100%; border-radius:8px; border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:10px; text-align:left}
+  .figure .caption b{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2509.14739 · 2025 · Pattern Recognition</span>
+    <h1>FMGS-Avatar:基础模型先验驱动的单目人体数字人重建</h1>
+    <p class="subtitle">用 Mesh-Guided 2D 高斯溅射替代体积式 3D 高斯,并把 Sapiens 基础模型的多模态 2D 先验(深度/法线/语义)系统蒸馏进 3D 数字人 —— 关键创新是"协调训练策略"用选择性梯度隔离解决多损失争抢同一高斯参数的优化冲突。</p>
+    <p class="authors">Jinlong Fan · Bingyu Hu · Xingguang Li · Yuxiang Yang · Jing Zhang<br>
+    <span style="color:var(--muted);font-size:13px">杭州电子科技大学 · 深圳职业技术大学 · 武汉大学</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2509.14739" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2509.14739v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2509.14739" target="_blank">📥 PDF</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#canonical">规范空间表示:Mesh-Guided 2DGS</a></li>
+    <li><a href="#sampling">属性特征采样:三 HashGrid 体积</a></li>
+    <li><a href="#distilling">多场蒸馏:几何 / 外观 / 语义场</a></li>
+    <li><a href="#skinning">蒙皮场与正向 LBS</a></li>
+    <li><a href="#loss">训练目标与正则化</a></li>
+    <li><a href="#total-loss">总损失函数</a></li>
+    <li><a href="#cts">协调训练策略(核心创新)</a></li>
+    <li><a href="#flowchart">逻辑流程图</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#conclusion">总结与演进定位</a></li>
+  </ol>
+</div>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2509.14739v1) -->
+<div class="figure">
+  <img src="https://arxiv.org/html/2509.14739v1/overview.png" alt="FMGS-Avatar Figure 1 Overview — 规范空间表示 + 多场蒸馏 + 蒙皮场 + 协调训练" style="max-width:100%;border-radius:8px;border:1px solid #333;" loading="lazy">
+  <div class="caption"><b>图 1</b> 方法总览。(a) 规范空间表示:2D 高斯绑定到模板 mesh 面,并用三个独立特征体积 $\mathcal{V}_g/\mathcal{V}_c/\mathcal{V}_s$ 存几何/外观/语义属性;(b) 多场蒸馏:姿态相关几何残差场、视角相关外观场、语义场吸收基础模型知识;(c) 蒙皮场:正向 LBS 把规范表示变换到观测空间;(d) 协调训练策略平衡多场优化、消解冲突。</div>
+</div>
+
+<!-- ==================== ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">从单目 RGB 视频重建高保真、可驱动的 3D 人体数字人,长期受困于<strong>单视角观测信息不足</strong>与<strong>表示能力受限</strong>两大难题。3D 高斯溅射(3DGS)虽高效,但 3D 高斯是体积式椭球,表示薄表面(衣物/皮肤)时要么被迫压成极扁薄片导致训练不稳,要么保留厚度产生深度歧义与"糊/厚"表面。</p>
+<div class="callout key">
+<p>本文提出 <strong>FMGS-Avatar</strong>,以两项核心创新同时攻克"表示不足"与"信息稀缺":</p>
+<ol>
+<li><strong>Mesh-Guided 2D Gaussian Splatting(网格引导 2D 高斯溅射)</strong>:把 2D 高斯基元直接绑定到 SMPL 模板 mesh 的三角面上,对其位置/旋转/移动施加显式约束,使基元天然贴合表面流形,获得比体积式 3D 高斯更优的几何保真度;</li>
+<li><strong>基础模型先验 + 协调训练策略</strong>:用 Sapiens 等大规模基础模型补充单目视频缺失的 2D 线索(深度、法线、语义),并设计<strong>选择性梯度隔离</strong>策略 —— 深度损失只更新位置、法线损失只更新旋转、语义损失两者都不碰 —— 消解多模态监督对同一高斯参数的优化争抢。</li>
+</ol>
+</div>
+<p>实验在 ZJU-MoCap、PeopleSnapshot 上取得 SOTA,同时提供丰富语义信息;蒸馏进共享规范空间的先验知识,使新视角/新姿态下渲染天然具备时空一致性。</p>
+</section>
+
+<!-- ==================== MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>2.1 单目数字人重建的两大根本挑战</h3>
+<p>论文把单目数字人重建的困境归结为两条相互纠缠的主线:</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h4 style="color:var(--orange)">挑战一:几何歧义</h4>
+    <ul>
+      <li>单视角观测信息不足,无法直接约束背面/遮挡区</li>
+      <li>基础模型(DINOv2/SAM/Sapiens)能提供丰富 2D 先验(深度/法线/语义),但<strong>系统蒸馏多模态知识会引入优化冲突</strong>:不同模态对高斯参数的敏感度不同,监督信号互相竞争干扰</li>
+      <li>已有工作(如 StruGauAvatar)只用<strong>单模态</strong>监督(法线)做伪 GT,多模态系统蒸馏几乎无人探索</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">挑战二:表示局限</h4>
+    <ul>
+      <li>3D 高斯是<strong>体积式椭球</strong>,表示薄表面时必须压到极扁 → 训练不稳;或保留厚度 → 深度歧义、表面"糊/厚"</li>
+      <li>GoMAvatar 等把 3D 高斯挂到 mesh 上强制结构一致,但基元本质仍是体积式,几何仍含噪</li>
+      <li>NeRF 路线(Anim-NeRF/HumanNeRF)虽逼真但渲染慢,难以实时</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 现有路线与本文定位</h3>
+<table>
+<tr><th>路线</th><th>代表方法</th><th>表示</th><th>先验利用</th><th>核心局限</th></tr>
+<tr><td>NeRF 数字人</td><td>HumanNeRF / Anim-NeRF / NeuralBody</td><td>隐式辐射场</td><td>无</td><td>渲染慢(0.1~1.5 FPS)</td></tr>
+<tr><td>3DGS-on-Mesh</td><td>GoMAvatar / GauHuman</td><td>体积式 3D 高斯</td><td>无/单模态</td><td>体积基元 → 表面几何含噪;GoMAvatar 训练 15h</td></tr>
+<tr><td>形变高斯场</td><td>3DGS-Avatar</td><td>3D 高斯场</td><td>无</td><td>无 mesh 约束,几何自由度大</td></tr>
+<tr><td>全身扩展</td><td>ExAvatar (SMPL-X)</td><td>3D 高斯</td><td>无</td><td>仍继承体积基元缺陷</td></tr>
+<tr class="best"><td>本文 FMGS-Avatar</td><td>2D 高斯(surfel)</td><td><strong>多模态(Sapiens)</strong></td><td>用 mesh-guided 2DGS 攻克表示,用协调训练攻克蒸馏冲突</td></tr>
+</table>
+<div class="callout tip">
+<p><strong>关键洞察:</strong>论文把"单目数字人重建"重构为两个独立子问题分别求解 —— <em>表示问题</em>交给 mesh-guided 2DGS(2D surfel 天然贴面),<em>信息问题</em>交给基础模型多模态蒸馏,而<strong>二者交汇处的优化冲突</strong>用协调训练策略兜底。这种"分治 + 兜底"的结构是本文的方法论骨架。</p>
+</div>
+</section>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p>给定单目视频序列 $\{I^k\}_{k=1}^{K}$ 与每帧拟合好的 SMPL 参数(姿态 $\theta$、形状 $\beta$、模板 mesh $\mathcal{M}_c$),先用 Sapiens 基础模型提取丰富 2D 先验:前景掩码 $\bar{\mathcal{M}}$、伪深度 $\bar{\mathcal{D}}$、表面法线 $\bar{\mathcal{N}}$、人体解析语义 $\bar{\mathcal{S}}$(28 类)。FMGS-Avatar 由四个模块协同:</p>
+
+<div class="grid grid-2">
+  <div class="card">
+    <span class="stage-tag stage-1">模块 A</span>
+    <h4>规范空间表示 (Canonical Space)</h4>
+    <ul>
+      <li>SMPL 模板 6890 顶点 → 上采样到 <strong>30000 顶点</strong></li>
+      <li>每个三角面绑定一个 2D 高斯(1-to-1 映射)</li>
+      <li>三个独立 HashGrid 体积存几何/外观/语义特征(各 $\mathbb{R}^{32}$)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-2">模块 B</span>
+    <h4>多场蒸馏 (Multi-Field Distilling)</h4>
+    <ul>
+      <li>几何场:姿态相关残差 MLP 纠正位姿形变</li>
+      <li>外观场:视角+姿态条件颜色 MLP(弃球谐)</li>
+      <li>语义场:28 类 logits 解码 MLP</li>
+    </ul>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-3">模块 C</span>
+    <h4>蒙皮场 (Skinning Field)</h4>
+    <ul>
+      <li>4 层 MLP(128 隐层)预测 24 维 SMPL 关节蒙皮权重</li>
+      <li>正向 LBS 把规范空间高斯变换到观测空间</li>
+    </ul>
+  </div>
+  <div class="card">
+    <span class="stage-tag stage-1">模块 D</span>
+    <h4>训练目标 + 协调策略</h4>
+    <ul>
+      <li>9 项损失(光度/掩码/深度/法线/语义/正则…)</li>
+      <li>选择性梯度隔离:深度→位置、法线→旋转、语义→两者皆隔</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.1 2D 高斯溅射预备</h3>
+<p>2DGS 用嵌入 3D 空间的<strong>扁平 2D 高斯盘</strong>(surfel)替代 3D 椭球。每个基元由中心 $\mu\in\mathbb{R}^3$、不透明度 $\alpha$、视角相关颜色 $\mathbf{c}$(球谐)、缩放 $\mathbf{s}=(s_u,s_v)\in\mathbb{R}^2$、旋转矩阵 $\mathbf{R}=[\mathbf{t}_u,\mathbf{t}_v,\mathbf{t}_w]$ 刻画。$\mathbf{t}_w=\mathbf{t}_u\times\mathbf{t}_v$ 为法线。在 uv 切平面上:</p>
+<div class="equation">
+$$ \mathcal{G}(\mathbf{u})=\exp\!\left(-\frac{u^2+v^2}{2}\right) $$
+<span class="label">(式 1,预备)</span>
+</div>
+<p>渲染时 2DGS 把 uv 空间经可微光栅化映射到屏幕像素,颜色按 alpha-blending 累积:</p>
+<div class="equation">
+$$ \mathbf{c}(\mathbf{x})=\sum_i \mathbf{c}_i\,\alpha_i^{2D}\prod_{j=1}^{i-1}(1-\alpha_j^{2D}). $$
+<span class="label">(式 1,渲染)</span>
+</div>
+</section>
+
+<!-- ==================== CANONICAL / Mesh-Guided 2DGS ==================== -->
+<section id="canonical">
+<h2><span class="num">4</span>规范空间表示:Mesh-Guided 2DGS</h2>
+<p>选择 2D 高斯而非 3D 是<strong>刻意且关键</strong>的。3D 高斯表示衣物/皮肤等薄表面时,要么压成极扁(训练不稳),要么保留体积(深度歧义、表面"糊/厚")。2D 高斯作为平面 surfel,是<strong>天然表面基元</strong>,对 avatar 表面更高效、几何更忠实。</p>
+
+<h3>4.1 mesh 上采样与 1-to-1 绑定</h3>
+<p>SMPL 模板 $\mathcal{M}_c$(6890 顶点)先上采样到 <strong>30000 顶点</strong>得 $\mathcal{M}_c^{up}=\{\{v_i\}_{i=1}^{V},\{f_j\}_{j=1}^{F}\}$,增强表面细节表达。对上采样 mesh 的每个面 $f_j$,绑定一个 2D 高斯基元,建立<strong>显式表面对应</strong>。这种 1-to-1 映射保证表示忠实捕捉 mesh 拓扑,同时享受高斯溅射的高效渲染。</p>
+
+<h3>4.2 位置约束:重心锚定</h3>
+<p>每个 2D 高斯 $k$ 的位置由其对应面的<strong>重心</strong>确定:</p>
+<div class="equation">
+$$ \mu_k=\frac{1}{3}\sum_{i=1}^{3}v_i, $$
+<span class="label">(式 2)</span>
+</div>
+<p>其中 $v_i$ 为面 $f_k$ 的三个顶点。此约束把每个高斯锚定到特定 mesh 位置,提供几何稳定性与表面一致性。</p>
+
+<h3>4.3 旋转约束:切平面 + 面法线</h3>
+<p>旋转矩阵 $\mathbf{R}_k=[\mathbf{t}_u,\mathbf{t}_v,\mathbf{t}_w]$ 构造为:切向量 $(\mathbf{t}_u,\mathbf{t}_v)$ 落在 mesh 表面切平面内,$\mathbf{t}_w$ 对齐面法线 $\mathbf{n}_k$。该朝向约束确保 2D 高斯基元保持正确表面贴合,并跟随人体自然曲率。</p>
+
+<h3>4.4 固定基元数(无自适应密度控制)</h3>
+<div class="callout warn">
+<p><strong>与常规 3DGS 的关键差异:</strong>本文在 mesh 上采样后<strong>固定 2D 高斯数量</strong>,不采用自适应密度控制。论文称此举"防止不受控基元增殖",并通过系统上采样保证足够表示密度。固定对应关系还便于跨表面一致地学习属性特征。</p>
+</div>
+<p>这一设计是<strong>双刃剑</strong>:换来了稳定与拓扑一致,代价是对宽松衣物/长发等细节的<strong>容量上限被 mesh 分辨率锁死</strong>(见 §14 改进分析)。</p>
+</section>
+
+<!-- ==================== PROPERTY FEATURE SAMPLING ==================== -->
+<section id="sampling">
+<h2><span class="num">5</span>属性特征采样:三 HashGrid 体积</h2>
+<p>摒弃逐点特征,改用独立 <strong>HashGrid 体积</strong>实现内存高效的多层级特征融合。用三个独立体积存不同属性特征:几何特征体积 $\mathcal{V}_g$、外观特征体积 $\mathcal{V}_c$、语义特征体积 $\mathcal{V}_s$。对规范空间每个 2D 高斯,经三线性插值从对应体积采样属性特征 $(\mathbf{f}_g,\mathbf{f}_c,\mathbf{f}_s)\in\mathbb{R}^{32}$。</p>
+<div class="callout tip">
+<p><strong>可扩展性设计:</strong>该设计天然可扩展 —— 接入更多基础模型属性只需新增特征体积,计算开销极小,使方法能随基础模型进步而演进。</p>
+</div>
+</section>
+
+<!-- ==================== MULTI-FIELD DISTILLING ==================== -->
+<section id="distilling">
+<h2><span class="num">6</span>多场蒸馏:几何 / 外观 / 语义场</h2>
+
+<h3>6.1 几何场:姿态相关残差 MLP</h3>
+<p>规范空间受 mesh 约束的 2D 高斯对姿态相关表面细节(衣物褶皱等)表达能力有限。为此引入<strong>姿态相关几何残差场</strong>,轻量 MLP 以几何特征 $\mathbf{f}_g$ 与姿态潜码 $\mathcal{Z}_p$ 为输入:</p>
+<div class="equation">
+$$ (\delta d,\,\delta\mathbf{s},\,\delta\mathbf{r},\,\mathbf{z}_g)=\mathcal{F}_{\theta_g}(\mathbf{f}_g,\mathcal{Z}_p). $$
+<span class="label">(式 3)</span>
+</div>
+<p>姿态潜码 $\mathcal{Z}_p$ 用分层姿态编码器编码 SMPL 姿态与形状 $(\theta,\beta)$,为观测空间提供姿态上下文。规范高斯按下式校正:</p>
+<div class="equation">
+$$ \mu'=\mu+\mathbf{n}\cdot\delta d,\qquad \mathbf{s}'=\mathbf{s}\cdot\exp(\delta\mathbf{s}),\qquad \mathbf{R}'=\mathbf{R}\cdot\exp([\delta\mathbf{r}]_\times). $$
+<span class="label">(式 4-6)</span>
+</div>
+<div class="callout key">
+<p><strong>1D 法向位移的关键设计:</strong>$\mathbf{n}\cdot\delta d$ 强制位置偏移<strong>只沿法线方向移动</strong>,把 3D 移动自由度压到 1D 位移。这极大降低了几何自由度、提升稳定性,但也意味着无法表达切向滑动 —— 对宽松服装是潜在瓶颈(见 §14)。</p>
+</div>
+<p>$[\delta\mathbf{r}]_\times$ 为旋转更新的反对称矩阵。$\mathbf{z}_g\in\mathbb{R}^{16}$ 是几何编码特征,喂给外观场。</p>
+
+<h3>6.2 外观场:视角+姿态条件颜色 MLP</h3>
+<p>单目设置下相机方向有限且未必与人体姿态变化对齐,球谐函数不适用。参照 3DGS-Avatar,把观测空间光线 $\mathbf{d}$ 用正向蒙皮的逆旋转<strong>规范化</strong>到规范空间:$\hat{\mathbf{d}}=\mathbf{T}_{1:3,1:3}^{-1}\mathbf{d}$。衣物褶皱等局部形变依赖姿态,故颜色预测需姿态条件。外观场取颜色特征 $\mathbf{f}_c$、几何编码 $\mathbf{z}_g\in\mathbb{R}^{16}$、姿态潜码 $\mathcal{Z}_p\in\mathbb{R}^{16}$、规范化视角 $\boldsymbol{\gamma}(\hat{\mathbf{d}})$ 为输入:</p>
+<div class="equation">
+$$ \mathbf{c}=\mathcal{F}_{\theta_c}(\mathbf{f}_c,\mathbf{z}_g,\mathcal{Z}_p,\boldsymbol{\gamma}(\hat{\mathbf{d}})). $$
+<span class="label">(式 7)</span>
+</div>
+<p>用紧凑 MLP(1 个 64 维隐层)防过拟合同时保容量。</p>
+
+<h3>6.3 语义场:28 类 logits 解码 MLP</h3>
+<p>用 Sapiens 估计 28 类人体解析图。直接把采样特征当 logits(softmax)不优,因为特征体积存的是压缩抽象表示而非干净类概率。故用轻量 MLP $\mathcal{F}_{\theta_s}$ 作<strong>语义解码器</strong>,学从 $\mathbf{f}_s$ 到 28 维 logits $\mathbf{l}_s$ 的非线性映射:</p>
+<div class="equation">
+$$ \mathbf{l}_s=\mathcal{F}_{\theta_s}(\mathbf{f}_s),\qquad I_s=\arg\max(\text{softmax}(\mathbf{l}_s)). $$
+<span class="label">(式 8)</span>
+</div>
+<p>共享 MLP 解码器两大优势:① 大幅提升表示力,学复杂语义区域边界;② 单一 coherent 映射作用于整个特征空间,增强空间一致性,语义图更平滑可靠。</p>
+</section>
+
+<!-- ==================== SKINNING ==================== -->
+<section id="skinning">
+<h2><span class="num">7</span>蒙皮场与正向 LBS</h2>
+<p>几何残差场校正后的 2D 高斯不再严格落在模板 mesh 上,故需把 mesh 上定义的蒙皮权重扩散到 3D 空间。学一个网络 $\mathcal{F}_{\theta_w}$ 预测规范空间任意点的 24 维 SMPL 关节蒙皮权重 $\mathcal{W}=\{w_b\}_{b=1}^{24}$。</p>
+<p>输入为校正后高斯位置 $\mu'$,先用多分辨率哈希编码 $H(\cdot)$ 编码。$\mathcal{F}_{\theta_w}$ 为 <strong>4 层 MLP、128 隐层</strong>,输出 24 维(对应 SMPL 关节影响),最后 softmax 保证权重和为 1($\sum_{b=1}^{24}w_b=1$):</p>
+<div class="equation">
+$$ \mathcal{W}=\text{softmax}(\mathcal{F}_{\theta_w}(H(\mu'))). $$
+<span class="label">(式 9)</span>
+</div>
+<p>再经正向线性混合蒙皮(LBS)把 2D 高斯位置与旋转从规范空间变换到观测空间:</p>
+<div class="equation">
+$$ \mathbf{T}=\sum_{b=1}^{24}w_b\,\mathbf{B}_b,\qquad \mu_o=\mathbf{T}\mu',\qquad \mathbf{R}_o=\mathbf{T}_{1:3,1:3}\mathbf{R}', $$
+<span class="label">(式 10-12)</span>
+</div>
+<p>其中 $\mathbf{B}_b$ 为人体姿态 $\theta_p$ 的骨骼变换矩阵,$\mathbf{T}$ 为混合变换矩阵。最后各模态图像经式 1 渲染。</p>
+</section>
+
+<!-- ==================== LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">8</span>训练目标与正则化</h2>
+<p>训练目标组合多损失项,确保高质量重建同时有效利用基础模型先验。</p>
+
+<h4>光度损失 $\mathcal{L}_c$</h4>
+<p>L1 + SSIM 组合,光度一致性:$\lambda_{\text{ssim}}=0.2$。</p>
+<div class="equation">
+$$ \mathcal{L}_c=(1-\lambda_{\text{ssim}})\mathcal{L}_1(I,\bar{I})+\lambda_{\text{ssim}}\mathcal{L}_{\text{SSIM}}(I,\bar{I}). $$
+<span class="label">(式 13)</span>
+</div>
+
+<h4>掩码损失 $\mathcal{L}_m$</h4>
+<p>渲染不透明度掩码 $\mathcal{M}$ 与 GT 掩码 $\bar{\mathcal{M}}$ 的二元交叉熵:</p>
+<div class="equation">
+$$ \mathcal{L}_m=\mathcal{L}_{\text{BCE}}(\mathcal{M},\bar{\mathcal{M}}). $$
+<span class="label">(式 14)</span>
+</div>
+
+<h4>深度监督损失 $\mathcal{L}_d$(序数深度排序)</h4>
+<p>基础模型估计的单目深度有尺度歧义与绝对深度误差,故用<strong>序数深度排序损失</strong>聚焦相对深度关系。先定义序数指示函数:</p>
+<div class="equation">
+$$ \mathcal{I}_{\text{ord}}(\mathcal{D}(x_1),\mathcal{D}(x_2))=\begin{cases}+1,& \mathcal{D}(x_1)>\mathcal{D}(x_2)\\ -1,& \mathcal{D}(x_1)<\mathcal{D}(x_2).\end{cases} $$
+<span class="label">(式 15)</span>
+</div>
+<p>深度排序损失:</p>
+<div class="equation">
+$$ \mathcal{L}_d=\left\|\tanh(\alpha(\mathcal{D}(x_1)-\mathcal{D}(x_2)))-\mathcal{I}_{\text{ord}}(\bar{\mathcal{D}}(x_1),\bar{\mathcal{D}}(x_2))\right\|_1, $$
+<span class="label">(式 16)</span>
+</div>
+<p>其中 $\alpha=10$ 为缩放因子,训练时随机采样像素对 $(x_1,x_2)$。</p>
+
+<h4>表面法线损失 $\mathcal{L}_{\text{norm}}$</h4>
+<p>多一致性约束组合:</p>
+<ul>
+<li><strong>自一致性</strong> $\mathcal{L}_{sn}=\|\mathcal{N}-\hat{\mathcal{N}}\|_1$:渲染法线 vs 深度图导出法线;</li>
+<li><strong>先验对齐</strong> $\mathcal{L}_n=1-\mathcal{N}\cdot\bar{\mathcal{N}}$:与基础模型预测一致;</li>
+<li><strong>TV 正则</strong> $\mathcal{L}_{tv}$:相邻像素法线平滑,水平+垂直绝对差之和。</li>
+</ul>
+<div class="equation">
+$$ \mathcal{L}_{\text{tv}}(\mathcal{N})=\sum_{i,j}\bigl(|\mathcal{N}_{i,j+1}-\mathcal{N}_{i,j}|+|\mathcal{N}_{i+1,j}-\mathcal{N}_{i,j}|\bigr),\qquad \mathcal{L}_{\text{norm}}=\mathcal{L}_{sn}+\mathcal{L}_n+\mathcal{L}_{tv}. $$
+<span class="label">(式 17-18)</span>
+</div>
+
+<h4>语义损失 $\mathcal{L}_s$ + 语义引导正则 $\mathcal{L}_{reg}$</h4>
+<p>语义监督用标准交叉熵:</p>
+<div class="equation">
+$$ \mathcal{L}_s=\mathcal{L}_{\text{CE}}(\mathcal{S},\bar{\mathcal{S}}). $$
+<span class="label">(式 19)</span>
+</div>
+<p>语义引导正则鼓励<strong>类内特征一致、类间差异</strong>:</p>
+<div class="equation">
+$$ \mathcal{L}_{reg}=\frac{1}{|\mathcal{C}|}\sum_{c\in\mathcal{C}}\frac{1}{|\mathcal{G}_c|}\sum_{i,j\in\mathcal{G}_c}\|\mathbf{f}_i-\mathbf{f}_j\|_2^2, $$
+<span class="label">(式 20)</span>
+</div>
+<p>其中 $\mathcal{C}$ 为语义类集合,$\mathcal{G}_c$ 为属于类 $c$ 的所有高斯,$\mathbf{f}_i$ 为采样语义特征。</p>
+
+<h4>其他正则</h4>
+<p>$\mathcal{L}_{skin}$ 正则蒙皮权重;$\mathcal{L}_{iso}$ 鼓励尽可能刚体(as-rigid-as-possible)形变,保持相邻高斯间局部距离。</p>
+</section>
+
+<!-- ==================== TOTAL LOSS ==================== -->
+<section id="total-loss">
+<h2><span class="num">9</span>总损失函数</h2>
+<p>完整目标函数组合所有项,权重精心调校:</p>
+<div class="equation">
+$$ \mathcal{L}=\mathcal{L}_c+\lambda_m\mathcal{L}_m+\lambda_d\mathcal{L}_d+\lambda_n\mathcal{L}_{\text{norm}}+\lambda_s\mathcal{L}_s+\lambda_{reg}\mathcal{L}_{reg}+\lambda_{skin}\mathcal{L}_{skin}+\lambda_{iso}\mathcal{L}_{iso}. $$
+<span class="label">(式 21)</span>
+</div>
+
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重</th><th>作用</th></tr>
+<tr><td><span class="loss-tag" style="background:rgba(96,165,250,.15);color:var(--accent)">$\mathcal{L}_c$</span></td><td>L1+SSIM</td><td>1</td><td>光度一致性</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(96,165,250,.15);color:var(--accent)">$\mathcal{L}_m$</span></td><td>BCE</td><td>$\lambda_m$</td><td>前景分割</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(52,211,153,.15);color:var(--green)">$\mathcal{L}_d$</span></td><td>序数深度排序</td><td>$\lambda_d$</td><td>相对深度先验(避开尺度歧义)</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(52,211,153,.15);color:var(--green)">$\mathcal{L}_{\text{norm}}$</span></td><td>$\mathcal{L}_{sn}+\mathcal{L}_n+\mathcal{L}_{tv}$</td><td>$\lambda_n$</td><td>法线自一致+先验对齐+平滑</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(167,139,250,.15);color:var(--accent2)">$\mathcal{L}_s$</span></td><td>CE</td><td>$\lambda_s$</td><td>28 类语义监督</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(167,139,250,.15);color:var(--accent2)">$\mathcal{L}_{reg}$</span></td><td>类内特征 $\ell_2^2$</td><td>$\lambda_{reg}$</td><td>语义引导特征聚类</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(251,146,60,.15);color:var(--orange)">$\mathcal{L}_{skin}$</span></td><td>—</td><td>$\lambda_{skin}$</td><td>蒙皮权重正则(承袭 3DGS-Avatar)</td></tr>
+<tr><td><span class="loss-tag" style="background:rgba(251,146,60,.15);color:var(--orange)">$\mathcal{L}_{iso}$</span></td><td>—</td><td>$\lambda_{iso}$</td><td>as-rigid-as-possible 形变</td></tr>
+</table>
+<div class="callout warn">
+<p><strong>权重披露不充分:</strong>论文仅说明 $\{\lambda_m,\lambda_{skin},\lambda_{iso}\}$ 承袭 3DGS-Avatar 既定实践,而 <strong>$\{\lambda_d,\lambda_n,\lambda_s,\lambda_{reg}\}$ "经经验验证确定"</strong>,<strong>未给出具体数值</strong>,也未做权重扫描消融。这是复现与调参的主要缺口(见 §14)。</p>
+</div>
+</section>
+
+<!-- ==================== COORDINATED TRAINING ==================== -->
+<section id="cts">
+<h2><span class="num">10</span>协调训练策略(核心创新)</h2>
+<div class="callout key">
+<p>多场蒸馏面临<strong>冲突的优化需求</strong>:深度估计主要对<strong>高斯位置</strong>敏感,表面法线关键依赖<strong>高斯朝向</strong>,语义信息需要<strong>聚类一致性</strong>。这些竞争目标指向同一组高斯参数,若不处理会互相争抢干扰。</p>
+</div>
+<p>论文用<strong>选择性梯度停止(selective gradient stopping)</strong>实现协调训练,为每个损失划定其"该碰"的参数,隔离"不该碰"的参数:</p>
+
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--green)">① 深度损失</h4>
+    <p><strong>阻断</strong>对高斯<strong>旋转</strong>参数的梯度 → 专注<strong>位置</strong>更新</p>
+    <p style="color:var(--muted);font-size:13px">理由:深度对位置敏感,旋转不是它该管的</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--accent)">② 法线损失</h4>
+    <p><strong>阻断</strong>对高斯<strong>位置</strong>参数的梯度 → 专注<strong>朝向</strong>精修</p>
+    <p style="color:var(--muted);font-size:13px">理由:法线由朝向决定,位置是深度的领地</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--accent2)">③ 语义损失</h4>
+    <p><strong>阻断</strong>对<strong>位置+旋转</strong>两者的梯度 → 专注<strong>语义场</strong>优化</p>
+    <p style="color:var(--muted);font-size:13px">理由:语义要的是聚类一致,不该动几何</p>
+  </div>
+</div>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2509.14739v1/cts.png" alt="FMGS-Avatar Figure 5 Effectiveness of Coordinated Training Strategy — 有无梯度隔离的语义/法线对比" style="max-width:100%;border-radius:8px;border:1px solid #333;" loading="lazy">
+  <div class="caption"><b>图 5</b> 协调训练策略的效果。无选择性梯度阻断时,多模态损失争抢同一高斯参数,语义图出现<strong>黑洞</strong>、头/腿部法线错误;协调方法有效消解优化冲突,确保稳定多场学习。</div>
+</div>
+
+<div class="callout tip">
+<p><strong>为什么这是"核心创新"而非工程 trick:</strong>协调训练把基础模型的使用从"<em>外部监督</em>"升级为"<em>深度融合的协同学习过程</em>"。它解决的是<strong>多模态蒸馏的理论障碍</strong> —— 不同模态对参数敏感度不同导致的目标冲突。这与 EVA-Gaussian 用固定大权重(如 $10^3$)的 anchor loss 是不同层次的解法:FMGS 解决的是"冲突",EVA 解决的是"稳定"。该策略使方法天然可扩展 —— 未来加入更多 2D 先验只需新增"隔离规则",不会破坏既有优化。</p>
+</div>
+</section>
+
+<!-- ==================== FLOWCHART ==================== -->
+<section id="flowchart">
+<h2><span class="num">11</span>逻辑流程图</h2>
+
+<h3>11.1 总流程(规范空间 → 蒸馏 → 蒙皮 → 渲染)</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: 单目视频 {I^k} + SMPL 参数 (θ, β, M_c)"] --> FM
+    FM["Sapiens 基础模型<br/>提取 2D 先验: 掩码 M̄ / 深度 D̄ / 法线 N̄ / 语义 S̄(28类)"] --> UP
+    subgraph CAN["模块 A: 规范空间表示"]
+        UP["SMPL 模板 6890 顶点<br/>→ 上采样 30000 顶点"] --> BIND["每个三角面绑定一个 2D 高斯<br/>位置=重心 / 旋转=切平面+面法线"]
+        BIND --> SMP["三 HashGrid 体积采样<br/>V_g / V_c / V_s (各 ℝ^32)"]
+    end
+    SMP --> DIST
+    subgraph DIST["模块 B: 多场蒸馏"]
+        GF["几何场 MLP<br/>(f_g, Z_p)→(δd,δs,δr,z_g)<br/>1D 法向位移 μ'=μ+n·δd"] --> AF["外观场 MLP<br/>(f_c,z_g,Z_p,γ(d̂))→c"]
+        GF --> SF["语义场 MLP<br/>f_s → 28 类 logits"]
+    end
+    DIST --> SK
+    subgraph SK["模块 C: 蒙皮场"]
+        SKW["4层MLP(128隐层)<br/>W=softmax(F(H(μ'))) 24维"] --> LBS["正向 LBS<br/>T=Σw_b·B_b / μ_o=Tμ' / R_o=T·R'"]
+    end
+    LBS --> REN["2DGS 可微光栅化<br/>渲染 RGB/深度/法线/语义/掩码"]
+    REN --> LOSS
+    subgraph LOSS["模块 D: 训练目标 + 协调策略"]
+        L1["L_c 光度 + L_m 掩码"]
+        L2["L_d 序数深度<br/>⛔ 阻断→旋转"]
+        L3["L_norm 法线<br/>⛔ 阻断→位置"]
+        L4["L_s 语义 + L_reg<br/>⛔ 阻断→位置&旋转"]
+        L5["L_skin + L_iso 正则"]
+    end
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style FM fill:#ede9fe,stroke:#7c3aed,color:#3b0764
+    style REN fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style LOSS fill:#fef3c7,stroke:#d97706,color:#451a03
+</div>
+
+<h3>11.2 协调训练的梯度隔离规则</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph PARAM["2D 高斯参数"]
+        POS["位置 μ"]
+        ROT["旋转 R"]
+        SEM["语义场 θ_s"]
+    end
+    LD["L_d 深度损失"] -->|更新| POS
+    LD -.->|⛔ 梯度隔离| ROT
+    LN["L_norm 法线损失"] -.->|⛔ 梯度隔离| POS
+    LN -->|更新| ROT
+    LS["L_s 语义损失"] -.->|⛔ 梯度隔离| POS
+    LS -.->|⛔ 梯度隔离| ROT
+    LS -->|更新| SEM
+    style LD fill:#dcfce7,stroke:#16a34a
+    style LN fill:#dbeafe,stroke:#3b82f6
+    style LS fill:#ede9fe,stroke:#7c3aed
+    style POS fill:#fef3c7,stroke:#d97706
+    style ROT fill:#fed7aa,stroke:#ea580c
+    style SEM fill:#f3e8ff,stroke:#9333ea
+</div>
+
+<h3>11.3 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    START["开始训练"] --> PRE["预处理: Sapiens 跑全部帧<br/>得 M̄/D̄/N̄/S̄ 2D 先验(离线一次性)"]
+    PRE --> INIT["初始化: mesh 上采样 + 1-to-1 绑定 2D 高斯<br/>HashGrid 体积 / 各 MLP 参数"]
+    INIT --> LOOP{"每训练步"}
+    LOOP --> SAMPLE["采样帧 → Sapiens 先验查表<br/>规范空间采样 (f_g,f_c,f_s)"]
+    SAMPLE --> FWD["前向: 几何残差→外观/语义→蒙皮LBS→渲染"]
+    FWD --> COMPUTE["计算 9 项损失"]
+    COMPUTE --> ISOLATE["按协调策略隔离梯度<br/>L_d→旋转 / L_norm→位置 / L_s→两者"]
+    ISOLATE --> BACK["反向传播(选择性)"]
+    BACK --> UPDATE["更新参数"]
+    UPDATE --> LOOP
+    style START fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style ISOLATE fill:#fef3c7,stroke:#d97706,color:#451a03
+</div>
+</section>
+
+<!-- ==================== EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">12</span>实验结果</h2>
+
+<h3>12.1 评估数据集</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>ZJU-MoCap(主测床)</h4>
+    <ul>
+      <li>选 6 个序列:377, 386, 387, 392, 393, 394</li>
+      <li>遵循 HumanNeRF 标准训练/测试划分</li>
+      <li>动作重复,不足以评新姿态合成 → 仅评<strong>新视角合成</strong></li>
+      <li>LPIPS 表中均 ×1000</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>PeopleSnapshot</h4>
+    <ul>
+      <li>4 个序列(人绕相机旋转、受控光照)</li>
+      <li>遵循 InstantAvatar 数据划分</li>
+      <li>用 AnimNeRF 优化的 SMPL 姿态,不再精修</li>
+    </ul>
+  </div>
+</div>
+
+<h3>12.2 ZJU-MoCap 量化结果(表 1)</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>训练↓</th><th>FPS↑</th></tr>
+<tr><td>NeuralBody (NeRF)</td><td>29.03</td><td>0.964</td><td>52.29</td><td>10h</td><td>1.5</td></tr>
+<tr><td>Anim-NeRF</td><td>29.17</td><td>0.961</td><td>51.98</td><td>13h</td><td>1.1</td></tr>
+<tr><td>MonoHuman</td><td>30.26</td><td>0.969</td><td>30.92</td><td>6h</td><td>0.1</td></tr>
+<tr><td>InstantAvatar</td><td>29.73</td><td>0.938</td><td>64.41</td><td class="best">5m</td><td>4.2</td></tr>
+<tr><td>HumanNeRF</td><td>30.24</td><td>0.969</td><td>33.38</td><td>10h</td><td>0.3</td></tr>
+<tr><td>GoMAvatar (3DGS-on-Mesh)</td><td>30.56</td><td>0.967</td><td>32.55</td><td>15h</td><td>43</td></tr>
+<tr><td>GauHuman</td><td>30.79</td><td>0.960</td><td>32.73</td><td class="best">1m</td><td class="best">180</td></tr>
+<tr><td>3DGS-Avatar</td><td>30.61</td><td>0.965</td><td>30.28</td><td>17m</td><td>50</td></tr>
+<tr class="best"><td><strong>FMGS-Avatar(本文)</strong></td><td class="best">30.89</td><td class="best">0.972</td><td class="best">28.59</td><td>10m</td><td>55</td></tr>
+</table>
+<div class="callout tip">
+<p><strong>关键结论:</strong>FMGS-Avatar 在 ZJU-MoCap <strong>三项质量指标全部 SOTA</strong>,且训练仅 <strong>10 分钟</strong>(vs GoMAvatar 15h,<strong>90× 加速</strong>)、推理 55 FPS。对比 3DGS-Avatar(同为高斯路线)三项均提升。GauHuman 虽训练更快(1m)、推理更高(180 FPS),但 FMGS 在质量-效率权衡上更优。</p>
+</div>
+
+<h3>12.3 PeopleSnapshot 结果(表 2)</h3>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="3">male-3-casual</th><th colspan="3">male-4-casual</th><th colspan="3">female-3-casual</th><th colspan="3">female-4-casual</th></tr>
+<tr><th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>PSNR</th><th>SSIM</th><th>LPIPS</th></tr>
+<tr><td>Anim-NeRF</td><td>23.17</td><td>.9266</td><td>78.4</td><td>22.30</td><td>.9235</td><td>91.1</td><td>22.37</td><td>.9311</td><td>78.4</td><td>23.18</td><td>.9292</td><td>68.7</td></tr>
+<tr><td>NeuralBody</td><td>24.94</td><td>.9428</td><td>32.6</td><td>24.71</td><td>.9469</td><td>42.3</td><td>23.87</td><td>.9504</td><td>34.6</td><td>24.37</td><td>.9451</td><td>38.2</td></tr>
+<tr><td>Anim-3DGS</td><td>29.06</td><td>.9704</td><td>26.4</td><td>26.16</td><td>.9554</td><td>49.1</td><td>24.59</td><td>.9535</td><td>39.9</td><td>27.26</td><td>.9634</td><td>28.1</td></tr>
+<tr><td>InstantAvatar</td><td>29.65</td><td>.9731</td><td>19.2</td><td>27.97</td><td>.9649</td><td>34.6</td><td>27.9</td><td>.9722</td><td>24.9</td><td>28.92</td><td>.9692</td><td>18.0</td></tr>
+<tr><td>3DGS-Avatar</td><td>30.57</td><td>.9581</td><td>20.9</td><td>33.16</td><td>.9678</td><td class="best">15.7</td><td class="best">34.28</td><td>.9724</td><td class="best">14.9</td><td>30.22</td><td>.9653</td><td>23.1</td></tr>
+<tr class="best"><td><strong>FMGS-Avatar</strong></td><td class="best">30.92</td><td class="best">.9816</td><td class="best">15.2</td><td class="best">33.78</td><td class="best">.9753</td><td>23.7</td><td>33.89</td><td class="best">.9854</td><td>14.2</td><td class="best">30.95</td><td class="best">.9873</td><td class="best">15.8</td></tr>
+</table>
+<p>4 个序列中 FMGS-Avatar 在 <strong>3 个序列</strong>多数指标领先,尤以 male-3-casual、female-4-casual 表现突出。female-3-casual 的 PSNR 次于 3DGS-Avatar,但 SSIM/LPIPS 更优,反映外观感知质量更好。</p>
+
+<h3>12.4 几何质量对比(图 3)</h3>
+<div class="figure">
+  <img src="https://arxiv.org/html/2509.14739v1/geometry_2.png" alt="FMGS-Avatar Figure 3 几何重建质量对比 — 外观/深度/法线/深度导出法线" style="max-width:100%;border-radius:8px;border:1px solid #333;" loading="lazy">
+  <div class="caption"><b>图 3</b> 几何重建综合对比。从左到右:(a)重建外观、(b)深度图、(c)预测法线、(d)深度梯度导出法线。对比 3DGS-Avatar(3D 基元)与无 mesh 引导的普通 2DGS 基线:① 2D surfel 比体积 3D 高斯深度尺度更一致、法线更合理;② mesh 引导进一步增强贴合;③ 基础模型先验消解单目歧义,深度与法线更准。</div>
+</div>
+
+<h3>12.5 多模态新姿态合成(图 4)</h3>
+<p>用 AIST++ 与 AMASS 序列驱动 Subject 392,展示 RGB/深度/法线/深度导出法线/语义分割五模态渲染,验证对分布外姿态的泛化。这把 2D 语义与几何先验变为<strong>3D 可驱动</strong>信息,对虚拟试衣、动作分析、avatar 编辑等下游有价值。</p>
+</section>
+
+<!-- ==================== ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">13</span>消融实验</h2>
+<p>在 ZJU-MoCap Subject 377 上系统消融各组件。</p>
+
+<h3>13.1 基础模型监督的渐进贡献(表 3)</h3>
+<table>
+<tr><th>$\mathcal{L}_d$</th><th>$\mathcal{L}_{sn}$</th><th>$\mathcal{L}_n$</th><th>$\mathcal{L}_s$</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>ΔPSNR</th></tr>
+<tr><td>—</td><td>—</td><td>—</td><td>—</td><td>29.98</td><td>0.938</td><td>29.53</td><td>基线</td></tr>
+<tr><td>✓</td><td></td><td></td><td></td><td>30.31</td><td>0.958</td><td>28.23</td><td class="best">+0.33</td></tr>
+<tr><td>✓</td><td>✓</td><td></td><td></td><td>30.73</td><td>0.963</td><td>28.01</td><td class="best">+0.42</td></tr>
+<tr><td>✓</td><td>✓</td><td>✓</td><td></td><td>31.09</td><td>0.975</td><td>27.42</td><td class="best">+0.36</td></tr>
+<tr class="best"><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td class="best">31.22</td><td class="best">0.978</td><td class="best">26.53</td><td class="best">+0.13</td></tr>
+</table>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>逐项增量</h4>
+    <ul>
+      <li>无基础模型监督:29.98 dB(最低)</li>
+      <li>+ 深度 $\mathcal{L}_d$:<strong>+0.33 dB</strong>,证几何先验价值</li>
+      <li>+ 自一致法线 $\mathcal{L}_{sn}$:<strong>+0.42 dB</strong>(最大单步增益)</li>
+      <li>+ 基础模型法线 $\mathcal{L}_n$:<strong>+0.36 dB</strong></li>
+      <li>+ 语义 $\mathcal{L}_s$:最佳 31.22 dB</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>洞察</h4>
+    <ul>
+      <li>多模态蒸馏<strong>每一项都有正贡献</strong>,无冗余项</li>
+      <li>法线相关损失(自一致+先验)合计 +0.78 dB,是几何质量主力</li>
+      <li>语义损失虽 PSNR 增益小(+0.13),但提供<strong>语义信息</strong>这一额外模态(下游价值)</li>
+    </ul>
+  </div>
+</div>
+
+<h3>13.2 协调训练策略的效果(图 5)</h3>
+<div class="callout warn">
+<p><strong>无选择性梯度阻断的失败模式:</strong>多模态损失争抢同一高斯参数,导致语义图出现<strong>黑洞</strong>、头/腿部法线错误。协调方法有效消解冲突,确保稳定多场学习。<strong>这是"协调训练"被定性验证为不可或缺的组件</strong> —— 但论文<strong>未给出有/无协调策略的量化 PSNR 对比</strong>(仅定性图示),是消融完整性的缺口(见 §14)。</p>
+</div>
+</section>
+
+<!-- ==================== IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<p>本节从方法、数据与评估、工程实用性三维度展开,每点含论文/实验佐证与改进建议。</p>
+
+<h3>14.1 方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red); margin-bottom:14px">
+<h4>① 固定高斯数锁死容量上限 [高优先级]</h4>
+<p><strong>问题:</strong>论文在 mesh 上采样到 30000 顶点后<strong>固定 2D 高斯数量</strong>,弃用自适应密度控制(§4.4 自承"防止不受控增殖")。这意味着表示容量被 mesh 分辨率锁死 —— 对宽松衣物褶皱、长发、手指等细节,30000 面 may 不足,且无法按需加密。论文<strong>未给高斯数 vs 质量的扫描</strong>。对比 GaussianAvatars 的 Binding Inheritance 在密度控制时保持绑定,FMGS 走了另一极端。</p>
+<p><strong>改进:</strong>引入 mesh 感知的自适应分裂 —— 沿 mesh 边/面细分,或按面片面积/曲率分配高斯数(高频曲率区域加倍)。保持 1-to-1 绑定的同时解锁容量。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:14px">
+<h4>② 1D 法向位移无法表达切向滑动 [高优先级]</h4>
+<p><strong>问题:</strong>几何残差场用 $\mu'=\mu+\mathbf{n}\cdot\delta d$(式 4)把位置偏移压到<strong>1D 法向</strong>,几何稳定性好,但衣物褶皱本质是切向滑动+法向起伏的耦合。论文 Fig.4 新姿态结果中宽松服装可能因此失真(论文未单列宽松vs紧身对比)。对比 3DGS-Avatar 用 3D 自由位移,FMGS 牺牲了切向表达。</p>
+<p><strong>改进:</strong>引入受限切向分量(如沿 $\mathbf{t}_u/\mathbf{t}_v$ 的小幅位移 + TV 正则),或对"衣物区域"用语义引导切换到 2D 位移模式。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:14px">
+<h4>③ SMPL 模板无手部/脸部 articulation [中优先级]</h4>
+<p><strong>问题:</strong>仅用 SMPL(非 SMPL-X),手部是简化张合、脸部无 articulation。与 ExAvatar(SMPL-X 全身含脸手)、<a href="3D-20260720-F3G-Avatar.html">F3G-Avatar</a>(MHR)对比有明显代际差距。手部在 28 类语义里也只是粗类,无法精细驱动。</p>
+<p><strong>改进:</strong>升级到 SMPL-X 或 <a href="3D-20260720-MHR.html">MHR</a> 模板,沿用 FMGS 的 mesh-guided 2DGS 框架(只需替换模板 + 增加手/脸高斯密度)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent); margin-bottom:14px">
+<h4>④ SMPL tracking 误差继承未处理 [中优先级]</h4>
+<p><strong>问题:</strong>方法依赖每帧 SMPL 参数(θ,β)输入,论文用 AnimNeRF 优化的姿态"不再精修"。tracking 误差会经 LBS 放大到表面。论文<strong>未讨论 HMR 误差敏感性</strong>(如人为加噪 SMPL 的鲁棒性测试)。</p>
+<p><strong>改进:</strong>引入 pose 不确定性估计或多假设采样,或联合微调 SMPL 参数(像 3DGS-Avatar 那样端到端优化 pose)。</p>
+</div>
+
+<h3>14.2 数据与评估层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red); margin-bottom:14px">
+<h4>⑤ 仅受控室内数据集,无野外验证 [高优先级]</h4>
+<p><strong>问题:</strong>评测仅 ZJU-MoCap + PeopleSnapshot —— 均为受控室内单目序列(受控光照、人绕相机旋转)。PeopleSnapshot 仅 4 序列。无室外/复杂光照/动态背景验证。对比 <a href="3D-20260820-4DAnyone.html">4DAnyone</a> 在 DNA-Rendering/DyMVHumans 等野外数据评测,FMGS 的泛化性存疑。</p>
+<p><strong>改进:</strong>在 DNA-Rendering、合成野外序列上评测;报告 Sapiens 在域外图像的先验质量退化情况。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:14px">
+<h4>⑥ 宣称"时空一致"但无时序指标 [中优先级]</h4>
+<p><strong>问题:</strong>摘要/结论宣称"spatially and temporally consistent rendering",但评测<strong>仅在静态姿态做新视角合成</strong>(PSNR/SSIM/LPIPS),<strong>无动态视频时序指标</strong>(如 clip score、frame-to-frame warping error、timestep consistency)。时序一致性是<strong>宣称但未量化</strong>的。</p>
+<p><strong>改进:</strong>加动态新姿态序列的时序一致性评测(如相邻帧语义/法线一致性、warping 误差)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent); margin-bottom:14px">
+<h4>⑦ 未与最新 SOTA 对比 [中优先级]</h4>
+<p><strong>问题:</strong>对比基线最新为 2024 的 3DGS-Avatar/GoMAvatar。2025 的 ExAvatar、SIFU、以及单图前馈路线(如 <a href="3D-20260316-Fast-SAM-3D-Body.html">Fast SAM 3D Body</a> 下游)未对比。Sapiens 本身是 2024 ECCV,基础模型赛道演进快。</p>
+<p><strong>改进:</strong>补充与 ExAvatar(SMPL-X 全身)、GART 等同期工作对比;说明 Sapiens 可替换为更新基础模型(论文强调可扩展性,但未实证)。</p>
+</div>
+
+<h3>14.3 工程实用性层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red); margin-bottom:14px">
+<h4>⑧ 无公开代码/项目主页 [高优先级]</h4>
+<p><strong>问题:</strong>arXiv abs 页 "Links to Code" 为空,无 GitHub、无项目主页、无 HuggingFace。<strong>不可复现</strong>。这对含 9 项损失 + 梯度隔离策略 + 3 个 HashGrid 体积 + 多 MLP 的复杂方法尤为致命 —— 尤其 §9 指出 $\{\lambda_d,\lambda_n,\lambda_s,\lambda_{reg}\}$ 权重<strong>未披露具体值</strong>。</p>
+<p><strong>改进:</strong>开源代码、配置文件、预训练 Sapiens 先验提取脚本;至少公布完整超参表。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange); margin-bottom:14px">
+<h4>⑨ Sapiens 预处理开销未报告 [中优先级]</h4>
+<p><strong>问题:</strong>训练 10min 很快,但<strong>依赖 Sapiens 跑全部帧</strong>提多模态 2D 先验(深度+法线+语义,每帧 3 头)。Sapiens 是大模型,推理慢。论文<strong>未报告预处理总耗时</strong> —— 若先验提取需数小时,则"10min 训练"的吸引力被抵消。对比 4DAnyone 明确报告推理 40min,FMGS 的端到端时间账不清。</p>
+<p><strong>改进:</strong>报告 Sapiens 预处理时间;考虑轻量先验模型或缓存复用策略。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent); margin-bottom:14px">
+<h4>⑩ 损失权重未消融 [低优先级]</h4>
+<p><strong>问题:</strong>$\{\lambda_d,\lambda_n,\lambda_s,\lambda_{reg}\}$ "经验确定",消融(表 3)只开关损失项,未扫权重。对比 <a href="3D-20241002-EVA-Gaussian.html">EVA-Gaussian</a> 的 anchor loss 固定 $10^3$ 也是经验值,但至少披露了。FMGS 连值都未给。</p>
+<p><strong>改进:</strong>补权重敏感性消融;至少公布最终值。</p>
+</div>
+
+<h3>14.4 改进优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>影响维度</th><th>佐证</th></tr>
+<tr><td rowspan="3" style="color:var(--red);font-weight:700">高</td><td>① 固定高斯数锁死容量</td><td>表达力</td><td>§4.4 弃用自适应密度;无高斯数扫描</td></tr>
+<tr><td>② 1D 法向位移缺切向</td><td>宽松服装</td><td>式 4 μ'=μ+n·δd;Fig.4 新姿态</td></tr>
+<tr><td>⑤ 仅室内数据集</td><td>泛化性</td><td>仅 ZJU-MoCap/PeopleSnapshot</td></tr>
+<tr><td>⑧ 无公开代码</td><td>复现性</td><td>abs Links to Code 空;权重未披露</td></tr>
+<tr><td rowspan="4" style="color:var(--orange);font-weight:700">中</td><td>③ SMPL 无手脸 articulation</td><td>表达力</td><td>仅 SMPL 非 SMPL-X;对比 ExAvatar</td></tr>
+<tr><td>④ tracking 误差继承</td><td>鲁棒性</td><td>用 AnimNeRF 优化 SMPL 不再精修;无加噪测试</td></tr>
+<tr><td>⑥ 时序一致未量化</td><td>可信度</td><td>宣称时空一致但仅静态评测</td></tr>
+<tr><td>⑦ 未对比最新 SOTA</td><td>公平性</td><td>最新基线 3DGS-Avatar(2024)</td></tr>
+<tr><td>⑨ Sapiens 预处理开销未报</td><td>部署</td><td>训练 10min 但 Sapiens 推理慢</td></tr>
+<tr><td style="color:var(--accent);font-weight:700">低</td><td>⑩ 损失权重未消融</td><td>完整性</td><td>λ_d/λ_n/λ_s/λ_reg 未给值</td></tr>
+</table>
+
+<div class="callout key">
+<h4>个人认为最关键的三点</h4>
+<ol>
+<li><strong>开源代码 + 披露完整超参</strong>(⑧)—— 这是 9 项损失 + 梯度隔离 + 3 HashGrid 复杂方法的可复现前提,权重未披露使结果不可验证;</li>
+<li><strong>突破固定高斯数与 1D 法向位移的双重容量瓶颈</strong>(①②)—— 二者共同决定了对宽松衣物/细节的表达天花板,是方法从"紧身人体 SOTA"走向"通用人体 SOTA"的关键解锁;</li>
+<li><strong>在野外/动态数据上验证泛化与时序一致性</strong>(⑤⑥)—— 决定方法能否从受控实验室走向实际部署,也直接检验"时空一致"宣称是否成立。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">15</span>总结与演进定位</h2>
+
+<div class="callout key">
+<h4>FMGS-Avatar 的三大贡献</h4>
+<ol>
+<li><strong>Mesh-Guided 2DGS</strong>:2D 高斯 1-to-1 绑定 SMPL 上采样 mesh 面,位置/旋转/移动显式约束,以 surfel 天然贴面替代体积式 3D 高斯,几何保真度更高;</li>
+<li><strong>多模态基础模型蒸馏</strong>:Sapiens 的深度/法线/语义三模态先验系统蒸馏进共享规范空间,经 LBS 可在新视角/新姿态下时空一致渲染,且天然可扩展更多 2D 先验;</li>
+<li><strong>协调训练策略</strong>:选择性梯度隔离(深度→位置、法线→旋转、语义→两者皆隔)消解多损失争抢同一参数的优化冲突,把基础模型从"外部监督"升级为"深度融合协同学习"。</li>
+</ol>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h4>核心优势</h4>
+    <ul>
+      <li>2D surfel 几何忠实,深度/法线更准</li>
+      <li>多模态蒸馏每项有正贡献(消融验证)</li>
+      <li>训练 10min / 推理 55 FPS(质量-效率优)</li>
+      <li>提供语义模态(下游可用)</li>
+      <li>框架可扩展(新增先验仅加体积+隔离规则)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>技术要点</h4>
+    <ul>
+      <li>1-to-1 mesh-高斯绑定 + 固定基元数</li>
+      <li>1D 法向位移(μ'=μ+n·δd)</li>
+      <li>三 HashGrid 体积(几何/外观/语义,各 ℝ³²)</li>
+      <li>光线规范化到规范空间(弃球谐)</li>
+      <li>序数深度排序损失(避开尺度歧义)</li>
+      <li>梯度隔离的三条规则</li>
+    </ul>
+  </div>
+</div>
+
+<h3>演进定位</h3>
+<table>
+<tr><th>维度</th><th>3DGS-on-Mesh (GoMAvatar)</th><th>形变高斯场 (3DGS-Avatar)</th><th>FMGS-Avatar(本文)</th></tr>
+<tr><td>基元</td><td>体积式 3D 高斯</td><td>体积式 3D 高斯</td><td class="best">2D surfel</td></tr>
+<tr><td>结构约束</td><td>mesh 绑定</td><td>无(自由场)</td><td class="best">mesh 绑定 + 固定数</td></tr>
+<tr><td>基础模型先验</td><td>无</td><td>无</td><td class="best">Sapiens 多模态蒸馏</td></tr>
+<tr><td>优化冲突处理</td><td>—</td><td>—</td><td class="best">协调训练(梯度隔离)</td></tr>
+<tr><td>训练</td><td>15h</td><td>17m</td><td class="best">10m</td></tr>
+<tr><td>局限</td><td>体积基元 + 慢</td><td>无 mesh 约束</td><td>固定容量 + 1D 位移 + 无开源</td></tr>
+</table>
+<p>FMGS-Avatar 处于"单目数字人 → 高斯表示"技术脉络的<strong>最新融合点</strong>:继承 GoMAvatar 的 mesh 绑定思路但换用 2D surfel,继承 3DGS-Avatar 的形变场但加 mesh 约束,并首次系统引入基础模型多模态先验 + 协调训练。它把"表示"与"信息"两个子问题分治求解,用协调训练兜底交汇冲突 —— 这一<strong>"分治 + 兜底"结构</strong>是其方法论贡献,比单项技术更值得借鉴。</p>
+
+<hr>
+<p style="color:var(--muted);font-size:13px;text-align:center">
+本分析基于论文 arXiv:2509.14739v1(2025-09-18, Pattern Recognition)与 arXiv HTML 全文编写。<br>
+流程图使用 Mermaid.js 渲染,公式使用 MathJax 渲染。截至调研时<strong>未发现公开代码/项目主页</strong>。
+</p>
+</section>
+
+</div>
+
+<div class="footer">
+  FMGS-Avatar 算法原理分析 · 2025 · 杭州电子科技大学 / 深圳职业技术大学 / 武汉大学
+</div>
+
+<script>
+  mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
