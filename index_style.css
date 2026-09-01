@@ -1,0 +1,139 @@
+:root {
+            --bg: #0f1117;
+            --card: #1a1d27;
+            --accent: #76b900;
+            --accent-dim: #5a8f00;
+            --text: #e0e0e0;
+            --text-dim: #9a9a9a;
+            --border: #2a2d37;
+            --tag-bg: #252830;
+            --code-bg: #15171f;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+            border-bottom: 3px solid var(--accent);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2em;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: var(--text-dim);
+            font-size: 0.95em;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: var(--accent);
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section h3 {
+            color: #c8c8c8;
+            font-size: 1.05em;
+            margin: 15px 0 8px;
+        }
+        .note-card {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+        }
+        .note-card:hover {
+            border-color: var(--accent);
+        }
+        .note-card h3 {
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .note-card .meta {
+            color: var(--text-dim);
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .note-card .meta span { white-space: nowrap; }
+        .note-card p {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .note-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0;
+        }
+        .tag {
+            background: var(--tag-bg);
+            color: var(--text-dim);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            border: 1px solid var(--border);
+        }
+        .tag.green { border-color: var(--accent); color: var(--accent); }
+        .note-card a {
+            display: inline-block;
+            padding: 5px 12px;
+            background: var(--tag-bg);
+            color: var(--accent);
+            border: 1px solid var(--accent-dim);
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.85em;
+            margin-right: 8px;
+        }
+        .note-card a:hover { background: var(--accent-dim); color: #fff; }
+        .highlight {
+            background: rgba(118, 185, 0, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th { background: var(--code-bg); color: var(--accent); }
+        tr:nth-child(even) { background: var(--code-bg); }
+        .footer {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8em;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }

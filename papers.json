@@ -1,0 +1,2748 @@
+{
+ "version": 2,
+ "description": "唯一真相源:index.html 由 build_index.py 生成本文件数据,禁止手改 index.html。kind: note/survey/pipeline/methodology; depth: deep/standard/brief。",
+ "page": {
+  "title": "论文调研知识库索引",
+  "subtitle": "Wan 系列 (2.1→2.2→VACE→Move→R1→Streamer) + 业界全景 (Sora 2 / Veo 3.1 / Kling 2.1 / Runway Gen-4 / Mochi 1 / CogVideoX / DynamiCrafter / Cosmos 3)<br>三维重建与生成方向 (VGGT / 3DGS / LRM / TRELLIS / Hunyuan3D / 4D Gaussians)<br>含相机可控性、几何一致性、3D 前馈重建、4D 动态场景综述与业界全景对比表"
+ },
+ "topics": [
+  {
+   "name": "微动与非刚性人体重建"
+  },
+  {
+   "name": "人体先验与参数化模型"
+  },
+  {
+   "name": "数字人 Pipeline 工程"
+  },
+  {
+   "name": "人脸手部细节与增强"
+  },
+  {
+   "name": "稀疏与少视角重建"
+  },
+  {
+   "name": "前馈式大重建模型"
+  },
+  {
+   "name": "表面与几何重建"
+  },
+  {
+   "name": "3D 生成"
+  },
+  {
+   "name": "视频扩散先验用于 3D"
+  },
+  {
+   "name": "质量速度权衡与实时"
+  },
+  {
+   "name": "鲁棒性与干扰过滤"
+  },
+  {
+   "name": "相机控制与位姿条件"
+  },
+  {
+   "name": "几何与时序一致性"
+  },
+  {
+   "name": "视频生成模型谱系"
+  }
+ ],
+ "extra_sections": [
+  {
+   "id": "overview",
+   "title": "📋 调研总览",
+   "html": "<div class=\"highlight\">\n            <strong>调研结论：</strong>Wan 系列 (2.1→2.2) 是阿里开源的视频生成模型主线，VACE、Wan-Move、Wan-R1、Wan-Streamer 是衍生和扩展工作。<strong>Wan2.3 ~ Wan2.7 不存在</strong>（截至 2026-06-25 搜索 arXiv 无结果）。Wan2.2 共享 Wan2.1 的 arXiv 论文 (2503.20314)，无独立论文。\n        </div>\n        <table>\n            <tr><th>版本</th><th>arXiv</th><th>提交日期</th><th>GitHub</th><th>关键特性</th></tr>\n            <tr><td><strong>Wan2.1</strong></td><td>2503.20314</td><td>2025-03-26</td><td>Wan-Video/Wan2.1</td><td>开源 DiT 视频生成，1.3B+14B，中英文字生成</td></tr>\n            <tr><td><strong>Wan2.2</strong></td><td>(共享 2503.20314)</td><td>2025-07-28</td><td>Wan-Video/Wan2.2</td><td>MoE 架构，720P@24fps，S2V，角色动画</td></tr>\n            <tr><td><strong>VACE</strong></td><td>2503.07598</td><td>2025-03-10</td><td>ali-vilab/VACE</td><td>一体化视频创作与编辑，VCU + Context Adapter</td></tr>\n            <tr><td><strong>Wan-Move</strong></td><td>2512.08765</td><td>2025-12-09</td><td>ali-vilab/Wan-Move</td><td>运动控制，Latent Trajectory Guidance，NeurIPS 2025</td></tr>\n            <tr><td><strong>Wan-R1</strong></td><td>2603.27866</td><td>2026-03-29</td><td>(代码待发布)</td><td>视频推理 RL，可验证奖励，GRPO + Flow Matching</td></tr>\n            <tr><td><strong>Wan-Streamer</strong></td><td>2606.25041</td><td>2026-06-23</td><td>(暂无 GitHub)</td><td>实时交互，端到端全双工音视频，~200ms 延迟</td></tr>\n        </table>\n    </div>"
+  },
+  {
+   "id": "roadmap",
+   "title": "🔄 演进路线图",
+   "html": "<table>\n            <tr><th>时间</th><th>版本</th><th>里程碑</th></tr>\n            <tr><td>2025-03-10</td><td>VACE</td><td>视频创作与编辑统一框架（Wan2.1 配套）</td></tr>\n            <tr><td>2025-03-26</td><td>Wan2.1</td><td>开源 DiT 视频生成，1.3B+14B，SOTA 性能</td></tr>\n            <tr><td>2025-04-19</td><td>Wan2.1 v2</td><td>arXiv 论文修订</td></tr>\n            <tr><td>2025-05-14</td><td>VACE 集成</td><td>VACE 正式作为 Wan2.1 配套发布</td></tr>\n            <tr><td>2025-07-28</td><td>Wan2.2</td><td>MoE 架构升级，TI2V-5B 720P@24fps</td></tr>\n            <tr><td>2025-08-26</td><td>Wan2.2-S2V</td><td>语音驱动电影级视频生成</td></tr>\n            <tr><td>2025-09-19</td><td>Wan2.2-Animate</td><td>角色动画与替换</td></tr>\n            <tr><td>2025-09-18</td><td>Wan-Move</td><td>NeurIPS 2025 接收</td></tr>\n            <tr><td>2025-12-09</td><td>Wan-Move</td><td>论文发布，代码/模型/MoveBench 开源</td></tr>\n            <tr><td>2026-03-29</td><td>Wan-R1</td><td>视频推理 RL，可验证奖励</td></tr>\n            <tr><td>2026-06-23</td><td>Wan-Streamer v0.1</td><td>实时端到端交互，全双工音视频</td></tr>\n        </table>\n    </div>"
+  },
+  {
+   "id": "key-compare",
+   "title": "📊 关键对比",
+   "html": "<h3>模型规格</h3>\n        <table>\n            <tr><th>模型</th><th>参数量</th><th>架构</th><th>最大分辨率</th><th>VRAM</th></tr>\n            <tr><td>Wan2.1-T2V-1.3B</td><td>1.3B</td><td>Dense DiT</td><td>480P</td><td>8.19 GB</td></tr>\n            <tr><td>Wan2.1-T2V-14B</td><td>14B</td><td>Dense DiT</td><td>720P</td><td>~40 GB</td></tr>\n            <tr><td>Wan2.2-T2V-A14B</td><td>A14B (MoE)</td><td>MoE DiT</td><td>720P</td><td>~80 GB</td></tr>\n            <tr><td>Wan2.2-TI2V-5B</td><td>5B</td><td>Dense DiT</td><td>720P@24fps</td><td>消费级</td></tr>\n            <tr><td>Wan-Move-14B</td><td>14B</td><td>Dense DiT</td><td>480P</td><td>40 GB</td></tr>\n            <tr><td>HunyuanVideo 1.5</td><td>8.3B</td><td>DiT + SSTA</td><td>720P</td><td>消费级</td></tr>\n            <tr><td>Kandinsky 5.0 Video Lite</td><td>2B</td><td>DiT</td><td>~720P</td><td>轻量</td></tr>\n            <tr><td>Kandinsky 5.0 Video Pro</td><td>19B</td><td>DiT</td><td>~720P</td><td>专业级</td></tr>\n            <tr><td>LTX-Video</td><td>~2B</td><td>DiT + VAE联合</td><td>768×512</td><td>轻量</td></tr>\n            <tr><td>LTX-2</td><td>19B (14+5)</td><td>双流 DiT</td><td>4K@50fps</td><td>专业级</td></tr>\n        </table>\n        <h3>能力维度</h3>\n        <table>\n            <tr><th>能力</th><th>Wan2.1</th><th>Wan2.2</th><th>VACE</th><th>Wan-Move</th><th>Wan-R1</th><th>Wan-Streamer</th></tr>\n            <tr><td>文本到视频</td><td>✓</td><td>✓</td><td>~</td><td>-</td><td>-</td><td>-</td></tr>\n            <tr><td>图像到视频</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>-</td><td>-</td></tr>\n            <tr><td>视频编辑</td><td>✓</td><td>-</td><td>✓</td><td>-</td><td>-</td><td>-</td></tr>\n            <tr><td>运动控制</td><td>-</td><td>-</td><td>-</td><td>✓</td><td>-</td><td>-</td></tr>\n            <tr><td>语音驱动</td><td>-</td><td>✓ (S2V)</td><td>-</td><td>-</td><td>-</td><td>✓</td></tr>\n            <tr><td>角色动画</td><td>-</td><td>✓ (Animate)</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>\n            <tr><td>视频推理</td><td>-</td><td>-</td><td>-</td><td>-</td><td>✓</td><td>-</td></tr>\n            <tr><td>实时交互</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>✓</td></tr>\n            <tr><td>MoE 架构</td><td>-</td><td>✓</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>\n        </table>\n    </div>"
+  },
+  {
+   "id": "panorama",
+   "title": "🌍 业界全景对比 (2026-06-25)",
+   "html": "<h3>按厂商/团队分类</h3>\n        <table>\n            <tr><th>厂商/团队</th><th>模型</th><th>参数量</th><th>最大分辨率</th><th>帧率</th><th>开源</th><th>原生音频</th><th>备注</th></tr>\n            <tr><td rowspan=\"2\"><strong>OpenAI</strong></td><td>Sora 1</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>❌</td><td>❌</td><td>GPT-1 时刻, 世界模拟器路线起点</td></tr>\n            <tr><td>Sora 2 / 2 Pro</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>❌</td><td>✅</td><td>GPT-3.5 时刻, Characters, 2026-04 下线</td></tr>\n            <tr><td rowspan=\"2\"><strong>Google</strong></td><td>Veo 3</td><td>未公开</td><td>4K</td><td>~30fps</td><td>❌</td><td>✅</td><td>首个原生音频闭源模型, Flow 平台</td></tr>\n            <tr><td>Veo 3.1</td><td>未公开</td><td>4K</td><td>~30fps</td><td>❌</td><td>✅</td><td>R-Bench T2V 79.1 / I2V 82.67</td></tr>\n            <tr><td rowspan=\"2\"><strong>快手</strong></td><td>Kling 2.0</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>❌</td><td>❌</td><td>Motion Brush, 大规模产品化</td></tr>\n            <tr><td>Kling 2.1 + Foley</td><td>未公开</td><td>1080p</td><td>~30fps</td><td>部分</td><td>✅</td><td>Kling-Foley V2A, Audio-Eval 开源</td></tr>\n            <tr><td><strong>Runway</strong></td><td>Gen-4</td><td>未公开</td><td>1080p</td><td>~24fps</td><td>❌</td><td>❌</td><td>角色/场景一致性, 专业创作定位</td></tr>\n            <tr><td rowspan=\"3\"><strong>NVIDIA</strong></td><td>Cosmos 3 Nano</td><td>16B</td><td>720p</td><td>10-30fps</td><td>✅</td><td>✅</td><td>全模态世界模型, MoT 架构</td></tr>\n            <tr><td>Cosmos 3 Super</td><td>64B</td><td>720p</td><td>10-30fps</td><td>✅</td><td>✅</td><td>R-Bench T2V 80.0 / I2V 82.8, 最佳开源</td></tr>\n            <tr><td>Cosmos 3 Super T2I/I2V</td><td>64B</td><td>720p</td><td>-</td><td>✅</td><td>-</td><td>Artificial Analysis 最佳开源 T2I/I2V</td></tr>\n            <tr><td rowspan=\"4\"><strong>Alibaba/Wan</strong></td><td>Wan2.1</td><td>1.3B/14B</td><td>720p</td><td>16/24fps</td><td>✅</td><td>❌</td><td>开源 SOTA, 中英文字生成, Wan-VAE</td></tr>\n            <tr><td>Wan2.2</td><td>A14B/5B</td><td>720p</td><td>24fps</td><td>✅</td><td>❌</td><td>MoE 架构, S2V, Animate</td></tr>\n            <tr><td>Wan-Move</td><td>14B</td><td>480p</td><td>16fps</td><td>✅</td><td>❌</td><td>运动控制, NeurIPS 2025</td></tr>\n            <tr><td>Wan-Streamer</td><td>未公开</td><td>192p</td><td>实时</td><td>✅</td><td>✅</td><td>端到端实时交互, ~200ms 延迟</td></tr>\n            <tr><td rowspan=\"2\"><strong>智谱 AI</strong></td><td>CogVideoX</td><td>2B/5B</td><td>768×1360</td><td>16fps</td><td>✅</td><td>❌</td><td>Expert Transformer, ICLR 2025</td></tr>\n            <tr><td>CogVideoX1.5</td><td>5B</td><td>多分辨率</td><td>16fps</td><td>✅</td><td>❌</td><td>10秒视频, DDIM Inverse, CogKit</td></tr>\n            <tr><td><strong>腾讯</strong></td><td>HunyuanVideo 1.5</td><td>8.3B</td><td>720p</td><td>~24fps</td><td>✅</td><td>❌</td><td>SSTA 注意力, 消费级 GPU, Muon 优化器</td></tr>\n            <tr><td rowspan=\"2\"><strong>腾讯 ARC</strong></td><td>DynamiCrafter</td><td>未公开</td><td>-</td><td>-</td><td>✅</td><td>❌</td><td>图像动画化, 双路径注入范式</td></tr>\n            <tr><td>HunyuanVideo</td><td>13B</td><td>720p</td><td>16fps</td><td>✅</td><td>❌</td><td>开源 DiT, 早期版本</td></tr>\n            <tr><td><strong>Genmo</strong></td><td>Mochi 1</td><td>~10B</td><td>~720p</td><td>~24fps</td><td>✅</td><td>❌</td><td>Apache 2.0, 非对称 DiT, 加速研究标准</td></tr>\n            <tr><td rowspan=\"3\"><strong>Kandinsky Lab</strong></td><td>K5 Video Lite</td><td>2B</td><td>~720p</td><td>-</td><td>❌</td><td>❌</td><td>轻量级, 数据策展披露</td></tr>\n            <tr><td>K5 Image Lite</td><td>6B</td><td>-</td><td>-</td><td>❌</td><td>❌</td><td>图像生成</td></tr>\n            <tr><td>K5 Video Pro</td><td>19B</td><td>~720p</td><td>-</td><td>❌</td><td>❌</td><td>专业级, RL 后训练</td></tr>\n            <tr><td rowspan=\"2\"><strong>Lightricks</strong></td><td>LTX-Video</td><td>~2B</td><td>768×512</td><td>24fps</td><td>✅</td><td>❌</td><td>1:192 压缩率, 2秒生成5秒视频</td></tr>\n            <tr><td>LTX-2</td><td>19B (14+5)</td><td>4K</td><td>50fps</td><td>✅</td><td>✅</td><td>首个开源音视频联合 DiT, 双流</td></tr>\n        </table>\n\n        <h3>关键指标总结</h3>\n        <table>\n            <tr><th>指标</th><th>闭源最佳</th><th>开源最佳</th><th>差距</th></tr>\n            <tr><td>R-Bench T2V</td><td>Veo 3.1: 79.1</td><td>Cosmos3-Super: 80.0</td><td>开源已超越 ✅</td></tr>\n            <tr><td>R-Bench I2V</td><td>Veo 3.1: 82.67</td><td>Cosmos3-Super: 82.8</td><td>开源已超越 ✅</td></tr>\n            <tr><td>Artificial Analysis T2I</td><td>Gemini 3 Pro: 90.85</td><td>Cosmos3-Super: 91.36</td><td>开源已超越 ✅</td></tr>\n            <tr><td>音频质量 (AQA)</td><td>Veo 3.1: 7.45</td><td>Cosmos3-Super: 7.31</td><td>闭源略优</td></tr>\n            <tr><td>最大分辨率</td><td>Veo 3.1: 4K</td><td>LTX-2: 4K@50fps</td><td>持平 ✅</td></tr>\n            <tr><td>最小 VRAM</td><td>-</td><td>Wan2.1-1.3B: 8.19GB</td><td>仅开源有轻量方案</td></tr>\n            <tr><td>实时交互延迟</td><td>-</td><td>Wan-Streamer: ~200ms</td><td>仅开源有实时方案</td></tr>\n        </table>\n\n        <div class=\"highlight\">\n            <strong>关键发现：</strong>截至 2026-06-25，开源模型（Cosmos 3 Super）已在 R-Bench T2V/I2V 和 Artificial Analysis 上超越所有闭源模型。闭源模型仅在音频质量和社交产品化方面保持优势。开源生态已从追赶者变为引领者。\n        </div>\n    </div>"
+  },
+  {
+   "id": "vg-timeline",
+   "title": "🔄 业界演进时间线 (2023-2026)",
+   "html": "<table>\n            <tr><th>时间</th><th>模型</th><th>里程碑</th><th>开源</th></tr>\n            <tr><td>2023-10</td><td>DynamiCrafter</td><td>视频扩散先验图像动画化</td><td>✅</td></tr>\n            <tr><td>2024-02</td><td>Sora 1</td><td>视频生成 GPT-1 时刻</td><td>❌</td></tr>\n            <tr><td>2024-06</td><td>Kling 1.0</td><td>快手进入视频生成</td><td>❌</td></tr>\n            <tr><td>2024-08</td><td>CogVideoX</td><td>Expert Transformer, ICLR 2025</td><td>✅</td></tr>\n            <tr><td>2024-10</td><td>Mochi 1</td><td>Apache 2.0 开源, 非对称 DiT</td><td>✅</td></tr>\n            <tr><td>2024-11</td><td>CogVideoX1.5</td><td>10秒视频, 多分辨率</td><td>✅</td></tr>\n            <tr><td>2024-12</td><td>LTX-Video</td><td>1:192 压缩, 实时生成</td><td>✅</td></tr>\n            <tr><td>2025-03</td><td>Runway Gen-4</td><td>角色/场景一致性</td><td>❌</td></tr>\n            <tr><td>2025-03</td><td>Wan2.1</td><td>开源 SOTA, 1.3B+14B</td><td>✅</td></tr>\n            <tr><td>2025-05</td><td>Veo 3</td><td>首个原生音频闭源模型</td><td>❌</td></tr>\n            <tr><td>2025-06</td><td>Kling 2.0</td><td>Motion Brush 升级</td><td>❌</td></tr>\n            <tr><td>2025-07</td><td>Wan2.2</td><td>MoE 架构, S2V</td><td>✅</td></tr>\n            <tr><td>2025-09</td><td>Sora 2</td><td>视频 GPT-3.5 时刻, Characters</td><td>❌</td></tr>\n            <tr><td>2025-11</td><td>HunyuanVideo 1.5</td><td>8.3B SSTA, 消费级</td><td>✅</td></tr>\n            <tr><td>2025-11</td><td>Kandinsky 5.0</td><td>2B~19B 谱系, RL 后训练</td><td>❌</td></tr>\n            <tr><td>2026-01</td><td>LTX-2</td><td>首个开源音视频联合 DiT, 4K@50fps</td><td>✅</td></tr>\n            <tr><td>2026-04</td><td>Sora 产品下线</td><td>OpenAI 视频社交尝试结束</td><td>-</td></tr>\n            <tr><td>2026-06</td><td>Cosmos 3</td><td>全模态世界模型, 开源超越闭源</td><td>✅</td></tr>\n            <tr><td>2026-06</td><td>Wan-Streamer v0.1</td><td>端到端实时交互, 全双工</td><td>✅</td></tr>\n        </table>\n    </div>"
+  },
+  {
+   "id": "3d-compare",
+   "title": "📊 三维重建与生成横向对比表 (2026-06-25)",
+   "html": "<h3>方法特性对比</h3>\n        <table>\n            <tr><th>模型/方法</th><th>类型</th><th>前馈</th><th>需要优化</th><th>动态/静态</th><th>输出表示</th><th>场景/物体</th><th>年份</th></tr>\n            <tr><td><strong>3DGS</strong></td><td>重建</td><td>❌</td><td>✅ (~30min)</td><td>静态</td><td>3D 高斯</td><td>场景+物体</td><td>2023</td></tr>\n            <tr><td><strong>GaussianPro</strong></td><td>重建</td><td>❌</td><td>✅</td><td>静态</td><td>3D 高斯</td><td>大规模场景</td><td>2024</td></tr>\n            <tr><td><strong>2DGS / SuGaR</strong></td><td>重建</td><td>❌</td><td>✅</td><td>静态</td><td>2D 高斯/网格</td><td>场景+物体</td><td>2024</td></tr>\n            <tr><td><strong>VGGT</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>点图</td><td>场景+物体</td><td>2025</td></tr>\n            <tr><td><strong>π³</strong></td><td>重建</td><td>✅</td><td>❌</td><td>动态+静态</td><td>局部点图+位姿</td><td>场景+物体</td><td>2025</td></tr>\n            <tr><td><strong>LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>Triplane NeRF</td><td>物体</td><td>2023</td></tr>\n            <tr><td><strong>GS-LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>场景+物体</td><td>2024</td></tr>\n            <tr><td><strong>Long-LRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>场景 360°</td><td>2024</td></tr>\n            <tr><td><strong>CRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>Flexicubes 网格</td><td>物体</td><td>2024</td></tr>\n            <tr><td><strong>GRM</strong></td><td>重建</td><td>✅</td><td>❌</td><td>静态</td><td>3D 高斯</td><td>物体</td><td>2024</td></tr>\n            <tr><td><strong>TRELLIS</strong></td><td>生成</td><td>✅</td><td>❌</td><td>静态</td><td>SLAT (多格式)</td><td>物体</td><td>2024</td></tr>\n            <tr><td><strong>Hunyuan3D 2.0</strong></td><td>生成</td><td>✅</td><td>❌</td><td>静态</td><td>形状+PBR纹理</td><td>物体</td><td>2025</td></tr>\n            <tr><td><strong>DreamGaussian</strong></td><td>生成</td><td>半 (SDS)</td><td>✅ (~2min)</td><td>静态</td><td>纹理网格</td><td>物体</td><td>2023</td></tr>\n            <tr><td><strong>GaussianDreamer</strong></td><td>生成</td><td>半 (SDS)</td><td>✅ (~15min)</td><td>静态</td><td>3D 高斯</td><td>物体</td><td>2023</td></tr>\n            <tr><td><strong>Instant3D</strong></td><td>生成</td><td>✅</td><td>❌</td><td>静态</td><td>Triplane NeRF</td><td>物体</td><td>2023</td></tr>\n            <tr><td><strong>Dynamic 3D Gaussians</strong></td><td>重建</td><td>❌</td><td>✅</td><td><strong>动态 (4D)</strong></td><td>4D 高斯</td><td>场景</td><td>2023</td></tr>\n            <tr><td><strong>SA4D</strong></td><td>分割</td><td>❌</td><td>✅</td><td><strong>动态 (4D)</strong></td><td>4D 高斯</td><td>场景</td><td>2024</td></tr>\n            <tr><td><strong>4DLangVGGT</strong></td><td>理解</td><td>✅</td><td>❌</td><td><strong>动态 (4D)</strong></td><td>4D 几何+语义</td><td>场景</td><td>2025</td></tr>\n        </table>\n\n        <h3>速度与规模对比</h3>\n        <table>\n            <tr><th>模型</th><th>推理速度</th><th>输入视角数</th><th>输入分辨率</th><th>训练数据规模</th></tr>\n            <tr><td>3DGS</td><td>实时渲染 (训练~30min)</td><td>数十~数百</td><td>原始分辨率</td><td>每场景</td></tr>\n            <tr><td>VGGT</td><td>&lt;1 秒</td><td>1~数百</td><td>≤518px (限制)</td><td>大规模</td></tr>\n            <tr><td>π³</td><td>57.4 FPS</td><td>1~N</td><td>-</td><td>大规模</td></tr>\n            <tr><td>GS-LRM</td><td>0.23 秒</td><td>2~4</td><td>中等</td><td>Objaverse/RE10K</td></tr>\n            <tr><td>Long-LRM</td><td>~1 秒</td><td>32</td><td>960×540</td><td>DL3DV</td></tr>\n            <tr><td>Long-LRM++</td><td>14 FPS 渲染</td><td>32~64</td><td>950×540</td><td>DL3DV</td></tr>\n            <tr><td>CRM</td><td>~10 秒</td><td>1</td><td>单图</td><td>大规模</td></tr>\n            <tr><td>TRELLIS</td><td>秒级</td><td>文本/图像</td><td>-</td><td>500K 物体</td></tr>\n            <tr><td>Hunyuan3D 2.0</td><td>秒级</td><td>文本/图像</td><td>-</td><td>大规模</td></tr>\n            <tr><td>DreamGaussian</td><td>~2 分钟</td><td>1</td><td>单图</td><td>SDS 蒸馏</td></tr>\n            <tr><td>GaussianDreamer</td><td>~15 分钟</td><td>文本</td><td>-</td><td>SDS 蒸馏</td></tr>\n        </table>\n\n        <div class=\"highlight\">\n            <strong>关键发现：</strong>(1) 前馈模型已实现亚秒到秒级重建，速度比优化方法快 100-800×; (2) 3D 生成正从 SDS 优化转向前馈生成; (3) VGGT (CVPR 2025 Best Paper) 统一多任务范式代表 3D 基础模型方向; (4) 4D 动态高斯是下一个前沿; (5) Pi3 作为 VGGT 同类几何基础模型在近期论文中被广泛引用，V2FUN 在 arXiv 上未找到明确的 3D 模型对应。\n        </div>\n    </div>"
+  },
+  {
+   "id": "3d-timeline",
+   "title": "🔄 三维重建与生成演进时间线 (2023-2026)",
+   "html": "<table>\n            <tr><th>时间</th><th>模型</th><th>里程碑</th><th>类型</th></tr>\n            <tr><td>2023-08</td><td>3DGS</td><td>实时新视角合成, 显式高斯表示</td><td>重建</td></tr>\n            <tr><td>2023-08</td><td>Dynamic 3D Gaussians</td><td>4D 重建 + 6-DOF 追踪</td><td>动态</td></tr>\n            <tr><td>2023-09</td><td>DreamGaussian</td><td>2 分钟图生 3D, 高斯+SDS</td><td>生成</td></tr>\n            <tr><td>2023-10</td><td>GaussianDreamer</td><td>2D+3D 扩散桥接, CVPR 2024</td><td>生成</td></tr>\n            <tr><td>2023-11</td><td>Instant3D / DMV3D</td><td>多视角扩散 + 前馈重建</td><td>生成</td></tr>\n            <tr><td>2024-02</td><td>GaussianPro</td><td>MVS 启发渐进传播密度化</td><td>重建</td></tr>\n            <tr><td>2024-03</td><td>CRM / GRM</td><td>卷积重建 / 像素对齐高斯</td><td>重建</td></tr>\n            <tr><td>2024-04</td><td>GS-LRM</td><td>每像素高斯, 场景级, 0.23s</td><td>重建</td></tr>\n            <tr><td>2024-10</td><td>Long-LRM</td><td>32 视角 360°, Mamba2+Transformer</td><td>重建</td></tr>\n            <tr><td>2024-12</td><td>TRELLIS</td><td>SLAT 统一表示, 多格式输出</td><td>生成</td></tr>\n            <tr><td>2025-01</td><td>Hunyuan3D 2.0</td><td>DiT+Paint, 开源 3D 大模型</td><td>生成</td></tr>\n            <tr><td>2025-03</td><td>VGGT</td><td>CVPR 2025 Best Paper, 多任务统一</td><td>重建</td></tr>\n            <tr><td>2025-07</td><td>π³</td><td>排列等变架构, 消除参考帧依赖, 57.4 FPS</td><td>重建</td></tr>\n            <tr><td>2025-06</td><td>Hunyuan3D 2.1</td><td>PBR 材质, 生产就绪</td><td>生成</td></tr>\n            <tr><td>2025-09</td><td>Hunyuan3D-Omni</td><td>多模态控制 (点云/骨骼等)</td><td>生成</td></tr>\n            <tr><td>2025-12</td><td>Long-LRM++</td><td>半显式表示, 14 FPS 实时, CVPRF 2026</td><td>重建</td></tr>\n        </table>\n    </div>"
+  },
+  {
+   "id": "summary",
+   "title": "💡 总结与思考（更新 2026-06-29）",
+   "html": "<ul>\n            <li><strong>开源超越闭源：</strong>截至 2026-06-25，Cosmos 3 Super 在 R-Bench 和 Artificial Analysis 上已超越 Veo 3.1 和 Gemini 3 Pro，开源生态从追赶者变为引领者</li>\n            <li><strong>音频原生成标配：</strong>2025 年 Sora 2 和 Veo 3 同时推出原生音频生成，2026 年 LTX-2 和 Wan-Streamer 将此能力带入开源，音频原生已成标配</li>\n            <li><strong>世界模拟器路线：</strong>OpenAI (Sora) 和 Google (Veo) 都将视频生成定位为世界模拟器训练路径，NVIDIA (Cosmos 3) 更进一步实现全模态世界模型</li>\n            <li><strong>开源生态分层：</strong>Wan 系列 (Alibaba) = 生态最全; Cosmos 3 (NVIDIA) = 性能最强; CogVideoX (智谱) = 学术标准; Mochi 1 (Genmo) = 加速基线; HunyuanVideo (腾讯) = 轻量高效</li>\n            <li><strong>闭源独特价值：</strong>Sora 2 Characters 社交、Veo 3.1 4K + Gemini 集成、Kling Motion Brush 产品化、Runway 叙事一致性——各有不可替代的产品化优势</li>\n            <li><strong>RL 后训练趋势：</strong>从 Wan-R1 推理到 Kandinsky 5 人类偏好对齐再到 World-R1 几何一致性，RL 后训练在视频生成中的角色与 LLM 领域一致</li>\n            <li><strong>未来方向：</strong>(1) 高分辨率实时交互 (Wan-Streamer 192p → 更高); (2) 视频推理拓展到自然场景 (Wan-R1); (3) 全模态统一 (Cosmos 3 MoT); (4) 物理世界模拟 (Sora/Veo/Cosmos 3 共同方向)</li>\n            <li><strong>三维重建前馈化：</strong>从 3DGS 的 30 分钟优化到 VGGT/GS-LRM 的亚秒级前馈重建，Long-LRM++ 达到 14 FPS 实时渲染。VGGT (CVPR 2025 Best Paper) 统一多任务范式标志着 3D 基础模型方向。π³ 进一步消除参考帧依赖，实现全排列等变架构，57.4 FPS + Sintel ATE 降低 55.7%，证明\"减少归纳偏置\"是 3D 基础模型的关键设计原则。</li>\n            <li><strong>3D 生成从 SDS 到前馈：</strong>DreamGaussian/GaussianDreamer (2023, SDS 路线) → TRELLIS/Hunyuan3D (2024-2025, 前馈生成)。TRELLIS 的 SLAT 多格式表示和 Hunyuan3D 的 PBR 材质支持使 3D 生成走向生产。</li>\n            <li><strong>4D 动态高斯是下一个前沿：</strong>Dynamic 3D Gaussians 实现从渲染涌现追踪，4DLangVGGT 融合语言-几何。前馈 4D 重建是重要研究机会。</li>\n        </ul>\n    </div>\n\n</div>"
+  }
+ ],
+ "notes": [
+  {
+   "title": "Wan2.1: Open and Advanced Large-Scale Video Generative Models",
+   "meta": [
+    "📄 arXiv: 2503.20314",
+    "📅 2025-03-26",
+    "🏢 Alibaba / Wan-AI Team"
+   ],
+   "tags": [
+    "DiT",
+    "T2V",
+    "I2V",
+    "Wan-VAE",
+    "Scaling Law",
+    "1.3B/14B"
+   ],
+   "summary": "开源视频生成基础模型套件，14B 模型在多个基准超越闭源方案。1.3B 模型仅需 8.19GB VRAM，首个支持中英双语文字生成的视频模型。Wan-VAE 的 3D 因果设计成为后续工作的基础（包括 Cosmos 3 也采用）。",
+   "links": [
+    {
+     "href": "VideoGen-20250326-Wan2.1.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2503.20314",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/Wan-Video/Wan2.1",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20250326-Wan2.1.html",
+   "section": "vg-notes-1",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Wan2.2: Major Upgrade with MoE Architecture",
+   "meta": [
+    "📄 arXiv: (共享 2503.20314)",
+    "📅 2025-07-28 发布",
+    "🏢 Alibaba / Wan-AI Team"
+   ],
+   "tags": [
+    "MoE",
+    "720P@24fps",
+    "S2V",
+    "Animate",
+    "A14B/5B"
+   ],
+   "summary": "Wan2.1 的重大升级：引入 MoE 架构到视频扩散模型（跨时间步专家分离），训练数据增加 65.6%(图像)/83.2%(视频)。扩展到语音驱动视频 (S2V) 和角色动画 (Animate)。TI2V-5B 支持 720P@24fps 在消费级 GPU 运行。",
+   "links": [
+    {
+     "href": "VideoGen-20250728-Wan2.2.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://github.com/Wan-Video/Wan2.2",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20250728-Wan2.2.html",
+   "section": "vg-notes-1",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "VACE: All-in-One Video Creation and Editing",
+   "meta": [
+    "📄 arXiv: 2503.07598",
+    "📅 2025-03-10",
+    "🏢 Alibaba / ali-vilab"
+   ],
+   "tags": [
+    "Video Editing",
+    "VCU",
+    "Context Adapter",
+    "Wan2.1 配套"
+   ],
+   "summary": "一体化视频创作与编辑框架，通过 Video Condition Unit (VCU) 统一接口和 Context Adapter 将多种视频任务整合到一个模型中。支持参考视频生成、视频编辑、遮罩编辑等，性能对标专用模型。",
+   "links": [
+    {
+     "href": "VideoGen-20250310-VACE.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2503.07598",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/ali-vilab/VACE",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20250310-VACE.html",
+   "section": "vg-notes-1",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Wan-Move: Motion-controllable Video Generation",
+   "meta": [
+    "📄 arXiv: 2512.08765",
+    "📅 2025-12-09",
+    "🏆 NeurIPS 2025",
+    "🏢 Alibaba / ali-vilab + 清华+港大"
+   ],
+   "tags": [
+    "Motion Control",
+    "Latent Trajectory Guidance",
+    "MoveBench",
+    "Wan-I2V-14B"
+   ],
+   "summary": "运动控制视频生成框架，通过 Latent Trajectory Guidance 实现精细 point-level 运动控制，无需架构修改直接集成到 Wan-I2V-14B。运动可控性媲美 Kling 1.5 Pro Motion Brush。发布 MoveBench 评测基准。",
+   "links": [
+    {
+     "href": "VideoGen-20251209-Wan-Move.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2512.08765",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/ali-vilab/Wan-Move",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20251209-Wan-Move.html",
+   "section": "vg-notes-1",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Wan-R1: Verifiable-Reinforcement Learning for Video Reasoning",
+   "meta": [
+    "📄 arXiv: 2603.27866",
+    "📅 2026-03-29",
+    "🏢 中科院自动化所"
+   ],
+   "tags": [
+    "Video Reasoning",
+    "RL / GRPO",
+    "Verifiable Rewards",
+    "Maze Solving"
+   ],
+   "summary": "首个系统研究视频生成模型推理能力的工作。将 GRPO 适配到 flow-based 视频模型，发现多模态奖励模型灾难性失败，设计可验证奖励函数实现稳定训练。迷宫求解 +29.1%，避障 +51.4%（vs SFT 基线）。",
+   "links": [
+    {
+     "href": "VideoGen-20260329-Wan-R1.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2603.27866",
+     "text": "📄 arXiv"
+    }
+   ],
+   "file": "VideoGen-20260329-Wan-R1.html",
+   "section": "vg-notes-1",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Wan-Streamer v0.1: End-to-end Real-time Interactive Foundation Models",
+   "meta": [
+    "📄 arXiv: 2606.25041",
+    "📅 2026-06-23",
+    "🏢 Alibaba / Wan-AI Team"
+   ],
+   "tags": [
+    "Real-time",
+    "Full-Duplex",
+    "End-to-End",
+    "Audio-Visual",
+    "~200ms Latency"
+   ],
+   "summary": "原生流式端到端交互式基础模型，单一 Transformer 统一处理语言/音频/视频的输入输出。模型侧延迟 ~200ms，总延迟 ~550ms。不依赖外部 ASR/TTS/动画模块。唯一同时具备视频感知、视频输出、全双工、端到端、亚秒响应的模型。",
+   "links": [
+    {
+     "href": "VideoGen-20260623-Wan-Streamer.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.25041",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://wan-streamer.com",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20260623-Wan-Streamer.html",
+   "section": "vg-notes-1",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Kandinsky 5.0: 图像与视频生成基础模型家族",
+   "meta": [
+    "📄 arXiv: 2511.14993",
+    "📅 2025-11-19",
+    "🏢 Kandinsky Lab AI (俄罗斯)"
+   ],
+   "tags": [
+    "Video Generation",
+    "DiT",
+    "T2V / I2V",
+    "SFT + RL 后训练",
+    "2B / 6B / 19B"
+   ],
+   "summary": "三档模型家族 (Video Lite 2B / Image Lite 6B / Video Pro 19B)，支持 10 秒视频生成。完整数据策展生命周期披露，引入 RL 后训练对齐人类偏好。来自俄罗斯团队的差异化路线。",
+   "links": [
+    {
+     "href": "VideoGen-20251119-Kandinsky5.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2511.14993",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://kandinskylab.ai/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20251119-Kandinsky5.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "HunyuanVideo 1.5: 轻量级高性能视频生成模型",
+   "meta": [
+    "📄 arXiv: 2511.18870",
+    "📅 2025-11-24",
+    "🏢 Tencent Hunyuan"
+   ],
+   "tags": [
+    "8.3B Parameters",
+    "SSTA",
+    "Consumer GPU",
+    "Step Distillation",
+    "Muon Optimizer"
+   ],
+   "summary": "仅 8.3B 参数达到开源视频生成 SOTA，消费级 GPU 可运行。SSTA (选择性+滑动窗口注意力) 是核心架构创新。Step Distillation 实现 RTX 4090 上 75 秒生成。工程完备度首屈一指。",
+   "links": [
+    {
+     "href": "VideoGen-20251124-HunyuanVideo1.5.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2511.18870",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20251124-HunyuanVideo1.5.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "LTX-Video / LTX-2: 实时视频与音视频联合生成",
+   "meta": [
+    "📄 arXiv: 2501.00103 / 2601.03233",
+    "📅 2024-12 ~ 2026-01",
+    "🏢 Lightricks"
+   ],
+   "tags": [
+    "Realtime Video",
+    "Audio-Visual",
+    "1:192 Compression",
+    "4K@50fps",
+    "Modality-CFG"
+   ],
+   "summary": "LTX-Video: 1:192 极高压缩率 + VAE 解码器去噪，2 秒生成 5 秒视频 (H100)。LTX-2: 首个开源 DiT 音视频联合基础模型，14B 视频 + 5B 音频双流，支持 4K@50fps + 同步音频。",
+   "links": [
+    {
+     "href": "VideoGen-20241230-LTX.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2501.00103",
+     "text": "📄 LTX-Video arXiv"
+    },
+    {
+     "href": "https://arxiv.org/abs/2601.03233",
+     "text": "📄 LTX-2 arXiv"
+    },
+    {
+     "href": "https://github.com/Lightricks/LTX-Video",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20241230-LTX.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "视频生成中的相机可控性技术方向",
+   "meta": [
+    "📄 综述: TriMotion / Track2View / Geo-Align",
+    "📅 2026-05 ~ 2026-06",
+    "📂 Camera Control"
+   ],
+   "tags": [
+    "Camera Control",
+    "Multi-Modal",
+    "3D Point Tracks",
+    "RL Alignment",
+    "ECCV 2026"
+   ],
+   "summary": "从单一模态向多模态统一演进（TriMotion 三模态），从隐式对应向显式 3D 点轨迹升级（Track2View），从 SFT 向 RL 对齐发展（Geo-Align）。旋转误差降低 30-65%，平移误差降低 61-72%。",
+   "links": [
+    {
+     "href": "VideoGen-20260618-视频生成相机可控性调研.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.20774",
+     "text": "📄 TriMotion"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.15534",
+     "text": "📄 Track2View"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.23903",
+     "text": "📄 Geo-Align"
+    }
+   ],
+   "file": "VideoGen-20260618-视频生成相机可控性调研.html",
+   "section": "vg-notes-2",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "视频生成中的几何一致性技术方向",
+   "meta": [
+    "📄 综述: World-R1 / Robust Dreamer / MVTrack4Gen",
+    "📅 2026-04 ~ 2026-06",
+    "📂 3D Consistency"
+   ],
+   "tags": [
+    "3D Consistency",
+    "RL Constraints",
+    "Gaussian Splatting",
+    "Deviation Learning",
+    "ICML 2026"
+   ],
+   "summary": "从架构修改注入 3D 先验转向 RL 强化 3D 约束（World-R1, ICML 2026），从 RGB 空间循环转向潜空间 3D 高斯记忆（Robust Dreamer），从外部 3D 重建转向注意力层内点追踪监督（MVTrack4Gen）。",
+   "links": [
+    {
+     "href": "VideoGen-20260427-视频生成几何一致性调研.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2604.24764",
+     "text": "📄 World-R1"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.30855",
+     "text": "📄 Robust Dreamer"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.26087",
+     "text": "📄 MVTrack4Gen"
+    }
+   ],
+   "file": "VideoGen-20260427-视频生成几何一致性调研.html",
+   "section": "vg-notes-2",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "World-R1: Reinforcing 3D Constraints for Text-to-Video Generation",
+   "meta": [
+    "📄 arXiv: 2604.24764",
+    "📅 2026-04-27",
+    "🏢 Microsoft Research + 浙江大学",
+    "🏆 ICML 2026",
+    "✅ 开源"
+   ],
+   "tags": [
+    "3D Consistency",
+    "RL / Flow-GRPO",
+    "Camera Conditioning",
+    "Reward Hacking",
+    "World Simulation",
+    "Wan 2.1 基座"
+   ],
+   "summary": "用强化学习把视频生成与 3D 约束对齐——不改架构、不要 3D 监督数据。Flow-GRPO-Fast + 复合奖励(3DGS meta-view 几何 + 重建保真 + 轨迹对齐 + HPSv3 美学),无参数噪声包裹做隐式相机条件,周期解耦训练防 reward hacking。PSNR +10.23dB(Small)/+7.91dB(Large),VBench 不降反升,几何一致用户胜率 92%。表 J 揭示去掉周期解耦训练时 3D 分反升但 VBench 崩——教科书级 reward hacking 签名。",
+   "links": [
+    {
+     "href": "VideoGen-20260427-World-R1.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2604.24764",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/microsoft/World-R1",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://aka.ms/world-r1",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20260427-World-R1.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+   ]
+  },
+  {
+   "title": "UCPE: 统一相机位置编码 — 跨任意镜头的视频生成相机控制",
+   "meta": [
+    "📄 arXiv: 2512.07237",
+    "📅 2025-12-08",
+    "🏢 Monash University · VAST",
+    "🏆 CVPR 2026"
+   ],
+   "tags": [
+    "Camera Control",
+    "Ray-Level Encoding",
+    "Fisheye / Wide-Angle",
+    "Lat-Up Map",
+    "LoRA Adapter",
+    "Wan DiT"
+   ],
+   "summary": "把相机条件从\"相机级\"下沉到\"光线级\",每 token 建立局部光线坐标系,自然支持针孔/广角/鱼眼/折反射等任意镜头;Lat-Up Map 解决首帧 pitch/roll 歧义;LoRA 风格适配器 < 1% 参数零侵入注入 Wan。RotErr 4.12°(ReCamMaster 9.23°,Wan-Ctrl 17.92°),仅 35.6M 参数(ReCamMaster 1/10、Wan-Ctrl 1/42)。OOD 反直觉:鱼眼训练 → 针孔 RE10K 测试反超针孔专用方法,说明学到的是几何不变量而非镜头模型。与 SCoPE 形成\"乘法 vs 加法\"设计对偶。",
+   "links": [
+    {
+     "href": "VideoGen-20251208-UCPE.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2512.07237",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/chengzhag/UCPE",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://chengzhag.github.io/publication/ucpe/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20251208-UCPE.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15"
+   ]
+  },
+  {
+   "title": "SCoPE: 视线坐标位置编码 — 让光线成为 token 的第二地址",
+   "meta": [
+    "📄 arXiv: 2606.27345",
+    "📅 2026-06-25",
+    "🏢 ARC Lab, Tencent · HKU · HKUST"
+   ],
+   "tags": [
+    "Camera Control",
+    "Additive Injection",
+    "Plücker Ray",
+    "Reciprocal Product",
+    "NGI",
+    "Wan2.2 DiT"
+   ],
+   "summary": "每条 Plücker 光线坐标 r=(d,m) 加法注入预训练注意力的 Q/K(Q 侧 (d,m),K 侧翻转 (m,d)),注意力分数自然分解出\"仅依赖两条光线\"的几何项(互反积:零=相交,增大=偏离)。NGI 处理尺度异构,RoPE 逐位不变 + &lt; 0.1% 参数 + 零推理开销。14B 上 RotErr 0.058(UCPE 0.082,−29%),FVD 280(ReRoPE 493,−43%),闭环重访返回平移比 0.090(UCPE 0.433)。消融实证几何项 (D) 最关键(FVD +190 退化)。与 UCPE 形成\"加法 vs 乘法\"设计对偶,若融合将收敛这一代相机编码技术。",
+   "links": [
+    {
+     "href": "VideoGen-20260625-SCoPE.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.27345",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://visual-ai.github.io/scope/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20260625-SCoPE.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "相机控制与位姿条件",
+    "几何与时序一致性"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15"
+   ]
+  },
+  {
+   "title": "Cosmos 3: NVIDIA 全模态世界模型",
+   "meta": [
+    "📄 arXiv: 2606.02800 (v4, 2026-06-23)",
+    "📅 2026-06-01",
+    "🏢 NVIDIA (200+ 作者)",
+    "✅ 开源"
+   ],
+   "tags": [
+    "World Model",
+    "Omnimodal",
+    "Mixture-of-Transformers",
+    "Physical AI",
+    "16B / 64B"
+   ],
+   "summary": "NVIDIA 全模态世界模型家族，统一语言/图像/视频/音频/动作于单一 MoT 架构。R-Bench T2V 80.0 / I2V 82.8，Artificial Analysis 最佳开源 T2I/I2V。开源模型已超越所有闭源模型。",
+   "links": [
+    {
+     "href": "CV-AI-20260625-Cosmos3.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.02800",
+     "text": "📄 arXiv"
+    }
+   ],
+   "file": "CV-AI-20260625-Cosmos3.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control",
+   "meta": [
+    "📄 arXiv: 2503.03751",
+    "📅 2025-03-05",
+    "🏢 NVIDIA Toronto AI Lab / U. Toronto / Vector Institute",
+    "🏆 CVPR 2025 Highlight",
+    "✅ 开源"
+   ],
+   "tags": [
+    "3D Cache",
+    "Camera Control",
+    "3D Consistency",
+    "NVS",
+    "Driving",
+    "Dolly Zoom",
+    "Cosmos/SVD 底座"
+   ],
+   "summary": "用显式 3D 点云缓存(3D cache)作视频扩散模型的几何骨架——把\"几何记忆\"从模型剥离到外部缓存。DAV2 预测深度反投影为点云,按用户相机轨迹渲染为 2D 条件视频注入视频扩散模型(SVD/Cosmos-7B)。模型只需补全未观测区域 + 推进场景动态。统一覆盖单图/稀疏视角/驾驶/单目动态四类 NVS,TSED 0.9143、驾驶 y±4m FID 35.33(3D-GS 81.26)、RE10K 双视角外推 PSNR 21.56(MVSplat 15.51)。In-Layer+Max-Pool 置换不变多视角融合,仅 denoising score matching 损失(以架构替代损失堆叠)。",
+   "links": [
+    {
+     "href": "VideoGen-20250305-GEN3C.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2503.03751",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/nv-tlabs/GEN3C",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://research.nvidia.com/labs/toronto-ai/GEN3C/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20250305-GEN3C.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "相机控制与位姿条件",
+    "视频生成模型谱系"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "stage1",
+    "stage2",
+    "stage3",
+    "control",
+    "loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "evolution",
+    "conclusion"
+   ]
+  },
+  {
+   "title": "Sora 2: OpenAI 旗舰视频与音频生成模型",
+   "meta": [
+    "📄 博客: openai.com/index/sora-2/",
+    "📅 2025-09-30",
+    "🏢 OpenAI",
+    "🔒 闭源"
+   ],
+   "tags": [
+    "Video+Audio",
+    "World Simulator",
+    "Physics",
+    "Characters"
+   ],
+   "summary": "视频生成\"GPT-3.5 时刻\"。原生音频生成、物理建模（含失败模拟）、Characters 社交功能。2026-04 产品下线，Sora 1 Turbo 仍以 API 提供。",
+   "links": [
+    {
+     "href": "VideoGen-20250930-Sora2.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://openai.com/index/sora-2/",
+     "text": "🌐 官方"
+    }
+   ],
+   "file": "VideoGen-20250930-Sora2.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Veo 3 / 3.1: Google DeepMind 视频生成模型",
+   "meta": [
+    "📄 deepmind.google/models/veo/",
+    "📅 2025-05 ~ 2025-08",
+    "🏢 Google DeepMind",
+    "🔒 闭源"
+   ],
+   "tags": [
+    "Video+Audio",
+    "Physics",
+    "Prompt Adherence",
+    "4K",
+    "Gemini 集成"
+   ],
+   "summary": "首个原生音频生成的闭源模型。R-Bench T2V 79.1 / I2V 82.67。Veo 3.1 专为电影制作者设计，支持 4K 输出（Google Flow 平台）。",
+   "links": [
+    {
+     "href": "VideoGen-20250520-Veo3.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://deepmind.google/models/veo/",
+     "text": "🌐 官方"
+    }
+   ],
+   "file": "VideoGen-20250520-Veo3.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Kling 2.0 / 2.1: 快手视频生成模型",
+   "meta": [
+    "📄 klingai.com",
+    "📅 2025-06 ~ 2025-11",
+    "🏢 Kuaishou (快手)",
+    "🔒 闭源"
+   ],
+   "tags": [
+    "Video Generation",
+    "Motion Brush",
+    "Camera Control",
+    "Kling-Foley (V2A)",
+    "1080p"
+   ],
+   "summary": "Motion Brush 涂抹区域指定运动是 UX 创新典范。Kling-Foley (arXiv: 2506.19774) 补齐音频短板，开源 Kling-Audio-Eval 评测基准。在快手短视频生态大规模落地。",
+   "links": [
+    {
+     "href": "VideoGen-20250620-Kling2.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://klingai.com",
+     "text": "🌐 官网"
+    },
+    {
+     "href": "https://arxiv.org/abs/2506.19774",
+     "text": "📄 Kling-Foley arXiv"
+    }
+   ],
+   "file": "VideoGen-20250620-Kling2.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Runway Gen-4: 下一代视频生成模型",
+   "meta": [
+    "📄 runwayml.com/blog/gen-4",
+    "📅 2025-03",
+    "🏢 Runway",
+    "🔒 闭源"
+   ],
+   "tags": [
+    "Character Consistency",
+    "Scene Consistency",
+    "Style Transfer",
+    "电影制作"
+   ],
+   "summary": "核心突破：跨镜头角色和场景一致性。不追求单次最高质量，而是专注\"叙事一致性\"——视频生成从炫技走向实用的关键一步。无 arXiv 论文。",
+   "links": [
+    {
+     "href": "VideoGen-20250331-RunwayGen4.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://runwayml.com/blog/gen-4",
+     "text": "🌐 官方"
+    }
+   ],
+   "file": "VideoGen-20250331-RunwayGen4.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Mochi 1: Genmo 开源视频生成模型",
+   "meta": [
+    "📄 GitHub: genmoai/mochi",
+    "📅 2024-10 ~ 2024-11",
+    "🏢 Genmo",
+    "✅ Apache 2.0"
+   ],
+   "tags": [
+    "Open Source",
+    "Asymmetric DiT",
+    "Flow Matching",
+    "LoRA",
+    "ComfyUI"
+   ],
+   "summary": "2024 年最重要的开源视频生成模型之一。非对称扩散 Transformer 设计，Apache 2.0 许可。被 CalibAtt、AdaCluster 等多项加速工作作为标准基线。2025 年 Wan 2.1 发布后性能被超越。",
+   "links": [
+    {
+     "href": "VideoGen-20241015-Mochi1.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://github.com/genmoai/mochi",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://huggingface.co/genmo/mochi-1-preview",
+     "text": "🤗 HuggingFace"
+    }
+   ],
+   "file": "VideoGen-20241015-Mochi1.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "CogVideoX: 智谱文本到视频扩散模型",
+   "meta": [
+    "📄 arXiv: 2408.06072 (v3, 2025-03)",
+    "📅 2024-08-12",
+    "🏢 智谱 AI / THUDM",
+    "🏆 ICLR 2025",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Expert Transformer",
+    "3D VAE",
+    "T2V / I2V",
+    "2B / 5B",
+    "CogVideoX1.5",
+    "CogKit"
+   ],
+   "summary": "三大创新：3D VAE 时空压缩 + Expert Transformer 深度文视融合 + 渐进式训练。ICLR 2025 接收。被 6+ 篇后续论文作为基线，是开源视频生成研究的标准平台。CogVideoX1.5 支持 10 秒视频。",
+   "links": [
+    {
+     "href": "VideoGen-20240812-CogVideoX.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2408.06072",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/THUDm/CogVideo",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "VideoGen-20240812-CogVideoX.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "brief",
+   "topics": [
+    "视频生成模型谱系"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "DynamiCrafter: 视频扩散先验驱动的图像动画化",
+   "meta": [
+    "📄 arXiv: 2310.12190 (v2)",
+    "📅 2023-10-18",
+    "🏢 腾讯 ARC Lab + CUHK",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Image Animation",
+    "Video Diffusion Prior",
+    "Query Transformer",
+    "Open-domain I2V"
+   ],
+   "summary": "利用视频扩散先验将任意开放域静态图像动画化。双路径注入（Query Transformer 语义路径 + 像素拼接路径）成为后续 I2V 工作的标准范式。腾讯视频生成路线的早期里程碑。",
+   "links": [
+    {
+     "href": "VideoGen-20231018-DynamiCrafter.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2310.12190",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://doubiiu.github.io/projects/DynamiCrafter",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20231018-DynamiCrafter.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "视频扩散先验用于 3D"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "ArtiFixer: 用自回归扩散模型增强和扩展 3D 重建",
+   "meta": [
+    "📄 NVIDIA Research PDF",
+    "📅 2026-08-21",
+    "🏢 NVIDIA / ETH Zurich / Cornell / U Toronto",
+    "🏆 SIGGRAPH 2026"
+   ],
+   "tags": [
+    "3D 重建增强",
+    "自回归视频扩散",
+    "Opacity Mixing",
+    "因果蒸馏 DMD",
+    "Wan 2.1 T2V-14B",
+    "3DGUT"
+   ],
+   "summary": "闭合「3D 重建 ↔ 生成」回路:用 opacity mixing 把损坏渲染潜变量与高斯噪声按渲染不透明度逐像素混合,解决未观测区 mode collapse;再蒸馏成因果自回归模型一次生成数百帧。比所有 SOTA 高 1-3 dB PSNR,相对双向骨干 70× 加速(14B 8.36 FPS / 1.3B 34.4 FPS)。三变体 ArtiFixer/3D/3D+ 覆盖直接渲染、回灌 3D、后处理。基于 Wan 2.1,128×H100 训练约 15k GPU-hours。",
+   "links": [
+    {
+     "href": "3D-20260821-ArtiFixer.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://research.nvidia.com/labs/sil/projects/artifixer/",
+     "text": "🌐 项目主页"
+    },
+    {
+     "href": "https://github.com/nv-tlabs/ArtiFixer",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://huggingface.co/nvidia/ArtiFixer",
+     "text": "🤗 HuggingFace"
+    }
+   ],
+   "file": "3D-20260821-ArtiFixer.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "视频扩散先验用于 3D"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12"
+   ]
+  },
+  {
+   "title": "4DAnyone: Create Anyone in 4D from a Casual Monocular Video",
+   "meta": [
+    "📄 arXiv: 2608.20335",
+    "📅 2026-08-20",
+    "🏢 浙大 / Robbyant / Ant Group / HKUST / CUHK",
+    "🏆 SIGGRAPH Asia 2026"
+   ],
+   "tags": [
+    "4D 人体重建",
+    "单目视频",
+    "多视角视频扩散",
+    "RCP / TCR",
+    "3D 骨架条件",
+    "Wan2.2-TI2V-5B",
+    "4DGS"
+   ],
+   "summary": "无需 rig、无需标定、无需三脚架，从单目随意视频创建 4D 人体。核心诊断\"bounded-attention-context problem\":DiT 注意力上下文有界导致重建规模(数十视角)一致性崩坏。三大支柱:① 3D-Aware Skeleton Conditioning(精度优先于密度,稀疏骨架替代稠密深度);② Reference Context Packing(多尺度 patchify 把参考上下文从 O(N) 压到 O(1));③ Target Context Routing(高噪声轮转 4-view groups 传播全局结构,低噪声固定相邻组稳定细节, t_s/T=0.2)。基于 Wan2.2-TI2V-5B,128×H20-3E 训练,三阶段 curriculum(0.5/1/1.5 天)。自建 MVGameHuman 数据集(游戏引擎,38k 视频/24 相机/318 actors)。DNA-Rendering/DyMVHumans 三维评估全面超越 ReCamMaster†(同数据同 RCP/TCR 对照) 2.5-3 dB PSNR。",
+   "links": [
+    {
+     "href": "3D-20260820-4DAnyone.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.20335",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://ant-research.github.io/4DAnyone/",
+     "text": "🌐 项目主页"
+    },
+    {
+     "href": "https://github.com/ant-research/4DAnyone",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://huggingface.co/AntResearch/4DAnyone",
+     "text": "🤗 HuggingFace"
+    }
+   ],
+   "file": "3D-20260820-4DAnyone.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "微动与非刚性人体重建",
+    "几何与时序一致性"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "skeleton",
+    "rcp",
+    "tcr",
+    "training",
+    "loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "conclusion"
+   ]
+  },
+  {
+   "title": "VGGT: Visual Geometry Grounded Transformer",
+   "meta": [
+    "📄 arXiv: 2503.11651",
+    "📅 2025-03-14",
+    "🏢 Meta FAIR / Oxford VGG",
+    "🏆 CVPR 2025 Best Paper"
+   ],
+   "tags": [
+    "Feed-Forward 3D",
+    "Multi-task",
+    "Camera Pose",
+    "Point Map",
+    "Point Tracking"
+   ],
+   "summary": "单一前馈 Transformer 同时解决相机估计、多视角深度、密集点云和 3D 点追踪四大任务，不到 1 秒重建，超越需要后处理优化的传统方法。CVPR 2025 最佳论文。QuantVGGT (ICLR 2026) 4-bit 量化实现 3.7× 内存压缩。",
+   "links": [
+    {
+     "href": "3D-20250314-VGGT.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2503.11651",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/facebookresearch/vggt",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20250314-VGGT.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建",
+    "前馈式大重建模型",
+    "相机控制与位姿条件"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "3D Gaussian Splatting: 基础技术与改进综述 (2023-2026)",
+   "meta": [
+    "📄 arXiv: 2308.04079 及后续",
+    "📅 2023-08 ~ 2026",
+    "🏢 INRIA / 多机构",
+    "🏆 SIGGRAPH 2023"
+   ],
+   "tags": [
+    "Novel View Synthesis",
+    "Explicit Representation",
+    "Real-Time",
+    "Survey"
+   ],
+   "summary": "3DGS 用可学习高斯椭球体显式表示场景，实现 1080p 30+ FPS 实时新视角合成。改进工作涵盖：GaussianPro (MVS 启发的密度化)、3DGS-MCMC (MCMC 采样)、Mip-Splatting (抗锯齿)、2DGS (表面重建)、SuGaR (表面对齐)、Scaffold-GS (锚点引导)。",
+   "links": [
+    {
+     "href": "3D-20230808-3DGS基础与改进综述.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2308.04079",
+     "text": "📄 3DGS 原始"
+    },
+    {
+     "href": "https://arxiv.org/abs/2402.14650",
+     "text": "📄 GaussianPro"
+    }
+   ],
+   "file": "3D-20230808-3DGS基础与改进综述.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "表面与几何重建",
+    "质量速度权衡与实时"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "三维重建质量-速度 Pareto 全谱调研:谁最快、谁最质量、谁综合最优",
+   "meta": [
+    "📄 综述: 2503.11651 / 2605.15195 / 2507.13347 / 2510.08575 / 2512.10267 / 2404.10772 / 2603.19682 / 2604.07337 / 2601.17835 等",
+    "📅 编撰 2026-08-14",
+    "📂 Survey · 全谱"
+   ],
+   "tags": [
+    "Pareto 全谱",
+    "Quality vs Speed",
+    "Feed-Forward",
+    "Per-Scene Opt",
+    "Hybrid"
+   ],
+   "summary": "回答\"当前质量最好、速度最快的三维重建方法\"。覆盖<strong>速度端:前馈亚秒~秒级</strong>(VGGT-Ω 几何 SOTA Sintel AUC@3°=40.0、π³ 57.4 FPS、ReSplat 0.8s 建+~1400 FPS 渲染 DL3DV 27.70、GS-LRM 0.23s、Long-LRM++ 14 FPS)↔ <strong>质量端:分钟级优化</strong>(NVS outdoor Gaussian Wrapping 26.49/GOF 24.82;表面 GGGS DTU 0.47+T&amp;T 0.60 效率之王、Gaussian Wrapping DTU 0.49)↔ <strong>中间地带:混合范式</strong>(ReSplat 1.7s 超 3DGS 13min 优化 +1.2dB、GenRecon 生成先验桥接 +16%)。<strong>关键结论:</strong>速度王 VGGT-Ω/ReSplat,质量王 GGGS/Gaussian Wrapping,综合 Pareto 最优 = 几何 VGGT-Ω / NVS≤16 视角 ReSplat / 表面 GGGS;甜点区 15-42min;评测分轨(几何/NVS/表面)+ 协议对齐是引用前提。",
+   "links": [
+    {
+     "href": "3D-20260814-三维重建质量速度Pareto全谱调研.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.15195",
+     "text": "📄 VGGT-Ω"
+    },
+    {
+     "href": "https://arxiv.org/abs/2510.08575",
+     "text": "📄 ReSplat"
+    },
+    {
+     "href": "https://arxiv.org/abs/2601.17835",
+     "text": "📄 GGGS"
+    }
+   ],
+   "file": "3D-20260814-三维重建质量速度Pareto全谱调研.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9"
+   ]
+  },
+  {
+   "title": "2D Gaussian Splatting: 几何准确的辐射场重建",
+   "meta": [
+    "📄 arXiv: 2403.17888 (v3)",
+    "📅 2024-03-26",
+    "🏢 ShanghaiTech / Univ. Tübingen",
+    "🏆 SIGGRAPH 2024",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Surface Reconstruction",
+    "2D Gaussian Disk",
+    "Ray-Splat Intersection",
+    "TSDF Mesh",
+    "Normal Consistency"
+   ],
+   "summary": "把 3D 体积塌缩为 2D 定向平面高斯盘,以显式 ray-splat 求交实现透视正确泼溅,配深度畸变+法线一致性正则恢复无噪声几何。DTU Chamfer 0.80mm(比 3DGS 降 59%)、存储 52MB、训练 10.9min。<strong>【是否过时辨析】</strong>作为几何 SOTA 刷榜方法已被同实验室后继 GOF(DTU 0.74/TnT 0.46)及 2026 年 Gaussian Wrapping 等取代;但作为\"2D 盘+深度/法向正则\"范式奠基者与轻量可微分几何前端,2026 年仍被 SLAM/4D/数字人/逆向渲染大量顶会工作沿用,有不可替代价值。",
+   "links": [
+    {
+     "href": "3D-20240326-2DGS.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2403.17888",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/hbb1/2d-gaussian-splatting",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://surfsplatting.github.io",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20240326-2DGS.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建",
+    "鲁棒性与干扰过滤"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+   ]
+  },
+  {
+   "title": "GOF: Gaussian Opacity Fields — 高效自适应表面重建",
+   "meta": [
+    "📄 arXiv: 2404.10772 (v2)",
+    "📅 2024-04-16",
+    "🏢 Univ. Tübingen / CTU Prague",
+    "🏆 SIGGRAPH Asia 2024 (TOG)",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Surface Reconstruction",
+    "Opacity Field",
+    "Marching Tetrahedra",
+    "Ray-Gaussian Intersection",
+    "2DGS 同作者后继"
+   ],
+   "summary": "2DGS 同实验室同作者(Zehao Yu/Geiger)的直接后继。用射线-高斯相交的体渲染建立连续<strong>不透明度场</strong>,对其 level-set 用 Marching Tetrahedra(由高斯诱导的自适应四面体网格)直接提网格,摒弃 TSDF/Poisson;相交平面法线复用 2DGS 正则。DTU Chamfer <strong>0.74</strong>(vs 2DGS 0.80)、TnT F1 <strong>0.46</strong>(vs 0.32,+43.75%),修复 2DGS 无法重建背景几何的短板。<strong>【是否过时】</strong>作为几何 SOTA 已被 2026 新一代 Gaussian Wrapping(DTU 0.49/TnT VirtualScan 0.53,轻 2-3×/快 2.6×)反超,但\"opacity level-set + MTet\"范式仍是承上启下关键节点。",
+   "links": [
+    {
+     "href": "3D-20240416-GOF.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2404.10772",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/autonomousvision/gaussian-opacity-fields",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://niujinshuchong.github.io/gaussian-opacity-fields",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20240416-GOF.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14"
+   ]
+  },
+  {
+   "title": "2026 新一代高斯表面重建调研:GOF 之后的范式反超",
+   "meta": [
+    "📄 综述: 2604.07337 / 2506.19139 / 2603.19682 / 2603.08503",
+    "📅 2025-06 ~ 2026-04(编撰 2026-08-14)",
+    "📂 Survey",
+    "🏆 CVPR/IROS 2026 · SIGGRAPH Asia 2025"
+   ],
+   "tags": [
+    "Survey",
+    "Gaussian Wrapping",
+    "SOF",
+    "GSPrior",
+    "Spherical-GOF",
+    "Eval Protocol Bias"
+   ],
+   "summary": "覆盖 GOF 之后的四条路线:<strong>Gaussian Wrapping</strong>(SuGaR 团队,可学习定向法向+互易衰减→Objects as Volumes 闭式 vacancy/normal 场,2 pivots vs GOF 9,Primal Adaptive Meshing;DTU 0.49/TnT VirtualScan 0.53/Outdoor NVS +1.67dB/网格轻 2-3×/训练快 2.6×,全面反超 GOF)、<strong>SOF</strong>(GOF 直接工程改良,逐像素排序+并行 MTet,网格化快~1数量级)、<strong>GSPrior</strong>(CVPR 2026,自约束 TSDF 先验+带渐收紧,DTU 0.50)、<strong>Spherical-GOF</strong>(IROS 2026 全景扩展)。<strong>关键贡献:</strong>揭穿 TnT 评测协议两类根本偏差(顶点密度偏差+GT 采集偏差),揭穿 PGSR\"假高分\"(MBR PSNR 仅 15.63),提出 Uniform Sampling+Virtual Scanning 替代方案——今后引用几何 SOTA 必须标注协议。",
+   "links": [
+    {
+     "href": "3D-20260814-高斯表面重建2026新一代调研.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2604.07337",
+     "text": "📄 Gaussian Wrapping"
+    },
+    {
+     "href": "https://arxiv.org/abs/2506.19139",
+     "text": "📄 SOF"
+    },
+    {
+     "href": "https://arxiv.org/abs/2603.19682",
+     "text": "📄 GSPrior"
+    }
+   ],
+   "file": "3D-20260814-高斯表面重建2026新一代调研.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9"
+   ]
+  },
+  {
+   "title": "前馈 3D 重建模型综述: LRM / GS-LRM / Long-LRM / CRM / GRM / Instant3D",
+   "meta": [
+    "📄 综述: 2311.06214 → 2404.19702 → 2410.12781 → 2512.10267",
+    "📅 2023-11 ~ 2026-03",
+    "📂 Feed-Forward"
+   ],
+   "tags": [
+    "Feed-Forward",
+    "Transformer",
+    "Triplane → Gaussians",
+    "0.1s ~ 1s"
+   ],
+   "summary": "前馈重建是最重要趋势：LRM (Triplane NeRF) → GRM (像素对齐高斯) → GS-LRM (每像素高斯, 场景级) → Long-LRM (32 视角 360°) → Long-LRM++ (14 FPS 实时)。从仅物体到场景级，从 2-4 张到 32-64 张输入。",
+   "links": [
+    {
+     "href": "3D-20231110-前馈3D重建模型综述.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2404.19702",
+     "text": "📄 GS-LRM"
+    },
+    {
+     "href": "https://arxiv.org/abs/2410.12781",
+     "text": "📄 Long-LRM"
+    }
+   ],
+   "file": "3D-20231110-前馈3D重建模型综述.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "TRELLIS: 结构化 3D 潜空间用于可扩展多用途 3D 生成",
+   "meta": [
+    "📄 arXiv: 2412.01506",
+    "📅 2024-12-02",
+    "🏢 Microsoft Research",
+    "✅ 开源"
+   ],
+   "tags": [
+    "3D Generation",
+    "SLAT",
+    "Rectified Flow",
+    "2B Params",
+    "Multi-format"
+   ],
+   "summary": "统一 SLAT (Structured LATent) 表示，稀疏 3D 网格 + DINOv2 多视角特征，可解码为辐射场/高斯/网格三种格式。Rectified Flow Transformer, 2B 参数, 500K 物体训练。支持局部 3D 编辑。",
+   "links": [
+    {
+     "href": "3D-20241202-TRELLIS.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2412.01506",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/Microsoft/TRELLIS",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20241202-TRELLIS.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "3D 生成"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Hunyuan3D 2.0 / 2.1: 腾讯高分辨率 3D 资产生成系统",
+   "meta": [
+    "📄 arXiv: 2501.12202 / 2506.15442 / 2509.21245",
+    "📅 2025-01 ~ 2025-09",
+    "🏢 Tencent Hunyuan",
+    "✅ 开源"
+   ],
+   "tags": [
+    "3D Generation",
+    "DiT",
+    "PBR Material",
+    "Multi-modal Control"
+   ],
+   "summary": "两阶段管线: Hunyuan3D-DiT (形状生成) + Hunyuan3D-Paint (纹理合成)。2.1 加入 PBR 材质支持，Hunyuan3D-Omni 扩展支持点云/体素/边界框/骨骼姿态多模态控制。号称填补开源 3D 大模型空白。",
+   "links": [
+    {
+     "href": "3D-20250121-Hunyuan3D.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2501.12202",
+     "text": "📄 2.0 arXiv"
+    },
+    {
+     "href": "https://github.com/Tencent/Hunyuan3D-2",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20250121-Hunyuan3D.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "3D 生成"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "3D 生成: DreamGaussian / GaussianDreamer",
+   "meta": [
+    "📄 arXiv: 2309.16653 / 2310.08529",
+    "📅 2023-09 / 2023-10",
+    "🏢 上交+NTU / 腾讯+清华",
+    "🏆 CVPR 2024 (GaussianDreamer)"
+   ],
+   "tags": [
+    "Text/Image-to-3D",
+    "SDS",
+    "Gaussian Splatting",
+    "2D+3D Diffusion"
+   ],
+   "summary": "DreamGaussian: 渐进密度化高斯 + 网格提取 + UV 精调, 2 分钟图生 3D (10× 加速)。GaussianDreamer: 3D 扩散先验初始化 + 2D 扩散精化, 15 分钟文生 3D, CVPR 2024。验证了高斯是 3D 生成的正确表示。",
+   "links": [
+    {
+     "href": "3D-20230928-3D生成高斯方法综述.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2309.16653",
+     "text": "📄 DreamGaussian"
+    },
+    {
+     "href": "https://arxiv.org/abs/2310.08529",
+     "text": "📄 GaussianDreamer"
+    }
+   ],
+   "file": "3D-20230928-3D生成高斯方法综述.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "3D 生成"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "4D / 动态 3D 高斯: 动态场景重建与追踪",
+   "meta": [
+    "📄 arXiv: 2308.09713 及后续",
+    "📅 2023-08 ~ 2026",
+    "📂 Dynamic Scene"
+   ],
+   "tags": [
+    "4D Reconstruction",
+    "6-DOF Tracking",
+    "Local Rigidity",
+    "4D Segmentation"
+   ],
+   "summary": "Dynamic 3D Gaussians: 高斯随时间移动旋转, 局部刚性约束, 从持久视图合成涌现 6-DOF 追踪 (无需对应/光流输入)。SA4D: 4D 分割框架。DGD: 单目视频语义动态场。4DLangVGGT: 动态场景语言-几何统一。",
+   "links": [
+    {
+     "href": "3D-20230818-4D动态高斯综述.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2308.09713",
+     "text": "📄 Dynamic 3D Gaussians"
+    }
+   ],
+   "file": "3D-20230818-4D动态高斯综述.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "π³: Permutation-Equivariant Visual Geometry Learning",
+   "meta": [
+    "📄 arXiv: 2507.13347",
+    "📅 2025-07-17",
+    "🏢 上海交大 + 上海AI实验室 + 浙大 + 中科大 + 复旦",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Permutation Equivariance",
+    "Feed-Forward 3D",
+    "Camera Pose",
+    "Depth",
+    "Point Map"
+   ],
+   "summary": "打破前馈 3D 重建对固定参考视角的依赖，采用全排列等变架构（移除 camera token 和帧索引位置编码），预测仿射不变位姿和尺度不变局部点图。Sintel ATE 从 VGGT 的 0.167 降到 0.074，推理速度 57.4 FPS（VGGT 43.2 FPS）。VGGT 的直接改进者。",
+   "links": [
+    {
+     "href": "3D-20250717-Pi3.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2507.13347",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/yyfz/Pi3",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://yyfz.github.io/pi3/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20250717-Pi3.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "VGGT-Ω: 前馈3D重建的规模化里程碑",
+   "meta": [
+    "📄 arXiv: 2605.15195",
+    "📅 2026-05-14",
+    "🏢 Oxford VGG + Meta AI",
+    "🏆 CVPR 2026 Best Paper Finalist (Oral)",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Feed-Forward 3D",
+    "Scaling Law",
+    "Register Attention",
+    "Dynamic Scenes",
+    "Self-Supervised"
+   ],
+   "summary": "VGGT (CVPR 2025 Best Paper) 的官方升级版,CVPR 2026 Oral/Best Paper Finalist。三大架构改进:单一 dense head + Register Attention(显存压至原版 ~30%,省 70%)+ 动态场景支持;用 15× 监督数据(4M seq)+ 18M 无标注视频自监督训练 <strong>1B/10B</strong> 模型,首次验证前馈 3D 重建 Scaling Law(幂律)。6 基准断层领先:<strong>Sintel 位姿 AUC@3°=40.0(10B,vs 次优 MegaSaM 22.5,+77%)</strong>、ETH3D 56.3、Sintel 深度 δ1.25=93.5。Register 特征可增强 VLA(LIBERO 98.5%)并与语言对齐(InfoNCE top-1 76.8%,类 CLIP CLS token)。<em>本笔记为基于 arXiv HTML 全文的<strong>重写版</strong>,纠正旧版消融数字/Teacher-Student 协议/动态机制/MLP-only 等多处错误。</em>",
+   "links": [
+    {
+     "href": "3D-20260514-VGGT-Omega.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.15195",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://vggt-omega.github.io/",
+     "text": "🌐 项目主页"
+    },
+    {
+     "href": "https://github.com/facebookresearch/vggt-omega",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260514-VGGT-Omega.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12"
+   ]
+  },
+  {
+   "title": "GenRecon: 桥接生成式先验的多视角3D场景重建",
+   "meta": [
+    "📄 arXiv: 2605.23888",
+    "📅 2026-05-22",
+    "🏢 TUM + 华为",
+    "🔗 基于 TRELLIS.2"
+   ],
+   "tags": [
+    "Scene Reconstruction",
+    "Generative Prior",
+    "Multi-View",
+    "PBR Mesh",
+    "TRELLIS.2"
+   ],
+   "summary": "将 TRELLIS.2 的物体级 3D 生成先验桥接到场景级多视角重建。场景分块+投影式多视角条件机制（视角无关、空间锚定），输出可编辑 PBR mesh。比 2DGS/MonoSDF/FineRecon 高 16%。",
+   "links": [
+    {
+     "href": "3D-20260522-GenRecon.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.23888",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://kasothaphie.github.io/GenRecon/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20260522-GenRecon.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型",
+    "3D 生成"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "F3G-Avatar: Face Focused Full-body Gaussian Avatar",
+   "meta": [
+    "📄 arXiv: 2604.09835",
+    "📅 2026-04-10",
+    "🏢 TU/e Eindhoven AIMS Group",
+    "🏆 CVPRW 3DMV 2026",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Full-body Avatar",
+    "Face-focused",
+    "MHR (Momentum Human Rig)",
+    "Two-branch",
+    "Adversarial Loss"
+   ],
+   "summary": "全身高斯数字人方法的<strong>脸部焦点</strong>专用分支。在全身 pipeline 中独立预测一整套脸部 3D 高斯，与身体高斯融合后 LBS 摆姿态、可微高斯渲染。首次把 clothed MHR 模板集成到 3DGS 数字人流程。双分支 + StyleGAN2 对抗损失使 AvatarReX 脸部 PSNR 26.24、LPIPS 0.084 全面 SOTA。与同事方案（MHR+双分支+face loss）高度重合，是直接可复用的学术实现。",
+   "links": [
+    {
+     "href": "3D-20260410-F3G-Avatar.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2604.09835",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/wjmenu/F3G-avatar",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260410-F3G-Avatar.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型",
+    "人脸手部细节与增强"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "GaussianAvatars: Photorealistic Head Avatars with Rigged 3D Gaussians",
+   "meta": [
+    "📄 arXiv: 2312.02069",
+    "📅 2023-12-04",
+    "🏢 TU Munich (Nießner 组)",
+    "🏆 SIGGRAPH 2024",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Head Avatar",
+    "FLAME",
+    "Rigged Gaussians",
+    "Triangle-local Frame",
+    "Binding Inheritance"
+   ],
+   "summary": "3DGS 头部 avatar <strong>开山之作</strong>。每个高斯绑定到 FLAME mesh 一个三角面，用局部坐标系参数化 + 显式 displacement offset。Binding Inheritance 策略在自适应密度控制时保持绑定关系。带阈值的位置/缩放正则化抑制动画伪影。端到端联合优化 FLAME + 高斯。NeRSemble novel-view PSNR 31.6，大幅超越 INSTA/PointAvatar/AvatarMAV。triangle-local 参数化被后续广泛沿用。",
+   "links": [
+    {
+     "href": "3D-20231204-GaussianAvatars.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2312.02069",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://shenhanqian.github.io/gaussian-avatars",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20231204-GaussianAvatars.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "MHR: Momentum Human Rig — SMPL 升级版",
+   "meta": [
+    "📄 arXiv: 2511.15586",
+    "📅 2025-11-19",
+    "🏢 Meta Reality Labs (47 位作者)",
+    "✅ 开源 (工业友好许可)"
+   ],
+   "tags": [
+    "Parametric Body Model",
+    "Decoupled Skeleton/Shape",
+    "Non-linear Pose Correctives",
+    "FACs Expressions",
+    "Multi-LoD"
+   ],
+   "summary": "SMPL 的<strong>正式升级版</strong>。基于 ATLAS 解耦骨架/形状范式 + Momentum 蒙皮库。127 关节 + 204 pose 参数 + 72 FACS 表情 + 6 级 LoD（971~73639 顶点）。稀疏非线性 pose corrective（局部 MLP + geodesic mask）融合 STAR 与 GHUM 优势。分区身份空间（body/head/hand 各用专用数据集）。3DBodyTex 拟合误差低于 SMPL/SMPL-X。工业友好许可 + FBX/GLTF + Momentum 库。",
+   "links": [
+    {
+     "href": "3D-20251109-MHR.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2511.15586",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/facebookresearch/MHR",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20251109-MHR.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "SAM 3D Body: Robust Full-Body Human Mesh Recovery",
+   "meta": [
+    "📄 arXiv: 2602.15989",
+    "📅 2026-02-17",
+    "🏢 Meta + CMU (Jitendra Malik 组)",
+    "✅ 开源 (3DB + MHR)"
+   ],
+   "tags": [
+    "HMR",
+    "Single Image",
+    "MHR (首用)",
+    "Promptable",
+    "2D Keypoint / Mask Prompt",
+    "Body+Hands+Feet"
+   ],
+   "summary": "<strong>首个使用 MHR 的单图全身 HMR 模型</strong>。encoder-decoder 架构 + SAM 风格 promptable 推理（2D keypoint / mask 辅助）。多阶段标注流水线（手动 keypoint + 可微优化 + 多视角几何 + 密集检测）+ 主动数据引擎收集罕见姿态。新评测集按 pose/appearance 分类，支持细粒度分析。野外泛化 SOTA。3DB 是 MHR 界的 HMR/SMPLify，与 MHR 构成完整\"模型+预测器\"生态。",
+   "links": [
+    {
+     "href": "3D-20260217-SAM-3D-Body.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2602.15989",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/facebookresearch/sam-3d-body",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260217-SAM-3D-Body.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Fast SAM 3D Body: Accelerating SAM 3D Body for Real-Time HMR",
+   "meta": [
+    "📄 arXiv: 2603.15603",
+    "📅 2026-03-16",
+    "🏢 USC PSI Lab + UCSD + NVIDIA + Meta Reality Labs",
+    "✅ 开源",
+    "🔧 Training-free"
+   ],
+   "tags": [
+    "HMR 加速",
+    "Training-free",
+    "Real-time",
+    "MHR → SMPL (MLP)",
+    "YOLO11 Pose",
+    "Humanoid Teleoperation"
+   ],
+   "summary": "SAM 3D Body 的<strong>训练免费实时加速版</strong>。3DB 权重完全冻结，通过推理路径重构实现 10.9× 端到端加速：① YOLO11 关键点解耦 hand bbox 串行依赖 → 批化多 crop 编码（3→1 前向）；② 静态图（TensorRT FP16 / CUDA Graph）；③ decoder 剪枝（中间预测层选择 + 去自精化）；④ 用 2.5M 参数 3 层 MLP 替代迭代 MHR→SMPL 转换，<strong>10000× 加速</strong>。部署于 Unitree G1 人形机器人遥操作，单 RGB 65ms 延迟，40 演示微调 VLA 达 80% 成功率。精度持平甚至略超原版。",
+   "links": [
+    {
+     "href": "3D-20260316-Fast-SAM-3D-Body.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2603.15603",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/yangtiming/Fast-SAM-3D-Body",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260316-Fast-SAM-3D-Body.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人体先验与参数化模型",
+    "质量速度权衡与实时"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "FMGS-Avatar: 基础模型先验驱动的单目人体数字人重建",
+   "meta": [
+    "📄 arXiv: 2509.14739",
+    "📅 2025-09-18",
+    "🏢 杭州电子科技大学 / 深圳职院 / 武大",
+    "🏆 Pattern Recognition",
+    "❌ 暂无公开代码"
+   ],
+   "tags": [
+    "Monocular Avatar",
+    "Mesh-Guided 2DGS",
+    "Sapiens Foundation Model",
+    "Multi-Field Distilling",
+    "Coordinated Training",
+    "Gradient Isolation"
+   ],
+   "summary": "把 2D 高斯 surfel 1-to-1 绑定到 SMPL 上采样 mesh 面(位置=重心/旋转=切平面+面法线),替代体积式 3D 高斯攻几何保真度;用 Sapiens 蒸馏深度/法线/语义三模态先验补单目信息,核心创新是<strong>协调训练策略</strong>——选择性梯度隔离(深度→位置、法线→旋转、语义→两者皆隔)消解多损失争抢同参数的优化冲突。ZJU-MoCap 三项 SOTA(PSNR 30.89),训练 10min/55FPS。需注意:固定高斯数锁死容量、1D 法向位移缺切向、无开源+权重未披露。",
+   "links": [
+    {
+     "href": "3D-20250918-FMGS-Avatar.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2509.14739",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://arxiv.org/html/2509.14739v1",
+     "text": "🌐 HTML 全文"
+    }
+   ],
+   "file": "3D-20250918-FMGS-Avatar.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "人体先验与参数化模型",
+    "数字人 Pipeline 工程",
+    "稀疏与少视角重建"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "canonical",
+    "sampling",
+    "distilling",
+    "skinning",
+    "loss",
+    "total-loss",
+    "cts",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "conclusion"
+   ]
+  },
+  {
+   "title": "PDF-GS: 面向鲁棒 3D 高斯溅射的渐进式干扰过滤",
+   "meta": [
+    "📄 arXiv: 2604.12580 (v2)",
+    "📅 2026-04-14",
+    "🏢 成均馆大学 (SKKU)",
+    "🏆 CVPR Findings 2026",
+    "✅ 开源"
+   ],
+   "tags": [
+    "3DGS Robustness",
+    "Distractor Filtering",
+    "DINOv3",
+    "Progressive Optimization",
+    "Plug-and-Play"
+   ],
+   "summary": "重新审视 3DGS 内禀的\"自过滤\"特性(多视角监督天然抑制不一致信号),通过 4 阶段渐进优化将其放大为 distractor 过滤器:filtering 阶段用 DINOv3 patch 差异线索渐进剔除不一致像素,reconstruction 阶段从净化高斯恢复细粒度外观。零额外推理成本、无架构改动。RobustNeRF Mean PSNR 29.65(+0.29 vs RobustSplat,且 4 场景中 3 个更快);+3.44 dB vs vanilla 3DGS。源码佐证:论文\"递减 τ_k\"与代码 sim_thr 0.6→0.7→0.8(递增)等价;phase 内 mask 乘积累积(论文未述)等关键实现细节已纳入分析。",
+   "links": [
+    {
+     "href": "3D-20260414-PDF-GS.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2604.12580",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/kangrnin/PDF-GS",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://kangrnin.github.io/PDF-GS/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20260414-PDF-GS.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "表面与几何重建",
+    "鲁棒性与干扰过滤"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "detect",
+    "progressive",
+    "loss",
+    "total-loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "code-vs-paper",
+    "improvements",
+    "conclusion"
+   ]
+  },
+  {
+   "title": "VidSplat: 视频扩散先验驱动的稀疏视角高斯重建",
+   "meta": [
+    "📄 arXiv: 2605.11424",
+    "📅 2026-05-12",
+    "🏢 清华大学软件学院 · 快手 · Wayne State Univ.",
+    "🏆 SIGGRAPH 2026 Conference Paper",
+    "🔧 Training-free · Code Coming Soon"
+   ],
+   "tags": [
+    "Sparse-View Reconstruction",
+    "Video Diffusion Prior",
+    "Gaussian Splatting",
+    "Stage-wise Denoising",
+    "Single-View",
+    "Wan2.1"
+   ],
+   "summary": "用视频扩散先验(Wan2.1 I2V)迭代合成新视角、补偿稀疏输入覆盖缺失的 training-free 生成式重建框架。核心创新:① <strong>几何引导的分阶段去噪</strong>(式 9 三阶段 mask 调度——早期严格锚定渲染几何、中期渐松、晚期解冻生成),解决视频生成的内容漂移与 3D 不一致;② <strong>迭代优化框架</strong>(可见性相机采样 + 单目深度反投影新增高斯 + 置信度加权融合)。表面重建断层领先:Replica F-Score <strong>80.79</strong>(vs 次优 MAtCha 71.77)、TNT <strong>12.80</strong>(vs 6.47,+98%);DL3DV NVS 室内 <strong>19.78</strong>(vs 17.87,+1.91dB);视频生成 PSNR <strong>25.80</strong> 全面最优。支持单图重建。<em>基于 2DGS/MAtCha/DUSt3R/Wan2.1;代码 Coming Soon,三阶段超参 T0/T1/T2/ρ 未公开是主要可复现性硬伤。</em>",
+   "links": [
+    {
+     "href": "3D-20260512-VidSplat.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.11424",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/tangjm24/VidSplat",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://tangjm24.github.io/VidSplat",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20260512-VidSplat.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "稀疏与少视角重建",
+    "视频扩散先验用于 3D"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "init",
+    "sampling",
+    "gen",
+    "iter",
+    "loss",
+    "experiments",
+    "ablation",
+    "singleview",
+    "improvements",
+    "evolution",
+    "conclusion",
+    "team"
+   ]
+  },
+  {
+   "title": "Stipple: 实时增量高斯泼溅与视觉惯性跟踪",
+   "meta": [
+    "📄 arXiv: 2608.00931",
+    "📅 2026-08-02",
+    "🏢 Technical University of Munich (TUM)"
+   ],
+   "tags": [
+    "3DGS SLAM",
+    "VIO / Basalt",
+    "Incremental",
+    "SSIM Densify",
+    "Rigid Loop Closure",
+    "Rust / CubeCL"
+   ],
+   "summary": "基于 Basalt VIO + Brush(Rust/CubeCL 跨平台 3DGS),实现跟踪与重建异步并行。仅锚帧(~10% 关键帧,未重建&gt;5% 触发)执行 5 步高斯添加(深度播种→占用剪枝→突发拟合→SSIM 致密化→收敛);回环修正用刚体变换 O(n) 批量更新锚帧高斯,无需重训。Vicon Room PSNR 23.49(+1.08 vs CaRtGS)、跟踪 211 FPS(3×);MSD 264 FPS,MGO 序列 +4.3~5.4 dB。Machine Hall 上 SSIM 致密化过度触发致高斯爆炸(394k),是已知失败模式。代表 3DGS SLAM 从\"离线 SfM 后训\"向\"VIO+增量重建\"的范式转向。",
+   "links": [
+    {
+     "href": "3D-20260802-Stipple.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.00931",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/ArthurBrussee/brush",
+     "text": "💻 Brush (3DGS 引擎)"
+    }
+   ],
+   "file": "3D-20260802-Stipple.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "质量速度权衡与实时",
+    "鲁棒性与干扰过滤"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
+   "title": "微动人体三维重建调研 (六大维度综述)",
+   "meta": [
+    "📅 2026-08-10",
+    "📂 微动 / 非刚性人体重建 — 项目主线",
+    "📑 调研综述"
+   ],
+   "tags": [
+    "微动人体重建",
+    "非刚性形变",
+    "可变形 3DGS",
+    "视频生成几何一致性",
+    "姿态引导",
+    "动转静",
+    "生成式三维重建"
+   ],
+   "summary": "人体微动（非刚性形变）是三维重建中的经典挑战：传统 NeRF 用 MLP 变形场处理非刚性运动但速度慢，3DGS 的出现为实时动态重建提供了新可能。本调研覆盖六大维度：(1) 可变形 3DGS、(2) 视频生成几何一致性、(3) 骨骼/姿态引导、(4) 动转静与姿态归一化、(5) 生成式三维重建、(6) Wan 模型几何一致性特性。",
+   "links": [
+    {
+     "href": "3D-20260810-微动人体三维重建调研.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "3D-20260810-微动人体三维重建调研.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "微动人体三维重建 — 思路辨析与研究规划",
+   "meta": [
+    "📅 2026-08-10",
+    "📂 研究规划 / 思路辨析",
+    "⚠️ 含对前篇推理的质疑"
+   ],
+   "tags": [
+    "思路辨析",
+    "命名混淆",
+    "逻辑闭环",
+    "研究规划"
+   ],
+   "summary": "承接上篇调研，逐条审辨六大维度的定位与推理链。两处关键质疑：其一，「生成式三维重建」实际是 Image-to-3D via Video Generation（VideoMV / Hi3D 同类），与 PersonNeRF 式动转静属不同任务，命名混淆会误导研究定位；其二，原调研以「SMAL 不成熟」为由不推荐骨骼路线，但推荐路线里又要求「姿态条件」——2D 关键点本身即是一种骨骼先验，若不要姿态条件则无法保证生成视频的姿态一致，逻辑闭环有缺陷。",
+   "links": [
+    {
+     "href": "3D-20260810-微动人体三维重建思路辨析.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "3D-20260810-微动人体三维重建思路辨析.html",
+   "section": "3d",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "同事方案分析：MHR + 3DMM + 3D 高斯数字人 Pipeline",
+   "meta": [
+    "📅 2026-07-20",
+    "📂 工程方案 / 静态与动态重建",
+    "🏢 HUGS + GaussianAvatars 混合路线"
+   ],
+   "tags": [
+    "MHR",
+    "3DMM",
+    "3DGS 数字人",
+    "静态重建",
+    "动态重建",
+    "入门基础"
+   ],
+   "summary": "逐句解码同事的 MHR + 3DMM + 3D 高斯数字人方案，对应到具体论文与算法，并给出精读建议。先补齐基础区分：静态重建与动态重建是两个不同任务，参数化人体模型（SMPL / MHR / FLAME）在其中角色不同；核心论断是动态重建的 canonical（规范）空间本质上是某种静态重建结果——选一帧或 K 帧联合优化得到模板高斯，再靠参数化模型驱动其他帧，静态重建是动态重建的地基。文末另设深度解析与解法章节。",
+   "links": [
+    {
+     "href": "3D-20260720-同事方案MHR高斯数字人分析.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "3D-20260720-同事方案MHR高斯数字人分析.html",
+   "section": "3d",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "同事人体重建 Pipeline 详细流程（9 步，初学者友好版）",
+   "meta": [
+    "📅 2026-07-20",
+    "📂 工程方案 / 9 步流程",
+    "⚠️ 按口述整理，存在误差风险"
+   ],
+   "tags": [
+    "人体重建 Pipeline",
+    "前处理",
+    "对齐",
+    "初始化",
+    "训练",
+    "含误差标注"
+   ],
+   "summary": "按同事口述记忆整理的 9 步人体重建流程，配色分组：蓝色=前处理（1-5）、绿色=对齐（6）、紫色=初始化（7-8）、橙色=训练（9），并附 SVG 矢量总览图。整体框架与社区主流数字人 pipeline（HUGS + GaussianAvatars 混合）一致，对理解研究方向有参考价值。<strong>注意：本流程按口述整理，文末设有「可能的笔记误差」小节，引用前请先核对。</strong>",
+   "links": [
+    {
+     "href": "3D-20260720-同事人体重建Pipeline详解.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "3D-20260720-同事人体重建Pipeline详解.html",
+   "section": "3d",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "3D 高斯人物与人脸重建研究现状调研 (2023.11–2026.07)",
+   "meta": [
+    "📅 2026-07-20",
+    "📂 调研综述 / 40+ 篇核心论文",
+    "📑 含精读优先级建议"
+   ],
+   "tags": [
+    "人体重建",
+    "人脸与头部",
+    "全身表达",
+    "单图前馈",
+    "远程在场",
+    "精读优先级"
+   ],
+   "summary": "3DGS 自 2023 年 SIGGRAPH 提出后迅速被应用到可动画人体/人脸数字化。相比 NeRF，3DGS 提供实时渲染（60-100 FPS）、显式可编辑表示与分钟级（vs 小时级）训练，成为数字人、虚拟试衣、远程在场、talking head 等场景的主流路线。本调研按人体重建 / 人脸与头部 / 全身表达 / 单图前馈 / 远程在场五个子方向组织，文末给出精读优先级建议供决策深读顺序。",
+   "links": [
+    {
+     "href": "3D-20260720-高斯人物与人脸重建调研.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "3D-20260720-高斯人物与人脸重建调研.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程",
+    "人脸手部细节与增强"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "3DGS 多视角重建 SOTA 调研 (2025-2026)",
+   "meta": [
+    "📅 2026-08-12",
+    "📂 调研综述 / 静态多视角人体",
+    "🎯 含选型结论"
+   ],
+   "tags": [
+    "多视角重建",
+    "密度控制改进",
+    "稀疏视角",
+    "2DGS",
+    "PDF-GS",
+    "HUGS"
+   ],
+   "summary": "面向静态多视角人体的 SOTA 选型调研，覆盖改进密度控制机制的方法（原版 3DGS 的 split/clone/prune 是启发式的，易产生漂浮点与过度增长）与稀疏视角（2-12 视角）重建方法（引入深度/法线几何先验或大规模预训练先验）。<strong>选型结论：</strong>对静态多视角人体与已有的 SMPL/SAM2 mask 天然适配；若只需静态资产，2DGS + PDF-GS 已足够，HUGS 可作为升级路线；若需要可驱动数字人则是 HUGS / GaussianAvatars 的强项。当前 12-16 视角属中度稀疏，稀疏视角方法可选但非必需。",
+   "links": [
+    {
+     "href": "3D-20260812-3DGS多视角重建SOTA调研.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "3D-20260812-3DGS多视角重建SOTA调研.html",
+   "section": "3d",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "稀疏与少视角重建"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Deformable 3D Gaussians: 高保真单目动态场景重建",
+   "meta": [
+    "📄 arXiv: 2309.13101",
+    "📅 2023-09-22",
+    "🏢 浙江大学 (Xiaogang Jin 组) / 腾讯"
+   ],
+   "tags": [
+    "3D Gaussian Splatting",
+    "Dynamic Scene",
+    "Deformation Field",
+    "Monocular Video",
+    "Canonical Space",
+    "Real-time Rendering"
+   ],
+   "summary": "将 3DGS 扩展到单目动态场景重建：在规范空间（canonical space）学习一组 3D 高斯，通过变形场将高斯映射到任意时间步。优化从 COLMAP SfM 点云开始作为初始状态，以高斯位置编码与时间编码作为变形场网络输入，输出位置偏移与旋转偏移。相比 D-NeRF 等隐式神经表示难以捕捉细节、无法实时渲染，本方法同时实现了更高渲染质量与实时渲染速度，并支持时间插值。",
+   "links": [
+    {
+     "href": "3D-20230922-Deformable-3DGS.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2309.13101",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/ingra14m/Deformable-3D-Gaussians",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20230922-Deformable-3DGS.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "微动与非刚性人体重建"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "EVA-Gaussian: 基于 3D 高斯的实时人体新视角合成",
+   "meta": [
+    "📄 arXiv: 2410.01425",
+    "📅 2024-10-02",
+    "🏢 香港科技大学 · 天翼智脑 (TeleAI, 中国电信)"
+   ],
+   "tags": [
+    "Feed-Forward 3DGS",
+    "跨视角注意力",
+    "特征溅射",
+    "循环精修",
+    "稀疏视角",
+    "实时人体"
+   ],
+   "summary": "面向多样化多视角相机设置的实时前馈式 3D 人体重建。针对现有方法要么局限于稠密视角配置、要么受限于较低图像分辨率（无法在大视角差下自由视角渲染、也无法在常用 GPU 上实时恢复精细人体细节）的痛点，提出三阶段方案：EVA 高效跨视角注意力模块做高斯位置估计 → 高斯属性估计 → 特征溅射与循环精修，并引入锚点损失做属性正则化。",
+   "links": [
+    {
+     "href": "3D-20241002-EVA-Gaussian.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2410.01425",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/zhenliuZJU/EVA-Gaussian",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20241002-EVA-Gaussian.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "人脸手部细节与增强",
+    "稀疏与少视角重建"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "stage1",
+    "stage2",
+    "stage3",
+    "anchor",
+    "loss",
+    "flowchart",
+    "experiments",
+    "ablation",
+    "improvements",
+    "conclusion"
+   ]
+  },
+  {
+   "title": "ReSplat: Learning Recurrent Gaussian Splatting",
+   "meta": [
+    "📄 arXiv: 2510.08575",
+    "📅 2025-10-09",
+    "🏢 CVG / ETH Zurich · University of Tübingen · Microsoft"
+   ],
+   "tags": [
+    "Feed-Forward 3DGS",
+    "循环高斯更新",
+    "渲染误差反馈",
+    "Gradient-Free",
+    "紧凑初始化"
+   ],
+   "summary": "前馈式高斯泼溅能直接从输入图像预测 3D 高斯参数、无需昂贵的逐场景优化，但受限于固定的单次前馈。ReSplat 的核心洞察：<strong>高斯泼溅的渲染误差本身是一个丰富的反馈信号</strong>——渲染当前预测后与真实输入图比较，用误差指导网络学习如何循环更新高斯参数，无需显式计算梯度（gradient-free）。作者 Haofei Xu, Daniel Barath, Andreas Geiger, Marc Pollefeys。",
+   "links": [
+    {
+     "href": "3D-20251009-ReSplat.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2510.08575",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/cvg/resplat",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20251009-ReSplat.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "稀疏与少视角重建",
+    "前馈式大重建模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "TripoSplat: Generative 3D Gaussians with Learned Density Control",
+   "meta": [
+    "📄 arXiv: 2605.16355",
+    "📅 2026-05-08",
+    "🏢 清华大学 (IIIS) / VAST AI Research",
+    "🏆 SIGGRAPH 2026"
+   ],
+   "tags": [
+    "3D Gaussian Splatting",
+    "Learned Density Control",
+    "Generative Model",
+    "Latent Diffusion",
+    "Octree",
+    "Optimal Transport"
+   ],
+   "summary": "提出 Density-Sampled Gaussians (DeG)——专为生成式建模设计的 3D 表示，解决一个关键矛盾：<strong>3DGS 的密度控制（densification/pruning）是非可微的，无法直接用于生成模型训练</strong>。此前所有生成式 3DGS 方法都在回避该问题，改用固定数量/固定结构的高斯，牺牲了 3DGS 最核心的自适应能力。TripoSplat 用 PDF 采样 + 渲染损失贡献梯度把密度控制变成可微操作：高斯中心从可学习概率密度函数采样，密度自动集中在几何复杂区域，单个潜码可解码任意数量的高斯。",
+   "links": [
+    {
+     "href": "3D-20260508-TripoSplat.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.16355",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/VAST-AI-Research/TripoSplat",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260508-TripoSplat.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "稀疏与少视角重建",
+    "前馈式大重建模型"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
+   "meta": [
+    "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",
+    "📅 2018-2026",
+    "📂 Real-ISR"
+   ],
+   "tags": [
+    "Super-Resolution",
+    "GAN → Diffusion → One-Step",
+    "Blind SR",
+    "DiT"
+   ],
+   "summary": "从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。",
+   "links": [
+    {
+     "href": "SR-20260629-RealISR-Evolution.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/1809.00219",
+     "text": "📄 ESRGAN"
+    },
+    {
+     "href": "https://arxiv.org/abs/2406.08177",
+     "text": "📄 OSEDiff"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.16188",
+     "text": "📄 TEASR"
+    }
+   ],
+   "file": "SR-20260629-RealISR-Evolution.html",
+   "section": "sr",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人脸手部细节与增强"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration",
+   "meta": [
+    "📄 arXiv: 2507.20590",
+    "📅 2025-07-28",
+    "📂 Image Restoration",
+    "🔄 Diffusion Prior + One-Step"
+   ],
+   "tags": [
+    "Image Restoration",
+    "Diffusion Prior",
+    "Score Distillation",
+    "One-Step",
+    "GAN Discriminator"
+   ],
+   "summary": "利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。",
+   "links": [
+    {
+     "href": "SR-20250728-HYPIR.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2507.20590",
+     "text": "📄 arXiv"
+    }
+   ],
+   "file": "SR-20250728-HYPIR.html",
+   "section": "sr",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人脸手部细节与增强"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "RetouchFormer: 半监督高质量人脸修图 Transformer",
+   "meta": [
+    "📅 2024-02-20",
+    "🏆 AAAI 2024",
+    "📂 Face Retouching"
+   ],
+   "tags": [
+    "Face Retouching",
+    "Semi-Supervised",
+    "Prior-Based Selective Self-Attention",
+    "Inpainting"
+   ],
+   "summary": "Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，<strong>在单一网络中联合完成瑕疵定位与内容合成</strong>，不同于先检测后修复的两阶段硬修复方案。",
+   "links": [
+    {
+     "href": "SR-20240220-RetouchFormer.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://github.com/Davidcoach/RetouchFormer_AAAI_24",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "SR-20240220-RetouchFormer.html",
+   "section": "sr",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "人脸手部细节与增强"
+   ],
+   "anchors": []
+  },
+  {
+   "title": "用 AI 做论文调研：从链接到深度分析笔记的工作流",
+   "meta": [
+    "📅 2026-08-13",
+    "📂 方法论 / 元文档",
+    "🛠️ 与 AGENTS.md 配套"
+   ],
+   "tags": [
+    "5 步调研工作流",
+    "AGENTS.md 规范",
+    "子代理协作",
+    "框图演进",
+    "知识资产"
+   ],
+   "summary": "基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成<strong>可累积、可检索、可复用</strong>的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。",
+   "links": [
+    {
+     "href": "CV-AI-20260813-用AI做论文调研经验分享.html",
+     "text": "📖 阅读笔记"
+    }
+   ],
+   "file": "CV-AI-20260813-用AI做论文调研经验分享.html",
+   "section": "meta",
+   "kind": "methodology",
+   "depth": "deep",
+   "topics": [],
+   "anchors": [
+    "why",
+    "workflow",
+    "agents",
+    "subagent",
+    "diagram",
+    "case",
+    "pitfall",
+    "toolchain",
+    "retrieval",
+    "summary"
+   ]
+  }
+ ]
+}

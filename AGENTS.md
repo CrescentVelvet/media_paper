@@ -84,8 +84,17 @@ flowchart TD
 
 **关键原则**:改进点要**有代码/实验佐证**,不能空谈。例:说"多视角名不副实"要引用 `EVANet.forward` 中 `torch.stack([lmain, rmain])`;说"伪影在手脚"要引用消融实验原文。
 
-### 7. 更新 index.html
-在 `index.html` 加一个 `.note-card`:标题 + `.meta`(arxiv-id/日期/机构) + `.tags` + 一段摘要 + 三个链接(`📖 阅读笔记` 本地、`📄 arXiv`、`💻 GitHub`)。
+### 7. 更新 papers.json 并重新生成 index.html(**禁止手改 index.html**)
+`index.html` 是生成物,由 `build_index.py` 从 `papers.json`(唯一真相源)+ `index_style.css` 生成。新增笔记流程:
+1. 在 `papers.json` 的 `notes[]` 对应分区位置追加条目,字段:`file`(笔记文件名)、`title`、
+   `section`(卡片分区: `vg-notes-1`/`vg-notes-2`/`vg-notes-3`/`3d`/`sr`/`meta`)、`kind`、`depth`、
+   `topics`(从 `topics` 列表中选,可多选)、`meta`(📅 日期/📄 arXiv/🏢 机构等,原文照抄)、
+   `tags`、`summary`(一段摘要,可含 `<strong>`)、`links`(`📖 阅读笔记` 本地 + `📄 arXiv` + `💻 GitHub`)。
+   **内容必须取自笔记自身 header,禁止编造**(见「二、真实性硬约束」)。
+2. 运行 `python build_index.py` 重新生成 `index.html`(编号自动连续,卡片自动带 kind/depth 徽章与筛选数据)。
+3. 运行 `python check.py` —— 它会重新生成 index 并与磁盘文件比对,**手改 index.html 会被检出**。
+
+- 页面样式改 `index_style.css`;静态章节(调研总览/对比表/时间线/总结)内容存于 `papers.json` 的 `extra_sections`,同样改后需重新生成。
 
 ---
 
@@ -234,5 +243,5 @@ flowchart TD
 - [ ] Mermaid/MathJax(若用)CDN 与 init 脚本正确
 - [ ] 实验表格含 PSNR/SSIM/LPIPS 等量化指标,最优行标 `.best`
 - [ ] deep 级笔记含「可改进方向分析」章节(三维度 + 优先级表 + 代码佐证)
-- [ ] 已更新 `index.html` 加 `.note-card`
+- [ ] 已更新 `papers.json` 并运行 `python build_index.py` 重新生成 index(禁止直接改 index.html)
 - [ ] commit 信息中文,描述新增/改动章节
