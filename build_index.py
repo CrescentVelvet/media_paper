@@ -30,20 +30,29 @@ DEPTH_LABEL = {"deep": "深度", "standard": "标准", "brief": "速览"}
 FILTER_CSS = """
 /* ---- 筛选栏(build_index.py 生成) ---- */
 .filter-bar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
-  background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:24px;}
+  background:rgba(22,25,35,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:22px;
+  box-shadow:var(--shadow);}
 .filter-bar input[type=search]{flex:1 1 220px;min-width:180px;background:var(--bg);color:var(--text);
-  border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:14px;outline:none;}
-.filter-bar input[type=search]:focus{border-color:var(--accent);}
+  border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:14px;outline:none;
+  transition:border-color .15s;}
+.filter-bar input[type=search]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.filter-bar input[type=search]::placeholder{color:var(--text-dim);}
 .filter-bar .chips{display:flex;gap:6px;flex-wrap:wrap;}
-.chip{cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text-dim);
-  border-radius:999px;padding:5px 12px;font-size:13px;user-select:none;}
+.chip{cursor:pointer;border:1px solid var(--border);background:var(--tag-bg);color:var(--text-dim);
+  border-radius:999px;padding:5px 13px;font-size:13px;user-select:none;transition:all .15s;}
 .chip:hover{color:var(--text);border-color:var(--accent-dim);}
-.chip.active{background:var(--accent);border-color:var(--accent);color:#0f1117;font-weight:600;}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#0d0f15;font-weight:600;}
+.chip.chip-clear{display:none;border-color:var(--border-strong);color:var(--text-dim);}
+.filter-bar.filtering .chip-clear{display:inline-block;}
 .filter-bar select{background:var(--bg);color:var(--text);border:1px solid var(--border);
-  border-radius:8px;padding:8px 10px;font-size:14px;}
-.result-count{font-size:13px;color:var(--text-dim);}
-.tag-kind{background:#1e3a5f;color:#93c5fd;}
-.tag-depth{background:#3d2e04;color:#fbbf24;}
+  border-radius:8px;padding:8px 10px;font-size:14px;outline:none;cursor:pointer;}
+.filter-bar select:focus{border-color:var(--accent);}
+.result-count{font-size:13px;color:var(--text-dim);margin-left:auto;}
+.empty{display:none;text-align:center;color:var(--text-dim);padding:48px 0;
+  border:1px dashed var(--border-strong);border-radius:12px;margin-bottom:22px;font-size:0.95em;}
+.tag-kind{background:var(--kind-bg) !important;color:var(--kind-fg) !important;}
+.tag-depth{background:var(--depth-bg) !important;color:var(--depth-fg) !important;}
 """
 
 
@@ -100,11 +109,11 @@ def render(papers, css):
 
     # --- 筛选栏 ---
     kind_chips = "".join(
-        f'<span class="chip" data-k="{k}" data-v="{v}">{label} {kc[v] if v in kc else ""}</span>'
+        f'<span class="chip{" active" if v == "all" else ""}" data-k="{k}" data-v="{v}">{label} {kc[v] if v in kc else ""}</span>'
         for k, v, label in
         [("kind", "all", "全部类型")] + [("kind", k, KIND_LABEL[k]) for k in ["note", "survey", "pipeline", "methodology"]])
     depth_chips = "".join(
-        f'<span class="chip" data-k="{k}" data-v="{v}">{label} {dc[v] if v in dc else ""}</span>'
+        f'<span class="chip{" active" if v == "all" else ""}" data-k="{k}" data-v="{v}">{label} {dc[v] if v in dc else ""}</span>'
         for k, v, label in
         [("depth", "all", "全部深度")] + [("depth", d, DEPTH_LABEL[d]) for d in ["deep", "standard", "brief"]])
     topic_opts = '<option value="all">全部主题</option>' + "".join(
@@ -115,8 +124,10 @@ def render(papers, css):
         f'    <div class="chips">{kind_chips}</div>\n'
         f'    <div class="chips">{depth_chips}</div>\n'
         f'    <select id="topic">{topic_opts}</select>\n'
+        '    <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>\n'
         '    <span class="result-count" id="cnt"></span>\n'
-        '</div>\n')
+        '</div>\n'
+        '<div class="empty" id="empty">🔍 没有匹配的笔记 —— 换个关键词，或点上方「✕ 清除筛选」重置条件</div>\n')
 
     # --- 分区(按固定顺序) ---
     num = 0
@@ -147,6 +158,7 @@ def render(papers, css):
 (function(){
   var cards=[].slice.call(document.querySelectorAll('.note-card'));
   var q=document.getElementById('q'),topic=document.getElementById('topic'),cnt=document.getElementById('cnt');
+  var bar=document.getElementById('filterBar'),empty=document.getElementById('empty'),clear=document.getElementById('clear');
   var state={kind:'all',depth:'all'};
   function bindChips(key){
     document.querySelectorAll('.chip[data-k="'+key+'"]').forEach(function(ch){
@@ -175,11 +187,20 @@ def render(papers, css):
     document.querySelectorAll('.section[data-static]').forEach(function(s){
       s.style.display=filtering?'none':'';
     });
+    bar.classList.toggle('filtering',filtering);
     if(filtering){
       var n=cards.filter(function(c){return c.style.display!=='none';}).length;
       cnt.textContent='显示 '+n+' / '+cards.length+' 篇';
-    }else cnt.textContent='';
+      empty.style.display=n?'none':'block';
+    }else{cnt.textContent='';empty.style.display='none';}
   }
+  clear.addEventListener('click',function(){
+    q.value='';topic.value='all';state.kind='all';state.depth='all';
+    document.querySelectorAll('.chip[data-k]').forEach(function(c){
+      c.classList.toggle('active',c.dataset.v==='all');
+    });
+    apply();
+  });
   bindChips('kind');bindChips('depth');
   q.addEventListener('input',apply);topic.addEventListener('change',apply);
 })();

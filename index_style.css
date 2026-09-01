@@ -1,139 +1,225 @@
 :root {
-            --bg: #0f1117;
-            --card: #1a1d27;
-            --accent: #76b900;
-            --accent-dim: #5a8f00;
-            --text: #e0e0e0;
-            --text-dim: #9a9a9a;
-            --border: #2a2d37;
-            --tag-bg: #252830;
-            --code-bg: #15171f;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.7;
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
-            border-bottom: 3px solid var(--accent);
-            padding: 40px 30px;
-            text-align: center;
-        }
-        .header h1 {
-            font-size: 2em;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-        .header p {
-            color: var(--text-dim);
-            font-size: 0.95em;
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        .container { max-width: 900px; margin: 0 auto; padding: 30px; }
-        .section {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-        .section h2 {
-            color: var(--accent);
-            font-size: 1.3em;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-        .section h3 {
-            color: #c8c8c8;
-            font-size: 1.05em;
-            margin: 15px 0 8px;
-        }
-        .note-card {
-            background: var(--code-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: border-color 0.2s;
-        }
-        .note-card:hover {
-            border-color: var(--accent);
-        }
-        .note-card h3 {
-            color: var(--accent);
-            margin-bottom: 8px;
-            font-size: 1.1em;
-        }
-        .note-card .meta {
-            color: var(--text-dim);
-            font-size: 0.85em;
-            margin-bottom: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .note-card .meta span { white-space: nowrap; }
-        .note-card p {
-            font-size: 0.9em;
-            margin-bottom: 10px;
-        }
-        .note-card .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin: 8px 0;
-        }
-        .tag {
-            background: var(--tag-bg);
-            color: var(--text-dim);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.75em;
-            border: 1px solid var(--border);
-        }
-        .tag.green { border-color: var(--accent); color: var(--accent); }
-        .note-card a {
-            display: inline-block;
-            padding: 5px 12px;
-            background: var(--tag-bg);
-            color: var(--accent);
-            border: 1px solid var(--accent-dim);
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 0.85em;
-            margin-right: 8px;
-        }
-        .note-card a:hover { background: var(--accent-dim); color: #fff; }
-        .highlight {
-            background: rgba(118, 185, 0, 0.1);
-            border-left: 3px solid var(--accent);
-            padding: 12px 15px;
-            margin: 12px 0;
-            border-radius: 0 6px 6px 0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-        th, td {
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            text-align: left;
-        }
-        th { background: var(--code-bg); color: var(--accent); }
-        tr:nth-child(even) { background: var(--code-bg); }
-        .footer {
-            text-align: center;
-            color: var(--text-dim);
-            font-size: 0.8em;
-            padding: 20px;
-            border-top: 1px solid var(--border);
-            margin-top: 20px;
-        }
+    --bg: #0d0f15;
+    --card: #161923;
+    --card-2: #1b1f2b;
+    --accent: #76b900;
+    --accent-bright: #9ed93c;
+    --accent-dim: #5a8f00;
+    --accent-soft: rgba(118, 185, 0, 0.12);
+    --text: #e6e8ee;
+    --text-dim: #9aa0ae;
+    --border: #262a36;
+    --border-strong: #333849;
+    --tag-bg: #20242f;
+    --code-bg: #12151d;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --kind-bg: rgba(96, 165, 250, 0.14);
+    --kind-fg: #93c5fd;
+    --depth-bg: rgba(251, 191, 36, 0.14);
+    --depth-fg: #fbbf24;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background:
+        radial-gradient(1200px 400px at 50% -100px, rgba(118, 185, 0, 0.07), transparent 70%),
+        var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent-dim); color: #fff; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+/* ---------- 头部 ---------- */
+.header {
+    background: linear-gradient(160deg, #171b26 0%, #0d0f15 78%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    padding: 56px 30px 46px;
+    text-align: center;
+}
+.header::before {
+    content: "";
+    position: absolute;
+    left: 50%; top: -140px;
+    width: 640px; height: 240px;
+    transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba(118, 185, 0, 0.16), transparent);
+    pointer-events: none;
+}
+.header h1 {
+    font-size: 2.2em;
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+    background: linear-gradient(92deg, #cde98a, var(--accent) 55%, var(--accent-bright));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.header p {
+    color: var(--text-dim);
+    font-size: 0.95em;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* ---------- 容器与分区 ---------- */
+.container { max-width: 1140px; margin: 0 auto; padding: 28px 24px 40px; }
+.section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow);
+}
+.section h2 {
+    color: var(--text);
+    font-size: 1.25em;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    padding-left: 16px;
+}
+.section h2::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 4px; bottom: 14px;
+    width: 4px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent-bright), var(--accent-dim));
+}
+.section h3 {
+    color: #cfd3dd;
+    font-size: 1.05em;
+    margin: 15px 0 8px;
+}
+
+/* 卡片分区:双列网格(h2 通栏) */
+.section[data-cards] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+.section[data-cards] > h2 { grid-column: 1 / -1; margin-bottom: 4px; }
+.section[data-cards] .note-card { margin-bottom: 0; height: 100%; }
+
+/* ---------- 笔记卡片 ---------- */
+.note-card {
+    background: linear-gradient(180deg, var(--card-2) 0%, var(--code-bg) 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.note-card:hover {
+    border-color: var(--accent-dim);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(118, 185, 0, 0.15);
+}
+.note-card h3 {
+    color: var(--accent-bright);
+    margin-bottom: 10px;
+    font-size: 1.06em;
+    line-height: 1.5;
+}
+.note-card .meta {
+    color: var(--text-dim);
+    font-size: 0.82em;
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+.note-card .meta span { white-space: nowrap; }
+.note-card p {
+    font-size: 0.885em;
+    color: #c6cad4;
+    margin-bottom: 12px;
+    flex: 1;
+}
+.note-card p strong { color: var(--text); }
+.note-card .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 2px 0 14px;
+}
+.tag {
+    background: var(--tag-bg);
+    color: var(--text-dim);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.74em;
+    border: 1px solid var(--border);
+    line-height: 1.7;
+}
+.tag.green { border-color: var(--accent-dim); color: var(--accent-bright); }
+.tag-kind { background: var(--kind-bg) !important; color: var(--kind-fg) !important; border-color: transparent; }
+.tag-depth { background: var(--depth-bg) !important; color: var(--depth-fg) !important; border-color: transparent; }
+.note-card a {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 5px 14px;
+    background: var(--accent-soft);
+    color: var(--accent-bright);
+    border: 1px solid var(--accent-dim);
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 0.84em;
+    margin: 0 8px 6px 0;
+    transition: background 0.15s, color 0.15s;
+}
+.note-card a:hover { background: var(--accent); color: #0d0f15; }
+
+/* ---------- 静态内容 ---------- */
+.highlight {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.88em;
+    display: block;
+    overflow-x: auto;
+    min-width: 100%;
+}
+th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background: var(--code-bg);
+    color: var(--accent-bright);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+}
+tr:nth-child(even) { background: var(--code-bg); }
+
+/* ---------- 页脚 ---------- */
+.footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.8em;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+}
