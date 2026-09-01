@@ -28,29 +28,30 @@ KIND_LABEL = {"note": "论文笔记", "survey": "调研综述",
 DEPTH_LABEL = {"deep": "深度", "standard": "标准", "brief": "速览"}
 
 FILTER_CSS = """
-/* ---- 筛选栏(build_index.py 生成) ---- */
+/* ---- 筛选栏(build_index.py 生成, iOS 风格) ---- */
 .filter-bar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
-  background:rgba(22,25,35,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:22px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:20px;
   box-shadow:var(--shadow);}
-.filter-bar input[type=search]{flex:1 1 220px;min-width:180px;background:var(--bg);color:var(--text);
-  border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:14px;outline:none;
-  transition:border-color .15s;}
-.filter-bar input[type=search]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.filter-bar input[type=search]{flex:1 1 220px;min-width:180px;background:var(--tag-bg);color:var(--text);
+  border:1px solid transparent;border-radius:11px;padding:8px 14px;font-size:14px;outline:none;
+  transition:all .15s;}
+.filter-bar input[type=search]:focus{background:#fff;border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);}
 .filter-bar input[type=search]::placeholder{color:var(--text-dim);}
 .filter-bar .chips{display:flex;gap:6px;flex-wrap:wrap;}
-.chip{cursor:pointer;border:1px solid var(--border);background:var(--tag-bg);color:var(--text-dim);
+.chip{cursor:pointer;border:1px solid transparent;background:var(--tag-bg);color:#3c3c43;
   border-radius:999px;padding:5px 13px;font-size:13px;user-select:none;transition:all .15s;}
-.chip:hover{color:var(--text);border-color:var(--accent-dim);}
-.chip.active{background:var(--accent);border-color:var(--accent);color:#0d0f15;font-weight:600;}
-.chip.chip-clear{display:none;border-color:var(--border-strong);color:var(--text-dim);}
+.chip:hover{background:#e8e8ed;}
+.chip.active{background:var(--accent);color:#fff;font-weight:600;}
+.chip.chip-clear{display:none;background:transparent;border-color:var(--border-strong);color:var(--text-dim);}
 .filter-bar.filtering .chip-clear{display:inline-block;}
-.filter-bar select{background:var(--bg);color:var(--text);border:1px solid var(--border);
-  border-radius:8px;padding:8px 10px;font-size:14px;outline:none;cursor:pointer;}
-.filter-bar select:focus{border-color:var(--accent);}
+.filter-bar select{background:var(--tag-bg);color:var(--text);border:1px solid transparent;
+  border-radius:11px;padding:8px 10px;font-size:14px;outline:none;cursor:pointer;transition:all .15s;}
+.filter-bar select:focus{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
 .result-count{font-size:13px;color:var(--text-dim);margin-left:auto;}
-.empty{display:none;text-align:center;color:var(--text-dim);padding:48px 0;
-  border:1px dashed var(--border-strong);border-radius:12px;margin-bottom:22px;font-size:0.95em;}
+.empty{display:none;text-align:center;color:var(--text-dim);padding:48px 0;background:var(--card);
+  border:1px dashed var(--border-strong);border-radius:16px;margin-bottom:20px;font-size:0.95em;}
 .tag-kind{background:var(--kind-bg) !important;color:var(--kind-fg) !important;}
 .tag-depth{background:var(--depth-bg) !important;color:var(--depth-fg) !important;}
 """

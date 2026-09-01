@@ -95,6 +95,7 @@ flowchart TD
 3. 运行 `python check.py` —— 它会重新生成 index 并与磁盘文件比对,**手改 index.html 会被检出**。
 
 - 页面样式改 `index_style.css`;静态章节(调研总览/对比表/时间线/总结)内容存于 `papers.json` 的 `extra_sections`,同样改后需重新生成。
+- **commit 信息规范**:中文、简短——标题一行 + 正文合计不超过 3-4 行,说明改了什么即可,不写多段长文。
 
 ---
 
@@ -244,4 +245,4 @@ flowchart TD
 - [ ] 实验表格含 PSNR/SSIM/LPIPS 等量化指标,最优行标 `.best`
 - [ ] deep 级笔记含「可改进方向分析」章节(三维度 + 优先级表 + 代码佐证)
 - [ ] 已更新 `papers.json` 并运行 `python build_index.py` 重新生成 index(禁止直接改 index.html)
-- [ ] commit 信息中文,描述新增/改动章节
+- [ ] commit 信息中文、简短(标题 + 正文合计不超过 3-4 行,不写多段长文)
