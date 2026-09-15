@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHARP 单图实时高保真三维重建解析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .loss-tag{
+    display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px;
+    margin:2px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  .uncertain{
+    background:rgba(210,153,34,0.10); border-left:3px solid #d29922;
+    padding:10px 16px; border-radius:6px; margin:12px 0; color:#e2e8f0;
+  }
+  .figure{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:14px; margin:18px 0; text-align:center;
+  }
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333;}
+  .figure .caption{
+    font-size:13px; color:var(--muted); margin-top:10px; text-align:left; padding:0 6px;
+  }
+  .imgrow{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+  .imgrow img{width:32%; min-width:180px}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+  .prio{font-weight:700; font-size:12px; padding:2px 8px; border-radius:4px; margin-right:8px; white-space:nowrap}
+  .prio-high{background:rgba(248,113,113,0.15); color:var(--red); border:1px solid rgba(248,113,113,0.3)}
+  .prio-mid{background:rgba(251,146,60,0.15); color:var(--orange); border:1px solid rgba(251,146,60,0.3)}
+  .prio-low{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .improve-card{border-left:4px solid var(--accent); margin-bottom:16px}
+  .improve-card.method{border-left-color:var(--accent)}
+  .improve-card.data{border-left-color:var(--orange)}
+  .improve-card.eng{border-left-color:var(--green)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2512.10685 · 2025 · ICLR 2026</span>
+    <h1>SHARP:单图高精度实时视差三维重建</h1>
+    <p class="subtitle">Single-image High-Accuracy Real-time Parallax —— 一张照片,一次前馈,不到一秒生成约 120 万个 metric-scale 3D 高斯;邻近视角实时渲染(4–22ms),零样本跨数据集全面刷新 SOTA。</p>
+    <p class="authors">Lars Mescheder · Wei Dong · Shiwei Li · Xuyang Bai · Marcel Santos · Peiyun Hu · Bruno Lecouat · Mingmin Zhen · Amaël Delaunoy · Tian Fang · Yanghai Tsin · Stephan R. Richter · Vladlen Koltun<br>
+    <span style="color:var(--muted);font-size:13px">Apple</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2512.10685" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2512.10685v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2512.10685" target="_blank">📥 PDF</a>
+      <a href="https://github.com/apple/ml-sharp" target="_blank">💻 GitHub</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#encoder">模块解析一:Depth Pro 编码与双深度解码</a></li>
+    <li><a href="#init">模块解析二:深度调整与高斯初始化</a></li>
+    <li><a href="#decoder">模块解析三:Gaussian decoder 与 Composer</a></li>
+    <li><a href="#loss">损失函数(10 项)</a></li>
+    <li><a href="#training">训练策略(合成数据 + SSFT)</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#videogen">与视频生成模型的关系</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#conclusion">总结</a></li>
+  </ol>
+</div>
+
+<!-- ==================== ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">SHARP(Single-image High-Accuracy Real-time Parallax)是 Apple 提出的<strong>单图前馈式三维重建方法</strong>:给定一张照片,通过神经网络<strong>单次前向传播</strong>(A100 上不到 1 秒)回归出场景的 3D 高斯表示;该表示可实时渲染高分辨率逼真邻近视角,且具有<strong>绝对尺度的 metric 表示</strong>,支持物理相机运动。</p>
+<div class="callout key">
+<p>核心结果(均为论文原文数据):</p>
+<ul>
+<li><strong>零样本 SOTA</strong>:6 个未见数据集上,LPIPS 相比此前最强模型降低 <strong>25–34%</strong>,DISTS 降低 <strong>21–43%</strong>;</li>
+<li><strong>速度优势 2–3 个数量级</strong>:推理 0.91s vs Gen3C 830s / ViewCrafter 119s / SVC 62s;渲染延迟 4–22ms(≈100 FPS);</li>
+<li><strong>规模经济</strong>:总参数 702M(可训练 340M),远小于扩散类方法(Gen3C 7.7B / ViewCrafter 3.17B / SVC 2.33B)。</li>
+</ul>
+</div>
+<div class="figure">
+<!-- arXiv HTML figures (from https://arxiv.org/html/2512.10685v2) -->
+<div class="imgrow">
+  <img src="https://arxiv.org/html/2512.10685v2/figures/teaser/UnsplashCurated/sharp_public_aligned/inlet_target/_5wkyNA2BPc_0000_0001.jpg" loading="lazy" alt="SHARP 渲染结果示例 1">
+  <img src="https://arxiv.org/html/2512.10685v2/figures/teaser/UnsplashCurated/gen3c_aligned/inlet_target/_5wkyNA2BPc_0000_0001.jpg" loading="lazy" alt="Gen3C 对比">
+  <img src="https://arxiv.org/html/2512.10685v2/figures/teaser/UnsplashCurated/view_crafter_aligned/inlet_target/_5wkyNA2BPc_0000_0001.jpg" loading="lazy" alt="ViewCrafter 对比">
+</div>
+<div class="caption"><b>图 1</b>(论文 Figure 2 节选,同一输入 <code>_5wkyNA2BPc</code>):左 = SHARP 渲染的邻近新视角;中 = Gen3C(最强扩散 baseline);右 = ViewCrafter。SHARP 在细节保持上明显更优。(GT 列图在 arXiv 服务器上已 404,未收录)</div>
+</div>
+</section>
+
+<!-- ==================== MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>2.1 应用定位:个人照片的三维复活</h3>
+<p>论文从一个具体场景出发:重温一张珍贵的老照片,把场景从像平面中"抬起",让 AR/VR 头显或手持设备上的用户能以小幅度视角移动重新观察这个瞬间。由此导出三个需求(desiderata):</p>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--accent)">① 快速生成</h4>
+    <p>单张照片 → 3D 表示,需支持个人相册的<strong>交互式浏览</strong>,不能接受分钟级生成。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--green)">② 实时渲染</h4>
+    <p>邻近视角<strong>实时逼真渲染</strong>。支持 AR/VR 头显中的自然姿态移动,但不要求"走进照片"式大范围漫游。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--accent2)">③ 绝对尺度</h4>
+    <p>表示必须是 <strong>metric(米制)</strong>的,才能让虚拟相机与物理头显/设备精确耦合。</p>
+  </div>
+</div>
+
+<h3>2.2 现有方法为何不满足</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4 style="color:var(--orange)">扩散类方法(SVC / ViewCrafter / Gen3C)</h4>
+    <ul>
+      <li>视觉质量高,但<strong>生成时间 62–830 秒</strong>(Table 6),完全无法交互;</li>
+      <li>参数量 2.3B–7.7B,推理成本高昂;</li>
+      <li>多数输出图像而非 3D 表示,换一个视角要重新生成。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">前馈回归类方法(Flash3D / TMPI / LVSM)</h4>
+    <ul>
+      <li>速度快(0.1–0.3s),但<strong>保真度显著落后</strong>:Flash3D 的 DISTS 0.159–0.535 vs SHARP 0.069–0.258(Table 1);</li>
+      <li>依赖单目深度先验但深度本身病态(transparent/reflective 表面失真),直接采用会污染视图合成;</li>
+      <li>低分辨率输出或无 metric 尺度。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout tip">
+<h4>SHARP 的立场</h4>
+<p>论文的核心主张:<strong>纯回归框架足以支撑高分辨率视图合成 SOTA</strong>——前提是(a)端到端训练的大网络(340M 可训练参数,而非以往回归方法的 6M–52M);(b)精心设计的损失配置;(c)可化解深度歧义的 depth adjustment 模块。三大贡献正对应这三点。</p>
+</div>
+
+<h3>2.3 关键洞察:深度病态性是回归式方法的根本障碍</h3>
+<p>单目深度估计存在固有歧义:网络往往退化为预测"可能结果的平均尺度"(论文引 Poggi et al., 2020)。把这种深度直接用于视图合成,会系统性地产生伪影——尤其透明、反光表面(Wen et al., 2025)。SHARP 用两个手段正面回应:<strong>解冻深度网络</strong>让端到端梯度修正深度(Table 13:DISTS 0.084→0.064),以及训练期 <strong>depth adjustment 模块</strong>吸收尺度歧义(Table 11:0.077→0.064)。</p>
+</section>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p class="lead">输入单张 RGB 图像 $\mathbf{I}\in\mathbb{R}^{3\times H\times W}$(统一缩放至 $1536\times1536$),输出 $N$ 个 3D 高斯 $\mathbf{G}\in\mathbb{R}^{K\times N}$,其中每高斯 $K=14$ 个属性(位置 3 + 尺度 3 + 旋转四元数 4 + 颜色 3 + 不透明度 1)。实践中共 <strong>$2\times768\times768\approx120$ 万个高斯</strong>,布置在 $768\times768$ 网格 × 2 层。<strong>不使用球谐函数(SH)</strong>——SH 系数数随阶数二次增长,会大幅膨胀输出体积。</p>
+
+<div class="figure">
+<img src="https://arxiv.org/html/2512.10685v2/overview.png" loading="lazy" alt="SHARP 方法总览">
+<div class="caption"><b>图 2</b>(论文 Figure 3):SHARP 总体架构。输入图像经 Depth Pro 双 ViT 编码器产生 4 级特征,DPT 深度解码器输出双层深度;深度调整模块(仅训练期)校正尺度歧义;多层高斯初始化器生成基础高斯;Gaussian decoder(另一个 DPT)预测全属性增量;Gaussian composer 以属性专属激活组合 base+delta,输出最终 3D 高斯,送入可微渲染器监督。</div>
+</div>
+
+<h3>3.1 五大模块流水线</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: 单张 RGB 图像 I<br/>(缩放至 1536×1536)"] --> ENC
+    subgraph ENC["① 特征编码器 (Depth Pro backbone, 2×ViT, 共 652M 冻结+解冻)"]
+        ENC1["低分辨率图像 ViT (326M)<br/>训练时解冻"] --> ENC2["patch ViT (326M)<br/>始终冻结"]
+        ENC2 --> ENC3["4 级中间特征图<br/>(f1..f4, 多分辨率)"]
+    end
+    ENC --> DDEC["② 深度解码器 (DPT 改, 20M)<br/>复制末层卷积 → 双通道深度 D̂∈R^(2×H×W)<br/>第一层=可见表面, 第二层=遮挡/视角效应<br/>训练时完全解冻"]
+    DDEC -->|"D̂"| ADJ["③ 深度调整 (U-Net, 2M)<br/>输入 (D̂⁻¹, GT D⁻¹) → 尺度图 S<br/>训练期吸收深度歧义<br/>推理时替换为恒等函数"]
+    ADJ -->|"D̄ = S ⊙ D̂"| INIT["④ 多层高斯初始化器<br/>2× 下采样 (均值/最小池化)<br/>反投影 → 基础高斯 G₀<br/>(不使用内参, 归一化空间)"]
+    ENC -->|"特征 f1..f4"| GDEC
+    INIT -->|"G₀ (base)"| COMP
+    GDEC["⑤ Gaussian decoder (DPT 改, 7.8M)<br/>自定义预测头<br/>输出全属性增量 ΔG (K=14 通道×2层)"] -->|"ΔG"| COMP["⑥ Gaussian composer<br/>属性专属激活 γ_attr 组合<br/>G = γ_attr(G₀, η·ΔG)"]
+    COMP --> REN["可微渲染器 R<br/>P = K_tgt·E_tgt·E_src⁻¹·K_src⁻¹<br/>渲染输入视角 + 新视角"]
+    REN --> LOSS["10 项损失监督<br/>(color/alpha/depth/percep<br/>+ 6 项正则)"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style ENC1 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style ENC2 fill:#f1f5f9,stroke:#94a3b8,color:#334155
+    style DDEC fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style ADJ fill:#fce7f3,stroke:#ec4899,color:#831843
+    style INIT fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style GDEC fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style COMP fill:#f3e8ff,stroke:#a855f7,color:#581c87
+    style REN fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style LOSS fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<h3>3.2 网络结构总表(论文 3.x + 附录 A 数据)</h3>
+<table>
+<tr><th>模块</th><th>结构</th><th>参数量</th><th>训练状态</th><th>输入 → 输出</th></tr>
+<tr><td>特征编码器</td><td>Depth Pro backbone(双 ViT:低分辨率图像 ViT + patch ViT)</td><td>2×326M</td><td>低分辨率 ViT <strong>解冻</strong>;patch ViT 与归一化层冻结</td><td>I → (f₁..f₄) 4 级特征图</td></tr>
+<tr><td>深度解码器</td><td>DPT 改(复制末层卷积输出 2 通道)</td><td>~20M</td><td><strong>完全解冻</strong></td><td>(f₁..f₄) → D̂ ∈ ℝ^(2×H×W)</td></tr>
+<tr><td>深度调整</td><td>小 U-Net</td><td>~2M</td><td>训练(推理时恒等替换)</td><td>(D̂⁻¹, D⁻¹) → 尺度图 S</td></tr>
+<tr><td>高斯初始化器</td><td>确定性几何(反投影)</td><td>0(无可学习参数)</td><td>—</td><td>(I, D̄) → G₀ 基础高斯</td></tr>
+<tr><td>Gaussian decoder</td><td>DPT 改 + 自定义预测头</td><td>~7.8M</td><td>从零训练</td><td>(f₁..f₄, I, D̂) → ΔG 全属性增量</td></tr>
+<tr><td>Gaussian composer</td><td>属性专属激活组合</td><td>≈0</td><td>—</td><td>(G₀, ΔG) → G 最终高斯</td></tr>
+<tr><td><strong>合计</strong></td><td>—</td><td><strong>702M 总 / 340M 可训练</strong></td><td>—</td><td>1536² 图像 → ~1.2M 高斯 &lt;1s</td></tr>
+</table>
+
+<div class="callout key">
+<p><strong>参数量对比</strong>(Table 3):Flash3D 399M/52M · TMPI 957M/6M · LVSM 314M/314M · SVC 2.33B/1.26B* · ViewCrafter 3.17B/2.6B* · Gen3C 7.7B/7.4B* · <strong>SHARP 702M/340M</strong>(* 为扩散模型微调)。SHARP 的可训练参数比此前所有前馈方法大一个数量级以上,但仍只有扩散方法的 1/4–1/20。</p>
+</div>
+
+<h3>3.3 渲染与投影:归一化空间到 metric 空间</h3>
+<p>高斯在<strong>归一化空间</strong>(不用输入图像内参)中预测,渲染时把空间变换直接并入目标视角投影矩阵:</p>
+<div class="equation">
+$$\mathbf{P}=\mathbf{K}_{\text{tgt}}\mathbf{E}_{\text{tgt}}\mathbf{E}_{\text{src}}^{-1}\mathbf{K}_{\text{src}}^{-1}$$
+<span class="label">(式 1,论文 3.2)</span>
+</div>
+<p>其中 $\mathbf{K}_{\text{src}},\mathbf{E}_{\text{src}}$ 为源视角(输入图)内参/外参,$\mathbf{K}_{\text{tgt}},\mathbf{E}_{\text{tgt}}$ 为目标视角。这样网络无需针对不同视场角自适应预测;同时输出天然兼容 metric 尺度——官方代码导出的 <code>.ply</code> 采用 OpenCV 约定(x 右、y 下、z 前),可直接被 gsplat 等渲染器加载。</p>
+<div class="callout tip">
+<p><strong>推理成本摊销</strong>是与扩散方法的本质区别:3D 表示一次生成后,新视角渲染只需 4–22ms;扩散方法每换一个视角都要重新去噪(SVC 62s/图)。论文称支持"100 FPS 高分辨率邻近视角渲染"。</p>
+</div>
+</section>
+
+<!-- ==================== ENCODER ==================== -->
+<section id="encoder">
+<h2><span class="num">4</span>模块解析一:Depth Pro 编码与双深度解码</h2>
+
+<span class="stage-tag stage-1">特征编码</span>
+<h3>4.1 双 ViT 骨干</h3>
+<p>编码器基于 <strong>Depth Pro</strong>(Bochkovskii et al., ICLR 2025,同为 Apple 的工作)骨干:两个 ViT——一个处理<strong>下采样后的全图</strong>(低分辨率图像编码器,326M),一个处理<strong>多个图像 patch</strong>(patch 编码器,326M)——联合产出 4 级多分辨率特征图 $(\mathbf{f}_i)_{i\in\{1,\dots,4\}}$。官方开源代码中 ViT 预设仅有 <code>dinov2l16_384</code>(DINOv2-L/16,embed_dim=1024,depth=24,输入 384²),见 <code>src/sharp/models/presets/vit.py:12</code>。</p>
+
+<h4>选择性解冻策略</h4>
+<ul>
+<li><strong>解冻</strong>:低分辨率图像编码器(让特征适配视图合成任务);</li>
+<li><strong>冻结</strong>:patch 编码器与归一化层(保留预训练特征提取能力);</li>
+<li>深度解码器 <strong>完全解冻</strong>。</li>
+</ul>
+<div class="callout warn">
+<p><strong>消融证据</strong>(Table 13):不解冻单目深度骨干,ScanNet++ DISTS 从 0.064 恶化到 <span class="fail">0.084</span>(+31%),Tanks LPIPS 0.419→0.434。冻结的 Depth Pro 深度先验对视图合成<strong>不是最优</strong>——端到端梯度必须能修正深度。这与"深度病态性"洞察(2.3 节)一致:透明/反光表面的深度本来就不该信。</p>
+</div>
+
+<span class="stage-tag stage-2">双深度解码</span>
+<h3>4.2 为什么要两层深度?</h3>
+<p>DPT 深度解码器复制了最后一个卷积层,输出 $\mathbf{\hat{D}}\in\mathbb{R}^{2\times H\times W}$:</p>
+<ul>
+<li><strong>第一层</strong>:主可见表面——深度监督($\mathcal{L}_{\text{depth}}$)只作用于第一层,且只在输入视角;</li>
+<li><strong>第二层</strong>:可能表示<strong>被遮挡区域与视角相关效应</strong>(如透明玻璃后的物体)——不直接监督,靠 TV 正则($\mathcal{L}_{\text{tv}}$)保持平滑。</li>
+</ul>
+<p>双层设计与高斯的两层布局(2×768×768)一一对应:第二层高斯专门负责 inpaint 遮挡区域。这是从 Flynn et al. (2019)(Layered Depth Images)一脉相承的思想,但这里是学习出来的、面向高斯的。</p>
+</section>
+
+<!-- ==================== INIT ==================== -->
+<section id="init">
+<h2><span class="num">5</span>模块解析二:深度调整与高斯初始化</h2>
+
+<span class="stage-tag stage-3">深度调整(训练期专属)</span>
+<h3>5.1 C-VAE 启发的深度歧义吸收器</h3>
+<p>单目深度的"平均尺度"退化问题(2.3 节)在训练中体现为:同一输入对应多个合理深度,直接 L1 监督会把网络拉向均值,渲染出新视角伪影。SHARP 的解法借鉴 C-VAE:</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>传统 C-VAE</h4>
+    <p>后验网络以 GT 深度 $\mathbf{D}$ 为输入产生隐变量 $\mathbf{z}$;KL 散度信息瓶颈保证 $\mathbf{z}$ 只含解决歧义所需的最小信息量。</p>
+  </div>
+  <div class="card">
+    <h4>SHARP 的简化</h4>
+    <p>把 $\mathbf{z}$ 直接解释为<strong>尺度图</strong> $\mathbf{S}\in\mathbb{R}^{H\times W}$,用任务专属正则(MAE + 多尺度 TV)替代 KL 散度:</p>
+  </div>
+</div>
+<p>实现为一个 2M 参数的小 U-Net:输入(预测逆深度 $\hat{\mathbf{D}}^{-1}$, GT 逆深度 $\mathbf{D}^{-1}$),输出尺度图,校正后深度为:</p>
+<div class="equation">
+$$\mathbf{\bar{D}}=\mathbf{S}(\hat{\mathbf{D}},\mathbf{D})\odot\hat{\mathbf{D}}$$
+<span class="label">(式 2,论文 3.1)</span>
+</div>
+<div class="callout key">
+<p><strong>关键设计:推理时深度调整模块被替换为恒等函数。</strong>GT 深度只在训练时可得——这个模块本质是一个"训练期教师":它把 GT 信息以最小充分统计量的形式注入训练信号,让下游模块(初始化器、Gaussian decoder)学会在无 GT 条件下也能预测好的高斯。推理管线里它完全消失,零开销。</p>
+</div>
+<p>官方实现见 <code>src/sharp/models/alignment.py</code>;对齐参数 <code>AlignmentParams(kernel_size=16, stride=1, steps=4, activation_type="exp", base_width=16)</code>(<code>params.py:36-39</code>)。消融(Table 11):去掉该模块 ScanNet++ DISTS 0.064→<span class="fail">0.077</span>(+20%),Tanks 0.126→0.148。</p>
+
+<h3>5.2 多层高斯初始化器:无内参的归一化空间反投影</h3>
+<p>用校正后双层深度 $\mathbf{\bar{D}}$ 与输入图像 $\mathbf{I}$ 构造基础高斯 $\mathbf{G}_0\in\mathbb{R}^{K\times 2\times H'\times W'}$($H'=H/2, W'=W/2$,即 768×768):</p>
+<ol>
+<li><strong>下采样</strong>:图像平均池化、深度最小池化,因子 2——深度取 min 保守处理遮挡边界;</li>
+<li><strong>反投影</strong>(<strong>刻意不用输入图内参</strong>):$\mu(i,j)=[i\cdot\bar{D}'(i,j),\,j\cdot\bar{D}'(i,j),\,\bar{D}'(i,j)]^T$,让网络在归一化空间推理,无需按视场角自适应;</li>
+<li><strong>尺度</strong>正比于深度:$s(i,j)=s_0\cdot\bar{D}'(i,j)$,固定比例因子 $s_0$——近处高斯小、远处高斯大,符合透视规律;</li>
+<li><strong>颜色</strong>直接取下采样图像 $c(i,j)=\mathbf{I}'(i,j)$;<strong>旋转</strong>=单位四元数 $[1,0,0,0]^T$;<strong>不透明度</strong>=0.5。</li>
+</ol>
+<div class="callout tip">
+<p>初始化器是<strong>纯几何、无可学习参数</strong>的。所有"智能"都留给 Gaussian decoder 的增量预测——这个 base + delta 分工让从零训练的 decoder(仅 7.8M)只需要学"偏移量",大幅降低学习难度,类似 ResNet 的恒等映射思想在高斯属性空间的翻版。</p>
+</div>
+</section>
+
+<!-- ==================== DECODER ==================== -->
+<section id="decoder">
+<h2><span class="num">6</span>模块解析三:Gaussian decoder 与 Composer</h2>
+
+<h3>6.1 Gaussian decoder:全属性增量预测</h3>
+<p>与深度解码器同构的 DPT,但末级上采样块替换为自定义预测头。输入 $(\mathbf{f}_1..\mathbf{f}_4, \mathbf{I}, \hat{\mathbf{D}})$,输出全属性增量张量:</p>
+<table>
+<tr><th>属性</th><th>通道数</th><th>增量含义</th></tr>
+<tr><td>位置 $\Delta\mathbf{G}_{\text{pos}}$</td><td>3</td><td>NDC 空间中的偏移</td></tr>
+<tr><td>尺度 $\Delta\mathbf{G}_{\text{scale}}$</td><td>3</td><td>各向异性尺度修正</td></tr>
+<tr><td>旋转 $\Delta\mathbf{G}_{\text{rot}}$</td><td>4</td><td>四元数修正</td></tr>
+<tr><td>颜色 $\Delta\mathbf{G}_{\text{color}}$</td><td>3</td><td>linearRGB 颜色修正</td></tr>
+<tr><td>不透明度 $\Delta\mathbf{G}_{\text{alpha}}$</td><td>1</td><td>不透明度修正</td></tr>
+</table>
+<p>输出维度 $14\times2\times768\times768\approx1650$ 万值/图——论文强调这个高维输出实现对高斯表示的细粒度控制。7.8M 参数从零训练。</p>
+
+<h3>6.2 Gaussian composer:属性专属激活</h3>
+<p>组合不是简单相加,而是<strong>每个属性一个专属激活函数</strong> $\gamma_{\text{attr}}$ 与尺度因子 $\eta_{\text{attr}}$(论文式 3.2,附录 A.1 表):</p>
+<table>
+<tr><th>属性</th><th>激活 $\gamma$</th><th>因子 $\eta$</th><th>设计意图</th></tr>
+<tr><td>位置 (x/z, y/z)</td><td>identity</td><td>$10^{-3}$</td><td>NDC 空间小步长精修</td></tr>
+<tr><td>位置 (z⁻¹)</td><td>softplus</td><td>$10^{-3}$</td><td>保证逆深度恒正</td></tr>
+<tr><td>颜色</td><td>sigmoid</td><td>$10^{-1}$</td><td>约束到有效色域</td></tr>
+<tr><td>旋转</td><td>identity</td><td>1</td><td>四元数线性空间</td></tr>
+<tr><td>尺度</td><td>sigmoid</td><td>1</td><td>约束到 [min,max] 尺度区间</td></tr>
+<tr><td>不透明度</td><td>sigmoid</td><td>1</td><td>约束到 [0,1]</td></tr>
+</table>
+<p>位置激活在 NDC 空间进行:先 $[x,y,z]\rightarrow[x/z,y/z,1/z]$,加 delta 后再变换回世界坐标。</p>
+
+<h4>源码中的两个非平凡细节(官方 <code>apple/ml-sharp</code>)</h4>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>softplus-of-inverse-softplus 均值激活</h4>
+    <p><code>composer.py:186-205</code> 的 <code>_mean_activation</code>:对 z⁻¹ 分量,<code>inverse_zz = softplus(inverse_softplus(a) + b)</code>——在<strong>softplus 的对数域</strong>里做加法,保证结果恒正的同时允许双向修正,比直接 softplus(a+b) 的数值行为更对称。</p>
+  </div>
+  <div class="card">
+    <h4>尺度激活的常数映射</h4>
+    <p><code>composer.py:211-218</code> 的 <code>_scale_activation</code>:<code>sigmoid(constant_a·delta + constant_b)</code>,其中常数由 <code>_get_scale_activation_constant(max_scale=10.0, min_scale=0.0)</code>(<code>params.py:182-184</code>)从配置反解,使 sigmoid 值域精确映射到期望尺度区间。</p>
+  </div>
+</div>
+<p>另外 <code>composer.py:145-147</code>:若提供 <code>global_scale</code>,均值向量与奇异值统一乘该系数——这是 NDC → metric 世界空间的显式转换入口。</p>
+</section>
+
+<!-- ==================== LOSS ==================== -->
+<section id="loss">
+<h2><span class="num">7</span>损失函数(10 项)</h2>
+<p class="lead">监督在<strong>图像空间</strong>进行:每个训练样本含输入视角 + 新视角两个视图;从输入视角预测高斯,在两个视角都渲染,损失作用在渲染结果上。属性集划分:$\mathcal{D}=\{\text{color, alpha, depth, percep}\}$ 数据项,$\mathcal{R}=\{\text{tv, grad, delta, splat}\}$ 正则项,$\mathcal{S}=\{\text{scale, }\nabla\text{scale}\}$ 尺度正则项。</p>
+
+<h3>7.1 数据项</h3>
+<table>
+<tr><th>损失</th><th>作用视角</th><th>公式</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{\text{color}}$</td><td>输入 + 新视角</td><td>$\frac{1}{|\Omega|}\sum_{p\in\Omega}\|\hat{\mathbf{I}}(p)-\mathbf{I}(p)\|_1$</td><td>渲染 L1 像素重建</td></tr>
+<tr><td>$\mathcal{L}_{\text{alpha}}$</td><td>输入视角</td><td>BCE(渲染 alpha)</td><td>惩罚虚假透明像素,防"半透明漂浮物"作弊路径</td></tr>
+<tr><td>$\mathcal{L}_{\text{depth}}$</td><td>仅输入视角,仅第一层</td><td>$\|\bar{D}_{(1)}^{-1}-D^{-1}\|_1$(视差域 L1)</td><td>锚定几何,防深度漂移</td></tr>
+<tr><td>$\mathcal{L}_{\text{percep}}$</td><td>新视角(输入视角也用)</td><td>$\sum_l \lambda_l^{\text{feat}}\|\phi_l(\hat{I})-\phi_l(I)\| + \lambda_l^{\text{Gram}}\|M_l(\hat{I})-M_l(I)\|$</td><td>基于 inpainting 预训练 ResNet-50(LaMa 特征)+ Gram 矩阵,鼓励遮挡区域合理 inpaint</td></tr>
+</table>
+
+<div class="callout key">
+<h4>感知损失的两个工程突破(附录 A.4,论文最具复用价值的小节)</h4>
+<ul>
+<li><strong>计算图手术(computation graph surgery)</strong>:感知损失经 ResNet-50 反传,整图计算图在 A100-40GB 上 batch=1 都会 OOM。作者实现了一个 surgery 算子:前向时缓存梯度与输入,反向时注入缓存梯度;在感知损失节点处<strong>预计算特征梯度、显式释放 ResNet 部分计算图、用手术节点覆写</strong>。最终以全 FP32 精度在双视角上跑感知损失而不牺牲吞吐,且计算图规模与像素数/视角数无关。论文强调这是一个<strong>可移植到任何框架的通用算子</strong>。</li>
+<li><strong>Gram 矩阵回归</strong>:感知损失在隐空间对齐导致像素域模糊 → 大而圆的高斯(渲染慢且细节差)。复活了风格迁移的 Gram 矩阵损失(匹配特征自相关)提升锐度,但需要为 LaMa 的 ResNet-50 特征重新调参:$\lambda_l^{\text{Gram}}=10/D_l^2$、$\lambda_l^{\text{feat}}=1/(D_l\cdot H_l\cdot W_l)$(附录 A.2),网格搜索 $j\in\{1,10,100,500\}, k\in\{0.1,0.3,1.0,10.0\}$ 确定。效果:基准上 DISTS 提升 62%/47%,渲染延迟降低 49%/36%。</li>
+</ul>
+</div>
+
+<h3>7.2 正则项</h3>
+<table>
+<tr><th>损失</th><th>公式要点</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{\text{tv}}$</td><td>第二深度层 TV</td><td>遮挡层平滑</td></tr>
+<tr><td>$\mathcal{L}_{\text{grad}}$</td><td>抑制大视差梯度 floater($\sigma=\epsilon=10^{-2}$)</td><td>反投影位置惩罚,压"视差突变漂浮物"</td></tr>
+<tr><td>$\mathcal{L}_{\text{delta}}$</td><td>约束偏移幅度 $\Delta G_x, \Delta G_y$($\delta=400$)</td><td>防极端偏离基础高斯</td></tr>
+<tr><td>$\mathcal{L}_{\text{splat}}$</td><td>屏幕空间投影方差约束($\sigma_{\min}=10^{-1},\sigma_{\max}=10^{2}$)</td><td>防过大(糊)与过小(闪烁)的投影高斯</td></tr>
+<tr><td>$\mathcal{L}_{\text{scale}}$ / $\mathcal{L}_{\nabla\text{scale}}$</td><td>深度调整尺度图 MAE + 多尺度 TV(式 2 的正则)</td><td>信息瓶颈:尺度图保持最小充分性</td></tr>
+</table>
+
+<h3>7.3 总损失与权重(附录 A.2 原文)</h3>
+<div class="equation">
+$$\mathcal{L}=\sum_{d\in\mathcal{D}}\lambda_d\mathcal{L}_d+\sum_{r\in\mathcal{R}}\lambda_r\mathcal{L}_r+\sum_{s\in\mathcal{S}}\lambda_s\mathcal{L}_s$$
+<span class="label">(式 3,论文式 3.12)</span>
+</div>
+<table>
+<tr><th>权重</th><th>$\lambda_{\text{color}}$</th><th>$\lambda_{\text{alpha}}$</th><th>$\lambda_{\text{percep}}$</th><th>$\lambda_{\text{depth}}$</th><th>$\lambda_{\text{tv}}$</th><th>$\lambda_{\text{grad}}$</th><th>$\lambda_{\text{delta}}$</th><th>$\lambda_{\text{splat}}$</th><th>$\lambda_{\text{scale}}$</th><th>$\lambda_{\nabla\text{scale}}$</th></tr>
+<tr><td>值</td><td>1.0</td><td>1.0</td><td><strong>3.0</strong></td><td>0.2</td><td>1.0</td><td>0.5</td><td>1.0</td><td>1.0</td><td>0.1</td><td>5.0</td></tr>
+</table>
+<p>注意感知损失权重(3.0)是像素 L1 的三倍——"优先视图合成保真度"的损失设计哲学的直接体现;$\lambda_{\nabla\text{scale}}=5.0$ 则对尺度图平滑性极其严格(信息瓶颈)。</p>
+</section>
+
+<!-- ==================== TRAINING ==================== -->
+<section id="training">
+<h2><span class="num">8</span>训练策略(合成数据 + SSFT)</h2>
+
+<h3>8.1 两阶段课程</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph S1["阶段一: 合成数据(完美 GT)"]
+        A["in-house 程序化场景生成<br/>2K 室外 + 5K 室内艺术家环境<br/>+ 数字人/毛发/服装/透明反光物体<br/>HDR 环境光, V-Ray 渲染"] --> B["~700K 场景 × 11 视角<br/>≈8M 图 @1536²/2048²<br/>环状相机(相距≤60cm)"]
+        B --> C["完美图像+深度 GT<br/>端到端学基础 3D 能力"]
+    end
+    subgraph S2["阶段二: SSFT 自监督微调(真实图像, 无 GT)"]
+        D["OpenScene + 商业图库<br/>(Shutterstock/Getty/Flickr)<br/>2.65M 图"] --> E["用已训模型生成伪 GT:<br/>单图 → 3D 高斯 → 渲染伪新视角"]
+        E --> F["视角对调训练:<br/>伪新视角作输入, 真实原图作目标<br/>强制适应真实图像分布"]
+    end
+    S1 --> S2
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style D fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style E fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style F fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h4>阶段一:合成数据的"监督密度"</h4>
+<p>细节值得注意(附录 B):场景由程序化内容生成系统构造——采样艺术家制作的环境并程序化增强;填充<strong>带真实毛发与服装的数字人角色</strong>(Apple 的研究一贯关注人物);支持<strong>薄结构、透明材质、反光表面</strong>的随机摆放(正好覆盖深度病态难点);相机为环绕兴趣对象的 10 机环(<strong>相邻相机距离 ≤60cm</strong>——与"邻近视角"应用定位严格一致);物理正确直射光 + 高分辨率 HDRI 环境光;V-Ray 渲染。最终 ~700K 场景实例 × 11 视图 ≈ 8M 图,1536²或 2048² 分辨率。</p>
+
+<h4>阶段二:SSFT 的视角对调技巧</h4>
+<p>真实单图没有新视角 GT。SHARP 的做法:用阶段一模型在真实图上生成 3D 高斯,渲染<strong>伪新视角</strong>;然后<strong>交换输入与目标</strong>——伪新视角当输入,真实原图当监督目标。由于真实图是真实分布,网络被强制学会"从伪视角也能渲染回真实画质"。这与 AdaMPI 的 warp-back 立体对构造不同:伪视角来自完整 3D 表示,保持几何一致。</p>
+<div class="callout warn">
+<p><strong>消融的微妙之处</strong>(Table 12):SSFT 在 ScanNet++ 上 DISTS 反而 0.063→0.071(轻微变差),Tanks 上 0.125→0.122(轻微变好)——<strong>量化指标不一致,但定性研究中有帮助</strong>(论文原文)。作者如实报告了这一点。这提示 SSFT 主要改善真实世界观感(训练分布),而非基准指标。</p>
+</div>
+
+<h3>8.2 优化器与超参(附录 A.2)</h3>
+<table>
+<tr><th>项目</th><th>配置</th></tr>
+<tr><td>优化器</td><td>Adam(Kingma & Ba, 2015)</td></tr>
+<tr><td>学习率调度</td><td>cosine 衰减(Loshchilov & Hutter, 2017)</td></tr>
+<tr><td>warmup</td><td>线性预热 10,000 迭代 → 峰值 $1.6\times10^{-4}$</td></tr>
+<tr><td>终值</td><td>余弦衰减至 $1.6\times10^{-5}$</td></tr>
+</table>
+
+<h3>8.3 视锥掩码(附录 A.3)</h3>
+<p>新视角中源视角被遮挡的区域没有可靠 GT(多种合理解)。SHARP 用深度信息把目标视角像素反投影回源视角,构造<strong>视锥掩码</strong>,只在对齐可靠处施加图像损失——所有目标视角的图像级损失都带此掩码。这解释了为什么感知损失(专治遮挡 inpaint)与掩码监督能共存:掩码管像素级 L1,感知损失在整图隐空间作用(附录 A.4:全图应用比仅遮挡区域效果更好)。</p>
+</section>
+
+<!-- ==================== EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">9</span>实验结果</h2>
+
+<h3>9.1 评测协议</h3>
+<p>6 个<strong>训练未见</strong>的零样本数据集:Middlebury、Booster、ScanNet++、WildRGBD、Tanks and Temples、ETH3D。主指标 <strong>DISTS↓ / LPIPS↓</strong>(感知指标;论文附录 C.1 论证了小错位下 PSNR/SSIM 会崩塌——平移 1% 像素 PSNR 掉 10dB,而 DISTS 仅 0.079——故以感知指标为主、PSNR/SSIM 为辅)。</p>
+
+<h3>9.2 主结果(Table 1,DISTS↓/LPIPS↓,SHARP 全列最佳)</h3>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="2">Middlebury</th><th colspan="2">Booster</th><th colspan="2">ScanNet++</th></tr>
+<tr><th>DISTS↓</th><th>LPIPS↓</th><th>DISTS↓</th><th>LPIPS↓</th><th>DISTS↓</th><th>LPIPS↓</th></tr>
+<tr><td>Flash3D</td><td>0.359</td><td>0.581</td><td>0.409</td><td>0.370</td><td>0.374</td><td>0.572</td></tr>
+<tr><td>TMPI</td><td>0.158</td><td>0.436</td><td>0.232</td><td>0.409</td><td>0.128</td><td>0.309</td></tr>
+<tr><td>LVSM</td><td>0.274</td><td>0.555</td><td>0.307</td><td>0.404</td><td>0.145</td><td>0.302</td></tr>
+<tr><td>SVC</td><td>0.208</td><td>0.629</td><td>0.283</td><td>0.448</td><td>0.201</td><td>0.596</td></tr>
+<tr><td>ViewCrafter</td><td>0.373</td><td>0.751</td><td>0.318</td><td>0.523</td><td>0.176</td><td>0.526</td></tr>
+<tr><td>Gen3C</td><td>0.164</td><td>0.545</td><td>0.207</td><td>0.384</td><td>0.090</td><td>0.227</td></tr>
+<tr><td><strong>SHARP</strong></td><td class="best">0.097</td><td class="best">0.358</td><td class="best">0.119</td><td class="best">0.270</td><td class="best">0.071</td><td class="best">0.154</td></tr>
+</table>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="2">WildRGBD</th><th colspan="2">Tanks</th><th colspan="2">ETH3D</th></tr>
+<tr><th>DISTS↓</th><th>LPIPS↓</th><th>DISTS↓</th><th>LPIPS↓</th><th>DISTS↓</th><th>LPIPS↓</th></tr>
+<tr><td>Flash3D</td><td>0.159</td><td>0.345</td><td>0.382</td><td>0.683</td><td>0.535</td><td>0.651</td></tr>
+<tr><td>TMPI</td><td>0.114</td><td>0.327</td><td>0.309</td><td>0.693</td><td>0.396</td><td>0.720</td></tr>
+<tr><td>LVSM</td><td>0.095</td><td>0.257</td><td>0.227</td><td>0.575</td><td>0.555</td><td>0.664</td></tr>
+<tr><td>SVC</td><td>0.157</td><td>0.531</td><td>0.230</td><td>0.733</td><td>0.420</td><td>0.708</td></tr>
+<tr><td>ViewCrafter</td><td>0.148</td><td>0.386</td><td>0.295</td><td>0.759</td><td>0.454</td><td>0.748</td></tr>
+<tr><td>Gen3C</td><td>0.106</td><td>0.285</td><td>0.177</td><td>0.566</td><td>0.408</td><td>0.734</td></tr>
+<tr><td><strong>SHARP</strong></td><td class="best">0.069</td><td class="best">0.190</td><td class="best">0.122</td><td class="best">0.421</td><td class="best">0.258</td><td class="best">0.554</td></tr>
+</table>
+<p><strong>SHARP 在 6 数据集 × 2 指标全部 12 列最佳</strong>。对比此前最强方法(Gen3C):LPIPS 相对降低 25–34%,DISTS 降低 21–43%——而 Gen3C 是 7.7B 参数的扩散方法,推理 830s/图。</p>
+
+<h3>9.3 PSNR/SSIM(Table 5,供完整性)</h3>
+<table>
+<tr><th>方法</th><th>Middlebury<br>PSNR↑/SSIM↑</th><th>Booster</th><th>ScanNet++</th><th>WildRGBD</th><th>Tanks</th><th>ETH3D</th></tr>
+<tr><td>Flash3D</td><td>15.88/0.683</td><td>22.40/0.873</td><td>18.14/0.641</td><td>18.09/0.616</td><td>15.80/0.518</td><td>15.21/0.682</td></tr>
+<tr><td>TMPI</td><td>16.42/0.688</td><td>19.44/0.833</td><td>16.16/0.712</td><td>16.44/0.559</td><td>12.41/0.368</td><td>12.61/0.540</td></tr>
+<tr><td>LVSM</td><td>15.53/0.681</td><td>20.16/0.843</td><td>20.25/0.775</td><td>18.04/0.594</td><td>15.95/0.519</td><td>16.72/0.722</td></tr>
+<tr><td>SVC</td><td>12.72/0.613</td><td>17.65/0.781</td><td>11.71/0.624</td><td>12.20/0.410</td><td>11.76/0.413</td><td>13.36/0.662</td></tr>
+<tr><td>ViewCrafter</td><td>10.33/0.569</td><td>14.18/0.692</td><td>13.30/0.645</td><td>14.43/0.437</td><td>11.49/0.423</td><td>11.94/0.621</td></tr>
+<tr><td>Gen3C</td><td>13.89/0.624</td><td>20.19/0.837</td><td>20.82/0.792</td><td>16.54/0.504</td><td>14.83/0.499</td><td>13.09/0.642</td></tr>
+<tr><td><strong>SHARP</strong></td><td class="best">17.12/0.693</td><td class="best">22.19/0.864</td><td class="best">22.63/0.833</td><td class="best">19.57/0.655</td><td class="best">16.33/0.528</td><td>14.51/0.610</td></tr>
+</table>
+<p>PSNR/SSIM 上 SHARP 5/6 数据集最佳(ETH3D 的 PSNR 14.51 低于 LVSM 16.72,SSIM 0.610 低于 Flash3D 0.682——ETH3D 是高分辨率户外场景,与"邻近小基线"假设偏离最远)。论文附录 C.1 用平移敏感性实验说明 PSNR/SSIM 对亚像素错位极度敏感,不宜作为主要结论依据。</p>
+
+<h3>9.4 推理与渲染时间(Table 6,A100,秒)</h3>
+<table>
+<tr><th>方法</th><th>推理/图</th><th>渲染/帧</th><th>量级</th></tr>
+<tr><td>Flash3D</td><td>0.154</td><td>0.003–0.047</td><td>百毫秒</td></tr>
+<tr><td>TMPI</td><td>0.183–0.333</td><td>0.157–0.294</td><td>百毫秒</td></tr>
+<tr><td>LVSM</td><td>0.120</td><td>—</td><td>百毫秒</td></tr>
+<tr><td>SVC</td><td>32.6–78.8</td><td>—</td><td>分钟</td></tr>
+<tr><td>ViewCrafter</td><td>118.7–119.9</td><td>—</td><td>两分钟</td></tr>
+<tr><td>Gen3C</td><td>830.2–841.4</td><td>—</td><td>一刻钟</td></tr>
+<tr><td><strong>SHARP</strong></td><td class="best">0.910–0.912</td><td class="best">0.004–0.022</td><td><strong>&lt;1s + 100FPS</strong></td></tr>
+</table>
+<p>注:论文说明 SVC/TMPI 在 ETH3D 因显存问题改在 H100 上重跑。SHARP 渲染延迟 4–22ms 对应约 45–250 FPS,支撑"100 FPS 高分辨率渲染"的宣传语。</p>
+
+<h3>9.5 特权深度上界(Table 7)</h3>
+<p>给所有方法提供 GT 深度(特权信息)后:SHARP 仍全面提升(ScanNet++ DISTS 0.071→0.068)且保持全列最佳——说明 SHARP 的剩余差距不在深度质量,而在遮挡 inpaint 等更本质的歧义上。Gen3C 在特权深度下与 SHARP 差距缩小(WildRGBD 0.078 vs 0.057),暗示扩散方法部分瓶颈在几何。</p>
+</section>
+
+<!-- ==================== ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">10</span>消融实验</h2>
+<p class="lead">消融基准:ScanNet++ 与 Tanks and Temples(表 8–14,附录 D)。</p>
+
+<h3>10.1 损失组件(表 8/9)</h3>
+<table>
+<tr><th>color+alpha</th><th>depth</th><th>percep</th><th>reg</th><th>ScanNet++<br>DISTS/LPIPS/PSNR</th><th>Tanks<br>DISTS/LPIPS/PSNR</th><th>渲染延迟</th></tr>
+<tr><td>✓</td><td>✗</td><td>✗</td><td>✗</td><td class="fail">0.229/0.414/18.18</td><td class="fail">0.301/0.656/14.75</td><td>22.2/15.5 ms</td></tr>
+<tr><td>✓</td><td>✓</td><td>✗</td><td>✗</td><td>0.162/0.270/22.95</td><td>0.239/0.548/16.23</td><td>12.2/8.8 ms</td></tr>
+<tr><td>✓</td><td>✓</td><td>✓</td><td>✗</td><td class="best">0.063/0.143/23.65</td><td class="best">0.126/0.421/16.29</td><td>6.2/5.6 ms</td></tr>
+<tr><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>0.064/0.147/22.61</td><td>0.126/0.419/16.19</td><td class="best">5.5/4.9 ms</td></tr>
+</table>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>解读</h4>
+    <ul>
+      <li><strong>感知损失是最大单一贡献</strong>:ScanNet++ DISTS 0.162→0.063(-61%),Tanks 0.239→0.126(-47%),渲染延迟反而降 49%/36%(更小更锐的高斯渲染更快);</li>
+      <li><strong>正则项几乎不动指标但显著加速渲染</strong>(6.2→5.5/5.6→4.9 ms)且定性改善(论文引 Figure 9 的 floater 对比)——"指标平、观感赢"的典型,靠定性评估才能发现;</li>
+      <li>depth 损失贡献第二大(-29%/-15% DISTS)。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Gram 矩阵(表 10)</h4>
+    <p>感知损失内部:加 Gram 后 ScanNet++ DISTS 0.070→<span class="best">0.064</span>,Tanks 0.130→0.127,LPIPS 双降。验证了"隐空间对齐→像素域模糊"的诊断与 Gram 自相关匹配的补救。</p>
+  </div>
+</div>
+
+<h3>10.2 架构组件(表 11/13)</h3>
+<table>
+<tr><th>消融</th><th>ScanNet++ DISTS</th><th>Tanks DISTS</th><th>结论</th></tr>
+<tr><td>深度调整:✓ → ✗</td><td>0.064 → <span class="fail">0.077</span></td><td>0.126 → <span class="fail">0.148</span></td><td>训练期歧义吸收器价值 +20%/+17%</td></tr>
+<tr><td>解冻深度骨干:✓ → ✗</td><td>0.064 → <span class="fail">0.084</span></td><td>0.126 → <span class="fail">0.139</span></td><td>端到端深度修正价值 +31%/+10%</td></tr>
+<tr><td>SSFT:✓ → ✗</td><td>0.071 → 0.063</td><td>0.122 → 0.125</td><td>指标不一致,定性有帮助(见 8.1)</td></tr>
+</table>
+
+<h3>10.3 高斯数量(表 14)</h3>
+<table>
+<tr><th># 高斯</th><th>ScanNet++ DISTS/LPIPS/PSNR</th><th>Tanks DISTS/LPIPS/PSNR</th></tr>
+<tr><td>2×192×192(≈7.4 万)</td><td class="fail">0.110/0.199/20.46</td><td class="fail">0.181/0.458/16.27</td></tr>
+<tr><td>2×384×384(≈29.5 万)</td><td>0.077/0.160/22.00</td><td>0.140/0.425/16.23</td></tr>
+<tr><td>2×768×768(≈118 万)</td><td class="best">0.064/0.147/22.61</td><td class="best">0.126/0.419/16.19</td></tr>
+</table>
+<p><strong>规模是硬道理</strong>:高斯数从 7.4 万 → 118 万,ScanNet++ DISTS 0.110→0.064(-42%)。论文标题里的"scale is a key ingredient"在这里体现——不过 Tanks 的 PSNR 几乎不涨(16.27→16.19 反而微降),说明户外场景瓶颈不在高斯密度。</p>
+</section>
+
+<!-- ==================== VIDEOGEN ==================== -->
+<section id="videogen">
+<h2><span class="num">11</span>与视频生成模型的关系</h2>
+<p class="lead">调研缘起之一是"SHARP 常被用来作为视频生成模型的输入"。本节基于论文原文、官方 README 与开源代码给出<strong>证据状态的严格澄清</strong>。</p>
+
+<h3>11.1 论文原文怎么说</h3>
+<p>SHARP 论文的自我定位是<strong>单图新视角合成</strong>(AR/VR 照片复活场景),全文没有"作为视频生成模型输入"的直接论述。唯一相关的是 Conclusion 的未来方向段落(原文照录):</p>
+<div class="quote">
+<p>"One clear opportunity for future work is to extend the methodology to support photorealistic synthesis of <strong>faraway views</strong> ... This may call for judicious <strong>integration of diffusion models</strong> (Po et al., 2024), possibly with the aid of distillation for reducing synthesis latency (Yin et al., 2024). With diffusion models, a <strong>unified view synthesis routine for single-view, multi-view, and video input</strong> (Ren et al., 2025; Ma et al., 2025) may emerge as a versatile generalization."</p>
+</div>
+<p>即:扩散模型集成是<strong>未来工作</strong>;引文 Ren et al. 2025 = <strong>Gen3C</strong>(恰好是本文最强 baseline,其定位是"3D-informed world-consistent video generation"——用 3D 缓存引导视频生成),Ma et al. 2025 = "You see it, you got it"(免位姿视频 3D 创建,CVPR 2025)。</p>
+
+<h3>11.2 证据状态判定</h3>
+<div class="uncertain">⚠️【存疑】"SHARP 常被用来作为视频生成模型的输入"——在 SHARP 论文、官方 README(apple/ml-sharp)与开源代码中<strong>均未找到任何直接支撑</strong>。论文发表时间尚短(2025-12 v1),截至本笔记撰写时未检索到以 SHARP 作为视频生成条件/先验的后续文献。</div>
+<div class="uncertain">⚠️【推测】该印象的合理来源:Gen3C 等"3D 引导视频生成"范式确实以 3D 表示作为视频扩散模型的条件输入;SHARP 能以快 3 个数量级的速度(0.9s vs 830s)产出 metric-scale 3D 高斯,理论上适合充当此类管线的<strong>实时几何先验供给器</strong>——但这是范式层面的推断,尚无已发表的 SHARP+视频生成组合工作。</div>
+
+<h3>11.3 什么场景下 SHARP 确实能服务视频生成管线</h3>
+<table>
+<tr><th>角色</th><th>机理</th><th>证据强度</th></tr>
+<tr><td>几何条件/3D cache 供给器</td><td>Gen3C 范式:3D 表示约束视频扩散的视角一致性;SHARP 提供 &lt;1s 的 3D 高斯来源</td><td>【推测】范式存在(Gen3C 论文),SHARP 接入未发表</td></tr>
+<tr><td>视频帧的深度/几何先验</td><td>SHARP 内部依赖 Depth Pro;其输出的双层深度本身可作下游条件</td><td>【推测】</td></tr>
+<tr><td>单图→3D 的快速前端(视频首帧起步)</td><td>Ma et al. 2025 类"视频输入统一视角合成"工作需要帧间几何;SHARP 可提供首帧 3D 初始化</td><td>【推测】论文 Conclusion 明确点名此方向为 future work</td></tr>
+<tr><td>邻近视角渲染(非视频生成)</td><td>SHARP 本体能力:100 FPS 实时渲染</td><td>✅ 论文直接支撑</td></tr>
+</table>
+<p>结论:<strong>把 SHARP 说成"视频生成模型输入的标准组件"为时过早</strong>;准确表述是"SHARP 是当前最强的单图前馈 3D 高斯生成器之一,其输出天然具备充当视频生成几何条件的潜质,该组合方向被论文列为未来工作"。</p>
+</section>
+
+<!-- ==================== IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">12</span>可改进方向分析</h2>
+<p class="lead">从方法、数据与评估、工程实用性三维度展开;每点附论文/代码佐证与改进建议。</p>
+
+<h3>12.1 方法层面</h3>
+<div class="card improve-card method">
+<h4><span class="prio prio-high">高优先级</span>仅支持"邻近视角",小基线假设写入训练分布</h4>
+<p>① 问题:训练数据相机环"相邻相机距离 ≤60cm"(附录 B 原文),评测也以邻近视角为主;远视角/大视角差既超训练分布,也超两层高斯的表达能力(第二层只够 inpaint 一层遮挡)。ETH3D(高分辨率户外,视角差相对更大)上 PSNR 14.51 落后 LVSM 16.72、SSIM 0.610 落后 Flash3D 0.682(Table 5),是 6 数据集中唯一非最佳项。论文 Conclusion 自己把 faraway views 列为头号未来方向。</p>
+<p>② 建议:结合论文点名的扩散模型蒸馏(Yin et al., 2024)做远视角外推;或训练时混合更大基线样本并增加层数——但层数增长会与"无 SH、控制输出体积"的设计哲学冲突,需要稀疏化。</p>
+</div>
+<div class="card improve-card method">
+<h4><span class="prio prio-high">高优先级</span>无球谐函数 → 视角相关效应(反光/高光)无法建模</h4>
+<p>① 问题:为控制输出体积,颜色只有 3 通道 RGB(3.x 节),没有视角相关颜色。反光/透明表面(训练数据特意强化的类别!)在邻近视角渲染尚可,但同一表面在新视角应有不同高光——纯 RGB 高斯只能给出静态外观。论文 Conclusion 把 view-dependent and volumetric effects 列为另一未来方向(引 Verbin et al., 2024 反射 NeRF 一脉)。</p>
+<p>② 建议:低阶 SH(1 阶仅 +3 通道)或 per-Gaussian 视角相关特征 + 微型 MLP 解码;与 K=14 的输出预算增幅仅 ~20%。</p>
+</div>
+<div class="card improve-card method">
+<h4><span class="prio prio-mid">中优先级</span>两层深度/高斯的表达上限</h4>
+<p>① 问题:遮挡区域只能由第二层高斯 inpaint,多层遮挡(玻璃后物体后再有反光)表达不了。Table 14 中 118 万高斯仍在收益递增段(ScanNet++ DISTS 0.077→0.064 未饱和),说明容量仍是瓶颈之一。</p>
+<p>② 建议:层数作为可学习/输入自适应(如按遮挡复杂度门控);或第二层以上用 anchor-based 稀疏高斯(Scaffold-GS 一脉)而非均匀网格,把容量集中到遮挡边界。</p>
+</div>
+
+<h3>12.2 数据与评估</h3>
+<div class="card improve-card data">
+<h4><span class="prio prio-high">高优先级</span>训练数据完全 in-house 且不可复现</h4>
+<p>① 问题:阶段一 700K 场景 V-Ray 合成数据与阶段二 2.65M 商业图(Shutterstock/Getty/Flickr,商业许可)均不发布。社区只能在推理层面复现,340M 可训练参数的训练配方实质不可复现。</p>
+<p>② 建议:论文之外,社区可比对公开替代(如 Hypersim、InteriorVerse 合成 + OpenScene 公开子集)做小规模复现验证;关注 Apple 后续是否会像 Depth Pro 一样放出部分训练资产【待核实】。</p>
+</div>
+<div class="card improve-card data">
+<h4><span class="prio prio-mid">中优先级</span>感知指标为主的选择性论证</h4>
+<p>① 问题:论文用平移敏感性实验(附录 C,Table 2:平移 1% 像素 PSNR 掉 10.2dB 而 DISTS 仅 +0.079)论证 DISTS/LPIPS 更公平——论证本身成立,但感知指标对像素级几何错位宽容,可能低估几何误差;SSFT 消融(Table 12)指标变差却因定性更好被保留,也显示指标体系与设计目标间的张力。</p>
+<p>② 建议:补充对齐后重评(alignment-invariant PSNR,如 www metric 领域的做法)与几何直接评估(深度误差、双视角一致性),避免只报对自身有利的感知指标。</p>
+</div>
+<div class="card improve-card data">
+<h4><span class="prio prio-mid">中优先级</span>评测分布偏室内/物体级</h4>
+<p>① 问题:6 个评测集中 Middlebury/Booster/ScanNet++/WildRGBD 均为室内或桌面级;ETH3D/Tanks 户外但指标明显更差(Tanks DISTS 0.122 vs ScanNet++ 0.071),大深度范围/天空/无限远场景未见专门分析。</p>
+<p>② 建议:增加大规模户外街景/地标数据集(如 Mip-NeRF 360 的 outdoor 子集)的零样本评测。</p>
+</div>
+
+<h3>12.3 工程实用性</h3>
+<div class="card improve-card eng">
+<h4><span class="prio prio-high">高优先级</span>仓库仅推理代码 + 模型许可限科研</h4>
+<p>① 问题:<code>apple/ml-sharp</code> 只含推理 CLI(<code>src/sharp/cli/predict.py</code> + <code>render.py</code>)与模型定义,<strong>无训练代码、无数据生成脚本</strong>;LICENSE(源码)允许个人使用与修改,但 LICENSE_MODEL 明确"sole purpose of scientific research"——<strong>权重商用受限</strong>。</p>
+<p>② 建议:产品化需自训模型(数据 + 计算成本极高,见上条);科研用途可直接 <code>pip install</code> 并从 Apple CDN 拉权重(<code>predict.py:36</code> 的 <code>DEFAULT_MODEL_URL</code>)。</p>
+</div>
+<div class="card improve-card eng">
+<h4><span class="prio prio-mid">中优先级</span>渲染强依赖 CUDA;非 NVIDIA 平台残缺</h4>
+<p>① 问题:<code>predict.py:112-114</code>:"Can only run rendering with gsplat on CUDA. Rendering is disabled."——MPS/CPU 只能导出 .ply 高斯,不能出渲染图。A100 上 0.91s 推理;消费级显卡(如 3090)时间未公布【待核实】,1536² 输入的 702M 模型显存占用需自行评估。</p>
+<p>② 建议:接入有 Metal 后端的 gsplat 分支或自研渲染器以覆盖 Apple 生态(讽刺的是 Apple 自家论文在自家芯片上不能完整跑);导出 .ply 后可用任何 3DGS 兼容渲染器(gsplat/gsplat.js/Blender 插件)绕开限制。</p>
+</div>
+<div class="card improve-card eng">
+<h4><span class="prio prio-mid">中优先级</span>输入固定 1536×1536,非方形图像直接拉伸</h4>
+<p>① 问题:<code>predict.py:166</code> <code>internal_shape = (1536, 1536)</code>,L175 对任意输入 <code>resize</code> 到方形且仅缩放内参(L198-199)——非方形照片会被<strong>各向异性拉伸</strong>,场景几何(球形物体变椭球)与尺度都会失真,而 metric 尺度恰是卖点。</p>
+<p>② 建议:使用前自行 letterbox 到方形并在内参中平移主点;或修改代码支持 letterbox 变体。</p>
+</div>
+<div class="card improve-card eng">
+<h4><span class="prio prio-low">低优先级</span>感知损失的训练内存技巧未开源</h4>
+<p>① 问题:计算图手术(surgery 算子,7.1 节)是全文最可复用的工程贡献,但推理仓库不含训练代码,该算子未随代码发布(<code>utils/module_surgery.py</code> 存在但服务于推理侧模块替换【待核实】其是否即论文所述算子)。</p>
+<p>② 建议:关注论文作者的后续开源;自行实现时按论文描述(前向缓存梯度/反向注入)在 autograd 自定义 Function 层面复刻。</p>
+</div>
+
+<h3>12.4 优先级总览</h3>
+<table>
+<tr><th>#</th><th>改进点</th><th>维度</th><th>优先级</th><th>佐证</th></tr>
+<tr><td>1</td><td>邻近视角小基线上限 / 远视角外推</td><td>方法</td><td class="fail">高</td><td>附录 B 相机环 ≤60cm;Conclusion 首句未来方向;ETH3D PSNR 落后(Table 5)</td></tr>
+<tr><td>2</td><td>无 SH → 视角相关效应缺失</td><td>方法</td><td class="fail">高</td><td>3.x 节"no spherical harmonics";Conclusion 引 Verbin et al. 2024</td></tr>
+<tr><td>3</td><td>训练数据不可复现</td><td>数据评估</td><td class="fail">高</td><td>附录 B 全 in-house;仓库无训练代码</td></tr>
+<tr><td>4</td><td>仓库仅推理 + 权重限科研</td><td>工程</td><td class="fail">高</td><td>repo 结构;LICENSE_MODEL 原文</td></tr>
+<tr><td>5</td><td>两层高斯表达上限</td><td>方法</td><td>中</td><td>Table 14 未饱和</td></tr>
+<tr><td>6</td><td>感知指标选择性论证</td><td>数据评估</td><td>中</td><td>附录 C Table 2;Table 12 SSFT 指标-定性分歧</td></tr>
+<tr><td>7</td><td>评测偏室内</td><td>数据评估</td><td>中</td><td>Table 1 数据集构成</td></tr>
+<tr><td>8</td><td>渲染仅 CUDA</td><td>工程</td><td>中</td><td>predict.py:112-114</td></tr>
+<tr><td>9</td><td>方形拉伸破坏 metric 尺度</td><td>工程</td><td>中</td><td>predict.py:166,175,198-199</td></tr>
+<tr><td>10</td><td>surgery 算子未开源</td><td>工程</td><td>低</td><td>附录 A.4 vs 仓库内容</td></tr>
+</table>
+
+<div class="callout key">
+<h4>个人认为最关键的三点</h4>
+<ol>
+<li><strong>小基线天花板是产品定义级的限制</strong>:训练分布(60cm 环)与两层高斯共同锁死了"只能看邻近视角"。要让 SHARP 真正进入 Gen3C 类视频生成管线(11.2 节的推测场景),远视角能力是第一道坎——这也是作者自己排第一的未来方向。</li>
+<li><strong>视角相关外观缺失</strong>与其强化反光/透明训练数据的努力直接矛盾:再好的几何也救不了一块静态高光玻璃,而真实照片里玻璃/水面/屏幕无处不在。低阶 SH 是代价最小的补丁。</li>
+<li><strong>不可复现性</strong>(数据 in-house + 仅推理开源 + 科研许可)意味着社区无法在其上迭代改进,只能把它当黑盒基线用——对一篇"scale is all you need"式的方法论宣言,这是最大的遗憾。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">13</span>总结</h2>
+<div class="grid grid-3">
+  <div class="card">
+    <h4>一句话定位</h4>
+    <p>用 <span class="num-big">0.9s</span> + 702M 参数,证明了纯回归式单图 3D 重建可以在 6 个零样本基准上全面碾压 3–10 倍参数的扩散方法,同时快 2–3 个数量级。</p>
+  </div>
+  <div class="card">
+    <h4>方法论启示</h4>
+    <p>① 深度先验要<strong>解冻</strong>而非冻结(Table 13);② 训练期教师(depth adjustment)推理时摘除的 C-VAE 简化范式;③ 感知损失的图手术 + Gram 修正两连击;④ base+delta 与属性专属激活让 7.8M 的 decoder 驾驭 120 万高斯。</p>
+  </div>
+  <div class="card">
+    <h4>适用边界</h4>
+    <p>邻近视角 + 单图 + 有 CUDA GPU + 科研用途。远视角、视角相关外观、非方形输入、商用授权均不满足(12 节)。</p>
+  </div>
+</div>
+<p>对本知识库关注的人体/人脸重建主线而言,SHARP 的价值不在直接套用(它是场景级、静态、单图),而在三个可迁移的技术:① <strong>深度调整模块</strong>——任何依赖单目深度的 pipeline(如 MHR 3DMM 对齐、身体高斯初始化)都可借它吸收深度歧义;② <strong>计算图手术</strong>——多视角感知损失训练(人脸 finetune 场景常见 OOM)的直接解法;③ <strong>属性专属激活的 base+delta 组合</strong>——head_gs/body_gs 拆分架构中属性预测头的参考设计。</p>
+<div class="uncertain">⚠️【待核实】apple/ml-sharp 的 <code>utils/module_surgery.py</code> 是否即论文附录 A.4 的计算图手术算子(仓库仅含推理路径,未含感知损失,初步判断为推理侧模块替换工具,非训练期梯度缓存实现)。</div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+📝 阅读笔记 · 生成于 2026-09-15 · arXiv:2512.10685 (v1 2025-12-11, v2 2026-02-27) · 代码核验: apple/ml-sharp @ 2026-09 clone
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

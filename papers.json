@@ -2597,6 +2597,47 @@
    "anchors": []
   },
   {
+   "title": "SHARP: Sharp Monocular View Synthesis in Less Than a Second",
+   "meta": [
+    "📄 arXiv: 2512.10685",
+    "📅 2025-12-11 (v2 2026-02-27)",
+    "🏢 Apple",
+    "🏆 ICLR 2026"
+   ],
+   "tags": [
+    "Feed-Forward 3D",
+    "Single-Image 3DGS",
+    "Metric Scale",
+    "Depth Pro",
+    "Real-Time Rendering"
+   ],
+   "summary": "单张照片 0.9 秒前馈生成 120 万 metric-scale 3D 高斯（Depth Pro 双 ViT 编码 + 双层深度 + base/delta 组合，无球谐），邻近视角 4–22ms 实时渲染。6 个零样本数据集 DISTS/LPIPS 全列 SOTA：LPIPS 相比最强基线 Gen3C 降 25–34%，DISTS 降 21–43%，而推理快 3 个数量级。参数 702M/340M 可训练，对比扩散方法 Gen3C 7.7B/SVC 2.33B/ViewCrafter 3.17B。训练两阶段：700K V-Ray 合成场景 + 2.65M 真实图 SSFT 视角对调。核心可迁移技术：C-VAE 启发的深度调整模块（推理恒等替换）、感知损失计算图手术、属性专属激活。",
+   "links": [
+    {
+     "href": "3D-20251211-SHARP.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2512.10685",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/apple/ml-sharp",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20251211-SHARP.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "前馈式大重建模型",
+    "稀疏与少视角重建",
+    "质量速度权衡与实时"
+   ],
+   "anchors": []
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",
