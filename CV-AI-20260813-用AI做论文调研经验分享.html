@@ -145,8 +145,8 @@
   <div class="hero-content">
     <span class="badge">经验分享 · 2026-08-13 · AI 协作方法论</span>
     <h1>用 AI 做论文调研:从链接到深度分析笔记的工作流</h1>
-    <p class="subtitle">基于 media_paper 知识库(51 个 HTML 笔记 / 40 篇论文 / 4 大领域)的真实协作沉淀 —— 讲清楚怎么把"读论文"从一次性消耗战,变成可累积、可检索、可复用的知识资产。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
-    <p class="authors">面向技术同事 · 配套仓库 <code>media_paper</code>(含 AGENTS.md 规范 + 51 个范例笔记)</p>
+    <p class="subtitle">基于 media_paper 知识库(63 个 HTML 笔记 / 4 大领域)的真实协作沉淀 —— 讲清楚怎么把"读论文"从一次性消耗战,变成可累积、可检索、可复用的知识资产。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
+    <p class="authors">面向技术同事 · 配套仓库 <code>media_paper</code>(含 AGENTS.md 规范 + 63 个范例笔记)</p>
     <div class="links">
       <a href="#why">为什么用 AI</a>
       <a href="#workflow">5 步工作流</a>
@@ -183,8 +183,8 @@
 <h3>1.1 知识库全景:这份经验从哪来</h3>
 <p>这套经验来自 <code>media_paper</code> 知识库的真实协作,不是空谈。它的规模:</p>
 <div class="grid grid-3">
-  <div class="card"><div class="num-big">40</div><p>篇论文调研笔记(p01–p40)</p></div>
-  <div class="card"><div class="num-big">51</div><p>个自包含 HTML 文件</p></div>
+  <div class="card"><div class="num-big">63</div><p>篇调研笔记(index 编号 1–63)</p></div>
+  <div class="card"><div class="num-big">63</div><p>个自包含 HTML 文件</p></div>
   <div class="card"><div class="num-big">4</div><p>大领域:VideoGen / 3D / SR / CV-AI</p></div>
 </div>
 <p>从 git log 看,合作经历了清晰的三个阶段:</p>
@@ -193,6 +193,7 @@
   <tr><td><span class="stage-tag stage-1">堆量期</span></td><td><code>b663f9b Add arxiv HTML figures: batch2</code></td><td>批量添加笔记,单篇较简略(219 行级别)</td></tr>
   <tr><td><span class="stage-tag stage-2">深耕期</span></td><td><code>228c34e 新增 EVA-Gaussian 算法原理与逻辑框图分析</code></td><td>单篇深耕,引入 Mermaid+MathJax,884 行</td></tr>
   <tr><td><span class="stage-tag stage-3">规范化</span></td><td><code>afbf8b4 新增 AGENTS.md</code> → <code>edab92c 重写 GEN3C</code></td><td>建立规范,按规格产出深度版(876 行)</td></tr>
+  <tr><td><span class="stage-tag stage-3">格式统一</span></td><td><code>c50e67f 统一笔记格式为方法密集型高端样式</code></td><td>废除样式双轨,全库只留高端样式 + 四项内容精度要求</td></tr>
 </table>
 
 <h3>1.2 AI 协作的真正价值定位</h3>
@@ -202,7 +203,7 @@
 <p>三个具体价值:</p>
 <ol>
   <li><strong>从消耗战变资产</strong>:读一篇论文不再是 2 小时读完就忘,而是产出一个可检索、可复用、可关联的 HTML 笔记,下次遇到相关问题直接 grep。</li>
-  <li><strong>从碎散变结构化</strong>:笔记不是 Markdown 散文件,而是统一样式(Style A/B)、统一命名、统一目录、有索引的可浏览知识库。</li>
+  <li><strong>从碎散变结构化</strong>:笔记不是 Markdown 散文件,而是统一样式(全库唯一高端格式)、统一命名、统一目录、有索引的可浏览知识库。</li>
   <li><strong>从被动变主动</strong>:AI 不只复述论文,还会写"可改进方向""技术路线对比"等增值章节,逼着你从"读懂"走向"评判"。</li>
 </ol>
 </section>
@@ -215,12 +216,12 @@
 <div class="mermaid">
 flowchart TD
     L["输入: arXiv / GitHub / 项目主页 链接"] --> S1["① 输入解析<br/>提取 arxiv-id / 仓库名 / 最新版本号"]
-    S1 --> S2["② 并行信息抓取<br/>abs页 + HTML全文 + 项目主页 + README"]
+    S1 --> S2["② 并行信息抓取<br/>abs页 + HTML全文 + 项目主页 + README + 源码"]
     S2 --> S3["③ 子代理深读全文<br/>委派 Task 读超长 HTML,提取方法/公式/实验/消融"]
     S3 --> S4["④ 框图绘制<br/>Mermaid 画 pipeline / 损失 / 演进"]
-    S4 --> S5["⑤ 分点解析成笔记<br/>按 Style A/B 模板,热链 arXiv 图,含可改进方向"]
-    S5 --> IDX["更新 index.html 加卡片"]
-    IDX --> COMMIT["commit(中文,描述章节)"]
+    S4 --> S5["⑤ 分点解析成笔记<br/>统一高端模板,热链 arXiv 图,含同类对比与可改进方向"]
+    S5 --> IDX["改 papers.json + 重新生成 index"]
+    IDX --> COMMIT["python check.py 通过后 commit(中文,描述章节)"]
     style L fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
     style S3 fill:#ede9fe,stroke:#a78bfa,color:#4c1d95
     style S5 fill:#dcfce7,stroke:#34d399,color:#065f46
@@ -251,7 +252,7 @@ flowchart TD
   </div>
   <div class="card">
     <h4>④ GitHub README + 源码</h4>
-    <p>取环境配置、训练命令、数据集说明。深度调研时 <code>git clone --depth 1</code> 读 <code>train.py</code>/<code>config/*.yaml</code>,检验论文"宣称 vs 实现"差异。</p>
+    <p>取环境配置、训练命令、数据集说明。深度调研时 <code>git clone --depth 1</code> 读 <code>train.py</code>/<code>config/*.yaml</code>,检验论文"宣称 vs 实现"差异。<strong>源码是「工程实现细节」章节的唯一可信来源</strong>;仓库无源码时明确写"无法验证",不要猜数。</p>
   </div>
 </div>
 
@@ -259,14 +260,16 @@ flowchart TD
 <p>HTML 全文常超 2000 行/51200 字节,主代理直接读会爆上下文。委派 explore 子代理读取,提取方法/损失/实验/消融/图 URL,返回结构化素材。</p>
 
 <h3>2.4 第 4 步:框图绘制(详见 §5)</h3>
-<p>方法密集型论文用 Mermaid 画 pipeline、损失树、演进路线;总结性大图用内联 SVG;轻量嵌入用 HTML/CSS。ASCII 已废弃。</p>
+<p>统一用 Mermaid 画 pipeline、损失树、演进路线;总结性大图用内联 SVG;轻量嵌入用 HTML/CSS。ASCII 已废弃。一张笔记至少 3 张图(总体数据流 / 模块内部 / 训练推理流程)。</p>
 
 <h3>2.5 第 5 步:分点解析成笔记</h3>
-<p>按模板(Style A 方法密集型 13 节 / Style B 通用 14 节)填充。关键章节:</p>
+<p>按<strong>统一模板</strong>填充:Hero → 摘要 → 背景动机 → 总体框架 → 逐模块"五件套"(网络结构表/数学形式化/前向流程/内部 Mermaid/监督信号)→ 损失总表 → 训练+推理流程图 → 工程实现细节 → 实验 → 消融 → 同类方法对比 → 应用场景 → 可改进方向 → 总结 → 团队与链接。关键章节:</p>
 <ul>
+  <li><strong>算法逻辑</strong>:符号表 + 数据流到<em>张量维度级</em>(每步进出形状),关键设计要解释"为什么这样做"而非复述结构</li>
+  <li><strong>工程实现细节</strong>:源码里的真实超参/损失权重/显存与耗时,每条标出处(<code>config/xxx.yaml:12</code>);拿不到源码就写"无法验证"</li>
+  <li><strong>同类方法对比</strong>:横向对比表维度固定(输入假设/表示/监督/耗时/显存/指标/开源),≥3 个同类方法且须含论文 baseline 以外,给出机制层面的对比结论 + 演进定位 + 库内交叉链接</li>
   <li><strong>实验表格</strong>:PSNR/SSIM/LPIPS 等量化指标必须完整数字,最优行标 <code>.best</code></li>
   <li><strong>可改进方向</strong>:知识库特色章节,三维度(方法/数据/工程)+ 优先级表 + <em>代码佐证</em>,不能空谈</li>
-  <li><strong>技术路线对比与演进</strong>:把论文放回领域脉络,范式 → 代表方法 → 先验 → 局限</li>
 </ul>
 </section>
 
@@ -286,46 +289,86 @@ flowchart TD
   <li><strong>零记忆负担</strong>:规范在文件里,新会话的 AI 读一遍就上手,不必每次重新交代</li>
 </ol>
 
-<h3>3.2 AGENTS.md 的 7 个必备模块</h3>
-<p>本知识库的 AGENTS.md(133 行)覆盖这 7 块,可作为模板:</p>
+<h3>3.2 AGENTS.md 的 8 个必备模块</h3>
+<p>本知识库的 AGENTS.md(294 行)覆盖这 8 块,可作为模板:</p>
 <table>
   <tr><th>模块</th><th>内容</th><th>为什么重要</th></tr>
   <tr><td>① 工作流</td><td>5 步:输入解析→并行抓取→子代理深读→框图→分点解析</td><td>让 AI 知道"先做什么后做什么",不会跳步</td></tr>
   <tr><td>② 文件命名</td><td><code>PREFIX-YYYYMMDD-Name.html</code>,4 个前缀(3D-/VideoGen-/SR-/CV-AI-)</td><td>排序即分类,日期即版本,一眼看出归属</td></tr>
-  <tr><td>③ HTML 样式</td><td>Style A(方法密集型,Mermaid+MathJax)/ Style B(通用,NVIDIA 绿)</td><td>样式与内容匹配,方法论文用 A,综述用 B</td></tr>
-  <tr><td>④ 公式处理</td><td>三档:MathJax / 纯文本 <code>.formula</code> / <code>&lt;code&gt;</code> 内联</td><td>按公式密度选,不必每篇都上 MathJax</td></tr>
-  <tr><td>⑤ 图像策略</td><td>优先热链 arXiv HTML 图(<code>loading="lazy"</code>),失效则本地化</td><td>热链省存储且图自动跟论文版本走</td></tr>
-  <tr><td>⑥ 对比表格</td><td>✓/✗/~ 标记,<code>.best</code>/<code>.fail</code> 标色</td><td>对比一目了然,最优行突出</td></tr>
-  <tr><td>⑦ 验证清单</td><td>成稿前 9 项自查(lang/主题色/链接/图/Mermaid/表格/可改进方向/index)</td><td>质检门,防止低质产出</td></tr>
+  <tr><td>③ HTML 样式</td><td><strong>全库唯一</strong>高端样式,Hero + 2 列目录 + 数字徽章标题 + Mermaid + MathJax</td><td>样式不再需要"选",消除双轨带来的分裂与错配</td></tr>
+  <tr><td>④ 内容精度</td><td>四项硬要求:思路 / 算法逻辑 / 工程细节 / 同类方法对比</td><td>格式统一的重点是这四项,不是换皮</td></tr>
+  <tr><td>⑤ 公式处理</td><td>三档:MathJax(默认)/ 纯文本 <code>.formula</code> / <code>&lt;code&gt;</code> 内联</td><td>按公式密度选,不必每篇都上 MathJax</td></tr>
+  <tr><td>⑥ 图像策略</td><td>优先热链 arXiv HTML 图(<code>loading="lazy"</code>),失效则本地化</td><td>热链省存储且图自动跟论文版本走</td></tr>
+  <tr><td>⑦ 对比表格</td><td>✓/✗/~ 标记,<code>.best</code>/<code>.fail</code> 标色;同类对比表维度固定不许删列</td><td>对比一目了然,最优行突出,缺失值也看得见</td></tr>
+  <tr><td>⑧ 验证清单</td><td>成稿前自查:硬性项(脚本)/ 真实性项 / 格式项 / 内容项 / 流程项</td><td>质检门,防止低质产出</td></tr>
 </table>
 
 <h3>3.3 验证清单(直接抄)</h3>
 <p>这是 AGENTS.md 最后一节,成稿前逐条自查:</p>
-<pre><code>- [ ] 文件名符合 PREFIX-YYYYMMDD-Name.html
-- [ ] &lt;html lang="zh-CN"&gt;
-- [ ] 主题色与所选 Style 一致(NVIDIA 绿 / EVA 蓝)
-- [ ] 资源链接含 arXiv abs + HTML 全文 + GitHub + 项目主页
-- [ ] 图像有 loading="lazy" 与 alt
-- [ ] Mermaid/MathJax(若用)CDN 与 init 脚本正确
-- [ ] 实验表格含 PSNR/SSIM/LPIPS,最优行标 .best
-- [ ] 含「可改进方向分析」章节(三维度 + 优先级表 + 代码佐证)
-- [ ] 已更新 index.html 加 .note-card
-- [ ] commit 信息中文,描述新增/改动章节</code></pre>
+<pre><code># 硬性项(脚本校验,不通过禁止 commit)
+python check.py        # 0 站内死链 / index 全收录 / 本地图片完整 / index 与 papers.json 同步
 
-<h3>3.4 Style A vs Style B:怎么选</h3>
-<table>
-  <tr><th>维度</th><th>Style A(高端)</th><th>Style B(默认)</th></tr>
-  <tr><td>主题色</td><td>EVA 蓝 <code>#60a5fa</code> + 紫 <code>#a78bfa</code></td><td>NVIDIA 绿 <code>#76b900</code></td></tr>
-  <tr><td>头部</td><td><code>.hero</code> 双渐变 + badge + subtitle + authors + links</td><td><code>.header</code> 渐变 + h1 + meta + tags</td></tr>
-  <tr><td>标题</td><td>数字徽章 <code>&lt;h2&gt;&lt;span class="num"&gt;N&lt;/span&gt;</code></td><td>emoji 前缀 📌/🏗️/🎯,不加数字</td></tr>
-  <tr><td>公式</td><td>MathJax <code>.equation</code> + 标号</td><td>纯文本或 <code>&lt;code&gt;</code></td></tr>
-  <tr><td>框图</td><td>Mermaid 优先</td><td>HTML/CSS 或 ASCII(已弃)</td></tr>
-  <tr><td>适用</td><td class="best">方法密集型(多公式多 pipeline)</td><td class="best">95% 通用论文</td></tr>
-  <tr><td>范例</td><td><code>3D-20241002-EVA-Gaussian.html</code></td><td>大多数 VideoGen 笔记</td></tr>
-</table>
-<div class="callout tip">
-<p><strong>选型原则</strong>:论文有 3 个以上公式或复杂 pipeline → Style A;只是了解性调研 → Style B。别为了"好看"给简单论文上 Style A,MathJax 和 Mermaid 是有加载成本的。</p>
+# 真实性项
+- [ ] 无编造:代码引用有真实文件路径+行号,数字有原文出处(表号/章节/README)
+- [ ] 不确定内容已用【存疑】/【推测】/【待核实】统一标注(无自由措辞)
+- [ ] 「工程实现细节」「同类方法对比」中的非源码直读数值已标注
+
+# 格式项(统一高端样式)
+- [ ] 使用高端样式:.hero + .toc(2 列)+ &lt;h2&gt;&lt;span class="num"&gt;N&lt;/span&gt;
+- [ ] &lt;html lang="zh-CN"&gt;;文件名符合 PREFIX-YYYYMMDD-Name.html
+- [ ] 图像有 loading="lazy" 与 alt;Mermaid/MathJax CDN 与 init 脚本正确
+- [ ] 至少 3 张图(总体数据流 / 模块内部 / 训练或推理流程)
+
+# 内容项(四项精度要求)
+- [ ] 思路:先前方法的具体失败模式 + 作者关键假设 + 假设失效条件
+- [ ] 算法逻辑:有符号表;数据流到张量维度级;关键设计有机制解释
+- [ ] 工程细节:超参/资源账/落地坑有出处;无源码时明确写"无法验证"
+- [ ] 同类对比:横向表维度齐全 + ≥3 个同类方法(含论文 baseline 以外)
+- [ ] 同类对比:有对比结论 + 演进定位表 + 库内兄弟笔记交叉链接
+- [ ] 实验表格含 PSNR/SSIM/LPIPS,最优行标 .best
+- [ ] deep 级含「可改进方向分析」(三维度 + 优先级表 + 代码佐证)
+
+# 流程项
+- [ ] 已更新 papers.json 并跑 python build_index.py(禁止直接改 index.html)
+- [ ] commit 信息中文、简短(标题 + 正文合计不超过 3-4 行)</code></pre>
+
+<h3>3.4 统一高端格式:一套样式 + 四类精度要求</h3>
+<div class="callout key">
+<p><strong>规范演进(2026-09-17,commit <code>c50e67f</code>)</strong>:最初规范分了两套样式 —— Style A(方法密集型,Mermaid+MathJax)与 Style B(通用,NVIDIA 绿扁平)。实践后发现<em>双轨本身就是错误的</em>:它把"要不要上公式和框图"变成了主观选择题,结果同一领域内笔记外观分裂、方法密集型论文被写成扁平简版、样式选错还要返工。现在<strong>全库只保留一套高端样式</strong>,把省下的心力放到内容精度上。</p>
 </div>
+<table>
+  <tr><th>维度</th><th>统一后(唯一格式)</th></tr>
+  <tr><td>主题色</td><td>蓝紫 <code>#60a5fa</code> + <code>#a78bfa</code></td></tr>
+  <tr><td>头部</td><td><code>.hero</code> 双渐变 + badge + subtitle + authors + links</td></tr>
+  <tr><td>标题</td><td>数字徽章 <code>&lt;h2&gt;&lt;span class="num"&gt;N&lt;/span&gt;&lt;/h2&gt;</code></td></tr>
+  <tr><td>公式 / 框图</td><td>MathJax <code>.equation</code> + 标号;Mermaid 优先</td></tr>
+  <tr><td>结构</td><td>Hero → 摘要 → 背景动机 → 总体框架 → 逐模块"五件套" → 损失总表 → 流程 → 工程细节 → 实验 → 消融 → 同类对比 → 应用场景 → 可改进方向 → 总结 → 链接</td></tr>
+  <tr><td>判据</td><td class="best">不再需要选型:一律高端样式,内容按 depth 裁剪章节</td></tr>
+  <tr><td>范例</td><td><code>3D-20241002-EVA-Gaussian.html</code>(样式参考实现)</td></tr>
+</table>
+<p>真正区分笔记质量的不再是外观,而是<strong>四类内容的精度下限</strong>:</p>
+<div class="grid grid-2">
+  <div class="card">
+    <h4 style="color:var(--accent)">① 思路(Why)</h4>
+    <p>此前方法的<em>具体失败模式</em>(不是"效果不好")、作者的关键假设、以及这个假设在什么条件下失效。作者宣称无证据时标 <code>【推测】</code>。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--accent2)">② 算法逻辑(How)</h4>
+    <p>符号表 + 数据流到张量维度级(<code>[B, N, 3]</code>)、循环次数、可导性与梯度流;关键设计要给"为什么这样做"的机制解释。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--green)">③ 工程细节(Reality)</h4>
+    <p>源码/配置里的真实超参与损失权重(标 <code>config/*.yaml:12</code>)、显存与耗时账、数据预处理依赖、硬件门槛与已知坑。拿不到源码就写"无法验证"。</p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">④ 同类方法对比(Versus)</h4>
+    <p>固定维度的横向表(输入假设/表示/监督/训练数据/耗时/显存/指标/开源),≥3 个同类方法且须含论文 baseline 以外的;给出机制层面的对比结论 + 演进定位表。</p>
+  </div>
+</div>
+<div class="callout tip">
+<p><strong>为什么"同类对比"必须含论文 baseline 以外的方法</strong>:只抄论文自己的对比表,等于把作者的叙事框架照搬一遍,看不到作者刻意回避的竞品。这也是本知识库服务于<em>工程选型</em>而非"论文导读"的关键差异。</p>
+</div>
+
 </section>
 
 <!-- ==================== 4. SUBAGENT ==================== -->
@@ -471,9 +514,9 @@ flowchart TD
 <p>用户指出 <code>VideoGen-20250305-GEN3C.html</code>(旧版 331 行)写得简略,要求按现规格重写。实际操作步骤:</p>
 <div class="mermaid">
 flowchart TD
-    OLD["旧版 331 行<br/>Style B,无 Mermaid,无公式,表无数字"] --> READ
+    OLD["旧版 331 行<br/>旧扁平样式,无 Mermaid,无公式,表无数字"] --> READ
     subgraph READ["① 读现状 + 读 EVA-Gaussian 作样式参考"]
-        R1["读旧版"] --> R2["读 EVA-Gaussian 的 Style A CSS"]
+        R1["读旧版"] --> R2["读 EVA-Gaussian 的样式 CSS(现为全库统一参考实现)"]
     end
     READ --> FETCH
     subgraph FETCH["② 并行抓取 4 路"]
@@ -484,7 +527,7 @@ flowchart TD
     end
     FETCH --> WRITE
     subgraph WRITE["③ 写作(主代理,context 充裕)"]
-        W1["14 节结构(Style A)"]
+        W1["14 节结构(统一高端样式)"]
         W2["6 个公式(MathJax)"]
         W3["5 个 Mermaid 框图"]
         W4["完整 Table 1-6 数字"]
@@ -506,8 +549,8 @@ flowchart TD
 <h3>6.3 三个关键决策点</h3>
 <div class="grid grid-3">
   <div class="card">
-    <h4 style="color:var(--accent)">① 选 Style A 而非沿用旧 Style B</h4>
-    <p>GEN3C 是方法密集型(3D cache pipeline + 多公式 + 多实验表),Style A 的 MathJax+Mermaid+数字徽章更匹配。旧版用 Style B 是错配。</p>
+    <h4 style="color:var(--accent)">① 用高端样式重写,而非沿用旧扁平样式</h4>
+    <p>GEN3C 是方法密集型(3D cache pipeline + 多公式 + 多实验表),MathJax+Mermaid+数字徽章才装得下它的内容。旧版用扁平样式是错配 —— 这也直接催生了后来的"格式统一":与其每次判断该用哪套样式,不如全库只留一套。</p>
   </div>
   <div class="card">
     <h4 style="color:var(--green)">② 委派子代理读全文</h4>
@@ -540,6 +583,7 @@ flowchart TD
   <tr><td>可改进方向空谈</td><td class="fail">像 GPT 套话,无信息量</td><td class="best">每点带代码/实验佐证,标优先级</td><td><code>ce7e49d EVA-Gaussian 新增可改进方向</code></td></tr>
   <tr><td>文件名中英混杂</td><td class="fail">排序乱,难检索</td><td class="best"><code>PREFIX-YYYYMMDD-Name.html</code> 统一</td><td><code>d3239b5 整理知识库命名规范</code></td></tr>
   <tr><td>每篇都上 MathJax</td><td class="fail">加载慢,简单论文过载</td><td class="best">三档选:MathJax / 纯文本 / <code>&lt;code&gt;</code></td><td>—</td></tr>
+  <tr><td>笔记样式分两轨,每篇都要"选 A 还是选 B"</td><td class="fail">同领域外观分裂;方法密集型论文被写成扁平简版,还得返工</td><td class="best">全库唯一高端样式,内容按 depth 裁剪章节</td><td><code>c50e67f 统一笔记格式</code></td></tr>
   <tr><td>用 Bootstrap/外部 CSS</td><td class="fail">十年后打不开</td><td class="best">仅 mermaid+mathjax CDN,其余自包含</td><td>—</td></tr>
   <tr><td>commit 信息写"update"</td><td class="fail">改了啥不知道</td><td class="best">中文,描述新增/改动章节</td><td>全仓库一致</td></tr>
 </table>
@@ -576,18 +620,23 @@ webfetch raw.githubusercontent.com/.../README.md;
 Task 委派 explore 子代理读 HTML 全文(prompt 见 §4.2)
 
 # 3. 主代理写作(用子代理返回的精炼素材)
-write 新笔记(Style A,14 节,Mermaid+MathJax+完整表格+可改进方向)
+write 新笔记(统一高端样式,含 Mermaid+MathJax+完整表格+同类对比+可改进方向)
 
 # 4. 验证(并行)
 bash 检查 section 闭合 / arXiv 图 HTTP 200;
 grep 计数 mermaid/equation/figure 块
 
-# 5. 更新索引 + commit
-edit index.html 加 .note-card;
+# 5. 更新索引 + 校验 + commit
+edit papers.json 加条目;  # index.html 是生成物,禁止手改
+bash python build_index.py && python check.py   # check.py 是 commit 硬门槛
 bash git add + commit(中文信息)</code></pre>
 
 <h3>8.3 验证清单(成稿前自查)</h3>
-<pre><code># 结构验证(PowerShell)
+<pre><code># 0. 仓库级硬门槛(必跑,不通过禁止 commit)
+python check.py     # 死链 / index 收录 / 本地图片 / index 与 papers.json 同步
+                    # 附带输出:不确定标注统计 + 统一格式迁移进度
+
+# 结构验证(PowerShell)
 $f = "笔记.html"; $c = Get-Content $f -Raw
 "section open:  " + ([regex]::Matches($c, '&lt;section ')).Count
 "section close: " + ([regex]::Matches($c, '&lt;/section&gt;')).Count   # 应相等
@@ -603,38 +652,41 @@ foreach ($u in $urls) {
   $r.Close()
 }</code></pre>
 <div class="callout tip">
-<p>这两个验证脚本是我每次重写后必跑的。section 不闭合说明 HTML 坏了;图 HTTP 非 200 说明热链失效要本地化。这是质量门。</p>
+<p><code>check.py</code> 管仓库级一致性(死链、索引同步),后两个脚本管单篇质量(section 闭合、图存活)。section 不闭合说明 HTML 坏了;图 HTTP 非 200 说明热链失效要本地化。<strong>三道门都过才 commit</strong>。</p>
 </div>
 </section>
 
 <!-- ==================== 9. RETRIEVAL ==================== -->
 <section id="retrieval">
 <h2><span class="num">9</span>从论文库到知识库:让知识可检索</h2>
-<p class="lead">论文调研做到 40 篇 × ~14 节 ≈ 560 个知识点时,新痛点浮现:<strong>知识点记不住、需要用时找不到在哪一篇</strong>。这不是记忆力问题,是索引粒度问题 —— 你需要的不是"背下来",而是"查得到"。</p>
+<p class="lead">论文调研做到 63 篇 × ~14 节 ≈ 880 个知识点时,新痛点浮现:<strong>知识点记不住、需要用时找不到在哪一篇</strong>。这不是记忆力问题,是索引粒度问题 —— 你需要的不是"背下来",而是"查得到"。</p>
 
 <h3>9.1 痛点本质:索引粒度太粗</h3>
-<p>当前 <code>knowledge-index.json</code> 是<strong>论文维度</strong>的索引 —— 每篇一个条目,带 tags/sections。查"3D 一致性"能定位到一批论文(p17/p27/p40...),但定位不到具体章节/段落。tag 到论文级,不到知识点级。</p>
+<p>当前 <code>papers.json</code> 是<strong>论文维度</strong>的索引 —— 每篇一个条目,带 kind/depth/topics/tags/anchors。查"3D 一致性"能定位到一批论文,但定位不到具体章节/段落。tag 到论文级,不到知识点级。</p>
+<div class="callout key">
+<p><strong>已落地的一半</strong>:<code>papers.json</code> 里每篇的 <code>anchors</code> 字段(该篇内所有 <code>id="..."</code> 章节锚点列表)就是"知识点索引"的雏形 —— 有了它,索引才能深链到 <code>笔记.html#loss</code> 这样的具体章节。目前 <strong>17/63 篇</strong> 已填写 anchors,其余为缺省空数组。这印证了原设计判断:锚点要显式维护,不能靠事后抓取。</p>
+</div>
 <table>
-  <tr><th>维度</th><th>当前(论文索引)</th><th>需要(知识点索引)</th></tr>
+  <tr><th>维度</th><th>当前(论文索引 papers.json)</th><th>需要(知识点索引)</th></tr>
   <tr><td>粒度</td><td>1 篇 = 1 条目</td><td>1 节/1 公式/1 表 = 1 条目</td></tr>
   <tr><td>查"X 怎么做"</td><td class="fail">返回一批论文,需逐篇翻</td><td class="best">直接跳到相关段落</td></tr>
   <tr><td>跨论文对比</td><td class="fail">手动翻多篇</td><td class="best">主题页自动聚合</td></tr>
-  <tr><td>条目数</td><td>40</td><td>~560</td></tr>
+  <tr><td>条目数</td><td>63</td><td>~880</td></tr>
 </table>
 
 <h3>9.2 解法一:知识点索引(条目化)</h3>
 <p>把每篇笔记拆成条目,每条字段:</p>
 <pre><code>{
-  "id": "p27-s8",
-  "paper": "p27",
+  "id": "GEN3C#loss",
+  "paper": "VideoGen-20250305-GEN3C",
   "title": "GEN3C",
-  "section": "§8 损失函数",
+  "anchor": "loss",
   "keywords": ["denoising score matching", "深度对齐", "以架构替代损失堆叠"],
   "summary": "仅 denoising score matching(式4)+ 深度对齐 s,t(式5),无感知/对抗/几何一致性损失",
   "file": "VideoGen-20250305-GEN3C.html#loss"
 }</code></pre>
 <div class="callout key">
-<p>关键设计:<strong>条目要带章节锚点(<code>#loss</code>)</strong>。这样检索到条目后,点击直接跳到笔记对应章节,不是只看摘要。<code>keywords</code> 用自然语言短语(如"以架构替代损失堆叠"),不只术语 —— 你回忆时想的往往是短语而非关键词。</p>
+<p>关键设计:<strong>条目要带章节锚点(<code>#loss</code>)</strong>。这样检索到条目后,点击直接跳到笔记对应章节,不是只看摘要。<code>keywords</code> 用自然语言短语(如"以架构替代损失堆叠"),不只术语 —— 你回忆时想的往往是短语而非关键词。<em>这也解释了为什么写笔记时每个 <code>&lt;section&gt;</code> 都要给 <code>id</code>:锚点是索引的地基,事后补抓不可靠。</em></p>
 </div>
 <div class="mermaid">
 flowchart LR
@@ -659,14 +711,14 @@ flowchart LR
   <li>跨论文对比表:显式 vs 隐式 vs RL,各自先验与局限</li>
 </ul>
 <div class="callout tip">
-<p>主题页是<strong>可浏览的"专题综述"</strong>,不是论文列表。它把分散在 40 篇里的相关知识聚到一页,带对比表和引用 —— 这才是"需要用时找得到"的最终形态。</p>
+<p>主题页是<strong>可浏览的"专题综述"</strong>,不是论文列表。它把分散在 60+ 篇里的相关知识聚到一页,带对比表和引用 —— 这才是"需要用时找得到"的最终形态。注意这与「同类方法对比」章节是两回事:章节在笔记内部做横向对比,主题页跨笔记聚合。</p>
 </div>
 
 <h3>9.4 落地路径:别一上来就 RAG</h3>
 <p>三阶段递进,前两阶段用关键词就够,不必向量检索:</p>
 <table>
   <tr><th>阶段</th><th>做什么</th><th>检索方式</th><th>何时做</th></tr>
-  <tr><td><span class="stage-tag stage-1">一</span> 条目化</td><td>拆 40 篇为 ~560 条目,带锚点+关键词</td><td>grep / 关键词</td><td class="best">现在</td></tr>
+  <tr><td><span class="stage-tag stage-1">一</span> 条目化</td><td>拆 63 篇为 ~880 条目,带锚点+关键词</td><td>grep / 关键词</td><td class="best">现在(anchors 已起步)</td></tr>
   <tr><td><span class="stage-tag stage-2">二</span> 主题聚合</td><td>按高频问题建主题入口页</td><td>浏览主题页</td><td>条目化后</td></tr>
   <tr><td><span class="stage-tag stage-3">三</span> 向量检索</td><td>条目向量化,语义检索</td><td>RAG</td><td>关键词不够用时</td></tr>
 </table>
@@ -678,7 +730,7 @@ flowchart LR
 <!-- ==================== 10. SUMMARY ==================== -->
 <section id="summary">
 <h2><span class="num">10</span>经验总结:知识沉淀的三层境界</h2>
-<p class="lead">回看这 40 篇笔记的演进,其实是知识沉淀的三层境界。</p>
+<p class="lead">回看这 63 篇笔记的演进,其实是知识沉淀的三层境界。</p>
 
 <div class="grid grid-3">
   <div class="card">
@@ -694,30 +746,31 @@ flowchart LR
   <div class="card">
     <span class="stage-tag stage-3">第三层</span>
     <h4>评判与关联</h4>
-    <p>加"可改进方向"(代码佐证)+"技术路线对比与演进"+ 跨论文引用。<strong>GEN3C(876 行)是这个层级</strong>。价值:高。从"读懂"走向"评判",把论文放回领域脉络。</p>
+    <p>加"可改进方向"(代码佐证)+"同类方法对比"+"演进定位"+ 跨论文引用。<strong>GEN3C(876 行)是这个层级</strong>。价值:高。从"读懂"走向"评判",把论文放回领域脉络。</p>
   </div>
 </div>
 
-<h3>9.1 三条核心经验</h3>
+<h3>10.1 四条核心经验</h3>
 <div class="callout key">
 <ol>
 <li><strong>规范先行,产出稳定</strong>。AGENTS.md 是一切的基础。没有规范,AI 协作就是"看心情",笔记质量随会话漂移。先把命名、样式、章节、验证清单定死,再让 AI 按规格产出。</li>
+<li><strong>样式只能有一套</strong>。给样式留"可选项"是伪灵活:它把判断成本推给了每次写作,结果同领域笔记外观分裂、错配返工。规范里的"多轨"最终都会被现实收敛成一轨 —— 与其分两套再统一,不如一开始就一套。(我们的双轨样式于 2026-09-17 被废除,commit <code>c50e67f</code>。)</li>
 <li><strong>子代理是上下文倍增器</strong>。主代理的 context 是稀缺资源,留给写作。读全文、读源码这种消耗 context 的活,委派子代理。一个 prompt 写得好,子代理能帮你读 2000 行论文返回精炼素材。</li>
-<li><strong>代码佐证让评判有底气</strong>。"可改进方向"不能空谈。说"多视角名不副实"要引用 <code>torch.stack([lmain, rmain])</code>;说"chunk 漂移风险"要引用 <code>121*N-1</code>。读源码是超越论文复述的关键。</li>
+<li><strong>代码佐证让评判有底气</strong>。"可改进方向"不能空谈。说"多视角名不副实"要引用 <code>torch.stack([lmain, rmain])</code>;说"chunk 漂移风险"要引用 <code>121*N-1</code>。读源码是超越论文复述的关键 —— 它同时是「工程实现细节」和「同类对比」两章的素材来源。</li>
 </ol>
 </div>
 
-<h3>9.2 给上手者的最小建议</h3>
+<h3>10.2 给上手者的最小建议</h3>
 <ol>
-  <li><strong>先建 AGENTS.md</strong>:哪怕只写命名规范 + 5 步工作流 + 1 个样式模板,先立起来</li>
+  <li><strong>先建 AGENTS.md</strong>:哪怕只写命名规范 + 5 步工作流 + 1 套样式模板,先立起来。样式不要留选项</li>
   <li><strong>先做 3 篇深度版</strong>:别堆量,3 篇 800 行深度版比 30 篇 200 行简略版有价值</li>
   <li><strong>每次都委派子代理读全文</strong>:主代理别碰 HTML 全文,留 context 写作</li>
-  <li><strong>每次都验证</strong>:section 闭合 + 图 HTTP 200,跑两个脚本就够</li>
+  <li><strong>每次都验证</strong>:<code>python check.py</code> + section 闭合 + 图 HTTP 200,三道门都过才 commit</li>
   <li><strong>commit 信息写中文写章节</strong>:未来 grep 自己的演进史</li>
 </ol>
 
 <div class="callout tip">
-<p><strong>最后一句</strong>:AI 协作做调研,真正的杠杆不在"AI 多聪明",而在<em>你有没有把规范、工作流、验证清单沉淀下来</em>。这套东西沉淀好,换任何 AI 工具都能复用,且产出会越来越稳。media_paper 知识库就是这套思路的活样本 —— 40 篇笔记、51 个文件、一条清晰的演进线,全部开源可参考。</p>
+<p><strong>最后一句</strong>:AI 协作做调研,真正的杠杆不在"AI 多聪明",而在<em>你有没有把规范、工作流、验证清单沉淀下来</em>。这套东西沉淀好,换任何 AI 工具都能复用,且产出会越来越稳。media_paper 知识库就是这套思路的活样本 —— 63 篇笔记、一条清晰的演进线(堆量 → 深耕 → 规范化 → 格式统一),全部开源可参考。</p>
 </div>
 </section>
 
@@ -725,7 +778,7 @@ flowchart LR
 
 <div class="footer">
   用 AI 做论文调研:从链接到深度分析笔记的工作流 · 经验分享<br>
-  📝 基于 media_paper 知识库(40 篇论文 / 51 个 HTML 笔记) · 生成于 2026-08-13 · 面向技术同事
+  📝 基于 media_paper 知识库(63 个 HTML 笔记) · 生成于 2026-08-13 · 修订于 2026-09-17(同步格式统一) · 面向技术同事
 </div>
 
 <script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>

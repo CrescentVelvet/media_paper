@@ -80,9 +80,12 @@ except Exception as e:
     errors.append(f"index 重生成失败: {type(e).__name__}: {e}")
 
 # 5. 不确定标注统计(报告项)
+# 只统计正文中的标记;出现在 <pre>/<code> 里的多是在"讲解标记用法"(如规范贴的验证清单),
+# 不是真实标注,计入会造成假计数。
+CODE_BLOCK_RE = re.compile(r"<(pre|code)\b[^>]*>.*?</\1>", re.S)
 unc = {}
 for f in notes:
-    s = open(f, encoding="utf-8", errors="ignore").read()
+    s = CODE_BLOCK_RE.sub("", open(f, encoding="utf-8", errors="ignore").read())
     n = sum(s.count(k) for k in ("【存疑】", "【推测】", "【待核实】"))
     if n:
         unc[f] = n
