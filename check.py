@@ -10,6 +10,8 @@
 
 报告项(仅统计,不失败):
   5. 不确定标注:【存疑】/【推测】/【待核实】数量(供定期核实)
+  6. 样式统一进度:仍为旧扁平样式(class="header")的笔记清单,即待迁移篇目
+     (统一格式规范见 AGENTS.md「四」「八」)
 
 外链图片存活检测需要网络,见 check_images.py。
 """
@@ -57,13 +59,20 @@ if badimg:
     errors += [f"  {f} -> {m}" for f, m in badimg]
 
 # 4. index.html 与 papers.json 同步(生成物不可手改)
+# 页脚含生成日期,跨天后必然与当日重生成结果不同,故比对前把日期归一化;
+# 真实的手改(卡片/分区/JS)仍会被检出。
+GEN_DATE_RE = re.compile(r"更新于 \d{4}-\d{2}-\d{2}")
+gen_date = ""
 try:
     import build_index
     papers = json.load(open("papers.json", encoding="utf-8"))
     css = open("index_style.css", encoding="utf-8").read()
     expect = build_index.render(papers, css)
     actual = open("index.html", encoding="utf-8", newline="").read()
-    if actual != expect:
+    m = GEN_DATE_RE.search(actual)
+    if m:
+        gen_date = m.group(0).replace("更新于 ", "")
+    if GEN_DATE_RE.sub("更新于 <DATE>", actual) != GEN_DATE_RE.sub("更新于 <DATE>", expect):
         errors.append("index.html 与 papers.json 不同步(可能被手改),请运行 python build_index.py")
 except FileNotFoundError as e:
     errors.append(f"缺少生成输入文件: {e.filename}")
@@ -78,10 +87,25 @@ for f in notes:
     if n:
         unc[f] = n
 
+# 6. 样式统一进度(报告项):统一格式用 .hero,旧扁平样式用 .header
+legacy = []
+for f in notes:
+    s = open(f, encoding="utf-8", errors="ignore").read()
+    if 'class="hero"' not in s and 'class="header"' in s:
+        legacy.append(f)
+
 print(f"笔记 {len(notes)} 篇 | 站内链接 | index 收录 | 本地图片")
 if unc:
     print(f"不确定标注: {sum(unc.values())} 处 / {len(unc)} 篇"
           "(【存疑】【推测】【待核实】,供定期核实)")
+unified = len(notes) - len(legacy)
+print(f"统一格式进度: {unified}/{len(notes)} 篇已用高端样式, {len(legacy)} 篇待迁移")
+if gen_date:
+    print(f"index.html 最近生成日期: {gen_date}(仅供追溯,不影响校验)")
+if legacy:
+    print("待迁移清单(旧扁平样式,触碰时顺带迁移,见 AGENTS.md 八):")
+    for f in legacy:
+        print(f"  {f}")
 
 if errors:
     print("\n[FAIL] 校验未通过:")

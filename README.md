@@ -1,6 +1,6 @@
 # media_paper — 论文调研知识库
 
-以「微动人体三维重建 / 数字人」为主线方向的论文调研笔记库：62 篇自包含单文件 HTML 笔记 + 生成式索引。写作规范见 [AGENTS.md](AGENTS.md)。
+以「微动人体三维重建 / 数字人」为主线方向的论文调研笔记库：63 篇自包含单文件 HTML 笔记 + 生成式索引。写作规范见 [AGENTS.md](AGENTS.md)。
 
 ## 快速上手：用 index.html 找东西
 
@@ -13,7 +13,7 @@
 | 点**深度 chip** | 点「深度」→ 只看 16 篇含可改进方向分析的高价值笔记 |
 | **主题下拉**选择 | 选「前馈式大重建模型」→ 聚合 VGGT / Pi3 / ReSplat 等 7 篇 |
 
-筛选栏右侧实时显示「显示 N / 62 篇」；结果为空或想重来时，点「✕ 清除筛选」一键重置。
+筛选栏右侧实时显示「显示 N / 63 篇」；结果为空或想重来时，点「✕ 清除筛选」一键重置。
 
 ## 维护流程（重要：index.html 是生成物，禁止手改）
 
@@ -31,6 +31,8 @@ python check.py
 
 **修正主题归属**：发现某篇笔记归错主题，直接改 `papers.json` 里那篇的 `topics` 字段，跑一次 `python build_index.py` 即可，不用碰任何 HTML。
 
+**看统一格式迁移进度**：`python check.py` 会额外输出「统一格式进度 N/63 篇已用高端样式」及旧样式待迁移清单（旧笔记在被触碰时顺带迁移，见 `AGENTS.md` 第八节）。
+
 **调整外观**：样式在 `index_style.css`（生成时内联进 index.html），改完同样跑 `python build_index.py`。
 
 ## 文件说明
@@ -38,12 +40,12 @@ python check.py
 | 文件 | 作用 |
 |---|---|
 | `index.html` | 索引页（**生成物，勿手改**），含搜索 + 类型/深度/主题筛选 |
-| `papers.json` | 唯一真相源：62 篇元数据（kind/depth/topics/锚点）+ 8 个静态章节 |
+| `papers.json` | 唯一真相源：63 篇元数据（kind/depth/topics/锚点）+ 8 个静态章节 |
 | `index_style.css` | 索引页样式源（生成时内联） |
 | `build_index.py` | 生成器：papers.json + index_style.css → index.html |
 | `check.py` | 离线完整性校验（死链/收录/图片/生成同步），commit 硬门槛 |
 | `check_images.py` | 外链图存活检测（需联网），失效图按规范本地化 |
-| `AGENTS.md` | AI 作业规范：真实性硬约束、depth 三档、命名/样式/流程 |
+| `AGENTS.md` | AI 作业规范：真实性硬约束、统一高端格式、四项精度要求（思路/算法逻辑/工程细节/同类对比）、depth 三档、命名/流程 |
 | `topics.json` | 主题骨架快照（已并入 papers.json，留作追溯） |
 
 ## 笔记的两个正交分类维度
