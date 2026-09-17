@@ -1,0 +1,42 @@
+{
+    "arxivId":  "2607.20789",
+    "noteFile":  "3D-20260722-3D-GIMP.html",
+    "figures":  [
+                    {
+                        "figure":  "Figure 1",
+                        "url":  "https://arxiv.org/html/2607.20789v1/teaser_v3.jpg",
+                        "local":  "images/2607.20789/teaser_v3.jpg",
+                        "caption":  "Figure 1: The proposed pipeline for view-consistent object removal in 3DGS. We initiate object removal in a reference view by defining a 3D ROI within the reconstructed Gaussian Splatting scene. Our method generates view-consistent masks and recovers missing geometry using a Poisson blending-based depth completion approach. A mapping field is then computed and propagated across following views to guide patch resampling and inpainting."
+                    },
+                    {
+                        "figure":  "Figure 2",
+                        "url":  "https://arxiv.org/html/2607.20789v1/hallucinations.jpg",
+                        "local":  "images/2607.20789/hallucinations.jpg",
+                        "caption":  "Figure 2: Random hallucinations of an image inpainting model. The original (left) and inpainted scenes (middle and right). The multi-view inconsistency degrades 3D inpainting quality (e.g., AuraFusion360)."
+                    },
+                    {
+                        "figure":  "Figure 3",
+                        "url":  "https://arxiv.org/html/2607.20789v1/dataflow.jpg",
+                        "local":  "images/2607.20789/dataflow.jpg",
+                        "caption":  "Figure 3: Data flow of our proposed pipeline. Our method selects a training view as a reference for rendering both before and after object removal. Patch searching is performed on the inpainted reference image to establish mapping correspondences. Utilizing the aligned depth map, we propagate the patch mapping field to the target views, enabling local pixel sampling for 2D inpainting."
+                    },
+                    {
+                        "figure":  "Figure 4",
+                        "url":  "https://arxiv.org/html/2607.20789v1/patch_propagation_v2.jpg",
+                        "local":  "images/2607.20789/patch_propagation_v2.jpg",
+                        "caption":  "Figure 4: Illustration of the process of warping the patch matching field."
+                    },
+                    {
+                        "figure":  "Figure 5",
+                        "url":  "https://arxiv.org/html/2607.20789v1/res_viewdepent_effects_v3.jpg",
+                        "local":  "images/2607.20789/res_viewdepent_effects_v3.jpg",
+                        "caption":  "Figure 5: Our method shows a smoother transition when recovering the reflection on the table surface. (Mip-NeRF 360 'kitchen' scene, vs AuraFusion360)"
+                    },
+                    {
+                        "figure":  "Figure 12",
+                        "url":  "https://arxiv.org/html/2607.20789v1/360USID_visual.jpg",
+                        "local":  "images/2607.20789/360USID_visual.jpg",
+                        "caption":  "Figure 12 (Appendix B): Qualitative results compared with one of most representative 360 inpainting work AuraFusion360."
+                    }
+                ]
+}

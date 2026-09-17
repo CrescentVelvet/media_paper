@@ -1169,6 +1169,62 @@
    ]
   },
   {
+   "title": "3D-GIMP:当 3D 高斯修复遇上 PatchMatch",
+   "meta": [
+    "📄 arXiv: 2607.20789",
+    "📅 2026-07-22",
+    "🏢 University of Stuttgart (VISUS)",
+    "📑 15 pages · cs.CV; cs.GR"
+   ],
+   "tags": [
+    "3D 高斯编辑",
+    "物体移除",
+    "PatchMatch 对应传播",
+    "泊松深度补全",
+    "跨视图一致掩码",
+    "2DGS",
+    "幻觉漂移"
+   ],
+   "summary": "只在单张参考视图上跑一次生成式修复得到外观先验，再用 3D 感知 PatchMatch 把纹理沿几何对应传播到全部视图——用「确定性对应」替代「逐帧随机采样」，从根本上消除 hallucination drift。三个可独立拆出的组件：① 3D 包围盒投影 + guard band（s=1.2）生成跨视图一致掩码，替代逐帧 2D mask（论文明批评 SAM 类逐帧分割天然跨视图不一致）；② 梯度域泊松深度补全，用 3DGS 光栅化深度做 Dirichlet 边界锚定单目深度的尺度（s_f=0.1）；③ SH 系数约束加权最小二乘预计算。IMFine 上 2DGS 版 PSNR 19.09 / FID 53.11 / 6 min（较 IMFine 的 1.0h 省约 90%）；对 GEN3C PSNR 19.81 vs 17.94。但 360-USID 上 PSNR 15.02 输给 AuraFusion360 的 16.22，换回原生 3DGS 后 FID 明显劣化，强依赖 2DGS 精确几何。无公开代码/项目主页，参考视图修复依赖闭源图像编辑模型。",
+   "links": [
+    {
+     "href": "3D-20260722-3D-GIMP.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2607.20789",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://arxiv.org/html/2607.20789v1",
+     "text": "🌐 HTML 全文"
+    }
+   ],
+   "file": "3D-20260722-3D-GIMP.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性",
+    "表面与几何重建"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13"
+   ]
+  },
+  {
    "title": "VGGT: Visual Geometry Grounded Transformer",
    "meta": [
     "📄 arXiv: 2503.11651",
