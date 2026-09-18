@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyra:视频扩散模型自蒸馏驱动的生成式 3D 场景重建</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2509.19296 · 2025-09-23 · ICLR 2026 · 3D/4D 生成式场景重建</span>
+    <h1>Lyra:视频扩散模型自蒸馏驱动的生成式 3D 场景重建</h1>
+    <div class="subtitle">Lyra: Generative 3D Scene Reconstruction via Video Diffusion Model Self-Distillation</div>
+    <div class="authors">Sherwin Bahmani · Tianchang Shen · Jiawei Ren · Jiahui Huang · Yifeng Jiang · Haithem Turki · Andrea Tagliasacchi · David B. Lindell · Zan Gojcic · Sanja Fidler · Huan Ling · Jun Gao* · Xuanchi Ren*</div>
+    <div class="org">NVIDIA · University of Toronto · Vector Institute · Simon Fraser University(*equal contribution)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2509.19296" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2509.19296v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://github.com/nv-tlabs/lyra" target="_blank">💻 GitHub(nv-tlabs/lyra)</a>
+      <a href="https://research.nvidia.com/labs/toronto-ai/lyra" target="_blank">🏠 项目主页</a>
+      <a href="https://huggingface.co/nvidia/Lyra" target="_blank">🤗 模型权重</a>
+      <a href="https://huggingface.co/datasets/nvidia/PhysicalAI-SpatialIntelligence-Lyra-SDG" target="_blank">🤗 训练数据</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">教师模型:GEN3C 与保守渲染函数</a></li>
+    <li><a href="#s5">学生模型:3DGS 解码器</a></li>
+    <li><a href="#s6">损失函数总表</a></li>
+    <li><a href="#s7">扩展到动态场景(video-to-4D)</a></li>
+    <li><a href="#s8">逻辑流程图</a></li>
+    <li><a href="#s9">⚙️ 工程实现细节</a></li>
+    <li><a href="#s10">实验结果</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">🔄 同类方法对比分析</a></li>
+    <li><a href="#s13">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s14">可改进方向分析</a></li>
+    <li><a href="#s15">总结与演进定位</a></li>
+    <li><a href="#s16">研究团队与资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>Lyra 来自 NVIDIA 多伦多 AI 实验室(与多伦多大学、Vector Institute 合作),一作 Sherwin Bahmani,ICLR 2026 接收。任务定义是<b>「生成式 3D 场景重建」(generative 3D scene reconstruction)</b>:从文本或单张图像前馈生成显式 3DGS 场景,并从单目视频前馈生成动态 4D(时间+视角双可控)场景。它的核心主张不是"又一个前馈重建模型",而是回答一个更根本的问题:<b>前馈 3D 重建模型能不能不依赖任何真实世界多视角训练数据?</b>答案是把"监督信号"从真实采集的多视角数据换成<b>预训练相机控制视频扩散模型的生成结果</b>——教师(GEN3C)负责想象,学生(3DGS 解码器)负责把想象固化为显式 3D 表示。</p>
+
+<div class="callout key">
+<b>一句话核心贡献:</b>提出 self-distillation 框架——在视频扩散模型的 latent 空间并联一个 3DGS 解码器,用 RGB 解码器的输出监督 3DGS 渲染,整个学生模型<b>纯靠教师合成的数据训练</b>,零真实多视角数据;推理时扔掉 RGB 分支,单图/单视频一次前馈直接出 3DGS,无需逐场景优化,支持实时渲染与 Isaac Sim 物理仿真导入。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">726</div><div class="l">单次前馈融合输入视角数(6 轨迹×121 帧,704×1280)</div></div>
+  <div class="stat"><div class="v">10.2M → 2.0M</div><div class="l">每场景高斯数(8×8 降采样 → opacity 剪枝 80%)</div></div>
+  <div class="stat"><div class="v">21.79 dB</div><div class="l">RealEstate10K 单图→3D PSNR(超 Bolt3D 的 21.54)</div></div>
+  <div class="stat"><div class="v">18 ms</div><div class="l">704×1280 单帧渲染耗时(剪枝后)</div></div>
+</div>
+
+<h3>三条 contribution(原文照录)</h3>
+<ul>
+  <li>提出 self-distillation 框架:以预训练相机控制视频扩散模型为教师训练 3DGS 学生解码器,<b>消除对真实多视角采集数据的依赖</b>(§1 contributions 列表)。</li>
+  <li>框架扩展到动态场景,支持从单目视频做 4D 重建(时间条件化的 3DGS 解码器)。</li>
+  <li>模型跨多样场景泛化,在单图 3D 场景生成与单视频 4D 场景生成上均达到 SOTA(RealEstate10K / DL3DV / T&T 三个基准全指标第一)。</li>
+</ul>
+
+<div class="tag-row">
+  <span class="tag">前馈 3D 生成</span><span class="tag">视频扩散自蒸馏</span><span class="tag">3DGS 解码器</span><span class="tag">latent 空间重建</span><span class="tag">Mamba-2</span><span class="tag">4D 场景生成</span><span class="tag">GEN3C / Cosmos</span>
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>两条路线各自的死结</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>路线 A:多视角重建(Reconstruction)</h4>
+    <p><b>失败模式(论文 §1):</b>依赖精确相机位姿 + 高质量图像,扩展性差;动态场景通常需要同步多相机阵列;更根本的是——<b>重建方法只能恢复输入视野内已有内容,无法外推</b>(cannot extrapolate beyond the input views)。</p>
+    <p><b>缓解尝试及其新瓶颈:</b>前馈重建模型(GS-LRM、AnySplat 等)免去逐场景优化,但瓶颈转移为<b>缺乏多样、大规模的 3D 训练数据</b>,导致 out-of-domain 泛化差——它们基本只能在 RealEstate10K 这类单一分布的场景里工作。</p>
+  </div>
+  <div class="card">
+    <h4>路线 B:视频扩散生成(Generation)</h4>
+    <p><b>优势:</b>在海量互联网视频上训练,保真度与泛化性极强;从手持、电影平移到无人机航拍的各种相机轨迹中<b>隐式编码了 3D 世界先验</b>,不需要多视角训练数据;作为生成模型,还能<b>幻觉出输入帧之外的合理内容</b>。</p>
+    <p><b>失败模式:</b>只输出 2D 帧,没有显式 3D 表示——几何一致性、长期连贯性、物理交互全部缺位,无法用于机器人仿真等下游任务。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>相机控制视频生成是一个被低估的转折点。近期工作(MotionCtrl、GEN3C 等)证明:只需小规模带位姿数据微调,视频扩散模型就能按给定相机轨迹生成视角一致的图像序列。<b>这把视频模型从"生成器"变成了"任意视角的监督信号提供者"</b>——它既能当重建模型的输入,又能当训练监督。Lyra 的全部设计都从这个洞出发:与其手工采集多视角数据集训练前馈重建,不如让视频扩散模型"既出题又给答案",自己蒸馏出 3D 解码器。
+</div>
+
+<div class="callout warn">
+<b>关键假设及其失效条件:</b>整个框架成立的前提是<b>教师生成的多视角序列足够 3D 一致</b>——学生学到的是教师的想象,教师的几何错误会被学生照单全收。这带来三个后果:① 场景规模与一致性受限于教师 GEN3C 的能力(§7 结论中作者自己承认 "the scale and consistency of our generated scenes are bounded by the capacity of our camera-controlled video diffusion model");② 评估指标上超越 SOTA 的部分来自教师分布,长时程漂移会被平均化掉(见 §14);③ 对教师从未见过的模态(极端反射、透明体),学生无从学习。论文未对"教师错误率 → 学生错误率"给出量化分析,【推测】这是后续 Lyra 2.0 换更大基座(WAN-14B)的直接动机之一。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入 / 输出定义</h3>
+<ul>
+  <li><b>3D(静态)模式:</b>输入 = 单张图像 $I$(+ 随机采样的相机轨迹 $\{\mathbf{C}^t\}_{t=1}^{L}$);输出 = 显式 3DGS 场景 $\mathbf{G}$,可从任意新视角实时渲染。</li>
+  <li><b>4D(动态)模式:</b>输入 = 单目视频(长度 $L$)+ 对应相机位姿(ViPE 估计);输出 = 时间条件化动态 3DGS,时间与视角双可控。</li>
+</ul>
+
+<h3>符号表(与论文原文一致)</h3>
+<table>
+  <tr><th>符号</th><th>含义</th><th>形状/取值</th></tr>
+  <tr><td>$I$</td><td>输入图像(或视频帧)</td><td>$3\times H\times W$,$H\times W = 704\times 1280$</td></tr>
+  <tr><td>$\mathcal{V}$</td><td>相机控制视频扩散模型(教师,GEN3C)</td><td>Cosmos-Predict1 基座,7B</td></tr>
+  <tr><td>$\mathcal{D}_{rgb}$</td><td>预训练 RGB 解码器(VAE decoder,教师分支)</td><td>冻结</td></tr>
+  <tr><td>$\mathcal{D}_s$ / $\mathcal{D}_d$</td><td>静态 / 动态 3DGS 解码器(学生)</td><td>16 层,512 维,32.75M 参数(HF 模型卡)</td></tr>
+  <tr><td>$\mathbf{z}$ / $\mathbf{Z}$</td><td>单条 / 多轨迹去噪视频 latent</td><td>$\mathbf{Z}\in\mathbb{R}^{V\times L'\times C\times h\times w}$</td></tr>
+  <tr><td>$V$ / $L$</td><td>相机轨迹数 / 每轨迹帧数</td><td>$V=6$,$L=121$(训练与推理同规格)</td></tr>
+  <tr><td>$C$</td><td>latent 通道数</td><td>16(Cosmos VAE)</td></tr>
+  <tr><td>$\tau$ / $\sigma$</td><td>VAE 时间 / 空间压缩因子</td><td>$\tau=8$,$\sigma=8$,$L'=(L-1)/\tau+1$,$h=H/8$,$w=W/8$</td></tr>
+  <tr><td>$\mathbf{E}$</td><td>Plücker 相机编码 latent</td><td>$\mathbf{E}\in\mathbb{R}^{V\times L'\times C\times h\times w}$</td></tr>
+  <tr><td>$\mathbf{T}^{src},\mathbf{T}^{tgt}$</td><td>动态模式源/目标时间编码</td><td>同 latent 形状,§7</td></tr>
+  <tr><td>$\mathbf{G}$</td><td>输出 3DGS 特征</td><td>$\mathbf{G}\in\mathbb{R}^{V\times L\times H\times W\times 14}$(降采样后每 8×8 像素 1 个)</td></tr>
+  <tr><td>$\mathbf{P}^{t,v}$</td><td>GEN3C 时空 3D cache 点云</td><td>$L\times V$ 数组,§4</td></tr>
+  <tr><td>$\mathbf{I}^{t,v},\mathbf{M}^{t,v}$</td><td>cache 渲染图 / disocclusion 掩码</td><td>$(\mathbf{I},\mathbf{M})=\mathcal{R}(\mathbf{P},\mathbf{C}^t)$</td></tr>
+</table>
+
+<h3>阶段划分</h3>
+<p>整个系统分四个阶段,训练阶段(①②)与推理阶段(③④)解耦:</p>
+<ol>
+  <li><b>教师数据生成(离线,训练前):</b>LLM 采多样文本 prompt → 图像扩散模型(Flux)生成单图 → GEN3C 沿 6 条采样轨迹各生成 121 帧多视角视频,同时产出 latent $\mathbf{Z}$ 与 RGB 帧;4D 模式从文本生成单目视频,ViPE 标定位姿与深度。</li>
+  <li><b>学生训练:</b>冻结教师,训练 3DGS 解码器 $\mathcal{D}_s$,损失 = 3DGS 渲染 vs RGB 解码输出的图像损失 + ViPE 深度监督 + opacity 正则。</li>
+  <li><b>推理(SDG 生成):</b>单图/单视频 → GEN3C 多轨迹生成 → 只保留 latent。</li>
+  <li><b>推理(3D 解码):</b>latent + Plücker 编码 → 3DGS 解码器一次前馈 → 剪枝 → .ply 导出。</li>
+</ol>
+
+<h3>总体数据流图</h3>
+<div class="mermaid">
+flowchart TD
+    PROMPT["多样文本 prompt(LLM 采样)"] --> T2I["图像扩散模型(Flux)<br/>生成单图 I"]
+    T2I --> GEN3C["GEN3C 教师生成<br/>(冻结, 沿 6 条轨迹 × 121 帧)"]
+    GEN3C --> Z["多视角视频 latent<br/>Z: V×L'×16×88×160"]
+    GEN3C --> RGBD["RGB 解码帧(教师监督信号)<br/>+ ViPE 深度"]
+    Z --> SUM["⊕ 相加(先 patchify)"]
+    E["Plücker 相机编码 E<br/>(VAE encoder 编码 + MLP)"] --> SUM
+    SUM --> BLOCKS["重建主干 ×2 块<br/>每块 = 1×Transformer + 7×Mamba-2<br/>共 16 层, 512 维"]
+    BLOCKS --> DECONV["转置 3D 卷积<br/>上采样到像素网格"]
+    DECONV --> G14["14 通道高斯头<br/>xyz+scale+quat+opacity+RGB<br/>沿光线参数化位置"]
+    G14 --> RENDER["gsplat 渲染<br/>(训练轨迹视角)"]
+    RGBD --> LOSS["图像损失 MSE+LPIPS<br/>深度损失 + opacity 正则"]
+    RENDER --> LOSS
+    G14 --> OUT["推理输出: ~2M 高斯<br/>18ms/帧 实时渲染"]
+    style GEN3C fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style Z fill:#ede9fe,stroke:#8b5cf6,color:#3b2f63
+    style BLOCKS fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style OUT fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<div class="figure">
+  <img src="images/2509.19296/method.png" alt="Lyra framework" loading="lazy">
+  <div class="caption"><b>图 4(论文 Figure 4)</b> Lyra 总体框架:基于相机控制视频扩散模型(GEN3C),训练 3DGS 解码器对齐其 RGB 解码输出;仅训练 3DGS 解码器,VAE 与扩散主干全程冻结;推理时直接用 3DGS 解码器,不再需要 RGB 解码器;时间条件化使框架可从静态平滑扩展到动态场景生成。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2509.19296/teaser.png" alt="Lyra teaser" loading="lazy">
+  <div class="caption"><b>图 1(论文 Figure 1)</b> 上行:单图 → 前馈 3DGS,无需真实多视角数据;下行:视频输入 → 动态 3DGS,时间(行)与视角(列)双自由度交互控制。</div>
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>教师模型:GEN3C 与保守渲染函数</h2>
+
+<h3>3.1 GEN3C 背景设定</h3>
+<p>Lyra 完全依赖教师的 3D 一致性(学生没有第二条监督来源),因此基座选择相机控制视频扩散模型 <b>GEN3C</b>(Ren et al., 2025),其三个关键设计:</p>
+
+<h4>① 时空 3D cache</h4>
+<p>GEN3C 从输入图像/视频构建时空 3D cache $\{\mathbf{P}^{t,v}\}$:每个 $\mathbf{P}^{t,v}$ 是对 RGB 图做深度估计(DepthAnything 系,Wang et al., 2024a)后反投影得到的<b>带颜色点云</b>,按 $L\times V$ 数组组织($L$ 帧时间维 × $V$ 视角维)。</p>
+
+<h4>② 渲染式结构引导</h4>
+<p>沿目标相机轨迹把 cache 点云前向投影渲染出 RGB 图与 disocclusion 掩码:$(\mathbf{I}^{t,v},\mathbf{M}^{t,v})=\mathcal{R}(\mathbf{P}^{t,v},\mathbf{C}^{t})$,作为扩散模型的<b>结构条件</b>。掩码显式告诉模型"哪里需要补全"。</p>
+
+<h4>③ 视频 VAE</h4>
+<p>RGB 视频 $\mathbf{I}\in\mathbb{R}^{L\times 3\times H\times W}$ 经 VAE 编码器 $\mathcal{E}$ 压缩到 latent $\mathbf{z}=\mathcal{E}(\mathbf{I})\in\mathbb{R}^{L'\times C\times h\times w}$,扩散在 latent 空间进行,最终 $\hat{\mathbf{I}}=\mathcal{D}_{rgb}(\mathbf{z})$。关键参数:<b>$C=16$、$\tau=8$(时间)、$\sigma=8$(空间)</b>,即 $L'=(L-1)/8+1$、$h=H/8$、$w=W/8$(论文 §3.1)。</p>
+
+<div class="callout key">
+<b>Lyra 对 GEN3C 的改进 — 保守掩码精化(conservative mask refinement,Appendix A):</b>GEN3C 前向渲染的已知缺陷是<b>背景泄漏(background leakage)</b>——源视角被遮挡的前景部分在新视角变得可见,但 disocclusion 掩码没有标出,扩散模型就把背景像素错误补全进前景。Lyra 的解法是"宁可错杀":既然遮挡区几何未知,就<b>假设全部被前景占据</b>。具体做法:把相机系点云 $\mathbf{P}_c^{t,v}=\mathbf{C}^t\mathbf{P}^{t,v}$ 中空间相邻像素连成三角面片(式 2),对每个渲染像素比较点云深度 $\mathbf{D}^{t,v}$ 与面片插值深度 $\mathbf{D}_{\mathcal{M}}^{t,v}$(光线-表面求交),当 $\mathbf{D}_{\mathcal{M}}^{t,v}(u,v)<\mathbf{D}^{t,v}(u,v)-\epsilon$ 时强制置 $\mathbf{M}^{t,v}(u,v)=0$(标记为待补全,式 3)——面片表面比点云更近,说明该像素被点间隙"藏住"了前景。
+</div>
+
+<div class="figure">
+  <img src="images/2509.19296/warping_disocclusion.png" alt="forward warping vs conservative masking" loading="lazy">
+  <div class="caption"><b>图 8(论文 Figure 8)</b> 前向渲染(左)vs 保守渲染(右):高亮区域在前向渲染中被错误填充为背景像素,保守掩码正确标记为 disocclusion,扩散模型得以补全前景(狮身)。</div>
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>学生模型:3DGS 解码器</h2>
+
+<h3>5.1 为什么在 latent 空间做前馈重建(尺度论证)</h3>
+<p>这是论文最有说服力的工程论证(§4.1):像素级前馈方法每个像素出一个高斯,注意力开销随像素数爆炸——GS-LRM 只能吃 2–4 张 512×512,AnySplat 是 24 张 448×448。而 Lyra 要处理 <b>$V\times L = 6\times 121 = 726$ 个视角 × $704\times 1280$ 分辨率</b>,超出 GPU 显存极限。解法:不在像素空间操作,直接消费 VAE 压缩了 64 倍(8×8×1)的 latent——消融实验证实,同样的 3DGS 解码器放回像素空间直接 OOM(§6.3 "w/o latent 3DGS" 行)。</p>
+
+<h3>5.2 网络结构表(五件套 ①)</h3>
+<table>
+  <tr><th>阶段</th><th>输入</th><th>算子</th><th>输出形状</th></tr>
+  <tr><td>输入组装</td><td>视频 latent $\mathbf{Z}$ + Plücker latent $\mathbf{E}$(各 $V\times L'\times 16\times 88\times 160$)</td><td>各 2×2 patchify → 求和</td><td>token 序列,隐维 512</td></tr>
+  <tr><td>重建主干</td><td>patchified token</td><td>块 = 1×Transformer + 7×Mamba-2(Long-LRM 设计),重复 2 次 → 16 层</td><td>$V\times L'\times h\times w\times 512$(隐空间网格)</td></tr>
+  <tr><td>上采样头</td><td>隐网格</td><td>转置 3D 卷积,patch_size_out_factor = [1,8,8]</td><td>$V\times L\times H\times W\times C_{out}$(像素网格)</td></tr>
+  <tr><td>高斯参数化</td><td>像素网格特征</td><td>每 8×8 空间邻域 1 个高斯;位置沿光线预测(见下)</td><td>高斯属性 [B, N, 14]</td></tr>
+</table>
+
+<div class="note">论文 §4.1 写 "a transposed 3D convolution maps the hidden representation to 14 Gaussian channels",但源码反卷积 <code>output_dims: 12</code>(configs/training/default.yaml)——12 通道为 scale(3)+rotation(4)+opacity(1)+RGB(3),<b>位置不在反卷积输出里</b>,而是由网络额外预测 1 维沿光线深度,与光线原点/方向反算得到(见 5.4)。两者并不矛盾:反卷积输出 + 深度图共同拼出 14 通道高斯。这是论文叙述与代码粒度的差异点。</div>
+
+<h4>无视觉编码器,只有 patchify</h4>
+<p>输入 latent 已是 VAE 特征,<b>不需要任何视觉编码器</b>,仅用 2×2 空间 patchification(Dosovitskiy et al., 2021, ViT 同款)把 latent 转成 token 流。</p>
+
+<h4>Plücker 相机编码(两段式)</h4>
+<ol>
+  <li>在<b>全分辨率</b>上计算原始 Plücker 嵌入 $\mathbf{E}^{raw}\in\mathbb{R}^{V\times L\times 6\times H\times W}$(射线方向 3 维 + 方向×原点叉积 3 维);</li>
+  <li>RGB 编码器 $\mathcal{E}$ 期望 3 通道输入,故把 6 维拆成两组 3 通道<b>分别过同一个 $\mathcal{E}$</b>,沿通道维拼接得 $\mathbf{E}^{enc}\in\mathbb{R}^{V\times L'\times 2C\times h\times w}$;</li>
+  <li>轻量 MLP 降到 $C$:$\mathbf{E}\in\mathbb{R}^{V\times L'\times C\times h\times w}$,与 $\mathbf{Z}$ 同形。</li>
+</ol>
+
+<h3>5.3 数学形式化(五件套 ②)</h3>
+<div class="equation">$$\mathbf{G}=\mathcal{D}_s(\mathbf{Z},\mathbf{E}),\quad \mathbf{Z}\in\mathbb{R}^{V\times L'\times C\times h\times w}\ \text{(式 A)}$$<span class="tag">论文 §4.1</span></div>
+<div class="equation">$$\mathbf{I}_{\mathcal{D}_s}=\mathrm{Render}(\mathbf{G},\{\mathbf{C}^t\}_{t=1}^{L})\ \xrightarrow{\ \text{supervise}\ }\ \mathbf{I}_{\mathcal{D}_s}\approx\mathbf{I}_{\mathcal{D}_{rgb}}=\mathcal{D}_{rgb}(\mathbf{z})\ \text{(式 B)}$$<span class="tag">论文 §3.2 self-distillation loop</span></div>
+<p>动态版把时间编码直接加进求和项:$\mathbf{G}=\mathcal{D}_d(\mathbf{Z},\mathbf{E},\mathbf{T}^{src},\mathbf{T}^{tgt})$。</p>
+
+<h3>5.4 高斯位置:沿光线参数化(代码佐证)</h3>
+<p>网络不直接回归世界系 $(x,y,z)$,而是预测沿光线的标量深度并映射到预设近远平面区间:<code>pre_sigmoid_distance_shift: -1.65</code>(configs/training/default.yaml),即</p>
+<div class="equation">$$w=\sigma(\text{distance}-1.65),\quad \text{depth}=\text{dnear}\cdot(1-w)+\text{dfar}\cdot w,\quad \text{pos}=\text{rays\_os}+\text{rays\_ds}\cdot\text{depth}\ \text{(式 C)}$$<span class="tag">model_latent_recon.py:333-335</span></div>
+<p>其中 $\text{dnear}=0.1$、$\text{dfar}=500$(default.yaml)。机制解释:让深度先验落在近平面附近(1.65 ≈ sigmoid 中心偏移),网络只需预测相对深度,数值范围稳定,比直接回归世界坐标更易训练。最终拼接:<code>gaussians = torch.cat([pos, opacity, scale, rotation, rgbs], dim=-1)</code>(model_latent_recon.py:350),注释即 <code>[B, N, 14]</code>。激活函数:<code>opacity_act = sigmoid(x-2.0)</code>(model_latent_recon.py:190)——偏置 -2 使初始 opacity 偏低,配合剪枝策略。</p>
+
+<h3>5.5 前向流程列表(五件套 ③)</h3>
+<ol>
+  <li>GEN3C 沿 $V=6$ 条轨迹各生成 $L=121$ 帧视频 latent $\mathbf{z}^v$($v=1..6$),堆成 $\mathbf{Z}\in\mathbb{R}^{6\times 16\times 16\times 88\times 160}$($L'=(121-1)/8+1=16$)。</li>
+  <li>Plücker 嵌入经 $\mathcal{E}$ 编码为 $\mathbf{E}$,与 $\mathbf{Z}$ 同形;各自 2×2 patchify 后<b>逐元素相加</b>(不是拼接)。</li>
+  <li>过重建主干:2 个块 × (1 Transformer + 7 Mamba-2) = 16 层,隐维 512。所有轨迹的 token 在同一序列里联合 attention,<b>多视角融合由网络隐式学习</b>(没有手工拼接/后融合)。</li>
+  <li>转置 3D 卷积上采样([1,8,8] 步幅)回像素网格;时间维上每帧高斯独立(静态模式)。</li>
+  <li>输出高斯属性 + 沿光线深度 → 反算 3D 位置 → 拼成 [B, N, 14]。</li>
+  <li>gsplat 渲染训练轨迹视角,与教师 RGB 帧算损失。一次前馈、全程可导(渲染在训练轨迹上用可微 splatting;推理用 3DGUT 路径,<code>use_3dgut: true</code>)。</li>
+</ol>
+
+<h3>5.6 模块内部图(五件套 ④)</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph IN["输入(每轨迹独立编码)"]
+        Z["Z: 视频 latent<br/>6×16×16×88×160"]
+        E["E: Plücker latent<br/>6×16×16×88×160"]
+    end
+    subgraph PATCH["Patchify + 融合"]
+        P1["2×2 patchify Z"] --> ADD["⊕"]
+        P2["2×2 patchify E"] --> ADD
+    end
+    subgraph BACKBONE["重建主干(联合序列 attention)"]
+        B1["块1: Transformer×1 → Mamba-2×7"]
+        B2["块2: Transformer×1 → Mamba-2×7"]
+        B1 --> B2
+    end
+    subgraph HEAD["高斯头"]
+        D3["转置 3D 卷积<br/>stride [1,8,8]"]
+        DEP["深度分支<br/>sigmoid(d-1.65) → [0.1, 500]"]
+        GA["属性激活<br/>opacity: σ(x-2)"]
+    end
+    Z --> P1
+    E --> P2
+    ADD --> B1
+    B2 --> D3
+    D3 --> DEP
+    D3 --> GA
+    DEP --> OUT["[B, N, 14] 高斯<br/>N = 10,222,080 → 剪枝 2,044,416"]
+    GA --> OUT
+    style ADD fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B1 fill:#ede9fe,stroke:#8b5cf6,color:#3b2f63
+    style B2 fill:#ede9fe,stroke:#8b5cf6,color:#3b2f63
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>5.7 监督信号(五件套 ⑤)</h3>
+<p>该模块的监督即 self-distillation 核心回路:教师的 RGB 解码输出 $\mathbf{I}_{\mathcal{D}_{rgb}}$(6 轨迹全部帧)+ ViPE 深度图,监督学生的 3DGS 渲染。共 4 项损失(权重与公式见 §6)。注意<b>训练时教师生成与学生学习分两步离线进行</b>(先离线生成数据集再训练),不是联合在线蒸馏;因此教师梯度不需要回传,VAE 与扩散主干全程冻结。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>损失函数总表</h2>
+
+<p>总损失(论文式 1):</p>
+<div class="equation">$$\mathcal{L}=\lambda_{mse}\,\mathcal{L}_{mse}+\lambda_{lpips}\,\mathcal{L}_{lpips}+\lambda_{depth}\,\mathcal{L}_{depth}+\lambda_{opacity}\,\mathcal{L}_{opacity}\ \text{(式 1)}$$<span class="tag">论文 §4.2</span></div>
+
+<table>
+  <tr><th>损失项</th><th>公式/形式</th><th>权重(真值)</th><th>作用与实现细节</th></tr>
+  <tr>
+    <td>$\mathcal{L}_{mse}$</td><td>3DGS 渲染 vs 教师 RGB 帧的 MSE</td><td><b>1.0</b></td>
+    <td>基础像素重建项;渲染目标 = 6 条轨迹的全部 726 帧监督视角</td>
+  </tr>
+  <tr>
+    <td>$\mathcal{L}_{lpips}$</td><td>LPIPS(VGG 特征,Zhang et al., 2018)</td><td><b>0.5</b></td>
+    <td>提升对教师生成帧间不一致性的鲁棒性 + 保高频细节;实现按 chunk 计算(loss.py:73-125,lpips_chunk_size 控制显存)</td>
+  </tr>
+  <tr>
+    <td>$\mathcal{L}_{depth}$</td><td>scale-invariant 深度损失(Long-LRM 式)</td><td><b>0.05</b></td>
+    <td>GT = ViPE 估计的一致视频深度;<b>median 中心化</b>后 smooth-L1(loss.py:39-42,55-67)——纯 RGB 监督会训出扁平几何,消融见 §11</td>
+  </tr>
+  <tr>
+    <td>$\mathcal{L}_{opacity}$</td><td>opacity L1 正则</td><td><b>0.1</b></td>
+    <td>实现为对 sigmoid 后 opacity 取 mean(loss.py:143);配合训练后剪掉 opacity 最低的 80% 高斯</td>
+  </tr>
+</table>
+
+<div class="callout warn">
+<b>论文 vs 代码差异点(损失启用时机):</b>论文式 1 给出的是最终训练态的权重组合,但源码里 $\lambda_{opacity}=0.1$、剪枝 80% 只在<b>最后的 prune 微调阶段</b>开启(configs/training/3dgs_res_704_1280_views_121_multi_6_prune.yaml:<code>lambda_opacity: 0.1</code>,<code>gaussians_prune_ratio: 0.8</code>,该阶段 <code>max_train_steps: 83000</code>);主静态阶段 multi_6.yaml 未覆写(<code>lambda_opacity: 0.0</code>,default.yaml)。即真实训练顺序是:先训 82000 步不带 opacity 正则,再加正则微调 1000 步,然后剪枝。笔记按论文权重呈现表格,启用时机以此为准。
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>扩展到动态场景(video-to-4D)</h2>
+
+<p>动态扩展是 Lyra 框架的"便宜加法"——教师和学生各改一处,主干架构不动。</p>
+
+<h3>教师侧:数据管线改造</h3>
+<p>不再从单图,而是从单目视频出发:LLM 采 prompt → 视频扩散模型(Cosmos / Wan)生成视频 → <b>ViPE</b>(Huang et al., 2025)标注相机位姿与深度图 → GEN3C 沿 6 条轨迹生成"同一运动、不同视角"的多视角视频 latent。监督信号的时空结构:每个目标时刻 $t$ 只能被该时刻的轨迹帧监督(3DGS 随时间变,跨时刻帧无效)。</p>
+
+<h3>学生侧:时间条件化 3DGS 解码器</h3>
+<ul>
+  <li><b>bullet-time 设计</b>(Liang et al., 2025b):为视频中<b>每一帧</b>生成一份时间依赖的 3DGS(而不是拟合单一形变场),推理时任意"时刻×视角"组合即时解码渲染。</li>
+  <li><b>输入扩展:</b>新增源时间 $\mathbf{T}^{src}$ 与目标时间 $\mathbf{T}^{tgt}$ 两个编码,形状同 latent($V\times L'\times C\times h\times w$)。原始时间只有 1 通道($\mathbf{T}^{src,raw}\in\mathbb{R}^{V\times L\times 1\times H\times W}$、$\mathbf{T}^{tgt,raw}\in\mathbb{R}^{V\times 1\times 1\times H\times W}$),空间重复后拼 2 维正弦嵌入凑成 3 通道,再经 RGB 编码器 $\mathcal{E}$ 编码进 latent 空间——<b>复用 VAE 编码器编码时间,避免新设计编码网络</b>。</li>
+  <li><b>注入方式:</b>$\mathbf{T}^{src},\mathbf{T}^{tgt}$ 直接加到 $\mathbf{Z}+\mathbf{E}$ 的和上;对应 patchify 层初始化为零、从预训练 $\mathcal{D}_s$ 微调出 $\mathcal{D}_d$——零初始化保证微调起点等价于原静态模型,不破坏已学到的 3D 先验。</li>
+  <li><b>训练采样:</b>每个 iteration 随机采一个目标时刻,解码该时刻的 3DGS 并用全部 12 个监督视角(见下)监督。</li>
+</ul>
+
+<h3>动态数据增广(解决训练坍缩,§5 + Figure 5/9)</h3>
+<div class="callout warn">
+<b>失败模式:</b>时间条件化后,早期时间步只有"近处视角"(对应输入视频开头)的监督——直接训练会让早期时刻的 3DGS 在远处视角区域学出<b>低 opacity 空洞</b>(未覆盖区域没人管)。<br>
+<b>解法:</b>把输入视频<b>按帧序反转</b>喂给 GEN3C 再生成 6 条轨迹,反转回原运动顺序后得到 6 条"由远及近"的轨迹;与原 6 条"由近及远"轨迹配对,每个时间步获得<b>一近一远 12 个监督视角</b>,空间覆盖完整。该增广<b>只用于训练</b>,推理不需要反向轨迹。代码佐证:动态配置 <code>num_views: 133 = 121 + 12</code>(configs/training/3dgs_res_704_1280_views_121_multi_6_dynamic.yaml)。
+</div>
+
+<div class="figure">
+  <img src="images/2509.19296/dynamic_data_augmentation.png" alt="dynamic data augmentation" loading="lazy">
+  <div class="caption"><b>图 9(论文 Figure 9)</b> 以 zoom-out 与 zoom-in 两条轨迹为例展示运动反转增广:增广视频相机运动翻转,与原始轨迹配对后每个时间步都有远近两个极端视角的监督,防止早期时间步出现低 opacity 伪影。</div>
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>逻辑流程图</h2>
+
+<h3>训练流程(离线两步)</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph STEP1["步骤一: 教师数据生成(离线, 可并行)"]
+        A1["LLM 采样多样 prompt"] --> A2["Flux 生成单图 / Cosmos-Wan 生成单目视频"]
+        A2 --> A3["GEN3C 沿 6 轨迹生成<br/>121 帧多视角视频 latent"]
+        A3 --> A4["存盘: Z + RGB 帧 + ViPE 深度/位姿"]
+    end
+    subgraph STEP2["步骤二: 学生 3DGS 解码器训练"]
+        B1["加载 latent Z + Plücker E"] --> B2["前馈解码 → 渲染监督视角"]
+        B2 --> B3{"损失计算"}
+        B3 --> B4["MSE 1.0 + LPIPS 0.5 + 深度 0.05"]
+        B4 --> B5["渐进训练 stage1→6(82000 步累计)"]
+        B5 --> B6["prune 微调 1000 步<br/>(+opacity 0.1, 剪枝 80%)"]
+        B6 --> B7["动态微调 stage7(10000 步, 时间条件化)"]
+    end
+    STEP1 --> STEP2
+    style A3 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B6 fill:#fef3c7,stroke:#f59e0b,color:#713f12
+    style B7 fill:#ede9fe,stroke:#8b5cf6,color:#3b2f63
+</div>
+
+<h3>推理流程(两段式 SDG → 3D 解码)</h3>
+<div class="mermaid">
+flowchart LR
+    C1["输入: 文本/单图/单视频"] --> C2["GEN3C 生成<br/>6 轨迹 × 121 帧多视角 latent<br/>(一次性, 数十秒)"]
+    C2 --> C3["3DGS 解码器一次前馈<br/>(3.2 秒, 704×1280×121×6)"]
+    C3 --> C4["剪枝 80% → ~2M 高斯"]
+    C4 --> C5["实时渲染 18ms/帧<br/>或导出 .ply → .usdz → Isaac Sim"]
+    style C2 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C3 fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style C5 fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<div class="note">推理耗时口径:3213ms 为一次前馈($V=6,L=121,H=704,W=1280$,联合块版,§6.3);18ms 为剪枝后 704×1280 单帧渲染耗时。GEN3C 生成本身的耗时论文未给出,【待核实】(demo 数据集附带预生成 latent,可跳过扩散段)。</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>⚙️ 工程实现细节(源码级)</h2>
+
+<h3>9.1 仓库结构</h3>
+<p>官方仓库 <code>nv-tlabs/lyra</code> 含两部分:<code>Lyra-1/</code>(本论文,基于 cosmos_predict1 框架)与 <code>Lyra-2/</code>(后续工作,2026-04-15 发布,换 WAN-14B 基座)。权重与数据在 HuggingFace:<code>nvidia/Lyra</code>(模型)、<code>nvidia/PhysicalAI-SpatialIntelligence-Lyra-SDG</code>(训练集)。</p>
+
+<h3>9.2 渐进训练(论文 Table 3 + 代码对照)</h3>
+<p>直接在 6×121 帧 @704×1280 上训练太贵,采用渐进策略(逐步加分辨率/帧数/视角):</p>
+<table>
+  <tr><th>Stage</th><th>$H\times W$</th><th>$L$</th><th>$V$</th><th>$S$</th><th>$B$</th><th>Steps</th></tr>
+  <tr><td>1</td><td>176×320</td><td>17</td><td>1</td><td>17</td><td>4</td><td>10k</td></tr>
+  <tr><td>2</td><td>176×320</td><td>49</td><td>1</td><td>49</td><td>4</td><td>2.5k</td></tr>
+  <tr><td>3</td><td>352×640</td><td>49</td><td>1</td><td>49</td><td>2</td><td>2.5k</td></tr>
+  <tr><td>4</td><td>704×1280</td><td>49</td><td>1</td><td>49</td><td>1</td><td>2.5k</td></tr>
+  <tr><td>5</td><td>704×1280</td><td>121</td><td>1</td><td>9</td><td>1</td><td>57.5k</td></tr>
+  <tr><td>6</td><td>704×1280</td><td>121</td><td>1–6</td><td>9</td><td>1</td><td>7k</td></tr>
+  <tr><td>7(动态)</td><td>704×1280</td><td>121</td><td>6</td><td>12</td><td>1</td><td>10k</td></tr>
+</table>
+<div class="note">
+列语义:$V$ = 相机轨迹数,$S$ = 监督视角数,$B$ = batch size。<b>$S$ 的含义原文未定义</b>,由代码解出:$S=\text{num\_views}-\text{num\_input\_views}$ 即"输入轨迹之外,预留用于渲染监督的新视角数"(stage5:130−121=9;dynamic:133−121=12)。Steps 为<b>累计值</b>:主配置 multi_6 的 <code>max_train_steps: 82000</code> = 10k+2.5k+2.5k+2.5k+57.5k+7k,与论文 Table 3 前 6 阶段之和吻合。<br>
+<b>论文 vs 代码差异:</b>代码在 stage6 与 stage7 之间还有一个论文未列的 <b>prune 阶段</b>(<code>3dgs_res_704_1280_views_121_multi_6_prune.yaml</code>,max_train_steps 83000,+1000 步开启 opacity 正则并剪枝),实际训练序列是 9 个阶段(train.sh:static 1-6 → prune → dynamic → dynamic_prune)。
+</div>
+
+<h3>9.3 训练资源账</h3>
+<ul>
+  <li><b>硬件/时长:</b>8× NVIDIA A100 80GB,<b>总计 6 天</b>(论文 Appendix B)。</li>
+  <li><b>优化器:</b><code>lr_scheduler: constant_with_warmup</code>,warmup 100 步(configs/training/default.yaml);学习率具体值由各 stage 配置覆写,【待核实】(default.yaml 中未直见数值)。</li>
+  <li><b>batch:</b>渐进早期 4(176×320),后期 1(704×1280)。</li>
+  <li><b>3DGS 渲染实现:</b>gsplat(Ye et al., 2025),且开启 <code>use_3dgut: true</code>——用 <b>3DGUT</b>(Wu et al., 2025a)渲染路径,论文正文未展开此点。</li>
+  <li><b>显存优化三板斧:</b>① latent 空间操作(64× 压缩);② DeferredBP 渲染(src/rendering/gs_deferred.py):前向用无梯度光栅化、反向按视角重算,多轨迹联合训练的关键;③ LPIPS 按 chunk 计算(src/models/utils/loss.py:73)。</li>
+</ul>
+
+<h3>9.4 推理资源与依赖</h3>
+<ul>
+  <li><b>GPU 门槛:</b>官方仅在 H100 / A100 测试;显存不足可全量 offload(diffusion transformer / tokenizer / text encoder / prompt upsampler / guardrail 五个开关,README.md:104-117),<b>全 offload 后推理峰值显存 ~43GB</b>。单卡 3090(24GB)即使 offload 也跑不下 GEN3C 生成段——学生 3DGS 解码器本身很小(32.75M 参数),瓶颈全在教师。</li>
+  <li><b>推理两步:</b>① <code>torchrun cosmos_predict1/diffusion/inference/gen3c_single_image_sdg.py</code>(静态)/<code>gen3c_dynamic_sdg.py</code>(动态,需先跑 ViPE)生成 latent;② <code>accelerate launch sample.py --config configs/demo/lyra_static.yaml</code> 解码 3DGS(README.md:47-92)。</li>
+  <li><b>环境坑:</b>ViPE 与 Lyra 环境<b>不兼容</b>,官方要求分装两个 conda 环境(README.md:94-95);ViPE 推理需加 <code>-p lyra</code> 旗标以使用与 Lyra 相同的深度估计器。</li>
+  <li><b>依赖:</b>requirements_lyra.txt 中核心为 torch 2.5.1 / cosmos_predict1 生态;动态模式硬依赖 ViPE 输出(位姿+深度)。</li>
+</ul>
+
+<h3>9.5 数据规模(真实值)</h3>
+<ul>
+  <li>3D:59,031 张图像 × 6 轨迹 = <b>354,186 段视频</b>;4D:7,378 段视频 × 6 = <b>44,268 段</b>(论文 §6.1)。全部由教师生成,零真实多视角数据。</li>
+  <li>数据管线:LLM(OpenAI/Qwen)采 prompt → Flux 生图 → GEN3C 展开;4D 用 Cosmos/Wan 生成视频再 ViPE 标注。</li>
+</ul>
+
+<h3>9.6 落地坑清单</h3>
+<ul>
+  <li><b>高斯数量账:</b>726 帧 @704×1280 逐像素 = 654,213,120 个 → 每 8×8 像素 1 高斯 → 10,222,080 → opacity 剪枝 80% → <b>2,044,416</b>(论文 Appendix B)。</li>
+  <li><b>反卷积输出网格:</b>88×160 = 704/8 × 1280/8(代码 patch_size_out_factor [1,8,8]),总输出高斯网格 [121, 88, 160] 每帧。</li>
+  <li><b>历史版本注意:</b>repo 内 Lyra-1/Lyra-2 并存,复现论文用 Lyra-1;Lyra 2.0 基于 WAN-14B,配置体系不同。</li>
+  <li><b>Isaac 导出:</b>.ply → 3DGUT 导出函数 → .usdz → Isaac Sim 5.0(论文 Appendix D)。</li>
+</ul>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 实验设置</h3>
+<ul>
+  <li><b>评测协议:</b>遵循 Wonderland 与 Bolt3D 的单图→3D 协议,数据集 RealEstate10K / DL3DV / Tanks and Temples,指标 PSNR / SSIM / LPIPS。基线数字主要取自各论文原文(无公开源码在 Lyra 的 OOD 评测集上复跑)。</li>
+  <li><b>Lyra 数据集评测:</b>消融与 BTimer 对比在自建的 out-of-distribution 多样 prompt 数据集上进行。</li>
+</ul>
+
+<h3>10.2 主结果:单图 → 3D(论文 Table 1)</h3>
+<table>
+  <tr><th rowspan="2">方法</th><th colspan="3">RealEstate10K</th><th colspan="3">DL3DV</th><th colspan="3">Tanks-and-Temples</th></tr>
+  <tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+  <tr><td>ZeroNVS</td><td>13.01</td><td>0.378</td><td>0.448</td><td>13.35</td><td>0.339</td><td>0.465</td><td>12.94</td><td>0.325</td><td>0.470</td></tr>
+  <tr><td>ViewCrafter</td><td>16.84</td><td>0.514</td><td>0.341</td><td>15.53</td><td>0.525</td><td>0.352</td><td>14.93</td><td>0.483</td><td>0.384</td></tr>
+  <tr><td>Wonderland</td><td>17.15</td><td>0.550</td><td>0.292</td><td>16.64</td><td>0.574</td><td>0.325</td><td>15.90</td><td>0.510</td><td>0.344</td></tr>
+  <tr><td>Bolt3D</td><td>21.54</td><td>0.747</td><td>0.234</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+  <tr class="best"><td><b>Lyra(Ours)</b></td><td>21.79</td><td>0.752</td><td>0.219</td><td>20.09</td><td>0.583</td><td>0.313</td><td>19.24</td><td>0.570</td><td>0.336</td></tr>
+</table>
+
+<div class="callout key">
+<b>怎么读这张表:</b>① RealEstate10K 上只比 Bolt3D 高 0.25dB——分布内场景大家接近;② 真正拉开差距的是 <b>DL3DV(+3.45dB vs Wonderland)与 T&T(+3.34dB)</b>——越 OOD 领先越大,这是"自蒸馏在多样合成数据上训练"的直接证据;③ 作者自己说得很清醒:"further boost the quality 的关键在更强的视频生成模型"——学生的上限就是教师的上限(§6.2)。
+</div>
+
+<h3>10.3 Lyra 数据集上的 BTimer(GEN3C)对比(论文 Table 4)</h3>
+<p>BTimer(Liang et al., 2025b,bullet-time 前馈重建)是纯回归模型,作者请其原作者帮忙集成:<b>喂给 BTimer 与 Lyra 完全相同的 GEN3C 生成结果</b>(像素空间 BTimer 吃不下 726 帧,均匀下采样到 12 帧;动态评测裁到 512×512,11 帧 + bullet-time 帧)。这构成了对"latent 空间 + 学习式多视角融合"设计的最公平对照:</p>
+<table>
+  <tr><th>设置</th><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+  <tr><td rowspan="2">静态(a)</td><td>BTimer (GEN3C)</td><td>16.32</td><td>0.580</td><td>0.427</td></tr>
+  <tr class="best"><td><b>Lyra</b></td><td>24.92</td><td>0.834</td><td>0.183</td></tr>
+  <tr><td rowspan="2">动态(b)</td><td>BTimer (GEN3C)</td><td>20.29</td><td>0.687</td><td>0.315</td></tr>
+  <tr class="best"><td><b>Lyra</b></td><td>23.07</td><td>0.779</td><td>0.231</td></tr>
+</table>
+<p>静态差 <b>+8.6dB</b>——同样的教师、同样的输入,差距来自学生架构(latent 操作 + 联合融合 vs 像素空间 + 12 帧下采样)。</p>
+
+<div class="figure">
+  <img src="images/2509.19296/sota_static_comparison.png" alt="BTimer comparison" loading="lazy">
+  <div class="caption"><b>图 10(论文 Figure 10)</b> 与 BTimer(GEN3C) 的静态单图→3DGS 对比,5 个生成视角:Lyra 伪影显著更少、保真度更高。</div>
+</div>
+
+<h3>10.4 下游:机器人仿真(论文 Appendix D)</h3>
+<p>文本 → 3DGS → .ply → .usdz(3DGUT 导出)→ Isaac Sim 5.0 作为物理仿真环境,支持 NuRec 实时高斯渲染与物理交互——这是"显式 3D 表示"路线对纯视频生成的核心卖点闭环。</p>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2509.19296v1/imgs/main_results.png" alt="main results" loading="lazy">
+  <div class="caption"><b>图 6(论文 Figure 6,热链)</b> 单图→3DGS 生成结果的 5 个视角可视化。</div>
+</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+
+<p>全部消融在 Lyra 数据集(out-of-distribution 多样 prompt)上进行,以"学生 3DGS 渲染 vs 教师生成视频"为参照(论文 Table 2):</p>
+<table>
+  <tr><th>类别</th><th>消融项</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>ΔPSNR</th></tr>
+  <tr class="best"><td>—</td><td><b>完整 Lyra</b></td><td><b>24.77</b></td><td><b>0.837</b></td><td><b>0.224</b></td><td>—</td></tr>
+  <tr><td rowspan="2">数据</td><td>real data only(RE10K+DL3DV 真实数据替代自蒸馏)</td><td>19.08</td><td>0.659</td><td>0.413</td><td>−5.69</td></tr>
+  <tr><td>self-distill. + real data(混合)</td><td>24.74</td><td>0.823</td><td>0.236</td><td>−0.03</td></tr>
+  <tr><td rowspan="3">损失</td><td>w/o depth loss</td><td>24.31</td><td>0.811</td><td>0.247</td><td>−0.46</td></tr>
+  <tr><td>w/o opacity pruning</td><td>24.55</td><td>0.820</td><td>0.237</td><td>−0.22</td></tr>
+  <tr><td>w/o LPIPS loss</td><td>23.74</td><td>0.766</td><td>0.370</td><td>−1.03</td></tr>
+  <tr><td rowspan="3">架构</td><td>w/o multi-view fusion(逐轨迹独立解码再拼点云)</td><td>17.73</td><td>0.632</td><td>0.446</td><td>−7.04</td></tr>
+  <tr><td>w/o Mamba-2(纯 Transformer)</td><td>24.58</td><td>0.818</td><td>0.241</td><td>−0.19</td></tr>
+  <tr class="fail"><td>w/o latent 3DGS(像素空间操作)</td><td colspan="3">OOM</td><td>—</td></tr>
+</table>
+
+<h3>逐项解读</h3>
+<ul>
+  <li><b>数据(最有信息量的消融):</b>"real data only" 崩到 19.08——验证了动机(OOD 泛化差);而"混合训练"相对纯自蒸馏<b>零收益</b>(24.74 vs 24.77)——自蒸馏数据已经足够多样且一致,真实数据没有附加价值。这是对"自蒸馏可否完全替代真实多视角数据"的肯定回答。</li>
+  <li><b>multi-view fusion 是架构命门(−7.04dB):</b>逐轨迹独立解码再后融合的朴素方案大幅劣化——6 条轨迹的生成结果必然有局部不一致,联合 attention 让每个 token 看到所有轨迹、隐式仲裁冲突;后融合没有这层纠错。</li>
+  <li><b>Mamba-2 是纯效率选型:</b>质量只掉 0.19dB(统计上近乎打平),但速度差 <b>6.5×</b>(联合块 3213ms vs 纯 Transformer 20922ms/次前馈)。作者在 Appendix B 补了一句诚实的备注:同预算下 Transformer-only 可能欠拟合,更多迭代或能追平——所以 6.5× 是"同预算下的效率优势",不能读成"Transformer 不行"。</li>
+  <li><b>latent 空间是可行性前提:</b>同样的解码器搬回像素空间直接 OOM——这行消融比任何数字都直观。</li>
+  <li><b>损失项:</b>LPIPS 影响最大(−1.03dB + LPIPS 指标本身崩到 0.370,失去对教师不一致性的鲁棒性);深度损失防扁平几何(-0.46dB,还带来深度图质量,Figure 11);opacity 剪枝主要是效率收益:渲染 18ms vs 30ms(<b>1.67×</b>),画质略有提升。</li>
+</ul>
+
+<div class="figure">
+  <img src="images/2509.19296/ablations_static_figure.png" alt="ablations static" loading="lazy">
+  <div class="caption"><b>图 7(论文 Figure 7)</b> 消融定性对比:同一极端新视角下的渲染结果差异。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2509.19296/ablations_dynamic_figure.png" alt="ablations dynamic" loading="lazy">
+  <div class="caption"><b>图 5(论文 Figure 5)</b> 无动态数据增广时,早期时间步在极端视角下出现低 opacity 伪影(上排);增广后空间覆盖完整(下排)。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2509.19296/ablation_depth.png" alt="depth ablation" loading="lazy">
+  <div class="caption"><b>图 11(论文 Figure 11)</b> 深度损失消融:无深度监督(左)出现扁平几何,加深度监督(右)几何恢复立体且画质不受损。</div>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+
+<h3>12.1 横向对比表</h3>
+<table>
+  <tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练成本</th><th>推理耗时</th><th>显存</th><th>关键指标(RE10K PSNR)</th><th>开源</th></tr>
+  <tr><td>CAT3D</td><td>2024</td><td>单图/多图 + 相机</td><td>多视角图像→NeRF/3DGS(需优化)</td><td>多视角扩散去噪</td><td>真实多视角(RE10K 等+Objaverse)</td><td>【推测】数十 A100 级</td><td>优化阶段逐场景,分钟级</td><td>—</td><td>【待核实】(论文口径为可视化对比为主)</td><td>✅</td></tr>
+  <tr><td>Bolt3D</td><td>2025</td><td>单图 + 相机网格</td><td>pointmap 前馈→3DGS</td><td>多视角扩散 + 几何 AE</td><td>真实多视角</td><td>【推测】同 CAT3D 微调</td><td>前馈,秒级</td><td>—</td><td>21.54</td><td>✅</td></tr>
+  <tr><td>Wonderland</td><td>2025</td><td>单图 + 相机轨迹</td><td>视频模型 latent→前馈 3DGS</td><td>真实多视角 GT</td><td>真实多视角(大规模)</td><td>【推测】24 层×1024 维网络</td><td>前馈</td><td>—</td><td>17.15</td><td>【待核实】</td></tr>
+  <tr><td>GS-LRM</td><td>2024</td><td>2–4 张有位姿图</td><td>逐像素 3DGS</td><td>真实多视角 GT</td><td>RE10K 等真实数据</td><td>【推测】A100 级</td><td>前馈</td><td>—</td><td>【待核实】(原论文以重建为主)</td><td>✅</td></tr>
+  <tr><td>BTimer</td><td>2025</td><td>带位姿图像/视频(≤12 帧,像素空间)</td><td>bullet-time 逐帧 3DGS</td><td>真实多视角 GT</td><td>真实数据</td><td>—</td><td>前馈</td><td>726 帧直接 OOM</td><td>16.32(喂 GEN3C 输出,静态)</td><td>【待核实】</td></tr>
+  <tr class="best"><td><b>Lyra</b></td><td>2025</td><td>文本/单图/单视频</td><td>latent→前馈(动态)3DGS</td><td><b>教师自蒸馏(零真实多视角)</b></td><td><b>纯合成(354k 视频)</b></td><td>8×A100 × 6 天</td><td>前馈 3.2s + 渲染 18ms/帧</td><td>全 offload 推理 ~43GB</td><td>21.79</td><td>✅ 代码+权重+数据</td></tr>
+</table>
+<div class="note">"—"表示原文未提供该维度数字,不做估算;标注【推测】/【待核实】的条目为公开信息中未直见的部分。训练成本仅 Lyra 有官方数字(8×A100×6 天),其余方法按论文常报量级推断,均已标注。</div>
+
+<h3>12.2 对比结论(机制解释,非罗列)</h3>
+<ul>
+  <li><b>Lyra vs CAT3D(生成后优化):</b>CAT3D 的"生成多视角图 → 逐场景优化 NeRF/3DGS"两段式里,优化成本<b>无法摊销</b>(每来一张图都要重新跑一次);Lyra 把重建成本一次性摊进训练,推理只跑前馈。代价是 Lyra 的场景一致性被锁死在教师水平,而 CAT3D 的优化阶段能"吸收"生成图之间的轻微不一致。</li>
+  <li><b>Lyra vs Bolt3D/Wonderland(同为前馈,监督来源不同):</b>三者都是前馈 3DGS,但 Bolt3D/Wonderland 仍以真实多视角数据为监督——数据多样性天花板 = 真实采集集;Lyra 的监督来自在<b>互联网级视频</b>上预训练的教师的想象,多样性天花板高得多。这就是 Table 1 中 DL3DV/T&T 上 +3.3~3.5dB 的来源。Wonderland 与 Lyra 结构最接近(都从视频模型 latent 前馈),差异只在监督:Wonderland 用真实 GT 直接监督,Lyra 用教师输出监督并换取了"生成内容可超出输入视角"的能力。</li>
+  <li><b>Lyra vs BTimer(同输入最公平对照):</b>同喂 GEN3C 输出,静态差 +8.6dB。机制:① BTimer 在像素空间只能吃 12 帧下采样(信息损失),Lyra 全量 726 帧;② BTimer 逐轨迹/逐帧独立处理,Lyra 联合 attention 仲裁 6 轨迹间的不一致;③ BTimer 网络为逐像素重建设计,不适应生成内容的分布。</li>
+  <li><b>与 GEN3C 的关系:</b>Lyra 是 GEN3C 的"显式化插件"——生成段完全复用,只在 VAE 后面并联学生分支。论文刻意保持教师不动(冻结),这使 Lyra 可以<b>无痛升级教师</b>:Lyra 2.0 换 WAN-14B 就是这条路的直接验证。</li>
+</ul>
+
+<h3>12.3 演进定位表</h3>
+<table>
+  <tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+  <tr><td>逐场景优化重建</td><td>NeRF、3DGS、3DGUT</td><td>多视角光度一致性</td><td>需要位姿+密集采集;只重建不外推</td></tr>
+  <tr><td>前馈重建</td><td>GS-LRM、Long-LRM、AnySplat</td><td>大规模真实多视角数据学到的回归先验</td><td>OOD 泛化差;受显存限制视角数</td></tr>
+  <tr><td>多视角扩散 + 优化</td><td>CAT3D、ReconFusion</td><td>图像扩散先验 + 优化兜底</td><td>逐场景优化不可摊销</td></tr>
+  <tr><td>多视角扩散 + 前馈头</td><td>Bolt3D</td><td>pointmap 自编码器</td><td>仍依赖真实多视角监督</td></tr>
+  <tr><td>视频模型 latent 前馈(真实监督)</td><td>Wonderland</td><td>相机控制视频先验</td><td>学生监督仍来自真实数据</td></tr>
+  <tr class="best"><td><b>视频模型自蒸馏(本文)</b></td><td><b>Lyra</b></td><td><b>教师即监督:视频扩散先验同时提供输入与 GT</b></td><td>上限锁死在教师;长时程一致性受限;场景规模受教师轨迹范围限制</td></tr>
+</table>
+
+<h3>12.4 库内交叉链接</h3>
+<ul>
+  <li>与 <a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20250717-Pi3.html">Pi3</a> 这类"位姿自由前馈重建"互补:它们解决"真实输入 → 几何",Lyra 解决"想象输入 → 可仿真场景";前者吃真实照片,后者吃生成 latent。</li>
+  <li>与 <a href="3D-20251211-SHARP.html">SHARP</a> 的自监督思路同构:SHARP 用单目视频的自监督蒸馏静态高斯场,Lyra 用视频扩散模型的自监督蒸馏前馈解码器——都是"用 2D 监督信号替代 3D GT"的范式,但 SHARP 面向逐场景拟合、Lyra 面向跨场景泛化。</li>
+  <li>3DGS 渲染基础见 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a>;前馈重建脉络见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a>。</li>
+  <li>GEN3C 的 cache 渲染条件机制与我们同事 pipeline(见 <a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline 详解</a>)中"生成式数据增广"的思路可对照:同样是用受控生成扩充监督视角,GEN3C 在场景级、同事方案在人物级。</li>
+</ul>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>✅ 机器人/具身仿真数据引擎</h4>
+    <p>论文的第一动机。文本→场景→Isaac Sim 闭环已打通(Appendix D + SIGGRAPH 2025 NuRec demo),适合低成本生成多样化训练/评测环境。我们若做 physical AI 方向的数据生成,这是当前工程完成度最高的开源方案(代码+权重+数据全开放)。</p>
+  </div>
+  <div class="card">
+    <h4>✅ 数字人/虚拟制片环境生成</h4>
+    <p>单图出可自由运镜的 3D 场景,直接可用于虚拟制片背景、数字人直播间的场景资产。限制:场景规模受 6 条轨迹覆盖范围约束(单间房间级,不是城市级)。</p>
+  </div>
+  <div class="card">
+    <h4>⚠️ 进我们 vggt_human pipeline</h4>
+    <p>不能直接替代 COLMAP→3DGS 重建段——Lyra 是<b>生成</b>不是<b>重建</b>,不恢复真实拍摄场景的几何。可用的位置:① 合成训练数据源(替代手工采集多视角数据训练我们的人脸/人体重建模型);② 场景资产预生成(scene_gs 的背景填充思路)。教师生成段需 A100/H100 级硬件(全 offload 后 ~43GB),3090 单卡跑不动生成段,学生解码段可以。</p>
+  </div>
+</div>
+
+<h3>成本-收益速查</h3>
+<table>
+  <tr><th>维度</th><th>数值/结论</th><th>出处</th></tr>
+  <tr><td>训练成本(复现)</td><td>8×A100 80GB × 6 天(约 1152 GPU·时)</td><td>论文 Appendix B</td></tr>
+  <tr><td>推理硬件门槛</td><td>生成段:A100/H100(全 offload 峰值 ~43GB);解码段:学生仅 32.75M 参数,轻</td><td>README / HF 模型卡</td></tr>
+  <tr><td>推理时延</td><td>解码一次前馈 3.2s;渲染 18ms/帧 @704×1280(剪枝后 2M 高斯)</td><td>论文 §6.3</td></tr>
+  <tr><td>数据成本</td><td>零真实多视角采集;教师生成 354k 段视频的 GPU 成本论文未披露【待核实】</td><td>论文 §6.1</td></tr>
+  <tr><td>输出格式</td><td>3DGS(.ply)→ .usdz,兼容 Isaac Sim / Unity 类渲染器</td><td>论文 Appendix D</td></tr>
+</table>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>可改进方向分析</h2>
+
+<h3>方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+  <h4>[高优先级] 学生上限被教师锁死,且无误差修正机制</h4>
+  <p><b>问题:</b>self-distillation 是单向的——学生只能逼近教师的想象,教师的多视角不一致、几何畸变会被学生"忠实继承"再平均化。论文 §6.2 作者承认改进关键在教师侧;§7 也承认场景规模与一致性受教师容量约束。但论文没有量化"教师误差 → 学生误差"的传递关系,也没有任何机制让学生<b>超过</b>教师(例如多轨迹之间用几何一致性约束互相纠错)。</p>
+  <p><b>佐证:</b>训练目标只有渲染≈教师 RGB 帧(式 1),全部 4 项损失都指向教师输出,没有任何项利用 6 轨迹间的几何冗余做一致性正则。</p>
+  <p><b>改进建议:</b>① 在损失里加跨轨迹深度/点云一致性项(不同轨迹的 3DGS 是同一个场景,几何应收敛);② 用少量真实多视角数据做"教师输出校准"(但消融显示混合训练无收益,说明朴素混合不行,需要设计选择性蒸馏)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+  <h4>[高优先级] 场景规模与长时程一致性受限于 121 帧 × 6 轨迹窗口</h4>
+  <p><b>问题:</b>整个框架在固定窗口($L=121$ 帧、$V=6$ 条轨迹、运动幅度由 <code>total_movement_distance_factor</code> 控制)内操作,输出是"一个房间/一个局部"的 3DGS。大场景需要自回归式滚动生成(作者在 §7 指出引入 autoregressive 技术是 future work),但当前版本没有跨窗口的坐标对齐机制。</p>
+  <p><b>佐证:</b>latent 网格 [121, 88, 160] 是硬编码的训练形状(configs 系列 yaml 的分辨率/帧数组合),Appendix B 的渐进训练也围绕该窗口设计。</p>
+  <p><b>改进建议:</b>① chunk 化生成 + 全局位姿图拼接(类似 3DGS 分块重建);② 把 cache 机制(GEN3C 已有)反过来用于跨窗口一致性——前一个窗口的 3DGS 直接作为下一个窗口的 3D cache。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+  <h4>[中优先级] Mamba-2 的质量代价被训练预算混淆,结论外推需谨慎</h4>
+  <p><b>问题:</b>消融只掉 0.19dB,但作者自己说明"同预算下训练,Transformer-only 可能需要更多迭代才能追平"(Appendix B)。即 6.5× 加速是在"两者都没训满"的前提下测的;预算充足时差距未知。</p>
+  <p><b>佐证:</b>"Since we trained both configurations within the same training budget, we hypothesize that transformer-only blocks would need considerably more training iterations to fully catch up"(论文 Appendix B 原文)。</p>
+  <p><b>改进建议:</b>报告学习率-步数扫描曲线,或至少给一个"训满"参照点,否则下游选型会把效率结论误读为质量结论。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow)">
+  <h4>[中优先级] 高斯 8×8 降采样是硬编码折中,大平面区域浪费、细节区域欠采样</h4>
+  <p><b>问题:</b>每 8×8 像素 1 个高斯是全局均匀策略(Appendix B),没有自适应密度。纹理丰富区与天空/墙面区获得同样 1/64 的采样密度——前者会糊,后者冗余。</p>
+  <p><b>佐证:</b>代码中 <code>sub_sample_gaussians_factor: null</code>(未启用运行时显式降采样),实际降采样完全由反卷积 8×8 输出步幅承担(configs/training/default.yaml 的 <code>patch_size_out_factor: [1,8,8]</code>);model_latent_recon.py:251-258 留有 sub_sample 接口但默认关闭。</p>
+  <p><b>改进建议:</b>用深度/梯度不确定性图驱动非均匀反卷积,或两阶段:先 8×8 粗出再在误差大的 patch 局部加密。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+<div class="card" style="border-left:4px solid var(--yellow)">
+  <h4>[中优先级] 评测协议的固有偏向:学生考试用老师的答案批改</h4>
+  <p><b>问题:</b>Table 2/4 的 Lyra 数据集消融以"3DGS 渲染 vs 教师生成视频"为参照——参照系本身就是教师的输出分布,天然有利于"复述教师"的模型。真实多视角评测(Table 1)覆盖面窄(RE10K 分布内),且基线数字取自各自论文(协议细节未必逐项对齐,论文 §6.1 自己注明)。</p>
+  <p><b>佐证:</b>"no source code is available to evaluate these methods on our out-of-distribution evaluation set, hence we mainly rely on reported quantitative comparisons from the papers"(论文 §6.1)。</p>
+  <p><b>改进建议:</b>对评测集子集用 COLMAP+3DGS 优化重建做"接近真值"的参照;至少对 Bolt3D/Wonderland 做一次同协议复跑。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow)">
+  <h4>[低优先级] 4D 运动质量无专门评测</h4>
+  <p><b>问题:</b>动态部分只有 100 段视频上的 PSNR/SSIM/LPIPS(Table 4b),没有运动幅度/时序一致性指标(如 FVD、光流误差),也没有与 4D 生成专门方法(4DiM、CAT4D 等)对比——只在 Appendix E 文字性对比。</p>
+  <p><b>佐证:</b>论文 §C.3 仅报告 3 项图像指标。</p>
+  <p><b>改进建议:</b>补 FVD 与跨视角时序一致性消融(尤其时间条件化注入方式的必要性消融——当前只有整体动态 vs 静态的对比)。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+  <h4>[高优先级] 教师生成段硬件门槛高,复现成本集中在此</h4>
+  <p><b>问题:</b>学生解码很轻,但训练数据/推理都要先过 GEN3C(7B 扩散 + VAE),全 offload 后仍 ~43GB——意味着数据引擎的每次迭代都要 A100/H100 集群。354k 段训练视频的生成成本论文未披露。</p>
+  <p><b>佐证:</b>README.md:104-117(only H100/A100 tested);论文 Appendix B(8×A100 训练)。</p>
+  <p><b>改进建议:</b>蒸馏一个更小的教师(如 1B 级)专供数据引擎用;或开源预生成 latent 库的扩容(现已为 demo 提供部分预生成 latent)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow)">
+  <h4>[低优先级] 论文与代码的训练阶段叙述不同步</h4>
+  <p><b>问题:</b>论文 Table 3 列 7 个阶段;代码 train.sh 实际 9 个(static 1-6 → prune → dynamic → dynamic_prune),多出的 prune 阶段(+1000 步 opacity 正则微调)论文未提。Table 3 的 $S$ 列在正文无定义,需读代码反推($S$=num_views−num_input_views)。</p>
+  <p><b>佐证:</b>configs/training/3dgs_res_704_1280_views_121_multi_6_prune.yaml(<code>max_train_steps: 83000</code>)vs multi_6.yaml(82000)。</p>
+  <p><b>改进建议:</b>无代码层面的改进需求;记录在此供复现者对照,避免按论文 7 阶段复现导致剪枝缺失(渲染 30ms 而非 18ms)。</p>
+</div>
+
+<h4>优先级总览</h4>
+<table>
+  <tr><th>优先级</th><th>改进点</th><th>维度</th></tr>
+  <tr><td>高</td><td>教师误差传递无修正(跨轨迹一致性损失缺失)</td><td>方法</td></tr>
+  <tr><td>高</td><td>场景规模受 121×6 窗口限制,无自回归扩展</td><td>方法</td></tr>
+  <tr><td>高</td><td>教师生成段硬件门槛(A100/H100 级)</td><td>工程</td></tr>
+  <tr><td>中</td><td>Mamba-2 结论受训练预算混淆</td><td>方法</td></tr>
+  <tr><td>中</td><td>8×8 高斯降采样全局均匀,无自适应密度</td><td>方法</td></tr>
+  <tr><td>中</td><td>评测参照系偏向教师分布;基线数字非同协议</td><td>评估</td></tr>
+  <tr><td>低</td><td>4D 缺运动质量专门评测</td><td>评估</td></tr>
+  <tr><td>低</td><td>论文/代码训练阶段数不同步(7 vs 9)</td><td>工程</td></tr>
+</table>
+
+<div class="callout key">
+<b>个人认为最关键的三点:</b>① 跨轨迹几何一致性正则的缺失——这是把"逼近教师"变成"超越教师"的唯一杠杆,也是其它后续工作最值得抢的点;② 自回归大场景扩展——决定这套方法能不能从"房间生成器"进化成"世界生成器",GEN3C 的 cache 机制天然是拼接接口;③ 硬件门槛的分档优化——教师蒸馏瘦身决定这套"数据引擎"路线能否被非巨头复现,直接关系开源生态能不能起来。
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>总结与演进定位</h2>
+
+<p>Lyra 的定位一句话:<b>前馈 3D 生成的"数据引擎"范式确立之作</b>。它没有发明新渲染、新网络,它的贡献是证明了"监督信号可以完全来自生成模型本身"——354k 段合成视频就把一个 16 层小网络(32.75M)喂成了三基准 SOTA,且 OOD 场景优势最大(+3.3~3.5dB)。消融进一步给出了两条对后人有长期价值的结论:① 真实多视角数据与自蒸馏数据混合训练零收益(数据多样性才是前馈重建的瓶颈,不是数据真实性);② 多视角联合融合(−7.04dB)与 latent 空间操作(像素空间 OOM)是这类方法的两个架构命门。</p>
+
+<p>从演进脉络看,Lyra 站在三个趋势的交汇点:<b>视频扩散的 3D 一致性成熟</b>(GEN3C/Cosmos)、<b>前馈重建架构定型</b>(Long-LRM 的 Transformer+Mamba 块)、<b>物理仿真需求爆发</b>(Isaac/physical AI)。它的后续 Lyra 2.0(2026-04,换 WAN-14B 教师)验证了这套框架的"教师可插拔"设计——这是比单点 SOTA 更重要的架构性质:教师每次换代,学生白捡一轮提升。</p>
+
+<p>对我们 vggt_human 主线的直接启示:重建侧(真实输入)与生成侧(想象输入)是两条独立供给线,vggt_human 解决前者;当需要大规模合成训练数据(人脸/人体/场景)时,Lyra 这类自蒸馏数据引擎是成本最低的来源——用它生成"环境+人"的合成多视角数据来训练我们的重建模型,是两条线交汇的实际落点。</p>
+
+<div class="callout tip">
+<b>阅读优先级建议:</b>若只读 15 分钟——§3 总体框架 → §5.1 latent 尺度论证 → §11 数据消融(real data only −5.69dB 与混合训练零收益)。这三处是论文的"可迁移结论",其余为工程实现细节。
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>研究团队</h3>
+<p><b>NVIDIA 多伦多 AI 实验室</b> + University of Toronto + Vector Institute + Simon Fraser University。核心成员:Sherwin Bahmani(一作,GEN3C 系列作者)、Tianchang Shen(可微渲染/3DGS 老兵)、Zan Gojcic、Sanja Fidler(NVIDIA 多伦多实验室负责人)、Huan Ling、Jun Gao*、Xuanchi Ren*(通讯共同贡献)。团队同时维护 GEN3C、Cosmos 生态,教师-学生全栈自研。</p>
+
+<h3>资源链接</h3>
+<table>
+  <tr><th>资源</th><th>链接</th></tr>
+  <tr><td>arXiv 论文</td><td><a href="https://arxiv.org/abs/2509.19296" target="_blank">arxiv.org/abs/2509.19296</a>(v1,2025-09-23)</td></tr>
+  <tr><td>代码(GitHub)</td><td><a href="https://github.com/nv-tlabs/lyra" target="_blank">github.com/nv-tlabs/lyra</a>(Lyra-1 本篇 / Lyra-2 后续)</td></tr>
+  <tr><td>项目主页</td><td><a href="https://research.nvidia.com/labs/toronto-ai/lyra" target="_blank">research.nvidia.com/labs/toronto-ai/lyra</a>(含视频 demo 与 SIGGRAPH 2025 NuRec 展示)</td></tr>
+  <tr><td>模型权重</td><td><a href="https://huggingface.co/nvidia/Lyra" target="_blank">huggingface.co/nvidia/Lyra</a>(3DGS 解码器 32.75M 参数)</td></tr>
+  <tr><td>训练数据</td><td><a href="https://huggingface.co/datasets/nvidia/PhysicalAI-SpatialIntelligence-Lyra-SDG" target="_blank">PhysicalAI-SpatialIntelligence-Lyra-SDG</a>(354k 静态 + 44k 动态)</td></tr>
+  <tr><td>教师模型</td><td>GEN3C-Cosmos-7B(INSTALL.md;Cosmos Predict1 生态)</td></tr>
+  <tr><td>深度/位姿标注</td><td><a href="https://github.com/nv-tlabs/vipe" target="_blank">nv-tlabs/vipe</a>(与 Lyra 环境不兼容,需独立安装,加 <code>-p lyra</code>)</td></tr>
+</table>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p>Lyra: Generative 3D Scene Reconstruction via Video Diffusion Model Self-Distillation · arXiv:2509.19296 · ICLR 2026</p>
+  <p class="refs">笔记编撰:2026-09-18 · 源码版本:nv-tlabs/lyra@master(Lyra-1 目录,基于 cosmos_predict1)· 引用格式 <code>bahmani2026lyra</code></p>
+</footer>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

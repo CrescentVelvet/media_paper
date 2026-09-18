@@ -2749,6 +2749,66 @@
    "anchors": []
   },
   {
+   "title": "Lyra: 视频扩散模型自蒸馏驱动的生成式 3D 场景重建",
+   "meta": [
+    "📄 arXiv: 2509.19296",
+    "📅 2025-09-23",
+    "🏢 NVIDIA · University of Toronto · Vector Institute · SFU",
+    "🏆 ICLR 2026"
+   ],
+   "tags": [
+    "Generative 3D Reconstruction",
+    "Self-Distillation",
+    "Video Diffusion",
+    "3DGS Decoder",
+    "Latent Space",
+    "Mamba-2",
+    "4D Generation"
+   ],
+   "summary": "提出 self-distillation 框架:在 GEN3C 相机控制视频扩散模型的 latent 空间并联 3DGS 学生解码器(16 层 1×Transformer+7×Mamba-2,32.75M),以教师 RGB 解码输出监督 3DGS 渲染,<strong>零真实多视角数据</strong>纯合成训练(354k 段教师生成视频,8×A100×6 天)。单次前馈融合 6 轨迹×121 帧=726 视角 @704×1280(靠 latent 空间操作+联合 attention,像素空间直接 OOM),每 8×8 像素 1 高斯→剪枝 80% 后 2M,渲染 18ms/帧。RE10K/DL3DV/T&T 三基准全指标 SOTA(21.79/20.09/19.24 dB),OOD 越多领先越大(+3.3~3.5dB vs Wonderland);同喂 GEN3C 输出时比 BTimer 静态高 8.6dB。消融关键结论:真实数据与自蒸馏混合训练零收益;多视角联合融合 −7.04dB 是架构命门。扩展到单目视频→动态 3DGS(bullet-time 逐帧高斯+运动反转增广)。代码/权重/数据全开源,场景可导出 Isaac Sim 做物理仿真。",
+   "links": [
+    {
+     "href": "3D-20250923-Lyra.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2509.19296",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/nv-tlabs/lyra",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20250923-Lyra.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "3D 生成",
+    "前馈式大重建模型",
+    "视频扩散先验用于 3D"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 50</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 18</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 51</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 19</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -1895,6 +1895,32 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/apple/ml-sharp" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card" data-file="3D-20250923-Lyra.html" data-kind="note" data-depth="deep"
+              data-topics="3D 生成|前馈式大重建模型|视频扩散先验用于 3D" data-search="Lyra: 视频扩散模型自蒸馏驱动的生成式 3D 场景重建 Generative 3D Reconstruction Self-Distillation Video Diffusion 3DGS Decoder Latent Space Mamba-2 4D Generation 提出 self-distillation 框架:在 GEN3C 相机控制视频扩散模型的 latent 空间并联 3DGS 学生解码器(16 层 1×Transformer+7×Mamba-2,32.75M),以教师 RGB 解码输出监督 3DGS 渲染,零真实多视角数据纯合成训练(354k 段教师生成视频,8×A100×6 天)。单次前馈融合 6 轨迹×121 帧=726 视角 @704×1280(靠 latent 空间操作+联合 attention,像素空间直接 OOM),每 8×8 像素 1 高斯→剪枝 80% 后 2M,渲染 18ms/帧。RE10K/DL3DV/T&amp;T 三基准全指标 SOTA(21.79/20.09/19.24 dB),OOD 越多领先越大(+3.3~3.5dB vs Wonderland);同喂 GEN3C 输出时比 BTimer 静态高 8.6dB。消融关键结论:真实数据与自蒸馏混合训练零收益;多视角联合融合 −7.04dB 是架构命门。扩展到单目视频→动态 3DGS(bullet-time 逐帧高斯+运动反转增广)。代码/权重/数据全开源,场景可导出 Isaac Sim 做物理仿真。">
+            <h3>62. Lyra: 视频扩散模型自蒸馏驱动的生成式 3D 场景重建</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2509.19296</span>
+                <span>📅 2025-09-23</span>
+                <span>🏢 NVIDIA · University of Toronto · Vector Institute · SFU</span>
+                <span>🏆 ICLR 2026</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Generative 3D Reconstruction</span>
+                <span class="tag">Self-Distillation</span>
+                <span class="tag">Video Diffusion</span>
+                <span class="tag">3DGS Decoder</span>
+                <span class="tag">Latent Space</span>
+                <span class="tag">Mamba-2</span>
+                <span class="tag">4D Generation</span>
+            </div>
+            <p>提出 self-distillation 框架:在 GEN3C 相机控制视频扩散模型的 latent 空间并联 3DGS 学生解码器(16 层 1×Transformer+7×Mamba-2,32.75M),以教师 RGB 解码输出监督 3DGS 渲染,<strong>零真实多视角数据</strong>纯合成训练(354k 段教师生成视频,8×A100×6 天)。单次前馈融合 6 轨迹×121 帧=726 视角 @704×1280(靠 latent 空间操作+联合 attention,像素空间直接 OOM),每 8×8 像素 1 高斯→剪枝 80% 后 2M,渲染 18ms/帧。RE10K/DL3DV/T&T 三基准全指标 SOTA(21.79/20.09/19.24 dB),OOD 越多领先越大(+3.3~3.5dB vs Wonderland);同喂 GEN3C 输出时比 BTimer 静态高 8.6dB。消融关键结论:真实数据与自蒸馏混合训练零收益;多视角联合融合 −7.04dB 是架构命门。扩展到单目视频→动态 3DGS(bullet-time 逐帧高斯+运动反转增广)。代码/权重/数据全开源,场景可导出 Isaac Sim 做物理仿真。</p>
+            <a href="3D-20250923-Lyra.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2509.19296" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/nv-tlabs/lyra" target="_blank">💻 GitHub</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -1973,7 +1999,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>62. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>63. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -1996,7 +2022,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>63. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>64. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2019,7 +2045,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>64. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>65. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2045,7 +2071,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="CV-AI-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>65. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>66. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2088,7 +2114,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-09-18 · 涵盖 65 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-09-18 · 涵盖 66 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
