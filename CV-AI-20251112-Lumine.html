@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumine:3D 开放世界通用智能体的开放配方</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{background:rgba(251,191,36,.12);border-left:3px solid var(--orange);border-radius:6px;padding:8px 12px;display:inline-block}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2511.08892 · 通用智能体 / VLA · ByteDance Seed</span>
+    <h1>Lumine:3D 开放世界通用智能体的开放配方</h1>
+    <div class="subtitle">Lumine: An Open Recipe for Building Generalist Agents in 3D Open Worlds</div>
+    <div class="authors">Weihao Tan* · Xiangyang Li* · Yunhao Fang* · Heyuan Yao* · Shi Yan* · Hao Luo* · Tenglong Ao · Huihui Li · Hongbin Ren · Bairen Yi · Yujia Qin · Bo An · Libin Liu · Guang Shi</div>
+    <div class="org">ByteDance Seed · Nanyang Technological University · Peking University(前 6 人为共同一作,多为 Seed 实习期贡献)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2511.08892" target="_blank">📄 arXiv 2511.08892</a>
+      <a href="https://www.lumine-ai.org/" target="_blank">🌐 项目主页</a>
+      <a href="https://www.lumine-ai.org/Lumine.pdf" target="_blank">📄 论文 PDF</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">观测与动作空间:键鼠的语言化建模</a></li>
+    <li><a href="#s5">数据管线与三阶段训练配方</a></li>
+    <li><a href="#s6">推理系统:上下文管理与 25.3× 实时优化</a></li>
+    <li><a href="#s7">Benchmark 设计</a></li>
+    <li><a href="#s8">实验结果:Scaling / 指令遵循 / 长任务</a></li>
+    <li><a href="#s9">零样本泛化:璃月与跨游戏</a></li>
+    <li><a href="#s10">错误模式分析</a></li>
+    <li><a href="#s11">🔄 同类方法对比分析</a></li>
+    <li><a href="#s12">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s13">可改进方向分析</a></li>
+    <li><a href="#s14">总结与演进定位</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p>Lumine 来自 ByteDance Seed(与 NTU、北大合作),2025-11-12 提交 arXiv。它自称第一个「开放配方」(open recipe):给出从环境选型、数据采集、交互频率、模型设计、训练流程到推理优化的<b>全生命周期方案</b>,并用一个 7B 模型在《原神》里完成实证——<b>实时完成小时级复杂任务</b>。</p>
+
+<div class="callout key">
+<b>一句话概括:</b>用 Qwen2-VL-7B-Base 做底座,以「类人交互范式」统一感知-推理-动作——5 Hz 读原始像素、30 Hz 输出键鼠操作、必要时才进入显式推理(hybrid thinking);用 <b>1731h 预训练 + 200h 指令跟随 + 15h 推理</b>的三阶段课程,在原神蒙德打出 5 小时主线,<b>56 分钟通关第一幕</b>(人类新手平均 78 分钟、专家 53 分钟),并<b>零样本</b>迁移到鸣潮与星穹铁道。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">56 min</div><div class="l">蒙德第一幕(人类专家 53 min)</div></div>
+  <div class="stat"><div class="v">5 Hz / 30 Hz</div><div class="l">感知 / 动作频率</div></div>
+  <div class="stat"><div class="v">25.3×</div><div class="l">端到端延迟降低(§6.2)</div></div>
+  <div class="stat"><div class="v">93.4%</div><div class="l">域内主线子任务成功率(Table 5)</div></div>
+</div>
+
+<h3>核心贡献</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>① 类人交互范式</h4>
+    <p>不依赖任何游戏 API,屏幕像素进、键鼠事件出。相对位移鼠标建模解决 3D 相机控制——这是 GUI agent 常规「绝对坐标传送」做不到的;完整覆盖 down/up/hold 键状态语义。</p>
+  </div>
+  <div class="card">
+    <h4>② 无标注预训练为主的数据配方</h4>
+    <p>预训练只用「图像-动作对」(无指令标注),指令与推理数据分别只要 200h / 15h。标注瓶颈被推到数据管线末端,可扩展性远超依赖大规模指令标注的 VLA 路线(SIMA/OpenVLA 等)。</p>
+  </div>
+  <div class="card">
+    <h4>③ Hybrid Thinking 端到端混合推理</h4>
+    <p>区别于「分层双模型」(Hi Robot/GR00T/Helix)与「每步 ReAct」(Cradle/Voyager),单模型自主决定何时显式思考——推理既是反思也是规划,同时天然形成长时记忆。</p>
+  </div>
+</div>
+
+<div class="note">⚠️ 「Open recipe」的准确含义:开放的是<b>论文级配方</b>——完整方法论、超参表(Table 3)、延迟分解(Table 4)、benchmark 任务定义与 prompt 模板(Appendix 13/14)。<b>没有开源代码仓库</b>,模型权重与数据集截至调研日均未见公开发布(项目主页与 GitHub 均无 repo 链接)【待核实:后续是否放出权重/数据】。</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>此前范式的具体失败模式(§2 Related Work 归纳)</h3>
+<table>
+<thead><tr><th>范式</th><th>代表</th><th>具体失败模式</th></tr></thead>
+<tbody>
+<tr><td><b>封闭环境 RL</b></td><td>DQN / AlphaStar / OpenAI Five</td><td>依赖 API 暴露内部状态与奖励;单目标 shaped reward;感知-然后-动作范式,策略从头训导致抽象弱、迁移差、语言 grounding 缺失</td></tr>
+<tr><td><b>Prompt-based agent</b></td><td>Voyager / Cradle / Claude Plays Pokémon</td><td>高层推理强但低层动作不精确、细粒度视觉识别差;代码格式动作冗长低效;推理慢(GUI agent 单动作数秒),达不到实时交互频率</td></tr>
+<tr><td><b>VLA 模型</b></td><td>RT-2 / OpenVLA / π0 / SIMA</td><td>指令跟随与泛化好,但任务时域仅秒~分钟级;依赖大规模人工标注指令/推理数据,「留下持续扩展的风险」;纯反应式单步观测,suffers partial observability</td></tr>
+<tr><td><b>分层 VLA</b></td><td>Hi Robot / GR00T N1 / Helix</td><td>高频低层模型 + 低频高层推理模型,两阶段联合优化因非平稳性难以稳定(§2 Reasoning 引 hutsebaut2022)</td></tr>
+</tbody>
+</table>
+
+<h3>作者归纳的六大挑战(§1)</h3>
+<div class="grid-2">
+  <div class="card"><h4>Scalable Environments</h4><p>环境要丰富、可组合、可复现且可规模化——商业游戏内容最丰富但闭源无 API。</p></div>
+  <div class="card"><h4>Multimodal Perception</h4><p>融合 3D 具身视觉、2D GUI、文本,构建对世界与自身状态的可行动理解。</p></div>
+  <div class="card"><h4>High-Level Planning</h4><p>自我激励的长时域计划,随环境动态演化,具备反思与自我修正。</p></div>
+  <div class="card"><h4>Low-Level Control</h4><p>把抽象意图落地为精确可执行动作,跨 embodiment 一致。</p></div>
+  <div class="card"><h4>Memory</h4><p>多时间尺度的经验保持与利用,支撑一致探索与测试时自适应。</p></div>
+  <div class="card"><h4>Real-Time Inference</h4><p>严格延迟约束下平衡「计算性深思」与「及时响应」;动作异步执行、环境不冻结。</p></div>
+</div>
+
+<div class="callout key">
+<b>关键洞察:</b>键鼠操作天然是<b>有语义的离散符号</b>,VLM 的语言空间无需改架构、改词表就能表达它们。而开放世界的「高难度」本质是数据问题而非算法问题——商业游戏的内容密度与自然课程(新手引导→主线递进)就是现成的学习课程。所以路线定为「商业游戏 + 类人接口 + 大规模模仿」:环境不可 API 化没关系,人怎么玩,AI 就怎么学。
+</div>
+
+<h3>为什么选原神(§3)</h3>
+<ul>
+<li><b>闭源无 API</b>——只能像素进/键鼠出,恰好符合通用范式;GPU 渲染限制千级并行 rollout,RL 难做,反衬模仿学习的必要性(§3 末尾)。</li>
+<li><b>任务时域极端</b>:主线数百小时内容,远超传统 benchmark 的分钟级任务。</li>
+<li><b>玩法全谱</b>:3D 探索(跑/跳/爬/滑翔/游泳/潜水)、实时战斗、导航、秘境、NPC 对话、养成、采集合成,外加 2D GUI(菜单/背包/地图/烹饪)——一个环境覆盖 3D+2D 双形态交互。</li>
+<li><b>谜题密集</b>:元素方碑、压力板、限时挑战,检验观察、逻辑与精细操作的综合(§3 Rich Puzzles)。</li>
+<li><b>新手引导完善 + 玩家基数大</b>:前者提供自然课程,后者让大规模人类数据采集与标注可行(§3 Comprehensive Guidance / Large Population Base)。</li>
+</ul>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+
+<h3>输入 / 输出定义</h3>
+<table>
+<thead><tr><th>项</th><th>定义</th><th>出处</th></tr></thead>
+<tbody>
+<tr><td>观测 $o_t$</td><td>游戏画面单帧,resize 到 <b>1280×720</b>;每 <b>200 ms</b> 一帧(5 Hz)——对齐人类 200–250 ms 视觉反应时间,同时避免错过关键时机事件</td><td>§4 Observation Space</td></tr>
+<tr><td>历史上下文</td><td>过去推理 $r_{&lt;t}$、动作 $a_{&lt;t}$,以多轮对话形式与视觉输入交错;滑动窗口上限 20 步</td><td>§4 / §6.1</td></tr>
+<tr><td>推理 $r_t$</td><td>第一人称内心独白,由 <code>&lt;|thought_start|&gt;</code>/<code>&lt;|thought_end|&gt;</code> 包裹;可缺席($r_t = \varnothing$)</td><td>§4 Hybrid Thinking</td></tr>
+<tr><td>动作 $a_t$</td><td>一个 200 ms 窗口 = 1 次鼠标位移 + 6 个 33 ms 按键 chunk(§4 详解)</td><td>§4 键鼠建模</td></tr>
+</tbody>
+</table>
+
+<h3>符号表</h3>
+<table>
+<thead><tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr></thead>
+<tbody>
+<tr><td>$o_{\le t}$</td><td>历史视觉观测序列</td><td>最多 20 帧,1280×720×3</td></tr>
+<tr><td>$r_t$</td><td>第 $t$ 步显式推理(内心独白)</td><td>文本,平均 37.4±11.7 token(§5.3)</td></tr>
+<tr><td>$a_t$</td><td>第 $t$ 步动作序列</td><td>$\Delta X,\Delta Y \in (-1000,1000)$,$\Delta Z \in [-5,5]$,$K_1..K_6$ 每个 0–4 键</td></tr>
+<tr><td>$\pi_\theta$</td><td>策略 = Qwen2-VL-7B-Base 微调</td><td>7B 参数(ViT + LLM)</td></tr>
+<tr><td>$\Lambda$</td><td>推理调用模式(Table 1 记号 Adaptive Λ)</td><td>按需触发,推理轨迹平均间隔 3.2 s(§5.3)</td></tr>
+</tbody>
+</table>
+
+<p>模型联合分布被分解为「先决定是否思考、再生思考内容、最后出动作」的链式因子:</p>
+
+<div class="equation">$$\pi_\theta(a_t, r_t \mid o_{\le t}, r_{<t}, a_{<t}) \;=\; \pi_\theta(a_t \mid o_{\le t}, r_{\le t}, a_{<t}) \;\cdot\; \pi_\theta(r_t \mid o_{\le t}, r_{<t}, a_{<t}) \qquad \text{(式 1,论文 §4)}$$<span class="tag">式 1</span></div>
+
+<p>这个因子化有双重含义:① <b>机制上</b>,显式推理是动作生成的「显式潜在结构」,把反思与规划注入上下文;② <b>效率上</b>,$r_t=\varnothing$ 的步跳过推理 token 生成,只需解码动作序列(约 20 token)——这是 hybrid thinking 省算力的来源,也是「Adaptive Λ」相对于每步 ReAct 的本质区别。</p>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2511.08892v1/x3.png" alt="Lumine model overview" loading="lazy" style="max-width:100%;border-radius:10px;border:1px solid var(--border)">
+  <div class="caption"><b>图 2(论文 Fig.3)</b> Lumine 模型总览:VLM 底座接收像素输入与历史上下文(先前动作与推理),输出文本键鼠动作;混合推理策略只在必要时生成新的推理步,否则直接产出动作以保障实时控制。</div>
+</div>
+
+<h3>总体数据流图</h3>
+<div class="mermaid">
+flowchart TD
+    SCR["屏幕截图 1280×720<br/>每 200ms 一帧"] --> JPG["JPEG 压缩 + Base64<br/>经持久 TCP 发往推理服务器"]
+    JPG --> VIT["Qwen2-VL ViT 编码<br/>1196 视觉 token / 帧"]
+    VIT --> CTX["上下文组装<br/>系统提示 + 最近推理(长时记忆)<br/>+ ≤20 帧 图像-动作对(短时记忆)"]
+    CTX --> DECIDE{"hybrid thinking<br/>是否进入思考模式?"}
+    DECIDE -- "关键转折:<br/>环境突变/任务完成/卡死>100步" --> THINK["生成内心独白 r_t<br/>平均 37 token<br/>反思过去 + 规划未来"]
+    DECIDE -- "常规操作" --> ACT
+    THINK --> ACT["动作生成 a_t<br/>&lt;|action_start|&gt; ΔX ΔY ΔZ ; K1;…;K6"]
+    ACT -- "流式输出:<br/>chunk(分号)完结即执行" --> EXEC["解析为键鼠事件<br/>6 chunks × 33ms = 200ms"]
+    EXEC --> GAME["游戏继续运行(异步不冻结)"]
+    GAME --> SCR
+    style SCR fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style DECIDE fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style THINK fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style ACT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<p>系统是「本地 Windows 主机跑游戏客户端 + 远程推理服务器」的两机架构,网络通信(§6.2)。吞吐设计围绕一个硬指标:<b>常规步(无推理)首 chunk 延迟 113.9 ms,远低于 200 ms 周期</b>(Table 4)。训练用 VeOmni 框架(§5.4,动态 batch packing 到目标序列长)。</p>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>观测与动作空间:键鼠的语言化建模</h2>
+
+<p>这是 Lumine 相对 Cradle / JAVIS-VLA / CombatVLA 最核心的设计差异。作者批评两类现有做法(§4 Keyboard and Mouse Modelling):① 机器人 VLA 引入额外动作头(RT-2/π0)或重定义词表(RT-1/JAVIS),丢掉了键鼠操作的天然语义;② 游戏与 GUI agent 把动作写成代码格式(Cradle 的 <code>turn(degree)</code>、<code>attack()</code>),高频交互下冗长低效。GUI agent 还普遍忽略<b>鼠标移动轨迹</b>(绝对坐标传送光标)与<b>按键状态</b>(只有 press/type,无 down/up/hold 区分)——游戏里这是致命的:3D 游戏相机由相对位移驱动,轨迹本身可能有语义;按住 W 冲刺与轻点 W 是不同动作。</p>
+
+<h3>动作格式(五件套①:结构定义)</h3>
+
+<div class="equation">$$\underbrace{\Delta X\ \Delta Y\ \Delta Z}_{\text{鼠标位移}}\ ;\ \underbrace{K_1;K_2;K_3;K_4;K_5;K_6}_{\text{按键 chunks(各 33ms)}} \qquad \text{(论文 §4)}$$<span class="tag">式 2</span></div>
+
+<table>
+<thead><tr><th>分量</th><th>定义</th><th>取值 / 形状</th><th>设计依据</th></tr></thead>
+<tbody>
+<tr><td>鼠标位移 $\Delta X,\Delta Y$</td><td><b>相对位移</b>整数对</td><td>各 ∈ (−1000, 1000)</td><td>3D 相机由相对位移驱动;离散化让 LLM 可自回归生成</td></tr>
+<tr><td>滚轮 $\Delta Z$</td><td>滚动步数</td><td>整数 ∈ [−5, 5]</td><td>武器切换等滚轮操作</td></tr>
+<tr><td>按键 chunk $K_i$</td><td>33 ms 内按下的键集合(键盘+鼠标键),<b>0–4 个键</b></td><td>6 chunks/步 × 33 ms = 200 ms → <b>30 Hz</b></td><td>实测 keyup–keydown 最小间隔 ≈40 ms,键间间隔(keydown+keyup)下限 ≈60 ms [dhakal2018],33 ms 粒度足以忠实复现玩家操作</td></tr>
+<tr><td>跨 chunk 键保持</td><td>相邻 chunk 重复出现的键保持按下,不重复触发;未列出的键自动释放</td><td>—</td><td>自然表达长按(W 冲刺)、组合键、点射</td></tr>
+<tr><td>token 化</td><td>每键单 token,分号为 chunk 终止符</td><td>典型动作 ≈20 token</td><td>零架构/词表修改;分号还是 speculative decoding 的 draft token(§6.2)</td></tr>
+</tbody>
+</table>
+
+<p><b>真实动作实例</b>(论文原文 §4):<code>"92 0 0 ; Shift W ; Shift W ; Shift W ; F W ; F W ; F"</code> ——鼠标右转 92 单位 + Shift+W 冲刺奔向宝箱,到位后停移、按 F 开箱。</p>
+
+<h3>五件套②:前向流程</h3>
+<ol>
+<li>接收当前帧 $o_t$(720p)与上下文:系统提示 + 最近推理 + ≤20 帧 图像-动作多轮对话。</li>
+<li>首个输出 token 二选一:<code>&lt;|thought_start|&gt;</code> → 思考模式先生成内心独白;或 <code>&lt;|action_start|&gt;</code> → 直接出动作(Table 2)。</li>
+<li>(若思考)<code>&lt;|thought_end|&gt;</code> 收尾后再输出 <code>&lt;|action_start|&gt;</code>。</li>
+<li>自回归生成动作串 <code>ΔX ΔY ΔZ ; K1 ; … ; K6</code>(约 20 token);每个分号完结的 chunk 被<b>流式解析并立即执行</b>(首 chunk 须 33 ms 内产出)。</li>
+<li>200 ms 后下一帧到达,循环。全程温度 1、top_p 1(§6.1)。</li>
+</ol>
+
+<p><b>五件套③(模块内 Mermaid):</b>单步内 6-chunk 结构如下。</p>
+
+<div class="mermaid">
+flowchart LR
+    subgraph ONE_STEP["一个动作步 t(200ms): 右转冲刺开箱"]
+        A["&lt;|action_start|&gt;"] --> M["92 0 0<br/>ΔX=92 ΔY=0 ΔZ=0<br/>相机右转"]
+        M --> C1["; Shift W"]
+        C1 --> C2["; Shift W"]
+        C2 --> C3["; Shift W<br/>(键保持=持续冲刺)"]
+        C3 --> C4["; F W"]
+        C4 --> C5["; F W"]
+        C5 --> C6["; F<br/>(按 F 交互)"]
+        C6 --> E["&lt;|action_end|&gt;"]
+    end
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style M fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+    style C1 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style C6 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style E fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+
+<p><b>五件套④(监督信号):</b>无独立损失,与三阶段训练共享下一 token 预测损失(§5);动作 chunk 设计与机器人 VLA 的 action chunking [zhao2023learning/ACT] 同源——降自回归步数、保时间一致性——但这里 chunk 是<b>语义单位</b>(33ms 键集合)而非 4 维连续向量。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>数据管线与三阶段训练配方</h2>
+
+<p>整个配方最值得学习的是<b>数据分层</b>:越贵的标注用得越少,越便宜的数据用得越多。</p>
+
+<div class="figure">
+  <img src="https://arxiv.org/html/2511.08892v1/x5.png" alt="数据管线" loading="lazy" style="max-width:100%;border-radius:10px;border:1px solid var(--border)">
+  <div class="caption"><b>图 3(论文 Fig.5)</b> 数据管线:2424h 原始录像 → 规则过滤 → 1731h 预训练;165h 人工标注训练 Qwen2-VL-2B 分类器 → 全量自动打标 → GPT-4.1 生成指令 + 校验 → 200h 指令数据;27 段主线视频人工标注内心独白 → 15h 推理数据(15K 条推理轨迹)。</div>
+</div>
+
+<h3>阶段一:预训练 → Lumine-Base(§5.1)</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>数据:2424h → 1731h</h4>
+    <p>承包商从全新账号起玩,通蒙德主线 + 80% 地图探索度,人均约 30h(§5 Raw Data)。规则过滤去掉 <b>95% 空闲动作</b>(noop)与镜头抖动片段,留 1731h。仅「图像-动作对」,无语言标注。</p>
+  </div>
+  <div class="card">
+    <h4>设计动机</h4>
+    <p>① 人工标注贵且不可扩展,VLM 自动打标因缺长时域理解而不可靠;② 开放世界玩家大量「无目的游走」难标注,但不规整行为恰是增强鲁棒性的 corner case。混入 ~20% 多模态网页数据保住底座的语言/推理能力,另留少量指令数据供评测(§5.1)。</p>
+  </div>
+</div>
+
+<h3>阶段二:指令跟随 → Lumine-Instruct(§5.2)</h3>
+<p>采用 <b>label-then-augment</b>(先标注后扩增)策略,把大 VLM 的泛化能力迁移进动作域:</p>
+<ol>
+<li><b>人工标注 165h</b>:标注员在 20 秒视频片段内标出 38 类预定义活动的起止时间;用这些数据微调 <b>Qwen2-VL-2B 分类器</b>,再对全部原始数据自动打标。</li>
+<li><b>找转换点</b>:观察发现 Lumine-Base 会本能地与附近物体/NPC/敌人交互,但难以「打破行为惯性」(如导航到指定地点)——这正是语言指令的价值所在。于是取分类器标签发生变化的相邻片段<b>转换点</b>,围绕转换点抽 20 帧(4s)片段。</li>
+<li><b>GPT-4.1 生成 + 校验</b>:基于标签类别生成多样化、上下文感知的指令;GPT-4.1 同时充当校验器,丢弃标签与画面不一致的样本。</li>
+<li>应用与预训练相同的动作过滤后得 <b>200h</b> 高质量指令数据,以与预训练相同的比例混入多模态网页数据,并保留少量纯动作数据保行为多样性。</li>
+</ol>
+
+<h3>阶段三:推理 → Lumine-Thinking(§5.3)</h3>
+<ul>
+<li>选<b>蒙德主线第一幕</b>(Prologue: Act I - The Outlander Who Caught the Wind)为试验田,从原始数据中抽 27 段玩家做该任务的视频。</li>
+<li>标注员看连续 10 秒片段,在<b>帧级</b>标出关键决策点,撰写第一人称内心独白,要求简洁准确地说明动作背后的理由。</li>
+<li>产出 <b>15h 游戏时长、15K 条推理轨迹</b>,相邻推理平均间隔 3.2 s,每条平均 37.4±11.7 token。</li>
+<li><b>不做动作过滤</b>——刻意对齐真实推理场景,让模型学会在关键决策点「等待」。</li>
+</ul>
+
+<div class="callout tip">
+<b>注意数据规模的递减节奏:</b>1731h → 200h → 15h,每层缩小约一个数量级。15h 推理数据就足以让模型获得 hybrid thinking 能力,说明推理行为是「低频开关 + 简短独白」的浅层模式,学习成本远低于动作原语本身。这也是整个配方工程上最便宜的一环。
+</div>
+
+<h3>训练超参与资源账(五件套⑤:论文 Table 3 全量转录)</h3>
+<table>
+<thead><tr><th>超参</th><th>非历史·预训练</th><th>非历史·指令</th><th>非历史·推理</th><th>历史·预训练</th><th>历史·指令</th><th>历史·推理</th></tr></thead>
+<tbody>
+<tr><td>LLM 学习率</td><td>2e-5</td><td>2e-5</td><td>1.83e-5</td><td>2e-5</td><td>2e-5</td><td>1.64e-5</td></tr>
+<tr><td>ViT 学习率</td><td>7e-6</td><td>7e-6</td><td>—(冻结)</td><td>7e-6</td><td>7e-6</td><td>—(冻结)</td></tr>
+<tr><td>LR Scheduler</td><td>Constant</td><td>Cosine</td><td>Cosine</td><td>Constant</td><td>Cosine</td><td>Cosine</td></tr>
+<tr><td>Gradient Norm Clip</td><td colspan="6">1.0(全部)</td></tr>
+<tr><td>Optimizer</td><td colspan="6">AdamW(β₁=0.9, β₂=0.95, ε=1e-8);Warm-up Ratio 0.05</td></tr>
+<tr><td>Batch Packing Length</td><td colspan="6">32768(VeOmni 动态打包)</td></tr>
+<tr><td>Batch Size</td><td>128</td><td>128</td><td>64</td><td>128</td><td>128</td><td>64</td></tr>
+<tr><td>Epochs</td><td>1</td><td>2</td><td>3</td><td>3</td><td>3</td><td>3</td></tr>
+<tr><td>GPU(H100)</td><td>64</td><td>32</td><td>64</td><td>64</td><td>32</td><td>64</td></tr>
+<tr class="best"><td>训练时长</td><td>3.5 天</td><td>1.3 天</td><td>1 小时</td><td>12.4 天</td><td>2.2 天</td><td>1 小时</td></tr>
+<tr class="best"><td>GPU-hours</td><td>5376</td><td>960</td><td>64</td><td>19008</td><td>1664</td><td>64</td></tr>
+</tbody>
+</table>
+
+<p>历史 setting(history)下每样本为 20 组图像-动作交错对,类似 VLM 多轮对话;非历史(non-history)下单帧单样本。非历史 setting 在第 2 个 epoch 后过拟合,历史 setting 多个 epoch 仍能提升(§5.4)。总资源账:两条 setting 合计约 <b>27,136 H100 GPU-hours</b>(= 5376+960+64+19008+1664+64),换算约 28 天 × 64 卡。</p>
+</section>
+
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>推理系统:上下文管理与 25.3× 实时优化</h2>
+
+<h3>上下文管理 = 记忆机制(§6.1)</h3>
+<p>Lumine 不引入任何专用记忆模块,用「context as memory」:滑动窗口 FIFO 保存最多 20 个图像-动作对作<b>短时记忆</b>(4 秒);<b>最近一条推理</b>保留在上下文头部作<b>长时记忆</b>(反思总结 + 未来计划)。窗口超限时丢弃最旧的图像-动作对,系统提示与推理保留;生成新推理时,整个上下文被清空并从该点重新累积。</p>
+
+<div class="mermaid">
+flowchart LR
+    subgraph CTX["推理时上下文结构"]
+        SP["System Prompt<br/>(attention sink)"] --> PR["上一条推理 r<br/>(长时记忆:<br/>反思+计划)"]
+        PR --> P1["图像-动作对 t-19"]
+        P1 --> P2["……"]
+        P2 --> P3["图像-动作对 t-1"]
+        P3 --> P4["当前帧 t"]
+    end
+    P4 --> NEW["新推理生成<br/>↓ 上下文清空重累积"]
+    style SP fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style PR fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style NEW fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>实时优化(§6.2):25.3× 端到端加速</h3>
+<p>200 ms 周期内必须完成:截图 → 网络传输 → 推理 → 解析执行。优化分四层:</p>
+
+<table>
+<thead><tr><th>层</th><th>技术</th><th>要点</th></tr></thead>
+<tbody>
+<tr><td><b>通信</b></td><td>流式输出 + JPEG/Base64 + 持久 TCP</td><td>动作串按分号切成 6 个 chunk,<b>每完成一个 chunk 立即执行</b>不等全串——时序约束从 200 ms 放宽到「单 chunk 33 ms 内产出」</td></tr>
+<tr><td><b>Prefill</b></td><td>KV cache 复用 + StreamingLLM</td><td>历史窗口滚动时用 StreamingLLM 最大化 KV 复用;attention sink 锚定系统提示防注意力崩塌。论文发现 StreamingLLM 在长任务上有性能退化,被「新推理出现即清空上下文」的策略有效缓解</td></tr>
+<tr><td><b>Decoding</b></td><td>无 draft 模型的 speculative decoding</td><td>利用动作格式中<b>固定分隔符</b>:ΔX ΔY 以空格结尾,ΔZ/K1..K5 以分号结尾,K6 以 &lt;|action_end|&gt; 结尾。状态机跟踪当前阶段,把对应分隔符当 draft token,标准 reject sampling 保证分布一致</td></tr>
+<tr><td><b>Infra</b></td><td>TP=4 + W8A8 量化 + kernel/图优化</td><td>Qwen2-VL-7B 只有 <b>4 个 KV head</b>,恰好 4×H20 每卡一个 KV head(TP=4);SmoothQuant W8A8 量化 ViT 与 prefill;GEMM kernel 搜索调优 + one-shot all-reduce 自定义 kernel;speculative decoding 下用单个 CUDA graph 融合前向与拒绝采样;图像预处理 offload 到 GPU</td></tr>
+</tbody>
+</table>
+
+<h3>延迟账本(论文 Table 4 完整转录)</h3>
+<table>
+<thead><tr><th>阶段</th><th>时间 (ms)</th><th>Token</th><th>Forward Step</th></tr></thead>
+<tbody>
+<tr><td>网络延迟</td><td>6</td><td>—</td><td>—</td></tr>
+<tr><td>预处理</td><td>6.8</td><td>—</td><td>—</td></tr>
+<tr><td>视觉编码器</td><td>39</td><td>1196</td><td>1</td></tr>
+<tr><td>LLM prefill</td><td>52</td><td>1209</td><td>1</td></tr>
+<tr><td>解码 / token</td><td>3.1</td><td>1</td><td>—</td></tr>
+<tr class="best"><td>首 chunk(无推理)</td><td><b>113.9</b></td><td>8.4</td><td>4.7</td></tr>
+<tr><td>首 chunk(带推理)</td><td>234.0</td><td>46.8</td><td>43.1</td></tr>
+<tr><td>action chunk(平均)</td><td>3.1</td><td>1.8</td><td>1.02</td></tr>
+<tr><td>action chunk(最大)</td><td>12.4</td><td>5</td><td>4</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>读数:</b>常规步 113.9 ms ≪ 200 ms 预算,富余 86 ms;最坏 chunk 12.4 ms ≪ 33 ms。带推理的步 234 ms 会超 200 ms 预算造成短暂空转,但推理事件低频(平均 3.2 s 一次),实测无可见卡顿——这正是 hybrid thinking 存在的合理性证明。遗留问题:<b>感知的永远是 200 ms 前的画面</b>(异步),高时效场景有副作用;非历史模型受此影响严重(见 §8.3.1)。
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>Benchmark 设计(§7)</h2>
+
+<p>141 个语言条件任务,4 大类 × 3 难度(simple / hard / unseen)。评测全部人工判定,每任务跑 5 次。所有 agent 用相同初始条件:四初始角色(Traveler/Amber/Kaeya/Lisa)20 级默认武器 World Level 1;unseen 任务 40 级。</p>
+
+<table>
+<thead><tr><th>类别</th><th>simple(≤10s,战斗≤2min)</th><th>hard</th><th>unseen(OOD)</th></tr></thead>
+<tbody>
+<tr><td><b>Collection</b></td><td>拾取地面可见物(果子/植物/宝箱)</td><td>垂直/空中目标、有干扰物、目标时隐时现</td><td>璃月/稻妻新物品</td></tr>
+<tr><td><b>Combat</b></td><td>击败简单敌人组开宝箱</td><td>精英怪(Ruin Guard 等)、地形限制</td><td>未见过的敌人攻击模式</td></tr>
+<tr><td><b>NPC Interaction</b></td><td>人群里找指定 NPC 对话</td><td>多干扰 NPC、复杂对话链</td><td>新 NPC(靠头顶名字识别)</td></tr>
+<tr><td><b>Puzzle</b></td><td>单步机关(元素方碑)</td><td>多步解谜、限时挑战</td><td>—(该类不设 unseen,依赖区域机制)</td></tr>
+</tbody>
+</table>
+
+<p><b>Baseline 集成方式(值得注意的公平性设计):</b>对比 GPT-5、Gemini 2.5 Pro、Grok4、Doubao-1.6-Vision、Qwen3-VL-235B-A22B-Thinking 五个 SOTA VLM,全部挂进 <b>Cradle 框架</b>(§7 Baselines)——提供代码格式技能库(<code>turn(degree)</code>/<code>move_forward(duration)</code>/<code>attack()</code>),保留最近 5 步历史(经验最优)。也就是说:闭源大模型得到的是「技能库 + 历史窗口」的加持,而 Lumine 是端到端像素到动作。API 响应最长达 30 秒,故基线评测时<b>暂停游戏</b>(沿 Cradle 设定)——Lumine 则全程真实时。</p>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>实验结果</h2>
+
+<h3>8.1 Scaling 与能力涌现(§8.1,Figure 9)</h3>
+<ul>
+<li><b>2B vs 7B 分歧点在 1200h</b>:1200h 数据前两模型 loss 降、benchmark 升;过了 1200h,2B loss 继续降但 benchmark 开始<b>退化</b>(容量不足),7B 两者同升 → 选 7B,并预示继续 scaling 仍有收益。</li>
+<li><b>能力涌现的四个台阶</b>(7B 原子能力按 5 分制人工评分):</li>
+</ul>
+<table>
+<thead><tr><th>数据规模</th><th>涌现能力</th><th>表现</th></tr></thead>
+<tbody>
+<tr><td>&lt; 100h</td><td>即时交互</td><td>稳定拾取近处资源、按 F 与 NPC 交互</td></tr>
+<tr><td>~1,000h</td><td>扩展交互</td><td>切人连招、对高处的敌人远程攻击;GUI 上移动光标选对话选项、点关闭按钮、复活确认</td></tr>
+<tr><td>&gt; 1,800h</td><td>游戏机制</td><td>识别解谜元素并合理反应(但种类稀疏+繁多,难以完整通关)</td></tr>
+<tr><td>&gt; 1,800h</td><td>导航</td><td>沿路走、避障、悬崖边停、坠落开风之翼、跟任务标记;仍有犹豫与体力管理不当</td></tr>
+</tbody>
+</table>
+
+<h3>8.2 指令跟随(§8.2)</h3>
+<ul>
+<li><b>simple 任务</b>:Lumine-Instruct-NonHis 四类全部 &gt;80% 成功率,比 base 提升 61%;战斗类翻倍,NPC/解谜 +50% 以上,采集 +23%(Figure 10)。<b>所有闭源 SOTA 基线被大幅超越</b>。</li>
+<li><b>hard 任务</b>:NPC 交互保持稳健(多干扰 NPC 仍能锁定);战斗受机制理解与闪避限制——对<b>Eye of the Storm</b>(悬浮敌)成功率为 0:正确切了弓箭手 Amber 但移动靶瞄准效率低、闪避迟缓;解谜跌幅最大(综合能力要求最高)。</li>
+<li><b>unseen 任务</b>:NPC 交互与域内相当(新 NPC 可靠头顶名字识别);采集中等下降(新收集物只能靠外观辨认,需靠近到显示名字才能确认);战斗下降(新敌人攻击模式)。</li>
+<li><b>预训练消融</b>(Figure 11):只用指令数据训练(跳过预训练)整体更差,但 <b>NPC 交互反而略好</b>——因为预训练数据里大量轨迹只是路过 NPC 不交互,指令数据缓解了这一偏置。</li>
+<li><b>历史窗口消融</b>(Figure 14):多帧历史全面优于单帧;<b>10 帧最优,20 帧反而回落</b>——归因于动作过滤后数据段通常 &lt;20 帧,长依赖难学。历史模型在采集与解谜上优势最明显(Figure 15)。</li>
+<li><b>In-context learning</b>(Figure 13):指令里给先验信息或任务分解,能完成此前 0 成功率的复杂任务(如「爬上右侧石柱到最高处,收集左侧空中风神瞳」)。</li>
+</ul>
+
+<h3>8.3 长任务:蒙德主线(§8.3.1,Table 5 全量转录)</h3>
+<p>任务:Prologue Act I《捕风的异乡人》,全新账号从零开始,分 5 个子任务,每任务跑 3 次:</p>
+<table>
+<thead><tr><th>模型</th><th>Overall</th><th>Task1</th><th>Task2</th><th>Task3</th><th>Task4</th><th>Task5</th></tr></thead>
+<tbody>
+<tr><td>Lumine-Instruct-NonHis</td><td class="fail">6.6%</td><td>0/3</td><td>0/3</td><td>0/3</td><td>1/3</td><td>0/3</td></tr>
+<tr><td>Lumine-Thinking-NonHis</td><td>53.4%</td><td>1/3</td><td>2/3</td><td>2/3</td><td>2/3</td><td>1/3</td></tr>
+<tr><td>Lumine-Instruct</td><td>66.8%</td><td>2/3</td><td>3/3</td><td>2/3</td><td>2/3</td><td>1/3</td></tr>
+<tr class="best"><td>Lumine-Thinking</td><td><b>93.4%</b></td><td>3/3</td><td>2/3</td><td>3/3</td><td>3/3</td><td>3/3</td></tr>
+</tbody>
+</table>
+
+<ul>
+<li>Instruct 模型失败主因:中途被解谜/敌人<b>分心后迷失主线</b>,在大世界里游荡无法恢复。</li>
+<li>Thinking 模型唯一失败(Task 2):去骑士团总部途中坠台,未及时生成中间推理调出任务引导,在城里游荡到超时。</li>
+<li><b>效率</b>:Lumine-Thinking 用 <b>56 分钟</b>通关;新手平均 78 分钟;专家(一周内玩过同段剧情)平均 53 分钟。</li>
+<li><b>历史 setting 在真实时下的关键价值</b>:非历史模型受 200 ms 异步延迟影响——想移鼠标到目标点,看到的却是执行前的画面,误以为没移够再移一次,<b>过冲</b>,GUI 精确点击困难;历史模型上下文里有先前动作与轨迹,几乎不受影响。转向导航同理。</li>
+<li><b>推理质量</b>(Figure 18):全程历史模型生成 593 条推理、错误率 8.8%;非历史 708 条、14.0%。推理在 NPC/GUI/常规导航/战斗上精确,在陌生机制与解谜上不可靠,靠低层操作兜底。</li>
+</ul>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>零样本泛化:推理 OOD 与跨游戏(§8.3.2)</h2>
+
+<h3>推理 OOD:蒙德 Act II+III 与璃月</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Act II+III(预训练有、推理数据无)</h4>
+    <p>连续通关 4.7 h(专家人类平均 3.6 h)。期间还会顺手解谜、开怪守宝箱、收集神瞳。机制泛化案例:Act II 秘境里的<b>浮动石台</b>与 Act I Lisa 秘境机制相同但布局背景完全不同,Lumine 仍认出并推理「等平台移动再前进」(Figure 20)。</p>
+  </div>
+  <div class="card">
+    <h4>璃月(完全 OOD)</h4>
+    <p>从蒙德徒步到璃月港(躲千岩军追捕、上二楼找公子)首小时效率与域内相当;甚至翻山越岭找到了深山中的仙人居所。中途一次幻觉误取消任务追踪,重新激活时左键+鼠标位移被游戏判定为拖拽,模型却自信已激活并关菜单,<b>无目的游荡约 2 小时</b>后才恢复。</p>
+  </div>
+</div>
+
+<h3>跨游戏(零样本,零 prompt 修改)</h3>
+<table>
+<thead><tr><th>游戏</th><th>类型差异</th><th>结果</th><th>主要失败模式</th></tr></thead>
+<tbody>
+<tr class="best"><td><b>鸣潮</b> Wuthering Waves</td><td>同为开放世界 ARPG,结构最接近</td><td>新手号从零完成前两个主线任务 <b>107 min</b>(人类新手平均 101 min);游戏发布晚于 Qwen2-VL 知识截止,排除底座先验</td><td>OCR 误读:把「按 F 交互」看成 E(触发技能导致卡顿);用原神术语命名鸣潮实体(丘丘人/旅行者/Amber)——人类玩家也常见</td></tr>
+<tr><td><b>星穹铁道</b> Honkai: Star Rail</td><td>回合制 RPG,hub 制地图,不能跳跃</td><td>7 h 通关第一章「今日是昨日之明日」+ 末日兽 Boss 战 + 模拟宇宙教程,并进入第二章(人类新手 4.7 h)</td><td>领域偏置:尝试跳过沟壑(原神可跳,星铁不行);回合制战斗键位映射冲突(Q/E 语义互换),按 E 选目标、空格确认大招等机制不理解,多次团灭后<b>主动调低难度</b>险胜最终 Boss</td></tr>
+<tr><td><b>黑神话:悟空</b> Black Myth: Wukong</td><td>写实画面,hub 制,类魂难度</td><td>仅展示基础导航与战斗能力,无法完成长任务</td><td>写实 UI 自动隐藏 → 误判为 CG 过场,输出 noop 干等;血条识别失败、不会回血,高难战斗不可持续</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>泛化梯度结论(论文自己总结):</b>游戏类型相似度越高迁移越好。导航、战斗、2D GUI 三类<b>元技能</b>可跨游戏迁移——单游戏训练即可获得,这直接支撑「游戏通用底座模型」的可行性主张。
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>错误模式分析</h2>
+
+<h3>指令跟随阶段错误分布(§8.2.2,Figure 16)</h3>
+<table>
+<thead><tr><th>错误类型</th><th>占比</th><th>典型表现</th><th>历史的影响</th></tr></thead>
+<tbody>
+<tr><td><b>多模态理解</b></td><td>≈一半(最大头)</td><td>检测不到目标(小物件与环境融合);错误判断「目标不在视野」后大角度转身,反而把可见目标转出视野</td><td>历史显著减少此类错误(动态追踪更强);但历史会让模型更偏时序一致性、牺牲单帧理解——<b>语言与视觉冲突</b>时(如 NPC 名字明明可见却选错人)无历史模型反而更少犯错</td></tr>
+<tr><td><b>指令遵循</b></td><td>第二</td><td>执行不一致:打完 3 个风史莱姆中的 2 个突然弃任务游荡;忽略细粒度限定(「捡左边那朵花」)</td><td>两类模型均有</td></tr>
+<tr><td><b>空间理解</b></td><td>第三</td><td>误判自身位置/距离;跳早了/跳晚了错过时机</td><td>—</td></tr>
+<tr><td><b>低层控制</b></td><td>最小</td><td>射击不稳定</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3>推理阶段错误分布(§8.3.1,Figure 18)</h3>
+<table>
+<thead><tr><th>错误类型</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><b>感知误报</b> Perceptual Misrepresentation(最高频)</td><td>描述画面中不存在的物体/场景,或误读角色状态(血量/体力)——对游戏环境的 situational understanding 不足</td></tr>
+<tr><td><b>过早完成</b> Premature Completion</td><td>幻觉「目标已达成」,并在错误前提上继续生成后续推理,<b>错误复合</b></td></tr>
+<tr><td><b>因果误判</b> Causal Misjudgment</td><td>错误相信某动作会达成目标——对游戏因果机制理解不完整</td></tr>
+<tr><td><b>自相矛盾</b> Self-Contradiction</td><td>如「我之前关掉了任务界面……所以我没有关任务界面」——底座逻辑推理能力局限</td></tr>
+<tr><td><b>言行不一</b> Instruction Unfollowing</td><td>生成的动作与自己刚说的推理对不上</td></tr>
+<tr><td><b>语言崩溃</b> Linguistic Collapse</td><td>仅非历史模型出现:输出不可读/不连贯——单帧推理认知负担更大</td></tr>
+</tbody>
+</table>
+
+<h3>长任务低效的五大因素(§8.3.1,论文列出的专家级差距归因)</h3>
+<ol>
+<li><b>不主动传送</b>:远距离也沿任务标记徒步——推理数据前 1 小时游戏里几乎没有传送模式(能力存在但触发不了)。</li>
+<li><b>小地图理解有限</b>:重度依赖金色任务标记;标记消失又没生成新推理时走错方向。</li>
+<li><b>不主动回血</b>:不会去七天神像回血/开背包吃食物——推理数据里同样缺这些模式。</li>
+<li><b>记忆有限</b>(20 帧 = 4 秒):多任务标记并行时来回摇摆;绕路中途被标记「吸」回起点(Figure 22)。</li>
+<li><b>战斗熟练度</b>:技能衔接、瞄准精度、闪避时机、机制理解均低于专家,多波次/Boss 战差距最明显。</li>
+</ol>
+
+<div class="callout warn">
+<b>注意第 1、3 条的共同点:</b>不是模型学不会,而是<b>推理数据(蒙德第一幕前 1 小时)里根本没出现过这些行为模式</b>。这是模仿学习的根本约束——数据分布之外的行为无法涌现,作者也直接以此为未来数据扩展的方向依据。
+</div>
+</section>
+
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>🔄 同类方法对比分析</h2>
+
+<h3>横向对比表(固定维度;含论文 Table 1 之外的方法)</h3>
+<table>
+<thead><tr><th>维度</th><th><b>Lumine</b></th><th>Cradle (2024)</th><th>SIMA (2024, DeepMind)</th><th>VPT (2022, OpenAI)</th><th>OpenVLA (2024)</th><th>Claude Plays Pokémon (2025)</th></tr></thead>
+<tbody>
+<tr><td>开放世界</td><td>✓ 商业 3D(原神)</td><td>✓ 商业 3D(荒野大镖客2等)</td><td>✓ 商业 3D(多个 commercial 游戏)</td><td>✓ Minecraft</td><td>✗(机器人操作)</td><td>✓ Pokémon(2D 回合制)</td></tr>
+<tr><td>任务时域</td><td class="best"><b>5 小时+</b>(蒙德全主线)</td><td>~1 小时(单任务)</td><td>10 秒级</td><td>20 分钟</td><td>秒~分钟级(操作序列)</td><td>全程通关(极慢速,远非实时)</td></tr>
+<tr><td>底座</td><td>Qwen2-VL-7B-Base(自训练)</td><td>GPT-4V/GPT-4o + 技能库</td><td>自研 VLM+自监督视频表征</td><td>IDM+VPT 自研(CBC 数据 2000h+)</td><td>Llama-2 7B + DINOv2 + 视觉指令微调</td><td>Claude 3.5/3.7(纯 prompt)</td></tr>
+<tr><td>监督信号</td><td>图像-动作模仿 + 200h 指令 + 15h 推理</td><td>无训练(纯 prompt)</td><td>大规模视频-动作模仿(带指令标注)</td><td>BC(逆动力学模型伪标签)</td><td>970k 机器人轨迹指令微调</td><td>无训练</td></tr>
+<tr><td>数据成本</td><td>2424h 原始(人工采集)+ 165h 标注 + 15h 推理标注</td><td>0(零训练)</td><td>大规模跨游戏数据【待核实:规模未公开细节】</td><td>~70k 小时视频(公开视频+伪标签)</td><td>Open X-Embodiment 子集</td><td>0</td></tr>
+<tr><td>实时性</td><td class="best"><b>真实时</b>(5Hz 感知/30Hz 动作,113.9ms 首响应)</td><td>✗ 单步数秒,评测时冻结游戏</td><td>✓(10Hz 级)</td><td>✓(Minecraft 帧率下)</td><td>✗(机器人节奏,非游戏实时)</td><td>✗ 每步数百 ms~秒级,数千小时游戏时长</td></tr>
+<tr><td>接口</td><td>键鼠全语义(down/up/hold/相对位移)</td><td>代码技能库(turn/attack...)</td><td>键鼠(简化)</td><td>键鼠(20 个离散动作 token)</td><td>7-DoF 机器人动作 token</td><td>模拟器按键(文本中介)</td></tr>
+<tr><td>推理方式</td><td class="best">端到端 hybrid thinking(自适应 Λ)</td><td>每步 LLM 反思(Stepwise)</td><td>✗</td><td>✗</td><td>✗</td><td>每步显式思考(Stepwise)</td></tr>
+<tr><td>开源</td><td>✗(论文级配方,无代码/权重)</td><td>✓ 代码</td><td>部分(模型未放)【待核实】</td><td>✓ 代码+权重</td><td>✓ 代码+权重</td><td>✗</td></tr>
+</tbody>
+</table>
+
+<h3>对比结论(机制原因,非罗列数字)</h3>
+<ul>
+<li><b>Lumine vs Cradle(同为商业 3D 开放世界,差异最大的一对)</b>:Cradle 的能力天花板由 prompt 侧决定——底层动作交给预写技能库,视觉识别交给通用 VLM,所以它永远做不好「技能库没覆盖」的精细操作,且每步 LLM 推理延迟让它在实时对抗中不可用(评测时必须暂停游戏)。Lumine 把动作原语内化到权重里(1731h 模仿),用 7B 模型 + 25.3× 推理优化换来真实时,换来的是 <b>5h 级任务的连续性</b>——这是 prompt 方案结构性达不到的。</li>
+<li><b>Lumine vs SIMA</b>:同为像素-键鼠端到端路线,SIMA 靠大规模跨游戏数据 + 指令标注换泛化,但任务时域只有 10 秒级;Lumine 用「无标注预训练 + 少量指令 + 少量推理」的三层配方,把同样的标注预算集中花在刀刃上,时域拉到小时级。两条路线本质分歧:<b>泛化靠数据广度还是靠任务深度</b>——Lumine 用跨游戏零样本结果给出了第三种答案(深度模仿也能产生广度)。</li>
+<li><b>Lumine vs VPT</b>:VPT 是「无标注视频模仿」的先例(逆动力学伪标签 7 万小时),但 Minecraft 动作空间小、节奏慢;Lumine 证明同样的思路在<b>高频、精细、商业级</b>环境里也成立,且加入 hybrid thinking 后解决了 VPT 完全不具备的长时域一致性。</li>
+<li><b>Lumine vs OpenVLA</b>:同为 7B VLA,OpenVLA 的 970k 指令标注轨迹是持续 scaling 的瓶颈;Lumine 的 1731h 无标注数据策略 + 15h 推理数据,直接回应了这个扩展性问题。但 OpenVLA 的连续控制精度是键鼠离散化牺牲掉的——机器人落地仍是 VLA 的主场。</li>
+<li><b>Lumine vs Claude Plays Pokémon</b>:后者证明纯 prompt 也能通关完整游戏,但速度极慢(数千小时游戏时长 vs Lumine 5h 主线 56 分钟),且每步数千 ms 的延迟使其只能玩回合制。两者共同确认了 hybrid thinking 的价值:显式推理是长任务一致性的关键,Lumine 用训练把它做成「按需触发」,Claude 用模型规模硬扛「每步触发」。</li>
+</ul>
+
+<h3>演进定位表</h3>
+<table>
+<thead><tr><th>范式</th><th>代表</th><th>核心先验</th><th>局限</th></tr></thead>
+<tbody>
+<tr><td>API RL</td><td>DQN → AlphaStar → OpenAI Five</td><td>可塑奖励 + 内部状态访问</td><td>封闭、单目标、无语言、不迁移</td></tr>
+<tr><td>视频模仿(无语言)</td><td>VPT → Lumine 预训练阶段</td><td>人类演示的分布即能力</td><td>无指令接地、长时域迷失</td></tr>
+<tr><td>Prompt 通用 agent</td><td>Voyager → Cradle → Claude Plays Pokémon</td><td>基础模型常识 + 工具/技能封装</td><td>低层不精、延迟高、成本高</td></tr>
+<tr><td>VLA(指令标注驱动)</td><td>RT-2 → OpenVLA → π0 → SIMA</td><td>大规模人工标注的指令-动作对齐</td><td>标注贵、时域短、scaling 受限</td></tr>
+<tr class="best"><td><b>分层/hybrid VLA(本文)</b></td><td><b>Lumine</b></td><td>无标注模仿打底 + 少量指令/推理分层解锁 + 推理系统协同设计</td><td>记忆仍浅(4s)、无在线学习、单游戏数据偏置</td></tr>
+</table>
+
+<p>库内交叉参照:与 <a href="CV-AI-20260625-Cosmos3.html">Cosmos 3</a>(世界模型路线)相对,世界模型走「学环境动力学→在想象空间里规划」,Lumine 走「直接学玩家行为」——前者吃仿真保真度,后者吃人类数据规模;两者是具身智能数据难题的两条互补出路。</p>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>🎯 应用场景与落地适配性</h2>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>游戏 QA / 自动化测试</h4>
+    <p>论文点名的第一应用(§9):主线逻辑矛盾检测、新手引导歧义发现、大规模可用性评测。7B 模型 + 4×H20 的部署成本对游戏厂商可接受,「像素进键鼠出」意味着不用改引擎、不用暴露接口。</p>
+  </div>
+  <div class="card">
+    <h4>AI 陪玩 / 直播互动</h4>
+    <p>项目主页已展示多小时直播级运行(蒙德二三幕 4h43m、璃月 7h16m 连跑)。跨游戏零样本让它可以「上号就能玩」。</p>
+  </div>
+  <div class="card">
+    <h4>GUI 自动化泛化</h4>
+    <p>原神菜单操作 = 2D GUI 操作;跨游戏迁移结果暗示该方法可扩展到办公软件/桌面自动化——与 Operator/UFO 等 GUI agent 直接竞争,但带相对鼠标与按键状态建模。</p>
+  </div>
+</div>
+
+<h3>落地账本</h3>
+<table>
+<thead><tr><th>项</th><th>数值</th><th>出处</th></tr></thead>
+<tbody>
+<tr><td>训练数据</td><td>2424h 人类游戏录像(承包商采集,人均 30h)+ 165h 人工标注 + GPT-4.1 调用</td><td>§5 / Appendix 10</td></tr>
+<tr><td>训练算力</td><td>两条 setting 合计 ≈27,136 H100 GPU-hours;单条(historical)≈20,736</td><td>Table 3</td></tr>
+<tr><td>推理硬件</td><td>4× NVIDIA H20(TP=4,W8A8)</td><td>§6.2</td></tr>
+<tr><td>推理延迟</td><td>首 chunk 113.9 ms(无推理)/ 234 ms(带推理);带外带宽极小(JPEG+Base64)</td><td>Table 4</td></tr>
+<tr><td>瓶颈</td><td>游戏侧一机一客户端(GPU 渲染限并行);评测靠人工判定;数据采集需真人小时级投入</td><td>§3 / §7</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<b>对本库主线(3D 数字人/重建 pipeline)的适配判断:</b>Lumine 与 vggt_human 的人脸/人体重建链路没有直接组件级交集——它不产出几何、不做 3D 表示,价值在<b>交互层</b>。可借鉴的三点:① 5Hz 感知 + 30Hz chunk 执行的<b>异步实时控制架构</b>,对数字人直播驱动/交互式 Avatar 有直接参考价值;② 「推理数据只占 0.6% 却解锁长时域一致性」的分层数据配方,适用于任何「底座模仿 + 语言接地」的 finetune 流程;③ 无 draft 模型 speculative decoding(利用固定分隔符)是零成本解码加速技巧,可移植到任何结构化输出场景。
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>可改进方向分析</h2>
+
+<h3>方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 长时记忆只有 4 秒,多目标场景系统性失灵</h4>
+<p><b>问题:</b>短时记忆 = 20 帧 = 4 秒;长时记忆只有「最近一条推理」。蒙德 Act II/III 里多任务标记并行时来回摇摆、绕路中途被标记吸回起点(§8.3.1 Figure 22),璃月 OOD 的 2 小时无目的游荡也是记忆失败的连锁反应(幻觉关菜单 → 无记录可恢复)。论文自己也承认这对数小时任务不够(§9 Long-Term Memory)。</p>
+<p><b>改进:</b>外部记忆库(任务状态机 / 关键帧索引检索)或周期性轨迹摘要自然语言化——Cradle 的经验表明摘要上下文对长任务有效,代价是额外延迟;或把「任务进度」作为结构化 token 常驻上下文。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[高优先级] 模仿学习的数据偏置直接固化成行为缺陷</h4>
+<p><b>问题:</b>「不主动传送」「不主动回血」两个专家级差距被论文明确归因于<b>推理数据(蒙德第一幕前 1 小时)中不存在这些模式</b>(§8.3.1);预训练数据「大量路过 NPC 不交互」的偏置甚至让 Instruct 模型在 NPC 任务上比无预训练版本更差(Figure 11)。行为克隆上限 = 数据分布覆盖。</p>
+<p><b>改进:</b>论文提的在线 RL 是正解(§9 Online Learning)——但商业游戏 GPU 渲染限并行 rollout,需要离线 RL(DICE/IQL 类)或 world-model 辅助 rollout;更实际的短期方案是「数据补丁」:定向采集含传送/回血/休整的演示,做 rejection-sampling 式微调。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] hybrid thinking 的触发没有显式监督信号</h4>
+<p><b>问题:</b>模型「何时该思考」是从 15h 数据的隐式分布里学的;推理数据刻意不过滤动作(教等待),但没有 loss 或奖励专门监督「决策点识别」本身。卡死恢复靠「100 步无推理强制进入思考」的工程兜底(§8.3 Setting),说明学到的触发不可靠。</p>
+<p><b>改进:</b>对思考触发加显式辅助头(预测「此帧是否为决策点」),或用过程奖励模型(PRM)对推理时机打分;工程兜底阈值(100 步)应按任务类型自适应。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 评测依赖人工判定 + 单游戏训练数据的地域偏置</h4>
+<p><b>问题:</b>141 任务 benchmark 全部人工评测(§7 Evaluation Setting),5 次重复的成本限制统计强度;Table 5 只有 3 次/任务,93.4% 的置信区间宽。所有标注数据为中文界面/中文独白(Appendix 10.1),语言迁移未验证。</p>
+<p><b>改进:</b>任务成功判据部分自动化(任务状态读取受限于无 API,但可用 VLM 裁判 + 人工抽检);扩多语言标注验证语言鲁棒性。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[低优先级] Scaling 曲线只到 1731h,2B/7B 分歧点(1200h)之后 7B 也未见平台</h4>
+<p><b>问题:</b>Figure 9(a) 显示 7B 在 1200h 后仍在提升,但没有更大规模(5000h/10000h)的证据支撑「继续 scaling 有收益」的推断;蒙德只是原神一国(全游戏内容 &gt;10 倍于此)。</p>
+<p><b>改进:</b>扩地区数据(璃月/稻妻)验证 OOD 内化;做数据规模-任务成功率的开环 scaling law 曲线。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[中优先级] 200 ms 感知异步与 4 卡推理门槛</h4>
+<p><b>问题:</b>模型看到的永远是 ≈200 ms 前的画面(§6.2 asynchrony),高时效场景(极限闪避)有系统性滞后;非历史模型因此过冲。推理需 4×H20 + W8A8,单 3090/4090 消费级部署跑不动 720p×1196 token 的 prefill(52ms)与流式解码【推测:7B W8A8 单 24G 卡或可勉强跑,但延迟预算会显著超支,需实测】。</p>
+<p><b>改进:</b>帧差预测(轻量网络预测 200ms 后画面补齐);动作头蒸馏成小模型处理纯运动段,大模型只处理推理段——等价于显式两层,但可用同一底座蒸馏,规避分层训练的非平稳性问题。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<thead><tr><th>方向</th><th>优先级</th><th>问题核心</th><th>预期收益</th></tr></thead>
+<tbody>
+<tr><td>长时记忆机制</td><td>[高]</td><td>4s 窗口撑不起 5h 任务</td><td>多目标/绕路/恢复场景成功率</td></tr>
+<tr><td>在线 RL / 数据补丁</td><td>[高]</td><td>数据分布缺行为模式</td><td>传送/回血/休整 → 专家级效率</td></tr>
+<tr><td>思考触发显式监督</td><td>[中]</td><td>触发不可靠靠兜底</td><td>推理延迟进一步降低</td></tr>
+<tr><td>评测自动化 + 多语言</td><td>[中]</td><td>人工判定瓶颈</td><td>benchmark 统计强度</td></tr>
+<tr><td>更大规模 scaling 验证</td><td>[低]</td><td>曲线未到平台</td><td>配方 scaling law 证据</td></tr>
+<tr><td>感知异步补偿 / 推理降门槛</td><td>[中]</td><td>200ms 滞后 + 4 卡门槛</td><td>消费级部署可行性</td></tr>
+</tbody>
+</table>
+
+<p><b>个人认为最关键的三点:</b>① 长时记忆——所有 5h 级任务的失败案例最终都汇到这里;② 数据偏置的行为固化——它定义了模仿学习路线的天花板,也决定了 RL 补充的优先级;③ 评测自动化——没有它,后续所有改进的验证成本都会卡住迭代速度。</p>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>总结与演进定位</h2>
+
+<p>Lumine 的真正贡献不是某项单点技术(模型是标准 Qwen2-VL 微调,优化组件都是已知技术),而是<b>第一个被完整验证的「商业 3D 开放世界通用智能体」端到端配方</b>:环境选型的理由(§3)、数据分层的比例(1731:200:15)、交互频率的依据(200–250ms 人类反应时间)、动作格式的实证粒度(33ms chunk vs 40ms 键间隔)、超参全表(Table 3)、延迟逐项分解(Table 4)、错误模式分类(Fig 16/18)。这种「配方级透明」在游戏 agent 领域是第一次。</p>
+
+<h3>三个值得记住的结论</h3>
+<ol>
+<li><b>能力从数据分层里长出来</b>:即时交互(&lt;100h)→ 扩展交互(~1000h)→ 游戏机制/导航(&gt;1800h)的涌现顺序说明,大规模无标注模仿是一切的地基,语言与推理只是「解锁」而非「教授」。</li>
+<li><b>hybrid thinking 是实时性与长时域的和解</b>:每步 ReAct 太慢且幻觉多、完全不思考则长任务必迷失;「低频思考 + 持续行动」用一个 7B 模型同时拿到了两者,15h 推理数据就够——性价比极高。</li>
+<li><b>推理系统设计与模型协同</b>:TP=4 恰好对齐 4 个 KV head、分号即 draft token 的 speculative decoding、chunk 流式执行——动作格式的设计在训练(语义友好)与推理(解码友好)两端同时获利。做 VLA 系统时,动作空间设计应该同时问「LLM 好学吗」和「服务器好吐吗」。</li>
+</ol>
+
+<div class="callout tip">
+<b>一句话定位:</b>Lumine = VPT 的数据哲学 + VLA 的语言接地 + hybrid thinking 的一致性 + 系统级推理工程,四者在商业 3D 开放世界的第一次完整合体。它把「通用智能体」从 prompt 工程的演示稿推进到了配方可复制的工程学科阶段。
+</div>
+
+<h3>资源链接</h3>
+<div class="refs">
+<ul>
+<li>arXiv: <a href="https://arxiv.org/abs/2511.08892" target="_blank">2511.08892</a>(v1,2025-11-12,51 页)</li>
+<li>项目主页: <a href="https://www.lumine-ai.org/" target="_blank">lumine-ai.org</a>(含各任务完整实录视频)</li>
+<li>训练框架: VeOmni(字节开源的多模态训练框架)</li>
+<li>库内相关:<a href="CV-AI-20260625-Cosmos3.html">Cosmos 3(世界模型路线)</a> · <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 系列(具身环境渲染底座)</a></li>
+</ul>
+</div>
+</section>
+
+</div><!-- /wrap -->
+
+<div class="footer">Lumine 调研笔记 · 生成于 2026-09-18 · media_paper 知识库 · 撰写:小藤子 🌿</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
