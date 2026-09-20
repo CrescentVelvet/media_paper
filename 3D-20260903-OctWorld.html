@@ -715,6 +715,8 @@ flowchart TD
 </div>
 </div>
 
+<figure><img src="images/2609.03919/firstdepth.png" alt="First-frame depth initialization" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><figcaption style="font-size:13px;color:var(--text-dim);margin-top:8px;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)"><b>图7(论文 Figure II,附录 0.A.4)</b> 不同首帧深度初始化(MoGe / Pi3 / 加噪 MoGe σ=0.05)的对比。可视化 RGB、空间记忆与深度在<b>初始</b>与<b>一个 chunk 之后</b>的状态 —— 论文结论:模型能在一个 chunk 内自然纠正含噪输入,输出趋于一致的视觉结果。</figcaption></figure>
+
 </section>
 
 <section class="section" id="s10">
@@ -748,7 +750,7 @@ flowchart TD
 
 <div class="figure">
   <img src="images/2609.03919/ws_results_v1_crop.png" alt="world generation qualitative" loading="lazy">
-  <div class="caption"><b>图7(论文 Figure 5)</b> 世界生成评测的定性结果。每个生成视频包含三个相机回合,展示第 36、72、108 帧(从左到右按时间顺序)。与 baseline 相比,本文模型生成的世界一致视频精确对齐给定相机位姿。论文对各 baseline 的批评:Gen3C 在大相机运动下出现明显纹理噪声;Voyager 因依赖单 chunk 生成,随未见区域增加质量退化,常在遮挡或外插区域产生伪影;无显式 warp 条件的 Aether 难以维持轨迹对齐的一致性;VMem 在大幅运动中也可能难以保持连贯结构。</div>
+  <div class="caption"><b>图8(论文 Figure 5)</b> 世界生成评测的定性结果。每个生成视频包含三个相机回合,展示第 36、72、108 帧(从左到右按时间顺序)。与 baseline 相比,本文模型生成的世界一致视频精确对齐给定相机位姿。论文对各 baseline 的批评:Gen3C 在大相机运动下出现明显纹理噪声;Voyager 因依赖单 chunk 生成,随未见区域增加质量退化,常在遮挡或外插区域产生伪影;无显式 warp 条件的 Aether 难以维持轨迹对齐的一致性;VMem 在大幅运动中也可能难以保持连贯结构。</div>
 </div>
 
 <h3>10.3 空间记忆维护:反转轨迹实验(Table 2)</h3>
@@ -767,7 +769,7 @@ flowchart TD
 
 <div class="figure">
   <img src="images/2609.03919/re10k_crop.png" alt="spatial memory maintenance" loading="lazy">
-  <div class="caption"><b>图8(论文 Figure 6)</b> 空间记忆维护的定性结果。四帧是从前向与反向轨迹中采样的对称对(从左到右)。(a) 与 baseline 的对比。(b) 消融研究。</div>
+  <div class="caption"><b>图9(论文 Figure 6)</b> 空间记忆维护的定性结果。四帧是从前向与反向轨迹中采样的对称对(从左到右)。(a) 与 baseline 的对比。(b) 消融研究。</div>
 </div>
 
 <h3>10.4 长程生成:用户研究(Table 3)</h3>
@@ -783,7 +785,7 @@ flowchart TD
 
 <div class="figure">
   <img src="images/2609.03919/user_study_v2.png" alt="long-range comparison" loading="lazy">
-  <div class="caption"><b>图9(论文 Figure 7)</b> 长程生成的定性对比。每个生成视频含 433 帧(附录勘误:另一条轨迹为 505 帧)。帧从左到右按时间顺序展示。论文称本文模型在保持一致空间记忆的同时实现长程视频生成;Gen3C 有时产生不一致的图案,VMem 在长 chunk 设定下难以生成合理结果。</div>
+  <div class="caption"><b>图10(论文 Figure 7)</b> 长程生成的定性对比。每个生成视频含 433 帧(附录勘误:另一条轨迹为 505 帧)。帧从左到右按时间顺序展示。论文称本文模型在保持一致空间记忆的同时实现长程视频生成;Gen3C 有时产生不一致的图案,VMem 在长 chunk 设定下难以生成合理结果。</div>
 </div>
 
 <h3>10.5 Baseline 配置透明度(Table III,值得肯定)</h3>
@@ -863,11 +865,12 @@ flowchart TD
 <div class="grid-2">
 <div class="card">
 <h4>与 warp-inpaint 路线对比(Figure I(a))</h4>
-<p>在 WorldScore 基准上与 <b>InvisibleStitch</b>(warp-inpaint 范式的代表)对比,结论:"在长轨迹设定下难以生成合理结果。"</p>
+<p>在 WorldScore 基准上与 <b>InvisibleStitch</b>(warp-inpaint 范式的代表)对比,结论:"在长轨迹设定下难以生成合理结果。" 定性可视化见 <a href="#s15">§15.4 图12</a>。</p>
 </div>
 <div class="card">
 <h4>与动作条件模型对比(Figure I(b))</h4>
 <p>把动作输入映射为近似相机轨迹后与 <b>OASIS</b> 与 <b>HYGameCraft</b> 对比:"OASIS 无法泛化到真实场景且迅速漂移;HYGameCraft 明显难以做精确相机控制;而本文方法凭借显式轨迹条件保持严格的几何对齐。"</p>
+<figure><img src="images/2609.03919/action_model.png" alt="Action-conditioned model comparison" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><figcaption style="font-size:13px;color:var(--text-dim);margin-top:8px;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)"><b>图11(论文 Figure I(b))</b> 与动作条件模型 OASIS / HYGameCraft 的对比。动作序列 "aaaddd"("a"/"d" 分别为左右移动)映射为近似相机轨迹后比较。</figcaption></figure>
 </div>
 </div>
 
@@ -1162,7 +1165,7 @@ OctWorld 的贡献是<b>把这个子方向的"记忆该怎么做"推向了工程
 
 <div class="figure">
   <img src="images/2609.03919/invsible.png" alt="comparison with warp-inpaint" loading="lazy">
-  <div class="caption"><b>图10(论文 Figure I(a))</b> 与 warp-inpaint 路线代表 InvisibleStitch 的对比。实验设置与主论文 Figure 5 一致,对应 WorldScore 基准上的结果。论文称其在长轨迹设定下难以生成合理结果。</div>
+  <div class="caption"><b>图12(论文 Figure I(a))</b> 与 warp-inpaint 路线代表 InvisibleStitch 的对比。实验设置与主论文 Figure 5 一致,对应 WorldScore 基准上的结果。论文称其在长轨迹设定下难以生成合理结果。</div>
 </div>
 
 </section>
