@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 54</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 22</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 55</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 23</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -1997,6 +1997,31 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/AMAP-ML/R2MBench" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card" data-file="3D-20260601-CovRAG.html" data-kind="note" data-depth="deep"
+              data-topics="几何与时序一致性|视频扩散先验用于 3D" data-search="CovRAG: 覆盖最大化检索的一致长视频生成 Memory-Augmented Generation Retrieval Strategy Target-View Coverage Map Residual Coverage Gain Greedy Set Cover VGGT DFoT Long-Horizon Consistency 把记忆增强视频生成的检索机制正交拆成证据轴(用什么 3D 证据)与选择轴(怎么选帧)并分别给出低成本答案。证据:CovRAG 用 VGGT 深度把每个历史帧 warp 到目标视角,得到 0/1 像素级目标视角覆盖图(式2/3)—— 免全局重建(VMem 的成本来源)却自带遮挡推理(FoV 做不到)。选择:残差覆盖增益(式4/5/6)迭代选「覆盖当前缺口最大」的帧,本质是贪婪集合覆盖,天然消除 top-n 独立打分的冗余。扩展性:滑窗 VGGT + 深度缓存,几何成本钉死在窗口 L,40→120 帧检索延迟仅 +21%、峰值显存 +1%。2×2 消融是全文最有警示价值的一格:细粒度覆盖图配独立选择(0.149 MEt3R)反而比 FoV 配独立(0.141)更差—— 证据与选择是乘法关系,升级一个必须同步升级另一个。主结果:RealEstate10K(自建 41 帧回环重排协议)与 DL3DV10K 上,对 WorldMem 的 MEt3R 均降 29%(0.144→0.102 / 0.316→0.224),对 VMem(DL3DV)四项指标降 19~29%,端到端延迟比 VMem 快 5.21×(45.4s→8.7s,与 WorldMem 仅差 3%);n=2 即近饱和。60→120 帧 FVD 恶化 40.2% vs WorldMem 55.0%,长程误差累积更慢。鲁棒性:深度尺度偏差 10% 内稳,但图像退化 L4(blur 31+噪声 0.08)时崩至 0.154 跌破 WorldMem —— 失效边界在几何估计器输入被破坏。⚠️ 无官方代码(截至 2026-09),超参全部来自论文口径未经验证;滑窗大小 L 论文通篇未给具体值。与 Lyra 2.0 同属「显式几何只做信息路由」哲学(差异:warp 注入 q/k vs 纯检索零侵入)。">
+            <h3>66. CovRAG: 覆盖最大化检索的一致长视频生成</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2606.02479</span>
+                <span>📅 2026-06-01</span>
+                <span>🏢 Korea University × KAIST (Hyunwoo J. Kim 组)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Memory-Augmented Generation</span>
+                <span class="tag">Retrieval Strategy</span>
+                <span class="tag">Target-View Coverage Map</span>
+                <span class="tag">Residual Coverage Gain</span>
+                <span class="tag">Greedy Set Cover</span>
+                <span class="tag">VGGT</span>
+                <span class="tag">DFoT</span>
+                <span class="tag">Long-Horizon Consistency</span>
+            </div>
+            <p>把记忆增强视频生成的检索机制正交拆成<strong>证据轴</strong>(用什么 3D 证据)与<strong>选择轴</strong>(怎么选帧)并分别给出低成本答案。证据:CovRAG 用 VGGT 深度把每个历史帧 warp 到目标视角,得到 0/1 像素级<strong>目标视角覆盖图</strong>(式2/3)—— 免全局重建(VMem 的成本来源)却自带遮挡推理(FoV 做不到)。选择:<strong>残差覆盖增益</strong>(式4/5/6)迭代选「覆盖当前缺口最大」的帧,本质是贪婪集合覆盖,天然消除 top-n 独立打分的冗余。扩展性:滑窗 VGGT + 深度缓存,几何成本钉死在窗口 L,40→120 帧检索延迟仅 +21%、峰值显存 +1%。2×2 消融是全文最有警示价值的一格:<strong>细粒度覆盖图配独立选择(0.149 MEt3R)反而比 FoV 配独立(0.141)更差</strong>—— 证据与选择是乘法关系,升级一个必须同步升级另一个。主结果:RealEstate10K(自建 41 帧回环重排协议)与 DL3DV10K 上,对 WorldMem 的 MEt3R 均降 29%(0.144→0.102 / 0.316→0.224),对 VMem(DL3DV)四项指标降 19~29%,端到端延迟比 VMem 快 5.21×(45.4s→8.7s,与 WorldMem 仅差 3%);n=2 即近饱和。60→120 帧 FVD 恶化 40.2% vs WorldMem 55.0%,长程误差累积更慢。鲁棒性:深度尺度偏差 10% 内稳,但图像退化 L4(blur 31+噪声 0.08)时崩至 0.154 跌破 WorldMem —— 失效边界在几何估计器输入被破坏。⚠️ 无官方代码(截至 2026-09),超参全部来自论文口径未经验证;滑窗大小 L 论文通篇未给具体值。与 Lyra 2.0 同属「显式几何只做信息路由」哲学(差异:warp 注入 q/k vs 纯检索零侵入)。</p>
+            <a href="3D-20260601-CovRAG.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2606.02479" target="_blank">📄 arXiv</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -2075,7 +2100,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>66. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>67. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2098,7 +2123,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>67. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>68. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2121,7 +2146,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>68. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>69. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2147,7 +2172,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="CV-AI-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>69. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>70. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2190,7 +2215,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-09-20 · 涵盖 69 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-09-20 · 涵盖 70 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
