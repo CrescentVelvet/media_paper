@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OctWorld:八叉树 3D 记忆的长程世界一致视频生成</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2609.03919 · 2026-09-03 · ECCV 2026 · 中科大 + MSRA · 八叉树 3D 记忆</span>
+    <h1>OctWorld:八叉树 3D 记忆的长程世界一致视频生成</h1>
+    <div class="subtitle">OctWorld: Long-Range World-Consistent Video Generation with Octree-Based 3D Mapping</div>
+    <div class="authors">Zelong Lv* · Sicheng Xu · Jianfeng Xiang* · Ruicheng Wang* · Yue Dong · Yu Deng · Guangzhong Sun · Jiaolong Yang†(*MSRA 实习期间完成,†通讯作者)</div>
+    <div class="org">University of Science and Technology of China · Microsoft Research Asia · Tsinghua University</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2609.03919" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2609.03919v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://maxtirerror.github.io/octworldpage/" target="_blank">🏠 项目主页</a>
+      <a href="3D-20260414-Lyra2.html">📖 对照笔记:Lyra 2.0</a>
+      <a href="3D-20250923-Lyra.html">📖 Lyra 1.0</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:长程一致性的缺口</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">OctMap:自适应八叉树表示</a></li>
+    <li><a href="#s5">OctMap:节点分配与 TSDF 融合</a></li>
+    <li><a href="#s6">生成网络:记忆注入与噪声增广</a></li>
+    <li><a href="#s7">推理:自回归长程生成算法</a></li>
+    <li><a href="#s8">逻辑流程图</a></li>
+    <li><a href="#s9">⚙️ 工程实现细节</a></li>
+    <li><a href="#s10">实验结果</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">🔄 同类方法对比分析</a></li>
+    <li><a href="#s13">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s14">可改进方向分析</a></li>
+    <li><a href="#s15">总结与演进定位</a></li>
+    <li><a href="#s16">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>OctWorld 要解决的问题与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 完全相同:<b>从单张图像出发沿用户指定的长相机轨迹自回归生成视频,当相机重访此前生成的区域时如何保持空间一致</b>。作者称之为 <b>long spatial range generation</b>(长空间跨度生成)——特征是长相机路径 + 宽视角覆盖。</p>
+
+<p>但它给出的答案与 Lyra 2.0 <b>方向相反</b>:Lyra 2.0 明确拒绝把历史几何融合成全局表示(逐帧独立存,几何只做信息路由);OctWorld 则<b>正面拥抱全局融合</b>,设计了一个可扩展、空间自适应的 3D 记忆 —— <b>OctMap</b>,把生成的 RGB 帧与其深度图<b>逐步融合进一个全局 3D 表示</b>。</p>
+
+<div class="callout key">
+<b>核心贡献(论文自述三条):</b>
+<ol style="margin-top:8px">
+<li>提出<b>首个</b>为长程世界一致视频生成设计的、可扩展且全局融合的 3D 记忆框架。</li>
+<li>提出<b>空间自适应的八叉树 TSDF 记忆</b>:逐步把生成的 RGB 帧与对应深度观测融合成全局 3D 表示,在开放域设定下平衡几何保真度与内存开销。</li>
+<li>在既有基准与长程案例上均超越此前方法;并证明 OctMap 相对<b>基于点的缓存</b>与<b>朴素 TSDF 体</b>有明确优势。</li>
+</ol>
+</div>
+
+<h3>为什么需要"自适应分辨率"</h3>
+<p>作者的动机链条很清晰,建立在一条对 SLAM 假设的质疑上:</p>
+<div class="grid-2">
+<div class="card">
+<h4>SLAM 重建的假设</h4>
+<p>恢复<b>物理上成立</b>的场景,具有<b>已知的度量尺度</b>与<b>有界的空间范围</b>。</p>
+</div>
+<div class="card">
+<h4>开放域世界生成的现实</h4>
+<p>目标是合成<b>可扩展、潜在无界</b>的环境,<b>空间尺度不确定</b>,且可能在生成过程中演变。</p>
+</div>
+</div>
+<p>结论(论文原文):"朴素地采用固定分辨率的 TSDF 体会导致<b>要么高分辨率下可扩展性差,要么低分辨率下显著丢失场景细节</b>。" 这是全篇最核心的问题诊断。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">15B</div><div class="l">OctWorld-1.0 参数量<br/>(FramePack F1 14B + 新增模块)</div></div>
+  <div class="stat"><div class="v">d_max=16</div><div class="l">八叉树最大深度</div></div>
+  <div class="stat"><div class="v">+1.39 dB</div><div class="l">重投影 PSNR 提升<br/>(23.47 vs 22.08 最优 TSDF)</div></div>
+  <div class="stat"><div class="v">505</div><div class="l">最长评测轨迹帧数</div></div>
+</div>
+
+<div class="callout warn">
+<b>代码可用性(最重要的前置事实):</b>截至本笔记撰写(2026-09-20),<b>官方代码尚未放出</b>。项目页的 Code 按钮显示 <code>Code (Coming Soon)</code> 且 href 指向页内锚点 <code>#top</code>,未暴露任何 GitHub 仓库地址;CatalyzeX 等第三方索引站显示的 "View Code" 属占位。<b>因此本笔记 §9 工程实现细节章节中的所有数字均来自论文原文(含附录),无任何源码级验证</b>,与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a>(代码全开源)的信息可信度不同级,引用时请注意区分。
+</div>
+
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:长程一致性的缺口</h2>
+
+<h3>既有方法的两条路线与共同缺陷</h3>
+<table>
+<tr><th>路线</th><th>做法</th><th>论文指出的缺陷</th></tr>
+<tr><td>几何感知的 RGB 合成</td><td>扩展 RGB 合成模型使其输出深度或 XYZ,鼓励几何意识、改善跨帧空间一致性</td><td><b>只关注短期几何连贯,通常只在单个生成 chunk 内运作</b>;长程生成基本未被探索</td></tr>
+<tr><td>记忆机制(点云累积)</td><td>把多视角 RGB-D 聚合为点云形成 3D cache;或存储预测 RGB 帧构成 memory bank</td><td><b>"缺乏有原则的记忆融合与全局整合"</b>,在长轨迹上仍易受几何漂移影响</td></tr>
+</table>
+
+<div class="callout key">
+<b>本文的问题定义(比"效果好"具体得多):</b>"在长轨迹后重访此前生成的区域时,重新生成的内容必须与先前的生成在<b>几何与视觉上保持一致</b>"。这句话把问题从"帧间一致"提升到"与历史任意时刻的生成结果一致",这正是长程与短程的分水岭。
+</div>
+
+<h3>作者的判断:朴素方案的两种失败</h3>
+<div class="grid-2">
+<div class="card">
+<h4>朴素方案 A:点云聚合</h4>
+<p>"可能迅速无界增长并累积噪声或位姿误差,产生<b>碎片化的几何</b>(fragmented geometry)。"</p>
+<p>OctWorld 的 Table 5 用数据证实了这一点:PointCloud 重投影 PSNR 仅 <b>19.89</b>,且 GPU 显存 6.11GB/耗时 18.58s 都不便宜 —— 差且贵。</p>
+</div>
+<div class="card">
+<h4>朴素方案 B:固定分辨率 TSDF</h4>
+<p>提供平滑表面,但"依赖固定的预定义体素分辨率,对尺度与几何复杂度变化的开放世界场景次优"。</p>
+<p>论文 §3.1 给出具体的双向失效:TSDF 统一体素尺寸导致<b>远处几何分配了过多体素</b>(那里不需要细节),而<b>前景几何受分辨率不足影响</b>,融合结果模糊。</p>
+</div>
+</div>
+
+<h3>关键假设与失效条件</h3>
+<table>
+<tr><th>假设</th><th>依据</th><th>何时失效</th></tr>
+<tr><td>局部体素尺寸应与观测深度成正比(近处细、远处粗)</td><td>§3.1 定义 $s(u,v,z)=z/\sqrt{f_x f_y}$,直接由像素在度量空间的尺寸推导</td><td>若场景存在大量细薄结构(如栏杆、电线)却位于远处,该区域会被分配到粗体素而丢失;论文未讨论这类结构</td></tr>
+<tr><td>TSDF 加权平均能容忍生成数据的几何不一致</td><td>式 1 的加权融合;Table 5 显示 OctMap 在同等耗时下 PSNR 23.47 > TSDF 最优 22.08</td><td>当同一区域被反复重访并给出互相矛盾的深度时,加权平均会趋向"折中"位置 —— 论文未做"矛盾观测"的鲁棒性分析</td></tr>
+<tr><td>给历史条件加噪可缩小训练-推理差距</td><td>Noise Augmentation;Table 4(b) 显示噪声等级 3 使 3D 一致性从 67.18 提升到 71.67</td><td>噪声等级 5 时 PSNR 类指标继续下降(0.1412→0.1806),存在明确的过噪退化;论文据此把等级固定为 3</td></tr>
+<tr><td>全局融合不会累积漂移</td><td>Table 2 反转轨迹 LPIPS 0.1633 / CD 0.0345,优于 Gen3C 与 VMem</td><td><b>论文自述失败案例:</b>当预定义轨迹与已生成物体相交或被遮挡时(模型错误地在门口处渲染出实心墙),会产生视觉漂移 —— 根因是"模型仅在局部 chunk 内处理轨迹条件"</td></tr>
+</table>
+
+<h3>与 Lyra 2.0 的问题设定对照(前置)</h3>
+<p>两篇解决同一问题但哲学相反,这里先给出最核心的一句差异,详细对照见 §12:</p>
+<table>
+<tr><th></th><th><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></th><th>OctWorld</th></tr>
+<tr><td>对"全局融合"的态度</td><td class="fail-cell" style="color:#fca5a5"><b>明确拒绝</b>:批评融合会导致"误差放大"(生成瑕疵→坏几何→坏条件)</td><td class="best-cell" style="color:#a7f3d0"><b>正面拥抱</b>:认为问题是融合方式不够有原则,而非融合本身有错</td></tr>
+<tr><td>几何的角色</td><td>只做信息路由(选帧 + 建对应),不参与外观合成</td><td>直接渲染成部分观测 + 可见性 mask,作为生成条件</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入与输出定义</h3>
+<table>
+<tr><th>项</th><th>定义</th><th>形状/取值</th></tr>
+<tr><td>输入</td><td>单张 RGB 图像 + 用户指定的相机轨迹</td><td>$I_0$;轨迹 $\mathcal{T}$</td></tr>
+<tr><td>初始深度</td><td>由单目深度估计器给出(<b>可视为可控的用户输入</b>)</td><td>$D_0$;估测器为 MoGe(§0.C.1 Table III)</td></tr>
+<tr><td>生成分辨率</td><td>训练与评测</td><td>$832\times480$(训练输入 $36\times480\times832$,即 36 帧)</td></tr>
+<tr><td>Chunk 长度</td><td>每次生成的帧数</td><td><b>36</b> 帧(§A.1 统计口径;消融中对比 $f{=}16/36$)</td></tr>
+<tr><td>输出</td><td>长程、世界一致的视频序列</td><td>最长评测 505 帧(约 30 秒 @15fps)</td></tr>
+<tr><td>中间表示</td><td>OctMap(可扩展全局 3D 记忆)</td><td>动态稀疏八叉树,叶节点存 TSDF/RGB/权重</td></tr>
+</table>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>取值/出处</th></tr>
+<tr><td>$\mathcal{M}_k$</td><td>第 $k$ 步的 OctMap 状态</td><td>逐步更新</td></tr>
+<tr><td>$\mathcal{H}_k$</td><td>第 $k$ 步的历史帧集合</td><td>$\mathcal{H}_k=\mathcal{H}_{k-1}\cup\mathcal{G}_k^{RGB}$</td></tr>
+<tr><td>$L$</td><td>根体积边长(canonical root volume size)</td><td>初始 <b>2</b>(对应 canonical cube $[-1,1]^3$);扩展后 $2L$</td></tr>
+<tr><td>$d$</td><td>八叉树深度(level)</td><td>$d_{\max}=\mathbf{16}$(§0.B.4)</td></tr>
+<tr><td>$\ell_d$</td><td>深度 $d$ 处的体素尺寸</td><td>$\ell_d = L/2^d$</td></tr>
+<tr><td>$\tau_d$</td><td>深度 $d$ 处的 TSDF 截断余量</td><td>$\tau_d=\alpha\cdot\ell_d$,<b>$\alpha=5$</b>(§0.B.4)</td></tr>
+<tr><td>$\phi$</td><td>TSDF 值与 RGB 颜色的合称</td><td>叶节点 8 个角点各一份</td></tr>
+<tr><td>$w$</td><td>融合权重(integration weight)</td><td>同上</td></tr>
+<tr><td>$z=D(u,v)$</td><td>像素 $(u,v)$ 的观测深度</td><td>—</td></tr>
+<tr><td>$(f_x,f_y)$</td><td>相机焦距</td><td>—</td></tr>
+<tr><td>$s(u,v,z)$</td><td><b>该像素期望的体素尺寸</b></td><td>$s=z/\sqrt{f_x f_y}$</td></tr>
+<tr><td>$d_k$</td><td>为点 $\mathbf{x}$ 分配的八叉树深度</td><td>满足 $\ell_d \le s < \ell_{d-1}$ 的<b>最细层级</b></td></tr>
+<tr><td>$\mathbf{x}(u,v)$</td><td>像素反投影到相机坐标的 3D 位置</td><td>$((u{-}c_x)z/f_x,\,(v{-}c_y)z/f_y,\,z)$</td></tr>
+<tr><td>$\mathbf{x}_k$</td><td>沿相机射线的采样点</td><td>$\mathbf{x}_k=\mathbf{o}+t_k\mathbf{r}(u,v)$,$t_k\in[z{-}\tau_d,\,z{+}\tau_d]$</td></tr>
+<tr><td>$\alpha$</td><td>噪声增广等级</td><td>11 级离散集 $\{x\cdot 0.7/10 \mid x{=}0..10\}$;实验固定 <b>3</b></td></tr>
+<tr><td>$\mathcal{T}_{\text{anchor}}/\mathcal{T}_{\text{history}}/\mathcal{T}_{\text{target}}$</td><td>三类 token(1.5 版)</td><td>tokens-wise AdaLN 噪声等级 $r_i \in \{0,\alpha,t\}$</td></tr>
+</table>
+
+<h3>三阶段划分</h3>
+<ol>
+<li><b>OctMap 维护(§3.1)</b>:新 RGB-D 帧 → 按深度分配八叉树节点 → TSDF 融合 → Marching Cubes 提网格 → 渲染成部分观测。</li>
+<li><b>视频生成(§3.2)</b>:把渲染的世界记忆投影 + FramePack 历史打包 + Plücker 相机控制 + 噪声增广一起喂给扩散骨干。</li>
+<li><b>自回归推理(§3.3)</b>:轨迹切 chunk,循环"提网格 → 渲染条件 → 生成 RGB → 获取深度 → 更新 OctMap"。</li>
+</ol>
+
+<div class="mermaid">
+flowchart TD
+    IMG["输入: 单张 RGB 图像 I₀<br/>+ 估计深度 D₀<br/>+ 用户相机轨迹 T"] --> SPLIT["轨迹切分为 K 个 chunk"]
+    SPLIT --> LOOP
+
+    subgraph LOOP["自回归循环 (Algorithm 1)"]
+        direction TB
+        MESH["1. ExtractMesh(M_k-1)<br/>从当前 OctMap 提网格"]
+        MESH --> REND["2. MeshRendering(G_mesh, c_k)<br/>渲染到目标视角<br/>→ 部分观测 + 可见性 mask"]
+        REND --> GEN["3. VideoGenerator(S_k, H_k-1, c_k)<br/>生成 RGB chunk (+ 可选深度)"]
+        GEN --> DEP["4. DepthAcquisition<br/>联合预测 或 外部流式估计"]
+        DEP --> INT["5. Integrate(M_k-1, RGB, Depth)<br/>TSDF 融合 + 自适应细分"]
+        INT --> HUP["6. H_k = H_k-1 ∪ RGB"]
+    end
+
+    INT -.->|"更新全局记忆"| OCTMAP[("OctMap M<br/>动态稀疏八叉树<br/>叶节点 8 角点存 TSDF+RGB+w<br/>τ_d = 5·ℓ_d, d_max=16")]
+    OCTMAP -.-> MESH
+    OCTMAP -.->|"空间越界时"| EXT["Root Extension<br/>根体积 L→2L<br/>O(1) 开销"]
+    HUP --> MORE{"还有 chunk?"}
+    MORE -->|是| MESH
+    MORE -->|否| OUT["长视频 H (最长 505 帧)"]
+
+    style OCTMAP fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style REND fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style EXT fill:#fce7f3,stroke:#ec4899,color:#831843
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<p style="font-size:13px;color:var(--text-dim)">总体数据流(对应论文 Algorithm 1)。核心是 OctMap 在循环中<b>既被读(渲染条件)又被写(融合新观测)</b> —— 而 Lyra 2.0 的 3D cache 只被读、只做路由。</p>
+
+<div class="figure">
+  <img src="images/2609.03919/octworld_teaser.png" alt="OctWorld teaser" loading="lazy">
+  <div class="caption"><b>图1(论文 Figure 1)</b> 本文生成的长程世界一致视频。底行的相机轨迹重访了顶行生成的区域,同时保持强一致性。这由 OctMap —— 一个由生成帧逐步构建、高效存储于稀疏八叉树(中)的可扩展、空间自适应 3D 记忆 —— 所引导。相机轨迹以颜色编码可视化。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2609.03919/octworld_method.png" alt="OctWorld training pipeline" loading="lazy">
+  <div class="caption"><b>图2(论文 Figure 2)</b> OctWorld 训练管线。给定训练用的 RGB-D 段,把序列切成历史帧与目标帧。由历史帧构建 OctMap 并渲染到目标视角作为空间条件。$\varepsilon_\alpha$ 与 $\varepsilon_t$ 分别表示层级 $\alpha$ 与 $t$ 上的高斯噪声。<b>深度生成是可选的</b>,在需要联合视频-深度生成时启用。</div>
+</div>
+
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>OctMap:自适应八叉树表示</h2>
+
+<h3>4.1 数据结构定义</h3>
+<p>OctMap 用一个递归地把 canonical 根体积(边长 $L$)细分为 8 个子单元的八叉树来维护世界状态。深度 $d$ 处的体素尺寸为 $\ell_d = L/2^d$。每个<b>叶节点在其 8 个角点顶点</b>上存储三类体属性:</p>
+<table>
+<tr><th>属性</th><th>符号</th><th>作用</th></tr>
+<tr><td>截断符号距离</td><td>TSDF 值</td><td>几何表面位置</td></tr>
+<tr><td>RGB 颜色</td><td>颜色</td><td>外观存储</td></tr>
+<tr><td>融合权重</td><td>$w$</td><td>加权平均时的观测置信度</td></tr>
+</table>
+<p>为方便,论文把 TSDF 与 RGB 颜色合记为 $\phi$,融合权重记为 $w$。<b>TSDF 截断余量按局部体素尺寸成比例设定</b>:</p>
+<div class="equation">
+$$ \tau_d = \alpha \cdot \ell_d $$
+<span class="tag">(截断余量)</span>
+</div>
+<p>其中 $\alpha$ 为常数缩放因子,<b>论文 §0.B.4 给出 $\alpha=5$</b>。这个设计的含义是:细体素用小的截断距离(保留细节),粗体素用大的截断距离(保证表面可被捕获)。</p>
+
+<h3>4.2 空间边界与根扩展(root extension)</h3>
+<p>为稳定建图,先确立场景空间边界:</p>
+<ol>
+<li>初始化时 OctMap 定义在 canonical cube $[-1,1]^3$(对应 $L{=}2$),最大八叉树深度限制为 $d_{\max}{=}16$。</li>
+<li>为保证待融合点都落在此边界内,<b>首帧点云先归一化到 $[-0.5,0.5]^3$</b> 再插入。</li>
+<li>在线推理中,当新点超出当前边界 $[-L/2, L/2]^3$ 时触发<b>根扩展</b>:把当前 OctMap 的 8 个 depth-1 节点插入到一个新建 OctMap 的 depth-2 中央八节点中。新 OctMap 根体积翻倍为 $2L$、边界为 $[-L,L]^3$,而<b>所有既有特征保持不变</b>。</li>
+</ol>
+<div class="callout tip">
+<b>根扩展的价值(论文明确点出):</b>"OctMap 因此只在根部增加一个深度层级,而内存与计算开销仅 <b>$\mathcal{O}(1)$</b>"。这是全篇最精巧的工程设计 —— 场景可以无限扩张,但每次扩张的代价是常数级的(只重挂 8 个指针),不需要重建已有体素。对比之下,若用固定包围盒的 TSDF,扩张意味着整个网格重建。
+</div>
+
+<h3>4.3 与替代表示的本质差异</h3>
+<table>
+<tr><th>表示</th><th>分辨率策略</th><th>近处细节</th><th>远处开销</th><th>内存增长方式</th></tr>
+<tr><td>PointCloud 聚合</td><td>无(逐点存储)</td><td>取决于点数</td><td>随采样密度增长,<b>无界</b></td><td>线性(且含冗余/噪声点)</td></tr>
+<tr><td>固定分辨率 TSDF</td><td>全局统一体素</td><td>体素过大时<b>模糊</b></td><td>体素过小时<b>立方级爆炸</b></td><td>立方级(随分辨率)</td></tr>
+<tr class="best"><td><b>OctMap</b></td><td><b>按观测深度自适应</b></td><td>近处用细体素,细节保留</td><td>远处用粗体素,不浪费</td><td>随实际观测覆盖的体素数量</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2609.03919/fig_comparewarp_warpcondcamp_crop.png" alt="representation comparison" loading="lazy">
+  <div class="caption"><b>图3(论文 Figure 3)</b> 不同表示作为世界记忆的定性分析。OctMap 按深度分配体素分辨率:近处区域用更小体素细化,远处区域保持较粗,因此即使在大尺度场景中也能保留近景细节。相反,TSDF 融合在全场景保持统一体素尺寸,导致远处几何分配了过多体素(那里不需要细节),而前景几何受分辨率不足影响,融合结果模糊。</div>
+</div>
+
+<h3>4.4 该模块的监督信号</h3>
+<p><b>OctMap 本身无可学习参数、无损失项</b> —— 它是纯几何/外观的确定性数据结构(TSDF 加权平均 + Marching Cubes),不含神经网络。其质量完全取决于输入深度估计的质量与融合策略的鲁棒性。这一点值得强调:它是"记忆",不是"模型"。</p>
+
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>OctMap:节点分配与 TSDF 融合</h2>
+
+<h3>5.1 自适应节点分配(核心机制)</h3>
+<p>对每个传入的 RGB-D 帧 $(I,D)$ 与相机内参 $(f_x,f_y)$,先<b>逐像素估计所需的体素分辨率</b>,再据此分配节点。完整推导链条如下:</p>
+
+<h4>第一步:反投影得到 3D 位置</h4>
+<div class="equation">
+$$ \mathbf{x}(u,v)=\left((u-c_x)\cdot \frac{z}{f_x},\;\; (v-c_y)\cdot \frac{z}{f_y},\;\; z\right), \qquad z = D(u,v) $$
+<span class="tag">(反投影)</span>
+</div>
+
+<h4>第二步:估计单像素的度量尺寸</h4>
+<p>单个像素在水平与垂直方向上代表的度量尺寸近似为:</p>
+<div class="equation">
+$$ \Delta x \approx \frac{z}{f_x}, \qquad \Delta y \approx \frac{z}{f_y} $$
+<span class="tag">(像素度量尺寸)</span>
+</div>
+<p>取几何平均,定义<b>该像素期望的体素尺寸</b>:</p>
+<div class="equation">
+$$ s(u,v,z) = \frac{z}{\sqrt{f_x\cdot f_y}} $$
+<span class="tag">(期望体素尺寸)</span>
+</div>
+<div class="callout key">
+<b>这个式子为什么这么写(机制解释):</b>一个体素若小于"该深度下单个像素所覆盖的物理尺寸",就无法从观测中得到更多信息(超采样,浪费内存);若大于,则会丢失该像素能提供的细节。<b>令体素尺寸正比于 $z$</b> 意味着分辨率随距离自然衰减 —— 近处细、远处粗,与透视投影的几何一致。用 $\sqrt{f_x f_y}$ 而非分别处理 $x/y$,是把各向异性的像素尺寸折中成各向同性体素(体素是立方体,无法在两个方向上取不同尺寸)。这是"用几何先验换内存效率"的典型做法。
+</div>
+
+<h4>第三步:确定八叉树深度</h4>
+<p>点 $\mathbf{x}$ 的合适八叉树深度 $d_k$ 取<b>满足下式的最细层级</b>:</p>
+<div class="equation">
+$$ \ell_d \le s < \ell_{d-1} $$
+<span class="tag">(层级选择)</span>
+</div>
+
+<div class="figure">
+  <img src="images/2609.03919/fig_octmap_octmapillu_v2_crop.png" alt="octree node allocation" loading="lazy">
+  <div class="caption"><b>图4(论文 Figure 4)</b> 八叉树节点分配的图示。来自新视角的像素被反投影到 3D 以估计体素尺寸;沿每条射线在截断余量内的点被采样以分配节点。</div>
+</div>
+
+<h4>第四步:沿射线采样(论文明确的一个工程必然性)</h4>
+<p>论文指出:"实践中,只更新表面点 $\mathbf{x}$ 不足以保证周围的 TSDF 场被完整更新。" 因此还需沿对应相机射线采样额外点:</p>
+<div class="equation">
+$$ \mathbf{x}_k=\mathbf{o}+t_k\,\mathbf{r}(u,v), \qquad t_k\in[z-\tau_d,\; z+\tau_d] $$
+<span class="tag">(射线采样)</span>
+</div>
+<p>每个采样点经空间量化映射到层级 $d$ 下的体素索引 $\mathbf{i}_k$。随后<b>从根遍历到深度 $d$,沿途按需分配并分裂此前未初始化的节点</b>。当一个叶节点被分裂时,<b>其子节点通过空间插值从父节点继承属性</b>(§0.B.4 补充:通过 3D 空间中的最近邻插值继承父节点的权重与特征作为初始化)。</p>
+
+<h3>5.2 TSDF 积分</h3>
+<p>节点分配完成后,当前帧相交的所有体素都通过标准 TSDF 融合更新。体素顶点处的 TSDF 值由观测深度计算:把每个顶点投影到相机平面并施加层级相关的截断 $\tau_d$。</p>
+<div class="equation">
+$$ \phi_{\text{new}}=\frac{w_{\text{old}}\,\phi_{\text{old}}+w_{\text{obs}}\,\phi_{\text{obs}}}{w_{\text{old}}+w_{\text{obs}}}, \qquad w_{\text{new}}=w_{\text{old}}+w_{\text{obs}} $$
+<span class="tag">(式 1,TSDF 加权融合)</span>
+</div>
+<p>这是经典的加权平均融合。<b>关键性质:</b>权重累加意味着反复观测同一区域会逐渐增大该处的置信度,单次错误观测的影响被平均稀释 —— 这正是 OctWorld 敢于全局融合的底气所在(与 Lyra 2.0 的顾虑形成对照)。</p>
+
+<h3>5.3 网格提取</h3>
+<p>最后,每个叶节点定义一个立方体,TSDF 值在其角点上。由于叶节点占据不相交的区域(共享角点处除外),这些立方体可以<b>并行地用 Marching Cubes 处理</b>,产出三角面片汤(triangle soup);共享角点处的重复顶点被合并,生成最终网格。<b>该网格随后被渲染到目标相机视角,作为世界记忆投影供视频生成模型使用</b> —— 这就是 OctMap 与生成器之间的接口。</p>
+
+<div class="mermaid">
+flowchart TD
+    IN["新帧 RGB-D: (I, D)<br/>内参 (fx, fy)"] --> PIX["逐像素 (u,v):<br/>z = D(u,v)"]
+    PIX --> BP["反投影 x(u,v)<br/>= ((u-cx)z/fx, (v-cy)z/fy, z)"]
+    PIX --> SIZE["期望体素尺寸<br/>s(u,v,z) = z / sqrt(fx·fy)"]
+    SIZE --> LV["选最细层级 d 满足<br/>ℓ_d ≤ s &lt; ℓ_(d-1)<br/>ℓ_d = L/2^d"]
+    LV --> RAY["沿射线采样<br/>x_k = o + t_k·r(u,v)<br/>t_k ∈ [z-τ_d, z+τ_d]<br/>τ_d = 5·ℓ_d"]
+    RAY --> TRAV["从根遍历到深度 d<br/>按需分配 + 分裂节点"]
+    TRAV --> SPLIT["节点分裂时:<br/>子节点经 3D 最近邻插值<br/>继承父节点权重与特征"]
+    SPLIT --> FUSE["TSDF 加权融合<br/>φ_new = (w_old·φ_old + w_obs·φ_obs)/(w_old+w_obs)<br/>w_new = w_old + w_obs"]
+    FUSE --> MC["Marching Cubes<br/>(叶节点不相交 → 可并行)<br/>合并共享角点顶点"]
+    MC --> MESH2["三角形网格 G_mesh"]
+    MESH2 --> RENDER["渲染到目标视角<br/>→ 部分观测 + 可见性 mask"]
+
+    style SIZE fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style FUSE fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style RENDER fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>生成网络:记忆注入与噪声增广</h2>
+
+<h3>6.1 两个模型版本</h3>
+<table>
+<tr><th>版本</th><th>骨干</th><th>深度来源</th><th>角色</th></tr>
+<tr class="best"><td><b>OctWorld-1.0</b></td><td><b>FramePack F1 (14B)</b>,内部为 <b>Hunyuan DiT</b> 骨干 <span style="font-size:12px">(§4.1 原文: "Our model builds on FramePack F1 (14B), which uses the Hunyuan DiT backbone")</span></td><td><b>联合生成</b> RGB + 深度(扩 latent 通道)</td><td>主模型,论文正文与 §0.A–§0.D 的所有实验均用它</td></tr>
+<tr><td>OctWorld-1.5</td><td><b>Wan2.1 14B I2V</b></td><td><b>解耦</b>:外部流式深度估计器(DA3 的流式版本)</td><td>增强版,解耦深度估计以获得更强能力;项目网页所有视频均由它生成</td></tr>
+</table>
+<p><b>参数量:</b>论文 §4.1 明确 "incorporates additional conditioning and control modules, bringing the total size to <b>15B parameters</b>"(14B 骨干 + 约 1B 新增条件模块)。</p>
+<div class="callout warn">
+<b>核对提示:</b>OctWorld-1.0 用 Hunyuan DiT 骨干,1.5 换成 <b>Wan2.1 14B I2V</b> —— 与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 的骨干<b>完全相同</b>(论文 §0.E.2 原文:"OctWorld-1.5 uses Wan2.1 14B I2V as its video generation backbone")。这使得 1.5 与 Lyra 2.0 构成同骨干的干净对照,但<b>两篇论文的评测基准不重叠,无法直接比数字</b>(详见 §12)。
+</div>
+
+<h3>6.2 四类条件信号的注入方式</h3>
+<table>
+<tr><th>信号</th><th>做法</th><th>1.0 的注入路径</th><th>细节</th></tr>
+<tr><td><b>World Memory Projection</b></td><td>OctMap 提网格 → 渲染到目标视角 → 得到<b>部分观测 + 可见性 mask</b></td><td>遵循 <b>VideoPainter</b> 的做法,使用<b>从预训练骨干复制来的额外 DiT blocks</b>(§0.B.1)</td><td>论文称"通过骨干特定的条件通路注入"</td></tr>
+<tr><td><b>History Frame Packing</b></td><td>继承 FramePack 的上下文压缩:按时间邻近性分组连续帧,其 patch-based latent 嵌入沿时间维逐步压缩</td><td>打包成定长 latent 上下文</td><td>"保留时间相关性,同时高效处理长序列"</td></tr>
+<tr><td><b>Depth(联合生成时)</b></td><td>用<b>历史帧的最大深度</b>归一化深度图,再按常数因子重缩放,映射到 $[0,1]$(值越大越远)</td><td>复制深度通道成 3 通道灰度图 → 与 RGB latent 沿通道拼接</td><td>为兼容预训练 <b>Hunyuan Video Encoder 的 3 通道输入</b>;patch embedder 与输出投影被扩展以支持增加的维度</td></tr>
+<tr><td><b>Camera Control</b></td><td>把相机内外参归一化到<b>最后一个历史帧的坐标系</b>,计算每像素 Plücker 射线嵌入</td><td>轻量卷积适配器:pixel-unshuffle + 跨步卷积 + 若干残差块;输出加到目标 latent</td><td>与主流相机可控方法一致</td></tr>
+</table>
+<div class="callout key">
+<b>深度归一化设计的一个细节值得注意:</b>论文说明用"历史帧的最大深度"而非当前帧或全局最大值来归一化,理由是"该设计<b>镜像推理设定</b> —— 推理时未来帧不可用"。同时确保深度值落在与 VAE 兼容的稳定范围内。这是一个典型的"训练必须模拟推理可得信息"的工程约束,与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 的自增广动机同源(都是缩小 train-test 差距)。
+</div>
+
+<h3>6.3 噪声增广(Noise Augmentation)</h3>
+<p>与 Lyra 2.0 的自增广解决同一问题(训练用 GT 历史、推理用自产历史),但实现更直接:</p>
+<ul>
+<li>训练时,ground-truth RGB-D 帧作为历史同时提供 OctMap 投影记忆与时间上下文。</li>
+<li>为缩小训练-推理差距,引入<b>噪声条件策略</b>:随机采样一个噪声等级 $\alpha$,用它<b>缩放加在记忆与时间上下文上的标准高斯噪声</b>,同时把 $\alpha$ 作为条件信号提供给扩散网络。</li>
+<li>论点:"这鼓励模型处理不完美的历史预测,提升自回归生成时的鲁棒性。"</li>
+</ul>
+<p><b>$\alpha$ 的取值(§0.B.2):</b>从 11 级离散集采样:</p>
+<div class="equation">
+$$ \alpha \in \left\{ x\cdot\frac{0.7}{10} \;\middle|\; x=0,1,\dots,10 \right\} = \{0,\;0.07,\;0.14,\;\dots,\;0.7\} $$
+<span class="tag">(噪声等级集合)</span>
+</div>
+<p><b>实验固定值:</b>经消融(Table 4(b))后,所有实验设噪声等级为 <b>3</b>(即 $\alpha=0.21$)。</p>
+<div class="callout warn">
+<b>1.0 与 1.5 在噪声注入方式上的重要差异(论文 §0.E.2 自述):</b>
+<ul style="margin-top:8px">
+<li><b>1.0:</b>噪声增广强度被<b>全局加到扩散时间步嵌入</b>上。论文承认其缺陷:"这种全局注入对具有不同损坏程度的 token 施加了相同的调制,并且<b>把扩散时间步与历史噪声增广等级纠缠在一起</b>"。</li>
+<li><b>1.5:</b>改为<b>逐 token 的噪声等级</b>,生成 token-wise AdaLN 调制。三类 token 的调制时间步 $r_i$ 定义为:</li>
+</ul>
+<div class="equation" style="margin-top:10px">
+$$ r_i=\begin{cases}0, & i\in\mathcal{T}_{\mathrm{anchor}} \quad(\text{干净首帧锚点,不加噪})\\ \alpha, & i\in\mathcal{T}_{\mathrm{history}}\\ t, & i\in\mathcal{T}_{\mathrm{target}}\end{cases} $$
+<span class="tag">(token-wise AdaLN,1.5 版)</span>
+</div>
+<b>判断:</b>这是对 1.0 的实质修正,论文明确承认了 1.0 的机制缺陷。$r_i$ 直接对应施加在 token $i$ 上的噪声等级,消除了时间步与噪声等级的纠缠。
+</div>
+
+<h3>6.4 零初始化策略</h3>
+<p>§0.B.2 明确:所有附加条件通路遵循<b>零初始化</b>策略 —— 修改过的线性层与卷积层,新引入的权重被置零;控制分支则在注入主 transformer 流之前应用一个零初始化投影。目的:"保证预训练 FramePack 骨干在训练开始时保持不变,新条件随训练推进逐步融入。"</p>
+<p><b>这与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 的做法完全一致</b> —— 两篇在同骨干上做条件扩展时都选择了零初始化,这是当前"在预训练扩散模型上加条件分支"的通行实践。</p>
+
+<div class="figure">
+  <img src="images/2609.03919/supple_net_arch_crop.png" alt="OctWorld-1.0 architecture" loading="lazy">
+  <div class="caption"><b>图5(论文 Figure IV)</b> OctWorld-1.0 网络架构(省略激活与归一化层)。"Tgt. Frames"与"Tgt. Latents"表示流匹配过程中的去噪目标;$T$ 为扩散时间步,$+\varepsilon_x$ 表示噪声注入步骤;"Hist. Frames"指历史帧,"Patch. Emb."为 patchify 嵌入器。论文 §0.B.1 归纳了对 FramePack 的三处扩展:① 扩展 latent 通道以支持深度预测;② 引入接收来自空间记忆的渲染 RGB/深度及可见性 mask 的控制分支;③ 通过把噪声等级参数 $\alpha$ 注入 transformer 层来启用噪声增广。</div>
+</div>
+
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>推理:自回归长程生成算法</h2>
+
+<h3>7.1 算法伪码(论文 Algorithm 1,逐行对照)</h3>
+<table>
+<tr><th>行</th><th>操作</th><th>说明</th></tr>
+<tr><td>输入</td><td>初始图像 $I_0$、估计深度 $D_0$、用户轨迹 $\mathcal{T}$</td><td>深度由单目估计器给出(MoGe)</td></tr>
+<tr><td>输出</td><td>世界一致视频序列 $\mathcal{H}$</td><td>—</td></tr>
+<tr><td>4</td><td>$\mathcal{M}_0\leftarrow\text{Integrate}(I_0,D_0)$</td><td>初始帧融入 OctMap</td></tr>
+<tr><td>5</td><td>$\mathcal{H}_0\leftarrow I_0$</td><td>初始化历史帧</td></tr>
+<tr><td>6</td><td>把 $\mathcal{T}$ 分成 $K$ 个 chunk $\{c_1,\dots,c_K\}$</td><td>按生成窗口切分</td></tr>
+<tr><td>8</td><td>$\mathcal{G}_{mesh}\leftarrow\text{ExtractMesh}(\mathcal{M}_{k-1})$</td><td><b>每 chunk 重新提网格</b> —— 因为上一步刚融合了新观测</td></tr>
+<tr><td>9</td><td>$\mathcal{S}_k\leftarrow\text{MeshRendering}(\mathcal{G}_{mesh},c_k)$</td><td>渲染到该 chunk 的目标视角</td></tr>
+<tr><td>10</td><td>$\mathcal{G}_k^{RGB}\leftarrow\text{VideoGenerator}(\mathcal{S}_k,\mathcal{H}_{k-1},c_k)$</td><td>条件于空间记忆投影 $S_k$ + 历史帧 $H_{k-1}$ + 相机轨迹</td></tr>
+<tr><td>11</td><td>$\mathcal{G}_k^{D}\leftarrow\text{DepthAcquisition}(\mathcal{G}_k^{RGB})$</td><td><b>联合预测或流式估计</b>(对应 1.0 / 1.5 两条路线)</td></tr>
+<tr><td>12</td><td>$\mathcal{M}_k\leftarrow\text{Integrate}(\mathcal{M}_{k-1},\mathcal{G}_k^{RGB},\mathcal{G}_k^D)$</td><td>新观测融合进 OctMap</td></tr>
+<tr><td>13</td><td>$\mathcal{H}_k\leftarrow\mathcal{H}_{k-1}\cup\mathcal{G}_k^{RGB}$</td><td>历史帧集合累积</td></tr>
+<tr><td>15</td><td>return $\mathcal{H}_K$</td><td>—</td></tr>
+</table>
+
+<div class="callout key">
+<b>该算法的成本结构(理解性能的关键):</b>每生成一个 chunk,都要<b>完整地</b>做一次"提网格 + 渲染 + 生成 + 融合"。其中<b>提网格(Marching Cubes)与融合是随场景规模增长的操作</b> —— 论文 Table I 实测:505 帧序列上,平均每 chunk(36 帧)集成耗时 <b>7.36 s</b>、网格提取耗时 <b>4.60 s</b>。对比单步扩散在 A100 上 3.6 s(35 步约 126 s),OctMap 的两项开销合计约 12 s/chunk,<b>相对生成段是小头但不可忽略</b>。论文也承认"视频生成骨干仍是推理时间的主导成分"。
+</div>
+
+<h3>7.2 与 Lyra 2.0 推理循环的结构差异</h3>
+<table>
+<tr><th>环节</th><th>Lyra 2.0</th><th>OctWorld</th></tr>
+<tr><td>每 chunk 的几何操作</td><td>把新帧深度<b>追加</b>进逐帧 cache(list append),<b>无重建</b></td><td><b>重新提网格 + 重新融合</b>(全局操作)</td></tr>
+<tr><td>条件信号的形态</td><td>canonical 坐标对应图(4 通道)+ 检索帧的 latent</td><td>渲染出的<b>部分观测 RGB + 可见性 mask</b></td></tr>
+<tr><td>成本随规模的变化</td><td>随帧数线性(存储)<b>但单步计算量恒定</b>(只在检索与 warp 时涉及点云)</td><td>提网格与融合的<b>计算量随场景体量增长</b></td></tr>
+<tr><td>几何被"用掉"的方式</td><td>只做路由,不进入像素域</td><td>直接渲染成图像进入条件</td></tr>
+</table>
+<p><b>判断:</b>两篇的成本结构因此不同 —— Lyra 2.0 是"内存换计算"(存得越多,检索越慢),OctWorld 是"计算换鲁棒"(每次都要重建网格)。这在长轨迹上会表现为不同的瓶颈曲线,但两篇都没有给出随轨迹长度的成本曲线。</p>
+
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>逻辑流程图</h2>
+
+<h3>8.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    A["训练数据: RE10K + DL3DV + SpatialVid(静态子集)"] --> F1["数据过滤<br/>① dynamicRatio ≤ 0.2<br/>② Kwai Keye-VL-1.5 判动态/人/手, 剔除<br/>③ 人脸检测网络剔除<br/>④ Pi3 估深度+位姿, 低置信剔除"]
+    F1 --> F2["置信度过滤(§0.B.3)<br/>MCV ≥ 0.16 且 HCPR ≥ 0.42 (τ=0.1)<br/>TransNetV2 帧分数 ≤ 0.5<br/>亮度变化 ≤ 22"]
+    F2 --> SEG["采样时间片段 → 切 历史帧 / 目标帧<br/>GPT-4o 生成视频级文本描述"]
+    SEG --> OCT["用历史帧构建 OctMap<br/>→ 渲染到目标视角作空间条件"]
+    OCT --> ZI["新增模块零初始化<br/>(保证起点 = 预训练 FramePack)"]
+    ZI --> NA["每个 iteration:<br/>采样噪声等级 α ∈ {0, 0.07, …, 0.7}<br/>缩放加在记忆与时间上下文上的噪声"]
+    NA --> GEN2["DiT 前向:<br/>条件 = 记忆投影 + 打包历史 + Plücker 相机 + α"]
+    GEN2 --> LOSS["扩散损失(论文未给具体损失形式)"]
+    LOSS --> OPT["AdamW lr=2e-5, batch 64<br/>32× H100"]
+    OPT --> STAGE{"训练阶段"}
+    STAGE -->|"阶段 1"| S1["16×480×832 低时间分辨率<br/>80K 步"]
+    STAGE -->|"阶段 2"| S2["36×480×832 全分辨率<br/>30K 步"]
+    S1 --> S2
+    S2 --> DONE["OctWorld-1.0 (15B)"]
+
+    style NA fill:#fce7f3,stroke:#ec4899,color:#831843
+    style ZI fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style DONE fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>8.2 推理流程</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: 单张图像 I₀ + 用户轨迹 T"] --> DEP0["单目深度估计 D₀ (MoGe)<br/>★ 首帧深度是可控的用户输入<br/>(尺度决定 3D 空间尺度)"]
+    DEP0 --> NORM["首帧点云归一化到 [-0.5, 0.5]³"]
+    NORM --> INIT["OctMap 初始化: L=2, d_max=16<br/>M₀ ← Integrate(I₀, D₀)"]
+    INIT --> CH["把 T 切成 K 个 chunk"]
+    CH --> C1["对每个 chunk c_k:"]
+    C1 --> E1["ExtractMesh(M_k-1)"]
+    E1 --> E2["MeshRendering → 部分观测 + 可见性 mask"]
+    E2 --> E3["VideoGenerator(记忆投影, 历史帧, 相机)<br/>生成 RGB chunk(36 帧)"]
+    E3 --> E4{"深度来源?"}
+    E4 -->|"OctWorld-1.0"| J1["与 RGB 联合生成"]
+    E4 -->|"OctWorld-1.5"| J2["外部流式 DA3 估计"]
+    J1 --> E5
+    J2 --> E5["Integrate(M_k-1, RGB, D)<br/>TSDF 融合 + 自适应细分"]
+    E5 --> E6{"新点超出边界?"}
+    E6 -->|是| EXT2["Root Extension: L→2L<br/>8 个 depth-1 节点重挂到 depth-2<br/>O(1) 开销"]
+    E6 -->|否| E7
+    EXT2 --> E7["H_k = H_k-1 ∪ RGB"]
+    E7 --> MORE2{"还有 chunk?"}
+    MORE2 -->|是| E1
+    MORE2 -->|否| OUT2["输出长视频 H (最长 505 帧)"]
+
+    style DEP0 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style EXT2 fill:#fce7f3,stroke:#ec4899,color:#831843
+    style OUT2 fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>8.3 失败模式(论文 §0.D.1 自述)</h3>
+<div class="callout red">
+<b>主要失败案例:</b>"当预定义的相机轨迹<b>与之前生成的物体相交或被其遮挡</b>时(例如模型错误地在有门口的地方渲染出一堵实心墙),会导致视觉漂移伪影。"<br><br>
+<b>根因(论文自述):</b>"这是因为模型<b>仅在局部 chunk 内处理轨迹条件</b>。"<br><br>
+<b>作者提出的方向:</b>"扩展框架以注入超出单个 chunk 的<b>全局相机轨迹</b>,可以提供更好的长期空间预见性并缓解此问题。"
+</div>
+<p><b>判断:</b>这个失败模式的本质是<b>局部决策无法预知全局路径</b> —— 模型在生成某个 chunk 时不知道用户未来会走到哪里,于是把门口填成了墙;等轨迹真的穿过时,已有几何与轨迹冲突。值得注意的是:Lyra 2.0 的 GUI 允许用户在 3D cache 上预先规划轨迹(它可视化了累积点云),这恰好是对同一问题的另一种缓解思路 —— 把规划前置到生成之前。两篇都识别到了这个坑,但给出的解法不同。</p>
+
+<div class="figure">
+  <img src="images/2609.03919/failurecase.png" alt="failure case" loading="lazy">
+  <div class="caption"><b>图6(论文 Figure VI)</b> 失败案例。当预定义相机轨迹与之前生成的物体相交或被遮挡时,模型产生视觉漂移伪影,因为它仅在局部 chunk 内处理轨迹条件。</div>
+</div>
+
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>⚙️ 工程实现细节</h2>
+
+<div class="callout red">
+<b>本节的可信度边界(必须先声明):</b>截至 2026-09-20,<b>OctWorld 官方代码未放出</b>(项目页 Code 按钮为 <code>Code (Coming Soon)</code>,href 指向页内锚点)。因此:<br>
+① 本节所有内容<b>全部来自论文原文与附录,无任何 <code>file:line</code> 级别的源码验证</b>;② 论文<b>未给</b>的部分(如具体损失函数形式、学习率调度、优化器 beta 等)本笔记一律留空并标注,<b>不做任何估算或推测填充</b>;③ 引用本节数字时,其可信度低于 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 笔记(代码全开源、超参有 <code>file:line</code>)。<br>
+若后续代码放出,本节需要整体重做核对。
+</div>
+
+<h3>9.1 模型与骨干</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>OctWorld-1.0 骨干</td><td>FramePack F1 (14B),其内部为 Hunyuan DiT 骨干</td><td>§4.1</td></tr>
+<tr><td>OctWorld-1.5 骨干</td><td>Wan2.1 14B I2V</td><td>§0.E.2</td></tr>
+<tr><td>总参数量(1.0)</td><td><b>15B</b>(14B 骨干 + 约 1B 新增条件/控制模块)</td><td>§4.1</td></tr>
+<tr><td>1.0 的记忆注入实现</td><td>遵循 <b>VideoPainter</b>,使用从预训练骨干复制的额外 DiT blocks</td><td>§0.B.1</td></tr>
+<tr><td>1.5 的条件接口</td><td>复用 Wan2.1 原生的条件生成接口:去噪网络同时接收噪声目标 latent $x$、条件 mask $m$、条件图像 latent $y$;可见性 mask 经<b>空间最小池化</b>下采样至 latent 分辨率作为 $m$</td><td>§0.E.2</td></tr>
+<tr><td>零初始化</td><td>所有附加条件通路;控制分支用零初始化投影</td><td>§0.B.2</td></tr>
+<tr><td>框架</td><td>1.5 用 <b>FSDP</b> 训练</td><td>§0.E.3</td></tr>
+<tr><td>损失函数</td><td class="fail-cell" style="color:#fca5a5"><b>论文未给出具体形式</b>(只称"扩散损失"/flow matching 类框架)</td><td>—</td></tr>
+</table>
+
+<h3>9.2 训练超参</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>优化器</td><td>AdamW</td><td>§4.1</td></tr>
+<tr><td>学习率</td><td><b>2e-5</b></td><td>§4.1</td></tr>
+<tr><td>输入分辨率</td><td>$36\times480\times832$(36 帧 × 高 × 宽)</td><td>§4.1</td></tr>
+<tr><td>训练阶段(1.0)</td><td>阶段 1:$16\times480\times832$(降低时间分辨率)训 <b>80K</b> 步;<br>阶段 2:全分辨率微调 <b>30K</b> 步</td><td>§4.1</td></tr>
+<tr><td>硬件与 batch(1.0)</td><td><b>32× NVIDIA H100</b>,总 batch size <b>64</b></td><td>§4.1</td></tr>
+<tr><td>硬件与 batch(1.5)</td><td>FSDP,<b>16× NVIDIA H100</b>,global batch size <b>64</b>;仅 7000 步即产生强定性结果</td><td>§0.E.3</td></tr>
+<tr><td>1.5 训练数据</td><td><b>仅 DL3DV</b>;标准化到 15 fps,切成不超过 <b>961 帧</b>的 clip;预处理渲染部分观测与 mask 时<b>使用与推理完全相同的算法</b>(消除空间条件的训练-测试差异)</td><td>§0.E.3</td></tr>
+<tr><td>噪声增广等级</td><td>11 级离散集 $\{x\cdot 0.7/10\}$;实验固定 <b>3</b></td><td>§0.B.2;§4.5</td></tr>
+<tr><td>TSDF 参数</td><td>$\alpha=5$,$L=2$,$d_{\max}=16$</td><td>§0.B.4</td></tr>
+<tr><td>首帧点云归一化</td><td>到 $[-0.5,0.5]^3$ 再插入</td><td>§0.B.4</td></tr>
+<tr><td>学习率调度 / 优化器 beta / warmup</td><td class="fail-cell" style="color:#fca5a5"><b>论文未给</b></td><td>—</td></tr>
+</table>
+
+<h3>9.3 数据过滤流水线(§0.B.3,论文给得相当细)</h3>
+<table>
+<tr><th>层级</th><th>操作</th><th>阈值/工具</th></tr>
+<tr><td rowspan="3">数据集选择</td><td>RE10K</td><td>用原始训练划分</td></tr>
+<tr><td>DL3DV</td><td>官方 11 个子集:<b>前 10 个训练</b>,剩 1 个验证/评测</td></tr>
+<tr><td>SpatialVid</td><td>用 HQ 子集</td></tr>
+<tr><td rowspan="4">动态内容剔除</td><td>按数据集元数据排除动态场景</td><td><code>dynamicRatio</code> ≤ <b>0.2</b></td></tr>
+<tr><td>人主要来自 crowdDensity 字段 → 仅保留标注为 desert 的场景<br><span class="uncertain">⚠️【待核实】</span>原文为 "we further retain only scenes labeled as <b>desert</b> in the crowdDensity field",该表述与上下文("humans are the main source of dynamics")的逻辑关联不明 —— 推测是论文笔误或数据集特定标签名,但本笔记不做改动,照录原文</td><td><code>crowdDensity</code> 字段</td></tr>
+<tr><td>VLM 判定动态内容/人/手并剔除</td><td><b>Kwai Keye-VL-1.5</b></td></tr>
+<tr><td>人脸检测剔除</td><td>人脸检测网络</td></tr>
+<tr><td rowspan="3">clip 级过滤</td><td>Pi3 置信度:平均置信值 MCV ≥ <b>0.16</b></td><td>Pi3 置信图</td></tr>
+<tr><td>高置信像素比例 HCPR ≥ <b>0.42</b>(像素级阈值 $\tau{=}0.1$)</td><td>同上</td></tr>
+<tr><td>场景切换:逐帧过渡分数最大值 ≤ <b>0.5</b></td><td><b>TransNetV2</b></td></tr>
+<tr><td>segment 级过滤</td><td>相邻帧平均亮度绝对差的最大值 ≤ <b>22</b>(抑制突变亮度)</td><td>基于 RGB→亮度转换</td></tr>
+</table>
+<p><b>位姿与深度:</b>对保留下来的视频,逐帧深度、置信度与相机轨迹由 <b>Pi3</b> 估计(§4.1)。<b>文本描述</b>由 <b>GPT-4o</b> 生成视频级描述(§4.1)。</p>
+
+<h3>9.4 资源账(论文实测数据)</h3>
+<h4>OctMap 自身开销(Table I,17 段视频 × 505 帧平均)</h4>
+<table>
+<tr><th>指标</th><th>值</th><th>说明</th></tr>
+<tr><td>平均集成时间(每 chunk,36 帧)</td><td><b>7.36 s</b></td><td>帧融入 OctMap</td></tr>
+<tr><td>平均网格提取时间(每 chunk)</td><td><b>4.60 s</b></td><td>每个 chunk 后提网格</td></tr>
+<tr><td>峰值 CUDA 内存(每视频序列)</td><td><b>22.93 GB</b></td><td>OctMap 的峰值显存</td></tr>
+<tr><td>最终总节点数(每视频序列)</td><td><b>34,659K</b></td><td>末端分配的八叉树节点数(含所有父节点与叶节点)</td></tr>
+</table>
+
+<h4>端到端效率对比(Table II,首 chunk 设定)</h4>
+<table>
+<tr><th>方法</th><th>参数量</th><th>FPS↑</th><th>内存(GB)</th></tr>
+<tr><td>Voyager</td><td>13.31B</td><td>0.041</td><td>48</td></tr>
+<tr><td>Gen3C</td><td>7.24B</td><td>0.117</td><td>41</td></tr>
+<tr><td>Aether</td><td>5.57B</td><td>0.223</td><td>34</td></tr>
+<tr><td>VMem</td><td>1.26B</td><td>0.400</td><td>19</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>14.50B</b></td><td><b>0.136</b></td><td><b>51</b></td></tr>
+</table>
+<div class="note"><b>论文对此的读法:</b>"我们的方法在模型规模、推理时间与运行时内存上保持竞争力。……视频生成骨干仍是推理时间的主导成分,而我们的 Spatial Memory 模块只引入边际开销(4–6 FPS)。" 客观看:本文参数量最大(14.50B vs Voyager 13.31B)、显存最高(51GB vs 48GB),FPS 居中(0.136,快于 Gen3C 的 0.117、慢于 Aether 的 0.223)。<b>"竞争力"的表述成立,但不是效率优势。</b></div>
+
+<h4>其他实测数字</h4>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>单步扩散耗时(A100)</td><td><b>3.6 s</b></td><td>§4.1</td></tr>
+<tr><td>OctMap 内存范围</td><td><b>1–10 GB</b>(随场景尺度与视距变化)</td><td>§4.1</td></tr>
+<tr><td>RGB-D 集成速度</td><td><b>约 4–6 FPS</b></td><td>§4.1</td></tr>
+<tr><td>帧率与时长</td><td>15 fps;505 帧 ≈ 30 秒</td><td>§0.A.5</td></tr>
+</table>
+
+<h3>9.5 论文内部的自我勘误(值得记一笔)</h3>
+<div class="callout warn">
+<b>§0.C.3 中作者主动纠正了正文的一处错误:</b>
+<blockquote style="margin:10px 0;padding-left:12px;border-left:3px solid var(--orange);color:#e8c9a0">
+原文(正文 §4.4):"我们手工构造两条轨迹,各含 433 帧。"<br>
+勘误(附录 §0.C.3):"该陈述不准确。这两条轨迹实际长度不同:一条含 433 帧,另一条含 505 帧。报告的结果不变,因为实验是用正确的轨迹进行的。"
+</blockquote>
+<b>判断:</b>作者在附录主动纠正正文数字,是值得肯定的学术诚实。同时它提示读者:本笔记中凡引用"长程"长度的数据,应以附录的 <b>433 / 505 帧</b> 为准,并注意 <b>Table I 的统计口径是 17 段 × 505 帧</b>,与 §4.4 的两条手工轨迹不是同一批数据。
+</div>
+
+<h3>9.6 落地坑(基于论文可判断的部分)</h3>
+<div class="grid-2">
+<div class="card">
+<h4>可确认的约束</h4>
+<ul>
+<li><b>首帧深度质量影响全局尺度</b>:首帧深度决定 3D 空间尺度,论文把它当作"可控的用户输入"而非待估计量。<span class="uncertain">⚠️ 但 §0.A.4 的实验显示模型能在<b>一个 chunk 内</b>自然纠正含噪初始深度(测试了 MoGe / Pi3 / 加噪 MoGe σ=0.05),因此对首帧深度并非极度敏感</span></li>
+<li><b>所有节点缓存于 GPU</b>,内存随场景扩张持续增长(§0.D.2 自述局限)</li>
+<li><b>不支持动态物体</b>(§0.D.2 自述)</li>
+<li><b>轨迹条件只在一个 chunk 内处理</b>,导致穿越已生成物体时漂移(§0.D.1)</li>
+</ul>
+</div>
+<div class="card">
+<h4>无法确认的部分(代码未放出)</h4>
+<ul>
+<li>具体损失函数项与权重</li>
+<li>学习率调度、warmup、梯度裁剪</li>
+<li>八叉树的实际数据结构实现(哈希表? 指针树? 内存布局?)</li>
+<li>Marching Cubes 的具体实现与并行粒度</li>
+<li>显存占用随轨迹长度的增长曲线</li>
+<li>训练总时长(论文只给步数与硬件)</li>
+</ul>
+</div>
+</div>
+
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 三个评测维度</h3>
+<table>
+<tr><th>维度</th><th>基准</th><th>设置</th><th>考察什么</th></tr>
+<tr><td><b>World Generation</b></td><td>WorldScore</td><td>photorealistic 子集的 static split,<b>200 个场景</b>,筛选相机运动幅度 ≥ 3(即方向变化次数);每个相机回合生成 <b>36 帧</b>轨迹 → 每场景 <b>108 帧</b></td><td>相机与物体控制、内容对齐、3D 一致性、感知保真度</td></tr>
+<tr><td><b>Spatial Memory Maintenance</b></td><td>Re10K test set</td><td><b>反转轨迹</b>:取 80 个最长视频,统一帧率得约 120 帧序列,再<b>追加其反向轨迹</b>,形成"前进 + 精确原路返回"</td><td>重访此前观察区域时能否保持几何结构与视觉外观</td></tr>
+<tr><td><b>Long Range Generation</b></td><td>自建基准</td><td>手工构造 2 条轨迹(附录勘误为 <b>433 与 505 帧</b>),选 17 个开放室外场景,做用户研究</td><td>长程生成的感知质量与一致性</td></tr>
+</table>
+
+<h3>10.2 WorldScore 定量结果(Table 1)</h3>
+<table>
+<tr><th>方法</th><th>WorldScore 总分</th><th>Static↑</th><th>3D 一致性↑</th><th>光度一致性↑</th><th>风格一致性↑</th><th>相机控制↑</th><th>物体控制↑</th><th>内容对齐↑</th><th>主观质量↑</th></tr>
+<tr><td>AETHER(*)</td><td>46.59</td><td>65.65</td><td>50.29</td><td class="best-cell" style="color:#a7f3d0">83.49</td><td>37.65</td><td>48.5</td><td>7.17</td><td>33.35</td></tr>
+<tr><td>Voyager(*)</td><td>49.93</td><td>66.35</td><td>43.38</td><td>67.89</td><td>46.60</td><td class="best-cell" style="color:#a7f3d0">58.09</td><td class="best-cell" style="color:#a7f3d0">35.97</td><td>31.21</td></tr>
+<tr class="fail"><td>VMem(*)</td><td>42.4</td><td>61.83</td><td>41.21</td><td>77.72</td><td>31.56</td><td>43.75</td><td>5.96</td><td>34.75</td></tr>
+<tr><td>Gen3C</td><td>45.48</td><td>70.52</td><td>68.46</td><td>78.06</td><td class="fail-cell" style="color:#fca5a5">12.57</td><td>50.12</td><td>6.24</td><td class="best-cell" style="color:#a7f3d0">32.36</td></tr>
+<tr class="best"><td><b>Ours†</b></td><td><b>50.31</b></td><td><b>71.67</b></td><td><b>77.01</b></td><td>78.17</td><td>39.12</td><td>48.69</td><td>6.37</td><td>31.17</td></tr>
+</table>
+<p style="font-size:13.5px;color:var(--text-dim)">(*) 标记:这些方法不支持跨 chunk 长程生成,其相机轨迹被插值以匹配本文所需的帧数。† 标记:本表所有 "Ours" 均为 OctWorld-1.0;无深度的 1.5 在附录单独评测。</p>
+
+<div class="callout key">
+<b>论文的核心卖点与数据的对应:</b>"OctWorld 在 <b>3D 一致性</b>与<b>光度一致性</b>两项取得最高分。"<br>
+• <b>3D 一致性 77.01 vs Gen3C 68.46</b>(次优)—— 该指标评估跨视角重投影误差,反映生成帧沿相机轨迹的几何对齐程度。<br>
+• <b>光度一致性 78.17 vs AETHER 83.49</b> —— 等等,这里需要精确:论文原文说取得两项最高分,但表格中光度一致性列 AETHER(83.49)> 本文(78.17)。<span class="uncertain">⚠️【待核实】</span>论文 §4.2 的表述("achieves the highest scores in both 3D Consistency and Photometric Consistency")与 Table 1 的数值存在表面矛盾 —— 表中光度一致性列的最高值属于 AETHER(83.49)。可能的原因是论文所指的"两项"并非表格中的这两列(如指 3D Consistency 与 WorldScore 总分),或该列定义与正文描述不完全对应。本笔记照录论文表述并标出该疑点,<b>不代为解释</b>。<br>
+• <b>相机控制与风格一致性排名第二</b> —— 相机控制 48.69(Voyager 58.09 第一,但 Voyager 无自回归管线);风格一致性 39.12(Voyager 46.60 第一)。
+</div>
+
+<div class="figure">
+  <img src="images/2609.03919/ws_results_v1_crop.png" alt="world generation qualitative" loading="lazy">
+  <div class="caption"><b>图7(论文 Figure 5)</b> 世界生成评测的定性结果。每个生成视频包含三个相机回合,展示第 36、72、108 帧(从左到右按时间顺序)。与 baseline 相比,本文模型生成的世界一致视频精确对齐给定相机位姿。论文对各 baseline 的批评:Gen3C 在大相机运动下出现明显纹理噪声;Voyager 因依赖单 chunk 生成,随未见区域增加质量退化,常在遮挡或外插区域产生伪影;无显式 warp 条件的 Aether 难以维持轨迹对齐的一致性;VMem 在大幅运动中也可能难以保持连贯结构。</div>
+</div>
+
+<h3>10.3 空间记忆维护:反转轨迹实验(Table 2)</h3>
+<p><b>实验设计的巧思:</b>把序列的相机轨迹反向追加,形成"前进 + 精确原路返回"。这样<b>前后两半中相机参数相同的帧应该看到同样的内容</b>,构成天然的对称对,可直接度量记忆一致性。两个指标:</p>
+<ul>
+<li><b>LPIPS</b>:在相机参数相同的帧之间计算(前后向序列),度量感知相似度与外观一致性。</li>
+<li><b>Chamfer Distance (CD)</b>:用 <b>VGGT</b> 从序列的前后两半各重建一组点云,计算两者之间的 Chamfer 距离,量化几何一致性(采样 65536 点,归一化到 $[-1,1]$,用 Kaolin 计算 $L_1$ 形式的 CD)。</li>
+</ul>
+<table>
+<tr><th>方法</th><th>LPIPS ↓</th><th>CD ↓</th></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>0.1633</b></td><td><b>0.0345</b></td></tr>
+<tr><td>Gen3C</td><td>0.1933</td><td>0.0457</td></tr>
+<tr class="fail"><td>VMem</td><td>0.4010</td><td>0.0620</td></tr>
+</table>
+<p>只有 Gen3C 与 VMem 参与对比 —— 论文说明"其他 baseline 不提供跨 chunk 视频生成协议,因此不适用于该任务"。<b>本文两项均最优</b>:LPIPS 比 Gen3C 低 15.5%,CD 低 24.5%。论文归因于"OctMap 构建的高质量 3D 记忆,其渲染的目标帧作为可靠的几何参考引导生成"。</p>
+
+<div class="figure">
+  <img src="images/2609.03919/re10k_crop.png" alt="spatial memory maintenance" loading="lazy">
+  <div class="caption"><b>图8(论文 Figure 6)</b> 空间记忆维护的定性结果。四帧是从前向与反向轨迹中采样的对称对(从左到右)。(a) 与 baseline 的对比。(b) 消融研究。</div>
+</div>
+
+<h3>10.4 长程生成:用户研究(Table 3)</h3>
+<table>
+<tr><th>方法</th><th>偏好比例 ↑</th></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>53.8%</b></td></tr>
+<tr><td>Gen3C</td><td>39.5%</td></tr>
+<tr class="fail"><td>VMem</td><td>0.9%</td></tr>
+<tr><td>Not sure</td><td>5.8%</td></tr>
+</table>
+<p><b>用户研究设置:</b>22 名参与者,每人完成 20 次对比;每个样本中,参与者看到输入图像、文本提示与相机路径描述(如 "move_left"、"move_right"),以及<b>来自同一输入、顺序随机化的三个匿名视频</b>,均对齐到相同时长。论文称结果显示"对本文方法在质量与世界一致性上的强烈偏好"。</p>
+<p><b>客观读法:</b>Ours 53.8% vs Gen3C 39.5% 是明显优势但不悬殊;VMem 的 0.9% 表明其在长程设定下基本不可用。样本量(22 人)偏小,论文未给置信区间。<span class="uncertain">⚠️【待核实】</span>论文未说明参与者是否为领域专家、是否做过一致性检验。</p>
+
+<div class="figure">
+  <img src="images/2609.03919/user_study_v2.png" alt="long-range comparison" loading="lazy">
+  <div class="caption"><b>图9(论文 Figure 7)</b> 长程生成的定性对比。每个生成视频含 433 帧(附录勘误:另一条轨迹为 505 帧)。帧从左到右按时间顺序展示。论文称本文模型在保持一致空间记忆的同时实现长程视频生成;Gen3C 有时产生不一致的图案,VMem 在长 chunk 设定下难以生成合理结果。</div>
+</div>
+
+<h3>10.5 Baseline 配置透明度(Table III,值得肯定)</h3>
+<p>论文在 §0.C.1 用一张表列出了所有方法的配置差异,这是很好的实践:</p>
+<table>
+<tr><th>方法</th><th>分辨率(W×H)</th><th>每 chunk 帧数</th><th>支持自回归</th><th>相机控制方式</th><th>首帧深度估计器</th></tr>
+<tr><td>Gen3C</td><td>$1280\times704$</td><td>121</td><td>✓</td><td>Warp Frames</td><td>MoGe</td></tr>
+<tr><td>Voyager</td><td>$768\times512$</td><td>49</td><td>✗(*)</td><td>Warp Frames</td><td>MoGe</td></tr>
+<tr><td>Aether</td><td>$720\times480$</td><td>41</td><td>✗</td><td>Camera</td><td>—</td></tr>
+<tr><td>Vmem</td><td>$576\times576$</td><td>4</td><td>✓</td><td>Retrieval Frames</td><td>—</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>$832\times480$</b></td><td><b>36</b></td><td>✓</td><td>Warp Frames</td><td>MoGe</td></tr>
+</table>
+<p style="font-size:13.5px;color:var(--text-dim)(*) 原文附注:Voyager 未提供官方自回归推理管线,因此报告其单 chunk 结果,尽管该模型原则上支持自回归生成。</p>
+<div class="callout warn">
+<b>公平性说明(论文自述的两处调整):</b>① 各方法支持的生成长度不同,因此"对所有 baseline 使用<b>相同的相机轨迹</b>,但<b>按各方法支持的帧数调整运动速度</b>"以保证公平;② VMem 在本文基准的 109 帧设定下"频繁失败",为迁就其生成约束,<b>把相机速度提高 4×</b>,且该策略在所有实验中对 VMem 一致应用。<br>
+<b>判断:</b>作者主动披露了这两处调整,透明度较好。但需注意 ② 意味着 VMem 是在"被特殊照顾"的设定下评测的,其 0.9% 的用户偏好因此更具说服力(是在有利设定下仍失败)。
+</div>
+
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+
+<h3>11.1 世界记忆表示消融(Table 4(a))</h3>
+<p><b>设置:</b>在统一实验设定下对比不同世界记忆表示。"f#" 表示每 chunk 的<b>推理帧数</b>。</p>
+<table>
+<tr><th>设置</th><th>LPIPS ↓</th><th>CD ↓</th><th>解读</th></tr>
+<tr class="fail"><td>TSDF_f16</td><td>0.2509</td><td>0.0556</td><td rowspan="2">在 $f{=}16$(短 chunk)下,<b>TSDF 优于点云</b> —— 点云 0.2749/0.0916 明显更差</td></tr>
+<tr class="fail"><td>PointCloud_f16</td><td>0.2749</td><td style="color:#fca5a5">0.0916</td></tr>
+<tr><td>w/o OctMap_f36</td><td>0.2128</td><td>0.0534</td><td><b>移除空间条件</b>后视频生成性能明显下降(虽 LPIPS 数字看似不差,但论文指出其相机控制失效)</td></tr>
+<tr><td>TSDF_f36</td><td>0.1996</td><td>0.0345</td><td>固定分辨率 TSDF 在长 chunk 下改善但仍不及 OctMap</td></tr>
+<tr class="best"><td><b>Ours_f36</b></td><td><b>0.1412</b></td><td><b>0.0252</b></td><td>相对 TSDF_f36:<b>LPIPS ↓29.3%,CD ↓27.0%</b></td></tr>
+</table>
+<div class="callout key">
+<b>这组消融的两个结论:</b>
+<ol style="margin-top:8px">
+<li><b>融合优于不融合</b>:TSDF_f16(0.2509)显著优于 PointCloud_f16(0.2749),CD 上差距更大(0.0556 vs 0.0916,点云差 64.7%)。论文解释:"点云融合在深度不连续处高度敏感,常引入严重几何伪影"。<b>注意这与 Lyra 2.0 的结论相反</b> —— Lyra 2.0 的消融显示全局点云会损害相机可控性。<b>两处的"点云"不是同一物</b>(Lyra 2.0 消融的是"代替逐帧 cache 的全局点云",OctWorld 对比的是"作为世界记忆的点云 vs TSDF"),k 不能直接互证。</li>
+<li><b>空间条件本身不可少</b>:w/o OctMap 移除空间条件后,论文称"模型无法提供精确的相机控制"(定性见 Figure 6)。这从反面验证了记忆机制的必要性。</li>
+</ol>
+</div>
+
+<h3>11.2 噪声增广消融(Table 4(b))</h3>
+<table>
+<tr><th>噪声等级</th><th>LPIPS ↓</th><th>CD ↓</th><th>WorldScore Static↑</th><th>WorldScore 3D 一致性↑</th></tr>
+<tr><td>0(不加噪)</td><td class="best-cell" style="color:#a7f3d0">0.1412</td><td class="best-cell" style="color:#a7f3d0">0.0252</td><td>50.22</td><td class="fail-cell" style="color:#fca5a5">67.18</td></tr>
+<tr class="best"><td><b>3(实验采用)</b></td><td>0.1633</td><td>0.0274</td><td><b>50.31</b></td><td><b>71.67</b></td></tr>
+<tr><td>5</td><td>0.1806</td><td>0.0340</td><td>50.07</td><td>71.09</td></tr>
+</table>
+<div class="callout key">
+<b>这是一个明确的 trade-off,论文的表述很诚实:</b>"我们观察到一个权衡。<b>噪声等级较低时,空间细节保存得更好,但整体生成质量下降。</b>提高噪声等级会略微降低空间质量,却<b>显著改善 3D 一致性</b>。因此在所有实验中把噪声增广等级设为 3。"<br><br>
+<b>数字上的具体形态:</b>从 等级 0 → 3,LPIPS 退化 15.6%(0.1412→0.1633)、CD 退化 8.7%,但 3D 一致性提升 <b>6.7%</b>(67.18→71.67)。从 3 → 5 则各项都变差。<b>3 是拐点</b>。<br><br>
+<b>与 Lyra 2.0 的呼应:</b>Lyra 2.0 的自增广消融也呈现同样的结构 —— "移除后单帧质量提升但长程一致性崩溃"(主观质量 47.88 vs 43.35,风格一致性 77.98 vs 85.07)。<b>两篇独立地用不同实现(一步去噪 vs 加噪)得到同一结论:对抗长期漂移必须以局部画质为代价。</b>这是本组对照中最强的一条交叉验证。
+</div>
+
+<h3>11.3 重投影渲染质量消融(Table 5,OctMap 的独立评测)</h3>
+<p><b>设置:</b>从 SpatialVID 随机选 100 个场景,各方法做 RGB-D 融合,把重建的世界记忆投影回原相机视角,与 GT 图像计算相似度。指标在 GT 帧上计算,无效区域用白色遮挡。在单张 <b>A100 80GB</b> 上测。</p>
+<table>
+<tr><th>3D 记忆</th><th>体素尺寸</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>显存(GB)↓</th><th>时间(s)↓</th></tr>
+<tr class="fail"><td>PointCloud</td><td>—</td><td>19.89</td><td>0.57</td><td>0.38</td><td>6.11</td><td>18.58</td></tr>
+<tr><td>TSDF</td><td>0.007</td><td>20.47</td><td>0.61</td><td>0.44</td><td>1.37</td><td>1.42</td></tr>
+<tr><td>TSDF</td><td>0.004</td><td>21.32</td><td>0.65</td><td>0.39</td><td>1.97</td><td>3.15</td></tr>
+<tr><td>TSDF</td><td>0.002</td><td>22.08</td><td>0.69</td><td>0.33</td><td>9.66</td><td>16.97</td></tr>
+<tr class="fail"><td>TSDF</td><td>0.001</td><td>—</td><td>—</td><td>—</td><td><b>OOM</b></td><td>—</td></tr>
+<tr class="best"><td><b>OctMap</b></td><td><b>Adaptive</b></td><td><b>23.47</b></td><td><b>0.74</b></td><td><b>0.27</b></td><td><b>7.26</b></td><td><b>17.94</b></td></tr>
+</table>
+<div class="callout key">
+<b>这组数据是全文最有说服力的一组,它直接证明了"自适应分辨率"的价值:</b>
+<ol style="margin-top:8px">
+<li><b>OctMap(23.47 PSNR)优于最优可行 TSDF(0.002 体素,22.08)</b> —— 提升 6.3%。</li>
+<li><b>而 OctMap 的成本(7.26GB / 17.94s)与那个 TSDF(9.66GB / 16.97s)相当甚至更省显存</b>。论文的表述:"OctMap 在取得显著更好的重投影质量的同时,保持了与体素尺寸 0.002(在内存预算内可承受的最小体素尺寸)的 TSDF 融合相当的处理时间与内存开销。"</li>
+<li><b>TSDF 的立方级爆炸被直接演示出来了</b>:体素从 0.007→0.004→0.002→0.001,显存 1.37→1.97→9.66→<b>OOM</b>,而 PSNR 只从 20.47 涨到 22.08 就撞墙。<b>OctMap 用"只在对的地方用细体素"打破了这条曲线。</b></li>
+<li><b>点云是最差的</b>:PSNR 19.89 最低,且 6.11GB/18.58s 并不比 TSDF 省 —— 论文归因于"在深度不连续处高度敏感,常引入严重几何伪影"。</li>
+</ol>
+</div>
+
+<h3>11.4 附录中的附加对比</h3>
+<div class="grid-2">
+<div class="card">
+<h4>与 warp-inpaint 路线对比(Figure I(a))</h4>
+<p>在 WorldScore 基准上与 <b>InvisibleStitch</b>(warp-inpaint 范式的代表)对比,结论:"在长轨迹设定下难以生成合理结果。"</p>
+</div>
+<div class="card">
+<h4>与动作条件模型对比(Figure I(b))</h4>
+<p>把动作输入映射为近似相机轨迹后与 <b>OASIS</b> 与 <b>HYGameCraft</b> 对比:"OASIS 无法泛化到真实场景且迅速漂移;HYGameCraft 明显难以做精确相机控制;而本文方法凭借显式轨迹条件保持严格的几何对齐。"</p>
+</div>
+</div>
+
+<h3>11.5 消融的充分性评估</h3>
+<table>
+<tr><th>消融项</th><th>是否充分</th><th>判断</th></tr>
+<tr><td>世界记忆表示(TSDF vs PointCloud vs OctMap vs 无记忆)</td><td>✅ 充分且设计好</td><td>两个维度($f{=}16/36$)× 四种表示,并且额外用 Table 5 做了<b>独立的纯重建评测</b>(不掺生成),把"记忆质量"与"生成质量"解耦 —— 这是很干净的设计</td></tr>
+<tr><td>噪声增广等级</td><td>✅ 充分</td><td>0/3/5 三点足以看出拐点与 trade-off 结构</td></tr>
+<tr><td>八叉树自适应 vs 固定分辨率</td><td>✅ 通过 Table 5 覆盖</td><td>但只对比了不同体素尺寸的 TSDF,没有做"固定分辨率的八叉树"这类中间态</td></tr>
+<tr><td><b>缺失</b>:噪声增广的注入方式</td><td>❌</td><td>1.0 的全局时间步注入 vs 1.5 的 token-wise 注入是实质差异(论文自己承认 1.0 的纠缠问题),但<b>没有做 A/B 消融</b> —— 1.5 同时改了骨干(Wan→)与注入方式,无法分离两个变量的贡献</td></tr>
+<tr><td><b>缺失</b>:chunk 长度的影响</td><td>❌</td><td>消融使用了 $f{=}16$ 与 $f{=}36$,但这是作为"记忆表示对比"的配对变量,没有单独分析 chunk 长度对长程一致性的影响</td></tr>
+<tr><td><b>缺失</b>:轨迹长度 vs 指标退化曲线</td><td>❌</td><td>与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 同样的缺口 —— 长程方法最该提供的证据(多长开始崩)两篇都没给</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+
+<h3>12.1 横向对比表</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>记忆/场景表示</th><th>监督信号</th><th>训练数据</th><th>训练成本</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr class="best"><td><b>OctWorld</b>(本文)</td><td>2026-09<br/>ECCV</td><td>单图 + 用户轨迹;首帧深度可控</td><td><b>OctMap:动态稀疏八叉树 + TSDF 全局融合</b></td><td>真实 RGB-D 序列(Pi3 估位姿/深度)</td><td>RE10K + DL3DV + SpatialVid(静态子集)</td><td>32×H100<br/>(80K+30K 步,batch 64)</td><td>3.6 s/扩散步(A100);<br/>集成 4–6 FPS</td><td>51 GB(端到端);<br/>OctMap 自身 1–10 GB</td><td>WorldScore 3D 一致性 77.01;<br/>Re10K 反转 LPIPS 0.1633</td><td>❌ Code Coming Soon</td></tr>
+<tr><td><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></td><td>2026-04</td><td>单图 + 任意长轨迹(交互式)</td><td><b>逐帧 3D cache(不融合)</b> + canonical 坐标 warp 路由</td><td>DL3DV 真实视频</td><td>DL3DV-10K</td><td>64×GB200 × 7000 步<br/>(TRAINING.md:64×B200 ~5000 步)</td><td>~194 s/80 帧(GB200);<br/>DMD 4 步 ~15 s</td><td>H100 80GB 可跑</td><td>T&amp;T SSIM 0.384 / LPIPS 0.552</td><td>✅ 代码+权重+GUI+训练码</td></tr>
+<tr><td><a href="VideoGen-20250305-GEN3C.html">GEN3C</a></td><td>2025-03</td><td>单图 + 相机轨迹</td><td>depth-warp 条件(无持久记忆)</td><td>真实视频</td><td>—</td><td>—</td><td>0.117 FPS(OctWorld 实测)</td><td>41 GB(同上)</td><td>相机控制 50.12 但风格一致性 12.57(最差)</td><td>✅</td></tr>
+<tr><td>Voyager</td><td>2025</td><td>单图 + 相机轨迹</td><td>warp 条件 + 深度预测(单 chunk)</td><td>真实视频</td><td>—</td><td>—</td><td>0.041 FPS(最慢)</td><td>48 GB</td><td>WorldScore 总分 49.93;相机控制 58.09(最高)</td><td>—</td></tr>
+<tr><td>Aether</td><td>2025</td><td>单图 + 相机条件</td><td>相机条件(无 warp)</td><td>真实视频</td><td>—</td><td>—</td><td>0.223 FPS</td><td>34 GB</td><td>光度一致性 83.49(最高)</td><td>—</td></tr>
+<tr class="fail"><td>VMem</td><td>2025</td><td>单图</td><td>3D surface element 索引检索</td><td>真实视频</td><td>—</td><td>—</td><td>0.400 FPS(最快,因参数量最小)</td><td>19 GB</td><td>WorldScore 总分 42.4;用户偏好 0.9%</td><td>—</td></tr>
+<tr><td><a href="3D-20250923-Lyra.html">Lyra 1.0</a></td><td>2025-09</td><td>单图/单视频,固定窗口</td><td>latent 自蒸馏 3DGS 解码器</td><td>教师视频模型(自蒸馏)</td><td>354k 合成视频</td><td>8×A100 × 6 天</td><td>18 ms/帧渲染</td><td>—</td><td>RE10K PSNR 21.79</td><td>✅</td></tr>
+<tr><td>InvisibleStitch</td><td>2025</td><td>单图</td><td>warp-inpaint 范式</td><td>真实视频</td><td>—</td><td>—</td><td>—</td><td>—</td><td>长轨迹下"难以生成合理结果"(论文定性)</td><td>—</td></tr>
+</table>
+<div class="note"><b>数据来源说明:</b>OctWorld 行来自本论文;GEN3C、Voyager、Aether、VMem 的 FPS 与显存来自 <b>OctWorld 论文 Table II 的实测</b>(在首 chunk 设定下,单张 A100 80GB);Lyra 2.0 与 Lyra 1.0 行来自各自论文/README。<b>注意各行的"关键指标"用的不是同一套指标与数据集,不可横向比大小</b>,仅用于展示各方法自称的强项。</div>
+
+<h3>12.2 核心对照:与 Lyra 2.0 的路线分歧</h3>
+<div class="callout key">
+<b>事实基础(经全文检索核实):</b>① OctWorld <b>全文 0 次提及 Lyra</b>,两篇互不引用;② 两篇<b>都构建在 FramePack 之上</b>(OctWorld §3.2 "built upon FramePack";Lyra 2.0 §3 "We adopt FramePack to compress the history context");③ OctWorld-1.5 的骨干是 <b>Wan2.1 14B I2V</b>,与 Lyra 2.0 的骨干<b>完全相同</b>;④ 时间上 Lyra 2.0 早 5 个月(2026-04-14 vs 2026-09-03),但 OctWorld 的 ECCV 2026 投稿窗口可能早于 4 月,两者属同期独立工作。
+</div>
+<table>
+<tr><th>维度</th><th><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></th><th>OctWorld</th></tr>
+<tr><td colspan="3" style="background:var(--panel2);color:#cfd6e0;font-weight:600">根本分歧:要不要把历史几何融合成一个全局表示</td></tr>
+<tr><td><b>核心主张</b></td><td class="fail-cell" style="color:#fca5a5">拒绝融合。"我们<b>从不</b>把它们融合成一个全局点云" —— 理由是长时程上深度质量必然退化,融合会把跨视角错位累积进一个被污染的重建</td><td class="best-cell" style="color:#a7f3d0">拥抱融合。"我们提出首个可扩展、全局融合的 3D 记忆框架" —— 理由是通过<b>有原则的融合机制</b>(自适应分辨率 + 加权 TSDF + 分级细节)可以让融合本身足够鲁棒</td></tr>
+<tr><td><b>几何的角色</b></td><td>只做<b>信息路由</b>:选帧 + 建对应,不参与外观合成</td><td>直接渲染成<b>部分观测 RGB + 可见性 mask</b>,作为生成的条件</td></tr>
+<tr><td><b>防误差累积的手段</b></td><td>靠"不累积" —— 逐帧隔离存储</td><td>靠"融合结构的容错性" —— TSDF 加权平均 + 体素自适应 + root extension</td></tr>
+<tr><td><b>对自己的怀疑的回应</b></td><td>消融 <code>w/ Global Point Cloud</code> 显示全局点云使相机可控性从 63.87 掉到 49.86</td><td>消融 <code>TSDF_f16 vs PointCloud_f16</code> 显示融合(0.2509)优于纯点云(0.2749),且 Table 5 显示 OctMap PSNR 23.47 > 最优 TSDF 22.08</td></tr>
+<tr><td colspan="3" style="background:var(--panel2);color:#cfd6e0;font-weight:600">抗漂移策略:同源问题意识,不同实现</td></tr>
+<tr><td><b>机制名</b></td><td>Self-Augmentation(自增广)</td><td>Noise Augmentation(噪声增广)</td></tr>
+<tr><td><b>怎么制造"退化条件"</b></td><td>对历史 latent 加噪后走<b>流匹配的一步去噪</b>,得到"模型自己会产出的那种"退化样本</td><td>直接对记忆与时间上下文<b>加缩放的高斯噪声</b>(等级 $\alpha$ 从 11 级集合采样)</td></tr>
+<tr><td><b>控制量</b></td><td>$p_{\text{aug}}$(论文 0.7 / 代码 1.0)、$t\sim\mathcal{U}(0,0.5)$</td><td>$\alpha \in \{0, 0.07, \dots, 0.7\}$,实验固定 3</td></tr>
+<tr><td><b>消融呈现的 trade-off</b></td><td>移除后:主观质量<b>升</b> 47.88(vs 43.35),但风格一致性崩到 77.98、相机可控性掉到 53.92</td><td>等级 0→3:LPIPS 退化 15.6%,但 3D 一致性<b>升</b> 6.7%(67.18→71.67)</td></tr>
+<tr><td colspan="3" style="background:var(--panel2);color:#cfd6e0;font-weight:600">共同点</td></tr>
+<tr><td>上下文压缩</td><td colspan="2">都用 <b>FramePack</b> 的可变核打包来延长时间视野并锚定首帧</td></tr>
+<tr><td>条件模块初始化</td><td colspan="2">都用<b>零初始化</b>保证起点等于预训练骨干的行为</td></tr>
+<tr><td>相机条件</td><td colspan="2">都用 <b>Plücker 射线</b>嵌入(加 MLP/卷积适配器后加到 token 或 latent 上)</td></tr>
+<tr><td>抗漂移的哲学</td><td colspan="2"><b>都把 train-test 分布不匹配显式化为训练策略</b> —— 在训练时主动污染历史条件</td></tr>
+<tr><td>失败模式</td><td>未系统报告(仅 README 警告轨迹上可能幻觉物体)</td><td>明确报告:轨迹穿过已生成物体时漂移,根因是"只在局部 chunk 内处理轨迹条件"</td></tr>
+</table>
+
+<div class="callout red">
+<b>关键判断:两篇无法直接比较,但分歧点非常有价值。</b>
+<ul style="margin-top:8px">
+<li><b>评测不可比:</b>Lyra 2.0 用 DL3DV + T&amp;T + SSIM/LPIPS/FID;OctWorld 用 WorldScore + Re10K 反转轨迹 + LPIPS/CD。两者<b>数据集不重叠、指标不重叠、且 OctWorld 的 baseline 列表里没有 Lyra</b>。</li>
+<li><b>消融结论表面矛盾但不可以此互驳:</b>Lyra 2.0 的 <code>w/ Global Point Cloud</code> 消融证明全局点云有害;OctWorld 的 Table 4(a) 证明 TSDF 融合优于点云。<b>两者消融的对象不同</b> —— Lyra 消融的是"用全局点云替换逐帧 cache + 对应条件",OctWorld 对比的是"作为世界记忆,点云 vs TSDF 谁更好"。**OctWorld 从未测试"完全不融合会怎样"(其 <code>w/o OctMap</code> 是完全移除空间条件,不是换回逐帧缓存)**,这正是可以补的实验。</li>
+<li><b>最有价值的空白实验:</b>在 Lyra 2.0 的开源代码上,把逐帧 3D cache 替换为 OctMap 式的自适应八叉树 TSDF 记忆(保留 canonical 坐标 warp 路由机制不变),在 Lyra 2.0 自己的评测协议下测 —— 这能干净地回答"对同一骨干、同一评测,融合 vs 不融合谁更好"。<b>目前没有任何一篇做了这个对照。</b></li>
+</ul>
+</div>
+
+<h3>12.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>① 逐帧 warp-inpaint</td><td>GEN3C、InvisibleStitch</td><td>用深度 warp 当前帧到目标视角并补全</td><td>无持久记忆,重访靠幻觉;风格一致性极差(Gen3C 12.57)</td></tr>
+<tr><td>② 检索式记忆</td><td>VMem、Context as Memory</td><td>按相似度检索历史帧/特征入上下文</td><td>缺几何锚定,长程失效(VMem 用户偏好 0.9%)</td></tr>
+<tr><td>③ 相机条件(无显式几何)</td><td>Aether、OASIS、HYGameCraft</td><td>靠学到的相机表示映射到视频帧</td><td>相机控制不精确、几何一致性有限</td></tr>
+<tr class="best"><td><b>④ 融合式全局 3D 记忆(本文)</b></td><td><b>OctWorld</b>、Voyager、SPMem</td><td>维护全局 3D 表示,渲染其视图作为条件;用有原则的融合(TSDF + 自适应分辨率)抵抗误差累积</td><td>内存随场景增长(全缓存 GPU);不支持动态物体;轨迹只做 chunk 内处理导致穿越漂移</td></tr>
+<tr><td>⑤ 几何仅作路由</td><td><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></td><td>几何只做信息路由,外观全交给生成先验</td><td>逐帧存储内存线性增长;分布外场景无外观兜底</td></tr>
+</table>
+<p><b>本文与 Voyager/SPMem 的区别(论文自己划的界):</b>虽然同属"累积显式 3D 表示"这一族,但论文指出 Voyager 与 Gen3C 等方法"在整合生成帧的观测时<b>通常依赖简单聚合或特征融合</b>",而本文"引入了可扩展的融合策略,把生成的 RGBD 观测逐步整合进全局空间记忆,实现鲁棒的几何累积"。<b>这个区分是成立的:</b>Voyager 的做法是把历史渲染直接当条件(无融合机制),而 OctMap 是有明确权重、明确分辨率策略、明确边界扩张规则的融合器。</p>
+
+<h3>12.4 库内交叉链接</h3>
+<ul>
+<li><b><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></b> — 解同一问题的相反路线,见 §12.2。这是本笔记最重要的对照对象。</li>
+<li><b><a href="3D-20250923-Lyra.html">Lyra 1.0</a></b> — 同团队的更早工作,走"视频扩散自蒸馏 → 3DGS 解码器"路线,与本文的"记忆机制"路线正交。</li>
+<li><b><a href="VideoGen-20250305-GEN3C.html">GEN3C</a></b> — 本文的 baseline 之一,也是 Lyra 1.0 的教师模型;两篇都把它当参照点,但用法不同(本文当竞争者,Lyra 1.0 当监督源)。</li>
+<li><b><a href="3D-20260514-VGGT-Omega.html">VGGT-Ω / VGGT</a></b> — <b>本文用 VGGT 计算 Chamfer Distance 来评估几何一致性</b>(§0.C.2 用官方 VGGT 管线 + 默认点置信度阈值 + FPS 采样 65536 点)。这是跨笔记的方法复用点。</li>
+<li><b><a href="3D-20260512-VidSplat.html">VidSplat</a></b> / <b><a href="3D-20260522-GenRecon.html">GenRecon</a></b> — 同属"用生成先验提升 3D"的路线,但聚焦稀疏视角而非长轨迹探索。</li>
+<li><b><a href="3D-20260821-ArtiFixer.html">ArtiFixer</a></b> — Lyra 团队同期的长时程自回归工作,可与本文的噪声增广策略对照。</li>
+<li><b><a href="VideoGen-20260427-视频生成几何一致性调研.html">视频生成几何一致性调研</a></b> / <b><a href="VideoGen-20260618-视频生成相机可控性调研.html">相机可控性调研</a></b> — 本文可置于这两个方向的交叉处。</li>
+</ul>
+
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+
+<h3>13.1 论文自述的定位</h3>
+<p>论文 §5 Conclusion 只给出方向性表述:"我们相信 OctWorld 代表了迈向世界一致视频生成的一个有意义的步骤,在多个领域有广泛的应用潜力。" <b>论文未设专门的应用章节</b>(对比 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 有 §5.5 Applications,含 GUI / Isaac Sim 仿真演示)。这是一个可观察的差别:OctWorld 更聚焦于机制本身,没有展示下游集成。</p>
+
+<h3>13.2 硬件与资源门槛</h3>
+<table>
+<tr><th>环节</th><th>需求</th><th>依据</th><th>RTX 3090(24GB)可行性</th></tr>
+<tr><td>生成 + OctMap 端到端</td><td>论文实测 <b>51 GB</b> 峰值显存(首 chunk 设定,单张 A100 80GB)</td><td>Table II</td><td class="fail-cell" style="color:#fca5a5"><b>❌ 不可行</b>(14.5B 骨干 + 记忆,24GB 差一倍以上)</td></tr>
+<tr><td>仅 OctMap 模块</td><td>论文实测 <b>1–10 GB</b>(随场景尺度与视距),峰值 22.93GB(505 帧序列)</td><td>§4.1;Table I</td><td style="color:#fbbf24">⚠️ 小场景理论上可能在 24GB 内,但 Table I 的峰值 22.93GB 已接近 3090 上限;<b>且记忆模块无法脱离生成器单独使用</b></td></tr>
+<tr><td>训练</td><td>32×H100(1.0)/ 16×H100(1.5),batch 64</td><td>§4.1;§0.E.3</td><td style="color:#fca5a5">❌ 不可行</td></tr>
+<tr><td>代码</td><td class="fail-cell" style="color:#fca5a5"><b>未放出</b></td><td>项目页 "Code (Coming Soon)"</td><td style="color:#fca5a5">❌ 无从谈起</td></tr>
+</table>
+
+<h3>13.3 对 vggt_human 主线的判断</h3>
+<div class="callout red">
+<b>三个层面都不适配:</b>
+<ol style="margin-top:8px">
+<li><b>能力层面:</b>OctWorld 是<b>生成</b>而非重建,输出是模型想象的世界;vggt_human 要的是对真实捕获的精确复原。二者目标相反。</li>
+<li><b>对象层面:</b>OctWorld 论文明确"<b>尚不支持动态物体的生成与记忆保持</b>"(§0.D.2),并把"如何有效建模 4D 场景与维持动态世界记忆"列为关键开放挑战。而 vggt_human 的核心正是人体(动态)。</li>
+<li><b>资源层面:</b>51GB 峰值显存 + 32×H100 训练门槛,超出本地单卡 3090 环境一个量级以上;且代码未放出。</li>
+</ol>
+</div>
+
+<h3>13.4 可迁移的思路(即便不落地代码)</h3>
+<div class="grid-3">
+<div class="card">
+<h4>① 自适应分辨率的思想</h4>
+<p>$s(u,v,z)=z/\sqrt{f_x f_y}$ 这个"按观测深度决定表示粒度"的推导,是纯几何的、与生成无关的。任何需要空间数据结构(体素/八叉树/哈希网格)的场景都可复用:<b>让分辨率随距离衰减,与透视几何一致</b>,而不是全场景统一分辨率。</p>
+</div>
+<div class="card">
+<h4>② O(1) 根扩展技巧</h4>
+<p>场景扩张时"只重挂 8 个指针、体积翻倍"的 root extension,是处理<b>无界空间</b>的优雅解法。适用于任何需要动态扩张包围盒的应用(增量式重建、大规模场景地图)。</p>
+</div>
+<div class="card">
+<h4>③ 反转轨迹评测协议</h4>
+<p>把序列轨迹反向追加,形成"前进+原路返回",用<b>前后半对称帧对</b>度量一致性 —— 这个评测协议设计精巧、成本低、判据明确,<b>可直接移植到任何"重访一致性"的评测</b>,包括 vggt_human 的逐帧重建一致性验证。</p>
+</div>
+</div>
+<div class="callout tip">
+<b>上面前两条对本项目最有实用价值。</b>第 ③ 条尤其值得注意:它是一个<b>你不需要 OctWorld 代码就能用</b>的评测方法,而且能直接用于检验现有 pipeline 在"相机原路返回"时的重建稳定性 —— 这是一个几乎没有额外成本的诊断实验。
+</div>
+
+<h3>13.5 数据成本</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>说明</th></tr>
+<tr><td>训练数据</td><td>RE10K + DL3DV + SpatialVid(HQ 子集)</td><td>均为公开数据集,但需大量过滤(见 §9.3)</td></tr>
+<tr><td>位姿/深度标注</td><td>用 Pi3 自动估计</td><td>无需人工标注,但有置信度过滤门槛(MCV ≥ 0.16 / HCPR ≥ 0.42)</td></tr>
+<tr><td>文本描述</td><td>GPT-4o 生成视频级描述</td><td>有 API 成本</td></tr>
+<tr><td>推理输入</td><td>1 张图 + 深度 + 轨迹</td><td>极低;首帧深度可由 MoGe 给出</td></tr>
+<tr><td>用户研究</td><td>22 名参与者 × 20 次对比</td><td>评测成本,论文未给是否付费</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<p style="font-size:14px;color:var(--text-dim)">本节区分两类来源:<b>[论文自述]</b> = 作者在 §0.D.2 主动列出的局限与方向;<b>[本笔记补充]</b> = 论文未提及但可从其数据/设计推断的问题。两类均给出依据。</p>
+
+<h3>14.1 方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级][论文自述] 不支持动态物体的建模与记忆保持</h4>
+<p><b>问题:</b>论文 §0.D.2 明确:"虽然 OctWorld 在静态场景的长程生成上展现了鲁棒能力,但它<b>尚不支持动态物体的生成与记忆保持</b>。如何有效建模 4D 场景并维持动态世界记忆,仍是一个关键的开放挑战。"</p>
+<p><b>论文佐证:</b>§0.D.2 原文;此外 §0.B.3 的整个数据过滤流水线都在<b>剔除动态内容</b>(dynamicRatio ≤ 0.2、VLM 判人/手/动态、人脸检测剔除),说明训练数据本身就把动态排除在外了。</p>
+<p><b>改进建议:</b>① 记忆结构上需从"静态 TSDF"扩展到"随时间变化的 4D 表示"(如 TSDF 加时间维、或动静分离的双层表示);② 数据侧需要保留含动态物体的视频并标注运动;③ 评测需引入时序一致性指标(现有 LPIPS/CD 都是前后半对称帧对比,对动态场景不适用)。<b>这条对 vggt_human 方向的团队是最关键的局限。</b></p>
+</div>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级][论文自述] 轨迹条件仅在某 chunk 内处理,导致穿越已生成物体时漂移</h4>
+<p><b>问题:</b>失败模式(§0.D.1):当预定义轨迹与已生成物体相交或被遮挡时(如模型在有门口处渲染出实心墙),产生视觉漂移。根因是"模型仅在<b>局部 chunk 内</b>处理轨迹条件"。</p>
+<p><b>论文佐证:</b>§0.D.1;Figure VI。</p>
+<p><b>改进建议(论文提出):</b>"扩展框架以注入<b>超出单个 chunk 的全局相机轨迹</b>,可以提供更好的长期空间预见性。"<br>
+<b>补充思路(本笔记):</b><a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 用 GUI 把累积点云可视化、让用户<b>在生成前规划轨迹</b>,是对同一问题的另一种缓解 —— 即把"预见性"从模型内部转移到用户交互层。两条路可叠加:模型侧注入全局轨迹 + 界面侧可视化已有几何以辅助规划。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级][论文自述] 所有节点缓存于 GPU,内存随场景扩张持续增长</h4>
+<p><b>问题:</b>§0.D.2 自述:"因为所有节点目前都缓存在 GPU 上,内存消耗随场景扩张<b>持续增长</b>。因此,启用<b>视相关的内存 offload</b> 是解决这一可扩展性瓶颈的关键方向。" 并要求"开发体素剪枝策略以丢弃未观测或冗余的体素"。</p>
+<p><b>论文佐证:</b>§0.D.2。实测数据也印证:Table I 显示 505 帧序列的峰值 CUDA 内存 <b>22.93 GB</b>,最终节点数 <b>34,659K</b> —— 这是不到 30 秒视频的体量。</p>
+<p><b>改进建议:</b>① 体素剪枝(按可见性/观测权重淘汰);② 视相关 offload(把不在当前视野内的节点换出到 CPU/磁盘,按需换入);③ 分块分层加载(类似虚拟纹理的做法)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级][论文自述] 不保留粗节点特征,无法做视相关 LOD 渲染</h4>
+<p><b>问题:</b>§0.D.2:"关于 OctMap,我们目前<b>不保留粗节点的特征</b>。因此无法执行视相关的层级细节(LOD)渲染 —— 后者通常依赖于在高分辨率变得冗余时(如远距离视图或均匀区域)把细粒度体素聚合成更粗的表示。"</p>
+<p><b>分析(本笔记):</b>这是 §4.3 所示"自适应分辨率"思想的一个未走完的延伸 —— 构造时按深度分配了不同粒度,但<b>不保留父节点特征意味着粒度一旦选定就不可回退</b>。若保留粗节点特征,就能在渲染时按距离动态选择粒度,进一步省内存与算力。</p>
+<p><b>改进建议:</b>在节点分裂时把父节点特征作为粗层级的"摘要"保留(而非仅用于初始化子节点),形成真正的多分辨率金字塔。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级][本笔记补充] 未测试"完全不融合"的对照实验</h4>
+<p><b>问题:</b>Table 4(a) 的四个设置是:TSDF_f16、PointCloud_f16、w/o OctMap_f36、TSDF_f36、Ours_f36。其中 <code>w/o OctMap</code> 是<b>完全移除空间条件</b>(退化为无记忆),而不是"改用 Lyra 2.0 式的逐帧不融合记忆"。<b>因此这篇论文从未在自己的评测协议下测试"几何只做路由、不融合"这条路线</b> —— 而这正是同题的另一种主流解法。</p>
+<p><b>依据:</b>Table 4(a) 的设置列表;结合 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> §12 消融(其 <code>w/ Global Point Cloud</code> 显示全局点云损害相机可控性 63.87→49.86)。</p>
+<p><b>改进建议:</b>补一个 <code>w/ Per-frame Cache + Routing</code> 变体(保留逐帧几何,只用于检索与建对应,不渲染成条件),在同一协议下与 OctMap 对比。这能干净地回答"融合 vs 不融合"—— 也是本笔记认为<b>当前这个子方向最有价值的空白实验</b>。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级][本笔记补充] 加权平均对"矛盾观测"的鲁棒性未做分析</h4>
+<p><b>问题:</b>TSDF 式 1 是标准加权平均 $\phi_{\text{new}}=(w_{\text{old}}\phi_{\text{old}}+w_{\text{obs}}\phi_{\text{obs}})/(w_{\text{old}}+w_{\text{obs}})$。当同一区域被反复重访、且不同次生成给出<b>互相矛盾</b>的深度(这在自回归生成中很可能发生,因为每次生成都是独立采样)时,加权平均会趋向一个"折中"位置 —— 可能既不是真实表面,也不是任何一次观测的表面。论文未做这类矛盾观测的鲁棒性分析。</p>
+<p><b>依据:</b>式 1;论文 §14.1 的失败模式讨论只涉及"轨迹与几何相交",未涉及"多次观测互相矛盾"。</p>
+<p><b>改进建议:</b>① 引入<b>置信度加权</b>(而非单纯计次加权),对来自低质量生成段的观测降权;② 分析 $w$ 的饱和策略(当前是无上限累加,意味着早期错误观测会永久保留但影响被稀释)。</p>
+</div>
+
+<h3>14.2 数据与评估层面</h3>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级][本笔记补充] 缺"轨迹长度 vs 指标退化"的定量曲线</h4>
+<p><b>问题:</b>论文设置了长程基准(433/505 帧)但<b>只做用户研究与定性对比</b>,没有给出各指标随轨迹长度的变化曲线。因此无法回答"模型在多少帧后开始崩" —— 而这是长程方法最该提供的证据,也直接决定工程上"多长轨迹需要分段处理"。</p>
+<p><b>依据:</b>Table 1/2 用的是 108 帧与约 120 帧设定;长程部分(§4.4)只有 Table 3 的用户偏好与 Figure 7 的定性结果。</p>
+<p><b>改进建议:</b>按轨迹长度分桶(如 100/200/400/800/1600 帧)给出 LPIPS/CD/WorldScore 各分项的曲线。<a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 有同样的缺口,两篇都缺这条曲线。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级][本笔记补充] 正文表述与表格数值存在表面矛盾</h4>
+<p><b>问题:</b>§4.2 正文称"OctWorld 在 <b>3D 一致性</b>与<b>光度一致性</b>两项取得最高分",但 Table 1 中<b>光度一致性列的最高值是 AETHER 的 83.49</b>,本文为 78.17。<span class="uncertain">⚠️【待核实】</span></p>
+<p><b>依据:</b>§4.2 原文 vs Table 1 数值。</p>
+<p><b>说明:</b>论文在同一节里对两项指标分别做了解释(3D 一致性=跨视角重投影误差;光度一致性=前向-后向光流),但解释与"最高分"的断言未被数值支持。可能的解释有:列定义与正文不完全对应、或"两项"指其他指标组合、或表述疏漏。<b>本笔记不代为解释,原样标出疑点。</b>改进建议:澄清"最高的两项"具体指哪两列,或修正表格/正文使其一致。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级][本笔记补充] 用户研究样本量与统计检验</h4>
+<p><b>问题:</b>22 名参与者、每人 20 次对比,报告 Ours 53.8% vs Gen3C 39.5%。论文未给置信区间、未说明参与者是否具备领域背景、未做显著性检验。</p>
+<p><b>依据:</b>Table 3;§0.C.3 只说明了界面与流程。</p>
+<p><b>改进建议:</b>报告置信区间与配对检验结果;说明参与者筛选标准。</p>
+</div>
+
+<h3>14.3 工程实用性层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级][本笔记补充] 代码未放出,方法完全不可复现</h4>
+<p><b>问题:</b>项目页 Code 按钮为 <code>Code (Coming Soon)</code> 且 href 指向页内锚点 <code>#top</code>;无任何 GitHub 仓库地址。<b>论文中缺失的信息(损失函数形式、LR 调度、八叉树实现细节、Marching Cubes 并行策略等)因此全部无法补齐</b>。</p>
+<p><b>影响:</b>① 无法验证论文的任何数字;② 无法把 OctMap 作为组件试用到自有 pipeline;③ 论文声称的三个对比优势(优于点云、优于固定 TSDF、端到端效率竞争力)都只能停留在"读"的层面。</p>
+<p><b>改进建议:</b>放出代码(至少放 OctMap 模块,它是最独立、最可复用的部分 —— 纯几何算法,不依赖模型权重)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级][本笔记补充] 1.0 → 1.5 的改动无法分离变量</h4>
+<p><b>问题:</b>从 1.0 到 1.5 至少同时改了三项:① 骨干(FramePack/Hunyuan DiT → Wan2.1 14B I2V);② 深度来源(联合生成 → 外部流式估计);③ 噪声注入方式(全局时间步嵌入 → token-wise AdaLN)。Table IV 显示 1.5 除 3D 与光度一致性外各项都更好。</p>
+<p><b>依据:</b>Table IV 的"Predict Depth"与"Backbone"两列直接显示了 ① ② 的差异;§0.E.2 描述了 ③。</p>
+<p><b>改进建议:</b>做单变量消融(如在同一骨干上分别测全局注入 vs token-wise 注入),否则"1.5 更好"无法归因。论文自己承认 1.0 的全局注入有"纠缠时间步与噪声等级"的缺陷,但未量化这一缺陷的代价。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级][论文自述] 生成质量受限于训练数据与骨干</h4>
+<p><b>论文自述(§0.D.2):</b>"OctWorld 的生成质量根本上取决于训练数据与底层骨干。利用更大规模、更高质量的数据集,以及采用能够长时程视频生成的先进基础模型,可以进一步提升整体合成质量。"</p>
+<p><b>分析:</b>这是本分的表述 —— OctWorld 的贡献在<b>记忆机制</b>而非生成模型,因此它天然可以"挂"在更强的骨干上受益。与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 一样,这类方法的价值随时间推移会被底层模型的进步放大。</p>
+</div>
+
+<h3>14.4 优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>方向</th><th>类别</th><th>来源</th><th>核心问题</th></tr>
+<tr class="fail"><td><b>高</b></td><td>代码未放出</td><td>工程</td><td>本笔记补充</td><td>方法完全不可复现、不可验证</td></tr>
+<tr class="fail"><td><b>高</b></td><td>不支持动态物体</td><td>方法</td><td>论文自述</td><td>排除了人体/动态场景等大量应用</td></tr>
+<tr class="fail"><td><b>高</b></td><td>轨迹只在 chunk 内处理</td><td>方法</td><td>论文自述</td><td>穿越已生成物体时漂移(已明确的失败模式)</td></tr>
+<tr class="fail"><td><b>高</b></td><td>节点全缓存 GPU,内存持续增长</td><td>方法</td><td>论文自述</td><td>长轨迹可扩展性瓶颈(505 帧已 22.93GB)</td></tr>
+<tr><td>中</td><td>不保留粗节点特征 → 无 LOD</td><td>方法</td><td>论文自述</td><td>自适应粒度不可回退,内存/算力有浪费</td></tr>
+<tr><td>中</td><td>未测"完全不融合"对照</td><td>方法</td><td>本笔记补充</td><td>子方向最有价值的空白实验</td></tr>
+<tr><td>中</td><td>矛盾观测的鲁棒性未分析</td><td>方法</td><td>本笔记补充</td><td>加权平均在冲突观测下可能给出折中伪表面</td></tr>
+<tr><td>中</td><td>缺轨迹长度 vs 退化曲线</td><td>评估</td><td>本笔记补充</td><td>长程方法最该给的证据缺失</td></tr>
+<tr><td>中</td><td>正文与表格数值表面矛盾</td><td>评估</td><td>本笔记补充</td><td>"两项最高分"与 Table 1 不符</td></tr>
+<tr><td>中</td><td>1.0→1.5 改动无法归因</td><td>工程</td><td>本笔记补充</td><td>三处变量同时变</td></tr>
+<tr><td>低</td><td>用户研究统计强度</td><td>评估</td><td>本笔记补充</td><td>22 人无置信区间</td></tr>
+<tr><td>低</td><td>生成质量受数据/骨干限制</td><td>工程</td><td>论文自述</td><td>本分表述,可随骨干进步受益</td></tr>
+</table>
+
+<div class="callout key">
+<b>个人认为最关键的三点:</b>
+<ol style="margin-top:8px">
+<li><b>"代码未放出"是当前最大的实用障碍,而不是任何技术缺陷。</b>OctMap 本身是纯几何算法(不含模型权重),单独放出既无许可风险又极具复用价值 —— 但它没有。在它放出之前,这篇论文的价值对工程团队而言仅停留在"读思路"层面,连 Table 5 那组最有说服力的重投影数据都无法验证。</li>
+<li><b>不支持动态物体从根本上划定了适用范围。</b>这不是"待改进的细节",而是架构级的约束:TSDF 体素融合的前提是场景静止。要扩展到 4D,记忆结构本身需要重新设计(时间维如何进入八叉树、动静如何分离、权重如何随时间衰减),不是加个模块能解决的。凡涉及人体、车辆、可变形物体的应用,这篇论文提供的是<b>问题定义</b>而非<b>解法</b>。</li>
+<li><b>"融合 vs 不融合"这个核心分歧至今无人做出干净对照。</b>Lyra 2.0 从一侧证明了全局融合有害(相机可控性 63.87→49.86),OctWorld 从另一侧证明了有原则的融合优于点云与固定 TSDF —— 但<b>两者用的评测协议不同、消融对象不同,无法互驳</b>。谁能在同一骨干、同一评测下同时跑这两条路线,谁就能给这个子方向一个确定的答案。这是我认为当下最值得做的实验。</li>
+</ol>
+</div>
+
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>总结与演进定位</h2>
+
+<h3>15.1 一句话总结</h3>
+<div class="callout key">
+OctWorld 的贡献是<b>把这个子方向的"记忆该怎么做"推向了工程化的一端</b>:它不满足于"检索历史帧"或"累积点云"这类简单聚合,而是借用 SLAM 的成熟工具(TSDF 融合 + 多分辨率八叉树),并针对开放域世界生成的<b>尺度不确定性</b>做了关键改造(按观测深度自适应分辨率 + O(1) 根扩展)。Table 5 那组数据(OctMap PSNR 23.47 vs 最优可行 TSDF 22.08,且成本相当)是全文最硬的证据,它把"自适应分辨率优于固定分辨率"从直觉变成了数字。
+</div>
+
+<h3>15.2 三条方法论级别的收获</h3>
+<table>
+<tr><th>#</th><th>收获</th><th>可迁移性</th></tr>
+<tr><td>1</td><td><b>分辨率应由观测几何决定,而非预先固定</b>:$s(u,v,z)=z/\sqrt{f_x f_y}$ 把"体素该多大"变成深度的函数,与透视投影天然一致。</td><td>极高 —— 任何用体素/八叉树/哈希网格的 3D 应用都可复用</td></tr>
+<tr><td>2</td><td><b>无界空间用根扩展而非重建</b>:场景扩张时只重挂 8 个指针,体积翻倍,O(1) 开销。</td><td>高 —— 增量重建、大规模建图</td></tr>
+<tr><td>3</td><td><b>反转轨迹评测协议</b>:把轨迹反向追加形成天然对称帧对,用前后半对比度量重访一致性。成本低、判据明确。</td><td>极高 —— <b>不需要本论文任何代码就能用</b>,可直接移植到任何重建系统的稳定性诊断</td></tr>
+</table>
+
+<h3>15.3 在演进脉络中的位置</h3>
+<table>
+<tr><th>范式 → 代表 → 核心先验 → 局限</th><th>本文的位置</th></tr>
+<tr><td>① 逐帧 warp-inpaint(GEN3C / InvisibleStitch)→ 深度 warp 补全 → 无持久记忆</td><td>本文用 OctMap 补上了持久记忆,且证明显式几何条件比纯 warp 更能维持长程一致</td></tr>
+<tr><td>② 检索式记忆(VMem / CaM)→ 相似度检索 → 缺几何锚定</td><td>本文用"融合 + 渲染"替代"检索",在用户偏好上以 53.8% vs 0.9% 形成压倒性对比</td></tr>
+<tr><td>③ 相机条件(Aether / 动作条件模型)→ 学到的相机表示 → 控制不精确</td><td>本文用 Plücker 显式相机条件 + 几何条件双重约束,论文称"保持严格几何对齐"</td></tr>
+<tr class="best"><td><b>④ 融合式全局 3D 记忆(本文)→ 有原则的融合可抵抗误差累积 → 内存随场景增长、不支持动态</b></td><td><b>当前位置</b>。与 ⑤ 构成当前该子方向的两条对立主线</td></tr>
+<tr><td>⑤ 几何仅作路由(<a href="3D-20260414-Lyra2.html">Lyra 2.0</a>)→ 只传对应不传外观 → 逐帧存储线性增长、分布外无兜底</td><td>同题的相反解法,两篇互不引用,尚无干净对照</td></tr>
+</table>
+
+<h3>15.4 与 Lyra 2.0 合读的价值</h3>
+<div class="callout tip">
+这两篇论文合在一起读,价值大于分别读:
+<ul style="margin-top:8px">
+<li><b>问题的共识部分</b>:都把"长时程重访一致性"定义为核心挑战;都选择 FramePack 做上下文压缩;都用零初始化扩展条件模块;都用 Plücker 做相机条件;都用"训练时污染历史条件"来对抗漂移。<b>这五条独立收敛的共识,基本勾勒出了当前该子方向的技术底盘。</b></li>
+<li><b>分歧部分</b>:要不要融合全局几何。这是唯一但最根本的分歧,而两篇都没有做出能让对方信服的对照实验。</li>
+<li><b>合读的直接产出</b>:一份清晰的实验清单 —— 在同一骨干(Wan2.1 14B I2V)、同一评测协议下,对比 ① 逐帧 cache + 路由 ② OctMap 融合 ③ 无记忆,并给出轨迹长度 vs 指标的曲线。这个实验目前无人做过。</li>
+</ul>
+</div>
+
+<div class="figure">
+  <img src="images/2609.03919/invsible.png" alt="comparison with warp-inpaint" loading="lazy">
+  <div class="caption"><b>图10(论文 Figure I(a))</b> 与 warp-inpaint 路线代表 InvisibleStitch 的对比。实验设置与主论文 Figure 5 一致,对应 WorldScore 基准上的结果。论文称其在长轨迹设定下难以生成合理结果。</div>
+</div>
+
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>👥 研究团队 + 🔗 资源链接</h2>
+
+<h3>研究团队</h3>
+<table>
+<tr><th>项</th><th>内容</th></tr>
+<tr><td>机构</td><td><b>中国科学技术大学(USTC)</b> · <b>微软亚洲研究院(MSRA)</b> · <b>清华大学</b></td></tr>
+<tr><td>一作</td><td>Zelong Lv(USTC + MSRA,<b>MSRA 实习期间完成</b>)</td></tr>
+<tr><td>共同贡献</td><td>Jianfeng Xiang(MSRA + 清华)、Ruicheng Wang(USTC + MSRA)均标注为共同贡献(⋆)</td></tr>
+<tr><td>通讯作者</td><td>Jiaolong Yang(MSRA)</td></tr>
+<tr><td>其他成员</td><td>Sicheng Xu、Yue Dong、Yu Deng(均 MSRA)、Guangzhong Sun(USTC)</td></tr>
+<tr><td>团队方向印证</td><td>同团队成员在同期还有多项 3D 几何工作(如 <b>MoGe-3</b> 细粒度单目几何估计、<b>FM-VLA</b> 力觉记忆 VLA 模型),可见该组在"3D 几何表示 + 记忆机制"上有持续投入</td></tr>
+</table>
+<div class="note"><b>机构对照:</b>本文来自 MSRA 团队,而 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 来自 NVIDIA Spatial Intelligence Lab。两篇的机构、骨干选择(Wan2.1 14B I2V 高度重合)与技术基座(FramePack)均高度重叠,却在核心机制上做出相反选择 —— 这也是"同期独立工作"判断的另一个侧面证据。</div>
+
+<h3>论文引用与致谢中的可复用资产</h3>
+<ul>
+<li><b>FramePack</b> — 上下文压缩骨干(本工作与 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 均采用)</li>
+<li><b>Hunyuan Video / Hunyuan DiT</b> — OctWorld-1.0 的 DiT 骨干与其 Video Encoder</li>
+<li><b>Wan2.1 14B I2V</b> — OctWorld-1.5 骨干</li>
+<li><b>Pi3</b> — 训练数据的位姿与深度估计</li>
+<li><b>MoGe</b> — 首帧深度估计(与所有 baseline 统一使用,以确保公平)</li>
+<li><b>VGGT</b> — 反转轨迹评测中的点云重建与 Chamfer Distance 计算</li>
+<li><b>Depth Anything 3</b>(流式版本)— OctWorld-1.5 的深度估计器</li>
+<li><b>Kwai Keye-VL-1.5</b> — 数据过滤中的动态内容判定</li>
+<li><b>TransNetV2</b> — 场景切换检测</li>
+<li><b>VideoPainter</b> — 1.0 的世界记忆条件注入实现参考</li>
+<li><b>Kaolin</b> — Chamfer Distance 计算</li>
+</ul>
+
+<h3>资源链接</h3>
+<div class="refs">
+<ul>
+<li>📄 arXiv abs:<a href="https://arxiv.org/abs/2609.03919" target="_blank">arxiv.org/abs/2609.03919</a>(v1,2026-09-03,<b>仅 v1,无后续版本</b>)</li>
+<li>🌐 arXiv HTML 全文:<a href="https://arxiv.org/html/2609.03919v1" target="_blank">arxiv.org/html/2609.03919v1</a>(含 Appendix 0.A–0.E)</li>
+<li>🏠 项目主页:<a href="https://maxtirerror.github.io/octworldpage/" target="_blank">maxtirerror.github.io/octworldpage/</a>(含交互式 "Show 3D Map" 演示与 hover-to-play 视频)</li>
+<li>💻 代码:<b>未放出</b>(项目页显示 "Code (Coming Soon)",href 指向页内锚点)</li>
+<li>🤗 权重:未见公开模型卡</li>
+<li>📖 库内关联:<a href="3D-20260414-Lyra2.html">Lyra 2.0 笔记</a>(同题相反路线) · <a href="3D-20250923-Lyra.html">Lyra 1.0 笔记</a> · <a href="VideoGen-20250305-GEN3C.html">GEN3C 笔记</a> · <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω 笔记</a></li>
+</ul>
+</div>
+
+<div class="note">
+<b>本笔记的信息来源与核实范围:</b>论文全文(arXiv HTML v1,含正文 §1–§5 与 Appendix 0.A–0.E)、OctWorld 项目主页。<b>无任何源码级验证</b> —— 官方代码未放出(见 §1 与 §9 的前置声明)。所有超参与数字均标注了章节号;论文未给出的项(损失函数形式、LR 调度、八叉树实现细节)明确留空并标注,<b>未做任何估算或推测填充</b>。图片全部来自 arXiv HTML 热链或本地下载。标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文直接佐证的推断或发现的疑点。
+</div>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>本笔记为论文调研知识库的一部分 · 由 <a href="index.html" style="color:var(--accent)">index.html</a> 索引</p>
+</footer>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

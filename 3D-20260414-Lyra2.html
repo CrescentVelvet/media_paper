@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyra 2.0:可探索生成式 3D 世界</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2604.13036 · 2026-04-14 · NVIDIA Spatial Intelligence Lab · 长时程 3D 一致生成</span>
+    <h1>Lyra 2.0:可探索生成式 3D 世界</h1>
+    <div class="subtitle">Lyra 2.0: Explorable Generative 3D Worlds</div>
+    <div class="authors">Tianchang Shen* · Sherwin Bahmani · Kai He · Sangeetha Grama Srinivasan · Tianshi Cao · Jiawei Ren · Ruilong Li · Zian Wang · Nicholas Sharp · Zan Gojcic · Sanja Fidler · Jiahui Huang · Huan Ling · Jun Gao · Xuanchi Ren*(*equal contribution)</div>
+    <div class="org">NVIDIA Spatial Intelligence Lab</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2604.13036" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2604.13036v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://github.com/nv-tlabs/lyra" target="_blank">💻 GitHub(nv-tlabs/lyra · Lyra-2/)</a>
+      <a href="https://research.nvidia.com/labs/sil/projects/lyra2/" target="_blank">🏠 项目主页</a>
+      <a href="https://huggingface.co/nvidia/Lyra-2.0" target="_blank">🤗 模型权重</a>
+      <a href="3D-20250923-Lyra.html">📖 前作 Lyra 1.0 笔记</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:两类退化</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">反遗忘(1):逐帧 3D Cache 与几何感知检索</a></li>
+    <li><a href="#s5">反遗忘(2):canonical 坐标 warp 注入</a></li>
+    <li><a href="#s6">反漂移:Self-Augmentation 训练</a></li>
+    <li><a href="#s7">3D 重建:DAv3 微调与网格提取</a></li>
+    <li><a href="#s8">DMD 蒸馏加速推理</a></li>
+    <li><a href="#s9">逻辑流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>论文要解决的问题是:<strong>生成式重建(generative reconstruction)如何扩展到大规模、可反复探索的场景</strong>。所谓生成式重建,是先用相机可控的视频扩散模型合成一段"虚拟拍摄"视频,再把它 lift 成显式 3D 表示(这里是 3D Gaussians + 网格)。这条路线的视觉上限由视频模型决定,但<b>一旦相机轨迹变长、视角变化变大、需要回头重访已生成区域,当前视频模型就会迅速崩坏</b>。</p>
+
+<p>作者把这种崩坏拆成两种机制不同的退化,并分别给出对策 —— 这是本文最有价值的部分,因为它把"长时程 3D 一致"这个模糊目标拆成了可分别验证的两个子问题:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>① Spatial Forgetting(空间遗忘)</h4>
+    <p>相机移动后,先前观察到的区域<b>滑出了模型有限的时间上下文窗口</b>。当相机回头重访时,模型没有这些区域的记忆,只能从零开始幻觉出一套新结构,全局布局一致性随之破坏。</p>
+    <p><b>对策:</b>维护逐帧 3D 几何,但<b>仅用于信息路由</b>(检索相关历史帧 + 建立稠密几何对应),外观合成完全交给扩散模型的像素先验。</p>
+  </div>
+  <div class="card">
+    <h4>② Temporal Drifting(时间漂移)</h4>
+    <p>自回归生成会累积误差。每步的小瑕疵(色偏、模糊、扭曲)复合放大,加上探索时新区域不断出现、与早期历史帧的重叠越来越少,模型失去可靠的几何/纹理约束。</p>
+    <p><b>对策:</b>自增广训练(self-augmented histories),训练时让模型条件于<b>自己退化的输出</b>,教它纠正漂移而不是传播漂移。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(对既有两条路线的解耦):</b>此前缓解空间遗忘的主流做法是维护一个<b>累积的 3D 表示</b>(如全局点云),再用它的渲染结果作为后续帧的条件。作者指出这种紧耦合设计存在<b>误差放大</b>:生成瑕疵污染 3D 几何 → 坏的几何又反过来提供错误条件。另一条路线是把历史帧直接放进上下文窗口、靠自注意力隐式推断长程对应,但在大视角变化下经常失败。本文的做法是<b>把"几何跟踪"与"像素合成"解耦</b> —— 让显式 3D 代理只负责"该看谁、对应关系是什么",不负责"长什么样"。
+</div>
+
+<h3>一句话核心贡献</h3>
+<p>在 Wan 2.1-14B 视频扩散骨干上加入<b>逐帧 3D cache + 几何感知检索 + canonical 坐标 warp 注入</b>(治空间遗忘)与<b>自增广训练</b>(治时间漂移)两个机制,使单图输入可以沿任意长相机轨迹自回归生成 3D 一致的视频,并微调前馈重建模型(Depth Anything v3)把长视频转为高质量 3DGS 与表面网格 —— 最终跑通"单图 → 可探索 3D 世界 → 导入 Isaac Sim 做机器人仿真"的完整链路。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">832×480</div><div class="l">训练/推理分辨率</div></div>
+  <div class="stat"><div class="v">Wan 2.1-14B</div><div class="l">视频扩散骨干(DiT)</div></div>
+  <div class="stat"><div class="v">7000</div><div class="l">训练迭代数(64×GB200)</div></div>
+  <div class="stat"><div class="v">194s→15s</div><div class="l">单段生成耗时(35步→DMD 4步)</div></div>
+</div>
+
+<div class="callout warn">
+<b>署名与发表状态:</b>arXiv v1 提交于 2026-04-14。<b>abs 页 comments 字段只写了 Project Page,没有会议接收信息</b>,因此本笔记不标注任何会议 badge。<span class="uncertain">⚠️【待核实】</span>前作 Lyra 1.0 已在 ICLR 2026 发表(见库内 <a href="3D-20250923-Lyra.html">Lyra 1.0 笔记</a>),但 2.0 截至目前未见公开的接收记录。
+</div>
+
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:两类退化</h2>
+
+<h3>此前方法的具体失败模式</h3>
+<p>作者在 Related Work 里把缓解空间遗忘的既有工作分成两族,并明确指出各自的失效条件:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>路线 A:累积 3D 表示作为条件</h4>
+    <p>代表:GEN3C、SPMem 等 —— 维护全局点云/体素,渲染其视图作为后续帧的生成条件。</p>
+    <p><b>失效模式(误差放大):</b>"生成瑕疵污染 3D 几何,进而为未来帧产生有缺陷的条件"。这是紧耦合设计的结构性缺陷,不是调参能解决的。</p>
+  </div>
+  <div class="card">
+    <h4>路线 B:历史帧直接入上下文</h4>
+    <p>代表:用相机位姿嵌入把历史帧塞进上下文窗口,靠自注意力隐式推断长程几何对应。</p>
+    <p><b>失效模式(注意力不够):</b>"在大视角变化下频繁失败" —— 把纯几何对应问题交给学习到的注意力分布,缺乏显式几何锚点。</p>
+  </div>
+</div>
+
+<p>对时间漂移,既有做法是<b>延长时间上下文长度</b>来锚定过去帧(如 FramePack)。作者指出这个思路在探索场景下天然失效:<b>相机运动会把早期帧移出视野</b>,于是"长上下文锚定"对那些新观察到的区域根本不起作用 —— 而漂移恰恰发生在新区域上。</p>
+
+<div class="callout key">
+<b>关键问题诊断(观察偏差 / observation bias):</b>漂移的根因是<b>训练-推理不一致</b>。训练时模型条件于 ground-truth 历史帧,推理时却必须条件于自己产出的不完美帧。这一差距使得每步误差(色偏、模糊、扭曲)"得不到纠正并跨自回归步复合"。判断:这个诊断把漂移问题从"容量/上下文长度不足"重述为"分布不匹配",从而把解法指向训练策略而非架构 —— 这是本文能与 FramePack 正交叠加的理论前提。
+</div>
+
+<h3>作者的关键假设与失效条件</h3>
+<table>
+<tr><th>假设</th><th>论文依据</th><th>何时会失效</th></tr>
+<tr><td>3D 几何估计即使有噪声,也足以担当"信息路由"角色(选出相关帧 + 建对应关系)</td><td>§4.2 "use noisy 3D geometry estimation exclusively for information routing";消融 w/ Explicit Corr. Fusion 显示学习式聚合(57.29)优于硬几何融合(该变体),说明容噪能力来自学习而非几何精度</td><td>深度估计严重失真时(论文承认 "depth estimation quality inevitably degrades over time, since it runs on the generated frames");失败案例见 §ND.1 — 轨迹穿过已生成物体时仍会漂移</td></tr>
+<tr><td>不要融合成全景点云,逐帧独立存几何可以避免误差累积</td><td>§4.2 "we never fuse them into a single global point cloud";消融 w/ Global Point Cloud:相机可控性 49.86 vs 63.87</td><td>逐帧存储的代价是内存随帧数线性增长(论文未给该方案的内存账)</td></tr>
+<tr><td>warp canonical 坐标而非 RGB,可以避免模型"抄"warp 图的伪影</td><td>§4.2 明确论证:warped RGB 含去遮挡空洞、拉伸伪影、深度边界渗色;若以此为条件,模型会复现这些伪影,"warped image acts as a crutch"</td><td>等价于把外观合成的全部负担压给生成先验;若生成先验对该区域无知识(如训练分布外的场景类型),无兜底</td></tr>
+<tr><td>自增广可把推理期误差分布引入训练</td><td>§4.3;消融 w/o Self-Augmentation:风格一致性 77.98 vs 85.07、相机可控性 53.92 vs 63.87</td><td>消融显示该机制会<b>牺牲单帧主观质量</b>(47.88 vs 43.35,反而更高),即"用局部画质换长程稳定",存在显式 trade-off</td></tr>
+</table>
+
+<h3>与前作 Lyra 1.0 的问题设定差异</h3>
+<p>两篇同属"视频扩散 → 3D"的生成式重建范式,但<b>要解决的核心矛盾完全不同</b>:</p>
+<table>
+<tr><th>维度</th><th>Lyra 1.0(2025-09)</th><th>Lyra 2.0(2026-04)</th></tr>
+<tr><td>核心问题</td><td>怎么把 2D 生成蒸馏成 3D 表示(监督信号从哪来)</td><td>怎么让视频模型在长轨迹上不崩(生成的稳定性)</td></tr>
+<tr><td>关键机制</td><td>latent 空间自蒸馏,学生 3DGS 解码器</td><td>3D 信息路由 + 自增广训练</td></tr>
+<tr><td>3D 来源</td><td>自研 latent 3DGS 解码器(自蒸馏训练)</td><td>改用现成前馈模型 Depth Anything v3,在自生成数据上微调</td></tr>
+<tr><td>规模上限</td><td>6 轨迹 × 121 帧的固定窗口</td><td>任意长轨迹,交互式逐段推进</td></tr>
+<tr><td>开放度</td><td>代码 + 权重 + 训练数据</td><td>代码 + 权重 + GUI + 训练代码(2026-07 追加)</td></tr>
+</table>
+<div class="callout warn">
+<b>一个值得注意的转向:</b>2.0 把 1.0 最有辨识度的自研创新(latent 自蒸馏 3DGS 解码器)换成了对现成模型(DAv3)的微调。结合论文 §4.4 的措辞("Similar to Lyra, this improves robustness to artifacts commonly present in generative data")与 §A.4 仅 10k 步的微调量,<span class="uncertain">⚠️【推测】</span>团队的重心判断是:瓶颈已从"3D 表示学习"转移到"生成侧的长时程一致性",因此重建段选择复用成熟前馈模型而非自研。<b>此推断基于 README 流程与 §4.4 措辞,论文正文未直接陈述这一取舍理由。</b>
+</div>
+
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入与输出定义</h3>
+<table>
+<tr><th>项</th><th>定义</th><th>形状/取值</th></tr>
+<tr><td>输入图像</td><td>单张起始 RGB 图</td><td>$I_0 \in \mathbb{R}^{3\times H\times W}$,$H{=}480, W{=}832$</td></tr>
+<tr><td>相机轨迹</td><td>用户逐步指定(交互式 GUI)或预定义</td><td>$\{(\mathbf{T}_i, \mathbf{K}_i)\}_{i=0}^{T-1}$</td></tr>
+<tr><td>文本提示</td><td>可选,分块(chunk)级字幕</td><td>chunk 级 caption,经 T5 编码</td></tr>
+<tr><td>输出(阶段 1)</td><td>长时程、相机可控的视频</td><td>每段 80 帧;长度由用户轨迹决定</td></tr>
+<tr><td>输出(阶段 2)</td><td>3D Gaussians + 三角网格</td><td><code>.ply</code> 点云 + OpenVDB 稀疏网格提取的 mesh</td></tr>
+</table>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>维度/取值(来源)</th></tr>
+<tr><td>$F$</td><td>视频帧数</td><td>—</td></tr>
+<tr><td>$\mathbf{z}=\mathcal{E}(\mathbf{x})$</td><td>VAE 编码后的 latent</td><td>$\mathbf{z}\in\mathbb{R}^{F'\times C\times h\times w}$</td></tr>
+<tr><td>$C$</td><td>latent 通道数</td><td><b>16</b>(§3,Preliminaries;代码 <code>out_dim: 16</code>)</td></tr>
+<tr><td>$F'$</td><td>时间压缩后帧数</td><td>$\lfloor(F-1)/4\rfloor+1$ —— <b>4× 时间下采样</b></td></tr>
+<tr><td>$h,w$</td><td>latent 空间尺寸</td><td>$H/8, W/8$ —— <b>8× 空间下采样</b>(Wan 2.1 VAE)</td></tr>
+<tr><td>$\mathbf{T}_i=[\mathbf{R}_i\mid\mathbf{t}_i]$</td><td>第 $i$ 帧 world-to-camera 外参</td><td>$\mathbb{R}^{3\times4}$</td></tr>
+<tr><td>$\mathbf{K}_i$</td><td>第 $i$ 帧内参</td><td>$\mathbb{R}^{3\times3}$</td></tr>
+<tr><td>$D_i$</td><td>第 $i$ 帧深度图</td><td>$\mathbb{R}^{H\times W}$,由 DAv3 估计</td></tr>
+<tr><td>$\mathcal{C}$</td><td>3D cache(逐帧几何缓存)</td><td>两个分量:全分辨率深度+相机参数、降采样点云</td></tr>
+<tr><td>$\mathbf{P}_i$</td><td>降采样点云</td><td>$\mathbb{R}^{(H/d)\times(W/d)\times3}$</td></tr>
+<tr><td>$d$</td><td>点云降采样因子</td><td><b>8</b>(§A.2 原文 "a subsampling factor of $d{=}8$";代码 <code>spatial_memory_stride=8</code>)</td></tr>
+<tr><td>$N_s$</td><td>每步检索的空间记忆帧数</td><td><b>5</b>(4 帧降采样 2× + 1 帧全分辨率)</td></tr>
+<tr><td>$\phi(i)$</td><td>历史帧 $i$ 的可见性评分</td><td>投影到目标视角后可见点数</td></tr>
+<tr><td>$\delta$</td><td>遮挡判定阈值</td><td><b>0.1</b>(归一化深度单位,§A.2)</td></tr>
+<tr><td>$\mathbf{r}_i(u,v)$</td><td>Plücker 射线坐标</td><td>$(\mathbf{d}, \mathbf{o}\times\mathbf{d})\in\mathbb{R}^{6}$</td></tr>
+<tr><td>$\mathbf{C}_j$</td><td>canonical 坐标图</td><td>$\in[-1,1]^{3\times H\times W}$,通道为 $(u,v,2j/N_s-1)$</td></tr>
+<tr><td>$[\hat{\mathbf{C}}_j;\hat{D}_j]$</td><td>warp 后的 4 通道对应图</td><td>3 通道 canonical 坐标 + 1 通道深度</td></tr>
+<tr><td>$p_{\text{aug}}$</td><td>自增广触发概率</td><td>论文 <b>0.7</b>(§A.2)<span class="uncertain">⚠️【待核实】与代码不一致,见 §10</span></td></tr>
+<tr><td>$L$</td><td>每段生成的帧数</td><td><b>80</b>(§5.1)</td></tr>
+<tr><td>$k$</td><td>DAv3 Gaussian head 降采样因子</td><td><b>2</b>,高斯数量减少 4×(§A.4)</td></tr>
+</table>
+
+<h3>三阶段管线划分</h3>
+<ol>
+<li><b>反遗忘(§4.2)</b>:逐帧 3D cache → 可见性评分 → 贪心检索 $N_s{=}5$ 帧 → canonical 坐标 warp → 注入 DiT 的 q/k。</li>
+<li><b>反漂移(§4.3)</b>:FramePack 上下文压缩(基础)+ 自增广训练(核心补充)。</li>
+<li><b>3D 重建(§4.4)</b>:DAv3 微调后把长视频 lift 成 3DGS,再用分层稀疏网格 + marching cubes 提网格。</li>
+</ol>
+
+<div class="mermaid">
+flowchart TD
+    IMG["输入: 单张 RGB 图像 I₀"] --> GEN
+    TRAJ["用户相机轨迹 (Tᵢ, Kᵢ) + 可选文本"] --> GEN
+
+    subgraph LOOP["自回归 检索–生成–更新 循环"]
+        direction TB
+        RET["① 检索: 可见性评分 φ(i) 贪心选 Ns=5 帧"] --> GEN2
+        GEN["② 生成: DiT (Wan2.1-14B) 产出下一段 80 帧"]
+        GEN --> GEN2["③ 更新: 新帧 + 深度 写入 3D Cache"]
+    end
+
+    CACHE[("3D Cache C<br/>逐帧深度 Dᵢ + 相机参数<br/>降采样点云 Pᵢ (d=8)<br/>★不融合成全景点云")] --> RET
+    GEN2 --> CACHE
+    CACHE --> WARP["canonical 坐标 warp (Cj)<br/>+ 深度通道 → 4ch 对应图"]
+    WARP --> INJ["sinusoidal PE → MLP<br/>→ 注入每个 block 的 q/k<br/>(value 保持预训练不变)"]
+    INJ --> GEN
+    FP["FramePack 时间槽<br/>f16k4 + f2k2 + f1k1"] --> GEN
+
+    GEN --> VID["长视频 (任意长度)"]
+    VID --> RECON["DAv3 微调 (k=2 降采样)<br/>→ 3DGS"]
+    RECO2["OpenVDB 分层稀疏网格<br/>+ Marching Cubes"] --> MESH["三角网格"]
+    RECON --> RECO2
+    MESH --> SIM["导入 Isaac Sim<br/>机器人仿真"]
+    RECON --> VIEW["实时渲染 / VR"]
+
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CACHE fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style GEN fill:#e9d5ff,stroke:#a78bfa,color:#3b0764
+    style INJ fill:#fce7f3,stroke:#ec4899,color:#831843
+    style SIM fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style VID fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<p style="font-size:13px;color:var(--text-dim)">总体数据流。★ 标记的是本文的核心设计决策:3D cache 只做信息路由,不融合、不直接当条件图。</p>
+
+<div class="figure">
+  <img src="images/2604.13036/teaser_v3.png" alt="Lyra 2.0 teaser" loading="lazy">
+  <div class="caption"><b>图1(论文 Figure 1)</b> Lyra 2.0 从单张图像实现长时程 3D 一致的场景生成。用户迭代定义相机运动来探索场景,Lyra 2.0 合成空间持久的视频输出并逐步扩展环境。这些视频可直接重建为高质量 3D Gaussians 与表面网格,产出可部署到仿真引擎与交互式浏览器的 3D 资产。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2604.13036/method_v3.png" alt="Lyra 2.0 method overview" loading="lazy">
+  <div class="caption"><b>图2(论文 Figure 2)</b> 方法总览。<b>左:</b>给定输入图像,Lyra 2.0 依据交互式 3D explorer 导出的用户相机轨迹与可选文本提示迭代生成视频段,每段 lift 成 3D 点云反馈回去继续导航;生成的视频帧最终重建并导出为 3DGS 或网格。<b>右:</b>每步从空间记忆中检索对目标视角可见性最大的历史帧,将其 canonical 坐标 warp 以建立稠密 3D 对应,与压缩后的时间历史一起注入 DiT。</div>
+</div>
+
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>反遗忘(1):逐帧 3D Cache 与几何感知检索</h2>
+
+<h3>4.1 数据结构:3D Cache $\mathcal{C}$</h3>
+<table>
+<tr><th>分量</th><th>内容</th><th>用途</th><th>形状</th></tr>
+<tr><td>(i) 精确几何</td><td>全分辨率深度图 $D_i$ + 相机内外参</td><td><b>对应关系计算</b>(需要精度)</td><td>$D_i\in\mathbb{R}^{H\times W}$</td></tr>
+<tr><td>(ii) 检索索引</td><td>降采样点云 $\mathbf{P}_i$(深度按 $d$ 下采样后反投影到世界坐标)</td><td><b>高效检索</b>(只需速度)</td><td>$\in\mathbb{R}^{(H/d)\times(W/d)\times3}$</td></tr>
+</table>
+<p>代码对应:<code>lyra2_model.py:2489</code> 的 <code>Sparse3DCache</code> 类,<code>_world_points</code> 为 <code>list[torch.Tensor]</code>,<b>每帧一个独立条目</b>(<code>add()</code> 方法逐帧 append),从数据结构上就杜绝了融合 —— 这与论文"never fuse them into a single global point cloud"的表述精确对应。</p>
+
+<div class="callout key">
+<b>为什么强调不融合(论文明确论证):</b>"这在长时程生成中尤为重要,因为深度估计质量不可避免地随时间退化 —— 它跑在生成帧而非真实图像上。保持逐帧点云可以避免把不完美深度导致<b>跨视角错位</b>累积进一个被污染的全局重建。" 直白说:长轨迹上深度估计会越跑越差,融合会把这份变差的误差永久固化;逐帧独立存则让每帧的误差保持局部、可被检索策略规避。
+</div>
+
+<h3>4.2 数学形式化:可见性评分与检索</h3>
+<p>给定目标相机 $(\mathbf{T}^{*},\mathbf{K}^{*})$,把每个降采样点云 $\mathbf{P}_i$ 投影到目标像平面。对目标像平面上的每个像素,取所有帧中投影深度的<b>最小值</b>以处理遮挡。一个点被视为可见,当且仅当:</p>
+<div class="equation">
+$$ \left|\, z_{\text{pt}} - z_{\min}(u,v) \,\right| < \delta $$
+<span class="tag">(判定条件)</span>
+</div>
+<p>帧 $i$ 的可见性评分 $\phi(i)$ 定义为其<b>可见点的计数</b>。论文进一步说明两个阶段的不同策略:</p>
+<table>
+<tr><th>阶段</th><th>检索策略</th><th>理由</th></tr>
+<tr><td>训练</td><td>按可见性评分 $\phi(i)$ <b>比例采样</b>历史帧</td><td>"make the model robust to different frame retrieval results"(对检索结果的变化鲁棒)</td></tr>
+<tr><td>推理</td><td><b>贪心最大化覆盖</b>:迭代选择能覆盖最多尚未覆盖目标像素的帧,直到 $N_s$ 帧</td><td>"避免冗余地选中相邻视角,最大化集体空间覆盖"</td></tr>
+</table>
+<p>效果表述:"即使相机在数百帧之后重访某区域 —— 远超模型的时间上下文窗口 —— 我们的检索也能通过 3D 重叠自然地召回相关观察。"</p>
+
+<h3>4.3 前向流程(数据如何流动)</h3>
+<ol>
+<li>生成第 $k$ 段后,新帧的深度 $D$(由 DAv3 或联合预测得到)与相机参数 <code>add()</code> 进 <code>Sparse3DCache</code>。
+<ul><li>深度按 <code>downsample</code> 步长抽取(<code>depth[..., ::ds, ::ds]</code>),内参同步按 $1/ds$ 缩放(<code>_scale_intrinsics</code>)。</li>
+<li>反投影得世界点 <code>[B, H', W', 3]</code>,存 <code>_world_points</code>。</li></ul></li>
+<li>对下一段的目标视角,用缓存的点云计算可见性,组装检索索引 <code>selected_idx</code>(<code>_compose_selected_indices</code>,<code>lyra2_model.py:1495</code>)。</li>
+<li>索引序列中 anchor 位($i{=}0$)固定对应第 0 帧(初始图像),其余按 FramePack 类型串排布 temporal / spatial 槽位。</li>
+<li>检索出的帧再经 §5 的 canonical warp 建对应关系,注入 DiT。</li>
+<li>该模块<b>无直接监督信号</b>:3D cache 与检索是纯推理期机制,不产生损失项;几何质量由上游深度模型决定,只被 §6 的自增广间接影响。</li>
+</ol>
+
+<div class="mermaid">
+flowchart LR
+    subgraph ADD["cache.add() 每帧调用一次"]
+        D["深度 D (H×W)"] --> DS["按 ds 下采样<br/>depth[::ds,::ds]"]
+        K["内参 K"] --> KS["K 按 1/ds 缩放"]
+        DS --> UP["unproject_points<br/>反投影到世界坐标"]
+        KS --> UP
+        UP --> WP["world_points<br/>[B, H', W', 3]<br/>append 到 list"]
+    end
+
+    subgraph RETR["检索 (目标视角 T*, K*)"]
+        WP --> PROJ["投影全部历史点云<br/>到目标像平面"]
+        PROJ --> ZMIN["逐像素取最小深度<br/>(遮挡处理)"]
+        ZMIN --> VIS["|z - z_min| &lt; δ ?<br/>δ = 0.1"]
+        VIS --> PHI["可见性评分 φ(i)"]
+        PHI --> TR{"训练还是推理?"}
+        TR -->|训练| SAMP["按 φ(i) 比例采样"]
+        TR -->|推理| GREEDY["贪心最大化覆盖<br/>直到 Ns=5"]
+    end
+
+    SAMP --> OUT["selected_idx"]
+    GREEDY --> OUT
+    OUT --> WARP2["→ §5 canonical warp"]
+
+    style WP fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style VIS fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GREEDY fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<figure>
+  <img src="images/2604.13036/Ns_ablations.png" alt="Ns ablation" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <figcaption style="font-size:13px;color:var(--text-dim);margin-top:8px;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)"><b>图3(论文 Figure 9)</b> 目标帧覆盖率 vs. 检索空间记忆帧数 $N_s$。论文结论 $N_s{=}5$ 在覆盖已访问区域与推理效率之间取得好的折中。</figcaption>
+</figure>
+
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>反遗忘(2):canonical 坐标 warp 注入</h2>
+
+<h3>5.1 完整上下文布局</h3>
+<p>检索到的帧不是单纯"贴进上下文",而是分成 temporal slots 与 spatial slots 两类,并共享 FramePack 的可变核压缩策略。论文给出的完整上下文排布为:</p>
+<div class="equation">
+$$ \underbrace{\texttt{f1k1}}_{\text{anchor}}\;\;\underbrace{\texttt{f4k2}\;\;\texttt{f1k1}}_{\text{spatial slots}}\;\;\underbrace{\texttt{f16k4}\;\;\texttt{f2k2}\;\;\texttt{f1k1}}_{\text{temporal slots}}\;\;\underbrace{\texttt{g20}}_{\text{generate}} $$
+<span class="tag">(式 3)</span>
+</div>
+<ul>
+<li><code>f<em>n</em>k<em>m</em></code>:$n$ 帧以空间降采样因子 $m$ 压缩。</li>
+<li><code>g20</code>:20 帧 latent 的生成目标(=80 像素帧,因 4× 时间压缩)。</li>
+<li>spatial slots 共 5 帧 = 4 帧降采样 2× + 1 帧全分辨率,即 $N_s{=}5$。</li>
+<li><b>anchor 帧(初始图像 $I_0$)始终以全分辨率保留</b>,作为一个"早期确立的端点"(引 FramePack),防止模型漂离原始场景外观。</li>
+<li>所有 token 由完整 DiT self-attention 联合处理。</li>
+</ul>
+<p><b>代码对应:</b><code>experiment.py:39</code> 的 <code>framepack_type="f1k1f4s2f1s1f16k4f2k2f1k1_g20"</code> —— 顺序与式 3 完全一致。注意代码里 spatial 槽用字母 <code>s</code> 而非论文的 <code>k</code>(<code>wan2pt1_lyra2.py:389</code>:<code>if t == "s": # spatial-only packing (T unchanged)</code>),语义相同(空间降采样但不压缩时间),只是论文与代码的符号选择不同。</p>
+
+<h3>5.2 数学形式化:canonical 坐标与 warp</h3>
+<p>对第 $j$ 个被检索帧,分配一个 canonical 坐标图 $\mathbf{C}_j\in[-1,1]^{3\times H\times W}$,三个通道为:</p>
+<div class="equation">
+$$ \mathbf{C}_j(u,v) = \left(\, u,\;\; v,\;\; 2\cdot\frac{j}{N_s}-1 \,\right), \qquad (u,v)\in[-1,1]^2 \text{ 归一化空间位置} $$
+<span class="tag">(canonical 坐标定义)</span>
+</div>
+<p>然后用<b>全分辨率深度</b>前向 warp:</p>
+<div class="equation">
+$$ \hat{\mathbf{C}}_j=\texttt{FwdWarp}\big(\mathbf{C}_j,\; D_{s_j},\; \mathbf{T}_{s_j},\; \mathbf{T}^{*},\; \mathbf{K}_{s_j},\; \mathbf{K}^{*}\big) $$
+<span class="tag">(式 4,论文编号 (3))</span>
+</div>
+<p>另外把深度也 warp 进来作为第 4 通道,得到每帧 4 通道图 $[\hat{\mathbf{C}}_j;\hat{D}_j]$。检索不足 $N_s$ 时对空缺槽位做 padding,使模型能区分真实对应与空槽。</p>
+<p><b>代码对应:</b><code>lyra2_model.py:1526-1546</code> <code>_build_canonical_spatial_coords</code> 精确实现了这一构造:</p>
+<pre><code>xs = torch.linspace(-1.0, 1.0, W, ...)   # u ∈ [-1,1]
+ys = torch.linspace(-1.0, 1.0, H, ...)   # v ∈ [-1,1]
+yy, xx = torch.meshgrid(ys, xs, indexing="ij")
+base_xy = torch.stack([xx, yy], dim=0)           # [2,H,W]
+base_xy = base_xy.unsqueeze(0).repeat(num_spatial_hist, 1, 1, 1)
+zs = torch.linspace(-1.0, 1.0, num_spatial_hist)  # 等价于 2j/Ns - 1
+z  = zs.view(num_spatial_hist, 1, 1, 1).expand(...)
+coords = torch.cat([base_xy, z], dim=1)          # [N,3,H,W]</code></pre>
+
+<h3>5.3 注入方式:只改 q/k,不动 value</h3>
+<p>warp 后的 4 通道图先经 pixel shuffle 降到 latent 空间分辨率,每通道做正弦位置编码,再由 pixel-shuffle 层 + 单层 linear 聚合,输出加到每个 transformer block 自注意力的 <b>query 与 key</b> 上,<b>value 投影保持预训练原样</b>。设计意图(论文原文):"确保对应关系信号引导哪些生成 token 关注哪些 spatial slot,而 value 保持预训练模型的不变"。</p>
+<p><b>代码对应:</b><code>wan2pt1_lyra2.py:183-198</code> —— 有两条分支,<code>inject_kq_only</code> 为真时走:</p>
+<pre><code>if self.inject_kq_only:
+    buf_emb = buf_emb * validity          # 空槽位乘 0(与 padding 设计呼应)
+...
+if self.inject_kq_only:
+    kq_bias = cam_emb + buf_emb           # Plücker 相机嵌入 + canonical 对应嵌入
+    y = self.self_attn(y, seq_lens, video_size, freqs, kq_bias=kq_bias)
+else:
+    y = self.self_attn(y + cam_emb + buf_emb, ...)   # 直接加到输入(非 kq-only 模式)</code></pre>
+<p>注意两个细节:① 相机嵌入(Plücker)与对应嵌入(canonical)是<b>相加后一起</b>作为 kq bias 注入的;② <code>validity</code> 掩码把空槽位的嵌入清零,这正是论文所说"padding 使模型能区分真实对应与空槽"的实现。</p>
+
+<h3>5.4 关键机制解释:为什么 warp 坐标而不是 RGB</h3>
+<div class="callout red">
+<b>论文给出的机制论证(§4.2 末):</b>"warp 后的 RGB 不可避免地包含<b>去遮挡空洞、拉伸伪影、深度边界渗色</b>。若以这类图像为条件,视频模型倾向于<b>重新生成这些伪影</b> —— warped image 变成了一个拐杖(crutch),绕过生成先验而不是为其提供信息。canonical 坐标承载相同的几何对应信息,却不含任何外观内容,把外观合成完全留给视频模型。"
+</div>
+<p>判断:这是全文最有迁移价值的设计决策之一。它把"几何引导"与"外观先验"的责任边界划清楚 —— 几何只回答"第 (u,v) 像素的历史观测落在目标视角的哪个位置",而不携带"那个位置应该长什么样"的答案。因此 warp 伪影无法被"抄"进生成结果。消融实验从侧面验证了这条边界的必要性(见 §12 的 <code>w/ Explicit Corr. Fusion</code>)。</p>
+
+<h3>5.5 模块监督信号</h3>
+<p>该模块<b>无独立损失项</b>。canonical 对应嵌入的 MLP 参数由主训练损失(flow matching over 生成区域)端到端学习;论文 §A.2 说明所有新增模块<b>零初始化</b>(<code>All newly added modules are initialized with zero weights</code>),因此训练起点精确等价于预训练 Wan 2.1 的行为,新条件随训练逐步融入 —— 这与代码 <code>experiment.py</code> 的 <code>framepack_trainable_modules="cam_encoder,buffer_encoder,self_attn,clean_patch_embeddings,patch_embedding"</code> 可对应(只放开这几组模块)。</p>
+
+<div class="mermaid">
+flowchart TD
+    SEL["检索出的 Ns=5 帧 {Iⱼ}"] --> SPLIT{"分流"}
+    SPLIT -->|"作为图像 token<br/>(不压缩时间)"| SLOT["spatial slots<br/>4帧@2× 降采样 + 1帧全分辨率"]
+    SPLIT -->|"构造 canonical 坐标"| CC["Cⱼ = (u, v, 2j/Ns - 1)<br/>[3, H, W], 值域 [-1,1]"]
+
+    CC --> FW["FwdWarp(Cⱼ, D_sj, T_sj, T*, K_sj, K*)<br/>用全分辨率深度"]
+    DEP["深度 D_sj"] --> FW
+    FW --> C4["4 通道: [Ĉⱼ ; D̂ⱼ]"]
+    C4 --> PS["pixel shuffle → latent 分辨率"]
+    PS --> PE["正弦位置编码"]
+    PE --> MLP["pixel-shuffle + Linear 聚合"]
+    MLP --> EMB["correspondence embedding<br/>(空槽 × validity=0)"]
+
+    CAM["Plücker 射线 rᵢ(u,v)<br/>= (d, o×d) ∈ R⁶"] --> CAMM["pixel-shuffle + Linear"]
+    CAMM --> CAMEMB["camera embedding"]
+
+    EMB --> ADD["kq_bias = cam_emb + buf_emb"]
+    CAMEMB --> ADD
+    SLOT --> TOK["token 序列"]
+    ADD --> ATTN["self_attn(y, kq_bias) → 只影响 q/k<br/>value 保持预训练"]
+    TOK --> ATTN
+
+    style CC fill:#fce7f3,stroke:#ec4899,color:#831843
+    style FW fill:#fce7f3,stroke:#ec4899,color:#831843
+    style ADD fill:#e9d5ff,stroke:#a78bfa,color:#3b0764
+</div>
+
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>反漂移:Self-Augmentation 训练</h2>
+
+<h3>6.1 问题诊断:观察偏差</h3>
+<p>论文明确指出漂移的根因是 <b>observation bias</b>(引用 FramePack):训练时模型条件于 ground-truth 历史帧,推理时条件于自己产出的不完美帧。这个 train-test 差距使每步误差(色偏、模糊、扭曲)得不到纠正,跨自回归步复合。</p>
+<p>FramePack 的上下文压缩能通过延长时间视野、锚定原始图像来缓解漂移,但<b>无法弥合这个根本偏差</b>。作者因此补充自增广训练,直接缩小 train-test 差距。</p>
+
+<h3>6.2 与 Self-Forcing 的关系与关键工程取舍</h3>
+<div class="callout key">
+<b>为什么不直接用 Self-Forcing:</b>Self-Forcing 类方法同样让模型在训练中条件于自身预测,但<b>主要面向因果(causal)网络架构</b>。作者指出:直接把它用到本文的<b>双向(bi-directional)</b>视频模型上代价不可接受 —— "每个历史段都需要完整的双向注意力与多步去噪(例如 35 步)来模拟模型推理时的输出"。
+</div>
+<p>这正是本文自增广设计的出发点:<b>用一个轻量的近似替代完整的推理模拟</b>。论文声称整体开销极小,"only one additional DiT forward pass"。</p>
+
+<h3>6.3 数学形式化</h3>
+<p>考虑一次自回归训练步,ground-truth 历史帧 $\mathbf{x}^{\text{hist}}$ 与当前 chunk 帧 $\mathbf{x}^{\text{cur}}$。由于 VAE 是因果的,当前 chunk 的编码依赖历史段的时间缓存。两者都用干净 ground-truth 帧编码:</p>
+<div class="equation">
+$$ \mathbf{z}_0^{\text{hist}}=\mathcal{E}(\mathbf{x}^{\text{hist}}), \qquad \mathbf{z}_0^{\text{cur}}=\mathcal{E}(\mathbf{x}^{\text{cur}}\mid\mathbf{x}^{\text{hist}}) $$
+<span class="tag">(干净编码)</span>
+</div>
+<p>以概率 $p_{\text{aug}}$ 对历史 latent 加噪(采样 $t\sim\mathcal{U}(0,0.5)$,按 flow matching 调度):</p>
+<div class="equation">
+$$ \mathbf{z}_t^{\text{hist}}=(1-t)\,\mathbf{z}_0^{\text{hist}}+t\,\boldsymbol{\epsilon},\quad\boldsymbol{\epsilon}\sim\mathcal{N}(0,\mathbf{I}) $$
+<span class="tag">(式 5,论文编号 (4))</span>
+</div>
+<p>视频模型做<b>一步去噪</b>得到近似重建:</p>
+<div class="equation">
+$$ \tilde{\mathbf{z}}_0^{\text{hist}}=\mathbf{z}_t^{\text{hist}}-t\cdot v_{\theta}(\mathbf{z}_t^{\text{hist}},t,\mathbf{c}) $$
+<span class="tag">(式 6,论文编号 (5))</span>
+</div>
+<p>然后用 $\tilde{\mathbf{z}}_0^{\text{hist}}$ 替换 $\mathbf{z}_0^{\text{hist}}$ 作为 DiT 的条件上下文。<b>关键(论文加粗强调):</b>目标 latent $\mathbf{z}_0^{\text{cur}}$ <b>始终用干净的历史缓存编码</b>,而 flow matching 损失监督 DiT 在收到<b>被污染的</b>条件时仍去噪趋向这个干净的 $\mathbf{z}_0^{\text{cur}}$。这就教会模型"从有缺陷的历史上下文中恢复高质量输出",即学习对抗自回归推理中的漂移伪影。</p>
+
+<h3>6.4 代码实现细节(与论文叙述的差异)</h3>
+<p>代码里的自增广是一个完整的两阶段流程(<code>lyra2_model.py:1208-1400</code>),比论文式 5–6 所描述的"一步去噪"要复杂:</p>
+<table>
+<tr><th>环节</th><th>论文叙述</th><th>代码实现</th></tr>
+<tr><td>采样步数</td><td>"一步去噪 / one additional DiT forward pass"</td><td>支持 <code>self_aug_steps</code> 步的完整采样循环(类默认 5,实验配置取 <b>1</b>);循环内每步都调 DiT 并 step 调度器</td></tr>
+<tr><td>重建路径</td><td>仅在 latent 空间替换</td><td>Stage-A 采样后 <b>decode 到像素再 stitch 回像素域、重新 encode</b>(<code>lyra2_model.py:1337-1340</code> 注释:"Decode Stage-A tail to pixels, stitch into the pixelized version of current latent window, re-encode")</td></tr>
+<tr><td>噪声范围</td><td>$t\sim\mathcal{U}(0,0.5)$</td><td>由 <code>self_aug_max_T</code>(配置 500)对 1000 步离散时间戳做缩放:<code>scale = max_T/1000</code>,再 floor/clamp</td></tr>
+<tr><td>触发概率</td><td>$p_{\text{aug}}{=}0.7$</td><td><code>self_aug_prob</code> 类默认 <b>1.0</b>,实验配置显式设为 <b>1.0</b><span class="uncertain">⚠️【待核实】与论文 0.7 不一致,见 §10 差异点</span></td></tr>
+<tr><td>触发间隔</td><td>未提及</td><td><code>self_aug_every_k</code>(配置 2):每 2 个 iteration 才做一次自增广</td></tr>
+<tr><td>条件处理</td><td>未提及</td><td><code>self_aug_encode_gt_with_clean_history=True</code>:目标确实用干净历史编码,与论文强调一致 ✅</td></tr>
+<tr><td>CFG</td><td>未提及</td><td><code>self_aug_guidance=1.0</code>(等于关闭 CFG,走 <code>gen_v = cond_v_gen</code> 分支)</td></tr>
+</table>
+<div class="callout warn">
+<b>判断:</b>代码保留了多步自增广的能力(默认 5 步),但<b>放出的实验配置最终只用 1 步</b>,因此与论文"一次额外前向"的说法在最终配置上一致。区别在于:<b>论文把 1 步描述为该设计的固有特性,而代码显示这是一个可调旋钮,且默认值并非 1</b>。若按论文文字复现而不看配置,会得到 5 步(默认)的行为,开销约 5 倍。此外 <code>decode→stitch→re-encode</code> 这一步在论文中完全没有提及,它引入了 VAE 往返重建误差 —— 这是自增广"模拟退化"的一部分,还是实现细节的副产品,论文未说明。<span class="uncertain">⚠️【推测】</span>倾向于认为是前者(把 VAE 往返也当作退化源之一注入),但论文与代码注释都未明确表态。
+</div>
+
+<h3>6.5 该模块的监督信号</h3>
+<p>自增广<b>不引入新损失项</b>,它改变的是主 flow matching 损失的<b>条件分布</b>。最终损失仍为:</p>
+<div class="equation">
+$$ \mathcal{L}=\mathbb{E}_{\mathbf{z}_0,t,\boldsymbol{\epsilon}}\Big[\big\|v_{\theta}(\mathbf{z}_t,t,\mathbf{c})-(\boldsymbol{\epsilon}-\mathbf{z}_0)\big\|^2\Big] $$
+<span class="tag">(式 1,骨干的 rectified flow 目标)</span>
+</div>
+<p>代码中损失<b>只在生成区域</b>计算(<code>lyra2_model.py:1479</code>:<code>vt_gen_target = vt[:, :, T_hist:]</code>),历史 latent 保持干净、不产生梯度。时间权重来自 <code>train_time_weight</code>(配置 <code>"reweighting"</code>),对应论文 §A.2 的 logit-normal 采样。</p>
+
+<div class="mermaid">
+flowchart TD
+    START["自回归训练步<br/>历史帧 x^hist, 当前 chunk x^cur"] --> ENC["干净编码<br/>z0_hist = E(x_hist)<br/>z0_cur = E(x_cur | x_hist)"]
+    ENC --> ROLL["掷骰子 (全卡同步 broadcast)<br/>rand ≤ self_aug_prob 且 iteration % k == 0 ?"]
+    ROLL -->|否| NORMAL["常规路径:<br/>条件于干净 z0_hist"]
+    ROLL -->|是| AUGPATH["自增广路径 (no_grad 模拟退化)"]
+    AUGPATH --> T["采样 t ~ U(0, 0.5)<br/>缩放到 self_aug_max_T"]
+    T --> NOISE["z_t_hist = (1-t)z0_hist + t·ε"]
+    NOISE --> STEPS{"self_aug_steps 步采样<br/>(配置=1, 类默认=5)"}
+    STEPS --> DENOISE["多步去噪 → latents_A"]
+    DENOISE --> DEC["decode 到像素 → stitch → 重新 encode"]
+    DEC --> REPLACE["用退化版替换 z0_hist 作为条件"]
+    NORMAL --> LOSS
+    REPLACE --> LOSS["flow matching 损失<br/>★目标仍是干净的 z0_cur<br/>★只在生成区域 T_hist: 计算"]
+    LOSS --> GRAD["梯度只更新 DiT<br/>(历史 latent 不产生梯度)"]
+
+    style NOISE fill:#fce7f3,stroke:#ec4899,color:#831843
+    style LOSS fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style REPLACE fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>3D 重建:DAv3 微调与网格提取</h2>
+
+<h3>7.1 为什么不用传统重建</h3>
+<p>论文明确说明:扩散模型合成的视频不可避免地含有轻微多视角不一致,容易击穿传统 3D 重建模型,产生浮点(floater)与噪点。因此改用前馈 3DGS 管线 —— 利用其学到的多视角先验来容忍这些不一致,从而弥合域差距。</p>
+
+<h3>7.2 DAv3 的两个局限与对应修改</h3>
+<table>
+<tr><th>局限</th><th>修改</th><th>源码/超参</th></tr>
+<tr><td>DAv3 每像素预测一个 Gaussian,在本文的高分辨率输入下高斯数量过大</td><td>改造 DAv3 架构中的 Gaussian DPT head,使其输出<b>降采样 $k\times k$ 的特征图</b>:网络仍处理原始高分辨率图像,但高斯数量减少 $k^2$ 倍</td><td>$k{=}2$,高斯数减少 4×(§A.4);README 中该能力体现在 <code>num_chunks</code> 之外的分辨率控制</td></tr>
+<tr><td>DAv3 未针对生成数据优化(生成数据含小几何不一致)</td><td>在<b>自己视频模型生成的场景</b>上微调,提升对生成伪影的鲁棒性(与 Lyra 1.0 做法一致)</td><td>用 DL3DV 的图像与相机轨迹自回归生成 <b>3000 段 1 分钟视频</b>作为微调集;微调 <b>10000 迭代</b>,lr <b>5e-5</b>,batch size <b>8</b>(§A.4)</td></tr>
+</table>
+
+<h3>7.3 表面网格提取</h3>
+<ul>
+<li>开发基于 <b>OpenVDB</b> 的<b>分层稀疏网格</b>方法:在生成视角附近分配细网格单元,远处背景用粗单元。</li>
+<li>把 Gaussian 重建的<b>中位深度</b>在每视角光栅化为深度图,法线取深度的梯度。</li>
+<li>用得到的有向点云在稀疏网格上构建符号距离场(SDF)。</li>
+<li>表面通过 <b>marching cubes</b> 提取,跨层级缝合,再抽稀(decimate)便于下游处理。</li>
+</ul>
+
+<h3>7.4 工程实现要点(README 实测建议)</h3>
+<div class="callout tip">
+<b>长视频必须分块重建(实测经验):</b>README 明确指出,对超过 500 帧的长视频,"在一个 DA3 pass 中重建全部帧可能产生模糊结果,因为 <b>DA3 Gaussian head 并未在如此长的序列长度上被微调</b>"。建议按重叠分块重建:
+<pre style="margin-top:8px"><code>PYTHONPATH=. python -m lyra_2._src.inference.vipe_da3_chunked_gs_recon \
+  --input_video_path &lt;video_path&gt; \
+  --num_chunks 2 --chunk_size 128 --chunk_overlap 10</code></pre>
+单次通过写 <code>&lt;sample_id&gt;_gs_ours/</code>,分块写 <code>&lt;sample_id&gt;_gs_chunked/</code>。两者都输出 <code>reconstructed_scene.ply</code>(高斯点云)与 <code>gs_trajectory.mp4</code>(渲染漫游视频)。
+</div>
+<p><b>重建段实测耗时:</b>README 给出 <code>~1 min (VIPE + DA3 depth + GS render)</code> on 1× H100 80GB。注意论文正文只给了生成段的耗时(194s/15s),<b>没有给重建段耗时</b>,这个数是 README 独有信息。</p>
+
+<h3>7.5 模块监督信号</h3>
+<p>重建段的监督来自<b>生成视频本身</b>(作为伪 ground-truth),不是真实多视角数据。微调目标即 DAv3 的原始重建损失(论文未展开其具体形式,只说 "fine-tune the model on scenes generated by our video model"),因此本笔记不列具体损失式。<span class="uncertain">⚠️【待核实】论文与 README 均未给出 DAv3 微调所用的具体损失项与权重,只说迭代数/lr/batch。</span></p>
+
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>DMD 蒸馏加速推理</h2>
+
+<h3>8.1 机制</h3>
+<p>用 <b>Distribution Matching Distillation (DMD)</b> 训练一个蒸馏版学生模型:</p>
+<ul>
+<li><b>去噪步数:35 步 → 4 步</b>。</li>
+<li>同时把 <b>classifier-free guidance 蒸馏进学生</b>,推理时不再需要单独的 condition / uncondition 两次前向。</li>
+<li><b>蒸馏期间保留自增广策略</b>,使学生对自回归误差累积同样鲁棒。</li>
+</ul>
+<p>合并效果:论文称每步生成时间<b>减少约 13×</b>,同时保持对交互式应用而言可比的视觉质量。</p>
+
+<div class="callout warn">
+<b>耗时口径存在两套数字,不可混用:</b>
+<table style="margin-top:8px">
+<tr><th>来源</th><th>硬件</th><th>全模型(35 步)</th><th>DMD(4 步)</th><th>加速比</th></tr>
+<tr><td>论文 §A.3(每段 80 帧)</td><td>单卡 <b>GB200</b></td><td><b>~194 s</b>(含深度估计 + 空间记忆检索 + DiT 去噪)</td><td><b>~15 s</b></td><td>~13×</td></tr>
+<tr><td>README(每 80 帧)</td><td>1× <b>H100 80GB</b></td><td><b>~9 min(540 s)</b></td><td><b>~35 s</b></td><td>~15×(README 自述)</td></tr>
+</table>
+<b>判断:</b>两者硬件不同(GB200 vs H100),且 H100 数值约慢 2.8×,量级合理。但加速比一处写 13×、一处写 ~15×,<b>同一份工作给出两个略不同的比值</b>,引用时应标明来源。另:论文的 194 s 明确包含深度估计与空间检索,而空间检索论文说"每步不到 1 秒",故 194 s 的绝大部分是 DiT 去噪。
+</div>
+<p><b>代码开关:</b>两个推理脚本都支持 <code>--use_dmd</code> 参数。README 同时给出质量提示:"DMD 可能削弱 prompt following,有时产生重复图案的场景。为最佳质量与规模,建议<b>不</b>用 <code>--use_dmd</code>"。</p>
+
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    A["加载 Wan2.1-I2V-14B-480P 预训练权重<br/>(scripts/convert_wan_checkpoint.py<br/>~45GB CPU 内存, 写出 ~33GB .pth)"] --> B["数据准备 (DL3DV-10K)<br/>隔帧采样(stride 2) + 仅保留 >1000 帧视频<br/>VIPE 估计位姿与度量深度<br/>切 80 帧 chunk, VLM 字幕, T5 编码"]
+    B --> C["新增模块零初始化<br/>(保证起点 = 预训练行为)"]
+    C --> D["每个 iteration:<br/>1) 掷骰子决定是否走自增广<br/>2) 构建条件(3D cache + FramePack 槽位)<br/>3) 一步去噪(配置 self_aug_steps=1)"]
+    D --> E["flow matching 损失<br/>只在生成区域 T_hist: 计算"]
+    E --> F["AdamW lr=3e-5, wd=1e-3<br/>warmup 100 步<br/>grad_clip norm=0.1"]
+    F --> G{"达到 max_iter?"}
+    G -->|否| D
+    G -->|是| H["产出 Lyra 2.0 全模型 (35 步)"]
+    H --> I["DMD 蒸馏<br/>学生 4 步 + CFG 蒸掉<br/>保留自增广"]
+    I --> J["产出 DMD 学生 (4 步)"]
+
+    style D fill:#fce7f3,stroke:#ec4899,color:#831843
+    style E fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style I fill:#e9d5ff,stroke:#a78bfa,color:#3b0764
+</div>
+
+<h3>9.2 推理流程(检索–生成–更新循环)</h3>
+<div class="mermaid">
+flowchart TD
+    S0["输入 I₀ + 深度 D₀ (DAv3/MoGe 估计)<br/>初始化 3D Cache,整合首帧"] --> S1["用户指定相机轨迹 (交互式 GUI 或 npz)"]
+    S1 --> S2["轨迹按生成窗口切成 K 段"]
+    S2 --> LOOP["对第 k 段:"]
+    LOOP --> R1["① 检索: 可见性评分 φ(i)<br/>贪心选 Ns=5 帧(最大化尚未覆盖像素)"]
+    R1 --> R2["② warp canonical 坐标 → 4ch 对应图"]
+    R2 --> R3["③ DiT 条件生成 80 帧<br/>上下文 = anchor + spatial slots + temporal slots + g20"]
+    R3 --> R4["④ 获取深度(联合预测或外部流式估计)"]
+    R4 --> R5["⑤ 更新 3D Cache (逐帧独立存, 不融合)"]
+    R5 --> MORE{"还有下一段?"}
+    MORE -->|是| LOOP
+    MORE -->|否| FIN["输出长视频 H"]
+    FIN --> REC["VIPE 位姿 + DA3 深度 + GS 重建<br/>(>500 帧需分块: num_chunks≥2)"]
+    REC --> MESH2["中位深度 → SDF → Marching Cubes<br/>→ 分层稀疏网格 mesh"]
+    MESH2 --> APP["Isaac Sim 仿真 / 实时渲染 / VR"]
+
+    style R1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style R2 fill:#fce7f3,stroke:#ec4899,color:#831843
+    style R5 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style APP fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节</h2>
+
+<div class="callout tip">
+<b>本节的可信度说明:</b>Lyra 2.0 <b>代码与训练代码均已开源</b>(2026-04-15 放权重与推理码,2026-07-15/20 追加 GUI 与训练代码)。下表超参均取自实际 clone 的 <code>nv-tlabs/lyra</code> 仓库 <code>Lyra-2/</code> 子目录,标注 <code>file:line</code>;论文与代码不一致处单列于 §10.4。
+</div>
+
+<h3>10.1 模型结构超参</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>骨干</td><td>Wan 2.1-14B DiT(I2V)</td><td>论文 §A.1;代码 <code>configs/defaults/net.py:24</code></td></tr>
+<tr><td><code>dim</code></td><td>5120</td><td><code>net.py:26</code></td></tr>
+<tr><td><code>ffn_dim</code></td><td>13824</td><td><code>net.py:27</code></td></tr>
+<tr><td><code>num_heads / num_layers</code></td><td>40 / 40</td><td><code>net.py:31-32</code></td></tr>
+<tr><td><code>in_dim / out_dim</code></td><td>36 / 16</td><td><code>net.py:29,33</code></td></tr>
+<tr><td><code>text_len</code></td><td>512</td><td><code>net.py:34</code></td></tr>
+<tr><td>VAE 下采样</td><td>空间 8× / 时间 4×,$C{=}16$</td><td>论文 §3;代码 <code>out_dim: 16</code> 与 <code>num_frames_per_latent=4</code>(<code>lyra2_model.py:58</code>)</td></tr>
+<tr><td>状态张量 <code>state_t</code></td><td>20</td><td><code>configs/defaults/model.py:12</code> —— 对应 20 帧 latent 生成目标(g20)</td></tr>
+<tr><td><code>max_segments</code></td><td>13</td><td><code>configs/experiment.py:40</code>(类默认 10,<code>lyra2_model.py:59</code>)</td></tr>
+</table>
+<div class="note"><b>关于 <code>in_dim=36</code>:</b><span class="uncertain">⚠️【推测】</span>该值符合 Wan 2.1 I2V 的官方条件接口设计(noisy latent 16 + 条件图像 latent 16 + 条件 mask 4 = 36)。论文正文与附录<b>均未提及 in_dim 的构成</b>,此处仅为与 Wan 官方设计比对后的推断,未在 Lyra 代码中逐层验证。</div>
+
+<h3>10.2 训练超参(源码级)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>优化器</td><td>AdamW</td><td>论文 §A.2</td></tr>
+<tr><td>学习率</td><td><b>3e-5</b></td><td><code>experiment.py:69</code> ✅与论文一致</td></tr>
+<tr><td>weight decay</td><td><b>1e-3</b></td><td><code>experiment.py:70</code> ⚠️论文写 0.1</td></tr>
+<tr><td>梯度裁剪</td><td>norm = 0.1(<code>force_finite=True</code>)</td><td><code>experiment.py:92</code> —— <b>论文未提</b></td></tr>
+<tr><td>LR schedule</td><td>warmup 100 步,cycle 400k,f_start 1e-6,f_max 0.99,f_min 0.4</td><td><code>experiment.py:72-78</code> —— <b>论文未提</b></td></tr>
+<tr><td>batch size</td><td>64</td><td>论文 §A.2;代码 <code>fsdp_shard_size=8</code>(<code>model.py:12</code>)</td></tr>
+<tr><td>训练迭代</td><td>论文:<b>7000</b> iters / 64× <b>GB200</b>;<br>TRAINING.md:<b>~5000</b> iters 收敛 / 64× <b>B200</b></td><td>论文 §A.2 vs <code>TRAINING.md:137</code> ⚠️不一致</td></tr>
+<tr><td>精度</td><td>bf16 混合精度</td><td>论文 §A.2;<code>keep_original_net_dtype=True</code>(<code>experiment.py:56</code>)</td></tr>
+<tr><td>EMA</td><td><b>关闭</b></td><td><code>experiment.py:38</code> —— 论文未提</td></tr>
+<tr><td>时间采样</td><td>logit-normal(mean 0, std 1 in logit space)+ uniform time weighting</td><td>论文 §A.2;代码 <code>train_time_weight="reweighting"</code>(<code>experiment.py:57</code>)</td></tr>
+<tr><td>训练的可训练模块</td><td><code>cam_encoder, buffer_encoder, self_attn, clean_patch_embeddings, patch_embedding</code></td><td><code>experiment.py:62</code></td></tr>
+<tr><td>空间记忆 <code>N_s</code></td><td>5</td><td>论文 §A.2</td></tr>
+<tr><td>点云降采样 <code>d</code></td><td>8</td><td>论文 §A.2;代码 <code>spatial_memory_stride=8</code>(<code>experiment.py:59</code>) ✅</td></tr>
+<tr><td>遮挡阈值 <code>δ</code></td><td>0.1(归一化深度单位)</td><td>论文 §A.2</td></tr>
+<tr><td><code>spatial_memory_skip_recent</code></td><td>16</td><td><code>experiment.py:60</code>(类默认 100,<code>lyra2_model.py:83</code>) —— 跳过最近 16 帧,避免与 temporal 槽重复</td></tr>
+<tr><td><code>warp_chunk_size</code></td><td>16</td><td><code>experiment.py:61</code>(类默认 2,<code>lyra2_model.py:98</code>)</td></tr>
+<tr><td><code>spatial_memory_dropout_rate</code></td><td>0.1</td><td><code>lyra2_model.py:85</code> —— 论文未提</td></tr>
+<tr><td>自增广概率 <code>self_aug_prob</code></td><td><b>1.0</b></td><td><code>experiment.py:50</code>;类默认亦 1.0(<code>lyra2_model.py:76</code>)⚠️论文写 0.7</td></tr>
+<tr><td>自增广步数 <code>self_aug_steps</code></td><td><b>1</b>(实验配置)</td><td><code>experiment.py:46</code>;类默认 5(<code>lyra2_model.py:70</code>)⚠️论文只描述"一步"</td></tr>
+<tr><td>自增广触发间隔</td><td><code>self_aug_every_k=2</code></td><td><code>experiment.py:49</code> —— 每 2 个 iteration 触发一次</td></tr>
+<tr><td>自增广噪声上限</td><td><code>self_aug_max_T=500</code>(对 1000 步离散时间戳缩放)</td><td><code>experiment.py:51</code></td></tr>
+<tr><td>目标编码用干净历史</td><td><code>self_aug_encode_gt_with_clean_history=True</code></td><td><code>experiment.py:53</code> ✅与论文加粗强调一致</td></tr>
+</table>
+
+<h3>10.3 数据与推理超参</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>训练数据</td><td>DL3DV-10K(1 万段真实场景长视频)</td><td>论文 §5.1</td></tr>
+<tr><td>采样策略</td><td>每视频采样 1000 帧;隔帧采样(temporal stride 2);仅保留子采样后 >1000 帧的视频</td><td>论文 §5.1(TRAINING.md 补充 stride 2 与 >1000 帧门槛)</td></tr>
+<tr><td>位姿/深度/字幕</td><td>ViPE 估位姿;DAv3 估逐帧深度;Qwen3-VL-8B-Instruct 生成字幕</td><td>论文 §5.1(TRAINING.md 亦提到用 VIPE 估位姿与 metric depth)</td></tr>
+<tr><td>训练模式混合</td><td><b>30%</b> I2V(条件于单帧,生成前 $L{=}80$ 帧)+ <b>70%</b> 自回归 chunk 训练</td><td>论文 §5.1</td></tr>
+<tr><td>chunk 长度</td><td>$L{=}80$ 帧</td><td>论文 §5.1;README 显示帧数须为 $1+80k$</td></tr>
+<tr><td>分辨率</td><td>832×480</td><td>论文 §A.1</td></tr>
+<tr><td>推理 CFG</td><td>scale = 5.0(文本提示)</td><td>论文 §A.3</td></tr>
+<tr><td>推理采样器</td><td>FlowUniPC,35 步</td><td>论文 §A.2</td></tr>
+<tr><td>单段耗时</td><td>~194 s / 80 帧(GB200,含深度估计与检索);<br>~15 s(DMD 4 步);空间检索 <1 s/步</td><td>论文 §A.3</td></tr>
+<tr><td>重建耗时</td><td>~1 min(VIPE + DA3 depth + GS render)on 1× H100</td><td>README(论文未给)</td></tr>
+<tr><td>DAv3 微调</td><td>3000 段 1 分钟自生成视频;10000 iters;lr 5e-5;batch 8;$k{=}2$</td><td>论文 §A.4</td></tr>
+</table>
+
+<h3>10.4 ⚠️ 论文 vs 代码差异点汇总</h3>
+<p>以下 6 处均经实际读取源码核实,按复现影响程度排序:</p>
+<table>
+<tr><th>#</th><th>项</th><th>论文</th><th>代码</th><th>复现影响</th></tr>
+<tr class="fail"><td>1</td><td>权重与源码 license</td><td>—</td><td>代码 Apache 2.0,但<b>权重为 NVIDIA Internal Scientific Research and Development Model License</b>,明确禁止生产部署、分发、商用</td><td><b>最高</b>:不能用于任何商业产品</td></tr>
+<tr class="fail"><td>2</td><td>自增广触发概率 $p_{\text{aug}}$</td><td><b>0.7</b> (§A.2 原文 "We set the augmentation probability $p_{\text{aug}}{=}0.7$")</td><td><code>self_aug_prob=1.0</code>(<code>experiment.py:50</code>),类默认亦 1.0</td><td><b>高</b>:按论文复现得 70% 触发,实际是全量触发。且代码还有 <code>self_aug_every_k=2</code> 的额外降频</td></tr>
+<tr class="fail"><td>3</td><td>自增广步数</td><td>"one-step denoising"、"only one additional DiT forward pass"</td><td>实验配置 <code>self_aug_steps=1</code>(与论文一致),<b>但类默认是 5</b>,且代码内含多步采样 + decode→stitch→re-encode 流程</td><td><b>中</b>:不改配置就按默认 5 步跑,开销约 5 倍</td></tr>
+<tr class="fail"><td>4</td><td>weight decay</td><td><b>0.1</b> (§A.2 原文 "weight decay $0.1$")</td><td><code>weight_decay=1e-3</code>(<code>experiment.py:70</code>)</td><td><b>中</b>:相差 100 倍,影响收敛行为</td></tr>
+<tr><td>5</td><td>训练硬件与迭代数</td><td>64× <b>GB200</b>,<b>7000</b> iters</td><td>TRAINING.md:64× <b>B200</b>,"converges after approximately <b>5,000</b> iterations"</td><td><b>中</b>:硬件型号与步数均不同,推算训练成本时会偏差</td></tr>
+<tr><td>6</td><td>单段耗时</td><td>~194 s / 80 帧 on GB200</td><td>README:~9 min / 80 帧 on 1× H100 80GB</td><td><b>低</b>:硬件不同导致,量级合理;但加速比一处 13×、一处 ~15×</td></tr>
+<tr><td>7</td><td>槽位符号</td><td>spatial 槽写作 <code>f4k2</code>(式 3)</td><td><code>f4s2</code>(<code>experiment.py:39</code>),<code>wan2pt1_lyra2.py:389</code> 注释 <code>if t == "s": # spatial-only packing (T unchanged)</code></td><td><b>低</b>:语义相同,仅命名差异</td></tr>
+</table>
+
+<h3>10.5 落地坑(README 与 INSTALL 实测信息)</h3>
+<div class="grid-2">
+<div class="card">
+<h4>环境门槛</h4>
+<ul>
+<li>实测于 <b>Ubuntu 22.04 + CUDA 12.8 + H100</b>;其他 Linux 发行版与 CUDA 12.4+ 理论上可行但未官方验证。<b>Windows 未提及支持</b>。</li>
+<li>依赖栈复杂:torch 2.7.1、flash-attn 2.6.3、transformer_engine、cuda_runtime→cudart 软链、多个 vendored CUDA 扩展(ViPE / DA3)需现场编译。README 承认"version conflicts may arise"。</li>
+<li>Wan 权重转换需 <b>~45GB CPU 内存</b>,写出 <b>~33GB</b> <code>.pth</code>。</li>
+</ul>
+</div>
+<div class="card">
+<h4>使用约束</h4>
+<ul>
+<li><b>轨迹帧数必须为 $1+80k$</b>(81/161/241/…),以对齐自回归 chunk 边界。</li>
+<li>输入轨迹<b>始终相对于首帧的单目深度估计</b>,实际相机路径可能与预期不同,需用 <code>--pose_scale</code> 调整。</li>
+<li>轨迹沿路可能<b>幻觉出物体</b>导致退化结果(README 明确警告)。</li>
+<li>内置碰撞检测会阻止相机穿入物体,因此增大 <code>--zoom_in_strength</code> 未必改变轨迹。</li>
+<li>DMD 版削弱 prompt following、易产生重复图案。</li>
+</ul>
+</div>
+</div>
+<div class="callout warn">
+<b>论文自述的两条局限(§6 Discussion):</b>① <b>只处理静态环境</b>,不显式建模动态场景,作者列为未来工作;② 视频模型继承训练数据特性 —— <b>DL3DV 含跨视角曝光变化</b>,模型可能在生成时复现,这种光度不一致会给前馈 3DGS 重建带来伪影。作者提出的缓解方向是网络内光度稳定化或改用游戏引擎类光度一致的合成数据。<b>对工程落地的含义:</b>若用自有数据训练,曝光一致性需要前置处理。
+</div>
+
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 评测设置</h3>
+<div class="grid-2">
+<div class="card">
+<h4>数据集</h4>
+<ul>
+<li><b>DL3DV-Evaluation</b> —— 域内测试</li>
+<li><b>Tanks and Temples</b> —— 域外泛化</li>
+</ul>
+</div>
+<div class="card">
+<h4>指标</h4>
+<ul>
+<li>常规:SSIM ↑ / LPIPS ↓ / FID ↓</li>
+<li>WorldScore 系列:主观质量(Subjective Quality)↑、风格一致性(Style Consistency,检测首末帧视觉漂移)↑、相机可控性(Camera Controllability)↑</li>
+<li>重投影误差(Reprojection Error):用现成 SLAM(ViPE)估逐帧深度,<b>验证生成视频的 3D 一致性</b> ↓</li>
+<li>3D 段:<b>LPIPS-G</b>(渲染新视角 vs GT 帧 → 整体重建质量)、<b>LPIPS-P</b>(渲染新视角 vs 生成视频帧 → 量化底层视频模型的 3D 一致性)</li>
+</ul>
+</div>
+</div>
+<p><b>Baseline 配置的诚实说明:</b>论文明确指出 <b>CaM 与 SPMem 未开源,是按 Wan2.1-14B 重新实现的</b>;HY-WorldPlay 用离散动作控制(键盘)而非显式相机轨迹条件。这两点使对比存在配置不对称的可能,读者判断时应纳入考量。</p>
+
+<h3>11.2 长视频生成对比(论文 Table 1)</h3>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="4">DL3DV(域内)</th><th colspan="4">Tanks and Temples(域外)</th></tr>
+<tr><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>相机控制↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>相机控制↑</th></tr>
+<tr><td>GEN3C</td><td>0.346</td><td>0.535</td><td>58.96</td><td>69.54</td><td>0.350</td><td>0.589</td><td>79.07</td><td>70.91</td></tr>
+<tr><td>Yume1.5</td><td>0.342</td><td>0.719</td><td>84.84</td><td>–</td><td>0.348</td><td>0.702</td><td>89.69</td><td>–</td></tr>
+<tr><td>Context as Memory</td><td>0.370</td><td>0.562</td><td>50.43</td><td>42.71</td><td>0.367</td><td>0.605</td><td>59.20</td><td>31.86</td></tr>
+<tr class="fail"><td>VMem</td><td>0.331</td><td>0.744</td><td>120.59</td><td>0.68</td><td>0.338</td><td>0.767</td><td>136.48</td><td>0.00</td></tr>
+<tr><td>SPMem</td><td>0.383</td><td>0.522</td><td>53.77</td><td>62.05</td><td>0.383</td><td>0.571</td><td>60.11</td><td>45.07</td></tr>
+<tr class="fail"><td>HY-WorldPlay</td><td>0.373</td><td>0.765</td><td>139.36</td><td>–</td><td>0.380</td><td>0.796</td><td>163.54</td><td>–</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>0.388</b></td><td><b>0.498</b></td><td><b>43.43</b></td><td>64.67</td><td><b>0.384</b></td><td><b>0.552</b></td><td><b>51.33</b></td><td>63.87</td></tr>
+<tr><td>Ours DMD(4 步)</td><td>0.359</td><td>0.507</td><td>43.63</td><td><b>65.64</b></td><td>0.362</td><td>0.545</td><td>49.71</td><td>58.12</td></tr>
+</table>
+<p style="font-size:13.5px;color:var(--text-dim)">全表完整数据见论文 Table 1(另含主观质量、风格一致性、重投影误差三列)。上表只列 4 列以便对照。</p>
+
+<h3>关键数字与机制解释</h3>
+<table>
+<tr><th>观察</th><th>数字</th><th>机制原因(论文解释)</th></tr>
+<tr><td>域外泛化最稳</td><td>T&amp;T 上 SSIM 0.384(次优 SPMem 0.383)、LPIPS 0.552(SPMem 0.571)、FID 51.33(SPMem 60.11)</td><td>3D 几何作信息路由强制长程一致性,<b>而不牺牲生成质量</b>;上下文压缩 + 自增广防止长时程质量退化</td></tr>
+<tr><td>GEN3C 的相机控制最好但画质最差</td><td>DL3DV 相机控制 69.54(全场最高)vs 主观质量 24.60 / SSIM 0.346</td><td>GEN3C 靠显式 depth-warp 条件取得最好的相机可控性与重投影误差,但"这种刚性的几何约束损害了生成质量"</td></tr>
+<tr><td>VMem 几乎全面崩塌</td><td>DL3DV 相机控制 <b>0.68</b>、T&amp;T <b>0.00</b></td><td>检索式记忆但缺几何锚定,长时程无法维持连贯性</td></tr>
+<tr><td>SPMem 质量强但会漂移</td><td>风格一致性低于本文;"SPMem 的全局点云条件在长时程引入几何误差,表现为更明显的漂移"</td><td>全局点云的累积误差 → 这正是本文不融合全景点云的动机</td></tr>
+<tr><td>DMD 版质量不降反升</td><td>DL3DV LPIPS 0.507(全模型 0.498)、FID 43.63(43.43)基本持平;<b>T&amp;T LPIPS 0.545 优于全模型 0.552</b>、FID 49.71 优于 51.33</td><td>论文称"达到可比甚至略好的逐帧质量(LPIPS/FID)",代价是相机可控性中等程度下降(去噪步数减少所致)</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2604.13036/comparison_grid_all.png" alt="video generation comparison" loading="lazy">
+  <div class="caption"><b>图4(论文 Figure 3)</b> 视频生成对比。给定 Tanks and Temples 的单张输入图像,对比所有评测模型的长时程生成结果(<b>约第 800 帧以上</b>)。Baseline 在长时程上出现严重质量退化、几何扭曲或内容漂移,本文方法保持真实的结构与外观。</div>
+</div>
+
+<h3>11.3 3D 场景生成对比(论文 Table 2)</h3>
+<p>所有 baseline 都配接 <b>Depth Anything V3</b> 作为重建器(以隔离"视频质量"与"重建方法"两个变量)。</p>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="4">DL3DV</th><th colspan="4">Tanks and Temples</th></tr>
+<tr><th>LPIPS-P↓</th><th>LPIPS-G↓</th><th>FID↓</th><th>主观质量↑</th><th>LPIPS-P↓</th><th>LPIPS-G↓</th><th>FID↓</th><th>主观质量↑</th></tr>
+<tr><td>GEN3C + DAv3</td><td>0.504</td><td>0.649</td><td>99.83</td><td>11.00</td><td>0.511</td><td>0.694</td><td>125.19</td><td>5.38</td></tr>
+<tr class="fail"><td>Yume1.5 + DAv3</td><td>0.598</td><td>0.806</td><td>121.61</td><td>0.22</td><td>0.575</td><td>0.794</td><td>113.25</td><td>0.79</td></tr>
+<tr><td>CaM + DAv3</td><td>0.433</td><td>0.668</td><td>94.04</td><td>12.16</td><td>0.423</td><td>0.693</td><td>94.02</td><td>9.79</td></tr>
+<tr class="fail"><td>VMem + DAv3</td><td>0.593</td><td>0.836</td><td>206.88</td><td>2.00</td><td>0.597</td><td>0.832</td><td>211.72</td><td>3.76</td></tr>
+<tr><td>SPMem + DAv3</td><td>0.419</td><td>0.625</td><td>93.56</td><td>13.72</td><td>0.412</td><td>0.666</td><td>94.11</td><td>9.95</td></tr>
+<tr><td>Ours + DAv3</td><td>0.413</td><td>0.603</td><td>74.39</td><td>17.02</td><td>0.409</td><td>0.648</td><td>79.36</td><td>14.42</td></tr>
+<tr class="best"><td><b>Ours Full</b>(DAv3 微调)</td><td><b>0.381</b></td><td><b>0.579</b></td><td><b>65.94</b></td><td><b>20.52</b></td><td><b>0.372</b></td><td><b>0.629</b></td><td><b>72.47</b></td><td><b>18.80</b></td></tr>
+</table>
+<div class="callout key">
+<b>两级增益的分解(重要):</b>① <b>Ours + DAv3 vs 最强 baseline(SPMem + DAv3)</b>:LPIPS-P 0.413 vs 0.419、LPIPS-G 0.603 vs 0.625、FID 74.39 vs 93.56 —— 对应"<b>视频模型本身更 3D 一致</b>";② <b>Ours Full vs Ours + DAv3</b>:所有指标全面更优 —— 对应"<b>在自生成数据上微调重建模型</b>"的增益。论文据此论证:视频的 3D 一致性可直接转化为更高的重建质量。
+</div>
+
+<div class="figure">
+  <img src="images/2604.13036/comparison_grid_gs_all.png" alt="3DGS comparison" loading="lazy">
+  <div class="caption"><b>图5(论文 Figure 4)</b> 3DGS 对比。对比从视频扩散模型输出重建的 3DGS 场景渲染结果,起点均为 Tanks and Temples 的单张输入图像。所有 baseline 都产生带伪影与浮点的场景,本文管线能生成高保真、真实感强的 3D 场景。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2604.13036/lyra_fantasyworld.png" alt="comparison with Lyra and FantasyWorld" loading="lazy">
+  <div class="caption"><b>图6(论文 Figure 5)</b> 与前作 Lyra 1.0 和 FantasyWorld 的定性对比(鸟瞰图)。展示 3DGS 渲染(Lyra 与本工作)与点云渲染(FantasyWorld),<b>红框标出跨方法大致相同的空间区域</b>。论文指出这两个方法都只生成短视频再 lift 到 3D,先天限制场景规模;而本文的交互式探索框架允许用户迭代定义相机轨迹、逐步扩展环境,产出空间范围与复杂度显著更大的场景。</div>
+</div>
+
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+
+<h3>12.1 定量结果(Tanks and Temples,论文 Table 3)</h3>
+<table>
+<tr><th>配置</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>主观质量↑</th><th>风格一致性↑</th><th>相机控制↑</th><th>重投影误差↓</th></tr>
+<tr class="best"><td><b>Ours(完整)</b></td><td><b>0.384</b></td><td>0.552</td><td>51.33</td><td>43.35</td><td><b>85.07</b></td><td><b>63.87</b></td><td><b>0.069</b></td></tr>
+<tr><td>w/ Global Point Cloud</td><td>0.368</td><td>0.562</td><td>52.54</td><td>44.58</td><td>82.42</td><td class="fail-cell" style="color:#fca5a5">49.86</td><td>0.067</td></tr>
+<tr><td>w/ Explicit Corr. Fusion</td><td>0.370</td><td>0.554</td><td><b>49.13</b></td><td><b>45.71</b></td><td>83.28</td><td style="color:#fca5a5">57.29</td><td>0.071</td></tr>
+<tr><td>w/o FramePack</td><td>0.362</td><td><b>0.549</b></td><td>50.98</td><td>45.27</td><td style="color:#fca5a5">80.61</td><td>62.62</td><td style="color:#fca5a5">0.079</td></tr>
+<tr><td>w/o Self-Augmentation</td><td>0.363</td><td>0.568</td><td>55.15</td><td><b>47.88</b></td><td style="color:#fca5a5">77.98</td><td style="color:#fca5a5">53.92</td><td>0.066</td></tr>
+</table>
+<p style="font-size:13.5px;color:var(--text-dim)">红色数字标出相对完整模型明显退化的指标。注意 <b>w/ Explicit Corr. Fusion 的 FID(49.13)与主观质量(45.71)实际上优于完整模型</b> —— 见下方第 2 条的讨论。</p>
+
+<h3>12.2 逐项解读(含机制原因与代价)</h3>
+<div class="grid-2">
+<div class="card">
+<h4>① w/ Global Point Cloud</h4>
+<p><b>改动:</b>把所有历史帧融合成单一累积点云,以其渲染图像作为生成条件,替换逐帧 3D cache 与基于对应的条件。</p>
+<p><b>结果:</b>相机可控性 <b>49.86 vs 63.87</b>(−13.01)、风格一致性 82.42 vs 85.07(−2.65)。</p>
+<p><b>结论:</b>"证实了累积深度误差在长时程上污染了条件信号"。定性上该变体产生明显不准确的相机位姿。</p>
+<p><b>价值:</b>这条消融直接验证了全文最核心的设计决策(不融合)的必要性。</p>
+</div>
+<div class="card">
+<h4>② w/ Explicit Corr. Fusion</h4>
+<p><b>改动:</b>用基于显式深度推理的融合替代学习式 MLP 聚合,来合并多源帧的对应关系。</p>
+<p><b>结果:</b>相机可控性 <b>57.29 vs 63.87</b>(−6.58),但 <b>FID 与主观质量反而更好</b>(49.13 vs 51.33;45.71 vs 43.35)。</p>
+<p><b>结论:</b>"学习式聚合比硬几何融合更能优雅地处理含噪深度估计"。</p>
+<p><b>注意(本笔记补充):</b>这条消融同时暴露了一个 trade-off —— 硬融合在画质上略优却牺牲可控性。论文只强调了相机可控性的损失,<b>未讨论画质提升的含义</b>,读者引用时需注意这是选择性叙述。</p>
+</div>
+<div class="card">
+<h4>③ w/o FramePack</h4>
+<p><b>改动:</b>移除 FramePack 时间槽。</p>
+<p><b>结果:</b>风格一致性 <b>80.61 vs 85.07</b>(−4.46)、重投影误差 <b>0.079 vs 0.069</b>(升 14.5%)。</p>
+<p><b>结论:</b>"没有时间接地,模型易于漂移"。定性上该变体表现出明显的视觉漂移。</p>
+</div>
+<div class="card">
+<h4>④ w/o Self-Augmentation</h4>
+<p><b>改动:</b>移除自增广训练策略。</p>
+<p><b>结果:</b>单帧主观质量<b>提升</b>(<b>47.88 vs 43.35</b>,+4.53),但长程一致性大幅退化:风格一致性降至 <b>77.98</b>(−7.09,<b>全场最低</b>)、相机可控性降至 <b>53.92</b>(−9.95)。</p>
+<p><b>结论:</b>"未在训练中接触不完美条件,模型在推理时条件于自身不完美输出变得脆弱,误差跨段复合"。</p>
+<p><b>这是最有信息量的一条:</b>它量化了自增广的<b>代价与收益结构</b> —— 用单帧画质换长程稳定。做工程选型时,如果目标是短视频/单帧质量,可考虑关闭;若目标是长轨迹探索,必须开。</p>
+</div>
+</div>
+
+<div class="figure">
+  <img src="images/2604.13036/comparison_grid_ablations.png" alt="qualitative ablation" loading="lazy">
+  <div class="caption"><b>图7(论文 Figure 6)</b> 定性消融。给定单张输入图像,对比完整模型与各消融变体在 Tanks and Temples 场景上的生成结果。</div>
+</div>
+
+<h3>12.3 消融的取舍评估</h3>
+<table>
+<tr><th>消融项</th><th>是否为充分消融</th><th>本笔记的判断</th></tr>
+<tr><td>Global Point Cloud</td><td>✅ 充分,直击核心设计</td><td>最有说服力的一条,因为它消融的正是"不融合"这一核心反直觉决策</td></tr>
+<tr><td>Explicit Corr. Fusion</td><td>✅ 充分</td><td>但叙述有选择性(只强调退化的相机可控性,不提提升的画质)</td></tr>
+<tr><td>FramePack</td><td>✅ 充分</td><td>清楚,且重投影误差这一指标独立佐证</td></tr>
+<tr><td>Self-Augmentation</td><td>✅ 充分且诚实</td><td>论文主动报告了"移除后单帧质量反而更好",这是值得肯定的诚实叙述</td></tr>
+<tr><td><b>缺失的消融</b></td><td>❌</td><td>论文<b>没有消融 $N_s$ 对最终生成质量的影响</b>(只在 §A.1 给了 $N_s$ vs 覆盖率的分析图,是覆盖率而非生成指标);也没有消融 <code>spatial_memory_skip_recent</code>、<code>spatial_memory_dropout_rate</code> 这些代码里存在但论文未提的旋钮</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>13.1 横向对比表</h3>
+<p>按 AGENTS.md 规范固定维度列出。缺失维度写 <code>—</code>(论文与源码均未提供),不省略列。</p>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示/记忆机制</th><th>监督信号</th><th>训练数据</th><th>训练成本</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td><a href="3D-20250923-Lyra.html">Lyra 1.0</a></td><td>2025-09</td><td>单图 / 单视频,固定 6 轨迹×121 帧</td><td>latent 空间自蒸馏的 3DGS 解码器</td><td>教师视频模型输出(自蒸馏,<b>零真实多视角</b>)</td><td>354k 合成视频段</td><td>8×A100 × 6 天</td><td>18 ms/帧渲染</td><td>—</td><td>RE10K PSNR 21.79</td><td>✅ 代码+权重+数据</td></tr>
+<tr class="best"><td><b>Lyra 2.0</b>(本文)</td><td>2026-04</td><td>单图 + 任意长相机轨迹(交互式)</td><td><b>逐帧 3D cache(不融合)+ canonical 坐标 warp 路由</b> + FramePack 时间槽</td><td>DL3DV 真实视频(位姿/深度/字幕均由现成模型估计)</td><td>DL3DV-10K</td><td>64×GB200 × 7000 步<br>(TRAINING.md:64×B200 ~5000 步)</td><td>~194 s/80 帧(GB200)<br>DMD 4 步 ~15 s</td><td>H100 80GB 可跑</td><td>T&amp;T SSIM 0.384 / LPIPS 0.552</td><td>✅ 代码+权重+GUI+训练码</td></tr>
+<tr><td><a href="3D-20260903-OctWorld.html">OctWorld</a></td><td>2026-09</td><td>单图 + 用户指定轨迹</td><td><b>OctMap:八叉树 + TSDF 全局融合记忆</b> + FramePack 时间槽</td><td>真实 RGB-D 序列(RE10K+DL3DV+SpatialVid,Pi3 估位姿)</td><td>三个数据集静态子集</td><td>32×H100(缩时间分辨率 80K 步 + 全分辨率 30K 步)</td><td>3.6 s / 扩散步(A100);OctMap 集成 4–6 FPS</td><td>OctMap 1–10 GB<br>总 51 GB</td><td>WorldScore Static 50.31 / 3D Consist. 71.67</td><td>❌ 项目页显示 "Code (Coming Soon)"</td></tr>
+<tr><td><a href="VideoGen-20250305-GEN3C.html">GEN3C</a></td><td>2025-03</td><td>单图 + 相机轨迹</td><td>depth-warp 条件(无持久记忆)</td><td>真实视频</td><td>—</td><td>—</td><td>—</td><td>41 GB(OctWorld 实测)</td><td>DL3DV 相机控制 69.54 / 主观质量 24.60</td><td>✅</td></tr>
+<tr><td>Context as Memory</td><td>2025</td><td>单图</td><td>按 FOV 重叠检索历史帧</td><td>真实视频</td><td>—</td><td>—</td><td>—</td><td>—</td><td>DL3DV 主观质量 35.19 / 相机控制 42.71</td><td>❌ 未开源,baseline 为重实现</td></tr>
+<tr><td>SPMem</td><td>2025</td><td>单图</td><td>全局点云累积条件</td><td>真实视频</td><td>—</td><td>—</td><td>—</td><td>—</td><td>DL3DV LPIPS 0.522(基线最强)</td><td>❌ 未开源,baseline 为重实现</td></tr>
+<tr class="fail"><td>VMem</td><td>2025</td><td>单图</td><td>3D surface element 索引检索</td><td>真实视频</td><td>—</td><td>—</td><td>—</td><td>19 GB(OctWorld 实测)</td><td>DL3DV 相机控制 0.68(接近失效)</td><td>—</td></tr>
+<tr><td>Wonderland / FantasyWorld</td><td>2025</td><td>单图</td><td>相机可控视频扩散 + 前馈 3D 网络(短视频)</td><td>真实视频</td><td>—</td><td>—</td><td>—</td><td>—</td><td>场景规模受限(论文 Figure 5 展示)</td><td>—</td></tr>
+</table>
+<div class="note"><b>表格可信度说明:</b>Lyra 2.0 与 OctWorld 两行的数据均取自各自论文/README 原文。GEN3C、CaM、SPMem、VMem 的"显存"与"推理耗时"来自 OctWorld 论文 Table II 的实测(它们不是 Lyra 2.0 论文提供的);Lyra 2.0 论文<b>没有列出各 baseline 的显存与耗时</b>,这也是两篇论文评测口径的差异之一。</div>
+
+<h3>13.2 最关键的一组对照:Lyra 2.0 vs OctWorld</h3>
+<div class="callout key">
+<b>两篇是在同一骨干、同一时期、独立收敛到相反解法的同期工作。</b>事实依据:① <b>两篇都建立在 FramePack 之上</b>(Lyra 2.0 §3 "We adopt FramePack to compress the history context";OctWorld §3.2 "built upon FramePack");② OctWorld-1.5 的骨干是 <b>Wan2.1 14B I2V</b> —— 与 Lyra 2.0 的骨干<b>完全相同</b>;③ <b>OctWorld 全文 0 次提及 Lyra</b>(经全文检索确认),两篇互不引用。
+</div>
+<table>
+<tr><th>维度</th><th>Lyra 2.0</th><th>OctWorld</th><th>本笔记的判断</th></tr>
+<tr><td colspan="4" style="background:var(--panel2);color:#cfd6e0;font-weight:600">同一问题(重访一致性)的两种哲学</td></tr>
+<tr><td>记忆的组织方式</td><td><b>拒绝融合</b>:逐帧独立存几何,永不成全局图</td><td><b>拥抱融合</b>:OctMap 把 RGB-D 逐步融进全局八叉树 TSDF</td><td>这是两篇最根本的分歧点</td></tr>
+<tr><td>记忆怎么用</td><td>只做<b>信息路由</b>(选帧 + 建对应),不参与外观合成</td><td>把记忆<b>渲染成部分观测 + 可见性 mask</b>,直接作为生成条件</td><td>Lyra 的顾虑是"误差放大";OctWorld 的解法是让融合本身足够鲁棒</td></tr>
+<tr><td>怎么防误差累积</td><td>靠<b>不累积</b>(逐帧隔离) + 自增广训练</td><td>靠<b>融合结构的容错性</b>(TSDF 加权平均 + 自适应分辨率 + root extension 保持 O(1))</td><td>Lyra 的路更保守但失去全局几何;OctWorld 换取显式全局几何但需信任融合</td></tr>
+<tr><td>抗漂移手段</td><td>Self-Augmentation(让模型看自己的退化输出)</td><td>Noise Augmentation(给历史条件加噪,等级 α ∈ {0, 0.07, …, 0.7} 共 11 级)</td><td><b>思路同源</b>:都是"在训练时污染历史条件以缩小 train-test 差距"。区别:Lyra 用流匹配一步去噪生成退化样本;OctWorld 直接加高斯噪声</td></tr>
+<tr><td>对几何误差的态度</td><td>承认深度会退化,因此只让它做粗路由</td><td>承认 SLAM 假设不成立(开放世界尺度不定),因此做自适应分辨率</td><td>两篇都识别到"深度不可靠",但一个选择回避、一个选择工程化解决</td></tr>
+<tr><td colspan="4" style="background:var(--panel2);color:#cfd6e0;font-weight:600">工程可验证性</td></tr>
+<tr><td>开源状态</td><td>✅ 代码 + 权重 + GUI + 训练代码</td><td>❌ "Code (Coming Soon)"</td><td><b>Lyra 2.0 可复现,OctWorld 目前不可</b></td></tr>
+<tr><td>权重商用许可</td><td>❌ NVIDIA Internal Scientific <b>Research</b> License,禁商用</td><td>未知(代码未放出)</td><td>两者都不适合直接做产品</td></tr>
+<tr><td>评测基准</td><td>DL3DV + T&amp;T,自建长程场景</td><td>WorldScore + Re10K 反转轨迹 + 自建 433 帧长轨迹</td><td>基准不重叠,<b>无法直接比数字</b></td></tr>
+</table>
+<div class="callout warn">
+<b>关键判断:两篇无法直接比较谁更好。</b>它们的主指标不重叠(Lyra 用 SSIM/LPIPS/FID + WorldScore 分项;OctWorld 用 WorldScore 分项 + LPIPS/CD),数据集不重叠(Lyra 用 DL3DV/T&amp;T;OctWorld 用 WorldScore static split/Re10K),且 OctWorld 的评测<b>不包含 Lyra 作为 baseline</b>。要做交叉验证,只能在 Lyra 2.0 开源代码上自行复现 OctWorld 的 OctMap 记忆替换掉逐帧 cache —— 这正是消融 <code>w/ Global Point Cloud</code> 做的事的强化版。<b>这条实验是目前最有价值的空白。</b>
+</div>
+
+<h3>13.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>① 逐帧 warp-inpaint</td><td>GEN3C、InvisibleStitch</td><td>用深度 warp 当前帧到目标视角,补全空洞</td><td>无持久记忆,重访区域靠幻觉;刚性几何约束损害画质</td></tr>
+<tr><td>② 检索式记忆</td><td>Context as Memory、VMem</td><td>按 FOV / 3D 元素相似度检索历史帧入上下文</td><td>缺显式几何锚定,大视角变化下失效(VMem 相机控制 0.68)</td></tr>
+<tr><td>③ 全局 3D 记忆直接条件化</td><td>SPMem(点云)、OctWorld(八叉树 TSDF)</td><td>维护全局 3D 表示,渲染其视图作为条件</td><td>误差放大:生成瑕疵污染几何 → 坏几何给出坏条件(Lyra 的批评)</td></tr>
+<tr class="best"><td><b>④ 几何仅作路由(本文)</b></td><td><b>Lyra 2.0</b></td><td>3D 几何只负责"看谁/对应关系",外观合成全交给生成先验</td><td>逐帧存储内存随帧数线性增长;等价于把外观负担全压给生成先验,分布外场景无兜底</td></tr>
+<tr><td>⑤ 自蒸馏表示学习</td><td><a href="3D-20250923-Lyra.html">Lyra 1.0</a>、<a href="3D-20260821-ArtiFixer.html">ArtiFixer</a></td><td>用生成模型自身作监督,免真实多视角数据</td><td>受限于固定生成窗口,场景规模上限低</td></tr>
+</table>
+<p><b>本文的定位:</b>处在范式 ④,是对范式 ③ 的直接反驳与范式 ② 的强化 —— 既保留了范式 ② "检索历史帧"的轻量性,又用链路 3D 几何补上了它缺失的空间锚定。同时它把范式 ⑤(自蒸馏思想)从"监督信号从哪来"迁移到了"训练分布怎么对齐"(自增广),这是同一思想的第二次应用。</p>
+
+<h3>13.4 库内交叉链接</h3>
+<ul>
+<li><b><a href="3D-20250923-Lyra.html">Lyra 1.0</a></b> — 同团队前作。差异在于:1.0 的创新点(latent 自蒸馏 3DGS 解码器)在 2.0 中被替换为对现成 DAv3 的微调,说明团队认为瓶颈已从表示学习转移到生成稳定性。</li>
+<li><b><a href="3D-20260903-OctWorld.html">OctWorld</a></b> — 解同一问题(重访一致性)的相反路线,见 §13.2。</li>
+<li><b><a href="VideoGen-20250305-GEN3C.html">GEN3C</a></b> — 既是 Lyra 1.0 的教师模型(自蒸馏信号来源),又是 Lyra 2.0 的 baseline(相机控制最强但画质最差)。注意两个角色的评价标准不同。</li>
+<li><b><a href="3D-20260821-ArtiFixer.html">ArtiFixer</a></b> — 同团队(Turki/Shen/Ren/Gojcic),用 opacity mixing + 因果自回归蒸馏提升 3D 重建质量。与本文在"长时程自回归"上共享问题意识。</li>
+<li><b><a href="VideoGen-20260427-视频生成几何一致性调研.html">视频生成几何一致性调研</a></b> / <b><a href="VideoGen-20260618-视频生成相机可控性调研.html">相机可控性调研</a></b> — 本文可视为这两个方向交汇处的一个具体解。</li>
+<li><b><a href="VideoGen-20251208-UCPE.html">UCPE</a></b> — 走"统一相机位置编码"路线提升相机可控性;与本文采用的 Plücker 射线注入属同类条件机制的两种设计。</li>
+<li><b><a href="3D-20260512-VidSplat.html">VidSplat</a></b> / <b><a href="3D-20260522-GenRecon.html">GenRecon</a></b> — 同属"用视频扩散先验提升 3D 重建"的路线,但聚焦稀疏视角而非长轨迹探索。</li>
+<li><b><a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a></b> — OctWorld 用 VGGT 计算 Chamfer Distance 评估几何一致性,是跨笔记的方法复用点。</li>
+</ul>
+
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<h3>14.1 论文自述的应用</h3>
+<table>
+<tr><th>应用</th><th>实现方式</th><th>论文/README 依据</th></tr>
+<tr><td><b>交互式场景探索</b></td><td>GUI:在 3D viewer 里绘制相机路径、自回归扩展视频、输入文本提示指定生成内容;GUI 可视化累积点云以便规划重访轨迹</td><td>§5.5;README Option 3</td></tr>
+<tr><td><b>具身 AI 仿真</b></td><td>重建的 3DGS 与网格直接导出到物理引擎;论文演示导入 <b>NVIDIA Isaac Sim</b> 做机器人导航与交互</td><td>§5.5;Figure 7</td></tr>
+<tr><td><b>VR / 实时渲染</b></td><td>3DGS 适合实时渲染与数据流</td><td>§1</td></tr>
+<tr><td><b>野外场景生成</b></td><td>对训练分布外的in-the-wild图像生成大规模可探索场景(室内外均有)</td><td>§5.5;Figure 8</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2604.13036/applications.png" alt="applications" loading="lazy">
+  <div class="caption"><b>图8(论文 Figure 7)</b> 应用。交互界面允许用户在 3D cache 内指定相机轨迹以轻松生成新视角;重建的 3DGS 场景可转换为表面网格并集成到 NVIDIA Isaac Sim 等具身 AI 仿真器中用于机器人仿真。</div>
+</div>
+
+<h3>14.2 资源与硬件门槛(对本地环境的判断)</h3>
+<table>
+<tr><th>环节</th><th>硬件需求</th><th>依据</th><th>RTX 3090(24GB)可行性</th></tr>
+<tr><td>视频生成(全模型 35 步)</td><td>80GB+ 显存(Linux,H100/GB200 级)</td><td>README 标注 "Runtime on 1× <b>H100 80GB</b>"</td><td class="fail-cell" style="color:#fca5a5"><b>❌ 不可行</b>(14B DiT + 长上下文,24GB 差一个量级)</td></tr>
+<tr><td>视频生成(DMD 4 步)</td><td>同上——DMD 只减步数,<b>不降显存</b></td><td>README DMD 说明未提显存下降</td><td style="color:#fca5a5">❌ 不可行</td></tr>
+<tr><td>3D 重建(ViPE + DA3 + GS)</td><td>论文未给显存;实测按 README 在 1× H100 上约 1 分钟</td><td>README</td><td style="color:#fbbf24">⚠️ <span class="uncertain">【待核实】</span>DAv3 主体为 ViT-L 级 + Gaussian head,单卡 24GB 有可能可跑,但<b>论文与 README 均未给该段的显存数字,无法确认</b></td></tr>
+<tr><td>训练</td><td>64× GB200 / 64× B200(FSDP)</td><td>论文 §A.2;TRAINING.md</td><td style="color:#fca5a5">❌ 不可行</td></tr>
+</table>
+<div class="callout red">
+<b>对 vggt_human 主线的直接结论:Lyra 2.0 不能替代现有的 COLMAP→3DGS 重建段。</b>原因有三:① <b>它是生成不是重建</b> —— 输出是模型"想象"的、与真实场景无关的画面,而 vggt_human 要的是对真实捕获的精确复原;② 硬件门槛差一个量级(80GB vs 24GB);③ <b>只支持静态场景</b>,而 vggt_human 的核心是人体(动态)。
+</div>
+
+<h3>14.3 可迁移的位置(如果有 A100/H100 资源)</h3>
+<div class="grid-3">
+<div class="card">
+<h4>① scene_gs 背景资产预生成</h4>
+<p>vggt_human 的 <code>scene_gs</code> 分支需要场景背景高斯。若目标是<b>合成/仿真环境</b>而非真实复现,Lyra 2.0 可从单图直接产出可探索的大场景背景资产,且能导出网格进 Isaac Sim —— 与现有 pipeline 的 COLMAP 段在目标上不冲突(一个出真实场景,一个出合成场景)。</p>
+</div>
+<div class="card">
+<h4>② 合成训练数据源</h4>
+<p>论文 §4.4 的做法本身就是范例:<b>用视频模型自回归生成 3000 段视频,再拿去微调重建模型</b>。若 vggt_human 的重建模型受限于真实多视角数据不足,这个"自生成数据微调"的闭环可以移植 —— 且这一思路已在 <a href="3D-20250923-Lyra.html">Lyra 1.0</a> 中用得更彻底(完全自蒸馏,零真实多视角)。</p>
+</div>
+<div class="card">
+<h4>③ 两个训练策略可直接借鉴</h4>
+<p><b>a) Self-Augmentation</b>:任何自回归生成/重建模型都可用"用自身退化输出做条件"来缩小 train-test 差距 —— 对逐帧推进的 3DGS 训练同样适用。<b>b) canonical 坐标 warp 而非 RGB warp</b>:这个"只传对应关系、不传外观"的设计,可直接用于任何"几何引导 + 生成先验"的混合架构,避免 warp 伪影被复制。</p>
+</div>
+</div>
+
+<h3>14.4 数据成本</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>说明</th></tr>
+<tr><td>训练数据获取</td><td>DL3DV-10K(公开)</td><td>但需自行用 VIPE 估位姿 + DAv3 估深度 + VLM 生成字幕 —— 预处理成本高</td></tr>
+<tr><td>数据准入门槛</td><td>隔帧采样后需 >1000 帧</td><td>TRAINING.md 明确门槛,会过滤掉大量短视频</td></tr>
+<tr><td>推理数据</td><td>1 张图 + 一条相机轨迹</td><td>极低;但轨迹需符合 1+80k 帧数约束</td></tr>
+<tr><td>下游微调(DAv3)</td><td>3000 段 1 分钟自生成视频 + 10000 步</td><td>§A.4;这部分算力需求未明确给出</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<h3>15.1 方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 逐帧 3D cache 的内存随帧数线性增长,且论文未给这笔账</h4>
+<p><b>问题:</b>论文论证"不融合"能避免误差累积,但代价是<b>每帧几何都要永久保留</b>。代码 <code>lyra2_model.py:2499</code> 的 <code>_world_points: list[torch.Tensor]</code> 是纯 list,<code>add()</code> 只 append、从不淘汰;论文与 README <b>均未给出该缓存的显存占用或增长曲线</b>(论文只给了 OctMap 之外的空间检索"每步不到 1 秒"的耗时)。对任意长轨迹的探索场景,这是隐藏的可扩展性瓶颈。</p>
+<p><b>代码佐证:</b><code>lyra2_model.py:2499-2507</code> 中 <code>_world_points</code> / <code>_latent_indices</code> / <code>_frame_ids</code> 均为无上限 list;<code>Sparse3DCache.__init__</code> 的 <code>downsample</code> 只控制单帧体积,不控制总帧数。</p>
+<p><b>改进建议:</b>① 引入论文中 <a href="3D-20260903-OctWorld.html">OctWorld</a> 的<b>体素剪枝</b>(丢弃未观测/冗余体素)或 view-dependent offload 思路 —— 值得注意的是 OctWorld <b>主动承认</b>了这个缺陷("all nodes are currently cached on the GPU, memory consumption increases continuously"),并把它列为关键方向;Lyra 2.0 论文则完全没有讨论;② 对逐帧缓存可采用"几何金字塔 + 按需重载"或"老帧只保留降采样点云"的分级淘汰。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 自增广的关键超参在论文与代码间不一致,且论文未做自身消融</h4>
+<p><b>问题:</b>$p_{\text{aug}}$ 论文写 0.7、代码是 1.0;步数论文称"一步"、代码类默认 5。论文<b>没有对 $p_{\text{aug}}$ 与自增广步数做消融</b>,只与"完全移除自增广"对比。因此无法判断这两个旋钮的敏感度 —— 而这直接决定复现成本(5 步 vs 1 步是 5 倍开销)。</p>
+<p><b>代码佐证:</b><code>experiment.py:50</code>(<code>self_aug_prob=1.0</code>)vs 论文 §A.2("$p_{\text{aug}}{=}0.7$");<code>lyra2_model.py:70</code>(<code>self_aug_steps: int = 5</code>)vs <code>experiment.py:46</code>(<code>self_aug_steps=1</code>)。</p>
+<p><b>改进建议:</b>补 $p_{\text{aug}} \in \{0.3, 0.7, 1.0\}$ 与步数 $\in \{1,2,5\}$ 的二维消融;论文应将代码里的实际生效值(<code>self_aug_every_k=2</code> 使有效触发率降半)明确写清,避免读者按 0.7 复现。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 未消融 $N_s$ 对生成质量的影响,只给了覆盖率曲线</h4>
+<p><b>问题:</b>论文 §A.1 的 Figure 9 只证明"$N_s{=}5$ 在覆盖率与效率间取得折中",但<b>覆盖率不等于生成质量</b>。$N_s$ 直接决定上下文长度与显存,是工程选型时最关心的旋钮之一。</p>
+<p><b>代码佐证:</b><code>framepack_type</code> 中的 spatial 槽位数(<code>f4s2f1s1</code> = 5)是硬编码在字符串里的,改 $N_s$ 需同时改该字符串与检索逻辑。</p>
+<p><b>改进建议:</b>补 $N_s \in \{1,3,5,8\}$ 在 SSIM/LPIPS/相机可控性上的曲线,给出"边际收益递减点"。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] canonical 坐标完全放弃外观传递,分布外场景无兜底</h4>
+<p><b>问题:</b>论文的论证(warped RGB 会让模型"抄"伪影)成立且有力,但走向了另一个极端 —— <b>完全切断历史外观信息</b>。这意味着外观合成的全部负担压给生成先验:若目标区域在训练分布外(如罕见的建筑风格、特殊的材质),模型没有任何历史外观可参考,只能纯靠先验想象。论文的 in-the-wild 结果(Figure 8)说明常见场景没问题,但没有量化分布外的失效边界。</p>
+<p><b>代码佐证:</b><code>_apply_camera_controls</code> 中 spatial 分支只构造 <code>warped_coords</code> + <code>warped_depth</code>(对应图通道),未同时提供 warped RGB 作为可选路径;反观 <code>buffer</code>(最近历史帧)仍走 RGB warp(<code>condition_state_pixels, _ = _warp_multisrc(buf_rgb, ...)</code>,<code>lyra2_model.py:1761</code>)—— 说明代码里 RGB warp 路径是存在的,只是没用在 spatial 槽上。</p>
+<p><b>改进建议:</b>提供"低置信度兜底":当某区域的对应点稀疏或深度置信度低时,允许注入该区域的历史外观(哪怕带伪影),并让模型自行取舍;或在训练时按概率交替使用坐标注入与 RGB 注入,使模型学会在两者间自适应。</p>
+</div>
+
+<h3>15.2 数据与评估层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 光度一致性问题是训练数据的结构性缺陷,但只被列为"未来工作"</h4>
+<p><b>问题:</b>论文 §6 自述:DL3DV 含跨视角曝光变化,模型会复现这种不一致,而<b>这种光度不一致会给前馈 3DGS 重建带来伪影</b>。作者提出的缓解方向(网络内光度稳定化、换用游戏引擎合成数据)都停留在口头。<b>这意味着开箱即用的模型在自有数据上很可能复现这个缺陷。</b></p>
+<p><b>论文佐证:</b>§6 "the DL3DV dataset contains exposure variations across views, which the model may reproduce during generation. Such photometric inconsistencies can lead to artifacts in the feed-forward 3DGS reconstruction."</p>
+<p><b>改进建议:</b>训练前对数据做曝光/白平衡归一化(而非只在网络侧解决);或按 <a href="VideoGen-20250305-GEN3C.html">GEN3C</a> 同类做法引入光度一致性增强。对自有数据训练的团队,这是<b>必须先做的预处理</b>。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 长时程缺定量基准,主要靠定性与 ~800 帧快照</h4>
+<p><b>问题:</b>主表(Table 1/2)用的 DL3DV-Evaluation 与 T&amp;T 都不是为长时程设计的;长轨迹只做了定性对比(Figure 3 "约第 800 帧")与消融(Table 3 在 T&amp;T 上)。<b>没有"轨迹长度 vs 指标退化"的定量曲线</b> —— 而这正是长时程方法最该提供的证据。对比之下 <a href="3D-20260903-OctWorld.html">OctWorld</a> 专门构造了 433/505 帧的长程基准并做 user study。</p>
+<p><b>改进建议:</b>按轨迹长度分桶(如 80/400/800/1600 帧)给出各指标曲线,明确"模型在多少帧后开始崩",这对下游决定"多长轨迹需要分段重建"有直接价值。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级 — 已诚实披露] baseline 配置存在不对称</h4>
+<p><b>问题:</b>CaM 与 SPMem 未开源,由作者按 Wan2.1-14B 重实现;HY-WorldPlay 使用离散动作控制而非显式轨迹。<b>但论文主动声明了这两点</b>(§5.2),这属于可接受的学术实践。</p>
+<p><b>改进建议:</b>补充重实现的配置细节(是否同等调参)到附录,便于第三方判断公平性。</p>
+</div>
+
+<h3>15.3 工程实用性层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 权重许可禁止商用,直接排除工业落地</h4>
+<p><b>问题:</b>代码是 Apache 2.0,但<b>权重是 NVIDIA Internal Scientific Research and Development Model License</b>,README 明确要求自定义许可需提交申请表单。这意味着它只能用于研究,不能进产品。</p>
+<p><b>影响:</b>若目标是产品化,必须换基座(如用 Apache 2.0 的 Wan2.1 原始权重自行训练)或走商业授权;这也削弱了"开源"标签的实际价值 —— 代码开放但模型不可用。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 轨迹约束硬编码,且轨迹尺度不自洽</h4>
+<p><b>问题:</b>① 帧数必须是 $1+80k$,否则与自回归 chunk 边界不齐;② 输入轨迹<b>始终相对于首帧的单目深度估计</b>,实际相机路径可能与用户预期不同,需手工调 <code>--pose_scale</code>;③ 轨迹沿路可能幻觉出物体导致退化。</p>
+<p><b>代码/文档佐证:</b>README "Frame counts must be of the form 1 + 80k";"the input trajectory is always relative to the monocular depth estimated from the first frame, so the actual camera path may differ from what you expect";"The model may hallucinate objects along the predefined trajectory, which can lead to degenerated results"。</p>
+<p><b>改进建议:</b>把尺度问题显式化 —— 在 GUI 中给出"估计尺度 vs 用户意图尺度"的对比提示;或引入尺度自校准(利用首帧深度的统计量与已知物体尺度先验)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级] 依赖栈与环境门槛高</h4>
+<p><b>问题:</b>Ubuntu 22.04 + CUDA 12.8 + torch 2.7.1 + flash-attn 2.6.3 + transformer_engine + 两个需现场编译的 vendored CUDA 扩展;README 自承会遇版本冲突。Windows 无支持。</p>
+<p><b>改进建议:</b>提供 Docker 镜像或 conda-lock 环境锁定;把 ViPE/DA3 扩展改为可选依赖(仅重建段需要)。</p>
+</div>
+
+<h3>15.4 优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>方向</th><th>类别</th><th>核心问题</th></tr>
+<tr class="fail"><td><b>高</b></td><td>权重许可禁商用</td><td>工程</td><td>直接排除产品化,只能研究用</td></tr>
+<tr class="fail"><td><b>高</b></td><td>逐帧 cache 内存无上限</td><td>方法</td><td>长轨迹可扩展性瓶颈,论文完全未讨论</td></tr>
+<tr class="fail"><td><b>高</b></td><td>训练数据光度不一致</td><td>数据</td><td>被列为未来工作,但会直接恶化自有数据上的 3DGS 重建</td></tr>
+<tr><td>中</td><td>自增广超参不一致且未消融</td><td>方法</td><td>复现成本可能差 5 倍</td></tr>
+<tr><td>中</td><td>$N_s$ 未按生成质量消融</td><td>方法</td><td>工程选型最关心的旋钮缺数据</td></tr>
+<tr><td>中</td><td>放弃外观传递,分布外无兜底</td><td>方法</td><td>生成先验负担过重</td></tr>
+<tr><td>中</td><td>长时程缺定量基准</td><td>评估</td><td>无"轨迹长度 vs 退化"曲线</td></tr>
+<tr><td>中</td><td>轨迹尺度不自洽 + 帧数硬约束</td><td>工程</td><td>实际路径可能不符用户预期</td></tr>
+<tr><td>低</td><td>baseline 配置不对称</td><td>评估</td><td>已诚实披露</td></tr>
+<tr><td>低</td><td>依赖栈复杂、无 Windows</td><td>工程</td><td>可用 Docker 缓解</td></tr>
+</table>
+
+<div class="callout key">
+<b>个人认为最关键的三点:</b>
+<ol style="margin-top:8px">
+<li><b>逐帧 cache 的内存账是论文最大的盲点。</b>它论证"不融合"能避免误差累积(消融也支持),但把可扩展性成本藏了起来。而 <a href="3D-20260903-OctWorld.html">OctWorld</a> 恰恰证明了另一条路可行:全局融合若能保证融合结构本身容错(自适应分辨率 + 加权 TSDF + 分级细节),也能做到 1–10GB 的内存占用。两篇的对照说明"融合 vs 不融合"不是二选一,而是<b>融合的鲁棒性够不够</b>的问题。</li>
+<li><b>光度一致性是把这套方法用在自己数据上的第一道坎。</b>论文自己承认了却只列为未来工作 —— 对任何想迁移该范式到自有场景的团队,曝光/白平衡归一化必须前置,否则 3DGS 重建的伪影会吞掉方法本身带来的增益。</li>
+<li><b>权重许可决定了它的实际可用范围是"读论文 + 借思路",不是"拿来跑"。</b>好在两个最有价值的可迁移物都是方法而非权重:<b>canonical 坐标 warp</b>(只传对应不传外观)与 <b>self-augmentation</b>(污染历史条件以对齐训练-推理分布)。这两个 trick 与骨干无关,可以独立搬走。</li>
+</ol>
+</div>
+
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+
+<h3>16.1 一句话总结</h3>
+<div class="callout key">
+Lyra 2.0 的核心贡献不是某个 SOTA 数字,而是<b>把"长时程 3D 一致生成"这个模糊目标拆成可分别攻克的两个子问题,并为每个子问题找了一个与骨干正交的机制</b>:用"几何只做信息路由、不做外观合成"治空间遗忘,用"让模型在训练中看自己的退化输出"治时间漂移。两个机制都不改骨干结构(零初始化注入),因此可以叠加在任何支持长上下文的视频扩散模型上 —— 这是它方法论上最有价值的地方。
+</div>
+
+<h3>16.2 三条方法论级别的收获</h3>
+<table>
+<tr><th>#</th><th>收获</th><th>可迁移性</th></tr>
+<tr><td>1</td><td><b>解耦"几何跟踪"与"像素合成"</b>:显式 3D 只回答"该看谁、对应在哪",不回答"长什么样"。这避免了紧耦合设计中的误差放大(坏几何 → 坏条件 → 更坏几何)。</td><td>极高 —— 适用于任何"几何引导 + 生成先验"的混合架构,不限视频扩散</td></tr>
+<tr><td>2</td><td><b>warp 对应关系而非 warp RGB</b>:warped 图像会变成"拐杖",让模型复制 warp 伪影而非调用生成先验;只传 canonical 坐标则切断这条捷径。</td><td>极高 —— 是个纯粹的接口设计决策,与模型无关</td></tr>
+<tr><td>3</td><td><b>把 train-test 分布不匹配显式化为训练策略</b>:自增广的本质是"在训练时主动制造推理时才会出现的坏条件"。相比 Self-Forcing 类做法,它用近似(一步去噪)换取了在双向架构上的可行性。</td><td>高 —— 适用于任何"训练用 GT、推理用自产"的自回归系统</td></tr>
+</table>
+
+<h3>16.3 在演进脉络中的位置</h3>
+<table>
+<tr><th>范式 → 代表 → 核心先验 → 局限</th><th>本文的位置</th></tr>
+<tr><td>① 逐帧 warp-inpaint(GEN3C)→ 用深度 warp 补全 → 无持久记忆</td><td>本文保留了它的 warp 机制但只用于建对应(不传像素),补上了它缺的持久记忆</td></tr>
+<tr><td>② 检索式记忆(CaM / VMem)→ 按相似度检索历史帧 → 缺几何锚定</td><td>本文继承了"检索"的轻量性,并<b>用 3D 可见性评分替代了纯视角相似度</b>(VMem 的相机控制 0.68 → 本文 64.67)</td></tr>
+<tr><td>③ 全局 3D 记忆条件化(SPMem / <a href="3D-20260903-OctWorld.html">OctWorld</a>)→ 融合全局几何 → 误差放大</td><td>本文是对该范式的<b>直接反驳</b>:消融证明融合会显著损害相机可控性(49.86 vs 63.87)</td></tr>
+<tr class="best"><td><b>④ 几何仅作路由(本文) → 外观交给生成先验 → 逐帧存储内存线性增长</b></td><td><b>当前位置</b>。留下两个未解问题:内存可扩展性、分布外场景无兜底</td></tr>
+<tr><td>⑤ 自蒸馏表示学习(Lyra 1.0 / ArtiFixer)→ 生成模型作监督 → 场景规模受限</td><td>本文把自蒸馏思想从"监督信号来源"迁移到"训练分布对齐"(自增广),是同一思想的第二次应用</td></tr>
+</table>
+
+<h3>16.4 与前后工作的关系</h3>
+<div class="grid-2">
+<div class="card">
+<h4>向后看:对 Lyra 1.0 的取舍</h4>
+<p>1.0 用自蒸馏训练了一个自研的 latent 3DGS 解码器(32.75M 参数),解决"监督信号从哪来";2.0 <b>放弃了这个自研解码器</b>,改为微调现成 DAv3。这一取舍说明团队判断瓶颈已从表示学习转移到生成一致性。</p>
+<p><span class="uncertain">⚠️【推测】</span>该判断基于 §4.4 措辞与 README 流程推断,论文未直接陈述理由。</p>
+</div>
+<div class="card">
+<h4>横向看:与 OctWorld 的分野</h4>
+<p>两篇同骨干(Wan 2.1-14B I2V)、同基础组件(FramePack)、同期独立完成,却给出相反答案:不融合 vs 全局融合。这种"同期同题的相反解法"是判断该子方向走向的最佳样本 —— <b>说明"融合的鲁棒性是否足够"这个问题尚未有定论</b>。</p>
+</div>
+</div>
+
+<div class="figure">
+  <img src="images/2604.13036/GUI_results.png" alt="in-the-wild scene generation" loading="lazy">
+  <div class="caption"><b>图9(论文 Figure 8)</b> 野外场景生成。对训练数据分布之外的挑战性真实图像展示视频生成与 3DGS 重建结果。方法支持在 GUI 中指定灵活的相机轨迹以探索世界,包括从同一起点组合多条轨迹(见第二个示例)。</div>
+</div>
+
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队 + 🔗 资源链接</h2>
+
+<h3>研究团队</h3>
+<table>
+<tr><th>项</th><th>内容</th></tr>
+<tr><td>机构</td><td><b>NVIDIA Spatial Intelligence Lab</b>(单一机构,无外协)<span class="uncertain">⚠️ 与 Lyra 1.0 规格不同:1.0 有多伦多大学/Vector Institute 参与</span></td></tr>
+<tr><td>一作</td><td>Tianchang Shen*(多伦多大学个人主页域名,现属 NVIDIA)</td></tr>
+<tr><td>通讯/共同末位</td><td>Xuanchi Ren*(与一作同为 equal contribution)</td></tr>
+<tr><td>核心成员</td><td>Sherwin Bahmani(Lyra 1.0 一作)、Jiawei Ren、Ruilong Li、Zian Wang、Nicholas Sharp、Zan Gojcic、Sanja Fidler、Jiahui Huang、Huan Ling、Jun Gao</td></tr>
+<tr><td>与前作的关系</td><td>相对 <a href="3D-20250923-Lyra.html">Lyra 1.0</a>(Bahmani 一作、Shen 二作),2.0 <b>一作与二作互换</b>;Fidler / Gojcic / Ling / Gao / Ren 等核心作者延续</td></tr>
+<tr><td>相关在库工作</td><td><a href="3D-20260821-ArtiFixer.html">ArtiFixer</a>(同团队 Turki/Shen/Ren/Gojcic)</td></tr>
+</table>
+
+<h3>关键引用与致谢中的可复用资产</h3>
+<ul>
+<li><b>Wan 2.1</b> — 视频扩散骨干(本工作与 OctWorld-1.5 均采用)</li>
+<li><b>FramePack</b> — 上下文压缩策略(本工作与 OctWorld 均采用)</li>
+<li><b>Depth Anything 3</b>(ByteDance-Seed)+ <b>ViPE</b>(nv-tlabs) — 3D 重建段的位姿与深度</li>
+<li><b>MoGe</b>(Microsoft) — README 提及的条件路径之一</li>
+<li>论文致谢特别提到 GUI 基于 Merlin Nimier-David / Thomas Müller / Alex Keller 的交互式 GUI 基础构建</li>
+</ul>
+
+<h3>资源链接</h3>
+<div class="refs">
+<ul>
+<li>📄 arXiv abs:<a href="https://arxiv.org/abs/2604.13036" target="_blank">arxiv.org/abs/2604.13036</a>(v1,2026-04-14)</li>
+<li>🌐 arXiv HTML 全文:<a href="https://arxiv.org/html/2604.13036v1" target="_blank">arxiv.org/html/2604.13036v1</a></li>
+<li>🏠 项目主页:<a href="https://research.nvidia.com/labs/sil/projects/lyra2/" target="_blank">research.nvidia.com/labs/sil/projects/lyra2/</a></li>
+<li>💻 代码仓库:<a href="https://github.com/nv-tlabs/lyra" target="_blank">github.com/nv-tlabs/lyra</a>(子目录 <code>Lyra-2/</code>;<code>Lyra-1/</code> 为前作)</li>
+<li>🤗 模型权重:<a href="https://huggingface.co/nvidia/Lyra-2.0" target="_blank">huggingface.co/nvidia/Lyra-2.0</a>(NVIDIA Internal Scientific Research and Development Model License,<b>禁商用</b>)</li>
+<li>📘 训练说明:<code>TRAINING.md</code> · 环境:<code>INSTALL.md</code> · GUI:<code>gui/README.md</code></li>
+<li>📖 库内关联:<a href="3D-20250923-Lyra.html">Lyra 1.0 笔记</a> · <a href="3D-20260903-OctWorld.html">OctWorld 笔记</a> · <a href="VideoGen-20250305-GEN3C.html">GEN3C 笔记</a></li>
+</ul>
+</div>
+
+<div class="note">
+<b>本笔记的信息来源与核实范围:</b>论文全文(arXiv HTML v1,含 Appendix A)、<code>nv-tlabs/lyra</code> 仓库 <code>Lyra-2/</code> 子目录源码(README / TRAINING.md / INSTALL.md / configs / models / networks)、NVIDIA 项目主页。所有超参标注了 <code>file:line</code>;论文与代码的 7 处差异列于 §10.4;图像来自 arXiv HTML(8 张本地 + 3 张热链,后者已注明)。所有指标数字、显存、耗时均标注了来源与硬件,<b>未做任何估算</b>。标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文直接佐证的推断。
+</div>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>本笔记为论文调研知识库的一部分 · 由 <a href="index.html" style="color:var(--accent)">index.html</a> 索引</p>
+</footer>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

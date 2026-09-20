@@ -2809,6 +2809,128 @@
    ]
   },
   {
+   "title": "Lyra 2.0: 可探索生成式 3D 世界",
+   "meta": [
+    "📄 arXiv: 2604.13036",
+    "📅 2026-04-14",
+    "🏢 NVIDIA Spatial Intelligence Lab (SIL)"
+   ],
+   "tags": [
+    "Autoregressive Video Generation",
+    "3D Cache / Spatial Memory",
+    "Camera Control",
+    "Self-Augmentation",
+    "Long-Horizon Consistency",
+    "DMD Distillation",
+    "FramePack"
+   ],
+   "summary": "把生成式重建(视频扩散合成 → lift 成 3D)从固定窗口扩展到<strong>大规模、可反复探索的场景</strong>。核心价值在于把「长时程 3D 一致」这个模糊目标<strong>拆成两种机制不同的退化</strong>并分别给出对策:① <strong>Spatial Forgetting</strong>(空间遗忘)——相机移动后先前区域滑出有限时间上下文窗口,回头重访时只能从零幻觉出新结构;对策是维护逐帧 3D 几何(全分辨率深度 + 降采样点云)但<strong>仅用于信息路由</strong>(可见性评分 → 贪心检索 N_s=5 帧 + 稠密几何对应),外观合成完全交给扩散像素先验。② <strong>Temporal Drifting</strong>(时间漂移)——自回归误差逐帧复合放大;对策是 <strong>self-augmented histories</strong>:训练时让模型条件于自己退化的输出,教它纠错而非传播漂移。关键解耦:显式 3D 代理只负责「该看谁、对应关系是什么」,不负责「长什么样」——避免此前全局点云紧耦合造成的「坏几何 → 坏条件」误差放大(消融 SPMem 的全局点云在长时程漂移更明显)。实现上在 <strong>Wan 2.1-14B</strong> 骨干(配 FramePack 上下文压缩)加入 canonical 坐标 warp 注入 DiT 的 <strong>q/k(不改 value)</strong>,再在自生成数据上微调 Depth Anything v3 把长视频转为 3DGS 与三角网格。832×480 训练/推理,7000 迭代(64×GB200),单段生成 194s→15s(35 步 → DMD 4 步蒸馏,约 13×)。DL3DV/T&amp;T 上 SSIM、LPIPS、FID、相机可控性同时最优,域外 T&amp;T FID 51.33 显著优于 SPMem 60.11。代码/权重/GUI/训练代码开源(权重走 NVIDIA 内部研究许可)。⚠️ abs 页 comments 无会议信息,本笔记不标会议 badge;自增广概率 p=0.7(论文)vs 1.0(代码)、weight decay 0.1(论文)vs 1e-3(代码)两处论文与代码不一致已在笔记标注。",
+   "links": [
+    {
+     "href": "3D-20260414-Lyra2.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2604.13036",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/nv-tlabs/lyra",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260414-Lyra2.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "3D 生成",
+    "视频扩散先验用于 3D",
+    "几何与时序一致性",
+    "相机控制与位姿条件"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
+   "title": "OctWorld: 八叉树 3D 记忆的长程世界一致视频生成",
+   "meta": [
+    "📄 arXiv: 2609.03919",
+    "📅 2026-09-03",
+    "🏢 中国科学技术大学 / 微软亚洲研究院 / 清华大学",
+    "🏆 ECCV 2026"
+   ],
+   "tags": [
+    "Octree 3D Mapping",
+    "TSDF Fusion",
+    "Long-Range World Consistency",
+    "Autoregressive Video Generation",
+    "3D Memory / Cache",
+    "Camera Control",
+    "FramePack"
+   ],
+   "summary": "与 Lyra 2.0 解决完全相同的问题(单图沿长相机轨迹自回归生成、重访区域保持一致),<strong>答案方向却相反</strong>:Lyra 2.0 明确拒绝把历史几何融合成全局表示(逐帧独立存、几何只做信息路由),OctWorld 则<strong>正面拥抱全局融合</strong>——把生成的 RGB 帧与深度图逐步融合进一个可扩展、空间自适应的全局 3D 记忆 <strong>OctMap</strong>(动态稀疏八叉树 + TSDF 融合)。动机建立在对 SLAM 假设的质疑上:SLAM 假设度量尺度已知、空间范围有界,而开放域世界生成尺度不确定且可能无界,固定分辨率 TSDF 要么高分辨率不可扩展、要么低分辨率显著丢细节。三条自述贡献:首个为长程世界一致视频生成设计的全局融合 3D 记忆框架;空间自适应八叉树 TSDF 记忆;超越此前方法并证明相对点缓存与朴素 TSDF 体的明确优势(重投影 PSNR 23.47 vs 最优 TSDF 22.08 = +1.39 dB,而 TSDF 0.001 体素已 OOM)。15B OctWorld-1.0(FramePack F1 14B + 新增控制模块),八叉树最大深度 d_max=16,32×H100 训练,评测最长轨迹 505 帧;WorldScore 200 场景总分 50.31 领先 Gen3C 45.48,Re10K 反转轨迹 LPIPS 0.1633/CD 0.0345 优于 Gen3C 与 VMem,用户研究 53.8% 偏好。⚠️ 截至笔记撰写(2026-09-20)官方代码<strong>尚未放出</strong>(项目页显示 Code (Coming Soon)、无 GitHub 链接),§9 工程细节全部来自论文附录、无源码级验证,可信度与 Lyra 2.0(代码全开源)不同级。",
+   "links": [
+    {
+     "href": "3D-20260903-OctWorld.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2609.03919",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://maxtirerror.github.io/octworldpage/",
+     "text": "🏠 项目主页"
+    }
+   ],
+   "file": "3D-20260903-OctWorld.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "3D 生成",
+    "视频扩散先验用于 3D",
+    "几何与时序一致性",
+    "相机控制与位姿条件"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

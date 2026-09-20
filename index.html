@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 51</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 19</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 53</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 21</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -1921,6 +1921,57 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/nv-tlabs/lyra" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card" data-file="3D-20260414-Lyra2.html" data-kind="note" data-depth="deep"
+              data-topics="3D 生成|视频扩散先验用于 3D|几何与时序一致性|相机控制与位姿条件" data-search="Lyra 2.0: 可探索生成式 3D 世界 Autoregressive Video Generation 3D Cache / Spatial Memory Camera Control Self-Augmentation Long-Horizon Consistency DMD Distillation FramePack 把生成式重建(视频扩散合成 → lift 成 3D)从固定窗口扩展到大规模、可反复探索的场景。核心价值在于把「长时程 3D 一致」这个模糊目标拆成两种机制不同的退化并分别给出对策:① Spatial Forgetting(空间遗忘)——相机移动后先前区域滑出有限时间上下文窗口,回头重访时只能从零幻觉出新结构;对策是维护逐帧 3D 几何(全分辨率深度 + 降采样点云)但仅用于信息路由(可见性评分 → 贪心检索 N_s=5 帧 + 稠密几何对应),外观合成完全交给扩散像素先验。② Temporal Drifting(时间漂移)——自回归误差逐帧复合放大;对策是 self-augmented histories:训练时让模型条件于自己退化的输出,教它纠错而非传播漂移。关键解耦:显式 3D 代理只负责「该看谁、对应关系是什么」,不负责「长什么样」——避免此前全局点云紧耦合造成的「坏几何 → 坏条件」误差放大(消融 SPMem 的全局点云在长时程漂移更明显)。实现上在 Wan 2.1-14B 骨干(配 FramePack 上下文压缩)加入 canonical 坐标 warp 注入 DiT 的 q/k(不改 value),再在自生成数据上微调 Depth Anything v3 把长视频转为 3DGS 与三角网格。832×480 训练/推理,7000 迭代(64×GB200),单段生成 194s→15s(35 步 → DMD 4 步蒸馏,约 13×)。DL3DV/T&amp;amp;T 上 SSIM、LPIPS、FID、相机可控性同时最优,域外 T&amp;amp;T FID 51.33 显著优于 SPMem 60.11。代码/权重/GUI/训练代码开源(权重走 NVIDIA 内部研究许可)。⚠️ abs 页 comments 无会议信息,本笔记不标会议 badge;自增广概率 p=0.7(论文)vs 1.0(代码)、weight decay 0.1(论文)vs 1e-3(代码)两处论文与代码不一致已在笔记标注。">
+            <h3>63. Lyra 2.0: 可探索生成式 3D 世界</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2604.13036</span>
+                <span>📅 2026-04-14</span>
+                <span>🏢 NVIDIA Spatial Intelligence Lab (SIL)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Autoregressive Video Generation</span>
+                <span class="tag">3D Cache / Spatial Memory</span>
+                <span class="tag">Camera Control</span>
+                <span class="tag">Self-Augmentation</span>
+                <span class="tag">Long-Horizon Consistency</span>
+                <span class="tag">DMD Distillation</span>
+                <span class="tag">FramePack</span>
+            </div>
+            <p>把生成式重建(视频扩散合成 → lift 成 3D)从固定窗口扩展到<strong>大规模、可反复探索的场景</strong>。核心价值在于把「长时程 3D 一致」这个模糊目标<strong>拆成两种机制不同的退化</strong>并分别给出对策:① <strong>Spatial Forgetting</strong>(空间遗忘)——相机移动后先前区域滑出有限时间上下文窗口,回头重访时只能从零幻觉出新结构;对策是维护逐帧 3D 几何(全分辨率深度 + 降采样点云)但<strong>仅用于信息路由</strong>(可见性评分 → 贪心检索 N_s=5 帧 + 稠密几何对应),外观合成完全交给扩散像素先验。② <strong>Temporal Drifting</strong>(时间漂移)——自回归误差逐帧复合放大;对策是 <strong>self-augmented histories</strong>:训练时让模型条件于自己退化的输出,教它纠错而非传播漂移。关键解耦:显式 3D 代理只负责「该看谁、对应关系是什么」,不负责「长什么样」——避免此前全局点云紧耦合造成的「坏几何 → 坏条件」误差放大(消融 SPMem 的全局点云在长时程漂移更明显)。实现上在 <strong>Wan 2.1-14B</strong> 骨干(配 FramePack 上下文压缩)加入 canonical 坐标 warp 注入 DiT 的 <strong>q/k(不改 value)</strong>,再在自生成数据上微调 Depth Anything v3 把长视频转为 3DGS 与三角网格。832×480 训练/推理,7000 迭代(64×GB200),单段生成 194s→15s(35 步 → DMD 4 步蒸馏,约 13×)。DL3DV/T&amp;T 上 SSIM、LPIPS、FID、相机可控性同时最优,域外 T&amp;T FID 51.33 显著优于 SPMem 60.11。代码/权重/GUI/训练代码开源(权重走 NVIDIA 内部研究许可)。⚠️ abs 页 comments 无会议信息,本笔记不标会议 badge;自增广概率 p=0.7(论文)vs 1.0(代码)、weight decay 0.1(论文)vs 1e-3(代码)两处论文与代码不一致已在笔记标注。</p>
+            <a href="3D-20260414-Lyra2.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2604.13036" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/nv-tlabs/lyra" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card" data-file="3D-20260903-OctWorld.html" data-kind="note" data-depth="deep"
+              data-topics="3D 生成|视频扩散先验用于 3D|几何与时序一致性|相机控制与位姿条件" data-search="OctWorld: 八叉树 3D 记忆的长程世界一致视频生成 Octree 3D Mapping TSDF Fusion Long-Range World Consistency Autoregressive Video Generation 3D Memory / Cache Camera Control FramePack 与 Lyra 2.0 解决完全相同的问题(单图沿长相机轨迹自回归生成、重访区域保持一致),答案方向却相反:Lyra 2.0 明确拒绝把历史几何融合成全局表示(逐帧独立存、几何只做信息路由),OctWorld 则正面拥抱全局融合——把生成的 RGB 帧与深度图逐步融合进一个可扩展、空间自适应的全局 3D 记忆 OctMap(动态稀疏八叉树 + TSDF 融合)。动机建立在对 SLAM 假设的质疑上:SLAM 假设度量尺度已知、空间范围有界,而开放域世界生成尺度不确定且可能无界,固定分辨率 TSDF 要么高分辨率不可扩展、要么低分辨率显著丢细节。三条自述贡献:首个为长程世界一致视频生成设计的全局融合 3D 记忆框架;空间自适应八叉树 TSDF 记忆;超越此前方法并证明相对点缓存与朴素 TSDF 体的明确优势(重投影 PSNR 23.47 vs 最优 TSDF 22.08 = +1.39 dB,而 TSDF 0.001 体素已 OOM)。15B OctWorld-1.0(FramePack F1 14B + 新增控制模块),八叉树最大深度 d_max=16,32×H100 训练,评测最长轨迹 505 帧;WorldScore 200 场景总分 50.31 领先 Gen3C 45.48,Re10K 反转轨迹 LPIPS 0.1633/CD 0.0345 优于 Gen3C 与 VMem,用户研究 53.8% 偏好。⚠️ 截至笔记撰写(2026-09-20)官方代码尚未放出(项目页显示 Code (Coming Soon)、无 GitHub 链接),§9 工程细节全部来自论文附录、无源码级验证,可信度与 Lyra 2.0(代码全开源)不同级。">
+            <h3>64. OctWorld: 八叉树 3D 记忆的长程世界一致视频生成</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2609.03919</span>
+                <span>📅 2026-09-03</span>
+                <span>🏢 中国科学技术大学 / 微软亚洲研究院 / 清华大学</span>
+                <span>🏆 ECCV 2026</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Octree 3D Mapping</span>
+                <span class="tag">TSDF Fusion</span>
+                <span class="tag">Long-Range World Consistency</span>
+                <span class="tag">Autoregressive Video Generation</span>
+                <span class="tag">3D Memory / Cache</span>
+                <span class="tag">Camera Control</span>
+                <span class="tag">FramePack</span>
+            </div>
+            <p>与 Lyra 2.0 解决完全相同的问题(单图沿长相机轨迹自回归生成、重访区域保持一致),<strong>答案方向却相反</strong>:Lyra 2.0 明确拒绝把历史几何融合成全局表示(逐帧独立存、几何只做信息路由),OctWorld 则<strong>正面拥抱全局融合</strong>——把生成的 RGB 帧与深度图逐步融合进一个可扩展、空间自适应的全局 3D 记忆 <strong>OctMap</strong>(动态稀疏八叉树 + TSDF 融合)。动机建立在对 SLAM 假设的质疑上:SLAM 假设度量尺度已知、空间范围有界,而开放域世界生成尺度不确定且可能无界,固定分辨率 TSDF 要么高分辨率不可扩展、要么低分辨率显著丢细节。三条自述贡献:首个为长程世界一致视频生成设计的全局融合 3D 记忆框架;空间自适应八叉树 TSDF 记忆;超越此前方法并证明相对点缓存与朴素 TSDF 体的明确优势(重投影 PSNR 23.47 vs 最优 TSDF 22.08 = +1.39 dB,而 TSDF 0.001 体素已 OOM)。15B OctWorld-1.0(FramePack F1 14B + 新增控制模块),八叉树最大深度 d_max=16,32×H100 训练,评测最长轨迹 505 帧;WorldScore 200 场景总分 50.31 领先 Gen3C 45.48,Re10K 反转轨迹 LPIPS 0.1633/CD 0.0345 优于 Gen3C 与 VMem,用户研究 53.8% 偏好。⚠️ 截至笔记撰写(2026-09-20)官方代码<strong>尚未放出</strong>(项目页显示 Code (Coming Soon)、无 GitHub 链接),§9 工程细节全部来自论文附录、无源码级验证,可信度与 Lyra 2.0(代码全开源)不同级。</p>
+            <a href="3D-20260903-OctWorld.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2609.03919" target="_blank">📄 arXiv</a>
+            <a href="https://maxtirerror.github.io/octworldpage/" target="_blank">🏠 项目主页</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -1999,7 +2050,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>63. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>65. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2022,7 +2073,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>64. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>66. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2045,7 +2096,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>65. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>67. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2071,7 +2122,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="CV-AI-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>66. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>68. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2114,7 +2165,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-09-18 · 涵盖 66 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-09-20 · 涵盖 68 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
