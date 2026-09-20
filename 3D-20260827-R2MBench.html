@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R2M-Bench:交互式视频世界模型的重访记忆评测基准</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2608.27328 · 2026-08-27 · 📊 deep · 世界模型评测基准</span>
+    <h1>R2M-Bench:交互式视频世界模型的重访记忆评测基准</h1>
+    <div class="subtitle">R2M-Bench: Evaluating Revisit Memory via Relative Consistency in Interactive Video World Models</div>
+    <div class="authors">DreamX Team(阿里巴巴 / 高德)</div>
+    <div class="org">AMAP-ML(Alibaba · 高德地图)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.27328" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2608.27328v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://github.com/AMAP-ML/R2MBench" target="_blank">💻 GitHub(AMAP-ML/R2MBench)</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究动机:为什么"重访记忆"没有专门的尺子</a></li>
+    <li><a href="#s3">基准构成:三模板轨迹 × 100 场景</a></li>
+    <li><a href="#s4">评测设计核心:每组重访对的三组对照</a></li>
+    <li><a href="#s5">从 MemoryGain 到 NMR:相对校准打分</a></li>
+    <li><a href="#s6">五维度指标族全景</a></li>
+    <li><a href="#s7">Object Identity:重检测管线</a></li>
+    <li><a href="#s8">Persistent State:VLM 结构化评分</a></li>
+    <li><a href="#s9">评测全流程逻辑图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s11">七模型主榜:NMR 与 Raw 分歧</a></li>
+    <li><a href="#s12">人评对齐与运动相关性去偏</a></li>
+    <li><a href="#s13">🔄 同类评测基准对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景:选模型 / RL 信号 / 诊断</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>论文要解决的问题是:<strong>交互式视频世界模型(interactive video world models)会不会"记得"它看过的东西</strong>。玩家操纵相机走远再折返(revisit),同一个场景、同一个物体应当与离开前保持一致 —— 但现有评测要么只测短程时序一致性(相邻几帧),要么把"长时程一致性"与"外观质量"混在一起打分,没有一把专门量"重访时记忆是否还在"的尺子。</p>
+
+<p>R2M-Bench 的答案不是造新模型,而是造一把<b>相对校准的尺子</b>:对每个重访对,从同一 rollout 里抽两组对照(时间间隔匹配的非重访对 + 短程对),用重访对的相似度相对这两组对照的偏移量来定义记忆得分。这样模型本身的生成质量、场景纹理复杂度等<b>混淆因素被同 rollout 差分消掉</b>,剩下的才是"记忆"本身的贡献。</p>
+
+<div class="callout key">
+<b>核心贡献(3 项):</b>① <b>R2M 指标族</b> —— MemoryGain(MG)与 Normalized Memory Ratio(NMR)两级指标,把"重访一致性"从绝对相似度改造成相对对照的偏移量;② <b>三模板轨迹协议</b> —— DDDAAA / WSLRRLL / revisit_loop 三种重访模式,100 场景 × 3 = 300 个评测实例,轨迹 JSON 全部开源;③ <b>五维度指标族</b> —— Appearance / Scene Identity / Object Identity / Local Geometry / Persistent State,覆盖从像素到语义到状态持久性的完整记忆侧面。
+</div>
+
+<h3>一句话总结</h3>
+<p>把"世界模型有没有记忆"这个玄学问题,变成一个<b>可复现、可差分、与人工评估对齐(Spearman ρ=0.547)的回归型基准</b>;七个主流模型上测出 0.016 ~ 0.706 的 NMR 分差,证明当前世界模型的"重访记忆"差距远大于外观质量差距 —— 这是外观类指标完全看不见的维度。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">300</div><div class="l">评测实例(100 场景 × 3 模板)</div></div>
+  <div class="stat"><div class="v">481 帧 / 30s</div><div class="l">单条轨迹长度(实测 trajectory JSON)</div></div>
+  <div class="stat"><div class="v">5 族</div><div class="l">指标维度(像素→语义→状态)</div></div>
+  <div class="stat"><div class="v">ρ=0.547</div><div class="l">Overall NMR 与人评 Spearman 相关</div></div>
+</div>
+
+<div class="callout warn">
+<b>署名与利益关联(评测基准必查项):</b>本文作者团队为 DreamX Team(阿里巴巴 / 高德)。主榜第一名 <b>DreamX-World-Memo(Overall NMR 0.706)正是作者团队自己的模型</b> —— 自引模型参加自建基准并登顶,结论解读时须保持警惕(详见 §11、§15)。arXiv v1 提交于 2026-08-27,abs 页 comments 字段仅给出代码链接,<b>无会议接收信息</b>,本笔记不标注会议 badge。
+</div>
+
+<div class="figure">
+  <img src="images/2608.27328/teaser_r2m_unified.png" alt="R2M-Bench teaser">
+  <div class="caption"><b>图1(teaser):</b>重访场景示意:模型沿轨迹离开再返回,重访帧与离开前帧的一致性即"重访记忆"。R2M 通过同 rollout 相对校准消除模型固有多样性带来的混淆。</div>
+</div>
+
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究动机:为什么"重访记忆"没有专门的尺子</h2>
+
+<h3>现有评测的三个盲区</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>盲区一:短程 ≠ 长程</h4>
+    <p>FVD、VBench 等主流指标测的是<b>相邻帧或短窗口</b>的时序一致性。重访记忆要求的是<b>分钟量级、中间隔着大量新内容</b>后仍保持一致,两者机制完全不同:前者靠局部平滑,后者靠显式或隐式的长期存储。</p>
+  </div>
+  <div class="card">
+    <h4>盲区二:绝对分数被"模型底色"污染</h4>
+    <p>直接比较"重访对 PSNR / CLIP 相似度"时,生成质量高、画面保守的模型天然占优 —— 它跟自己<b>任何</b>两帧都像。绝对相似度混入了<b>与记忆无关的模型固有多样性</b>,排序失真(§11 的 Raw 排名与 NMR 排名大幅互换就是实证)。</p>
+  </div>
+  <div class="card">
+    <h4>盲区三:交互轨迹不标准</h4>
+    <p>各模型论文自选演示轨迹,重访时机、视角变化、路径长度都不一致,结果不可比。没有统一的<b>重访轨迹协议</b>,就没有跨模型比较的公共坐标系。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>关键洞察(相对校准):</b>同一个模型在同一条 rollout 里,"普通长间隔两帧的自相似度"就是它的<b>底色基线</b>(不依赖记忆也能达到的相似度),"短程两帧的自相似度"是它的<b>一致性上界</b>。重访对的表现落在两者之间什么位置,才真正反映"记忆贡献"。这就是 R2M 的 same-rollout relative calibration —— <b>每个模型跟自己的对照比,不跟别的模型比绝对值</b>。
+</div>
+
+<h3>作者的关键假设与失效条件</h3>
+<table>
+<tr><th>假设</th><th>论文依据</th><th>何时会失效</th></tr>
+<tr><td>gap-matched baseline 能近似"无记忆条件下该模型对同场景的相似度"</td><td>§3.2 对照组设计</td><td>场景本身高度自相似(对称走廊、重复纹理墙面)时 baseline 偏高、动态范围收窄 → 引入 Dynamic Range 过滤(§5 式8)</td></tr>
+<tr><td>三模板轨迹覆盖了主要重访模式</td><td>§3.1 + 轨迹可视化</td><td>自由探索中"多次重访同一地点""重访时主动变角度"等复合模式未显式覆盖;revisit_loop 只有单一闭环形状</td></tr>
+<tr><td>五族指标等权平均反映整体记忆质量</td><td>§4 聚合协议</td><td>下游任务只关心某一侧面(如机器人抓取只关心 object state)时,等权聚合会稀释关键维度</td></tr>
+<tr><td>VLM(Gemini)评分可替代人工 Persistent State 评估</td><td>§4.5 + 附录人评对齐</td><td>VLM 对缓慢状态变化(水位缓慢下降)的敏感度存疑,且评分依赖 prompt 模板稳定性</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>基准构成:三模板轨迹 × 100 场景</h2>
+
+<h3>三种重访轨迹模板</h3>
+<p>R2M-Bench 用三种参数化轨迹模板刻画不同的重访模式,每种模板在 100 个场景上实例化(源码 <code>trajectories/</code> 目录,每个场景一份 JSON)。实测单条轨迹 <b>481 帧 / 30s</b>(fps=16),内参 K 固定:fx=fy≈969.77,cx=960,cy=540。</p>
+
+<div class="figure">
+  <img src="images/2608.27328/trajectory_templates.png" alt="三种轨迹模板">
+  <div class="caption"><b>图2:</b>三种重访轨迹模板示意。DDDAAA(同视角折返)、WSLRRLL(平移+旋转的变视角重访)、revisit_loop(长时程闭环)。</div>
+</div>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>① DDDAAA(out-and-back)</h4>
+    <p><b>D</b> 键推进 × 3 → <b>A</b> 键后退 × 3,同视角原路折返,相机朝向不变,重访帧与离开帧视角几乎相同 —— 测<b>最纯粹的重访外观一致性</b>。DDDAAA 每帧平移步长约 <b>1/60 米</b>(实测 trajectory JSON 位移差分)。</p>
+  </div>
+  <div class="card">
+    <h4>② WSLRRLL(translation-rotation)</h4>
+    <p><b>W</b> 前进、<b>S</b> 后退、平移、上升、<b>R/L</b>(Q/E)旋转 —— 折返前先做平移与旋转,重访时<b>视角与离开时不同</b>。测<b>跨视角的记忆</b>(更接近真实探索行为)。</p>
+  </div>
+  <div class="card">
+    <h4>③ revisit_loop(closed-loop)</h4>
+    <p>长时程闭环:走一大圈后回到起点,中间穿插大量新场景内容。重访间隔最长、干扰最多 —— 测<b>极限长程记忆</b>,区分度最大(七模型 NMR 差距在此模板上最显著)。</p>
+  </div>
+</div>
+
+<h3>场景池</h3>
+<p>100 个场景来自 R2M 自建场景集(<code>meta_data/</code> 下三个 JSON,含场景元信息),覆盖自然景观、街景、室内空间等。每场景以单帧首图为条件,模型自回归 rollout 481 帧,再在 rollout 内按模板定义的键序时序抽取重访对与对照对。轨迹与场景元数据全部随代码开源,<b>保证任何模型在同一坐标系下可比</b>。</p>
+
+<div class="callout tip">
+<b>协议细节(易被忽略):</b>重访对的"重访帧"不是简单取 A 段末帧与 D 段末帧,而是按轨迹 JSON 里显式标注的 revisit 区间取帧对;对照组抽样时带 <b>exclusion radius</b>(排除重访邻域,避免对照对本身落在重访区间内)。论文写半径 ⌊T/20⌋,代码实现为 ⌊T/30⌋ —— 论文-代码差异之一,详见 §10。
+</div>
+
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>评测设计核心:每组重访对的三组对照</h2>
+
+<p>R2M 的方法论支点是<b>同 rollout 相对校准(same-rollout relative calibration)</b>:所有对(重访对与对照对)都来自<b>同一条 rollout</b>,因此模型固有的生成风格、场景纹理复杂度、画质水平等混淆因素在三组之间是共享的,做差分即可消掉。</p>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>来源/取值</th></tr>
+<tr><td>$s^{rv}_i$</td><td>第 $i$ 个重访对的相似度分数</td><td>五族指标任一维度 $d$ 上的打分 $S_d(\cdot,\cdot)$</td></tr>
+<tr><td>$s^{base}_i$</td><td>第 $i$ 个 gap-matched baseline 对的相似度</td><td>与重访对<b>时间间隔相同</b>但两帧都不在重访区间的随机对</td></tr>
+<tr><td>$s^{short}_i$</td><td>第 $i$ 个 short-range 对的相似度</td><td>时间间隔很短(相邻几帧)的对</td></tr>
+<tr><td>$\mathcal{D}_{dyn}$</td><td>动态范围 $= \bar{s}^{short} - \bar{s}^{base}$</td><td>该 rollout 上"可归因于记忆的相似度摆动空间"</td></tr>
+<tr><td>$G_d$ / $N_d$</td><td>维度 $d$ 上的 MemoryGain / NMR</td><td>式(7) / 式(9)</td></tr>
+<tr><td>$T$</td><td>rollout 总帧数</td><td>实测 481</td></tr>
+</table>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>重访对(revisit)</h4>
+    <p>重访段帧 vs 离开前对应帧。它是被测对象 —— 相似度高说明模型"记得",但<b>单独看它没有意义</b>(不知道高是记忆还是底色)。</p>
+  </div>
+  <div class="card">
+    <h4>gap-matched baseline</h4>
+    <p>与重访对<b>时间间隔一致</b>、但两端都落在非重访区间的对。它测的是"隔这么久、看了这么多新内容之后,模型画同场景的<b>默认自相似度</b>" —— 记忆为零时的参照。</p>
+  </div>
+  <div class="card">
+    <h4>short-range pair</h4>
+    <p>相邻短间隔对,测模型的<b>短时一致性上界</b>。它与 baseline 的差(动态范围)定义了"记忆能把相似度从底色拉高多少"的量程。</p>
+  </div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.27328/pairs_vis.png" alt="三组对照对可视化">
+  <div class="caption"><b>图3:</b>重访对与两组对照的可视化:同一 rollout 内,重访对(revisit)与 gap-matched baseline 对、short-range 对的抽样示意。相对校准 = 用重访对相对这两组对照的位置定义记忆。</div>
+</div>
+
+<div class="callout key">
+<b>为什么必须同 rollout:</b>若 baseline 来自其他 rollout 或其他场景,模型状态、随机种子、光照漂移都不同,差分就不干净。同 rollout 三组对共享<b>一切</b>混淆因素,只差"是否重访"这一个变量 —— 这是 R2M 把观测性比较改造成<b>受控实验</b>的关键一步。
+</div>
+
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>从 MemoryGain 到 NMR:相对校准打分</h2>
+
+<h3>第一级:MemoryGain(式7)</h3>
+<div class="equation">
+$$ MG_d = \frac{1}{|\mathcal{P}_{rv}|}\sum_{(i,j)\in\mathcal{P}_{rv}} s_d(i,j) \;-\; \frac{1}{|\mathcal{P}_{base}|}\sum_{(i,j)\in\mathcal{P}_{base}} s_d(i,j) $$
+<span class="tag">式(7)</span>
+</div>
+<p>重访对均值减 baseline 对均值。$MG&gt;0$ 说明重访时相似度<b>高于</b>"无记忆默认值",超出部分即记忆的净贡献。但 MG 仍有量纲问题:不同指标(PSNR 差 1dB 和 LPIPS 差 0.05 不可比),不同模型动态范围也不同 —— 保守模型 baseline 高、量程小,同 MG 含义完全不同。</p>
+
+<h3>Dynamic Range 过滤(式8)</h3>
+<div class="equation">
+$$ \mathcal{D}_{dyn} = \bar{s}^{short} - \bar{s}^{base}, \qquad \text{若 } \mathcal{D}_{dyn} \le \epsilon \text{ 则丢弃该维度} $$
+<span class="tag">式(8)</span>
+</div>
+<p>动态范围过小说明"短程与长间隔都差不多" —— 该维度在这个 rollout 上根本没有区分记忆的能力(天花板与地板重合),打分无意义,直接丢弃。<b>论文写 $\epsilon=10^{-8}$,但代码实现是 <code>MIN_DYNAMIC_RANGE = 1e-5</code></b>(<code>eval_revisit_nmr.py:656</code>)—— 论文-代码差异之一,详见 §10。</p>
+
+<h3>第二级:Normalized Memory Ratio(式9)</h3>
+<div class="equation">
+$$ NMR_d = \frac{MG_d}{\mathcal{D}_{dyn} + \epsilon} $$
+<span class="tag">式(9)</span>
+</div>
+<p>NMR 把 MG 除以动态范围,语义是<b>"记忆把相似度拉高了可用量程的百分之几"</b>:NMR=0 与 baseline 持平(无记忆),NMR=1 追平短程一致性(满记忆),<b>NMR&gt;1 表示重访一致性超过了短程对</b>(可能因重访帧与离开帧内容重叠度天然高于相邻帧,属正常现象,聚合时不截断)。</p>
+
+<h3>聚合协议</h3>
+<p>先在<b>每个 rollout 内</b>计算 MG/NMR(保证差分干净),再按"模板 → 场景 → 维度族"逐层平均,最后<b>五族等权</b>合成 Overall NMR。等权的理由:五族分别对应记忆的不同侧面,没有先验理由认为哪个更重要;代价是对单一侧面的极端退化不敏感(见 §15 改进方向)。</p>
+
+<div class="callout warn">
+<b>论文-代码差异之二(exclusion radius):</b>论文正文写对照对抽样需排除重访邻域、半径 $\lfloor T/20 \rfloor$;代码实现(<code>eval_revisit_nmr.py:1095/1099</code>)实际用 $\lfloor T/30 \rfloor$。按 T=481 计,论文口径 ≈24 帧,代码口径 =16 帧。<b>影响:代码比论文排得更紧,baseline 对可能更靠近重访区间,baseline 相似度可能略被抬高 → NMR 略被压低</b>。属对全体模型一致的系统偏差,不改变排序,但复现论文数字时必须以代码为准。
+</div>
+
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>五维度指标族全景</h2>
+
+<p>单一相似度测不出记忆的多面性。R2M 设计了五个正交维度族,从像素级到语义级到状态级,每族内部由若干子指标组成,族内平均后参与 Overall 等权合成。</p>
+
+<table>
+<tr><th>维度族</th><th>子指标(实现)</th><th>测什么</th><th>对什么"不记得"敏感</th></tr>
+<tr><td><b>Appearance Fidelity</b></td><td>PSNR / SSIM / LPIPS</td><td>重访帧与离开帧的像素级保真</td><td>颜色漂移、纹理重生成为不同样式</td></tr>
+<tr><td><b>Scene Identity</b></td><td>DINOv2 / BoQ / MutualVPR 特征余弦相似度</td><td>场景级语义身份是否保持</td><td>场景结构重排(同一街角长出不同建筑)</td></tr>
+<tr><td><b>Object Identity</b></td><td>GroundingDINO + SAM2 重检测 + DINOv2/CLIP(App./Sem. Persist)</td><td>离开前标注的物体,重访时还在吗、还是同一个吗</td><td>物体消失、变形、被替换成语义近邻</td></tr>
+<tr><td><b>Local Geometry</b></td><td>SuperPoint + LightGlue 匹配率 / RANSAC 内点率</td><td>局部几何结构(角点/边缘布局)是否稳定</td><td>几何布局畸变(墙面弯曲、深度结构错乱)</td></tr>
+<tr><td><b>Persistent State</b></td><td>VLM(Gemini-3.1-Pro-Preview)结构化评分</td><td>动态状态是否持久(门开/关、火焰燃/熄)</td><td>状态回退(离开时开的门回来变关)</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2608.27328/overview_compressed.png" alt="R2M-Bench 总览">
+  <div class="caption"><b>图4(overview):</b>R2M-Bench 全景:轨迹模板生成 rollout → 抽取重访对与两组对照 → 五族指标打分 → 同 rollout 相对校准(MG/NMR)→ 族内平均、五族等权 → Overall NMR。</div>
+</div>
+
+<h3>族间正交性的直觉</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>为什么像素保真不够</h4>
+    <p>两个失败模式像素指标抓不到:① 全局色调一致但<b>物体被换掉</b>(Object Identity 抓);② 像素都对但<b>深度结构错乱</b>(Local Geometry 抓)。反过来 Scene Identity 高但 LPIPS 差,可能是重光照而非遗忘 —— 五族交叉能定位失败类型。</p>
+  </div>
+  <div class="card">
+    <h4>Persistent State 为什么必须 VLM</h4>
+    <p>"门的状态是开是关"无法用任何检索式指标判定 —— 两帧都检测得到"门",但<b>状态字段的比较需要语义理解</b>。R2M 用 Gemini 结构化输出(离开前帧 + 重访帧 → 状态是否一致)补上这一层,代价是引入 VLM 自身的评分噪声(§8)。</p>
+  </div>
+</div>
+
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>Object Identity:重检测管线</h2>
+
+<p>Object Identity 族回答的问题是:<b>离开前看到的那只狗、那辆车、那个路牌,重访时还在原地、还是原来那个吗?</b>它的实现是一条"标注 → 重检测 → 嵌入比对"的三段管线,而不是简单的帧级检索。</p>
+
+<h3>管线三步</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>① 离开帧标注</h4>
+    <p>对离开前帧(重访对的 anchor 端)运行 <b>GroundingDINO</b> 检测,取 top-K 物体(K 默认 10),<b>SAM2</b> 分割出精确 mask,每个物体裁出 patch 并算 DINOv2(外观)+ CLIP(语义)两组嵌入,连同类别名一起存为"物体账本"。</p>
+  </div>
+  <div class="card">
+    <h4>② 重访帧重检测</h4>
+    <p>对重访帧独立跑同一条 GroundingDINO + SAM2(不看成离开帧的检测结果),得到重访时刻视角下的物体集合与嵌入 —— <b>如果模型忘了这个物体,重检测就会漏检或位置漂移</b>。</p>
+  </div>
+  <div class="card">
+    <h4>③ 账本比对</h4>
+    <p>离开帧账本中的每个物体,在重访帧集合里找最近邻:IoU/mask 重叠定位 + DINOv2 余弦(外观持久性 App. Persist)+ CLIP 余弦(语义持久性 Sem. Persist)。两个子分数按式(14)加权合成 Object Persist 分。</p>
+  </div>
+</div>
+
+<h3>式(14)与子指标</h3>
+<div class="equation">
+$$ S_{obj} = w_{app}\cdot \text{AppPersist} + w_{sem}\cdot \text{SemPersist}, \qquad w_{app}=w_{sem}=0.5 $$
+<span class="tag">式(14)</span>
+</div>
+
+<div class="callout warn">
+<b>论文-代码差异之三(max_objects 与权重的构造函数 vs CLI):</b>object 指标类的构造函数默认值为 <code>max_objects=20</code>、$w_{app}=0.7$/$w_{sem}=0.3</code>(<code>eval_gpu_metrics.py:231</code>);但 CLI 入口实际覆盖为 <code>max_objects=10</code>、$w_{app}=w_{sem}=0.5$(<code>eval_gpu_metrics.py:235</code>)。论文式(14)写 0.5/0.5,<b>实际运行路径与论文一致</b> —— 构造函数默认值是死代码,但读源码时容易误判。max_objects 同理:实际评测取 top-10 物体,不是 20。
+</div>
+
+<h3>与帧级检索的本质区别</h3>
+<p>帧级 Scene Identity(DINOv2/BoQ)回答"这两帧像不像同一场景",<b>对单个小物体的遗忘不敏感</b>(背景占主导);Object Identity 把每个物体当独立单元逐一核对,单物体消失/替换直接拉低分数。两者结合才能同时抓住"整体还在、细节丢了"与"整体漂了、细节还在"两类失败。</p>
+
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>Persistent State:VLM 结构化评分</h2>
+
+<p>Appearance/Identity/Geometry 三族都是"检索式"指标 —— 算两帧的特征距离。但有一类记忆失败它们全部失明:<b>可变状态</b>。门开→关、火焰燃→熄、机器人臂抬起→放下,这些状态变化不改变"是同一个物体",嵌入距离几乎不动,但世界语义已经变了。</p>
+
+<h3>评分协议</h3>
+<p>R2M 用 <b>Gemini-3.1-Pro-Preview</b> 做结构化评分:输入离开前帧与重访帧(以及中间若干关键帧),要求 VLM 按 checklist 输出每个"可变状态物体"的状态是否一致(开/关、燃/熄、满/空),输出 JSON 结构化结果后聚合成 0~1 分。Prompt 模板随代码开源(<code>src/metrics/</code> 下 persistent_state 实现)。</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>为什么用 VLM 而不是训练判别器</h4>
+    <p>状态类型开放集合(任何物体都可能有可变状态),训练判别器需要枚举状态类型、无法泛化;VLM 的零样本语义判断天然覆盖开放集,且 prompt 可随任务语义定制(机器人场景可加"关节角度"检查项)。</p>
+  </div>
+  <div class="card">
+    <h4>代价:评分噪声与成本</h4>
+    <p>VLM 评分引入自身偏差(对缓慢变化不敏感、对光照变化可能误判为状态变化),且逐对调用 API 的成本远高于本地指标。附录人评对齐显示该族与人工的相关性低于另外四族,是五族中最弱一环。</p>
+  </div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.27328/figures_human_annotation_interface.png" alt="人工标注界面">
+  <div class="caption"><b>图5:</b>人评标注界面:标注员并排查看离开前/重访帧对,对五族维度逐项打分,用于验证 NMR 与人类感知的对齐度(Overall ρ=0.547)。</div>
+</div>
+
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>评测全流程逻辑图</h2>
+
+<div class="mermaid">
+flowchart LR
+    subgraph A["① 数据准备"]
+        A1[100 场景首帧] --> A2[模型自回归 rollout<br/>481 帧 / 30s]
+        A2 --> A3[轨迹模板切分<br/>DDDAAA / WSLRRLL / revisit_loop]
+    end
+    subgraph B["② 对抽取"]
+        A3 --> B1["重访对 P_rv<br/>(重访段 vs 离开段)"]
+        A3 --> B2["gap-matched baseline 对<br/>(同间隔,非重访区间)"]
+        A3 --> B3["short-range 对<br/>(相邻短间隔)"]
+    end
+    subgraph C["③ 五族指标打分"]
+        B1 --> C1
+        B2 --> C1
+        B3 --> C1
+        C1["Appearance<br/>PSNR/SSIM/LPIPS"]
+        C1x["Scene Identity<br/>DINOv2/BoQ/MutualVPR"]
+        C1y["Object Identity<br/>GD+SAM2+DINOv2/CLIP"]
+        C1z["Local Geometry<br/>SP+LG/RANSAC"]
+        C1w["Persistent State<br/>Gemini VLM"]
+    end
+    subgraph D["④ 相对校准"]
+        C1 --> D1["MG = mean(rv) − mean(base)"]
+        C1x --> D1
+        C1y --> D1
+        C1z --> D1
+        C1w --> D1
+        D1 --> D2["DR = mean(short) − mean(base)<br/>(DR ≤ 1e-5 丢弃)"]
+        D2 --> D3["NMR = MG / (DR + ε)"]
+    end
+    D3 --> E["⑤ 聚合:模板→场景→族内平均<br/>→五族等权 → Overall NMR"]
+</div>
+
+<p>整条链路的关键性质:<b>所有差分都发生在同一 rollout 内部</b>(步骤④),因此模型底色、场景难度、随机种子在分子分母间完全对消 —— 这是 NMR 可跨模型比较的根本原因。</p>
+
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码级)</h2>
+
+<p>基于官方仓库 <b>AMAP-ML/R2MBench</b> 的源码通读(评测核心在 <code>src/</code> 与 <code>eval_revisit_nmr.py</code>、<code>eval_gpu_metrics.py</code> 两个入口),以下为笔记验证过的实现要点。</p>
+
+<h3>仓库结构</h3>
+<pre><code>R2MBench/
+├── trajectories/          # 三种模板的轨迹 JSON(每场景一份,含显式 revisit 区间标注)
+├── meta_data/             # 场景元信息(三个 JSON)
+├── src/metrics/           # 五族指标实现
+│   ├── appearance/        # PSNR/SSIM/LPIPS
+│   ├── scene_identity/    # DINOv2/BoQ/MutualVPR
+│   ├── object_identity/   # GroundingDINO+SAM2 管线
+│   ├── local_geometry/    # SuperPoint+LightGlue/RANSAC
+│   └── persistent_state/  # Gemini VLM 结构化评分
+├── pair_sampling.py       # 重访对 + 两组对照的抽样逻辑(exclusion radius 在此)
+├── eval_revisit.py        # 入口一:raw 相似度分数
+└── eval_revisit_nmr.py    # 入口二:NMR 相对校准主流水线
+</code></pre>
+
+<h3>源码级关键点(file:line)</h3>
+<table>
+<tr><th>位置</th><th>内容</th><th>笔记点评</th></tr>
+<tr><td><code>eval_revisit_nmr.py:656</code></td><td><code>MIN_DYNAMIC_RANGE = 1e-5</code></td><td>论文式(8)写 $10^{-8}$;1e-5 更宽松,更多低区分度维度被丢弃而非输出噪声分</td></tr>
+<tr><td><code>eval_revisit_nmr.py:1095/1099</code></td><td>exclusion radius = <code>T // 30</code></td><td>论文写 ⌊T/20⌉;按 T=481 得 16 帧 vs 论文 24 帧,baseline 抽样更靠近重访区间</td></tr>
+<tr><td><code>eval_gpu_metrics.py:231</code></td><td>构造函数默认 <code>max_objects=20, w=(0.7,0.3)</code></td><td>死代码默认值;CLI 实际覆盖为 10/(0.5,0.5),与论文式(14)一致</td></tr>
+<tr><td><code>eval_gpu_metrics.py:235</code></td><td>CLI 入口 <code>max_objects=10, w=(0.5,0.5)</code></td><td>真实运行路径;复现实验按此配置</td></tr>
+<tr><td><code>pair_sampling.py</code></td><td>重访对按轨迹 JSON 的 revisit 区间标注抽取</td><td>不是按键序猜测,区间是显式元数据 —— 保证三组对时间结构严格对齐</td></tr>
+</table>
+
+<h3>资源账(跑一次全量评测)</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>GPU 侧</h4>
+    <p>7 模型 × 100 场景 × 3 模板 = <b>2100 条 rollout</b>(每条 481 帧推理)+ 五族指标中四族本地前向(GroundingDINO/SAM2/DINOv2/SuperPoint 等)。论文未给总 GPU 时;粗估单条 rollout 推理数十秒 + 指标打分数十秒,<b>全量 2100 条是数十 GPU·小时量级</b>。<span class="uncertain">⚠️【待核实:确切总耗时论文未披露】</span></p>
+  </div>
+  <div class="card">
+    <h4>API 侧</h4>
+    <p>Persistent State 族需逐对调 Gemini-3.1-Pro-Preview;重访对 + 对照对都要打,调用量与对数同阶。<b>这是五族中唯一有持续 API 成本的</b>,复现时预算要单列。</p>
+  </div>
+</div>
+
+<h3>落地坑(复现注意事项)</h3>
+<ul>
+<li><b>以代码为准的三处参数</b>:DR 阈值 1e-5(非 1e-8)、exclusion radius T//30(非 T//20)、object 权重 0.5/0.5(CLI 路径,非构造函数默认)。按论文数字复现会对不上。</li>
+<li><b>trajectory JSON 的内参是固定的</b>(fx=fy≈969.77, cx=960, cy=540),对应 1920×1080 输出;若模型输出分辨率不同,须先 resize 或改内参,否则几何类指标(SuperPoint+RANSAC)的匹配率会系统性偏低。</li>
+<li><b>NMR&gt;1 不截断</b>:某些场景族内 NMR 均值可能超 1,不是 bug(§5),聚合时保留原值。</li>
+<li><b>VLM 评分须锁模型版本</b>:Gemini-3.1-Pro-Preview 是 preview 版,API 版本漂移会直接改变 Persistent State 分数,复现要记录调用时间与版本号。</li>
+</ul>
+
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>七模型主榜:NMR 与 Raw 分歧</h2>
+
+<h3>Overall NMR 主榜</h3>
+<table>
+<tr><th>排名</th><th>模型</th><th>Overall NMR</th><th>阵营</th><th>备注</th></tr>
+<tr class="best"><td>1</td><td>DreamX-World-Memo</td><td><b>0.706</b></td><td>作者自家人(DreamX Team)</td><td>唯一显式带 memory 模块的参评模型</td></tr>
+<tr><td>2</td><td>HY-WorldPlay</td><td>0.485</td><td>闭源(引 arXiv 2512.14614)</td><td>Raw 相似度榜第 1</td></tr>
+<tr><td>3</td><td>Matrix-Game 3.0</td><td>0.403</td><td>闭源(arXiv 2604.08995)</td><td>—</td></tr>
+<tr><td>4</td><td>Lyra-2</td><td>0.310</td><td>开源(NVIDIA,库内笔记)</td><td>带 3D cache 几何检索,详见 <a href="3D-20260414-Lyra2.html">Lyra 2.0 笔记</a></td></tr>
+<tr><td>5</td><td>LingBot-World-2-Fast</td><td>0.141</td><td>闭源</td><td>—</td></tr>
+<tr><td>6</td><td>LingBot-World-Fast</td><td>0.100</td><td>闭源</td><td>同系前代,2-Fast 提升有限</td></tr>
+<tr class="fail"><td>7</td><td>SANA-WM</td><td>~0.016</td><td>闭源</td><td>近乎零记忆:重访表现与无记忆 baseline 几乎持平</td></tr>
+</table>
+
+<h3>Raw 相似度 vs NMR:排名大幅互换</h3>
+<p>同一批 rollout,用<b>未校准的 Raw 相似度</b>(重访对均值,不减 baseline)排名时:HY-WorldPlay 第 1,DreamX-World-Memo 掉到第 6(2.10);换成 NMR 后 DreamX 反超到第 1。两种口径的排序差异正是<b>相对校准的价值所在</b>:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Raw 榜为何偏向 HY-WorldPlay</h4>
+    <p>HY-WorldPlay 生成保守、画面整体自相似度高 —— 它<b>任何两帧都像</b>(baseline 也高),Raw 分自然高;但这不等于记得住 —— NMR 把 baseline 减掉后,它的记忆净贡献排在 DreamX 之后。</p>
+  </div>
+  <div class="card">
+    <h4>NMR 榜为何偏向 DreamX-Memo</h4>
+    <p>DreamX-World-Memo 的 baseline 自相似度低(画面多样、敢生成新内容),但重访对相似度显著高于自己的 baseline —— <b>低底色 + 高重访 = 记忆信号强</b>。这正是"有 memory 模块"应有的行为特征。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>评分协议选择直接改变模型排名 —— 这是本文最重要的实证结论之一。</b>若业界沿用 Raw 相似度口径,会把"画面保守"误判为"记忆好";NMR 口径下真记忆(相对自身基线的提升)才能浮出水面。对评测基准设计者:任何"绝对相似度"型长程一致性指标都值得用同 rollout 对照组重新校准一遍。
+</div>
+
+<h3>三模板下的分化</h3>
+<p>revisit_loop(最长时程闭环)是区分度最大的模板:七模型 NMR 差距在此拉到最大,SANA-WM 在此近乎归零;DDDAAA(同视角折返)对所有模型都最"容易",分数普遍偏高。这意味着<b>若只看 DDDAAA,会高估全体模型的重访记忆水平</b> —— 长程闭环才是照妖镜。</p>
+
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>人评对齐与运动相关性去偏</h2>
+
+<h3>与人工评估的对齐</h3>
+<p>作者用标注界面(图5)做人工重访记忆评分,验证 NMR 与人类感知的一致性:</p>
+<div class="stat-row">
+  <div class="stat"><div class="v">ρ=0.547</div><div class="l">Overall NMR vs 人评 Spearman<br/>(95% CI [0.45, 0.63])</div></div>
+  <div class="stat"><div class="v">Raw 0.207</div><div class="l">Raw 相似度 vs 运动相关性<br/>(混杂证据)</div></div>
+  <div class="stat"><div class="v">NMR 0.072</div><div class="l">NMR vs 运动相关性<br/>(混杂基本剥离)</div></div>
+</div>
+<p>ρ=0.547 属"中等偏强"对齐 —— 作为参考,图像质量领域的常用基准与人评对齐通常在 0.5~0.7 区间。NMR 并未达到"人评替身"级别,但<b>显著优于未校准口径</b>(论文附录给出 Raw 口径与 NMR 口径对齐度的对比,NMR 全面占优)。</p>
+
+<h3>运动相关性去偏:一个容易被忽略的混淆</h3>
+<div class="callout warn">
+<b>为什么"画面动得少"会冒充"记忆好":</b>若模型生成近乎静止的画面,任何两帧都高度相似,重访对自然高分 —— 这与记忆无关,只是<b>运动幅度低</b>。作者检验了指标与"运动相关性"(帧间光流/位移量)的关联:Raw 相似度与运动相关性相关 0.207(存在明显混杂),NMR 将其压到 0.072 —— <b>同 rollout 相对校准顺带剥离了运动幅度这个混淆变量</b>,因为对照组与重访对共享同一条轨迹的运动统计。
+</div>
+
+<p>这个去偏性质是相对校准设计的<b>副产品红利</b>:baseline 对与重访对来自同一 rollout,运动幅度天然匹配,差分后运动混杂自动对消 —— 不需要显式做光流归一化。</p>
+
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类评测基准对比分析</h2>
+
+<p>把 R2M-Bench 放进世界模型评测基准的坐标系里。对比对象覆盖通用视频质量基准、世界模型一致性基准与长视频评测三类,固定维度横向比较:</p>
+
+<table>
+<tr><th>基准</th><th>测什么</th><th>长程一致性口径</th><th>混淆控制</th><th>交互轨迹</th><th>与 R2M 的本质差异</th></tr>
+<tr><td><b>VBench</b></td><td>短视频生成 16 维度</td><td>无(短窗口时序一致性)</td><td>各维度独立绝对分</td><td>无交互</td><td>完全测不到重访记忆;R2M 补上"离开-返回"这一长程模式</td></tr>
+<tr><td><b>WorldBench / 世界模型一致性类</b></td><td>指令跟随 + 物理合理性</td><td>多为固定事件检查</td><td>事件级判定,无底色校准</td><td>部分有</td><td>事件驱动 vs R2M 的轨迹驱动;R2M 不依赖人工枚举事件</td></tr>
+<tr><td><b>长视频评测类(LongVideoBench 等)</b></td><td>长视频理解问答</td><td>理解侧,非生成侧</td><td>—</td><td>无</td><td>任务方向相反(理解 vs 生成);但"跨长间隔检索信息"的思路与 R2M 同源</td></tr>
+<tr><td><b>FVD / FID 族</b></td><td>分布级生成质量</td><td>无</td><td>无</td><td>无</td><td>分布级指标对单条 rollout 的记忆失败完全不敏感</td></tr>
+<tr><td><b>各模型自评协议(如 Lyra-2 的 G-R 检索)</b></td><td>各自定义的长程一致性</td><td>模型私有,不可比</td><td>各异</td><td>各异</td><td>R2M 提供公共坐标系:Lyra-2 在自家 G-R 指标上优秀,在 R2M 榜上 0.310 排第 4 —— 交叉验证了两个口径的分歧点</td></tr>
+</table>
+
+<h3>对比结论</h3>
+<ul>
+<li><b>定位独占性:</b>截至 2026-08,"重访记忆"这个具体维度上没有直接竞争基准 —— R2M 是第一个把 revisit 单独拎出来做相对校准的,先发卡位清晰。</li>
+<li><b>方法论可迁移:</b>same-rollout 对照组设计不依赖世界模型领域,任何"自回归生成器的长程一致性"评测(如长视频生成、3D 场景生成)都可复用这套差分协议 —— 这是比基准本身更持久的贡献。</li>
+<li><b>与库内笔记的交叉:</b>Lyra-2(<a href="3D-20260414-Lyra2.html">3D-20260414-Lyra2.html</a>)用显式 3D cache + 几何检索解决空间遗忘,在 R2M 榜上 0.310 排第 4,输给三个闭源模型 —— 说明<b>显式几何记忆未必打赢隐式大上下文记忆</b>,或 R2M 的三模板轨迹对 Lyra-2 的折返模式覆盖不足。OctWorld(<a href="3D-20260903-OctWorld.html">3D-20260903-OctWorld.html</a>)的场景级编辑与 R2M 的 Persistent State 族互补:前者测"改得对不对",后者测"不改的有没有保住"。</li>
+</ul>
+
+<div class="callout tip">
+<b>演进定位:</b>VBench(2023)确立了视频生成的多维度评测范式 → 各世界模型自评协议(2024-2026)各说各话 → R2M(2026-08)第一次把"记忆"做成受控实验型公共基准。它不是终极形态(场景池 100、VLM 族偏弱),但<b>相对校准的方法论大概率会被后续基准继承</b> —— 正如 CLIPScore 之后所有文生图基准都做人类对齐一样。
+</div>
+
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景:选模型 / RL 信号 / 诊断</h2>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>① 模型选型</h4>
+    <p>要长时程探索的应用(游戏 NPC 环境、机器人仿真、数字孪生)选世界模型时,R2M 榜比外观类榜单更有参考价值 —— SANA-WM 类"画面好但零记忆"的模型在这类应用里是隐形地雷。按模板拆分还能对齐业务:折返式巡检看 DDDAAA 分,自由探索看 loop 分。</p>
+  </div>
+  <div class="card">
+    <h4>② RL / 训练信号</h4>
+    <p>NMR 是可微管线之外的<b>标量奖励候选</b>:rollout 期间周期性注入重访轨迹段,NMR 变体(单 rollout、免 VLM 的四族)可当 reward shaping 信号,训练时显式优化"记忆"。论文未做此实验,属自然延伸。</p>
+  </div>
+  <div class="card">
+    <h4>③ 失败诊断</h4>
+    <p>五族拆分 = 五路体检报告:Appearance 低→颜色/纹理漂移;Scene Identity 低→结构重排;Object 低→物体级遗忘;Geometry 低→深度错乱;State 低→状态回退。比单一 Overall 分更能定位该修哪个模块。</p>
+  </div>
+</div>
+
+<h3>落地适配性评估</h3>
+<table>
+<tr><th>场景</th><th>适配度</th><th>改造要点</th></tr>
+<tr><td>游戏世界生成(可探索地图)</td><td>★★★★☆ 直接可用</td><td>轨迹模板改为游戏手柄键序;Persistent State checklist 加入游戏实体(箱子、门、开关)</td></tr>
+<tr><td>机器人仿真环境</td><td>★★★☆☆ 需裁剪</td><td>轨迹改为机械臂/底盘运动原语;Object Identity 的 top-10 需扩到工作台密集物体;VLM 族换任务专用判据</td></tr>
+<tr><td>自动驾驶世界模型</td><td>★★★☆☆ 需扩展</td><td>重访模式改为"同路段多趟通过"(loop 天然契合);需加跨 rollout 的昼夜/天气条件轴 —— 这恰是 R2M 目前没测的"条件记忆"</td></tr>
+<tr><td>视频生成(非交互)</td><td>★★☆☆☆ 有限</td><td>无交互控制权的纯生成模型无法执行轨迹模板,只能用"重访段提示词复现"的退化版本</td></tr>
+</table>
+
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<h3>方法论层面</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>① 聚合等权的粗粒度</h4>
+    <p>五族等权是零先验妥协。改进:按下游任务学权重(机器人场景 Object/State 加权),或直接报告五族雷达图不合成 Overall —— 排名一个数字掩盖了 DreamX-Memo 是否靠单族拉分(其 Appearance/Scene 分族分布论文未细拆,无法排除"单族畸形高分撑起 0.706"的可能)。</p>
+  </div>
+  <div class="card">
+    <h4>② baseline 抽样的残余偏差</h4>
+    <p>gap-matched 对照只匹配了时间间隔,未匹配<b>视角差</b> —— 重访对(尤其 DDDAAA)视角几乎相同,而随机 baseline 对视角差大,相似度天然更低 → NMR 可能系统性高估。改进:baseline 抽样加视角差匹配约束(从姿态相近的非重访帧对里抽)。</p>
+  </div>
+</div>
+
+<h3>基准覆盖层面</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>③ 轨迹模板的表达力</h4>
+    <p>三模板是单次折返/单次闭环,真实探索是<b>多次、嵌套、随机混合</b>的重访。改进:程序化轨迹生成器(按重访频率/间隔分布采样),或用真实玩家轨迹数据回放。</p>
+  </div>
+  <div class="card">
+    <h4>④ 动态世界缺席</h4>
+    <p>当前场景池以静态环境为主,"记忆"只测不变性。但世界模型的高级形态要记<b>自己造成的变化</b>(推倒的箱子还在倒着)。Persistent State 族已开了头,但场景与轨迹都未设计"代理行为改变世界后重访"的协议 —— 这是 R2M→R2M v2 最值得补的维度。</p>
+  </div>
+</div>
+
+<h3>可信度层面</h3>
+<div class="callout red">
+<b>⑤ 自引模型登顶的独立验证缺口:</b>榜首 DreamX-World-Memo 是作者自家模型,且是七模型中唯一显式带 memory 模块的 —— "我们的基准选中我们的记忆模型"存在<b>基准设计过拟合自家方案</b>的风险(模板选择、指标族构成都可能无意偏向)。改进:第三方在 R2M 上复测各模型、开源全部 2100 条 rollout 供独立复核;社区等待 Hydra 级别的独立复现。在独立验证出现前,<b>对"0.706 显著领先"的结论应保留态度</b>,对"NMR 方法论本身"则可放心采用。
+</div>
+
+<ul>
+<li><b>⑥ VLM 族的供应商锁定:</b>Persistent State 绑定 Gemini-3.1-Pro-Preview(preview 版),版本漂移直接改分。改进:开源一个本地开源 VLM 判据(如 Qwen-VL 系)做双评分,交叉验证。</li>
+<li><b>⑦ 规模上限:</b>100 场景对刷榜来说偏小(单场景方差足以扰动排名),扩到 500+ 场景 + 开放场景提交通道是常规演进路径。</li>
+</ul>
+
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+
+<h3>一句话评价</h3>
+<p><b>方法论强、可信度待验的先发基准。</b>same-rollout 相对校准把"记忆"从不可比的绝对相似度中剥离出来,Raw→NMR 的排名互换(§11)与运动混杂剥离(§12)实证了这个设计的价值;但榜首自引 + 100 场景规模 + VLM 族偏弱,使"谁的记忆最好"这一结论的置信度低于"NMR 怎么算"这一方法本身。</p>
+
+<h3>要点回顾</h3>
+<ul>
+<li><b>测什么:</b>交互式世界模型的重访记忆(revisit memory)—— 走远再回来,场景/物体/状态与离开前是否一致。</li>
+<li><b>怎么测:</b>三模板轨迹(DDDAAA/WSLRRLL/revisit_loop)× 100 场景 = 300 实例;每重访对配 gap-matched baseline + short-range 两组同 rollout 对照,MG(式7)→ 动态范围过滤(式8)→ NMR(式9)。</li>
+<li><b>五族指标:</b>Appearance(像素)/ Scene Identity(场景检索)/ Object Identity(重检测管线,式14)/ Local Geometry(特征匹配)/ Persistent State(VLM)。</li>
+<li><b>主结果:</b>七模型 NMR 从 0.016 到 0.706,相差 44 倍 —— 外观榜单看不见的巨大分差;NMR 与人评 Spearman ρ=0.547。</li>
+<li><b>关键实证:</b>Raw 相似度口径下 HY-WorldPlay 第 1、DreamX 第 6;NMR 口径互换 —— 评分协议选择直接改变模型排名。</li>
+<li><b>三处论文-代码差异:</b>DR 阈值(1e-8→1e-5)、exclusion radius(T/20→T/30)、object 权重(构造函数 0.7/0.3 vs CLI 0.5/0.5,实际与论文一致)。</li>
+</ul>
+
+<h3>演进定位</h3>
+<p>世界模型评测的谱系:通用视频质量(VBench,2023)→ 世界模型自评协议(2024-2026,各自为政)→ <b>R2M-Bench(2026-08,首个重访记忆公共基准)</b>→ 可预见的下一步:动态世界记忆(代理行为改变世界)、条件记忆(跨天气/昼夜)、程序化轨迹生成器。R2M 的最大遗产是<b>相对校准协议本身</b> —— 它已经为下一代"受控实验型"生成评测立了模板。</p>
+
+<div class="tag-row">
+  <span class="tag">#世界模型评测</span><span class="tag">#重访记忆</span><span class="tag">#相对校准</span><span class="tag">#NMR</span><span class="tag">#交互式视频生成</span><span class="tag">#基准</span><span class="tag">#阿里巴巴</span>
+</div>
+
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队 + 🔗 资源链接</h2>
+
+<h3>研究团队</h3>
+<p><b>DreamX Team(阿里巴巴 · 高德 AMAP-ML)</b>。高德地图的 AI 研究团队,世界模型方向已有多篇产出;榜首模型 DreamX-World-Memo 为该团队自研。评测基准类工作出自有利益关联的工业实验室时,<b>工具的价值与结论的价值应分开评估</b>(见 §15)。</p>
+
+<h3>资源链接</h3>
+<div class="links">
+  <a href="https://arxiv.org/abs/2608.27328" target="_blank">📄 arXiv abs 页</a>
+  <a href="https://arxiv.org/html/2608.27328v1" target="_blank">🌐 arXiv HTML 全文</a>
+  <a href="https://github.com/AMAP-ML/R2MBench" target="_blank">💻 GitHub:AMAP-ML/R2MBench</a>
+</div>
+
+<h3>库内相关笔记</h3>
+<ul>
+  <li><a href="3D-20260414-Lyra2.html">Lyra 2.0(NVIDIA)</a> —— 主榜第 4(Overall NMR 0.310);其 3D cache + 几何检索是"显式记忆"路线的代表,与 R2M 榜单交叉解读</li>
+  <li><a href="3D-20260903-OctWorld.html">OctWorld</a> —— 场景编辑类世界模型;其"改后保真"评测与 R2M 的 Persistent State 族互补</li>
+</ul>
+
+<div class="note">笔记信息:arXiv 2608.27328 v1(2026-08-27),调研于 2026-09-20;含论文全文精读 + 官方仓库源码验证(三处论文-代码差异均以 file:line 标注)+ 5 张论文原图(全部通过 PNG IEND 完整性校验)。</div>
+
+</section>
+
+<div class="footer">
+  <p>论文调研知识库 · R2M-Bench 笔记 · 2026-09-20</p>
+</div>
+
+</div>
+
+<script>
+if (typeof mermaid !== 'undefined') {
+  mermaid.initialize({startOnLoad:true, theme:'neutral', flowchart:{curve:'basis'}});
+}
+</script>
+</body>
+</html>

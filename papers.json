@@ -2931,6 +2931,65 @@
    ]
   },
   {
+   "title": "R2M-Bench: 交互式视频世界模型的重访记忆评测基准",
+   "meta": [
+    "📄 arXiv: 2608.27328",
+    "📅 2026-08-27",
+    "🏢 DreamX Team (阿里巴巴 / 高德 AMAP-ML)"
+   ],
+   "tags": [
+    "World Model Benchmark",
+    "Revisit Memory",
+    "Relative Calibration",
+    "NMR (Normalized Memory Ratio)",
+    "Long-Horizon Consistency",
+    "Interactive Video Generation",
+    "Human Alignment"
+   ],
+   "summary": "首个专门评测交互式视频世界模型<strong>「重访记忆」</strong>的公共基准:玩家操纵相机走远再折返,场景/物体/状态与离开前是否一致。方法论核心是 <strong>same-rollout 相对校准</strong>——对每个重访对,从同一 rollout 抽两组对照(gap-matched baseline 测无记忆底色 + short-range pair 测短时一致性上界),MemoryGain = 重访均值 − 基线均值,再除以动态范围得 <strong>NMR</strong>(式9),模型底色、场景难度、随机种子在分子分母间对消。协议:三轨迹模板(DDDAAA 同视角折返 / WSLRRLL 变视角 / revisit_loop 长程闭环)× 100 场景 = 300 实例,单条 rollout 481 帧/30s。五维度指标族:Appearance(PSNR/SSIM/LPIPS)、Scene Identity(DINOv2/BoQ/MutualVPR)、Object Identity(GroundingDINO+SAM2 重检测管线)、Local Geometry(SuperPoint+LightGlue)、Persistent State(Gemini VLM 结构化评分)。主结果:七模型 Overall NMR 从 0.016(SANA-WM)到 0.706(DreamX-World-Memo)相差 44 倍;<strong>Raw 相似度口径下 HY-WorldPlay 第 1、DreamX 第 6,换 NMR 后互换——评分协议选择直接改变模型排名</strong>(保守画面冒充记忆被校准揭穿);NMR 与人评 Spearman ρ=0.547,且顺带把运动相关性混杂从 0.207 压到 0.072。源码级验证出三处论文-代码差异:DR 阈值论文 1e-8 vs 代码 1e-5、exclusion radius 论文 ⌊T/20⌋ vs 代码 ⌊T/30⌋、object 权重构造函数 0.7/0.3 vs CLI 0.5/0.5(实际与论文式14一致)。⚠️ 榜首 DreamX-World-Memo 为作者团队自引模型,「0.706 显著领先」待第三方独立复现;方法论本身(NMR 协议)可放心采用。",
+   "links": [
+    {
+     "href": "3D-20260827-R2MBench.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.27328",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/AMAP-ML/R2MBench",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260827-R2MBench.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性",
+    "视频生成模型谱系"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",
