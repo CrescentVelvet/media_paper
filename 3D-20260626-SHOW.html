@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHOW:前馈单目视频的人景统一度量重建</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2606.27720 · 2026-06-26 · 📊 deep · 人-景统一度量重建 / 前馈 HMR</span>
+    <h1>SHOW:前馈单目视频的人景统一度量重建</h1>
+    <div class="subtitle">Scene and Human in One World: Reconstruction in a Feedforward Pass</div>
+    <div class="authors">Boao Shi · Qiao Feng · Yiming Huang · Lingjie Liu(通讯)</div>
+    <div class="org">GRASP Lab, University of Pennsylvania</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2606.27720" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2606.27720v1" target="_blank">🌐 arXiv HTML 全文 (v1)</a>
+      <a href="https://bowieshi.github.io/SHOW-project-page/" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/bowieshi/4D-show-official-codebase" target="_blank">💻 GitHub</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究动机:人景分离重建的失败模式</a></li>
+    <li><a href="#s3">问题形式化与符号表</a></li>
+    <li><a href="#s4">总体架构:三组件耦合设计</a></li>
+    <li><a href="#s5">Stage 1:人感知几何编码</a></li>
+    <li><a href="#s6">Stage 2:几何感知 SMPL-X 解码</a></li>
+    <li><a href="#s7">Stage 3:人景对齐联合训练</a></li>
+    <li><a href="#s8">附录 B:位置参数化与焦距归一</a></li>
+    <li><a href="#s9">算法整体逻辑图</a></li>
+    <li><a href="#s10">实验设置:数据、指标与基线</a></li>
+    <li><a href="#s11">主结果:局部/全局 HMR</a></li>
+    <li><a href="#s12">人景一致性新指标与结果</a></li>
+    <li><a href="#s13">消融实验:四设计逐一验证</a></li>
+    <li><a href="#s14">同类方法横向对比</a></li>
+    <li><a href="#s15">源码工程细节与落地坑</a></li>
+    <li><a href="#s16">局限、演进定位与改进方向</a></li>
+    <li><a href="#s17">总结:团队资源与库内定位</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>SHOW(arXiv 2606.27720,2026-06-26,UPenn GRASP Lab,Lingjie Liu 组)提出用<strong>掩码提示(mask-as-prompt)驱动的视觉几何基础模型</strong>,把「人体网格恢复(HMR)」与「前馈 3D 场景重建」耦合进<strong>统一度量空间(unified metric space)</strong>——从单目以人为中心的视频出发,一次前馈同时输出场景(相机/深度/点图)与所有人体的 SMPL-X 网格,且人体天然落在场景坐标系下、尺度一致。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">6.21</div><div class="l">HS-CF₅(3DPW,人景倒角,full+e2e;次优 UniSH 7.65)</div></div>
+  <div class="stat"><div class="v">0.030</div><div class="l">HS-V₅(3DPW,尺度方差;UniSH 0.028 相当)</div></div>
+  <div class="stat"><div class="v">109.1</div><div class="l">EMDB-2 WA-MPJPE(mm),前馈+场景类最优</div></div>
+  <div class="stat"><div class="v">3 阶段</div><div class="l">预训练→解码器→联合微调(100+100+200 epochs)</div></div>
+</div>
+
+<p><strong>核心贡献四个:</strong></p>
+<ol>
+<li><strong>人感知几何编码</strong>:在 VGGT 基座上注入轻量 mask encoder(人体分割掩码作为提示)+ DensePose 辅助头,让几何特征「认得出人」——为下游 SMPL-X 解码提供尺度/位置线索,并使点图尺度分布与训练管线归一化约定对齐。</li>
+<li><strong>几何感知 SMPL-X 解码器</strong>:三 token(SMPL/scale/register)解码器,自注意力 + 与「几何特征 × 人体特征」交叉注意力 K 轮迭代;PromptHMR 人体特征 + 场景几何特征融合,ray encoder 注入焦距感知信息,直接在世界系下回归 pose/shape/translation/scale。</li>
+<li><strong>人景对齐联合训练</strong>:log 空间尺度监督 + 跨帧尺度一致性正则 + SMPL 引导的点图对齐损失(chamfer + stop-gradient),显式强制人体网格与场景点图在同一度量空间一致。</li>
+<li><strong>人景一致性评价新指标</strong>:HS-CF(人体-点图归一化倒角)与 HS-V(水平/垂直方差 ℓ1 距离),配合百分位截断(5%/10%),首次把「人-景对齐质量」变成可量化、可复现的基准。</li>
+</ol>
+
+<div class="callout key"><b>一句话定位</b>:Human3R/UniSH 把「人」和「景」各自重建完再拼接对齐,SHOW 让一个模型在前馈中「同时看见」两者——场景几何约束人体尺度/位置,人体先验反过来规整场景点图,彼此互为监督。</div>
+
+<div class="figure">
+  <img src="images/2606.27720/teaser_new.png" alt="SHOW teaser">
+  <div class="caption"><b>图1</b>(论文 Figure 1):单目以人为中心视频输入下,SHOW(右)对比现有方法产生更优的人-景对齐。teaser 用黄椅场景直观展示:基线方法人体与场景尺度/位置错位,SHOW 的人体精确落在场景坐标系中。</div>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究动机:人景分离重建的失败模式</h2>
+
+<p>论文开篇论点:现实中人动作改变环境、环境影响行为,人与场景<strong>共存于同一物理世界</strong>,其空间/物理关系是理解人类行为的基础(AR/VR、游戏、机器人)。但既有管线大多把人与场景当<strong>两个独立目标</strong>分别估计,再事后对齐到公共坐标系——这条「先分后合」路线有三个结构性失败模式:</p>
+
+<div class="grid-3">
+  <div class="card"><h4>失败模式一:脆弱的定位线索</h4><p>依赖启发式 body anchor、检测框估计或 post-hoc 对齐。Human3R 靠<strong>头部检测</strong>定位人——头被遮挡或姿势怪异时直接预测失败;UniSH 靠<strong>bbox 提示</strong>——多人紧密交互时框互相重叠无法消歧。</p></div>
+  <div class="card"><h4>失败模式二:场景只当辅助上下文</h4><p>场景几何没有作为人体重建的<strong>主动约束</strong>。人/景各自看着都合理,放到一起尺度、位置、物理交互对不上——尤其是单目视频,深度/尺度歧义让「身体是否放对了地方」无从判断。</p></div>
+  <div class="card"><h4>失败模式三:尺度系不统一</h4><p>视觉几何模型(如 VGGT)的点图按自身归一化约定输出,与 SMPL-X 人体模型的度量尺度不匹配;直接拿原始 VGGT 特征引导人体尺度/位置估计,尺度恢复困难(消融:w/o pretrain alignment HS-CF₅ 从 9.44 恶化到 38.51)。</p></div>
+</div>
+
+<p><strong>关键假设</strong>:分割掩码(而非检测框/头部位置)是最鲁棒的人体定位提示——遮挡、部分可见、多人重叠下依然保持实例区分度;且基础模型的几何先验可以被「人体语义」调制,使场景点图带上度量可对齐的人体线索。</p>
+
+<p><strong>假设失效条件</strong>:①掩码本身质量差(SAM 分割失败/漏检)时提示失效;②人体在画面中占比极小或尺度极端变化时(论文 Limitation 自认),掩码提示的像素证据不足;③真实域与合成训练域(BEDLAM2.0)差异过大时,sim-to-real 鸿沟显现。</p>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>问题形式化与符号表</h2>
+
+<p>给定单目视频 $\mathcal{I}=\{I_t\}_{t=1}^{T}$,目标:单次前馈内在<strong>共享 3D 世界</strong>中同时重建人与场景。每帧预测归一化部分 3D 点图 $\bar{\mathbf{P}}_{t}=\{\bar{\mathbf{p}}_{t,u}\}_{u\in\Omega}$($\Omega$ 为像素集合,$\bar{\mathbf{p}}_{t,u}\in\mathbb{R}^3$),并在同一坐标系恢复所有可见人体 $\mathcal{H}_{t}=\{H_{t,i}\}_{i=1}^{N_t}$。每个人体实例 $H_{t,i}=\{\theta_{t,i},\beta_{t,i},\tau_{t,i},s_{t,i}\}$,标量 $s_{t,i}$ 把归一化点图映射到人体度量尺度:$\mathbf{P}_{t,i}=s_{t,i}\bar{\mathbf{P}}_{t}$——这个尺度因子是让重建人体与场景几何对齐的枢纽。</p>
+
+<table>
+<tr><th>符号</th><th>含义</th><th>维度/取值</th></tr>
+<tr><td>$I_t$ / $M_t$</td><td>第 $t$ 帧图像 / 人体前景掩码(SAM 生成)</td><td>$H\times W$ / 二值</td></tr>
+<tr><td>$\bar{\mathbf{P}}_{t}$, $\bar{\mathbf{p}}_{t,u}$</td><td>归一化(部分)3D 点图 / 像素 $u$ 的归一化 3D 点</td><td>$H\times W\times 3$</td></tr>
+<tr><td>$H_{t,i}$</td><td>人体实例(pose/shape/translation/scale 四元组)</td><td>$\{\theta,\beta,\tau,s\}$</td></tr>
+<tr><td>$\theta_{t,i}$ / $\beta_{t,i}$</td><td>SMPL-X 姿态(身体关节角)/ 形状(PCA 系数)</td><td>55×3 / 10</td></tr>
+<tr><td>$\tau_{t,i}$</td><td>全局平移(世界系放置)</td><td>$\mathbb{R}^3$</td></tr>
+<tr><td>$s_{t,i}$</td><td>尺度因子:归一化点图 → 人体度量尺度</td><td>标量,softplus 激活</td></tr>
+<tr><td>$F_t^{g$ / $F_t^m$}</td><td>VGGT 几何特征 / mask encoder 掩码特征</td><td>patch 序列</td></tr>
+<tr><td>$\tilde{F}_t^g$</td><td>人感知几何特征(融合后)</td><td>patch 序列</td></tr>
+<tr><td>$E_{msk}$ / $E_{geo}$ / $A$</td><td>掩码编码器 / VGGT 图像编码器 / 适配模块</td><td>轻量</td></tr>
+</table>
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>总体架构:三组件耦合设计</h2>
+
+<p>SHOW 的整体管线沿 VGGT 的「图像编码器 + aggregator + 多任务头」框架扩展,新增三个模块层层递进:mask encoder(Stage 1)、SMPL-X 解码器(Stage 2)、联合微调损失(Stage 3)。下图给出数据流:</p>
+
+<div class="mermaid">
+flowchart LR
+    subgraph Input["输入:单目视频帧 I_t"]
+        I["I_t 图像帧"] --> VGGTE["VGGT 图像编码器<br/>E_geo"]
+        I --> SAM["SAM 分割<br/>(离线)"] --> M["人体掩码 M_t"]
+    end
+    M --> ME["掩码编码器 E_msk<br/>(mask_in_chans=16)"]
+    VGGTE --> FG["几何特征 F_t^g"]
+    ME --> FM["掩码特征 F_t^m"]
+    FG --> ADAPT["适配模块 A<br/>(cross-attn 融合)"]
+    FM --> ADAPT
+    ADAPT --> FTG["人感知几何特征 F̃_t^g"]
+    FTG --> AGG["VGGT Aggregator<br/>(交替时空注意力)"]
+    AGG --> CHEAD["相机头(冻结)"]
+    AGG --> DHEAD["深度头"]
+    AGG --> PHEAD["点图头"]
+    AGG --> DPHEAD["DensePose 辅助头<br/>(Stage1 监督)"]
+    AGG --> PHMR["PromptHMR 图像编码器<br/>(人体特征)"]
+    FTG --> GEOM_INJ["几何注入<br/>(projected depth DPT)"]
+    PHMR --> DEC
+    GEOM_INJ --> DEC["SMPL-X 解码器<br/>(三token: SMPL/scale/register)"]
+    CAMINT["相机内参"] --> RAY["ray encoder<br/>(焦距感知)"]
+    RAY --> DEC
+    DEC --> OUT["pose θ / shape β<br/>transl τ / scale s"]
+    subgraph ALIGN["Stage 3 联合对齐"]
+        S2["log 空间尺度监督 L_scale"]
+        S3["跨帧尺度一致性 L_temp"]
+        S4["SMPL引导点图对齐 L_align<br/>(chamfer + stop-grad)"]
+    end
+    OUT --> ALIGN
+    PHEAD --> ALIGN
+</div>
+
+<p>三个组件的分工与耦合点:</p>
+<ul>
+<li><strong>人感知几何编码</strong>(§5,对应论文 3.1):mask 特征注入几何特征 → 点图/深度预测「带人视角」,DensePose 辅助头提供额外监督信号。</li>
+<li><strong>几何感知 SMPL-X 解码</strong>(§6,对应论文 3.2):解码器同时吃 PromptHMR 人体特征 + 场景几何特征 + ray embedding,输出世界系下的人体参数。</li>
+<li><strong>人景对齐联合训练</strong>(§7,对应论文 3.3):三个一致性损失把人体网格与场景点图拉进同一度量空间。</li>
+</ul>
+
+<div class="figure">
+  <img src="images/2606.27720/pipeline.png" alt="SHOW pipeline 总览">
+  <div class="caption"><b>图2</b>(论文 Figure 2):给定单目视频,SHOW 通过掩码提示的几何编码 + 几何感知 SMPL-X 解码,在共享 3D 世界中重建可见人体与周围场景。左:mask encoder 融合;中:VGGT aggregator 与各头;右:SMPL-X 解码器与联合对齐。</div>
+</div>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>Stage 1:人感知几何编码</h2>
+
+<p><strong>动机</strong>:VGGT 的隐特征为通用几何重建优化,预测的深度/点图不必与真实世界尺度或人体模型尺度对齐——原始特征直接引导人体尺度/位置估计会失配。解法是让几何编码「保留人体相关线索」。</p>
+
+<h3>5.1 掩码编码器与特征融合</h3>
+<p>对每帧 $I_t$ 先用现成分割模型(SAM2/SAM3)取人体前景掩码 $M_t$,经轻量 mask encoder 编码:</p>
+<div class="equation">$$F_{t}^{m}=E_{msk}(M_{t})$$<span class="tag">Eq.1</span></div>
+<p>并行地,VGGT 编码器提取几何特征:</p>
+<div class="equation">$$F_{t}^{g}=E_{geo}(I_{t})$$<span class="tag">Eq.2</span></div>
+<p>经适配模块 $A$ 融合为人感知几何特征:</p>
+<div class="equation">$$\tilde{F}_{t}^{g}=A(F_{t}^{g},F_{t}^{m})$$<span class="tag">Eq.3</span></div>
+<p>$\tilde{F}_t^g$ 用于深度/点图预测,并传给 SMPL-X 解码器作为场景级线索。<strong>源码印证</strong>(<code>vggt/models/mask_encoder.py</code>):MaskEncoder 采用 SAM 式 mask_downscaling(mask_in_chans=16,四层 MLP + zero_conv 输出),适配用 FQSimpleAdapter——与论文 Eq.1-3 一一对应。</p>
+
+<h3>5.2 DensePose 辅助监督</h3>
+<p>Stage 1 在 VGGT 头侧加 DensePose 辅助头,以 <code>smplx_densepose.npz</code> UV 映射(仓库自带)把 SMPL-X 顶点映射到 DensePose 24 部位标签作监督,鼓励几何特征「认出人体区域」——不直接输出人体,只让特征带上人体语义。</p>
+
+<h3>5.3 训练配置(源码实测)</h3>
+<p><code>exp_44_pretrain_with_projected_depth_dpt_VGGT_feature.yaml</code>:VGGT-1B 初始化,<code>stage: "pretrain"</code>,<code>enable_densepose: True</code>,<code>enable_vggt_mask_encoder: True</code>,<code>enable_smplx: False</code>(SMPL-X 分支关闭);损失为 camera(w=5, l1)+ depth(w=1)+ point(w=1)+ mask_supervision(w=1)+ densepose(w=1);<code>frozen_module_names: ["*camera_head*"]</code>(相机头冻结);AdamW lr=5e-5, wd=0.05, cosine 衰减,bf16 AMP,4×B200,100 epochs,checkpoint save_freq=5。</p>
+<div class="callout tip"><b>源码细节</b>:mask 特征注入方式历经迭代——exp_42 用 mask 预训练、exp_43 试 geometry token,最终 exp_44 定稿「projected depth DPT + VGGT feature」recipe(cmd.txt 记录了演进链)。发版 README 明确说 configs 中的 resume 路径是作者自己 run 的续训路径,复现时 Stage 1 应从 VGGT-1B model.pt 起步(strict: False 跨架构加载)。</div>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>Stage 2:几何感知 SMPL-X 解码</h2>
+
+<h3>6.1 解码器架构:三 token 设计</h3>
+<p>解码器以三个可学习 token 为查询——<strong>SMPL token</strong>(携带人体参数先验)、<strong>scale token</strong>(尺度)、<strong>register token</strong>(辅助寄存),与「加了位置编码的几何 patch 特征 × 人体 patch 特征」做 K 轮「自注意力 → 交叉注意力」迭代:</p>
+<div class="equation">$$q^{K}_{smpl},q^{K}_{scale} = \mathrm{TransformerDecoder}(\{q_{smpl},q_{scale},q_{reg}\},\ \mathrm{PE}(F^{geo})\otimes F^{hmr},\ K)$$<span class="tag">Eq.7-11 要义</span></div>
+<p>输出头分离:SMPL 头预测 pose/shape/translation,几何头预测 scale。论文图 3 给出架构示意(本库配图 <code>decoder.svg</code>)。</p>
+
+<div class="figure">
+  <img src="images/2606.27720/decoder.svg" alt="SMPL-X 解码器架构" onerror="this.style.display='none'">
+  <div class="caption"><b>图3</b>(论文 Figure 3):SMPL-X 解码器。SMPL/scale/register 三 token 经 K 次自注意力与交叉注意力(与加位置编码的几何/人体特征),更新后送入 MLP 预测 scale、pose、shape、translation。</div>
+</div>
+
+<h3>6.2 源码印证:三 token 实测</h3>
+<p><code>vggt/phmr/smpl_decoder_phmr.py</code> 实测:<code>smpl_token=nn.Embedding(2)</code>,<code>scale_token=nn.Embedding(1)</code>,<code>loc_token</code> 独立;heads 分立——pose(22×6D)、shape(10)、transl(2)、depth(1)、scale(1, softplus 激活);<code>decode_transl</code> 用 <code>cam_int[:,0,0]</code>(预测焦距)做归一(呼应附录 B Eq.21);<code>_share_scale_token_across_frames</code> 同一人跨帧共享 scale token——三 token 设计与论文 Eq.7-11 完全吻合。</p>
+
+<h3>6.3 ray encoder:焦距感知注入</h3>
+<p>视觉几何基座在大规模数据上训练,能准确估计相机内参。ray encoder 利用这一点,把 intrinsic-aware 信息注入人体分支,确保场景分支与人体分支共享同一套相机内参——消融显示去掉 ray encoder 后 HS-V₅ 从 0.028 恶化到 0.734(最严重的单项退化),是「人体分支吃透场景相机几何」的关键。</p>
+
+<h3>6.4 Stage 2 训练目标</h3>
+<p>第二阶段冻结人感知几何编码器,只训 SMPL-X 解码器,用标准人体重建损失:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{hmr}}=\lambda_{2d}\mathcal{L}_{2d}+\lambda_{3d}\mathcal{L}_{3d}+\lambda_{smpl}\mathcal{L}_{smpl}+\lambda_{v}\mathcal{L}_{v}+\lambda_{\tau}\mathcal{L}_{\tau}+\lambda_{s}\mathcal{L}_{s}$$<span class="tag">Eq.12</span></div>
+<p>本阶段教会解码器从「人体特征 + 几何特征」恢复 pose/shape/translation/scale;与场景的一致性留给下一阶段。<strong>源码实测</strong>(<code>training/loss.py</code> compute_smplx_loss + exp_45/46 yaml):loss_joints_2d ×50、loss_joints_3d ×5、loss_smplx_param ×1、loss_vertices_3d ×1、loss_smplx_transl ×10、loss_scale ×10;exp_45 冻结 aggregator/camera/point/depth/image/prompt 各头只训解码器;2×B200,100 epochs。</p>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>Stage 3:人景对齐联合训练</h2>
+
+<p>前两阶段后,几何编码器给出人感知场景特征、解码器能从人+场景线索出人体,但<strong>分开学不保证人体网格与预测点图一致</strong>。最终阶段联合微调,显式对齐三者:归一化点图 × 预测尺度 × 人体表面。</p>
+
+<h3>7.1 尺度与放置一致性</h3>
+<p>解码器预测 $\hat{s}_{t,i}$(重缩放归一化点图至人体尺度)与 $\hat{\tau}_{t,i}$(世界系放置)。尺度在 log 空间监督:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{scale}}=\left\|\log\hat{s}_{t,i}-\log s_{t,i}^{*}\right\|_{2}^{2}$$<span class="tag">Eq.13</span></div>
+
+<h3>7.2 时序尺度一致性</h3>
+<p>视频里同一个人跨帧尺度应稳定——正则化预测尺度趋向其序列级均值:</p>
+<div class="equation">$$\bar{s}_{i}=\frac{1}{|\mathcal{T}_{i}|}\sum_{t\in\mathcal{T}_{i}}\hat{s}_{t,i},\qquad \mathcal{L}_{\mathrm{temp}}=\sum_{t\in\mathcal{T}_{i}}\left\|\log\hat{s}_{t,i}-\log\bar{s}_{i}\right\|_{2}^{2}$$<span class="tag">Eq.14/15</span></div>
+<p>其中 $\mathcal{T}_i$ 为实例 $i$ 出现的帧集合。<strong>源码印证</strong>(<code>training/loss.py</code>):<code>loss_scale_supervised = F.l1_loss(log(pred), log(gt))</code> + <code>0.2 × loss_scale_consistency</code>(跨帧一致性权重 0.2),与 Eq.13/15 呼应;另 <code>loss.py:845</code> 有 <code>gamma=0.6 # temporal decay weight</code> 用于多阶段时序衰减。</p>
+
+<h3>7.3 SMPL 引导的点图对齐</h3>
+<p>除了尺度,还用重建人体表面规整人体区域的点图几何。点图是归一化尺度的,先用预测尺度重缩放人体区域:</p>
+<div class="equation">$$\hat{\mathbf{P}}_{t,i}^{h}=\hat{s}_{t,i}\,\hat{\bar{\mathbf{P}}}_{t}[m_{t,i}]$$<span class="tag">Eq.16</span></div>
+<p>渲染预测 SMPL-X 网格取可见表面点 $\hat{V}_{t,i}^{vis}$;因可见性操作不可微,对其 detach(stop-gradient),再算 chamfer:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{align}}=\mathcal{D}_{chamfer}\left(\hat{\mathbf{P}}_{t,i}^{h},\ \mathrm{sg}(\hat{V}_{t,i}^{\mathrm{vis}})\right)$$<span class="tag">Eq.17</span></div>
+<p>该损失把重缩放后的点图几何拉向 detach 的人体表面,鼓励人体区域点图与 SMPL-X 体兼容。<strong>源码印证</strong>(<code>training/loss.py</code> compute_chamfer_distance):SMPL 顶点与深度图点乘尺度,注释明确 <code>no gradient for smplx branch</code>——stop-gradient 方向与论文一致(梯度流向点图分支)。</p>
+<div class="callout warn"><b>论文-代码差异(重要)</b>:发布代码中 <code>loss_chamfer</code> 的主调用与 10× 权重在 <code>loss.py:141,290</code> 处于<strong>注释状态</strong>(compute_chamfer_distance 全仓库仅定义未启用)——最终发布版把 Eq.17 的对齐角色交给了 10×loss_scale + Stage 1 的 backbone 尺度分布对齐 + e2e 微调。复现论文 Table 4 数字时需注意:paper 表格可能对应含 chamfer 的内部版本,开源版用 scale 监督替代,二者不等价。</div>
+
+<h3>7.4 联合微调目标</h3>
+<div class="equation">$$\mathcal{L}_{\mathrm{total}}=\mathcal{L}_{\mathrm{geo}}+\mathcal{L}_{\mathrm{hmr}}+\lambda_{\mathrm{scale}}\mathcal{L}_{\mathrm{scale}}+\lambda_{\mathrm{temp}}\mathcal{L}_{\mathrm{temp}}+\lambda_{\mathrm{align}}\mathcal{L}_{\mathrm{align}}$$<span class="tag">Eq.18</span></div>
+<p>Stage 3(对应 exp_46 full_params 配置)放开所有模块联合微调(仅 camera_head/image_encoder/prompt_encoder/cam_encoder 冻结),4×B200 再训 200 epochs——论文主表数字即此设定。消融表中 full+e2e tuning(HS-CF₅ 9.44→6.21)证明了最后这步联合微调的价值。</p>
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>附录 B:位置参数化与焦距归一</h2>
+
+<p>在相机空间回归人体位置比在裁剪图像空间难得多,SHOW 不直接回归 $\tau$,而是回归<strong>焦距归一的 2D 平移</strong> $p_{xy}\in\mathbb{R}^2$ 与<strong>逆深度</strong> $p_z\in\mathbb{R}$,再变换:</p>
+<div class="equation">$$t_{xy}=\frac{p_{xy}}{p_{z}},\qquad t_{z}=\frac{1}{p_{z}}\times\frac{f}{f_{c}},\qquad \tau=[t_{xy},t_z]$$<span class="tag">Eq.21</span></div>
+<p>$f$ 为图像 ground-truth 或估计焦距,$f_c$ 为规范焦距。预测归一化逆深度沿袭单目深度文献(Ranftl et al. 2022)——逆深度与人在图像中的大小线性相关,直觉友好;$p_{xy}$ 等价于归一化像平面上的人体 2D 位置。<strong>源码印证</strong>(<code>smpl_decoder_phmr.py</code>):transl 头只出 2 维 + depth 头 1 维,<code>decode_transl</code> 用 <code>cam_int[:,0,0]</code> 焦距恢复 $\tau$,与 Eq.21 逐项对应。</p>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>算法整体逻辑图</h2>
+
+<p>把三阶段训练的模块归属与数据流整合成一张全景图:</p>
+
+<div class="mermaid">
+flowchart TB
+    subgraph S1["Stage 1: 人感知几何编码 (4×B200, 100 ep)"]
+        direction LR
+        V1["VGGT-1B 初始化"] --> V2["aggregator + mask encoder<br/>+ DensePose 头 + mask 深度 token 解码器"]
+        V2 --> V3["损失: camera×5 + depth + point<br/>+ mask_supervision + densepose"]
+        V3 --> V4["相机头冻结"]
+    end
+    subgraph S2["Stage 2: SMPL-X 解码器训练 (2×B200, 100 ep)"]
+        direction LR
+        W1["加载 Stage1 ckpt (strict:False)"] --> W2["SMPL-X 解码器 + PHMR 编码器<br/>+ ray encoder 上线"]
+        W2 --> W3["损失: L_hmr = 50·j2d + 5·j3d<br/>+ 1·param + 1·vert + 10·transl + 10·scale"]
+        W3 --> W4["backbone 大部冻结"]
+    end
+    subgraph S3["Stage 3: 联合微调 (4×B200, 200 ep)"]
+        direction LR
+        X1["加载 Stage2 ckpt"] --> X2["全模块放开<br/>(相机/图像/提示/相机编码器除外)"]
+        X2 --> X3["L_total = L_geo + L_hmr<br/>+ λ·L_scale + λ·L_temp + λ·L_align"]
+    end
+    S1 --> S2 --> S3
+    S3 --> OUT2["推理: 视频→YOLO+SAM2 掩码<br/>→滑窗前馈(chunk=30)→场景点云<br/>+ SMPL-X 网格 + 相机参数"]
+</div>
+
+<p>推理链路(README 实测):输入视频按 6 FPS 抽帧,YOLO11 检测人 + SAM2 生成掩码,模型以 30 帧滑窗前馈,输出场景点云(scene_point_clouds/ 人体剔除)、人体网格(smpl_meshes/ 每帧 .ply)、逐帧相机参数;UniSH 基线可同 CLI 直接跑(<code>--model_type unish</code>)。</p>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>实验设置:数据、指标与基线</h2>
+
+<h3>10.1 训练数据</h3>
+<p><strong>BEDLAM2.0</strong>(大规模合成,渲染自我中心风格视频 + 精确 SMPL-X GT/深度/相机轨迹)。为保证几何监督可靠,剔除 HDRI 深度渲染不准的序列后保留 <strong>4,250 条有效序列</strong>;训练时降采样到 6 FPS、用 5 帧片段增强时序多样性。数据读取(<code>training/data/datasets/bedlam2.py</code>):png 图像 + exr 深度 + exr_layers 人体掩码(hair/body/clothing 三层)+ 每序列 npz 标签。</p>
+
+<h3>10.2 评价指标</h3>
+<ul>
+<li><strong>局部 HMR(相机空间)</strong>:3DPW 与 EMDB-1,MPJPE / PA-MPJPE / PVE(mm)。</li>
+<li><strong>全局 HMR(世界空间)</strong>:EMDB-2 与 RICH,每序列切 100 帧段,W-MPJPE / WA-MPJPE / RTE(%)。</li>
+<li><strong>人景一致性(新)</strong>:HS-CF / HS-V(见 §12)。</li>
+</ul>
+
+<h3>10.3 基线阵容</h3>
+<table>
+<tr><th>类别</th><th>方法</th><th>特点</th></tr>
+<tr><td rowspan="5">裁剪空间 HMR(w/o sc.)</td><td>CLIFF / HMR2.0a</td><td>传统裁剪回归</td></tr>
+<tr><td>TokenHMR</td><td>token 化多人 HMR</td></tr>
+<tr><td>CameraHMR</td><td>全图相机感知 HMR</td></tr>
+<tr><td>NLF</td><td>normalizing flows</td></tr>
+<tr class="best"><td>PromptHMR</td><td>SHOW 人体特征来源(prompt 化 HMR)</td></tr>
+<tr><td rowspan="3">联合人景前馈(w/ sc.)</td><td>Human3R</td><td>CUT3R + 视觉提示调优,头检测定位</td></tr>
+<tr><td>UniSH</td><td>Pi3 + 人体头 + alignnet,bbox 提示</td></tr>
+<tr class="best"><td>SHOW(Ours)</td><td>VGGT + mask 提示 + 联合度量对齐</td></tr>
+</table>
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>主结果:局部/全局 HMR</h2>
+
+<h3>11.1 局部网格重建(Table 1,mm)</h3>
+<table>
+<tr><th>类别</th><th>方法</th><th>3DPW PA</th><th>MPJ</th><th>PVE</th><th>EMDB-1 PA</th><th>MPJ</th><th>PVE</th></tr>
+<tr><td>w/o sc.</td><td>CLIFF</td><td>43.0</td><td>69.0</td><td>81.2</td><td>68.3</td><td>103.3</td><td>123.7</td></tr>
+<tr><td></td><td>HMR2.0a</td><td>44.4</td><td>69.8</td><td>82.2</td><td>61.5</td><td>97.8</td><td>120.0</td></tr>
+<tr><td></td><td>TokenHMR</td><td>44.3</td><td>71.0</td><td>84.6</td><td>55.6</td><td>91.7</td><td>109.4</td></tr>
+<tr><td></td><td>CameraHMR</td><td>38.5</td><td>62.1</td><td>72.9</td><td>43.7</td><td>73.0</td><td>85.4</td></tr>
+<tr><td></td><td>NLF</td><td>37.3</td><td>60.3</td><td>71.4</td><td>41.2</td><td>69.6</td><td>82.4</td></tr>
+<tr><td></td><td>PromptHMR</td><td><b>36.6</b></td><td><b>58.7</b></td><td><b>69.4</b></td><td>41.0</td><td>71.7</td><td>84.5</td></tr>
+<tr><td>w/ sc.</td><td>Human3R</td><td>44.1</td><td>71.2</td><td>84.9</td><td>48.5</td><td>73.9</td><td>86.0</td></tr>
+<tr><td></td><td>UniSH</td><td>48.8</td><td>75.6</td><td>88.8</td><td>86.6</td><td>112.9</td><td>140.0</td></tr>
+<tr class="best"><td></td><td>SHOW(Ours)</td><td>41.0</td><td>67.7</td><td>78.7</td><td>45.8</td><td>75.7</td><td>88.8</td></tr>
+</table>
+<p><strong>读表</strong>:①联合人景类里 SHOW 全面占优(3DPW PA 41.0 vs Human3R 44.1 / UniSH 48.8);②但纯裁剪类 SOTA(NLF/PromptHMR/CameraHMR)仍略好——SHOW 的野心在「联合重建的统一性」而非单点姿态精度,加上世界系定位/尺度任务后整体更难;③UniSH 在 EMDB-1 崩得厉害(86.6),SHOW 保持 45.8。</p>
+
+<h3>11.2 全局运动估计(Table 2,mm / %)</h3>
+<table>
+<tr><th>方法</th><th>Opt.Free</th><th>Scene</th><th>EMDB-2 WA</th><th>W</th><th>RTE</th><th>RICH WA</th><th>W</th><th>RTE</th></tr>
+<tr><td>SLAHMR</td><td>✗</td><td>✗</td><td>326.9</td><td>776.1</td><td>10.2</td><td>132.2</td><td>237.1</td><td>6.4</td></tr>
+<tr><td>TRAM</td><td>✗</td><td>✗</td><td>76.4</td><td>222.4</td><td>1.4</td><td>127.8</td><td>238.0</td><td>6.0</td></tr>
+<tr><td>JOSH</td><td>✗</td><td>✓</td><td>68.9</td><td>174.7</td><td>1.3</td><td>89.0</td><td>132.5</td><td>3.0</td></tr>
+<tr><td>TRACE</td><td>✓</td><td>✗</td><td>429.0</td><td>1702.3</td><td>17.7</td><td>238.1</td><td>925.4</td><td>101.4</td></tr>
+<tr><td>WHAM</td><td>✓</td><td>✗</td><td>135.6</td><td>334.8</td><td>6.0</td><td>108.4</td><td>190.1</td><td>4.5</td></tr>
+<tr><td>GVHMR</td><td>✓</td><td>✗</td><td>111.0</td><td>276.5</td><td>2.0</td><td>78.8</td><td>126.3</td><td>2.4</td></tr>
+<tr><td>JOSH3R</td><td>✓</td><td>✓</td><td>220.0</td><td>661.7</td><td>13.1</td><td>–</td><td>–</td><td>–</td></tr>
+<tr><td>Human3R</td><td>✓</td><td>✓</td><td>112.2</td><td>267.9</td><td>2.2</td><td>110.0</td><td>184.9</td><td>3.3</td></tr>
+<tr><td>UniSH</td><td>✓</td><td>✓</td><td>118.5</td><td>270.1</td><td>5.8</td><td>118.1</td><td>183.2</td><td>4.8</td></tr>
+<tr class="best"><td>SHOW(Ours)</td><td>✓</td><td>✓</td><td>109.1</td><td>262.3</td><td>2.1</td><td>107.3</td><td>172.7</td><td>2.2</td></tr>
+</table>
+<p><strong>读表</strong>:①EMDB-2(动相机)上 SHOW 全面领先前馈+场景类,WA 109.1 甚至超过依赖外部尺度估计器的 GVHMR(111.0)——统一空间建模带来更准的全局运动;②RICH(静相机)上略逊于 GVHMR(78.8 vs 107.3)——论文解释:静相机场景下视觉几何模型本可受益于多视角观测,RICH 不满足,SHOW 吃不到这红利;③优化类 JOSH/TRAM 的 WA 更低,但需要逐序列优化,与前馈范式不同代。</p>
+
+<div class="figure">
+  <img src="images/2606.27720/yellow_chair.png" alt="人景重建定性对比(视频)">
+  <div class="caption"><b>图4</b>(论文 Figure 4):视频人-景重建定性对比。给定单目以人为中心的视频(顶行),SHOW 重建的人体精确落入场景、与椅子等物体空间关系正确,而基线人体与场景尺度/位置错位。</div>
+</div>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>人景一致性新指标与结果</h2>
+
+<h3>12.1 指标定义(附录 A)</h3>
+<p>场景以最一般形式表示为点云(图像/点图分辨率可变、含无效点),统一用 N×3 点云表示;人体侧渲染网格到相机系得点图。两指标都在过滤后的点云间计算(去外点/无效点),公式:</p>
+<div class="equation">$$\text{HS-CF}=\frac{\sum_{i=1}^{N}\min_{p\in\mathcal{S}}\|h_{i}-p\|_{2}}{\sum_{i=1}^{N}|z_{i}^{\text{human}}-\bar{z}^{\text{human}}|}$$<span class="tag">Eq.19</span></div>
+<p>分子:人体模型可见点集 $\mathcal{H}=\{h_i\}$ 到场景点集 $\mathcal{S}$(人体掩码下场景点图)的单向倒角和;分母:人体点 $z$ 坐标偏差绝对值之和(深度方向展布)——归一化掉场景深度量纲。<strong>低 HS-CF = 可见人体表面与场景点云空间对齐好</strong>。</p>
+<div class="equation">$$\mathrm{HS\text{-}V}=\frac{1}{2}\left(\left|\mathrm{Var}_{x}(\mathcal{V}_{h})-\mathrm{Var}_{x}(\mathcal{P}_{h})\right|+\left|\mathrm{Var}_{y}(\mathcal{V}_{h})-\mathrm{Var}_{y}(\mathcal{P}_{h})\right|\right)$$<span class="tag">Eq.20</span></div>
+<p>人体模型点 $\mathcal{V}_h$ 与人体点图 $\mathcal{P}_h$ 在相机系 x/y 轴方差的 ℓ1 距离取半。<strong>低 HS-V = 人体模型尺度合理、与场景点图一致;高 HS-V = 尺度失衡(人显得不现实地小/大)</strong>。</p>
+<p>为压制边界外点与不完美掩码的误差,只保留 5%–95% / 10%–90% 百分位内的点 → $HS\text{-}CF_5$、$HS\text{-}V_5$、$HS\text{-}CF_{10}$、$HS\text{-}V_{10}$ 四个变体。指标天然可扩展到其它参数化表示(刚体/铰接/软体)。</p>
+
+<h3>12.2 结果(Table 3)</h3>
+<table>
+<tr><th>方法</th><th>3DPW HS-V₅</th><th>HS-V₁₀</th><th>HS-CF₅</th><th>HS-CF₁₀</th><th>EMDB-1 HS-V₅</th><th>HS-V₁₀</th><th>HS-CF₅</th><th>HS-CF₁₀</th></tr>
+<tr><td>Human3R</td><td>0.652</td><td>0.640</td><td>1.30</td><td>1.32</td><td>3.66</td><td>2.91</td><td>1.13</td><td>1.31</td></tr>
+<tr><td>UniSH</td><td>0.028</td><td>0.028</td><td>7.65</td><td>7.52</td><td>0.033</td><td>0.037</td><td>7.10</td><td>6.99</td></tr>
+<tr class="best"><td>SHOW(Ours)</td><td>0.030</td><td>0.026</td><td>5.69</td><td>5.44</td><td>0.013</td><td>0.017</td><td>5.88</td><td>5.79</td></tr>
+</table>
+<p><strong>读表</strong>:①三方法呈互补格局——Human3R 的 HS-CF 极低(度量骨干 + 大规模度量数据训练)但 HS-V 崩(0.652,尺度对不齐,人相对场景忽大忽小);UniSH 反之,HS-V 好(显式 scale 头)但 HS-CF 差(7.65,几何分布没对齐);②SHOW 两项同时做到第二好/最好——不显式预测度量点图的方法中 HS-CF 最优,HS-V 与 UniSH 相当、比 Human3R 好 20×;③归因:SHOW 微调了几何骨干(对齐深度分布)且用 mask 提示 + e2e 优化,场景几何与人体参数先验强耦合。</p>
+
+<div class="figure">
+  <img src="images/2606.27720/walkup_hill.png" alt="人景对齐视频对比">
+  <div class="caption"><b>图5</b>(论文 Figure 5):视频中人体点图与人体模型对齐的定性对比。上坡行走序列中,SHOW 的人体网格与点图人区域贴合,基线出现明显的尺度漂移与错位。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2606.27720/single_frame.png" alt="单帧人景对齐">
+  <div class="caption"><b>图6</b>(论文 Figure 6):单帧输入下人体点图与人体模型的对齐对比——SHOW 无需时序信息也能保持一致的尺度与放置。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2606.27720/Presentation1.png" alt="HS-CF/HS-V 指标可视化">
+  <div class="caption"><b>图7</b>(论文 Figure 8):HS-CF / HS-V 的直观可视化。四象限代表不同指标组合:低 HS-CF + 低 HS-V(理想对齐)、高 HS-CF(空间错位)、高 HS-V(尺度失衡)等,给出指标的几何解释。</div>
+</div>
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验:四设计逐一验证</h2>
+
+<h3>13.1 定量(Table 4,3DPW,6 FPS,150 ep + e2e 100 ep)</h3>
+<table>
+<tr><th>变体</th><th>HS-V₅</th><th>HS-V₁₀</th><th>HS-CF₅</th><th>HS-CF₁₀</th><th>退化主因</th></tr>
+<tr class="fail"><td>w/o pretrain alignment</td><td>0.708</td><td>0.660</td><td>38.51</td><td>38.39</td><td>VGGT 点图尺度分布 ≠ 训练归一化约定,scale 分支无从学起</td></tr>
+<tr class="fail"><td>w/o joint modeling</td><td>0.312</td><td>0.295</td><td>17.32</td><td>17.08</td><td>去掉人体分支、直接从骨干语义估尺度,丢失参数先验</td></tr>
+<tr><td>w/o mask prompting</td><td>0.033</td><td>0.035</td><td>14.12</td><td>14.10</td><td>几何特征失去人体区域聚焦,HS-CF 掉 50%</td></tr>
+<tr class="fail"><td>w/o ray encoder</td><td>0.734</td><td>0.667</td><td>11.23</td><td>11.06</td><td>人体分支拿不到共享相机内参,尺度方差崩</td></tr>
+<tr><td>full</td><td>0.028</td><td>0.030</td><td>9.44</td><td>9.38</td><td>—</td></tr>
+<tr class="best"><td>full + e2e tuning</td><td>0.029</td><td>0.027</td><td>6.21</td><td>5.99</td><td>e2e 再砍 34% HS-CF</td></tr>
+</table>
+
+<h3>13.2 逐项解读</h3>
+<ul>
+<li><strong>预训练对齐(最大坑)</strong>:训练中每步把预测点图归一化(如单位均值),这是 scale 分支的尺度约定;未在 BEDLAM 上微调的 VGGT 输出的点图是另一套尺度分布 → 骨干输出与 scale 分支不一致,尺度恢复失败(38.51 vs 9.44,4× 恶化)。这解释了为什么 Stage 1 必须微调骨干而不能直接用 VGGT-1B。</li>
+<li><strong>联合建模</strong>:去掉人体分支改从骨干语义直接估尺度,HS-CF 17.32——SMPL-X 参数先验对尺度/放置的贡献不可替代。</li>
+<li><strong>掩码提示</strong>:HS-CF 14.12(掉 50%)但不灾难性——几何特征仍可从图像内容「猜」人体区域,只是不精准。</li>
+<li><strong>ray encoder</strong>:HS-V 崩到 0.734——没有焦距感知,人体分支与场景分支「各看各的相机」,尺度方差失控;注意它对 HS-CF 影响相对小(11.23),说明 ray encoder 主要救的是<strong>尺度</strong>而非<strong>位置</strong>。</li>
+<li><strong>e2e 微调</strong>:150 ep 分段训练后再 100 ep 端到端,HS-CF 9.44→6.21——联合微调把分段训练损失的耦合收益兑现。</li>
+</ul>
+
+<div class="figure">
+  <img src="images/2606.27720/ablation_new.png" alt="消融定性对比">
+  <div class="caption"><b>图8</b>(论文 Figure 7):消融的定性对比。(a) full 模型人体与场景对齐良好;(b)(c)(d) 去掉各设计后出现尺度失衡(人过大/过小)或空间错位(人飘离地面/穿透物体)。</div>
+</div>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>同类方法横向对比</h2>
+
+<table>
+<tr><th>维度</th><th>SHOW(2026.06)</th><th>UniSH(2026)</th><th>Human3R(2025)</th><th>GVHMR(2024)</th><th>JOSH(2026)</th></tr>
+<tr><td>范式</td><td>前馈统一重建</td><td>前馈双分支+对齐网</td><td>前馈(CUT3R 系)</td><td>前馈+外部尺度估计</td><td>优化式(测试时迭代)</td></tr>
+<tr><td>几何基座</td><td>VGGT(微调)</td><td>Pi3(冻结)</td><td>CUT3R(VPT 调优)</td><td>自研 HMR 骨干</td><td>3DGS 场景重建</td></tr>
+<tr><td>人体提示</td><td>mask(SAM)</td><td>bbox</td><td>头部检测</td><td>检测+跟踪</td><td>检测+优化</td></tr>
+<tr><td>骨干是否微调</td><td><b>是(关键设计)</b></td><td>否(冻结双分支)</td><td>提示调优</td><td>—</td><td>—</td></tr>
+<tr><td>度量尺度来源</td><td>scale token + 联合对齐</td><td>alignnet 显式 scale 头</td><td>度量骨干(大规模度量数据)</td><td>外部尺度估计器</td><td>场景几何(3DGS)</td></tr>
+<tr><td>3DPW PA-MPJPE</td><td>41.0</td><td>48.8</td><td>44.1</td><td>—</td><td>—</td></tr>
+<tr><td>EMDB-2 WA</td><td>109.1</td><td>118.5</td><td>112.2</td><td>111.0</td><td>68.9(优化式)</td></tr>
+<tr><td>HS-CF₅(3DPW)</td><td>5.69</td><td>7.65</td><td><b>1.30</b></td><td>—</td><td>—</td></tr>
+<tr><td>HS-V₅(3DPW)</td><td>0.030</td><td><b>0.028</b></td><td>0.652</td><td>—</td><td>—</td></tr>
+<tr><td>代码开源</td><td>✓(训练+推理+评测全链)</td><td>✓(权重 HF)</td><td>✓</td><td>✓</td><td>部分</td></tr>
+</table>
+
+<p><strong>对比结论</strong>:</p>
+<ul>
+<li><strong>vs UniSH</strong>:同为「基座+人体头」路线,UniSH 冻结几何/人体双分支靠轻量 alignnet 估尺度与位置,SHOW 坚持微调骨干对齐深度分布——换来 HS-CF 全面占优(5.69 vs 7.65)且不依赖额外真实视频数据;代价是三阶段训练流程更重。</li>
+<li><strong>vs Human3R</strong>:Human3R 度量骨干带来 HS-CF 极低值(1.30),但只在解码器阶段注入 human token 推断空间位置、不强制人景表示一致 → HS-V 崩(0.652,人相对场景忽大忽小);SHOW 用 ray encoder + 联合对齐把 HS-V 压到 0.030,代价是 HS-CF 屈居 5.69——「度量点图精度」与「人景尺度一致性」的取舍。</li>
+<li><strong>vs GVHMR</strong>:GVHMR 靠现成尺度估计器拿到准全局运动(EMDB-2 WA 111.0),SHOW 纯前馈 109.1 反超——统一空间建模比外挂尺度估计更干净;但 RICH 静相机上 GVHMR 78.8 vs SHOW 107.3,静相机+多视角红利吃不到。</li>
+<li><strong>演进定位</strong>:SHOW 是「VGGT → 人景统一」路线的第一个完整落地(前有 CUT3R→Human3R 的「重建基座+人体头」尝试,后有 UniSH 的 Pi3 双分支方案),核心增量是把<strong>掩码提示</strong>与<strong>骨干微调</strong>同时做到位,并用两指标揭示了前两代方法的互补缺陷。</li>
+</ul>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>源码工程细节与落地坑</h2>
+
+<p>官方仓库 <code>bowieshi/4D-show-official-codebase</code>(README 自述「Under Construction」,作者在读研申请期,文档清理待后续):训练/推理/评测全链路齐全,含 UniSH 基线复现与 Human3R 评测 harness。</p>
+
+<h3>15.1 仓库结构与关键模块</h3>
+<table>
+<tr><th>路径</th><th>内容</th></tr>
+<tr><td><code>vggt/models/mask_encoder.py</code></td><td>MaskEncoder:mask_in_chans=16,SAM 式 mask_downscaling(4 层 MLP)+ zero_conv;FQSimpleAdapter 适配</td></tr>
+<tr><td><code>vggt/phmr/smpl_decoder_phmr.py</code></td><td>三 token 解码器(smpl_token=Embedding(2) / scale_token / loc_token);pose(22×6D)/shape(10)/transl(2)/depth(1)/scale(1, softplus) 分立头;decode_transl 用 cam_int[:,0,0] 焦距;_share_scale_token_across_frames 跨帧共享</td></tr>
+<tr><td><code>vggt/heads/smpl_head.py</code></td><td>SMPLHead(dim_in=2048, trunk_depth=4, 迭代 4 次细化);⚠️ 硬编码绝对路径 <code>/home/boaoshi/.cache/4DHumans/data/smpl_mean_params.npz</code>——换机必改</td></tr>
+<tr><td><code>vggt/models/human_fuse.py</code></td><td>HumanFeatureFuseNet(CLIFF-Cam embedder + imgseq embedder,zero_module 初始化)</td></tr>
+<tr><td><code>training/loss.py</code></td><td>MultitaskLoss;compute_smplx_loss(scale 监督 log-l1 + 0.2 一致性);compute_chamfer_distance(定义了但<strong>发布版未启用</strong>)</td></tr>
+<tr><td><code>training/config/</code></td><td>Hydra 配置:exp_44(Stage1)→exp_45(Stage2)→exp_46(Stage3)主链 + ablation_1/2 系列 + 历史演进(exp_41~43)</td></tr>
+<tr><td><code>evaluation_tools/</code></td><td>evaluate.py(3DPW/EMDB/RICH)、evaluate_unish.py、segmentation.py(SAM3 掩码预处理);eval_results 断点续评</td></tr>
+<tr><td><code>eval/</code> + <code>unish/</code> + <code>hmr4d/</code></td><td>Human3R 基线 harness、UniSH 基线代码、GVHMR 派生的数据读取与 mocap 指标</td></tr>
+</table>
+
+<h3>15.2 复现资源账</h3>
+<ul>
+<li><strong>训练硬件</strong>:论文用 B200(Stage1/3 用 4 卡,Stage2 用 2 卡);README 称配置也能在更少/更小卡上跑(降 max_img_per_gpu / 开 accum_steps)。</li>
+<li><strong>依赖 checkpoint</strong>:VGGT-1B(HF)、SMPL-X v1.1 body models(MPG 注册,models_lockedhead 变体)、PromptHMR checkpoint.ckpt、smplx_densepose.npz(仓库自带)、UniSH safetensors(HF 自动)、yolo11n.pt;SHOW 自家三阶段权重「待发布」(README 占位)。</li>
+<li><strong>数据</strong>:BEDLAM2(MPG 注册,图像+exr 深度+三层人体掩码+npz 标签;论文筛后 4,250 序列);评测另需 GVHMR inputs/ 支持文件 + SAM3 掩码。</li>
+<li><strong>关键超参</strong>(yaml 实测):img_size=518 / patch=14 / max_img_per_gpu=40(Stage1)→30(Stage2/3);lr=5e-5 AdamW wd=0.05 cosine;bf16 AMP;梯度裁剪按模块(smpl_decoder max_norm=5,其余 1.0);seed=42;相机损失用 l1(README 注:论文写 smooth-l1,实测 l1 更稳)。</li>
+</ul>
+
+<h3>15.3 落地坑清单</h3>
+<ul>
+<li><strong>硬编码路径遍布</strong>:所有 yaml 顶部 model_folder / densepose_rgb_path / resume_checkpoint_path / PHMR ckpt 都是作者集群绝对路径(/vast/projects/lingjie6/...);hmr4d 三个 *_motion_test.py 硬编码评测数据根;smpl_head.py 硬编码 smpl_mean_params.npz——换机需逐处改。</li>
+<li><strong>resume 路径是续训不是阶段起点</strong>:发布 config 里 Stage1 的 resume 指向作者自己的 checkpoint_80.pt;干净复现须改为 VGGT-1B model.pt(加载 strict:False 可跨架构)。</li>
+<li><strong>chamfer 损失未启用</strong>(§7 callout):论文 Eq.17 与发布代码不一致,复现主表数字时留意。</li>
+<li><strong>掩码依赖</strong>:推理 YOLO11 检测 + SAM2 分割;评测掩码由 SAM3 生成(segmentation.py 预跑一次)——掩码质量直接决定提示质量。</li>
+<li><strong>评测脚本半成品</strong>:evaluate_unish.py 的 main 硬编码 3dpw,其它 split 要手改;README「Known loose ends」自列了这些债。</li>
+</ul>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>局限、演进定位与改进方向</h2>
+
+<h3>16.1 论文自认局限</h3>
+<ul>
+<li><strong>sim-to-real 鸿沟</strong>:虽在大规模合成人-景数据上训练,难泛化的真实世界场景仍在——OOD 情形(极端尺度变化、人体只占画面极小部分)依然棘手。</li>
+</ul>
+
+<h3>16.2 笔记补充的观察</h3>
+<ul>
+<li><strong>静相机场景吃亏</strong>:RICH 上全面落后 GVHMR——视觉几何模型的红利在动相机/多视角,静相机单目输入下 SHOW 的「统一空间」优势发挥不出来。</li>
+<li><strong>局部精度让位于统一性</strong>:3DPW PA 41.0 不敌纯裁剪 SOTA(NLF 37.3 / PromptHMR 36.6)——世界系联合任务天然更难,目标函数分散了局部姿态的优化压力。</li>
+<li><strong>三阶段训练重</strong>:100+100+200 epochs、两档卡型切换(4×B200↔2×B200),复现门槛高;UniSH 式「冻结+轻对齐」虽弱但便宜,工程取舍不同。</li>
+</ul>
+
+<h3>16.3 改进方向</h3>
+<ul>
+<li><strong>补真实数据微调</strong>闭环 sim-to-real(论文没做;HS-CF/HS-V 指标可直接当真实域评测器)。</li>
+<li><strong>恢复/重估 chamfer 对齐损失</strong>:发布版注释掉 Eq.17 用 10×scale 替代,二者理论上不等价(一个管分布对齐一个管点级贴合),系统对比后择优或叠加。</li>
+<li><strong>多人实例扩展</strong>:当前推理 --human_idx 单人输出;mask 提示天然支持多实例,解码器 batch 化即可,是显然的下一步。</li>
+<li><strong>动态场景</strong>:点图是每帧独立预测,无 4D 一致性约束——与人-景时序联合(如 PERSIST 式持久状态)结合是开放方向。</li>
+</ul>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结:团队资源与库内定位</h2>
+
+<p><strong>团队</strong>:UPenn GRASP Lab,Lingjie Liu 组(通讯;该组在 3D 人体/神经渲染方向深耕,代表作含各类人体重建与渲染工作)。一作 Boao Shi(项目页/代码均以其名义发布),Qiao Feng、Yiming Huang 合作。</p>
+
+<div class="tag-row">
+  <span class="tag">VGGT 系</span><span class="tag">前馈重建</span><span class="tag">HMR / SMPL-X</span><span class="tag">人-景对齐</span><span class="tag">掩码提示</span><span class="tag">度量尺度</span><span class="tag">HS-CF / HS-V</span><span class="tag">单目视频</span><span class="tag">BEDLAM2.0</span>
+</div>
+
+<p><strong>库内定位与交叉链接</strong>:</p>
+<ul>
+<li>直接建立在 <a href="3D-20250314-VGGT.html"><strong>VGGT</strong></a> 之上——VGGT 提供几何基座与多任务头框架,SHOW 是「VGGT + 人体」的第一篇完整系统工作(把 VGGT 笔记里的「下游任务扩展」预言兑现到人-景统一)。库内 <a href="3D-20260514-VGGT-Omega.html">VGGT-Omega</a>、<a href="3D-20250717-Pi3.html">Pi3</a>(UniSH 的基座)、<a href="3D-20251009-ReSplat.html">ReSplat</a> 同属前馈几何家族,可对照看「基座改造 vs 冻结」的路线分歧。</li>
+<li>与 <a href="3D-20260720-高斯人物与人脸重建调研.html">高斯人物与人脸重建调研</a>、<a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a> 构成「人体重建」主线:SHOW 补上了「单目前馈 + 世界系放置」这一格,与 vggt_human 多 session 人体重建管线(SAM3 mask ID 映射、3DGS 拆分)的哲学呼应——都是把「人」当场景中的一等公民而非孤立目标。</li>
+<li>HS-CF / HS-V 指标对 <a href="3D-20260827-R2MBench.html">R2MBench</a> 类重建评测工作有直接借鉴价值:人-景一致性此前缺乏量化基准,SHOW 给出了可复用的公式与百分位截断协议。</li>
+<li>SAM 掩码提示路线与 <a href="3D-20260217-SAM-3D-Body.html">SAM-3D-Body</a>、<a href="3D-20260316-Fast-SAM-3D-Body.html">Fast-SAM-3D-Body</a> 同源——掩码作为最鲁棒的人体定位提示,在这几篇里反复得到验证。</li>
+</ul>
+
+<div class="callout key"><b>总结</b>:SHOW 用「掩码提示 + 骨干微调 + 三损失联合对齐」把 HMR 与前馈场景重建焊进同一个度量空间,以 EMDB-2 WA 109.1 / HS-CF₅ 5.69 / HS-V₅ 0.030 的三好成绩证明了统一建模的代价可控、收益真实;新指标 HS-CF/HS-V 填补了人-景一致性评测的空白,预计会成为后续 4D 人-景重建工作的标配基准。</div>
+
+<div class="note">笔记信息源:arXiv HTML v1 全文(0 LaTeX 残留)+ 官方仓库源码逐文件印证(mask_encoder / smpl_decoder_phmr / smpl_head / human_fuse / loss.py / exp_44~46 yaml / README)。所有 file:line 引用基于 2026-09-21 克隆的仓库快照;论文-代码差异(chamfer 未启用、相机损失 l1 vs smooth-l1)已在 §7/§15 标注。<span class="uncertain">待核实</span>:SHOW 三阶段 checkpoint 尚未发布(HF 占位),发布后可验证复现数字;「无会议信息」以 abs 页无 comments 为准,后续若录用需补 badge。</div>
+</section>
+
+</div>
+</body>
+</html>

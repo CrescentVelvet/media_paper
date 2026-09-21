@@ -3108,6 +3108,72 @@
    ]
   },
   {
+   "title": "SHOW: 前馈单目视频的人景统一度量重建",
+   "meta": [
+    "📄 arXiv: 2606.27720",
+    "📅 2026-06-26 (v1)",
+    "🏢 UPenn GRASP Lab (Lingjie Liu 组)"
+   ],
+   "tags": [
+    "Human-Scene Unified Reconstruction",
+    "VGGT",
+    "SMPL-X",
+    "Mask-as-Prompt",
+    "Feedforward HMR",
+    "DensePose",
+    "PromptHMR",
+    "Metric Scale Alignment",
+    "HS-CF / HS-V",
+    "BEDLAM2.0"
+   ],
+   "summary": "用<strong>掩码提示驱动的 VGGT</strong>把 HMR 与前馈场景重建耦合进统一度量空间:单目视频一次前馈同时输出场景(相机/深度/点图)与所有人体的 SMPL-X 网格,人体天然落在场景坐标系、尺度一致。三阶段训练:①人感知几何编码(mask encoder 16 通道 SAM 式降维 + DensePose 辅助头,微调骨干对齐点图尺度分布——消融显示这一步从 38.51 拉到 9.44);②几何感知 SMPL-X 解码(三 token 设计 smpl/scale/register + K 轮自注意-交叉注意迭代,ray encoder 注入焦距;源码 smpl_decoder_phmr.py 逐项印证 Eq.7-11);③联合微调(log 尺度监督 + 0.2 跨帧一致性 + SMPL 引导点图 chamfer 对齐[stop-grad,发布代码未启用,以 10×scale 替代],Eq.13-18)。新指标 HS-CF(人体-点图归一化倒角)/HS-V(x/y 方差 ℓ1)配 5%/10% 百分位截断,首次量化人-景对齐。主结果:3DPW PA 41.0(联合类最优)、EMDB-2 WA 109.1(超 GVHMR)、HS-CF₅ 5.69 / HS-V₅ 0.030(同时做到 Human3R 的对齐与 UniSH 的尺度)。数据 BEDLAM2.0 筛后 4,250 序列 6FPS 5 帧片段;4×B200 100+100+200 epochs。局限:sim-to-real 鸿沟、静相机(RICH)吃不到多视角红利、人体占比极小场景困难。定位:VGGT→人景统一路线首个完整落地,掩码提示与骨干微调同时做到位;HS-CF/HS-V 预计成后续 4D 人-景重建标配基准。",
+   "links": [
+    {
+     "href": "3D-20260626-SHOW.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.27720",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://bowieshi.github.io/SHOW-project-page/",
+     "text": "🏠 项目页"
+    },
+    {
+     "href": "https://github.com/bowieshi/4D-show-official-codebase",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260626-SHOW.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性",
+    "前馈重建与基座模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",
