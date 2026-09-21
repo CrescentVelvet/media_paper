@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 55</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 23</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 56</span><span class="chip" data-k="kind" data-v="survey">调研综述 11</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 24</span><span class="chip" data-k="depth" data-v="standard">标准 35</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -2022,6 +2022,34 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://arxiv.org/abs/2606.02479" target="_blank">📄 arXiv</a>
         </div>
 
+        <div class="note-card" data-file="3D-20260303-PERSIST.html" data-kind="note" data-depth="deep"
+              data-topics="几何与时序一致性|视频扩散先验用于 3D" data-search="PERSIST: 以持久 3D 状态模拟交互式时空 Interactive World Model Persistent 3D State World-Frame Voxel Latent Rectified Flow DiT Differentiable Rasterization Depth Peeling Diffusion Forcing Exposure Bias Luanti/Craftium 用持久 3D 状态替代像素历史/关键帧检索的交互式世界模型:状态 s̃=⟨w,c⟩,w 为以 agent 为中心的 48³ 体素 world-frame latent(3D-VAE 压到 12³×48),c 为 10 维相机。三组件训练独立、推理组装:W_θ(rectified flow DiT)在体素 latent 空间预测环境演化,C_θ(1D causal transformer+RoPE)残差预测相机(只出 Δpitch/Δyaw/Δfov),P_θ(learned deferred shader)从投影特征栈画像素;桥接靠无参数可微投影算子 R(三角网格+depth-peeling,max 32 层,逐像素深度有序)。暴露偏置用 Diffusion Forcing(τ_ctx=0.02/0.1)+ 10% flat 噪声增强双层缓解,η=3、20 步、σ_min=1e-5——论文 Table 9 与发布 pipeline.json 逐项吻合(源码印证案例)。数据:Luanti/Craftium,~40M 交互/~100K 轨迹/460h@24Hz。主结果:FVD@200/400/600 = 129/141/148(Oasis 409/687/875,600 帧恶化 +15% vs Oasis +114%);+w0 显式初始化再降到 80/93/104;人评 Overall 2.6-3.0 vs Oasis 1.9;PERSIST-S 2-step 886ms/帧(3× 加速,FVD 仅 +30%)仍全胜基线,但距实时差一个量级。新能力:单图多世界采样(w_0 多样补全)、中途直接改 w 编辑世界、屏外动态持续演化(撞树/洞穴注水后离开再返回仍在);Camera-GT 反例(穿墙)证明一致性来自 w-c 耦合。局限:需引擎 GT 体素监督、48³ 有限区域、未达实时。与 WorldMem(代码内置 worldmem_cam_to_minetest_cam 相机对齐)、CovRAG、R2M-Bench、Lyra 2.0 构成记忆检索/3D 世界模型赛道,Oasis→WorldMem→CovRAG 在检索轴内卷,PERSIST 换载体终结内卷。">
+            <h3>67. PERSIST: 以持久 3D 状态模拟交互式时空</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2603.03482 (ICML 2026)</span>
+                <span>📅 2026-03-03 (v2: 2026-06-03)</span>
+                <span>🏢 Mila × UdeM × McGill (Christopher Pal 组)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Interactive World Model</span>
+                <span class="tag">Persistent 3D State</span>
+                <span class="tag">World-Frame Voxel Latent</span>
+                <span class="tag">Rectified Flow</span>
+                <span class="tag">DiT</span>
+                <span class="tag">Differentiable Rasterization</span>
+                <span class="tag">Depth Peeling</span>
+                <span class="tag">Diffusion Forcing</span>
+                <span class="tag">Exposure Bias</span>
+                <span class="tag">Luanti/Craftium</span>
+            </div>
+            <p>用<strong>持久 3D 状态</strong>替代像素历史/关键帧检索的交互式世界模型:状态 s̃=⟨w,c⟩,w 为以 agent 为中心的 48³ 体素 world-frame latent(3D-VAE 压到 12³×48),c 为 10 维相机。三组件训练独立、推理组装:W_θ(rectified flow DiT)在体素 latent 空间预测环境演化,C_θ(1D causal transformer+RoPE)残差预测相机(只出 Δpitch/Δyaw/Δfov),P_θ(learned deferred shader)从投影特征栈画像素;桥接靠无参数可微投影算子 R(三角网格+depth-peeling,max 32 层,逐像素深度有序)。暴露偏置用 Diffusion Forcing(τ_ctx=0.02/0.1)+ 10% flat 噪声增强双层缓解,η=3、20 步、σ_min=1e-5——论文 Table 9 与发布 pipeline.json 逐项吻合(源码印证案例)。数据:Luanti/Craftium,~40M 交互/~100K 轨迹/460h@24Hz。主结果:FVD@200/400/600 = 129/141/148(Oasis 409/687/875,600 帧恶化 +15% vs Oasis +114%);+w0 显式初始化再降到 80/93/104;人评 Overall 2.6-3.0 vs Oasis 1.9;PERSIST-S 2-step 886ms/帧(3× 加速,FVD 仅 +30%)仍全胜基线,但距实时差一个量级。新能力:单图多世界采样(w_0 多样补全)、中途直接改 w 编辑世界、屏外动态持续演化(撞树/洞穴注水后离开再返回仍在);Camera-GT 反例(穿墙)证明一致性来自 w-c 耦合。局限:需引擎 GT 体素监督、48³ 有限区域、未达实时。与 WorldMem(代码内置 worldmem_cam_to_minetest_cam 相机对齐)、CovRAG、R2M-Bench、Lyra 2.0 构成记忆检索/3D 世界模型赛道,Oasis→WorldMem→CovRAG 在检索轴内卷,PERSIST 换载体终结内卷。</p>
+            <a href="3D-20260303-PERSIST.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2603.03482" target="_blank">📄 arXiv</a>
+            <a href="https://francelico.github.io/PERSIST/" target="_blank">🏠 项目页</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -2100,7 +2128,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>67. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>68. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2123,7 +2151,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>68. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>69. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2146,7 +2174,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>69. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>70. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2172,7 +2200,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="CV-AI-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>70. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>71. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2215,7 +2243,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-09-20 · 涵盖 70 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-09-21 · 涵盖 71 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){

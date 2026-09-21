@@ -3046,6 +3046,68 @@
    ]
   },
   {
+   "title": "PERSIST: 以持久 3D 状态模拟交互式时空",
+   "meta": [
+    "📄 arXiv: 2603.03482 (ICML 2026)",
+    "📅 2026-03-03 (v2: 2026-06-03)",
+    "🏢 Mila × UdeM × McGill (Christopher Pal 组)"
+   ],
+   "tags": [
+    "Interactive World Model",
+    "Persistent 3D State",
+    "World-Frame Voxel Latent",
+    "Rectified Flow",
+    "DiT",
+    "Differentiable Rasterization",
+    "Depth Peeling",
+    "Diffusion Forcing",
+    "Exposure Bias",
+    "Luanti/Craftium"
+   ],
+   "summary": "用<strong>持久 3D 状态</strong>替代像素历史/关键帧检索的交互式世界模型:状态 s̃=⟨w,c⟩,w 为以 agent 为中心的 48³ 体素 world-frame latent(3D-VAE 压到 12³×48),c 为 10 维相机。三组件训练独立、推理组装:W_θ(rectified flow DiT)在体素 latent 空间预测环境演化,C_θ(1D causal transformer+RoPE)残差预测相机(只出 Δpitch/Δyaw/Δfov),P_θ(learned deferred shader)从投影特征栈画像素;桥接靠无参数可微投影算子 R(三角网格+depth-peeling,max 32 层,逐像素深度有序)。暴露偏置用 Diffusion Forcing(τ_ctx=0.02/0.1)+ 10% flat 噪声增强双层缓解,η=3、20 步、σ_min=1e-5——论文 Table 9 与发布 pipeline.json 逐项吻合(源码印证案例)。数据:Luanti/Craftium,~40M 交互/~100K 轨迹/460h@24Hz。主结果:FVD@200/400/600 = 129/141/148(Oasis 409/687/875,600 帧恶化 +15% vs Oasis +114%);+w0 显式初始化再降到 80/93/104;人评 Overall 2.6-3.0 vs Oasis 1.9;PERSIST-S 2-step 886ms/帧(3× 加速,FVD 仅 +30%)仍全胜基线,但距实时差一个量级。新能力:单图多世界采样(w_0 多样补全)、中途直接改 w 编辑世界、屏外动态持续演化(撞树/洞穴注水后离开再返回仍在);Camera-GT 反例(穿墙)证明一致性来自 w-c 耦合。局限:需引擎 GT 体素监督、48³ 有限区域、未达实时。与 WorldMem(代码内置 worldmem_cam_to_minetest_cam 相机对齐)、CovRAG、R2M-Bench、Lyra 2.0 构成记忆检索/3D 世界模型赛道,Oasis→WorldMem→CovRAG 在检索轴内卷,PERSIST 换载体终结内卷。",
+   "links": [
+    {
+     "href": "3D-20260303-PERSIST.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2603.03482",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://francelico.github.io/PERSIST/",
+     "text": "🏠 项目页"
+    }
+   ],
+   "file": "3D-20260303-PERSIST.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性",
+    "视频扩散先验用于 3D"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

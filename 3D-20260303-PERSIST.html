@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PERSIST:以持久 3D 状态模拟交互式时空</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2603.03482 · 2026-03-03 · 📊 deep · 交互式世界模型 / 持久 3D 状态 · ICML 2026</span>
+    <h1>PERSIST:以持久 3D 状态模拟交互式时空</h1>
+    <div class="subtitle">Persistent Environment Representations for Simulating Interactive Space-Time</div>
+    <div class="authors">Francelico P. Cortez · Pol Cusculluela · Nicholas Charron · Rémi Piché-Taillefer · William L. Hamilton · Artem Kaznatcheev · periklis petrokas · Derek Nowrouzezahrai · Christopher Pal · Louis-félix Chevigné(通讯排序按论文作者列表)</div>
+    <div class="org">Mila - Quebec AI Institute × Université de Montréal × McGill University</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2603.03482" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2603.03482v2" target="_blank">🌐 arXiv HTML 全文 (v2)</a>
+      <a href="https://francelico.github.io/PERSIST/" target="_blank">🏠 项目页</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究动机:像素历史的失败模式</a></li>
+    <li><a href="#s3">问题形式化与符号表</a></li>
+    <li><a href="#s4">持久环境表示:World-Frame 架构</a></li>
+    <li><a href="#s5">三组件方法论:W/C/P 耦合</a></li>
+    <li><a href="#s6">投影算子 R:可微光栅化桥接</a></li>
+    <li><a href="#s7">暴露偏置缓解:Diffusion Forcing + 噪声增强</a></li>
+    <li><a href="#s8">算法整体逻辑图</a></li>
+    <li><a href="#s9">实验设置:Luanti 平台与数据规模</a></li>
+    <li><a href="#s10">基线与消融设置</a></li>
+    <li><a href="#s11">主结果:FVD 与长程稳定性</a></li>
+    <li><a href="#s12">人评与推理速度</a></li>
+    <li><a href="#s13">新能力:生成 / 编辑 / 屏外演化</a></li>
+    <li><a href="#s14">同类方法横向对比</a></li>
+    <li><a href="#s15">应用启发与改进方向</a></li>
+    <li><a href="#s16">局限与展望</a></li>
+    <li><a href="#s17">总结:团队资源与库内定位</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>PERSIST(ICML 2026,Mila × UdeM × McGill)提出用<strong>持久 3D 状态(persistent 3D state)</strong>替代「像素历史 / 关键帧检索」作为交互式世界模型的世界表示。核心论点:视频世界模型(Oasis 类滑窗、WorldMem 类关键帧检索)把世界状态隐式存在 attention 里的帧序列中,一旦观测脱离画面或窗口滑走,状态即丢失;而 PERSIST 把状态显式存在一个以 agent 为中心的<strong>体素 world-frame latent</strong> $w$ 中——agent 走多远,世界记住多远。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">129</div><div class="l">600 帧 FVD(vs Oasis 875)</div></div>
+  <div class="stat"><div class="v">2.8×</div><div class="l">FVD 长程衰减比 Oasis 缓慢(875→129 基准)</div></div>
+  <div class="stat"><div class="v">3.0</div><div class="l">人评 Overall(w0 版,5 分制,vs Oasis 1.9)</div></div>
+  <div class="stat"><div class="v">886 ms</div><div class="l">PERSIST-S 2-step 降采样单帧耗时(3× 加速)</div></div>
+</div>
+
+<p><strong>核心贡献四个:</strong></p>
+<ol>
+<li><strong>持久环境表示</strong>:agent 状态 $\tilde{s}=\langle w, c\rangle$,w 为以 agent 为中心的 48³ 体素 world-frame latent(12³×48),c 为 10 维相机状态;环境演化在 3D 中预测而非像素中。</li>
+<li><strong>三组件耦合架构</strong>:world-frame 模型 $W_\theta$(rectified-flow DiT)、相机模型 $C_\theta$(1D causal transformer)、world-to-pixel 渲染 $P_\theta$(learned deferred shader),训练时独立、推理时组装,无需联合微调。</li>
+<li><strong>可微投影算子 R</strong>:可微光栅化(三角网格 + depth-peeling)把 world-frame 投影到任意视角,得到逐像素深度有序的体素特征栈 $\tilde{w}_{2D}$,桥接 3D 预测与 2D 渲染。</li>
+<li><strong>长程交互与结构化控制</strong>:600 帧不掉 FVD 饱和线、单图生成多样 3D 世界、中途编辑世界、屏外动态持续演化(agent 撞树、洞穴注水等涌现效果)。</li>
+</ol>
+
+<div class="callout key"><b>一句话定位</b>:Oasis/WorldMem 用「记忆过去的像素」对抗遗忘,PERSIST 用「维护一个 3D 世界」从根上消灭遗忘——状态不在帧里,在体素里。</div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究动机:像素历史的失败模式</h2>
+
+<h3>2.1 像素空间世界模型的三个结构性缺陷</h3>
+<p>现有交互式世界模型(以 Oasis、WorldMem 为代表)把「世界」存在像素历史中,要么是滑窗内的最近 K 帧,要么是检索出的关键帧集合。论文指出三个结构性问题:</p>
+<ol>
+<li><strong>遗忘不可避免</strong>:滑窗滑走、检索打分不高,状态就丢了。误差随帧数累积,FVD 从 200 帧到 600 帧单调恶化(Oasis 409→875)。</li>
+<li><strong>屏外即未知</strong>:像素观测的视场角有限,agent 转身或前进时,屏外区域没有任何信息载体。3D 空间中的实体(agent 走过撞过的树、注水的洞穴)一旦离开画面,再回来时模型只能「猜」。</li>
+<li><strong>像素空间的 3D 一致性是间接的</strong>:几何约束只能通过 attention 隐式学习,没有显式的空间载体,视角一致性(同一条河、同一棵树)依赖大量数据与容量。</li>
+</ol>
+
+<div class="callout warn"><b>关键假设</b>:世界状态本质上属于 3D 空间而非 2D 观测——只要把状态放进显式 3D 载体(world-frame 体素),遗忘问题就被结构性消除,而非用更长窗口/更聪明检索去「缓解」。这个假设的失效条件见 §16。</div>
+
+<h3>2.2 与记忆增强路线的分野</h3>
+<p>本库此前调研的 WorldMem(关键帧检索)与 CovRAG(覆盖最大化检索)属于「<strong>更好的检索</strong>」路线:承认状态在像素里,改进「取哪几帧」。PERSIST 属于「<strong>换载体</strong>」路线:状态根本不在像素里。两条路线的对比哲学与 Lyra 2.0 的「显式几何只做信息路由」同源——但 Lyra 路由的是视频 token,PERSIST 路由的是整个世界状态本身。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_Pipeline.png" alt="PERSIST 总体架构">
+<div class="caption"><b>图1</b> PERSIST 总体架构。交互循环中,world-frame 模型 W_θ 在体素 latent 空间预测环境演化,相机模型 C_θ 预测视角变化,投影算子 R 把 world-frame 投到当前视角,渲染器 P_θ 生成像素观测。三组件训练时独立,推理时组装。</div>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>问题形式化与符号表</h3>
+
+<h3>3.1 世界模型形式化</h3>
+<p>论文把交互式世界模型形式化为五元组 $E=\langle S, O, A, \Omega, p\rangle$:状态空间 S、观测空间 O、动作空间 A、初始状态分布 Ω、转移核 $p(s_{t+1}\mid s_t, a_t)$。智能体只观测 $o_t$,需从观测-动作历史推断状态。标准「世界模型」做法是学一个隐状态 $h_t$ 聚合历史;PERSIST 的关键改变是<strong>把隐状态结构化为 $\tilde{s}_t=\langle w_t, c_t\rangle$</strong>——环境部分 w(体素 latent)与相机部分 c(视角)显式解耦。</p>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>维度 / 说明</th></tr>
+<tr><td>$o_t$</td><td>像素观测</td><td>360×640 RGB</td></tr>
+<tr><td>$w_t$</td><td>world-frame latent(以 agent 为中心)</td><td>48³ 体素 → 3D-VAE 编码 → 12³×48</td></tr>
+<tr><td>$c_t$</td><td>相机状态</td><td>10 维 ⟨pos(3), rot(6d), fov(1)⟩</td></tr>
+<tr><td>$a_t$</td><td>动作(multi-hot)</td><td>23 维(移动/跳/挖/放/槽位/鼠标偏移)</td></tr>
+<tr><td>$z_t$</td><td>像素 latent</td><td>36×64×16(10px patch,2D-VAE)</td></tr>
+<tr><td>$W_\theta$</td><td>world-frame 模型</td><td>rectified flow DiT,预测 $w_{t+1}$</td></tr>
+<tr><td>$C_\theta$</td><td>相机模型</td><td>1D causal transformer + RoPE,预测 $c_{t+1}$</td></tr>
+<tr><td>$P_\theta$</td><td>world-to-pixel 渲染</td><td>learned deferred shader,从 $\tilde{w}_{2D}$ 生成 $o_{t+1}$</td></tr>
+<tr><td>$R(c,w)$</td><td>投影算子</td><td>$(\tilde{w}_{2D}, d)$(体素特征栈 + 深度)</td></tr>
+<tr><td>$\tilde{w}_{2D}$</td><td>投影后的体素特征栈</td><td>逐像素深度有序,通道维拼接体素特征</td></tr>
+<tr><td>$\tau$</td><td>flow 时间步</td><td>rectified flow 的噪声插值参数</td></tr>
+<tr><td>$V_\theta$</td><td>速度场(denoiser)</td><td>DiT 主干,学 $v(x^\tau,\tau)$</td></tr>
+</table>
+
+<h3>3.3 目标函数</h3>
+<p>World-frame 模型采用 rectified flow / conditional flow matching 目标(Eq. 1):</p>
+<div class="equation">
+$$\mathcal{L}(\theta)=\mathbb{E}_{t,x^0,x^1,\tau}\left[\left\|V_\theta(x^\tau,\tau)-\left(x^0-x^1\right)\right\|^2\right]$$
+<span class="tag">Eq. 1</span>
+</div>
+<p>其中 $x^1\sim\mathcal{N}(0,I)$ 为噪声,$x^\tau=\tau x^0+(1-\tau)x^1$ 为线性插值。推理时按 Euler 步(Eq. 2)$x^{\tau+\Delta}\leftarrow x^\tau+\Delta\,V_\theta(x^\tau,\tau)$ 迭代去噪,默认 20 步。世界模型演化即 Eq. 4:$\hat{w}_{t+1}=\text{denoise}_{W_\theta}(w_t,a_t)$。</p>
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>持久环境表示:World-Frame 架构</h2>
+
+<h3>4.1 状态设计的三个决策</h3>
+<div class="grid-3">
+<div class="card"><h4>以 agent 为中心</h4><p>体素窗口随 agent 移动,agent 永远在中心。好处:支持无限漫步,状态容量固定(48³);代价:窗口外的世界不维护——但已比像素滑窗大得多。</p></div>
+<div class="card"><h4>latent 而非原始体素</h4><p>48³ 体素经 3D-VAE(ResNet3d 主干,cross-entropy + KL 1e-6)压到 12³×48 latent,4³ 体素一个 patch。W_θ 在 latent 空间做 flow,计算量与像素空间解耦。</p></div>
+<div class="card"><h4>环境/相机解耦</h4><p>w 只装「世界」,相机状态 c 独立(⟨pos, rot, fov⟩ 10 维)。视角变化不污染环境状态,回头/俯仰时 w 不动、只动 c——这是「持久」的第二重含义:视角无关性。</p></div>
+</div>
+
+<h3>4.2 观测编码双塔</h3>
+<div class="grid-2">
+<div class="card"><h4>2D-VAE(pixel 域)</h4><p>ViT 主干,MSE + KL 1e-6。360×640 像素 → 36×64×16 latent(10px patch)。服务于 P_θ 的像素重建与 DFoT 式 pixel-level 训练。</p></div>
+<div class="card"><h4>3D-VAE(voxel 域)</h4><p>ResNet3d 主干,重建用 cross-entropy(体素类别)+ KL 1e-6。48³ 体素 → 12³×48。服务于 W_θ 的 world-frame 训练。</p></div>
+</div>
+<p>双塔的意义:两个域各自有最合适的压缩失真权衡(像素 MSE 保连续外观,体素 CE 保离散类别),不必强行用一套 VAE 兼顾。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_voxels.png" alt="体素 world-frame 观测">
+<div class="caption"><b>图2</b> 以 agent 为中心的体素 world-frame 观测示例。环境状态显式存为 48³ 体素(图中为可视化解码),agent 始终处于窗口中心。</div>
+</div>
+
+<h3>4.3 四种交互模态</h3>
+<p>整套循环涉及四种输入模态,论文 Figure 1 中的四个子图分别给出直观示例:</p>
+<div class="grid-2">
+<div class="card" style="text-align:center"><img src="images/2603.03482/fig_voxel_frame.png" alt="体素帧" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">体素帧 w:48³ world-frame(GT 由引擎提供)</p></div>
+<div class="card" style="text-align:center"><img src="images/2603.03482/fig_camera.png" alt="相机状态" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">相机状态 c:10 维 ⟨pos, rot, fov⟩</p></div>
+<div class="card" style="text-align:center"><img src="images/2603.03482/fig_action.png" alt="动作" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">动作 a:23 维 multi-hot(移动/挖掘/放置/槽位/鼠标)</p></div>
+<div class="card" style="text-align:center"><img src="images/2603.03482/fig_pixel.png" alt="像素观测" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">像素观测 o:360×640 RGB 渲染</p></div>
+</div>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>三组件方法论:W/C/P 耦合</h2>
+
+<h3>5.1 组件划分与训练独立性</h3>
+<table>
+<tr><th>组件</th><th>结构</th><th>输入 → 输出</th><th>训练目标</th></tr>
+<tr><td><b>W_θ</b> world-frame 模型</td><td>rectified flow DiT(patch 2,12³ 输入,ape+raymap)</td><td>$w_t, a_t, c_t \to w_{t+1}$</td><td>CFM(Eq. 1)</td></tr>
+<tr><td><b>C_θ</b> 相机模型</td><td>1D causal transformer + RoPE</td><td>$c_{1:t}, a_t, z_{1:t} \to c_{t+1}$</td><td>残差回归(Δpitch/Δyaw/Δfov)</td></tr>
+<tr><td><b>P_θ</b> world-to-pixel</td><td>learned deferred shader(DiT)</td><td>$\tilde{w}_{2D}, c_{t+1} \to o_{t+1}$</td><td>VAE latent 重建 + flow</td></tr>
+</table>
+
+<div class="callout key"><b>设计核心:训练独立、推理组装</b>。三个组件各自用自监督目标在大规模轨迹数据上独立训练,推理时按 $\hat{w}_{t+1}=W(w_t,a_t,c_t)$ → $\hat{c}_{t+1}=C(c_{1:t},a_t)$ → $R(\hat{c}_{t+1},\hat{w}_{t+1})$ → $\hat{o}_{t+1}=P(\tilde{w}_{2D})$ 串联,无需任何联合微调。这大幅简化了训练工程:每个组件可以独立迭代、独立缩放。</div>
+
+<h3>5.2 world-frame 模型 W_θ 细节</h3>
+<p>DiT 在 12³ latent 上做 rectified flow。条件注入方式:动作 $a_t$(23 维 multi-hot)与相机 $c_t$ 经 MLP 后作为 cross-attention 条件;latent 位置用 3D APE(voxel_use_ape=True);投影特征栈输入时开启 pixel_use_raymap(每像素射线方向可学嵌入)。去噪默认 20 步,σ_min=1e-5。</p>
+
+<div class="note">源码印证(<code>pipelines/persist_S_pipeline/pipeline.json</code>):voxel_sampler 配置 <code>{"noise_cond":0.1,"sigma_min":1e-5,"steps":20,"rescale_t_inference":3.0,"min_noise_level_inference":0.02}</code> 与论文 Table 9 完全吻合——η=3(rescale_t_inference)、τ_ctx=0.02(min_noise_level_inference)、10% flat 噪声增强(noise_cond 0.1)逐项对上。pixel_sampler 同构,唯 min_noise_level_inference=0.1。</div>
+
+<h3>5.3 相机模型 C_θ 细节</h3>
+<p>10 维相机状态 ⟨pos(3), rot(6d), fov(1)⟩ 经重参数化后,<strong>只预测残差 ⟨Δpitch, Δyaw, Δfov⟩</strong>(不预测位置与 roll)。1D causal transformer 沿时间轴 RoPE,吃相机历史 + 动作 + 像素 latent 历史。源码 <code>models/camera_transformer.py</code> 的 <code>predict_next_camera</code> 中 GAIN_PITCH=3.6、GAIN_YAW=6.4,delta 输出为分类式(乘增益),pitch clamp 到 [1e-8, 180-1e-8] 防极点退化。</p>
+
+<h3>5.4 world-to-pixel 渲染 P_θ 细节</h3>
+<p>learned deferred shader:先由投影算子 R 得到逐像素深度有序的体素特征栈 $\tilde{w}_{2D}$(每个像素位置的可见体素特征序列),P_θ 在此 2D 特征栈上用 DiT 直接生成像素 latent 再解码。相比体素→mesh→神经渲染的物理管线,learned shader 允许模型自学「如何从体素特征画像素」,避免显式纹理/材质建模。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_renderer.png" alt="渲染器结构">
+<div class="caption"><b>图3</b> world-to-pixel 渲染器。投影算子 R 输出深度有序特征栈,P_θ(learned deferred shader)从特征栈生成像素。</div>
+</div>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>投影算子 R:可微光栅化桥接</h2>
+
+<h3>6.1 为什么需要投影算子</h3>
+<p>W_θ 在体素 latent 空间演化,P_θ 在像素空间渲染——两者之间需要一个<strong>可微、视角条件化、深度有序</strong>的桥接。R(c,w) 把 world-frame 投影到相机 c 的视角:</p>
+<div class="equation">
+$$R(c, w) = (\tilde{w}_{2D}, d), \quad \tilde{w}_{2D} = \text{Rasterize}(w; c)$$
+<span class="tag">Eq. 5</span>
+</div>
+<p>输出 $\tilde{w}_{2D}$ 是逐像素的体素特征栈(沿视线方向按深度排序),d 是对应深度。深度有序很关键:遮挡关系显式编码在特征栈的排序里,渲染器不需要隐式学遮挡。</p>
+
+<h3>6.2 实现:三角网格 + depth-peeling</h3>
+<p>体素块转三角网格后用可微光栅化渲染,depth-peeling 逐层剥离得到多图层特征栈(max_layers=32)。源码 <code>utils/voxel_rasterizer.py</code> 的 <code>VoxelMeshRasterizer(dim=16, width=256, height=256, max_layers=32)</code>,<code>rasterize_voxel_peeling</code> 调 nvdiffrast 的 <code>dr.DepthPeeler</code>;<code>screen_depth_to_view_space_depth</code> 实现视图空间深度换算 $z_{view}=-p_{23}/(z_{ndc}+p_{22})$。</p>
+
+<div class="grid-2">
+<div class="card"><h4>可微性收益</h4><p>光栅化可微 → 梯度可以从像素损失回传到体素 latent,端到端训练 P_θ 时 world-frame 表征被反向塑形。</p></div>
+<div class="card"><h4>持久性收益</h4><p>R 是纯函数、无参数、不依赖历史帧——同一 w 在任意视角 c 下可重复投影,「记忆」由 w 单点持有,与视角解耦。</p></div>
+</div>
+
+<div class="figure">
+<img src="images/2603.03482/fig_rotate_rgb.png" alt="同 w 多视角重投影">
+<div class="caption"><b>图4</b> 同一 world-frame latent 在不同相机视角下的重投影。视角变化时 w 不变,只变 c 与 R(c,·)——状态持久性的直观展示。</div>
+</div>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>暴露偏置缓解:Diffusion Forcing + 噪声增强</h2>
+
+<h3>7.1 问题:自回归暴露偏置</h3>
+<p>推理时 W_θ 吃自己生成的 $w_t$(带误差),训练时吃真值 $w_t$(无误差)——经典暴露偏置(exposure bias),误差逐帧复合。PERSIST 用两层机制缓解:</p>
+<ol>
+<li><strong>Diffusion Forcing(DFoT)</strong>:训练时给条件帧的 latent 注入随机强度噪声 $\sigma\sim[0,1]$(而非全噪声或全干净),模型学会在任意噪声水平下去噪。推理时用 <strong>noise floor τ_ctx</strong> 保持条件帧带少量噪声:W_θ 的 τ_ctx=0.02,P_θ 的 τ_ctx=0.1,匹配「生成帧 vs 条件帧」的分布差。</li>
+<li><strong>10% flat 噪声增强</strong>:条件 latent 与 10% 高斯噪声线性混合,<code>cond = (1-0.1)·latent + 0.1·noise</code>(源码 <code>train_scripts/train_diffuser_voxel.py</code> 中 <code>cond["pixel_latents"] = (1-noise_cond)*batch["pixel"] + noise_cond*noise_pix</code> 的 voxel 侧对应实现)。这比 DFoT 更粗但极廉价,进一步抹平自回归分布偏移。</li>
+</ol>
+
+<div class="callout tip"><b>参数对照(论文 Table 9 ↔ 发布配置,已交叉验证)</b>:σ_min=1e-5;去噪步数 20;η(rescale_t_inference)=3.0;τ_ctx:W=0.02 / P=0.1;噪声增强系数 noise_cond=0.1。注意 <code>trainers/flow_euler.py</code> 中 DiffusionForcingArgs 默认 noise_cond=0.015 是 DFoT 内部的噪声表参数,与推理增强的 0.1 是两回事——读源码时不要混淆。</div>
+
+<h3>7.2 与 KV cache 的关系</h3>
+<p>W_θ 与 P_θ 推理时维护 causal KV cache(<code>reset_and_warmstart_kv_caches</code>),单帧循环不重算历史注意力;DFoT 噪声只作用于当前帧的条件拼接,不影响 cache 的复用。这是 PERSIST-S 能做到 2/4-step 886ms/帧的工程前提之一。</p>
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>算法整体逻辑图</h2>
+
+<div class="mermaid">
+flowchart TB
+    subgraph INIT["初始化(可选 warm start)"]
+        A0["初始观测 o_0<br/>(单图 / 重建)"] --> A1["3D-VAE 编码 + w_0 生成<br/>(flow 采样或 +w0 显式)"]
+        A1 --> A2["world-frame w_0"]
+    end
+    subgraph LOOP["自回归交互循环 (t → t+1)"]
+        B1["动作 a_t<br/>23 维 multi-hot"] --> B2
+        A2 --> B2["W_θ: flow 去噪 20 步<br/>预测 w_t+1 | w_t, a_t, c_t"]
+        B2 --> B3["C_θ: 残差预测<br/>c_t+1 = c_t + Δpitch/Δyaw/Δfov"]
+        B3 --> B4["R: 可微光栅化 + depth-peeling<br/>(w̃_2D, d) = R(c_t+1, w_t+1)"]
+        B4 --> B5["P_θ: learned deferred shader<br/>像素 latent flow → o_t+1"]
+        B5 --> B6["下一帧输入<br/>(w, c, KV cache 前移)"]
+        B6 -.-> B2
+    end
+    B5 --> OUT["600+ 帧<br/>FVD 不饱和 / 屏外持续演化"]
+</div>
+
+<p>读图要点:① 整个循环里<strong>没有检索、没有历史帧缓存</strong>——状态全在 w 与 KV cache 里;② R 是无参数纯函数,不参与训练目标,只做视角投影;③ W_θ 与 P_θ 各自 flow 去噪,两级扩散串联但梯度不互通(训练独立)。</p>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>实验设置:Luanti 平台与数据规模</h2>
+
+<h3>9.1 平台与数据</h3>
+<div class="stat-row">
+  <div class="stat"><div class="v">~40M</div><div class="l">交互(动作-观测对)</div></div>
+  <div class="stat"><div class="v">~100K</div><div class="l">轨迹</div></div>
+  <div class="stat"><div class="v">460 h</div><div class="l">总时长 @24 Hz</div></div>
+  <div class="stat"><div class="v">48³</div><div class="l">体素观测窗口</div></div>
+</div>
+<p>数据来自 <strong>Luanti</strong>(开源体素游戏引擎,原 Minetest)上通过 <strong>Craftium</strong> 采集:记录玩家 trajectory 的像素观测(360×640)、体素 world-frame(GT,用于 W_θ 监督)、相机状态、23 维动作。<strong>GT 3D 监督是 PERSIST 的特权也是枷锁</strong>——体素世界由引擎直接给出,W_θ 学的是真实状态转移;但这也把方法绑死在可提供 GT 体素的模拟器上(见 §16)。</p>
+
+<h3>9.2 评测协议</h3>
+<p>FVD 在 200/400/600 帧三个时长上计算(256 帧参考分布),主表报告 FVD;人评 4 维度(视觉保真 VF / 3D 一致性 / 时序一致性 / Overall,1-5 分);推理速度在单张 A100 上测。消融与基线在同协议下对比。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_UI.png" alt="交互界面">
+<div class="caption"><b>图5</b> 人机交互评测界面(UI)。玩家实时操控 agent,模型逐帧生成观测,用于人评与涌现行为观察(附录 Figure 9)。</div>
+</div>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>基线与消融设置</h2>
+
+<h3>10.1 基线</h3>
+<table>
+<tr><th>方法</th><th>世界表示</th><th>记忆机制</th><th>备注</th></tr>
+<tr><td><b>Oasis</b>(Decart, 2024)</td><td>像素隐状态</td><td>滑窗(最近帧)</td><td>交互式像素世界模型开山作,无 3D 载体</td></tr>
+<tr><td><b>WorldMem</b>(Xiao, 2025)</td><td>像素隐状态</td><td>关键帧检索(空间+时间+周期打分)</td><td>检索增强路线代表;长视频评测常超时未报全</td></tr>
+</table>
+<p>两个基线恰好覆盖「什么都不记(滑窗)」与「聪明地记(检索)」两端,PERSIST 作为「3D 状态持久化」第三条路线参战。</p>
+
+<h3>10.2 消融变体</h3>
+<table>
+<tr><th>变体</th><th>改动</th><th>目的</th></tr>
+<tr><td><b>PERSIST-S</b></td><td>3D-S denoiser(8× 更少空间 token)</td><td>效率档:验证架构在低算力下的保持度</td></tr>
+<tr><td><b>No-3D-Upscale</b></td><td>去掉 3D 上采样</td><td>定位 3D 上采样对渲染质量的贡献</td></tr>
+<tr><td><b>Camera-GT</b></td><td>相机用 GT 而非 C_θ 预测</td><td>分离「环境预测误差」与「相机预测误差」</td></tr>
+<tr><td><b>PERSIST + w0</b></td><td>推理时显式给定/编辑 w0</td><td>展示结构化初始化与编辑能力</td></tr>
+</table>
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>主结果:FVD 与长程稳定性</h2>
+
+<h3>11.1 FVD 主表(Table 1)</h3>
+<table>
+<tr><th>方法</th><th>FVD@200</th><th>FVD@400</th><th>FVD@600</th><th>600 帧相对 200 帧恶化</th></tr>
+<tr class="fail"><td>Oasis</td><td>409</td><td>687</td><td>875</td><td>+114%</td></tr>
+<tr><td>WorldMem</td><td>358</td><td>−</td><td>−</td><td>未报全</td></tr>
+<tr><td>No-3D-Upscale</td><td>216</td><td>231</td><td>247</td><td>+14%</td></tr>
+<tr><td>Camera-GT</td><td>161</td><td>152</td><td>152</td><td>−6%(饱和)</td></tr>
+<tr><td>PERSIST-S</td><td>159</td><td>170</td><td>179</td><td>+13%</td></tr>
+<tr><td>PERSIST</td><td>129</td><td>141</td><td>148</td><td>+15%</td></tr>
+<tr class="best"><td>PERSIST + w0</td><td>80</td><td>93</td><td>104</td><td>+30%</td></tr>
+</table>
+
+<h3>11.2 三个关键读数</h3>
+<ol>
+<li><strong>长程稳定性</strong>:Oasis 600 帧恶化 +114%,PERSIST 仅 +15%——持久状态确实结构性抑制误差累积。Camera-GT 甚至随帧数略降(152 饱和线),说明剩余误差主要来自相机预测而非环境演化。</li>
+<li><strong>w0 的杠杆</strong>:显式给定/编辑 w0 把 FVD 从 129 砍到 80(−38%)——世界状态的「起點」质量对下游一切都有杠杆效应,这是像素模型无法提供的控制接口。</li>
+<li><strong>WorldMem 未报全</strong>:400/600 帧缺失(长时评测超时/超内存),侧面反映检索路线在超长程的工程困难;PERSIST 状态大小恒定(O(1) 空间),天然不受帧数影响。</li>
+</ol>
+
+<div class="figure">
+<img src="images/2603.03482/fig_fid_vs_t_wmshift.png" alt="FVD 随帧数变化">
+<div class="caption"><b>图6</b> FVD 随生成帧数的演变。Oasis 单调恶化,PERSIST 系列稳定在低水平;w0 显式初始化再降一档。</div>
+</div>
+
+<div class="figure">
+<img src="images/2603.03482/fig_compare_87.jpg" alt="600 帧定性对比">
+<div class="caption"><b>图7</b> 600 帧长程定性对比(论文 Figure 5)。PERSIST(上)在长程后仍保持结构一致,Oasis / WorldMem(中/下)出现明显几何崩坏与场景遗忘。</div>
+</div>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>人评与推理速度</h2>
+
+<h3>12.1 人评(Table 2,1-5 分)</h3>
+<table>
+<tr><th>方法</th><th>视觉保真 VF</th><th>3D 一致性</th><th>时序一致性</th><th>Overall</th></tr>
+<tr class="fail"><td>Oasis</td><td>2.1</td><td>1.9</td><td>1.8</td><td>1.9</td></tr>
+<tr class="fail"><td>WorldMem</td><td>1.7</td><td>1.7</td><td>1.5</td><td>1.5</td></tr>
+<tr><td>PERSIST-S</td><td>2.8</td><td>2.7</td><td>2.5</td><td>2.6</td></tr>
+<tr><td>PERSIST</td><td>2.8</td><td>2.5</td><td>2.5</td><td>2.6</td></tr>
+<tr class="best"><td>PERSIST + w0</td><td>3.2</td><td>2.8</td><td>2.8</td><td>3.0</td></tr>
+</table>
+<p>人评与 FVD 排序一致;PERSIST 系列在 3D 一致性维度对两个基线的领先幅度最大(S 档 +0.8 vs Oasis)——3D 载体直接兑现为感知层面的几何一致性。值得注意的是 WorldMem 人评反而低于 Oasis,提示检索注入的帧可能引入风格跳变等感知瑕疵(FVD 之外的维度)。</p>
+
+<h3>12.2 人评分布(附录 A3,头对头对比)</h3>
+<p>附录给出逐维度头对头分布(h2h 四联):PERSIST 对 Oasis 的优势在 3D 一致性与时序一致性两个维度最显著,视觉保真度上差距较小——与「3D 载体 → 3D 一致性」的因果叙事吻合。</p>
+<div class="grid-2">
+<div class="card" style="text-align:center"><img src="images/2603.03482/h2h_h2h_metric_a.png" alt="视觉保真头对头" style="max-width:100%;border-radius:8px"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">(a) 视觉保真度分布</p></div>
+<div class="card" style="text-align:center"><img src="images/2603.03482/h2h_h2h_metric_b.png" alt="3D 一致性头对头" style="max-width:100%;border-radius:8px"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">(b) 3D 空间一致性分布</p></div>
+<div class="card" style="text-align:center"><img src="images/2603.03482/h2h_h2h_metric_c.png" alt="时序一致性头对头" style="max-width:100%;border-radius:8px"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">(c) 时序一致性分布</p></div>
+<div class="card" style="text-align:center"><img src="images/2603.03482/h2h_h2h_metric_d.png" alt="总体质量头对头" style="max-width:100%;border-radius:8px"><p style="font-size:13px;color:var(--text-dim);margin-top:6px">(d) 总体质量分布</p></div>
+</div>
+
+<h3>12.3 推理速度(Table 14,单 A100)</h3>
+<table>
+<tr><th>配置</th><th>ms/帧</th><th>FPS</th><th>FVD@200/400/600</th></tr>
+<tr><td>WorldMem</td><td>6387.1</td><td>0.16</td><td>358/−/−</td></tr>
+<tr><td>Oasis</td><td>3007.4</td><td>0.33</td><td>409/687/875</td></tr>
+<tr><td>PERSIST-S</td><td>2672.4</td><td>0.37</td><td>159/170/179</td></tr>
+<tr><td>PERSIST-S 4-step</td><td>~1330</td><td>~0.75</td><td>~略升</td></tr>
+<tr class="best"><td>PERSIST-S 2-step</td><td>886</td><td>1.13</td><td>207/230/244</td></tr>
+</table>
+<p>去噪步数 20→2(或 4)配合 KV cache 复用,单帧 886ms、3× 加速,FVD 仅从 159 升至 207(+30%,仍优于全部基线)——步数-FVD 曲线平缓,rectified flow 的直线路径性质使少步采样可行。但距离实时(≥8 FPS)仍有一个数量级差距。</p>
+
+<div class="callout warn"><b>GT 相机的反例(附录 A5,Figure 11)</b>:如果条件在 GT 相机轨迹上(相机与 world-frame 各自为政),会产生物理不一致——agent「穿墙」:相机轨迹穿过 world-frame 中的实体墙。这反向证明相机模型 C_θ 学到的是「与世界一致的相机运动」而非孤立的轨迹回归;也说明 PERSIST 的物理一致性来自 w 与 c 的耦合演化,而非任何一者单独。</div>
+<div class="figure">
+<img src="images/2603.03482/fig_camera_clip.jpg" alt="GT 相机穿墙">
+<div class="caption"><b>图8</b> GT 相机条件下的穿墙伪影。相机轨迹穿过 world-frame 中的实体墙——相机与状态解耦时物理一致性即丢失。</div>
+</div>
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>新能力:生成 / 编辑 / 屏外演化</h2>
+
+<h3>13.1 单图生成多样 3D 世界</h3>
+<p>从单张图 o_0 出发,W_θ 的 flow 采样可生成多个不同的 w_0(3D 世界的「幻想补全」),再进入交互循环。这是像素自回归模型做不到的:像素模型从单图只能走一条轨迹,而 PERSIST 把「世界的不确定性」从时序维度搬到了 3D 结构维度——一次采样定型一个世界,之后该世界内交互是确定的。</p>
+
+<p>初始化有两种模式(论文 Figure 3):仅单 RGB 帧(,第一行,模型自行采样补全 w_0),或 RGB + 世界帧联合初始化( + ,第二行,GT/显式给定 w_0)。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_qual.jpg" alt="初始化模式定性对比">
+<div class="caption"><b>图9</b> 两种初始化模式的定性对比。行 1:单 RGB 初始化,w_0 由模型采样(多样但可能偏离 GT);行 2:RGB + w_0 联合初始化,世界帧直接对齐真值。</div>
+</div>
+
+<div class="figure">
+<img src="images/2603.03482/fig_w0_generations.png" alt="单图多世界生成">
+<div class="caption"><b>图10</b> 同一初始观测 o_0 采样出的多个 w_0 及其对应渲染。多样性体现在 3D 结构(地形/建筑布局)而非仅纹理。</div>
+</div>
+
+<h3>13.2 中途世界编辑</h3>
+<p>w 是结构化张量(体素 latent),可以在任意时刻显式改写(增删建筑、改地形),后续帧立即生效且持续保持。编辑接口天然存在,无需为编辑设计专门机制——这是「状态在显式载体里」的直接红利。对照:像素模型的编辑需要专门训练 inversion/editing 模块。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_edits_single.jpg" alt="世界编辑">
+<div class="caption"><b>图11</b> 中途编辑示例。对 w 直接修改后,后续生成持续保持编辑结果(视角变化、时间推进后仍一致)。</div>
+</div>
+
+<h3>13.3 屏外动态持续演化</h3>
+<p>最有说服力的能力:agent 在 A 处撞倒树/注水洞穴,走远再回来,变化仍在——因为演化发生在 3D 状态里而非观测里。论文展示了洞穴注水、树被撞倒等案例;这类「屏外因果」是滑窗与检索模型原理上无法保证的(除非恰好检索到相关帧)。</p>
+
+<div class="figure">
+<img src="images/2603.03482/fig_dynamic.jpg" alt="屏外动态演化">
+<div class="caption"><b>图12</b> 屏外动态演化。agent 离开视野后世界事件仍在 world-frame 中演化,返回后观测到累积结果。</div>
+</div>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>同类方法横向对比</h2>
+
+<table>
+<tr><th>维度</th><th>Oasis(2024)</th><th>WorldMem(2025)</th><th>CovRAG(2026)</th><th>PERSIST(2026)</th></tr>
+<tr><td><b>世界表示</b></td><td>像素隐状态</td><td>像素隐状态 + 检索库</td><td>像素隐状态 + 覆盖检索</td><td><b>显式 3D 体素 latent</b></td></tr>
+<tr><td><b>记忆机制</b></td><td>滑窗(被动)</td><td>关键帧检索(打分)</td><td>贪婪集合覆盖选帧</td><td><b>状态持久化(无需检索)</b></td></tr>
+<tr><td><b>状态空间复杂度</b></td><td>O(K) 窗口帧</td><td>O(库大小)</td><td>O(库大小)</td><td><b>O(1) 恒定 48³</b></td></tr>
+<tr><td><b>屏外世界维护</b></td><td>✗</td><td>仅被检索到的帧</td><td>仅被检索到的帧</td><td><b>✓ 持续演化</b></td></tr>
+<tr><td><b>3D 一致性来源</b></td><td>隐式 attention</td><td>隐式 + 检索锚点</td><td>显式几何做路由(VGGT warp)</td><td><b>显式 3D 状态本身</b></td></tr>
+<tr><td><b>编辑接口</b></td><td>✗(需 inversion)</td><td>✗</td><td>✗</td><td><b>✓ 直接改 w</b></td></tr>
+<tr><td><b>单图→多世界</b></td><td>✗(单轨迹)</td><td>✗</td><td>✗</td><td><b>✓ w_0 多采样</b></td></tr>
+<tr><td><b>GT 3D 监督需求</b></td><td>不需要</td><td>不需要</td><td>深度估计器(VGGT)</td><td><b>需要引擎 GT 体素</b></td></tr>
+<tr><td><b>600 帧 FVD</b></td><td>875</td><td>−</td><td>−</td><td><b>148(w0: 104)</b></td></tr>
+<tr><td><b>推理速度</b></td><td>3007 ms/帧</td><td>6387 ms/帧</td><td>−</td><td>2672(2-step: 886)ms/帧</td></tr>
+</table>
+
+<h3>14.1 定位与演进逻辑</h3>
+<p>四篇构成一条清晰的演进线:<strong>Oasis(什么也不记)→ WorldMem(记关键帧)→ CovRAG(聪明地选帧)→ PERSIST(把状态搬进 3D,不再需要记)</strong>。前三篇共享「状态在像素里」前提,在检索轴上内卷;PERSIST 换掉了前提本身。CovRAG 用 VGGT 深度做检索路由,已经引入显式几何,但几何只服务于「选哪帧」;PERSIST 让几何成为状态本身——与 Lyra 2.0「显式几何做信息路由」vs「几何即状态」的分野完全同构。</p>
+
+<div class="callout key"><b>库内交叉链接</b>:<a href="3D-20260827-R2MBench.html">R2M-Bench</a>(重访记忆评测——PERSIST 的屏外演化正对 R2M-Bench 的 re-visit 协议,未来工作可用它量化「持久性」)、<a href="3D-20260601-CovRAG.html">CovRAG</a>(检索路线极致)、<a href="3D-20260414-Lyra2.html">Lyra 2.0</a>(几何路由哲学对照)、<a href="3D-20260903-OctWorld.html">OctWorld</a>(同样用八叉/体素离散化世界的生成范式)。另有直接代码亲缘:PERSIST 仓库 <code>utils/camera_util.py</code> 内置 <code>worldmem_cam_to_minetest_cam</code> 与 WorldMem 相机坐标对齐——两团队评测协议互通。</div>
+
+<h3>14.2 各自的适用边界</h3>
+<ul>
+<li><strong>有 GT 3D 的模拟环境</strong>(游戏/机器人仿真):PERSIST 范式完胜——状态转移直接监督,屏外演化、编辑、O(1) 状态全兑现。</li>
+<li><strong>真实世界视频(无 GT 3D)</strong>:PERSIST 目前不可行(GT 体素无从获得),检索路线(WorldMem/CovRAG)仍是唯一选项;除非未来用重建模型造伪 GT。</li>
+<li><strong>评测端</strong>:R2M-Bench 的 re-visit 协议恰好能量化 PERSIST 声称的屏外持久性,是天然搭配。</li>
+</ul>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>应用启发与改进方向</h2>
+
+<h3>15.1 对本库相关方向的启发</h3>
+<div class="grid-2">
+<div class="card"><h4>vggt_human pipeline</h4><p>「状态持久化 vs 检索」的取舍对多目持久重建有直接启发:head_gs/body_gs/scene_gs 的拆分本质上也是「把状态放进显式 3D 载体」,PERSIST 验证了 latent 体素 + 可微光栅化投影的组合可以端到端维护——多-session 人体重建的「跨 session 状态持久」可借鉴此架构(W 为持久人体/场景 gaussians,R 为可微渲染)。</p></div>
+<div class="card"><h4>世界模型评测</h4><p>PERSIST 的 FVD 三时长协议(200/400/600)+ 人评四维是可复用的评测骨架;R2M-Bench 的 re-visit 协议补上「屏外持久性」维度,两者合用可构成交互式世界模型的完整评测矩阵。</p></div>
+</div>
+
+<h3>15.2 论文自身的改进方向</h3>
+<ol>
+<li><strong>摆脱 GT 3D 依赖</strong>:用大规模重建(VGGT/3DGS 类)从真实视频造伪体素监督,是走向真实世界的关键一步;风险是伪 GT 的噪声会直接污染 W_θ 的转移学习。</li>
+<li><strong>突破 48³ 有限区域</strong>:分层体素(近处细、远处粗)或无限平铺 world-frame;48³ 对 Minecraft 类游戏够用,对开放世界不够。</li>
+<li><strong>实时化</strong>:886ms/帧距实时还差一个量级;蒸馏单步 flow、量化、P_θ 与 W_θ 的双扩散串联改单级,是明确路径。</li>
+<li><strong>非体素场景</strong>:体素离散化天然适配 Minecraft 类世界;连续场景(室内/城市)需换 NeRF/Gaussian 类连续载体——P_θ 的 learned deferred shader 倒是载体无关的。</li>
+</ol>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>局限与展望</h2>
+
+<h3>16.1 论文自认局限</h3>
+<ul>
+<li><strong>需 GT 3D 监督</strong>:W_θ 的转移学习依赖引擎提供的真值体素;真实世界视频无法直接使用。</li>
+<li><strong>有限 3D 区域</strong>:48³ 窗口外的世界不维护(比像素滑窗好,但非无限)。</li>
+<li><strong>未达实时</strong>:最快 886ms/帧(1.13 FPS),交互体验受限。</li>
+</ul>
+
+<h3>16.2 关键假设的失效条件</h3>
+<div class="callout warn"><b>假设失效边界</b>:「状态属于 3D 空间」这一前提在以下情形失效——① 世界状态不可完全体素化(流体细节、非刚性形变、光照);② 观测与体素窗口错位(agent 快速移动时 48³ 跟不上);③ 需要无限记忆(走出窗口的世界仍需召回)。此外 600 帧 FVD 仍有 +15% 恶化,说明 latent 舍入误差也在缓慢累积——持久 ≠ 无损。</div>
+
+<h3>16.3 2000 步长程伪影与自恢复(附录 A5,Figure 13)</h3>
+<p>论文附录展示了一段 2000 步(83 秒)episode 的伪影演化:3D 表示发生局部漂移,单个方块被「复制/涂抹」到邻近区域;但模型随后自我恢复,漂移区域被重新去噪收敛。这说明伪影不是单向累积的雪崩,而是「漂移—恢复」的动态平衡——DFoT 噪声下界与 KV cache 的组合给了模型持续纠错的余地。下面按时间顺序截取 8 帧(s00 → s83,秒):</p>
+<div class="grid-2">
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s00.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s00(t=0s):episode 起点,结构完好</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s28.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s28(t≈11.7s):局部方块开始漂移</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s37.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s37(t≈15.4s):漂移区域扩大,出现涂抹</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s54.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s54(t≈22.5s):伪影明显的低谷期</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s55.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s55:随后开始自恢复</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s69.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s69(t≈28.8s):漂移区域被重新收敛</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s70.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s70:恢复持续,结构回归</p></div>
+<div class="card" style="text-align:center;padding:10px"><img src="images/2603.03482/lim_s83.png" style="max-width:100%;border-radius:6px"><p style="font-size:12.5px;color:var(--text-dim);margin-top:4px">s83(t≈34.6s):episode 末尾,伪影已消散</p></div>
+</div>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结:团队资源与库内定位</h2>
+
+<h3>17.1 团队与资源</h3>
+<ul>
+<li><strong>机构</strong>:Mila - Quebec AI Institute × Université de Montréal × McGill(Christopher Pal 组,含 Artem Kaznatcheev、Louis-Félix Chevigné 等)。</li>
+<li><strong>代码</strong>:GitHub <code>francelico/PERSIST</code>(PyTorch,含 pipeline.json 发布配置、KV cache 加速、PERSIST-S 变体;本笔记所有源码引用均出自该仓库)。</li>
+<li><strong>项目页</strong>:francelico.github.io/PERSIST(视频、交互 demo)。</li>
+<li><strong>数据平台</strong>:Luanti(开源体素引擎)+ Craftium 采集栈,~40M 交互开源。</li>
+</ul>
+
+<h3>17.2 库内定位一句话</h3>
+<div class="callout key"><b>定位</b>:「记忆检索/3D 世界模型」赛道四篇的收束点——Oasis→WorldMem→CovRAG 在检索轴内卷,PERSIST 换载体终结内卷;它的三个组件(W 状态演化 / R 可微投影 / P learned shader)是「显式 3D 状态 + 学习渲染」架构的最小完整参照系,对 vggt_human 的多 session 持久重建与 R2M-Bench 的屏外评测都有直接接口价值。</div>
+
+<div class="tag-row">
+<span class="tag">#世界模型</span><span class="tag">#持久3D状态</span><span class="tag">#RectifiedFlow</span><span class="tag">#DiT</span><span class="tag">#可微光栅化</span><span class="tag">#DiffusionForcing</span><span class="tag">#体素世界</span><span class="tag">#Luanti/Craftium</span><span class="tag">#ICML2026</span>
+</div>
+
+<div class="note">调研材料:arXiv v2(2026-06-03)全文 + GitHub 仓库源码逐文件验证(28 张配图全数下载,IEND/JPEG 校验通过)。论文 Table 9 超参与发布 pipeline.json 逐项吻合——本笔记属于「源码印证论文」案例,未发现论文-代码矛盾;所有 file:line 引用可回溯至 francelico/PERSIST。</div>
+</section>
+
+<footer class="footer">
+<p>调研笔记 · 生成于 2026-09-21 · arXiv:2603.03482 v2 · <a href="index.html">返回索引</a></p>
+</footer>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'loose'})</script>
+</body>
+</html>
