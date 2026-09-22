@@ -172,8 +172,10 @@ N+10. 👥 研究团队 + 🔗 资源链接
 |---|---|---|
 | `3D-` | 3D 重建/生成/人体/高斯 | `3D-20241002-EVA-Gaussian.html` |
 | `VideoGen-` | 视频生成模型 | `VideoGen-20250326-Wan2.1.html` |
+| `ImageGen-` | 图像生成模型(扩散/蒸馏/文生图) | `ImageGen-20240523-DMD2.html` |
+| `WorldModel-` | 世界模型(学环境动力学生成多模态内容) | `WorldModel-20260625-Cosmos3.html` |
 | `SR-` | 超分辨率/图像修复 | `SR-20250728-HYPIR.html` |
-| `CV-AI-` | 通用 CV/AI | `CV-AI-20260625-Cosmos3.html` |
+| `Meta-` | 方法论/知识库自身建设 | `Meta-20260813-用AI做论文调研经验分享.html` |
 
 - **Name**:有英文短名用英文(`Wan2.1`、`EVA-Gaussian`、`VGGT`);综述/调研用中文并以 `综述`/`调研`/`思路辨析` 结尾(`前馈3D重建模型综述.html`)。
 - **日期**:论文 arXiv 提交日期(如 `20250326`);综述用编撰日期。

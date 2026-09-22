@@ -185,7 +185,7 @@
 <div class="grid grid-3">
   <div class="card"><div class="num-big">63</div><p>篇调研笔记(index 编号 1–63)</p></div>
   <div class="card"><div class="num-big">63</div><p>个自包含 HTML 文件</p></div>
-  <div class="card"><div class="num-big">4</div><p>大领域:VideoGen / 3D / SR / CV-AI</p></div>
+  <div class="card"><div class="num-big">6</div><p>大领域:VideoGen / 3D / SR / ImageGen / WorldModel / Meta</p></div>
 </div>
 <p>从 git log 看,合作经历了清晰的三个阶段:</p>
 <table>
@@ -294,7 +294,7 @@ flowchart TD
 <table>
   <tr><th>模块</th><th>内容</th><th>为什么重要</th></tr>
   <tr><td>① 工作流</td><td>5 步:输入解析→并行抓取→子代理深读→框图→分点解析</td><td>让 AI 知道"先做什么后做什么",不会跳步</td></tr>
-  <tr><td>② 文件命名</td><td><code>PREFIX-YYYYMMDD-Name.html</code>,4 个前缀(3D-/VideoGen-/SR-/CV-AI-)</td><td>排序即分类,日期即版本,一眼看出归属</td></tr>
+  <tr><td>② 文件命名</td><td><code>PREFIX-YYYYMMDD-Name.html</code>,前缀即领域(3D-/VideoGen-/SR-/ImageGen-/WorldModel-/Meta-)</td><td>排序即分类,日期即版本,一眼看出归属</td></tr>
   <tr><td>③ HTML 样式</td><td><strong>全库唯一</strong>高端样式,Hero + 2 列目录 + 数字徽章标题 + Mermaid + MathJax</td><td>样式不再需要"选",消除双轨带来的分裂与错配</td></tr>
   <tr><td>④ 内容精度</td><td>四项硬要求:思路 / 算法逻辑 / 工程细节 / 同类方法对比</td><td>格式统一的重点是这四项,不是换皮</td></tr>
   <tr><td>⑤ 公式处理</td><td>三档:MathJax(默认)/ 纯文本 <code>.formula</code> / <code>&lt;code&gt;</code> 内联</td><td>按公式密度选,不必每篇都上 MathJax</td></tr>

@@ -700,7 +700,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="section" data-sid="vg-notes-3" data-cards="1">
         <h2>📖 业界最新视频生成模型调研 (2026-06-25 新增)</h2>
 
-        <div class="note-card" data-file="CV-AI-20260625-Cosmos3.html" data-kind="note" data-depth="standard"
+        <div class="note-card" data-file="WorldModel-20260625-Cosmos3.html" data-kind="note" data-depth="standard"
               data-topics="视频生成模型谱系" data-search="Cosmos 3: NVIDIA 全模态世界模型 World Model Omnimodal Mixture-of-Transformers Physical AI 16B / 64B NVIDIA 全模态世界模型家族，统一语言/图像/视频/音频/动作于单一 MoT 架构。R-Bench T2V 80.0 / I2V 82.8，Artificial Analysis 最佳开源 T2I/I2V。开源模型已超越所有闭源模型。">
             <h3>16. Cosmos 3: NVIDIA 全模态世界模型</h3>
             <div class="meta">
@@ -719,11 +719,11 @@ tr:nth-child(even) { background: var(--code-bg); }
                 <span class="tag">16B / 64B</span>
             </div>
             <p>NVIDIA 全模态世界模型家族，统一语言/图像/视频/音频/动作于单一 MoT 架构。R-Bench T2V 80.0 / I2V 82.8，Artificial Analysis 最佳开源 T2I/I2V。开源模型已超越所有闭源模型。</p>
-            <a href="CV-AI-20260625-Cosmos3.html">📖 阅读笔记</a>
+            <a href="WorldModel-20260625-Cosmos3.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2606.02800" target="_blank">📄 arXiv</a>
         </div>
 
-        <div class="note-card" data-file="CV-AI-20240523-DMD2.html" data-kind="note" data-depth="deep"
+        <div class="note-card" data-file="ImageGen-20240523-DMD2.html" data-kind="note" data-depth="deep"
               data-topics="质量速度权衡与实时" data-search="DMD2: 改进的分布匹配蒸馏用于快速图像合成 扩散蒸馏 少步生成 Distribution Matching TTUR GAN SDXL 4-step 少步扩散蒸馏的「分布匹配」路线成熟作:去回归损失(DMD1 需 700 A100·天 ODE 配对)+ TTUR(生成器每 5 步更新,critic 每步)+ fake UNet bottleneck 判别器 GAN + backward simulation 多步训练。ImageNet-64 单步 FID 1.28 超教师 EDM,SDXL 4 步 COCO FID 19.32 超教师 cfg=6,SD v1.5 单步 8.35。自训需 3 份 UNet + 64×A100×57h(SDXL);推理 4 前向 CFG=0。Lyra2 / ArtiFixer 的蒸馏阶段即此框架。">
             <h3>17. DMD2: 改进的分布匹配蒸馏用于快速图像合成</h3>
             <div class="meta">
@@ -744,7 +744,7 @@ tr:nth-child(even) { background: var(--code-bg); }
                 <span class="tag">SDXL 4-step</span>
             </div>
             <p>少步扩散蒸馏的「分布匹配」路线成熟作:去回归损失(DMD1 需 700 A100·天 ODE 配对)+ TTUR(生成器每 5 步更新,critic 每步)+ fake UNet bottleneck 判别器 GAN + backward simulation 多步训练。ImageNet-64 单步 FID 1.28 超教师 EDM,SDXL 4 步 COCO FID 19.32 超教师 cfg=6,SD v1.5 单步 8.35。自训需 3 份 UNet + 64×A100×57h(SDXL);推理 4 前向 CFG=0。Lyra2 / ArtiFixer 的蒸馏阶段即此框架。</p>
-            <a href="CV-AI-20240523-DMD2.html">📖 阅读笔记</a>
+            <a href="ImageGen-20240523-DMD2.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2405.14867" target="_blank">📄 arXiv</a>
             <a href="https://github.com/tianweiy/DMD2" target="_blank">💻 GitHub</a>
             <a href="https://huggingface.co/tianweiy/DMD2" target="_blank">🤗 HuggingFace</a>
@@ -942,7 +942,7 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://doubiiu.github.io/projects/DynamiCrafter" target="_blank">🌐 项目主页</a>
         </div>
 
-        <div class="note-card" data-file="CV-AI-20251112-Lumine.html" data-kind="note" data-depth="deep"
+        <div class="note-card" data-file="3D-20251112-Lumine.html" data-kind="note" data-depth="deep"
               data-topics="" data-search="Lumine:3D 开放世界通用智能体的开放配方 VLA 通用智能体 Genshin Impact 类人交互 Hybrid Thinking Qwen2-VL-7B W8A8 量化 长程任务 Lumine 用一个 7B VLM(Qwen2-VL-7B-Base)在《原神》里实时完成小时级任务:5 Hz 读原始像素、30 Hz 输出键鼠、hybrid thinking 自适应推理(平均间隔 3.2s)。三阶段训练配方:1731h 无标注预训练 + 200h 指令跟随(GPT-4.1 生成校验)+ 15h 推理;动作空间语言化(相对位移鼠标 ΔX/ΔY + 6 按键 chunk)不依赖任何游戏 API。蒙德第一幕 56 分钟通关(人类专家 53/新手 78),域内主线子任务成功率 93.4%(Table 5),零样本迁移到鸣潮(107min)/星穹铁道;推理侧 StreamingLLM + 无 draft 投机解码 + TP=4 + W8A8 实现 25.3× 延迟降低、首 chunk 113.9ms。">
             <h3>26. Lumine:3D 开放世界通用智能体的开放配方</h3>
             <div class="meta">
@@ -964,7 +964,7 @@ tr:nth-child(even) { background: var(--code-bg); }
                 <span class="tag">长程任务</span>
             </div>
             <p>Lumine 用一个 7B VLM(Qwen2-VL-7B-Base)在《原神》里实时完成小时级任务:5 Hz 读原始像素、30 Hz 输出键鼠、hybrid thinking 自适应推理(平均间隔 3.2s)。三阶段训练配方:1731h 无标注预训练 + 200h 指令跟随(GPT-4.1 生成校验)+ 15h 推理;动作空间语言化(相对位移鼠标 ΔX/ΔY + 6 按键 chunk)不依赖任何游戏 API。蒙德第一幕 56 分钟通关(人类专家 53/新手 78),域内主线子任务成功率 93.4%(Table 5),零样本迁移到鸣潮(107min)/星穹铁道;推理侧 StreamingLLM + 无 draft 投机解码 + TP=4 + W8A8 实现 25.3× 延迟降低、首 chunk 113.9ms。</p>
-            <a href="CV-AI-20251112-Lumine.html">📖 阅读笔记</a>
+            <a href="3D-20251112-Lumine.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2511.08892" target="_blank">📄 arXiv</a>
             <a href="https://www.lumine-ai.org/" target="_blank">🌐 项目主页</a>
         </div>
@@ -2279,7 +2279,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="section" data-sid="meta" data-cards="1">
         <h2>🛠️ 方法论与工作流</h2>
 
-        <div class="note-card" data-file="CV-AI-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
+        <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
             <h3>74. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
@@ -2298,7 +2298,7 @@ tr:nth-child(even) { background: var(--code-bg); }
                 <span class="tag">知识资产</span>
             </div>
             <p>基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成<strong>可累积、可检索、可复用</strong>的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
-            <a href="CV-AI-20260813-用AI做论文调研经验分享.html">📖 阅读笔记</a>
+            <a href="Meta-20260813-用AI做论文调研经验分享.html">📖 阅读笔记</a>
         </div>
 
     </div>
