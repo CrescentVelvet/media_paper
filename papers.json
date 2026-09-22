@@ -690,6 +690,63 @@
    ]
   },
   {
+   "title": "LiON-LoRA: 重思 LoRA 融合 — 向量空间三性质统一相机与运动控制",
+   "meta": [
+    "📄 arXiv: 2507.05678 (v1, 2025-07-08)",
+    "📅 2025-07-08",
+    "🏢 浙江大学 · 阿里达摩院 · 湖畔实验室",
+    "❌ 未开源"
+   ],
+   "tags": [
+    "Camera Control",
+    "LoRA Fusion",
+    "Norm Consistency",
+    "Scaling Token",
+    "CogVideoX",
+    "Motion Strength"
+   ],
+   "summary": "把 LoRA 融合从\"高层风格叠加\"下沉到\"低层相机控制\"。诊断出 vanilla 线性加权融合在相机轨迹上必然出现方向突变(各 LoRA 的 Frobenius 范数悬殊,一个模块压过另一个),且强度旋钮 λ 根本不是模型输入。解法两条:<strong>逐层范数归一</strong>(ΔŴ=α/‖ΔW‖·ΔW,零参数、一行除法)修融合稳定性;<strong>缩放 token</strong> 把运动幅度 S 经傅里叶编码拼入 token 序列,替代 λ 实现线性可伸缩;再以训练无关框架支持多轨迹与相机-物体混合控制。基于 CogVideoX、仅 4,000 步微调(rank 256,对手≥50,000 步)取得 RotErr 0.776 / ATE 0.295 / FVD 136.0 全面最优,但复杂轨迹 RotErr 1.044 输给 CamI2V 0.924。三处需注意:标题宣称的\"正交性\"只被观察、未被任何约束实现;仅覆盖 3 类离散相机原语,非任意轨迹;代码与补充材料均不可得。",
+   "links": [
+    {
+     "href": "VideoGen-20250708-LiON-LoRA.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2507.05678",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://fuchengsu.github.io/lionlora.github.io/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "VideoGen-20250708-LiON-LoRA.html",
+   "section": "vg-notes-2",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "相机控制与位姿条件"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
    "title": "Cosmos 3: NVIDIA 全模态世界模型",
    "meta": [
     "📄 arXiv: 2606.02800 (v4, 2026-06-23)",

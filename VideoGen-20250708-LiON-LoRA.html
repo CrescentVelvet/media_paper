@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiON-LoRA:重思 LoRA 融合 — 向量空间三性质统一相机与运动控制</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange); background:linear-gradient(90deg,rgba(251,146,60,0.08),var(--panel))}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card.left-bar{border-left:4px solid var(--accent)}
+  .card.left-bar.warn{border-left-color:var(--orange)}
+  .card.left-bar.red{border-left-color:var(--red)}
+  .card.left-bar.green{border-left-color:var(--green)}
+  .card h4{margin-top:0}
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:18px 0}
+  @media(max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center}
+  .stat .v{font-size:24px; font-weight:700; color:var(--accent)}
+  .stat .v.green{color:var(--green)}
+  .stat .l{color:var(--muted); font-size:13px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  tr.best td{background:rgba(52,211,153,0.08); color:var(--green); font-weight:600}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .uncertain{display:block; background:rgba(251,146,60,0.10); border-left:3px solid var(--orange);
+             padding:8px 14px; margin:10px 0; border-radius:6px; color:#fdba74; font-size:14px}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0; text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:8px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2507.05678v1) — 已本地化到 images/2507.05678/ -->
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2507.05678 · 2025 · 相机可控视频生成 · 📊 deep</span>
+    <h1>LiON-LoRA:重思 LoRA 融合 — 用向量空间三性质统一相机与运动控制</h1>
+    <p class="subtitle">把 LoRA 融合从"高层风格叠加"下沉到"低层相机控制"。核心判断:vanilla 的线性加权融合 $\Delta W=\sum_i\lambda_i\Delta W_i$ 用于高层的风格/主体编辑没问题,但用于低层相机轨迹必然出现<em>突变</em>与<em>不可线性调节</em> —— 因为各 LoRA 的 Frobenius 范数相差悬殊(一个模块压过另一个),且强度旋钮 $\lambda$ 根本不是模型输入。LiON-LoRA 用<strong>逐层范数归一化</strong>(式 4)修融合稳定性、用<strong>缩放 token</strong>(式 6–7)把"运动幅度"变成模型能读到的显式条件,并以训练无关的方式支持多轨迹组合与相机-物体解耦控制。</p>
+    <p class="authors">Yisu Zhang<sup>1,2*</sup>, Chenjie Cao<sup>2,3*</sup>, Chaohui Yu<sup>2,3</sup>, Jianke Zhu<sup>1†</sup> &nbsp;|&nbsp; <sup>1</sup>Zhejiang University · <sup>2</sup>DAMO Academy, Alibaba Group · <sup>3</sup>Hupan Lab &nbsp;(*等贡献, †通讯作者)</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2507.05678" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2507.05678v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2507.05678" target="_blank">📥 PDF</a>
+      <a href="https://fuchengsu.github.io/lionlora.github.io/" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与核心数据</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">LoRA 与离散相机原语(§3.1)</a></li>
+    <li><a href="#s5">三个向量空间性质(§3.2)</a></li>
+    <li><a href="#s6">正交性与范数一致性(§3.3)</a></li>
+    <li><a href="#s7">线性可伸缩:缩放 token(§3.4)</a></li>
+    <li><a href="#s8">训练无关的多 LoRA 融合(§3.5)</a></li>
+    <li><a href="#s9">逻辑流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结、研究团队与资源</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与核心数据</h2>
+<p class="lead">视频扩散模型(Video Diffusion Model, VDM)已经能生成逼真视频,但要<strong>精确控制镜头怎么动、物体动多快</strong>仍然困难。显式注入相机位姿的办法(CameraCtrl / CamI2V 一类)泛化差、要大量标注数据;用 LoRA 隐式驱动的办法(AnimateDiff / DimensionX)便宜但控制不精。LiON-LoRA 的诊断是:<strong>问题不在 LoRA 本身,而在"多个 LoRA 怎么合"</strong> —— 业界把 LoRA 融合当高层技巧(风格、主体),却没人从向量空间角度量化低层可控性。论文提出三条原则:<em>线性可伸缩(Linear scalability)</em>、<em>正交性(Orthogonality)</em>、<em>范数一致性(Norm consistency)</em>,并给出两条可落地的机制 + 一个训练无关的融合框架。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v green">0.776</div><div class="l">RotErr↓(基础轨迹,次优 CamI2V 1.033)</div></div>
+  <div class="stat"><div class="v green">136.0</div><div class="l">FVD↓(基础轨迹,次优 DimensionX-S* 193.3)</div></div>
+  <div class="stat"><div class="v green">4,000</div><div class="l">微调步数(对手"至少 50,000 步")</div></div>
+  <div class="stat"><div class="v">256</div><div class="l">LoRA rank(训练 4×H20,batch 16)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2507.05678/teaser.png" alt="LiON-LoRA 的相机与物体运动控制结果" loading="lazy">
+  <div class="caption"><b>图1</b> LiON-LoRA 的效果。原文 Figure 1:可对 VDM 生成视频的<em>相机轨迹</em>与<em>物体运动幅度</em>做线性控制,且基于 LoRA 微调、用极少训练数据即获得良好泛化。</div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>四点贡献</h4>
+    <ol>
+      <li><strong>把 LoRA 融合当低层控制问题重审</strong>,提出 Linear scalability / Orthogonality / Norm consistency 三性质框架</li>
+      <li><strong>逐层范数归一化</strong>(式 4):一行公式消除各 LoRA 范数悬殊导致的"一侧压过另一侧"</li>
+      <li><strong>缩放 token</strong>(式 6–7):把运动幅度 $\mathcal{S}$ 做成模型输入,替代不可靠的 adapter scale $\lambda$</li>
+      <li><strong>训练无关融合 + 时空统一</strong>:多轨迹 / 相机-物体混合控制无需联合训练;用静机位视频把线性可伸缩扩展到时间维</li>
+    </ol>
+  </div>
+  <div class="card left-bar">
+    <h4>关键事实</h4>
+    <ul>
+      <li><strong>arXiv 提交</strong>:2025-07-08(v1,唯一版本)</li>
+      <li><strong>会议</strong>:项目页标注 ICCV 2025 <span class="partial">(arXiv abs 页 comments 字段为空)</span></li>
+      <li><strong>骨干模型</strong>:CogVideoX(49 帧 VDM,480×720)</li>
+      <li><strong>相机原语</strong>:仅 3 类(平移 / 前后 / 环绕)</li>
+      <li><strong>训练数据</strong>:DL3DV 重建 100 个场景 × 3DGS 渲染 + 172 条网络静机位视频</li>
+      <li><strong>推理</strong>:DDIM 50 步,CFG 6</li>
+      <li><strong>开源</strong>:❌ 未开源(项目页 Code 按钮指向作者个人主页)</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>一句话定位</h4>
+    <p>LiON-LoRA 不在<em>注意力</em>里注入几何(那是 <a href="VideoGen-20260625-SCoPE.html">SCoPE</a>、<a href="VideoGen-20251208-UCPE.html">UCPE</a> 的路线),而是在<strong>参数空间</strong>里治理 LoRA 的叠加行为。它把"相机控制"拆成 <em>离散原语各训一个 LoRA</em> + <em>训练无关地把它们合起来</em>,本质是 <strong>LoRA 融合工程化</strong>路线,而非几何建模路线。</p>
+  </div>
+</div>
+
+<div class="callout warn">
+  <h4>⚠️ 三处需要先标注的疑点(详见第 11、15 节)</h4>
+  <ol>
+    <li><strong>FVD 降幅的对比对象与表格不符</strong>:正文 §4.3 写 "a 37.8% reduction in FVD compared to CamI2V",但按表 1 数值,136.0 相对 CamI2V(294.6)是降 <strong>53.8%</strong>;相对 CameraCtrl(218.9)才是降 <strong>37.9%</strong>。<span class="partial">【待核实】</span></li>
+    <li><strong>ATE 降幅 21.5% 未指明基准</strong>:按表 1 推算,相对 CamI2V(0.370)为 20.3%,相对 DimensionX-S*(0.359)为 17.8%,均不等于 21.5%。<span class="partial">【待核实】</span></li>
+    <li><strong>"正交性"只被观察、未被约束</strong>:全文没有任何正交性损失或投影约束,浅层正交性来自经验测量(余弦相似度 $0.06\pm0.06$)。标题把三性质并列为"核心原则",但实际<em>只有范数一致性与线性可伸缩被实现</em>,正交性是<strong>前提假设</strong>而非<strong>方法</strong>。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 2. 背景动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>读这一篇要先理解两类"控制相机"的路线各自卡在哪里:</p>
+
+<table>
+<tr><th>路线</th><th>代表方法</th><th>怎么控相机</th><th>具体失败模式</th></tr>
+<tr><td>显式注入位姿</td><td>CameraCtrl / MotionCtrl / CamI2V / DimensionX</td><td>Plücker 嵌入、相机参数序列、外极注意力</td><td class="fail">需从大规模视频抽取运动轨迹重标注;条件过"硬",动态场景跟不上;易过拟合训练集 → 幻觉与闪烁</td></tr>
+<tr><td>LoRA 隐式驱动</td><td>AnimateDiff(8 个 LoRA)/ DimensionX</td><td>每个相机动作训一个 LoRA</td><td class="fail">融合不稳定(方向突变);幅度不可线性调;组合多了互相冲突,某些运动直接丢失</td></tr>
+<tr class="best"><td>LoRA 融合治理(本文)</td><td><strong>LiON-LoRA</strong></td><td>3 类原语各训 LoRA + 范数归一 + 缩放 token + 训练无关融合</td><td class="best">训练极省(4k 步);融合平滑、幅度线性;但仅 3 类原语,非任意轨迹</td></tr>
+</table>
+
+<h3>2.1 两个被点名批评的失败模式</h3>
+<div class="grid grid-2">
+  <div class="card left-bar red">
+    <h4>失败模式一:LoRA 融合不稳定</h4>
+    <p>论文 §1 明确写:把不同相机控制的 LoRA 组合起来会 "suffers from obvious instability, such as <em>abrupt changes in direction</em>"。具体表现是 —— <strong>本想从"前进"平滑过渡到"向左环绕",实际却在某一帧突然切换</strong>,即使仔细调整合并系数 $\lambda_i$ 也没用(见下文图2)。论文归因:各 LoRA 的低秩矩阵 Frobenius 范数差异悬殊(§3.2),"disproportionate amplification or suppression of specific LoRA weights during the combination, allowing one module to dominate over others"。</p>
+  </div>
+  <div class="card left-bar red">
+    <h4>失败模式二:强度不可线性调节</h4>
+    <p>调整 LoRA 特征乘子 $\lambda$ 对<strong>高层属性</strong>(如风格迁移)够用,对<strong>低层空间理解</strong>(相机运动)不够。论文列出 $\lambda$ 的三条硬伤:① $\lambda$ 不是 VDM 的输入,无法与其他视频/文本特征交互;② 提高 $\lambda$ 会损害基础模型的整体泛化,与 LoRA 的初衷相反;③ $\lambda$ 只决定"注入强度",无法对相机轨迹做到细粒度控制。</p>
+  </div>
+</div>
+
+<div class="callout key">
+  <h4>💡 核心洞察:把问题从"学什么"换成"怎么合"</h4>
+  <p>论文的关键转念是:<strong>前人的注意力都在"如何从数据里学出高层 LoRA 能力",没人从向量空间角度量化低层可控性</strong>。一旦把 LoRA 参数当作<em>向量空间里的对象</em>来看,融合不稳定就是范数(长度)问题、组合冲突就是相关性(夹角)问题、强度不可调就是缺少一个标量输入 —— 三条都能对应到具体的数学对象上,也就能分别修。这是本文最值得学的方法论:先给失败现象找到<em>可度量的向量空间归因</em>,再动手改。</p>
+</div>
+
+<h3>2.2 作者的关键假设与失效条件</h3>
+<table>
+<tr><th>假设</th><th>依据</th><th>失效条件</th></tr>
+<tr><td>浅层 LoRA 特征近似正交,足以解耦低层控制</td><td>经验测量:浅层余弦相似度 $0.06\pm0.06$(图3/原文 Figure 4);文献 [1,77] 称低频相机控制主要编码在初始 transformer 块</td><td class="fail"><strong>深层耦合显著增强</strong>(原文明示),而深层负责高频生成 —— 需要精细高频一致性的场景(细微视差、长序列)可能失稳。<span class="partial">论文对深层无任何对策</span></td></tr>
+<tr><td>运动幅度可用一个标量 $\mathcal{S}\in[s,1]$ 表达,且与"采样帧数"成正比</td><td>渲染时用 $\mathcal{S}$ 决定取前 $600\cdot\mathcal{S}$ 帧中的 49 帧</td><td class="fail">本质是"用视频播放长度代理运动幅度",隐含匀速假设;对变速运动、非线性轨迹、含遮挡的运动,单一标量不足以描述 <span class="partial">【推测】</span></td></tr>
+<tr><td>物体运动强度可用光流幅度作为代理量评估</td><td>图5(原文 Figure 6)的 Pearson 相关性分析</td><td class="fail">光流幅度是<em>像素级</em>量,与人类感知的"动作快慢"并不等价(如纹理稀疏区域、镜头外运动)</td></tr>
+<tr><td>不同 LoRA 的缩放 token 可在各自独立的注意力子空间互不干扰</td><td>图8(原文 Figure 8)的融合设计:各 LoRA 只 attend 自己的 $\mathcal{E}_i$,注意力后对 hidden state 取平均</td><td class="fail">"取平均"是否真的不引入耦合,论文<strong>没有理论证明也没有消融</strong>(见第 15 节)</td></tr>
+</table>
+</section>
+
+<!-- ==================== 3. 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<table>
+<tr><th>项</th><th>定义</th></tr>
+<tr><td><strong>输入</strong></td><td>单张参考图(首帧)+ 相机原语组合(如"前进 + 向左环绕")+ 各自的运动幅度缩放值 $\{S_1,\dots,S_k\}\in[s,1]$</td></tr>
+<tr><td><strong>输出</strong></td><td>49 帧、480×720 的视频,相机按指定原语组合运动、物体运动强度按 $\mathcal{S}$ 缩放</td></tr>
+<tr><td><strong>可训练部分</strong></td><td>每个相机原语一套 LoRA($r=256$)+ 该 LoRA 专属的缩放 token 线性投影</td></tr>
+<tr><td><strong>冻结部分</strong></td><td>CogVideoX 全部原始权重 $W^{\text{base}}$</td></tr>
+</table>
+
+<h3>3.1 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>维度 / 取值</th></tr>
+<tr><td>$i$</td><td>相机运动原语索引(或物体运动 LoRA)</td><td>—</td></tr>
+<tr><td>$A_i,\;B_i$</td><td>第 $i$ 个 LoRA 的低秩分解矩阵</td><td>$\mathbb{R}^{d\times r},\;\mathbb{R}^{r\times k}$</td></tr>
+<tr><td>$r,\;d,\;k$</td><td>LoRA 秩、输入维度、输出维度</td><td>$r=256$(实测超参)</td></tr>
+<tr><td>$\Delta W_i$</td><td>第 $i$ 个 LoRA 的权重增量 $=A_iB_i$</td><td>同 $W^{\text{base}}$</td></tr>
+<tr><td>$\lambda$ / $\lambda_i$</td><td>LoRA 注入强度(adapter scale)/ 融合系数</td><td>标量</td></tr>
+<tr><td>$\Delta\hat{W}_i$</td><td>范数归一化后的权重增量</td><td>同 $\Delta W_i$</td></tr>
+<tr><td>$\alpha$</td><td>归一化统一缩放因子</td><td>$\alpha=\frac{1}{k}\sum_i\lVert\Delta W_i\rVert$</td></tr>
+<tr><td>$\mathcal{S}$</td><td>运动幅度缩放值(相机轨迹长度 / 物体运动速度)</td><td>$\mathcal{S}\in[s,1]$</td></tr>
+<tr><td>$s$</td><td>最小缩放值</td><td>相机 $s=49/600$;物体 $s=49/240$</td></tr>
+<tr><td>$\gamma(\cdot)$</td><td>傅里叶位置编码</td><td>$\mathbb{R}\to\mathbb{R}^{2J}$</td></tr>
+<tr><td>$\mathcal{E}$</td><td>缩放 token(scaling token)</td><td>$\mathbb{R}^{d}$</td></tr>
+<tr><td>$H$</td><td>视觉 + 文本 token 序列(隐藏状态)</td><td>$\mathbb{R}^{n\times d}$</td></tr>
+<tr><td>$H'$</td><td>拼接缩放 token 后的序列</td><td>$\mathbb{R}^{(n+1)\times d}$ 或 $(n+k)\times d$</td></tr>
+<tr><td>$H_i'$</td><td>第 $i$ 个 LoRA 的独立注意力子空间输入</td><td>$[H;\mathcal{E}_i]$</td></tr>
+<tr><td>$J$</td><td>傅里叶编码的频率数</td><td>论文未给具体值 <span class="partial">【待核实】</span></td></tr>
+<tr><td>$V$</td><td>采样帧数</td><td>$V=49$</td></tr>
+</table>
+
+<h3>3.2 三大模块</h3>
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <span class="stage-tag stage-1">机制 A · 范数归一化(§3.3)</span>
+    <p>逐层把每个 LoRA 的输出范数拉齐:$\Delta\hat W_i=\frac{\alpha}{\lVert\Delta W_i\rVert}\Delta W_i$。<strong>目标</strong>:修"融合不稳定"。<strong>成本</strong>:零额外参数,一次除法。</p>
+  </div>
+  <div class="card left-bar green">
+    <span class="stage-tag stage-2">机制 B · 缩放 token(§3.4)</span>
+    <p>把标量 $\mathcal{S}$ 经傅里叶编码 + 线性投影成 token $\mathcal{E}$,拼到序列尾。每个 LoRA 用<strong>各自的</strong>投影层以保正交。<strong>目标</strong>:实现线性可伸缩,替代 $\lambda$。</p>
+  </div>
+  <div class="card left-bar warn">
+    <span class="stage-tag stage-3">机制 C · 训练无关融合(§3.5)</span>
+    <p>$k$ 个缩放 token,每个 LoRA 只在自己的子空间 $[H;\mathcal{E}_i]$ 里做注意力;注意力后缩放 token 拼接、hidden state 取平均 → $H^{out}$。<strong>目标</strong>:多轨迹/混合控制免联合训练。</p>
+  </div>
+</div>
+
+<div class="callout tip">
+  <h4>🔑 设计哲学:参数空间治理 ≠ 注意力空间注入</h4>
+  <p>与同代相机编码方法对比会看得很清楚:<a href="VideoGen-20251208-UCPE.html">UCPE</a> 与 <a href="VideoGen-20260625-SCoPE.html">SCoPE</a> 改的是<strong>注意力怎么算</strong>(把光线几何注入 Q/K);LiON-LoRA 改的是<strong>LoRA 权重怎么叠</strong>(范数与幅度)。前者回答"几何该去哪里",后者回答"多个能力模块如何共存"。两条路线<em>正交</em>,理论上可叠加。</p>
+</div>
+
+<div class="mermaid">
+flowchart TD
+    REF["输入: 单张参考图 + 相机原语组合 + 幅度 {S1..Sk}"] --> BASE["冻结的 CogVideoX 骨干<br/>(49 帧 / 480x720)"]
+    subgraph TRAIN["训练阶段(逐原语独立训练)"]
+        T1["原语 i 的 LoRA<br/>A_i·B_i, r=256"]
+        T2["傅里叶编码 γ(S) → 专属 linear → E_i"]
+        T1 --> T3["注入 transformer 线性层"]
+        T2 --> T3
+    end
+    BASE --> TRAIN
+    subgraph INFER["推理阶段(训练无关融合)"]
+        F1["k 个缩放 token {E_1..E_k}"]
+        F2["每个 LoRA 在独立子空间 [H;E_i] 做注意力"]
+        F3["缩放 token 拼接 + hidden state 取平均"]
+        F1 --> F2 --> F3
+    end
+    TRAIN --> INFER
+    INFER --> OUT["输出视频: 指定轨迹 + 指定运动幅度"]
+    style REF fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style BASE fill:#e5e7eb,stroke:#6b7280,color:#1f2937
+    style TRAIN fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style INFER fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style OUT fill:#fae8ff,stroke:#a855f7,color:#581c87
+</div>
+</section>
+
+<!-- ==================== 4. 离散原语 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>LoRA 与离散相机原语(§3.1)</h2>
+<p>论文的立足点是一个工程化简:<strong>3D 空间中的复杂相机运动可以分解成基本原语的组合</strong>。他们先在开源 CogVideoX 的 transformer block 线性层里注入 LoRA,验证"极少量参考视频 + 有限迭代"就能学会一个基本运动模式(证据是表 3)。参数更新过程:</p>
+
+<div class="equation">
+$$\Delta W_{i}=A_{i}B_{i},\quad A_{i}\in\mathbb{R}^{d\times r},\;B_{i}\in\mathbb{R}^{r\times k}\qquad \text{(式 1)}$$
+</div>
+<div class="equation">
+$$W_{i}=W^{\text{base}}_{i}+\lambda\,\Delta W_{i}\qquad \text{(式 2)}$$
+</div>
+<p>其中 $i$ 索引不同的运动原语,$r,d,k$ 分别是 LoRA 秩与输入/输出维度,$\lambda$ 控制 LoRA 注入强度。式 2 就是标准 LoRA 形式 —— 注意<strong>这里已经埋下了后面的伏笔:$\lambda$ 是一个全局标量,不是模型输入。</strong></p>
+
+<h3>4.1 三类相机原语</h3>
+<table>
+<tr><th>#</th><th>原语</th><th>说明</th></tr>
+<tr><td>1</td><td>水平/垂直偏移(horizontal/vertical offset)</td><td>平移镜头</td></tr>
+<tr><td>2</td><td>前进/后退(forward/backward movement)</td><td>沿光轴推拉</td></tr>
+<tr><td>3</td><td>绕场景中心的环绕(orbital rotation)</td><td>轨道旋转</td></tr>
+</table>
+<p>每个原语需要<strong>单独训练一套 LoRA 权重</strong>,并需要针对该运动准备的视频数据。数据制备方式:在 DL3DV 多视角数据集上先训 3DGS,再用 3DGS 渲染固定稳定的轨迹;移动距离按每个场景的<em>中位深度</em>自适应决定。</p>
+
+<div class="callout warn">
+  <h4>⚠️ 认清能力边界:这是"有限原语的组合",不是"任意轨迹控制"</h4>
+  <p>论文原文只列了<strong>三类</strong>基本原语(带正反方向),正文与图注中出现的具体 LoRA 名称只有 "forward"、"orbit left" 等方向性变体。所谓"轨迹控制精度"(RotErr / TransErr / ATE)衡量的是:<em>能否准确执行这些原语的组合、且幅度按 $\mathcal{S}$ 线性缩放</em>。<strong>它不支持任意自由轨迹</strong>(例如"先右移再上升同时侧滚"),也未覆盖 roll/pitch 等自由度。<span class="partial">论文未给出所用 LoRA 的确切总数。</span>这一点在对比 CameraCtrl / CamI2V(以完整位姿序列为条件)时必须分清 —— 两者的问题设定并不等价。</p>
+</div>
+</section>
+
+<!-- ==================== 5. 三个性质 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>三个向量空间性质(§3.2)</h2>
+<p>最朴素的 LoRA 融合是线性加权:</p>
+<div class="equation">
+$$\Delta W=\sum_{i=1}^{k}\lambda_{i}\Delta W_{i}\qquad \text{(式 3)}$$
+</div>
+<p>论文承认,式 3 用于<strong>高层</strong>可控任务(风格与主体融合)表现良好;但在<strong>低层</strong>相机运动融合上不行 —— 会出现"突然从前进切到向左环绕"的跳变,即便仔细调 $\lambda_i$ 也救不回来。于是从向量空间视角提出三个性质:</p>
+
+<table>
+<tr><th>性质</th><th>问题诊断</th><th>论文是否<em>实现</em>了它</th></tr>
+<tr><td><strong>线性可伸缩</strong><br>Linear scalability</td><td>只调 $\lambda$ 无法在<em>线性空间</em>里精确控制相机轨迹;学习原语是"隐式"控制,缺少显式的线性可调量</td><td class="best">✅ 实现了 —— 缩放 token(§3.4 / 式 6–7)</td></tr>
+<tr><td><strong>正交性</strong><br>Orthogonality</td><td>多任务共享基础模型时,LoRA 特征间的高层相关性会导致<em>非期望的增强或冲突</em>,破坏各 LoRA 的特征</td><td class="fail">❌ <strong>只做了观察,未做约束</strong>(§3.3 全是测量,无损失、无投影)</td></tr>
+<tr><td><strong>范数一致性</strong><br>Norm consistency</td><td>各相机 LoRA 独立训练,低秩矩阵的 Frobenius 范数差异大 → 合并时被不成比例地放大/压制,<em>一个模块压过其他</em></td><td class="best">✅ 实现了 —— 逐层范数归一(§3.3 / 式 4)</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2507.05678/param.png" alt="vanilla LoRA 融合与 LiON-LoRA 融合的对比" loading="lazy">
+  <div class="caption"><b>图2</b> vanilla 融合 vs 本文。原文 Figure 2:把 "forward" 与 "orbit left" 两个 LoRA 按调整过的 adapter scale 融合,会<strong>出现突变</strong>(左);加入范数一致性后的 LiON-LoRA <strong>无需调参即得到平滑得多的过渡</strong>(右)。</div>
+</div>
+
+<h3>5.1 "正交性"章节实际上在论证什么</h3>
+<p>细读 §3.3 会发现一个重要的表述落差。论文先断言 "ensuring the orthogonality of the camera LoRAs <em>should serve as</em> the foundation"(正交性<em>应当</em>作为基础),接着给出的却全是<strong>测量结果</strong>:</p>
+<ul>
+  <li>浅层 transformer block 的 LoRA 输出<strong>已经</strong>呈现强正交性:平均余弦相似度 $0.06\pm0.06$;</li>
+  <li>更深的 block 相关性明显上升(耦合出现);</li>
+  <li>引用文献 [1,77] 说明低频相机控制主要编码在初始 block、深层偏高频生成 —— 于是推论"正交性足以处理低频相机控制"。</li>
+</ul>
+<div class="callout red">
+  <h4>⚠️ 这是"发现"而非"方法" —— 写作上容易被误读</h4>
+  <p>摘要与贡献列表把 <em>Linear scalability / Orthogonality / Norm consistency</em> 并列为 "three core principles"、称方法 "acquiring linear scalability, orthogonality, and norm consistency",读起来像三项技术贡献。但<strong>正交性没有任何实现手段</strong>:全文不存在正交性正则项、不存在对 $\Delta W$ 的子空间投影分离;§3.5 中唯一与正交性相关的动作只是"给不同 LoRA 用各自的 linear 投影编码 $\mathcal{S}$,从而<em>避免耦合</em>"。也就是说:正交性是本文的<strong>经验前提</strong>,而非<strong>被构造出来的性质</strong>。真正的技术贡献只有两条:式 4 的范数归一 + 缩放 token。</p>
+</div>
+</section>
+
+<!-- ==================== 6. 正交性与范数 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>正交性与范数一致性(§3.3)</h2>
+
+<h3>6.1 正交性:浅层近似正交,深层耦合增强</h3>
+<div class="figure">
+  <img src="images/2507.05678/cossim.png" alt="不同相机 LoRA 的余弦相似度" loading="lazy">
+  <div class="caption"><b>图3</b> 不同相机 LoRA 的余弦相似度。原文 Figure 4:浅层 LoRA 保持正交,深层耦合效应开始显现。论文给出的浅层统计量:平均余弦相似度 <em>0.06±0.06</em>。</div>
+</div>
+<p>这张图是全文最重要的经验依据,也是全文最大的未解问题:<strong>深层耦合已经明确出现,而论文对此不提任何对策</strong>。结合"低频 → 初始 block,高频 → 后续 block"的分工,深层恰好承担生成细节与长时一致性,而多 LoRA 在深层恰恰是可耦合的。当前方法能工作,依赖的是"低层控制主要落在浅层"这一分工事实。</p>
+
+<h3>6.2 范数一致性:一行归一化修融合稳定</h3>
+<div class="figure">
+  <img src="images/2507.05678/layer_norm.png" alt="不同 LoRA 的范数一致性" loading="lazy">
+  <div class="caption"><b>图4</b> 不同 LoRA 的范数一致性。原文 Figure 5:不同相机控制 LoRA 的输出范数<strong>在不同样本间差异显著</strong>,且早期层与后期层都如此 —— 说明 LoRA 权重本身无法保证范数一致性,也意味着<em>不存在一个预设的 adapter scale 能同时平衡所有层的 LoRA 输出</em>。</div>
+</div>
+<p>论文给出的解法是逐层后归一化(post-normalization,只改结果不改训练):</p>
+<div class="equation">
+$$\Delta\hat{W}_{i}=\frac{\alpha}{\lVert\Delta W_{i}\rVert}\,\Delta W_{i},\qquad \alpha=\frac{1}{k}\sum_{i=1}^{k}\lVert\Delta W_{i}\rVert\qquad \text{(式 4)}$$
+</div>
+<p>其中 $\alpha$ 是 $k$ 个 LoRA 的统一缩放因子,取<strong>各 LoRA 范数的均值</strong>以"平衡地保留范数"。这一步的关键工程属性:<strong>零额外参数、零训练、一行代码</strong>。论文称其 "simple yet effective",并以图2 的定性证据支撑(融合平滑度显著提升)。</p>
+
+<div class="callout warn">
+  <h4>⚠️ 式 4 的效果只有定性证据,缺定量消融</h4>
+  <p>式 4 是全文最"便宜"的贡献(一行除法),也是论文宣称的第一条贡献。但它的证据链只有:<em>图2 的两段视频对比(定性的平滑度)</em> + 图 3d 的 2D 玩具示例。<strong>没有"去掉范数归一化"的定量消融表</strong>(RotErr / TransErr / ATE / FVD 的 Δ)。相对而言,缩放 token 至少有图 9(原文 Figure 10)的定量曲线。这是评价本文时应留意的举证不均衡。</p>
+</div>
+
+<h3>6.3 三个性质的 2D 玩具示例</h3>
+<p>论文用一张 2D 玩具图(原文 Figure 3)解释为什么非正交与范数悬殊会破坏融合。该图在 arXiv HTML 中是矢量图、无可下载位图,这里用流程图重述其逻辑:</p>
+<div class="mermaid">
+flowchart LR
+    A["两个待融合的 LoRA 向量<br/>ΔW_a, ΔW_b"] --> B{"是否正交?"}
+    B -->|"非正交(夹角小)"| C["融合结果沿共同方向被<br/>非期望放大 / 相互冲突<br/>(原文图3b、3c)"]
+    B -->|"正交"| D["融合结果 = 两方向独立叠加<br/>特性互不侵蚀"]
+    A --> E{"范数是否一致?"}
+    E -->|"∥ΔW_a∥ ≫ ∥ΔW_b∥"| F["范数大者主导融合结果<br/>→ 融合不稳定(原文图3d)"]
+    E -->|"范数一致"| G["等权贡献<br/>→ 平滑过渡"]
+    D --> H["可解的线性融合"]
+    G --> H
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style F fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style D fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style G fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style H fill:#fae8ff,stroke:#a855f7,color:#581c87
+</div>
+<p>论文给出的解法分工也很清楚:<strong>正交性交给"测量 + 依赖"</strong>(浅层本来正交,直接用),<strong>范数一致性交给"式 4 主动修正"</strong>。前者是免费午餐,后者是一行代码。</p>
+</section>
+
+<!-- ==================== 7. 缩放 token ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>线性可伸缩:缩放 token(§3.4)</h2>
+<p>这是本文技术含量最高的部分 —— 把"运动幅度"从一个<em>外部超参</em>变成<em>模型输入</em>。</p>
+
+<h3>7.1 为什么 $\lambda$ 不行</h3>
+<p>论文用试点实验确认"训练时调整各相机 LoRA 的 adapter 值 $\lambda$ 无法实现显式线性控制",并总结三条限制(已在 §2.1 列出):不是模型输入 / 大 $\lambda$ 损害泛化 / 只控注入强度不控轨迹精度。第③条特别值得玩味:$\lambda$ <em>本来就不是为低层几何设计的旋钮</em>,强行拿它当"运动幅度"用,是概念错配。</p>
+
+<h3>7.2 缩放 token 的构造</h3>
+<p>定义缩放值 $\mathcal{S}\in[s,1]$ 表示每个相机运动的幅度,$s$ 为最小缩放值。训练对这样构造:从 DL3DV 渲染每条含 <strong>600 帧</strong>的片段,取该片段<strong>前 $600\cdot\mathcal{S}$ 帧</strong>中均匀采样的 $V=49$ 帧作为监督目标 —— 于是 $\mathcal{S}$ 在语义上就是"运动完成了整条轨迹的几分之几"。最小值为 $s=49/600$。</p>
+<p>为提升 $\mathcal{S}$ 的细粒度表达,先用傅里叶位置编码,再过线性投影:</p>
+<div class="equation">
+$$\gamma(S)=\sum_{j=0}^{J-1}\bigl[\sin(2^{j}\pi S),\;\cos(2^{j}\pi S)\bigr]\qquad \text{(式 5)}$$
+</div>
+<div class="equation">
+$$\mathcal{E}=\operatorname{linear}\bigl(\gamma(S)\bigr)\qquad \text{(式 6)}$$
+</div>
+<p>其中 $j\in\{0,\dots,J-1\}$ 是频率索引,$\mathcal{E}$ 即缩放 token。随后把它拼到视觉 + 文本 token 序列 $H$ 尾部:</p>
+<div class="equation">
+$$H'=[H;\mathcal{E}]\in\mathbb{R}^{(n+1)\times d}\qquad \text{(式 7)}$$
+</div>
+<p>$n,d$ 分别是原序列长度与 VDM transformer 的通道数。论文特别强调:<strong>对不同相机 LoRA 使用各自的投影 linear 来编码 $\mathcal{S}$,以避免耦合、保护正交性</strong>;并称新增可训练参数"可忽略",LiON-LoRA 仍是参数高效的。</p>
+
+<div class="figure">
+  <img src="images/2507.05678/scaling.png" alt="LoRA 的线性可伸缩性对比" loading="lazy">
+  <div class="caption"><b>图5</b> LoRA 的线性可伸缩性。原文 Figure 10:vanilla LoRA 用全局 "adapter scale" $\lambda$ 调注入强度 —— <em>$\lambda$ 太小控制不住相机,$\lambda$ 太大质量崩坏</em>(左);LiON-LoRA 的缩放 token 在保持 VDM 泛化的前提下实现线性可控(右)。</div>
+</div>
+
+<h3>7.3 扩展到物体运动强度(时间维)</h3>
+<p>同一套机制被直接复用到"物体运动幅度"上,只是语义换了:$\mathcal{S}$ 此时表示物体运动<strong>速度</strong>。设置上的差异只有一处:$s=49/240$,因为物体运动视频的最大帧数是 <strong>240</strong>(相机侧是 600)。</p>
+<p>更关键的一个设计决策:<strong>物体运动强度的 LoRA 只用静机位视频训练</strong>,目的是让缩放 token 专心编码运动强度、不被相机运动污染 —— 从而实现相机与物体运动的解耦。</p>
+<p>评估方式用<strong>光流幅度与 $\mathcal{S}$ 的 Pearson 相关系数</strong>(图6),并展示可线性调幅度的定性结果(图7)。</p>
+
+<div class="figure">
+  <img src="images/2507.05678/pearson.png" alt="运动强度可控性的 Pearson 相关性" loading="lazy">
+  <div class="caption"><b>图6</b> 运动强度可控性的 Pearson 相关性。原文 Figure 6:比较"缩放 token"与"LoRA adapter scale"两种控制方式下,光流幅度与控制量的相关性。论文结论:adapter scale 的运动线性度很差,缩放 token 能精确控制物体运动强度。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2507.05678/motion_scale.png" alt="运动强度缩放的定性结果" loading="lazy">
+  <div class="caption"><b>图7</b> 运动强度缩放示意。原文 Figure 7:通过缩放 token 控制物体运动幅度,<strong>不需要边框标注或拖拽交互</strong>;这种参数化方式还保证了时序连续性与视觉一致性。论文强调的对比对象是 bounding-box 类(MotionCtrl 等)与 drag 类(DragAnything、Motion-Zero 等)控制方式。</div>
+</div>
+
+<div class="callout key">
+  <h4>💡 这一节的真正价值:把"强度"从超参挪进条件空间</h4>
+  <p>LiON-LoRA 最可迁移的思想是:<strong>当你想让模型控制某个连续量(运动快慢、风格强度、光照权重),不要指望"调权重系数"这种外部旋钮,而要把这个量编码成模型能看到的条件 token</strong>。理由论文写得很实在 —— 外部旋钮只改变注入强度,不参与特征交互,因此无法获得"理解"该量的能力。这与 <a href="VideoGen-20251208-UCPE.html">UCPE</a> 把相机参数从"乘法变换"变成"光线级坐标"、<a href="VideoGen-20260625-SCoPE.html">SCoPE</a> 把几何变成 token 的"加法地址"是同一类设计动机:<em>把外部条件搬到模型内部去表达</em>。</p>
+</div>
+</section>
+
+<!-- ==================== 8. 训练无关融合 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>训练无关的多 LoRA 融合(§3.5)</h2>
+<p>问题:在融合阶段塞入多个缩放 token,可能干扰视频 token 序列、破坏 LoRA 输出的正交性,从而破坏"独立控制"。因此论文设计了一个专用融合框架。</p>
+<p>给定 $k$ 个缩放值 $\{S_1,\dots,S_k\}$,各经专属编码层得到缩放 token $\{\mathcal{E}_1,\dots,\mathcal{E}_k\}$,与原隐藏状态拼接:</p>
+<div class="equation">
+$$H'=[H;\mathcal{E}_{1};\ldots;\mathcal{E}_{k}]\in\mathbb{R}^{(n+k)\times d}\qquad \text{(式 8)}$$
+</div>
+<p>为在拼接后保持独立控制、避免特征耦合,<strong>每个 LoRA 的输出只 attend 属于自己的那个缩放 token</strong>,在自己的独立注意力子空间 $\;H_i'=[H;\mathcal{E}_i]\;$ 内完成自注意力;注意力之后,<strong>不同缩放 token 空间上拼接,而隐藏状态取平均</strong>,得到输出 $H^{out}\in\mathbb{R}^{(n+k)\times d}$,再送入后续 block,从而保证控制是解耦的。</p>
+
+<div class="figure">
+  <img src="images/2507.05678/block_fusion.png" alt="多 LiON-LoRA 融合的流水线" loading="lazy">
+  <div class="caption"><b>图8</b> 多个 LiON-LoRA 融合的流水线。原文 Figure 8:先切分缩放 token,再分配给各自的 LoRA 编码与注意力过程;最后把 $k$ 组输出的视觉/文本 token 取平均作为 $H^{out}$,而 $k$ 个输出缩放 token 在空间上拼接。</div>
+</div>
+
+<div class="mermaid">
+flowchart TD
+    H["视频隐藏状态 H (n×d)"] --> SPLIT["与 k 个缩放 token 分别拼接"]
+    E1["E_1 = linear_1(γ(S_1))"] --> SPLIT
+    E2["E_2 = linear_2(γ(S_2))"] --> SPLIT
+    EK["E_k = linear_k(γ(S_k))"] --> SPLIT
+    SPLIT --> S1["LoRA_1 在子空间 [H;E_1] 做自注意力"]
+    SPLIT --> S2["LoRA_2 在子空间 [H;E_2] 做自注意力"]
+    SPLIT --> SK["LoRA_k 在子空间 [H;E_k] 做自注意力"]
+    S1 --> AVG["隐藏状态取平均"]
+    S2 --> AVG
+    SK --> AVG
+    S1 --> CAT["缩放 token 空间拼接"]
+    S2 --> CAT
+    SK --> CAT
+    AVG --> OUT["H_out (n+k)×d → 后续 block"]
+    CAT --> OUT
+    style H fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style SPLIT fill:#e5e7eb,stroke:#6b7280,color:#1f2937
+    style AVG fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style CAT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<p>论文强调该融合<strong>是训练无关的且高度通用</strong>:支持多轨迹相机融合与相机-运动混合控制,无需任何联合训练。</p>
+
+<div class="callout warn">
+  <h4>⚠️ "取平均"是一个未加论证的设计选择</h4>
+  <p>$k$ 组注意力各算一份视觉/文本 token,再<strong>算术平均</strong>。论文只在图8 图注里陈述了这个操作,既没说明"为什么是平均而不是拼接 / 加权 / 残差",也没有任何消融(例如 $k=2$ 时对比"平均" vs "不平均" vs "按 $\mathcal{S}$ 加权")。<em>平均会引入模糊,并可能与"独立控制"的目标相冲突</em>(两组控制信号在输出特征上被混合了) —— 这是本文在方法上最需要补证据的一处。<span class="partial">完整分析见第 15 节。</span></p>
+</div>
+</section>
+
+<!-- ==================== 9. 流程图 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 数据制备 + 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    A["DL3DV 多视角数据 (100 个场景)"] --> B["3DGS 重建场景"]
+    B --> C["按中位深度自适应设定移动距离<br/>渲染 600 帧/片段的相机轨迹视频"]
+    C --> D["按 S 取前 600·S 帧<br/>均匀采样 49 帧"]
+    D --> E["训练对: (S, 49 帧)"]
+    E --> F["逐原语独立训练 LoRA<br/>r=256, lr=5e-4, 4,000 步"]
+    G["172 条网络静机位视频<br/>CoTracker 边界点 + 光流筛选"] --> H["物体运动强度 LoRA<br/>最大帧 240, s=49/240"]
+    H --> F
+    F --> I["产出一组可组合的 LiON-LoRA"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B fill:#fae8ff,stroke:#a855f7,color:#581c87
+    style C fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style F fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style G fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style I fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.2 推理:组合 + 缩放 + 融合</h3>
+<div class="mermaid">
+flowchart TD
+    IN["用户: 参考图 + 原语组合 + 幅度 {S_1..S_k}"] --> A["范数归一 ΔŴ_i = α/‖ΔW_i‖ · ΔW_i<br/>(式4, 逐层, 零参数)"]
+    A --> B["各原语经专属 linear 编码 γ(S_i) → E_i<br/>(式5-6)"]
+    B --> C["H_i' = [H; E_i] 独立注意力子空间"]
+    C --> D["DDIM 50 步采样, CFG 6"]
+    D --> E["隐藏状态平均 + 缩放 token 拼接 → H_out"]
+    E --> F["49 帧 / 480x720 视频"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style A fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style B fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style D fill:#e5e7eb,stroke:#6b7280,color:#1f2937
+    style F fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+</section>
+
+<!-- ==================== 10. 工程实现 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节</h2>
+
+<div class="callout red">
+  <h4>🚫 前置声明:代码未开源,本章全部数据来自论文正文,无法用源码交叉验证</h4>
+  <p>核验过程:项目主页 <code>https://fuchengsu.github.io/lionlora.github.io/</code> 的 publication-links 区域共 4 个链接 —— <code>Paper</code> / <code>Supplementary</code> / <code>Code</code> / <code>arXiv</code>。其中 <strong><code>Code</code> 的 href 是 <code>https://fuchengsu.github.io</code>(作者个人主页),不是代码仓库</strong>;另有页脚模板链接指向 <code>github.com/eliahuhorwitz/Academic-project-page-template</code>(与本文代码无关)。<code>Supplementary</code> 指向 <code>static/pdfs/supplementary_material.pdf</code>,实测 <strong>HTTP 404</strong>;arXiv abs 页无 ancillary 文件。</p>
+  <p>因此本笔记<strong>没有 <code>file:line</code> 级源码证据</strong>,以下超参全部转引自论文 §4.1「Implementation Details」,<strong>可信度低于有源码的笔记</strong>。论文中多处"见补充材料"的细节(轨迹渲染参数、$\mathcal{S}$ 采样细节、各原语 LoRA 数量)因此<strong>无法核实</strong>。</p>
+</div>
+
+<h3>10.1 训练超参(出处:论文 §4.1)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处 / 备注</th></tr>
+<tr><td>基础模型</td><td>CogVideoX(49 帧序列的 VDM)</td><td>§4.1 <span class="partial">论文未写参数规模(2B / 5B)【待核实】</span></td></tr>
+<tr><td>LoRA rank $r$</td><td><strong>256</strong></td><td>§4.1。相对常见设置(4–128)偏大</td></tr>
+<tr><td>训练步数</td><td><strong>4,000</strong> 步</td><td>§4.1;论文对比"对手通常至少 50,000 步"</td></tr>
+<tr><td>学习率</td><td>$5\times10^{-4}$</td><td>§4.1</td></tr>
+<tr><td>硬件</td><td>4 × NVIDIA H20</td><td>§4.1</td></tr>
+<tr><td>Batch size</td><td>16</td><td>§4.1</td></tr>
+<tr><td>分辨率</td><td>$480\times720$</td><td>§4.1,沿用 CogVideoX 预训练方案</td></tr>
+<tr><td>推理采样</td><td>DDIM,50 步</td><td>§4.1</td></tr>
+<tr><td>CFG scale</td><td>6</td><td>§4.1</td></tr>
+<tr><td>傅里叶频率数 $J$</td><td>未报告</td><td class="fail">论文未给 <span class="partial">【待核实】</span></td></tr>
+</table>
+
+<h3>10.2 数据制备</h3>
+<table>
+<tr><th>环节</th><th>细节</th><th>出处</th></tr>
+<tr><td>相机控制数据源</td><td>DL3DV 多类别大场景数据集;重建 <strong>100 个场景</strong>,每个基本原语渲染对应视频</td><td>§4.1</td></tr>
+<tr><td>渲染管线</td><td>先用 3DGS 重建场景,再让虚拟相机沿预定义轨迹移动渲染;移动距离按各场景<em>中位深度</em>自适应决定</td><td>§3.1 / §4.1</td></tr>
+<tr><td>片段长度</td><td>每条片段含 <strong>600 帧</strong>(相机);物体运动视频最大帧数 <strong>240</strong></td><td>§3.4</td></tr>
+<tr><td>幅度-帧数耦合</td><td>$\mathcal{S}$ 直接决定取前 $600\cdot\mathcal{S}$ 帧 → $s=49/600$;物体 $s=49/240$</td><td>§3.4</td></tr>
+<tr><td>物体运动数据</td><td>网络收集 <strong>172 条视频</strong>(物体自由运动 + 相机静止);用 CoTracker 检测的边界跟踪点做启发式筛选,再用光流剔除运动过小的视频</td><td>§4.1</td></tr>
+<tr><td>评测集</td><td>从 DL3DV 每个运动原语取 <strong>100 个样本</strong>,同时评基础与复杂相机位姿</td><td>§4.1</td></tr>
+<tr><td>定性数据</td><td>DL3DV + 网络图片 + 生成图片</td><td>§4.1</td></tr>
+</table>
+
+<h3>10.3 评测工具链</h3>
+<table>
+<tr><th>指标</th><th>定义</th><th>计算方式</th></tr>
+<tr><td>RotErr ↓</td><td>旋转误差</td><td rowspan="3">沿用 CameraCtrl 的三项指标;按 CamI2V 的做法用 <strong>GLOMAP</strong> 对生成视频做 structure-from-motion,恢复相机位姿后比对</td></tr>
+<tr><td>TransErr ↓</td><td>平移误差</td></tr>
+<tr><td>ATE ↓</td><td>绝对轨迹误差</td></tr>
+<tr><td>FVD ↓</td><td>视频生成质量</td><td>FVD 指标</td></tr>
+<tr><td>Pearson 相关</td><td>运动强度可控性</td><td>$\mathcal{S}$ 与相邻帧光流幅度的相关系数(§3.4 / 原文 Figure 6)</td></tr>
+</table>
+
+<h3>10.4 落地坑与隐藏约束</h3>
+<div class="grid grid-2">
+  <div class="card left-bar warn">
+    <h4>资源账:关键数据缺失</h4>
+    <ul>
+      <li><strong>未报告</strong>显存占用、单次迭代/推理延迟、训练总时长、可训练参数量</li>
+      <li>只能从间接线索推断:4×H20 + batch 16 + rank 256 + 480×720 的训练成本<span class="partial">【推测】</span>不低 —— rank 256 意味着每层 $A,B$ 参数量远大于常见 rank 8–64 配置</li>
+      <li>"参数高效"的论断<strong>没有参数量数字支撑</strong>(只说了缩放 token 的投影参数"可忽略")</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>复现门槛</h4>
+    <ul>
+      <li><strong>代码与权重均未放出</strong>,补充材料 404 → 无法复现</li>
+      <li>数据制备依赖 <strong>3DGS 渲染管线 + 中位深度自适应策略</strong>,论文称"细节见补充材料",但补充材料不可得</li>
+      <li>依赖 DL3DV 多视角数据做 3DGS 重建,<strong>前置成本不低</strong>(100 个场景)</li>
+      <li>论文称方法可无缝迁移到 HunyuanVideo / DynamicCrafter 等其他 VDM,但<strong>未给任何验证</strong></li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ==================== 11. 实验结果 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 基础相机位姿(原文 Table 1)</h3>
+<table>
+<tr><th>方法</th><th>RotErr ↓</th><th>TransErr ↓</th><th>ATE ↓</th><th>FVD ↓</th></tr>
+<tr><td>CogVideoX(基线,无控制)</td><td>4.974</td><td>0.765</td><td>0.980</td><td>387.6</td></tr>
+<tr><td>MotionCtrl</td><td>2.254</td><td>0.269</td><td>0.408</td><td>290.9</td></tr>
+<tr><td>CameraCtrl</td><td>1.737</td><td class="best">0.192</td><td>0.458</td><td>218.9</td></tr>
+<tr><td>CamI2V</td><td>1.033</td><td>0.215</td><td>0.370</td><td>294.6</td></tr>
+<tr><td>DimensionX-S*</td><td>1.223</td><td>0.201</td><td>0.359</td><td>193.3</td></tr>
+<tr class="best"><td><strong>LiON-LoRA(本文)</strong></td><td class="best">0.776</td><td class="best">0.167</td><td class="best">0.295</td><td class="best">136.0</td></tr>
+</table>
+<p class="partial">DimensionX-S* 是作者<strong>自己重实现</strong>的 DimensionX S-Director 版本,非官方权重(原文 Table 1 图注 + Figure 9 图注)。</p>
+
+<h3>11.2 复杂融合相机位姿(原文 Table 2)</h3>
+<table>
+<tr><th>方法</th><th>RotErr ↓</th><th>TransErr ↓</th><th>ATE ↓</th><th>FVD ↓</th></tr>
+<tr><td>CogVideoX(基线)</td><td>4.104</td><td>0.717</td><td>0.842</td><td>383.2</td></tr>
+<tr><td>MotionCtrl</td><td>2.063</td><td>0.317</td><td>0.426</td><td>357.2</td></tr>
+<tr><td>CameraCtrl</td><td>1.947</td><td>0.201</td><td>0.440</td><td>261.8</td></tr>
+<tr><td>CamI2V</td><td class="best">0.924</td><td>0.217</td><td>0.398</td><td>285.6</td></tr>
+<tr><td>DimensionX-S*</td><td>1.510</td><td>0.264</td><td>0.405</td><td>240.7</td></tr>
+<tr class="best"><td><strong>LiON-LoRA(本文)</strong></td><td class="partial">1.044</td><td class="best">0.197</td><td class="best">0.345</td><td class="best">172.8</td></tr>
+</table>
+<p><strong>复杂轨迹下本文的 RotErr(1.044)输给了 CamI2V(0.924)</strong> —— 论文自己写明 "our method also achieves superior performance <em>except RotErr metric</em>"。这个例外恰好印证第 4 节的判断:原语拼接得越多,"融合平滑"与"轨迹精确"越难兼得。</p>
+
+<div class="figure">
+  <img src="images/2507.05678/main_vis.png" alt="相机位姿控制的定性对比" loading="lazy">
+  <div class="caption"><b>图9</b> 相机位姿控制的定性对比。原文 Figure 9:(a) 本文在多风格下泛化与适应性更强,既有方法(MotionCtrl、CameraCtrl、CamI2V)在不同风格下<em>场景几何不一致、出现幻觉</em>;重实现的 DimensionX 相机运动幅度受限且缺少线性控制。(b) 复杂轨迹下本文能整合多种相机运动并保持高质量;DimensionX 存在 <strong>LoRA 冲突</strong>,丢失了部分相机运动(orbit left)。</div>
+</div>
+
+<h3>11.3 论文声称的相对改进(逐条复核)</h3>
+<table>
+<tr><th>指标</th><th>论文表述</th><th>按原文表 1 数值复核</th><th>结论</th></tr>
+<tr><td>RotErr</td><td>↓ 24.8%</td><td>vs CamI2V 1.033 → 0.776,降 24.88%</td><td class="best">✅ 吻合</td></tr>
+<tr><td>TransErr</td><td>↓ 13.0%</td><td>vs CameraCtrl 0.192 → 0.167,降 13.02%</td><td class="best">✅ 吻合</td></tr>
+<tr><td>ATE</td><td>↓ 21.5%</td><td>vs CamI2V 0.370 → 20.3%;vs DimensionX-S* 0.359 → 17.8%</td><td class="fail">⚠️ 无基准可对上 <span class="partial">【待核实】</span></td></tr>
+<tr><td>FVD</td><td>"较 CamI2V 降 37.8%"</td><td>vs CamI2V 294.6 → 降 <strong>53.8%</strong>;vs CameraCtrl 218.9 → 降 <strong>37.9%</strong></td><td class="fail">⚠️ 数值与标注的基准不符 <span class="partial">【待核实】</span></td></tr>
+</table>
+
+<div class="callout red">
+  <h4>⚠️ 提炼句与表格数值不一致 —— 本笔记发现的第一处硬伤</h4>
+  <p>论文 §4.3 原文:<em>"demonstrating a 37.8% reduction in FVD <strong>compared to CamI2V</strong>"</em>。但同一页表 1 列出的 CamI2V FVD 是 294.6,$(294.6-136.0)/294.6=53.8\%$ 而非 37.8%。37.8% 恰与 CameraCtrl(218.9)吻合。结合同句前半段 "49 frames vs. 16-frame"(CameraCtrl 基于 AnimateDiff,只生成 16 帧),<strong>该处的对比对象极可能是 CameraCtrl 而非 CamI2V</strong>。</p>
+  <p>这类错误在论文中最典型的出现位置正是"把表格数字二次加工成结论句"的地方 —— 表格本身逐格可核。使用时请以表 1 / 表 2 的<strong>原始数值</strong>为准。</p>
+</div>
+
+<h3>11.4 效率对比</h3>
+<div class="callout tip">
+  <h4>🔑 4,000 步 vs 50,000 步 —— 本文最硬的工程卖点</h4>
+  <p>论文 §4.2 称:本文只需 <strong>4,000 步微调</strong>,"significantly fewer than the <em>at least 50,000 steps</em> typically needed by other competitors",并主张这种高效训练策略有助于<strong>保留 VDM 的泛化能力</strong>(迭代少 → 过拟合轻)。这是全文可信度最高的价值主张之一:训练成本低一个数量级,且与"少量数据即可"的消融(表 3)方向一致。</p>
+</div>
+</section>
+
+<!-- ==================== 12. 消融 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+
+<h3>12.1 数据量与训练迭代(原文 Table 3)</h3>
+<p>在 "orbit left" 单条轨迹上对比 7k 样本 vs 100 样本。</p>
+<table>
+<tr><th>样本数</th><th>迭代</th><th>RotErr ↓</th><th>TransErr ↓</th><th>ATE ↓</th><th>FVD ↓</th></tr>
+<tr class="best"><td>100</td><td>4k</td><td class="best">0.802</td><td>0.143</td><td>0.331</td><td class="best">175.3</td></tr>
+<tr><td>100</td><td>10k</td><td class="best">0.710</td><td>0.146</td><td class="best">0.327</td><td>184.6</td></tr>
+<tr><td>7k</td><td>4k</td><td class="fail">1.227</td><td class="fail">0.252</td><td class="fail">0.390</td><td class="fail">232.5</td></tr>
+<tr><td>7k</td><td>10k</td><td>0.896</td><td class="best">0.140</td><td>0.341</td><td>202.8</td></tr>
+</table>
+
+<div class="callout warn">
+  <h4>⚠️ 这张表最反直觉,且论文没有解释机制</h4>
+  <p>注意 <strong>7k 样本在同等迭代下全面劣于 100 样本</strong>:7k@4k 的 RotErr 1.227 vs 100@4k 的 0.802(差 53%);7k 即使训到 10k 步,0.896 仍不及 100@10k 的 0.710。论文只用了半句话收尾:"our model attains satisfactory controllability after only 4k iterations with minimal data." —— <strong>它把现象包装成"少数据就够",却回避了"数据变多反而更差"这个更需要解释的反常</strong>。</p>
+  <p>一个合理的机制解释<span class="partial">【推测】</span>:单条原语 LoRA 的学习目标是"复现一个固定方向的运动",7k 条片段的场景/速度/尺度多样性反而成了<em>干扰</em>,4k 步不足以收敛到该原语的一致表征;而 100 条同质样本恰好构成"低保真度但有针对性"的监督。若成立,这意味着<strong>当前用 3DGS 任意渲染的数据制备方式并未被充分利用,数据多样性反而有害</strong> —— 这比"省数据"更有信息量。论文未做验证。</p>
+</div>
+
+<h3>12.2 缩放 token vs adapter scale</h3>
+<p>这是本文核心机制的消融,以两种形式呈现:</p>
+<ul>
+  <li><strong>定量</strong>:原文 Figure 6(本笔记图6)用 Pearson 相关性量化"$\mathcal{S}$ 与光流幅度"的关系,结论是缩放 token 在微调早期即快速收敛,而 vanilla adapter scaling "fails to establish a meaningful correlation for effective control";</li>
+  <li><strong>定性</strong>:原文 Figure 10(本笔记图5)对比不同 $\lambda$ 下相机运动与生成质量,结论是 $\lambda$ 太小控制不住、太大质量崩坏,而缩放 token 在保持泛化的同时线性可控。</li>
+</ul>
+<p>论文对该消融的总结是:缩放 token 不仅实现精确控制,还<strong>把 LoRA 注入强度与控制信号解耦</strong>(注入强度不再兼任"幅度旋钮")。</p>
+
+<div class="callout warn">
+  <h4>⚠️ 消融覆盖面的两个缺口</h4>
+  <ol>
+    <li><strong>没有"去掉范数归一化"的定量消融</strong>。式 4 是论文列出的第一条贡献,证据只有图2 的定性对比与原文 Figure 3d 的 2D 玩具示例 —— 缺 RotErr / ATE / FVD 的 Δ 表。这是三性质中举证最弱的一项。</li>
+    <li><strong>没有对融合"取平均"的消融</strong>。§3.5 的融合框架是"训练无关"卖点的载体,但"隐藏状态取平均"这一关键操作无任何对照实验。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 13. 同类对比 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>13.1 同协议定量对比(全部取自论文表 1 / 表 2)</h3>
+<p>下表只放论文自报口径(基础轨迹,表 1)的数据,可逐格回表核对:</p>
+<table>
+<tr><th>方法</th><th>年份</th><th>控制机制</th><th>RotErr ↓</th><th>ATE ↓</th><th>FVD ↓</th><th>开源</th></tr>
+<tr><td>MotionCtrl</td><td>2024</td><td>相机 + 物体运动序列条件</td><td>2.254</td><td>0.408</td><td>290.9</td><td>✅</td></tr>
+<tr><td>CameraCtrl</td><td>2024</td><td>Plücker 嵌入 + ControlNet 式适配器</td><td>1.737</td><td>0.458</td><td>218.9</td><td>✅</td></tr>
+<tr><td>CamI2V</td><td>2024</td><td>相机条件注入(含外极约束)</td><td>1.033</td><td>0.370</td><td>294.6</td><td>✅</td></tr>
+<tr><td>DimensionX-S*</td><td>2025</td><td>统一 LoRA 解耦时空因子</td><td>1.223</td><td>0.359</td><td>193.3</td><td>~<span class="partial">(本文用重实现)</span></td></tr>
+<tr class="best"><td><strong>LiON-LoRA</strong></td><td>2025</td><td>3 原语 LoRA + 范数归一 + 缩放 token</td><td class="best">0.776</td><td class="best">0.295</td><td class="best">136.0</td><td class="fail">❌</td></tr>
+</table>
+
+<h3>13.2 机制 / 范式横向对比(固定维度表)</h3>
+<p class="partial">说明:下表的"关键指标 / 训练时长 / 推理耗时 / 显存"列只填本论文协议内可比或论文明确报告的值;库内其他方法(UCPE / SCoPE)的成绩基于 RE10K 采样的自有协议,与本文 DL3DV + GLOMAP 协议<strong>不可直接比较</strong>,故记为 —。缺失维度按规范保留列而不省略。</p>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td>AnimateDiff(相机版)</td><td>2023</td><td>文本 / 相机方向</td><td>LoRA × 8,各管一个相机动作</td><td>带相机标注视频</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✅</td></tr>
+<tr><td>MotionCtrl</td><td>2024</td><td>相机轨迹 + 物体运动序列</td><td>时序条件模块</td><td>运动序列对齐</td><td>—</td><td>—</td><td>—</td><td>—</td><td>RotErr 2.254</td><td>✅</td></tr>
+<tr><td>CameraCtrl</td><td>2024</td><td>相机位姿序列(Plücker)</td><td>额外参数编码器(适配器)</td><td>扩散损失 + 相机条件</td><td>大规模视频抽轨迹</td><td>≥50k 步<span class="partial">【推测】</span></td><td>—</td><td>—</td><td>RotErr 1.737</td><td>✅</td></tr>
+<tr><td>CamI2V</td><td>2024</td><td>相机位姿序列</td><td>相机条件注入 + 外极约束</td><td>扩散损失</td><td>大规模视频</td><td>—</td><td>—</td><td>—</td><td>RotErr 1.033(复杂轨迹 0.924,优于本文)</td><td>✅</td></tr>
+<tr><td>DimensionX</td><td>2025</td><td>统一 LoRA 解耦时空</td><td>统一 LoRA</td><td>扩散损失</td><td>—</td><td>—</td><td>—</td><td>—</td><td>RotErr 1.223(重实现)</td><td>~</td></tr>
+<tr><td>ReCamMaster</td><td>2025</td><td>源视频 + 目标相机轨迹</td><td>骨干微调</td><td>扩散损失</td><td>大规模视频</td><td>—</td><td>—</td><td>—</td><td>—<span class="partial">(非同协议)</span></td><td>✅</td></tr>
+<tr><td><a href="VideoGen-20251208-UCPE.html">UCPE</a></td><td>2025</td><td>任意镜头(光线级)</td><td>光线坐标系 + LoRA 风格适配器</td><td>扩散损失</td><td>合成多镜头数据</td><td>—</td><td>—</td><td>—</td><td>—<span class="partial">(RE10K 协议)</span></td><td>✅</td></tr>
+<tr><td><a href="VideoGen-20260625-SCoPE.html">SCoPE</a></td><td>2026</td><td>针孔(加性几何)</td><td>Plücker 加法注入 Q/K</td><td>扩散损失</td><td>四数据集混合</td><td>—</td><td>—</td><td>—</td><td>—<span class="partial">(RE10K 协议)</span></td><td>❌</td></tr>
+<tr class="best"><td><strong>LiON-LoRA</strong></td><td>2025</td><td><strong>3 类离散原语 + 幅度标量</strong></td><td>逐原语 LoRA + 缩放 token</td><td>扩散损失(49 帧监督)</td><td>100 DL3DV 场景(3DGS 渲染)+ 172 静机位视频</td><td class="best">4,000 步 / 4×H20 / bs16</td><td>—(DDIM 50 步,CFG 6)</td><td>—</td><td class="best">RotErr 0.776 / ATE 0.295 / FVD 136.0</td><td class="fail">❌</td></tr>
+</table>
+<p class="partial">表中大量 — 是论文未报告或本笔记无法核实的项(论文本身不报告对手的显存/耗时/训练时长);AnimateDiff 一行细节未在本文给出,亦未在库内笔记中核实。</p>
+
+<h3>13.3 对比结论:它为什么强、为什么弱</h3>
+<div class="grid grid-2">
+  <div class="card left-bar green">
+    <h4>强在哪(机制原因)</h4>
+    <ol>
+      <li><strong>FVD 领先的根因是"少训练"</strong>:4,000 步 vs 对手数十万步,过拟合轻 → 泛化好、幻觉少。图9 指出对手"场景几何不一致、出现幻觉",论文归因于"过拟合到特定训练数据集"。<strong>这更像训练预算优势,而非架构优势</strong>。</li>
+      <li><strong>融合平滑的根因是范数归一</strong>:显式消除"一侧压过另一侧",因此不需要像 vanilla 融合那样手工调 $\lambda_i$ 的配比(图2 右侧 "without parameter adjusting")。</li>
+      <li><strong>幅度可线性调的根因是条件化</strong>:把 $\mathcal{S}$ 变成 token 后,模型<em>知道</em>你要多大运动量,而不是靠外部系数压制特征。</li>
+      <li><strong>训练无关融合带来的组合灵活性</strong>:多轨迹、相机-物体混合都无需联合训练,工程上比"再训一个联合模型"便宜得多。</li>
+    </ol>
+  </div>
+  <div class="card left-bar red">
+    <h4>弱在哪(机制原因)</h4>
+    <ol>
+      <li><strong>问题设定更窄</strong>:只支持 3 类原语的有向组合;CameraCtrl / CamI2V 接受<em>任意</em>位姿序列。RotErr/ATE 数字好看,部分来自"任务更简单"。</li>
+      <li><strong>复杂轨迹 RotErr 输给 CamI2V</strong>(1.044 vs 0.924)。原语越多,融合的平均(§3.5 的 hidden state 取平均)越可能把方向信息抹平 —— 这与"融合平滑"是同一枚硬币的两面。</li>
+      <li><strong>正交性在深层失效且无对策</strong>:原文 Figure 4 明示深层耦合增强,而深层管高频细节。长序列 / 精细视差场景是风险区。</li>
+      <li><strong>对 DimensionX 的比较用自实现版本</strong>:DimensionX-S* 是作者重实现,原文 Figure 9 自承"重实现版相机运动幅度受限"。用它做对照,<strong>对本文有利</strong>,不构成对官方实现的公平比较。</li>
+    </ol>
+  </div>
+</div>
+
+<h3>13.4 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>① 多 LoRA 隐式驱动</td><td>AnimateDiff(8 个 LoRA)、DimensionX</td><td>一个相机动作 = 一个 LoRA,组合即控制</td><td class="fail">融合不稳定、幅度不可线性调、组合冲突丢运动</td></tr>
+<tr><td>② 显式位姿注入</td><td>CameraCtrl、MotionCtrl、AC3D</td><td>把相机位姿/运动序列作为额外条件输入</td><td class="fail">需大规模轨迹标注;条件过"硬";过拟合 → 幻觉</td></tr>
+<tr><td>③ 光线级几何编码</td><td><a href="VideoGen-20251208-UCPE.html">UCPE</a>、<a href="VideoGen-20260625-SCoPE.html">SCoPE</a></td><td>把相机条件下沉到每条光线的坐标,几何以乘法/加法进入注意力</td><td class="partial">回答"几何放哪",不回答"多能力模块如何共存"</td></tr>
+<tr><td>④ 逐点 / 拖拽控制</td><td>DragAnything、Motion-Zero、Track2View</td><td>用稀疏点轨迹直接操纵物体</td><td class="fail">轨迹容量有限、交互复杂、缺少真实动力学建模</td></tr>
+<tr class="best"><td><strong>⑤ LoRA 融合的向量空间治理</strong></td><td><strong>LiON-LoRA</strong></td><td>把 LoRA 融合视为范数 + 夹角 + 标量可调性问题,在<strong>参数空间</strong>而非注意力空间求解</td><td class="partial">仅 3 类原语;正交性未被约束;融合平均无消融</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>📈 与库内兄弟笔记的关系</h4>
+  <ul>
+    <li><strong>与 <a href="VideoGen-20260625-SCoPE.html">SCoPE</a> / <a href="VideoGen-20251208-UCPE.html">UCPE</a> 不在同一层面</strong>:那两篇解决"相机几何如何进入注意力"(加法 vs 乘法的设计对偶),LiON-LoRA 解决"<em>多个控制能力模块如何共存而不互蚀</em>"。前者是<em>几何建模</em>,后者是<em>融合工程</em>。理论上可叠加:用 LiON-LoRA 的范数归一 + 缩放 token 来组织 SCoPE/UCPE 式几何适配器的多能力组合。</li>
+    <li><strong>与 <a href="VideoGen-20260427-World-R1.html">World-R1</a> 的差异在于"几何一致性从何而来"</strong>:World-R1 用 RL 后训练诱导隐式 3D 一致性,LiON-LoRA 靠离散原语 LoRA 显式控制。前者不控相机,后者不建模几何。</li>
+    <li><strong>与两篇调研汇总的关系</strong>:<a href="VideoGen-20260618-视频生成相机可控性调研.html">相机可控性调研</a>、<a href="VideoGen-20260427-视频生成几何一致性调研.html">几何一致性调研</a> 是全景视角;LiON-LoRA 属于其"轨迹级控制"象限中"用 LoRA 隐式驱动"分支的一个<em>反例修正</em> —— 它证明隐式 LoRA 路线不是不能用,而是需要先治融合。</li>
+    <li><strong>骨干侧</strong>:本文基于 <a href="VideoGen-20240812-CogVideoX.html">CogVideoX</a>(49 帧、480×720),这也是它"49 帧 vs 对手 16 帧"直接比较的由来。</li>
+  </ul>
+</div>
+</section>
+
+<!-- ==================== 14. 应用场景 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<h3>14.1 它适合做什么</h3>
+<table>
+<tr><th>场景</th><th>适配度</th><th>理由</th></tr>
+<tr><td>产品演示视频:固定几种运镜(推拉 / 平移 / 环绕)组合</td><td class="best">✅ 高</td><td>恰好命中 3 类原语;幅度旋钮 $\mathcal{S}$ 可直接给非技术用户用</td></tr>
+<tr><td>数据增强:给静态图生成带指定运镜的短视频,做 3D/4D 训练数据</td><td class="best">✅ 高</td><td>训练成本低(4k 步)、可批量给不同 $\mathcal{S}$ 造多版本;"相机-物体解耦"利于构造可控变量</td></tr>
+<tr><td>物体运动速度可调的内容生产</td><td class="partial">~ 中</td><td>参数化 $\mathcal{S}$ 无需边框/拖拽交互,但用光流相关性做代理指标,与真实感知快慢的对应未验证</td></tr>
+<tr><td>虚拟制片 / 自由运镜(任意轨迹、含 roll/pitch)</td><td class="fail">❌ 低</td><td>只支持 3 类原语的组合,<strong>不是任意位姿序列条件</strong></td></tr>
+<tr><td>需要高精几何一致性的长序列重访</td><td class="fail">❌ 低</td><td>不含显式几何建模;深层正交性失效;长序列受 49 帧骨干限制</td></tr>
+</table>
+
+<h3>14.2 资源与成本</h3>
+<div class="grid grid-3">
+  <div class="card left-bar">
+    <h4>训练成本</h4>
+    <p>4×H20、batch 16、4,000 步、rank 256、480×720。相对对手"至少 50,000 步"低一个数量级。<strong>总时长 / 显存未报告</strong>,无法换算绝对成本。</p>
+  </div>
+  <div class="card left-bar warn">
+    <h4>数据成本</h4>
+    <p>需要 <strong>100 个场景的 3DGS 重建 + 每条原语渲染 600 帧</strong>。这是全流程中最重的一环 —— 但只需做一次,之后每个新原语的 LoRA 训练只要 ~100 条片段(表 3)。</p>
+  </div>
+  <div class="card left-bar red">
+    <h4>采用风险</h4>
+    <p><strong>无开源代码 / 权重</strong>,补充材料 404。若要落地需完整复现数据制备管线(3DGS 渲染 + 中位深度自适应移动距离,细节在不可得的补充材料里)。</p>
+  </div>
+</div>
+
+<h3>14.3 能否进我们自己的 pipeline</h3>
+<div class="callout key">
+  <h4>结论:方法思想可用,"拿来即用"不成立</h4>
+  <ul>
+    <li><strong>可直接借鉴的是两条与模型无关的技术</strong>:① 式 4 的逐层范数归一 —— 任何多 LoRA 融合场景都适用,一行除法、零参数;② "把连续控制量做成 token 而非外部系数"的设计原则 —— 可迁移到风格强度、光照权重、表情幅度等任何需要连续调节的量。这两条<strong>不依赖 CogVideoX,也不依赖相机控制</strong>。</li>
+    <li><strong>不宜直接照搬的是任务设定</strong>:3 类离散原语 + 单标量幅度,控制粒度远低于数字人时序控制所需的精度(需要任意相机轨迹 + 逐帧位姿)。</li>
+    <li><strong>与数字人主线的关联</strong>:本文"运动强度参数化"与"静机位数据解耦相机/物体"的思路,对<em>人体动作幅度可控生成</em>有参考价值 —— 尤其"用静机位数据训练物体运动 LoRA 以避免相机污染"这一招,可直接迁移到"用静背景数据训练人体运动 LoRA"。</li>
+  </ul>
+</div>
+</section>
+
+<!-- ==================== 15. 可改进方向 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<p>本节从方法 / 数据评估 / 工程实用性三维度分点,每点含<em>问题描述 + 论文佐证 + 改进建议</em>,并标优先级。</p>
+
+<h3>方法层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 正交性只被观察、未被实现,且深层失效无对策</h4>
+  <p><strong>问题:</strong>摘要与贡献列表把 Orthogonality 列为三条 "core principles" 之一、并称方法 "acquiring linear scalability, orthogonality, and norm consistency",但<strong>全文没有任何正交性损失项、没有对 $\Delta W$ 的子空间投影分离、没有任何显式约束</strong>。§3.3 的 Orthogonality 小节通篇是测量:浅层余弦相似度 $0.06\pm0.06$(原文 Figure 4),深层 "coupling effects begin to emerge"。§3.5 中与正交性相关的动作仅有一处 —— "为不同 LoRA 使用各自的 linear 投影编码 $\mathcal{S}$,以避免耦合"。也就是说:<em>浅层正交性是白捡的条件,深层耦合被观测到却没有处理</em>,而深层恰好负责高频细节与长时一致性。</p>
+  <p><strong>改进:</strong>① 引入正交性正则(如对 $\Delta W_i^\top\Delta W_j$ 的非对角项施加惩罚,或对 LoRA 输出做子空间分离投影),观察深层耦合是否下降;② 至少补一组"浅层 / 深层 / 全层注入"的对照消融,验证"深层耦合是否真的无害";③ 写作上应把 Orthogonality 从"方法贡献"降格为"经验前提",在摘要中区分 <em>analyze</em> 与 <em>enforce</em>。</p>
+</div>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 只有 3 类离散原语,"轨迹控制精度"的表述高估了能力</h4>
+  <p><strong>问题:</strong>§3.1 明确 "three types of fundamental camera primitives are included",每个原语单独训 LoRA。论文的评测指标却叫 "trajectory control accuracy"(轨迹控制精度),对比对象是接受<strong>任意相机位姿序列</strong>的 CameraCtrl / CamI2V。这两个问题设定不等价:后者的条件空间是连续的高维位姿序列,前者只是 3 类原语的方向 × 幅度组合。原文 Table 2(复杂轨迹)本文 RotErr 输给 CamI2V(1.044 vs 0.924)正是这个差异的体现 —— <strong>组合越复杂,离散原语的表达能力越吃紧</strong>。</p>
+  <p><strong>改进:</strong>① 明确报告所用 LoRA 的确切数量与支持的原语集合(论文未给);② 增加"非组合型轨迹"测试(如平移 + 环绕 + 侧滚的连续混合),观察原语叠加是否退化;③ 或探索原语空间的连续化(如对原语 LoRA 权重做流形插值),把离散原语扩展为连续原语场。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 融合时的"隐藏状态取平均"缺乏论证与消融</h4>
+  <p><strong>问题:</strong>§3.5 的核心操作是 "different scaling tokens are spatially concatenated while the hidden states are averaged"。这个平均值是本文"训练无关融合"的技术枢纽,但论文<strong>既未论证"为什么平均能保持独立控制",也未做任何消融</strong>($k=2/3$ 时平均 vs 拼接 vs 加权 vs 残差)。直觉上,平均会让 $k$ 组控制信号在输出特征上互相稀释 —— 这与表 2 中复杂轨迹 RotErr 反而落后(CamI2V 0.924 vs 本文 1.044)的现象吻合。</p>
+  <p><strong>改进:</strong>补 $k\in\{2,3,4\}$ 的融合消融表(平均 / 拼接 / 按 $\mathcal{S}$ 加权 / 学习门控),并列 RotErr / TransErr / ATE;若确实是平均导致复杂轨迹退化,改用可学习门控或注意力加权的融合可同时改善表 2。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 范数归一化(式 4)缺定量佐证</h4>
+  <p><strong>问题:</strong>式 4 是论文列出的第一条贡献,也是本文最便宜、最可迁移的技术。但它的证据只有图2 的<em>定性</em>平滑度对比 + 原文 Figure 3d 的 2D 玩具示例。<strong>没有 "w/o norm normalization" 的定量消融</strong>(RotErr / TransErr / ATE / FVD)。同时 $\alpha$ 取"各 LoRA 范数均值"这一具体选择也未做敏感性分析(均值 vs 中位数 vs 固定常数)。</p>
+  <p><strong>改进:</strong>补 w/o 式 4 的定量对照行;对 $\alpha$ 的取值策略做敏感性实验;并报告各 LoRA 范数的实际分布直方图(原文 Figure 5 只有曲线,未给数值范围),使读者能判断"范数悬殊"到底有多大。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] "运动幅度"被实现为"视频播放到第几帧",语义偏窄</h4>
+  <p><strong>问题:</strong>$\mathcal{S}$ 的构造方式是取前 $600\mathcal{S}$ 帧的均匀 49 帧,因此 $\mathcal{S}$ <em>本质上是"运动完成了整条轨迹的几分之几"</em>,而非"运动速度"或"位移幅度"。这隐含假设:轨迹是<strong>匀速</strong>的、且"播放长度"与"运动幅度"成正比。对加速 / 减速运动、非线性轨迹、含停留的运动,单一标量不足以描述。物体运动侧同理($s=49/240$,最大帧 240)。</p>
+  <p><strong>改进:</strong>明确说明 $\mathcal{S}$ 的匀速假设及其失效边界;或扩展为多维控制量(同时编码幅度与速度曲线),用与相机侧相同的手法把它 token 化。</p>
+</div>
+
+<h3>数据与评估层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 表 3 的"数据越多越差"反常未解释</h4>
+  <p><strong>问题:</strong>7k 样本 @4k 步的 RotErr 为 1.227,显著劣于 100 样本 @4k 步的 0.802;7k 训到 10k 步(0.896)仍不及 100 样本 @10k 步(0.710)。论文只截取了有利的那一半("4k 步 + 极少数据即可")。但另一半天平更重要:<strong>为什么增加 70 倍数据反而掉点?</strong></p>
+  <p><strong>改进:</strong>给出数据量-性能曲线(如 50 / 100 / 500 / 1k / 7k),并在同等步数下扫;同时分析 7k 片段的场景 / 速度 / 尺度分布,检验"多样性成为干扰"的假说。若假说成立,应改进数据制备 —— 原作中的"按中位深度自适应移动距离"可能在不同场景间引入了过大的尺度方差。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] DimensionX 用自实现版本对比,公平性打折</h4>
+  <p><strong>问题:</strong>表 1 / 表 2 的 DimensionX 一栏标注为 DimensionX-S*(表 1 图注:"the re-implemented version of S-Director of DimensionX"),原文 Figure 9 图注进一步自承 "The re-implemented DimensionX has limited camera movement amplitude and lacks linear control"。<strong>用一个作者自己重实现、且自认能力受限的版本作为对照,对本文系统性地有利</strong>。论文同时称 "our model achieves linear controllability and multi-motion fusion under the same foundation model, CogvideoX" —— 同骨干对比有价值,但结论强度受制于重实现质量。</p>
+  <p><strong>改进:</strong>用官方 checkpoint / 官方代码复测 DimensionX;若官方版本在 CogVideoX 上不可得,应明确声明"该栏为同骨干下的自实现基线,不代表 DimensionX 官方上限",并在结论中对该行数值降权。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 运动强度用光流幅度做代理指标,与感知不对齐</h4>
+  <p><strong>问题:</strong>原文 Figure 6 用"$\mathcal{S}$ 与相邻帧光流幅度的 Pearson 相关"量化运动强度可控性。但光流幅度是<em>像素级</em>量:纹理稀疏区域光流估计本身不可靠,镜头外或小占比物体的运动对全局光流幅度贡献很小。用它作为"运动强度"的代理,量化结论会被数据特性影响。</p>
+  <p><strong>改进:</strong>补充与人类感知的对照(如众包主观打分,或与运动模糊长度、Tracker 位移幅度等更贴近运动学的量做交叉验证);报告按运动幅度分层的相关系数(高/中/低幅度区间分别统计),而非只看总体 Pearson 值。</p>
+</div>
+
+<h3>工程实用性层面</h3>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 代码 / 权重 / 补充材料三缺,复现路径断裂</h4>
+  <p><strong>问题:</strong>项目页 <code>Code</code> 按钮 href 指向作者个人主页 <code>https://fuchengsu.github.io</code>,<code>Supplementary</code> 指向的 PDF 实测 404;arXiv abs 页无 ancillary 文件。论文正文至少有三处把关键细节外推到补充材料:"More details are discussed in the supplementary."(数据渲染)、缩放 token 的构造细节等。<strong>这意味着论文里最需要复现的部分(数据制备)没有公开来源</strong>。</p>
+  <p><strong>改进:</strong>作者侧应尽快放出数据制备脚本与渲染参数;使用方若不打算自己重建 100 个 3DGS 场景,则本方法的"可组合性"优势无法被验证 —— 只能借鉴式 4 与缩放 token 的思想,不能复现数字。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[中优先级] 缺资源账(显存 / 延迟 / 参数量)</h4>
+  <p><strong>问题:</strong>论文强调"参数高效"(parameter-efficient)并把新增参数说成"可忽略",但<strong>全文没有任何参数量、显存占用、推理延迟的数字</strong>。rank 256 相对常见 LoRA 配置(4–128)明显偏大,其对显存与推理的影响需要量化才能判断"高效"是否成立。</p>
+  <p><strong>改进:</strong>补一张资源表:可训练参数量及其占骨干比例、训练显存、相对原 CogVideoX 的推理延迟与 FPS 增幅(含缩放 token 拼接带来的序列长度增加 $n\to n+k$)。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 跨骨干迁移只有声明、没有验证</h4>
+  <p><strong>问题:</strong>§4.1 称 "This LoRA-based training approach can be seamlessly adapted to other video diffusion models, such as HunYuan and DynamicCrafter with its flexibility",但全文只做了 CogVideoX 一个骨干。</p>
+  <p><strong>改进:</strong>至少在第二个骨干(如 HunyuanVideo 或 Wan)上做一次验证,报告 RotErr / FVD 是否保持同一量级,以确认"范数归一 + 缩放 token"确实是骨干无关的。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>佐证类型</th></tr>
+<tr><td class="fail">高</td><td>正交性只被观察未实现,深层失效无对策</td><td>方法缺失(全文无正交约束)</td></tr>
+<tr><td class="fail">高</td><td>仅 3 类离散原语,"轨迹控制精度"表述高估能力</td><td>§3.1 原文 + 表 2 RotErr 落后</td></tr>
+<tr><td class="fail">高</td><td>表 3"数据越多越差"反常未解释</td><td>表 3 数值 + 论文回避</td></tr>
+<tr><td class="fail">高</td><td>代码/权重/补充材料三缺,复现断裂</td><td>链接实测(Code→个人主页 / Supp→404)</td></tr>
+<tr><td class="partial">中</td><td>融合"取平均"无论证无消融</td><td>方法缺失(§3.5 无消融)</td></tr>
+<tr><td class="partial">中</td><td>范数归一(式 4)缺定量消融</td><td>消融缺失(仅定性)</td></tr>
+<tr><td class="partial">中</td><td>DimensionX 用自实现版本做基线</td><td>表 1 图注自承</td></tr>
+<tr><td class="partial">中</td><td>光流幅度作为运动强度代理指标</td><td>评测协议分析</td></tr>
+<tr><td class="partial">中</td><td>缺资源账(显存/延迟/参数量)</td><td>论文缺失</td></tr>
+<tr><td>低</td><td>$\mathcal{S}$ 的匀速假设,语义偏窄</td><td>§3.4 构造方式</td></tr>
+<tr><td>低</td><td>跨骨干迁移只有声明无验证</td><td>§4.1 主张</td></tr>
+</table>
+
+<div class="callout key">
+  <h4>🎯 个人认为最关键的三点</h4>
+  <ol>
+    <li><strong>"三大原则"里只有两个是方法</strong> —— Orthogonality 是观察到的前提,不是实现出来的性质。这直接影响方法评估:它能工作的前提是"低频相机控制恰好落在浅层、而浅层恰好正交",一旦任务需要深层参与(高频细节、长序列一致性),方法的适用性就未被验证。<em>建议把本文当作"两个实用技巧 + 一个有价值的问题诊断"来使用,而不是一个三支柱框架。</em></li>
+    <li><strong>任务设定与对比基线不等价</strong> —— 3 类离散原语 vs 任意位姿序列,却在同一张表上比 RotErr/ATE。表 2 复杂轨迹 RotErr 落后(CamI2V 0.924 vs 1.044)是这种不等价最直接的溢出。评价这套数字时,必须把"任务更简单"折算进去。</li>
+    <li><strong>可迁移价值集中在"条件化"这一步</strong> —— 把连续控制量从外部系数挪进条件 token(以及"静背景数据解耦两个控制轴"这一招),是与骨干、与任务都无关的通用设计原则;而式 4 的范数归一是一行就能用的补丁。这两条比论文的定量结论更值得拿走。</li>
+  </ol>
+</div>
+</section>
+
+<!-- ==================== 16. 总结 ==================== -->
+<section id="s16">
+<h2><span class="num">16</span>总结、研究团队与资源</h2>
+<p>LiON-LoRA 的立论是:<strong>LoRA 路线的相机控制之所以不精,根因在"多个 LoRA 的融合"而非 LoRA 本身</strong>。它把融合行为拆成向量空间里的三个量 —— 范数、夹角、可调标量,并只对其中两个动手:用式 4 的<strong>逐层范数归一</strong>消除"一侧压过另一侧"的融合不稳定(零参数、一行代码),用<strong>缩放 token</strong> 把运动幅度 $\mathcal{S}$ 从外部旋钮变成模型输入以实现线性可伸缩;再以训练无关的融合框架支持多轨迹与相机-物体混合控制。在 CogVideoX 上仅 4,000 步微调(rank 256)即取得 RotErr 0.776 / ATE 0.295 / FVD 136.0(基础轨迹全部最优),复杂轨迹 RotErr 1.044 略逊于 CamI2V。核心遗留问题:正交性只被观察未被约束、只覆盖 3 类离散原语、融合的"取平均"无消融、代码与补充材料均不可得。</p>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>最大亮点</h4>
+    <ul>
+      <li><strong>问题诊断准确</strong>:把"LoRA 融合不稳定"归因到可度量的范数/夹角,而非笼统说"效果不好"</li>
+      <li><strong>式 4 极致便宜</strong>:一行除法、零参数、零训练即改善融合平滑度 —— 最易迁移的贡献</li>
+      <li><strong>缩放 token 思路通用</strong>:任何连续控制量都该被条件化,而不是当外部系数拧</li>
+      <li><strong>4,000 步 vs 对手 50,000 步</strong>:训练成本低一个数量级,是本文最硬的工程卖点</li>
+      <li><strong>相机-物体解耦的一招实用</strong>:用静机位数据隔离物体运动 LoRA,防相机污染</li>
+    </ul>
+  </div>
+  <div class="card left-bar red">
+    <h4>主要局限</h4>
+    <ul>
+      <li>"正交性"是观察而非方法,深层耦合被观测到却无对策</li>
+      <li>仅 3 类离散原语,与"任意轨迹控制"基线不同量级</li>
+      <li>复杂轨迹 RotErr 输给 CamI2V(1.044 vs 0.924)</li>
+      <li>DimensionX 基线是作者自实现版本,对比有利</li>
+      <li>式 4 与融合"取平均"均缺定量消融</li>
+      <li>代码 / 权重 / 补充材料三缺,无法复现</li>
+      <li>FVD 降幅的对比对象与表格数值不符</li>
+    </ul>
+  </div>
+  <div class="card left-bar">
+    <h4>演进定位</h4>
+    <p>在知识库的相机控制脉络里,LiON-LoRA 代表<strong>第五种范式:参数空间的 LoRA 融合治理</strong> —— 前四种分别是"多 LoRA 隐式驱动"(AnimateDiff/DimensionX)、"显式位姿注入"(CameraCtrl/MotionCtrl/AC3D)、"光线级几何编码"(<a href="VideoGen-20251208-UCPE.html">UCPE</a>/<a href="VideoGen-20260625-SCoPE.html">SCoPE</a>)与"逐点拖拽控制"。它与③是<em>正交</em>而非竞争关系:③ 回答"几何放哪",⑤ 回答"多能力如何共存"。若把式 4 的范数归一 + 缩放 token 叠加到几何编码类方法上,理论上能同时获得"几何精确"与"多能力不互蚀" —— 这是一条尚未被验证的可行组合。</p>
+  </div>
+</div>
+
+<h3>16.1 关键指标速查</h3>
+<table>
+<tr><th>指标</th><th>LiON-LoRA</th><th>最优基线</th><th>说明</th></tr>
+<tr><td>RotErr ↓(基础)</td><td class="best">0.776</td><td>CamI2V 1.033</td><td>相对降 24.8%(✅ 与论文表述吻合)</td></tr>
+<tr><td>TransErr ↓(基础)</td><td class="best">0.167</td><td>CameraCtrl 0.192</td><td>相对降 13.0%(✅ 吻合)</td></tr>
+<tr><td>ATE ↓(基础)</td><td class="best">0.295</td><td>DimensionX-S* 0.359</td><td>论文称降 21.5% <span class="partial">【待核实】</span></td></tr>
+<tr><td>FVD ↓(基础)</td><td class="best">136.0</td><td>DimensionX-S* 193.3</td><td>论文称"较 CamI2V 降 37.8%",与表 1 数值不符 <span class="partial">【待核实】</span></td></tr>
+<tr><td>RotErr ↓(复杂轨迹)</td><td class="partial">1.044</td><td class="best">CamI2V 0.924</td><td><strong>本文落后</strong>,论文自承 "except RotErr"</td></tr>
+<tr><td>微调步数</td><td class="best">4,000</td><td>对手 ≥50,000</td><td>低一个数量级</td></tr>
+<tr><td>LoRA rank</td><td>256</td><td>—</td><td>偏大,显存开销未披露</td></tr>
+<tr><td>开源</td><td class="fail">❌</td><td>CameraCtrl / CamI2V ✅</td><td>项目页 Code 指向作者个人主页</td></tr>
+</table>
+
+<h3>16.2 👥 研究团队</h3>
+<table>
+<tr><th>成员</th><th>单位</th><th>角色</th></tr>
+<tr><td>Yisu Zhang</td><td>浙江大学 / 阿里达摩院</td><td>共同一作(部分工作完成于达摩院实习期间)</td></tr>
+<tr><td>Chenjie Cao</td><td>阿里达摩院 / 湖畔实验室</td><td>共同一作 / 通讯</td></tr>
+<tr><td>Chaohui Yu</td><td>阿里达摩院 / 湖畔实验室</td><td>作者</td></tr>
+<tr><td>Jianke Zhu</td><td>浙江大学</td><td>通讯作者(论文中用 † 标注)</td></tr>
+</table>
+<p class="partial">作者角色标注:论文 §1 前脚注写明 "Equal Contribution"(Yisu Zhang、Chenjie Cao)与 "Corresponding author"(Jianke Zhu),另有 "Work done during internship at DAMO Academy, Alibaba Group"。项目页的作者上标为 <sup>1,2*</sup> / <sup>2,3*</sup> / <sup>2,3</sup> / <sup>1†</sup>。</p>
+
+<h3>16.3 🔗 资源链接</h3>
+<table>
+<tr><th>资源</th><th>链接</th></tr>
+<tr><td>📄 arXiv abs</td><td><a href="https://arxiv.org/abs/2507.05678" target="_blank">arxiv.org/abs/2507.05678</a></td></tr>
+<tr><td>🌐 arXiv HTML 全文</td><td><a href="https://arxiv.org/html/2507.05678v1" target="_blank">arxiv.org/html/2507.05678v1</a></td></tr>
+<tr><td>📥 PDF</td><td><a href="https://arxiv.org/pdf/2507.05678" target="_blank">arxiv.org/pdf/2507.05678</a></td></tr>
+<tr><td>🌐 项目主页</td><td><a href="https://fuchengsu.github.io/lionlora.github.io/" target="_blank">fuchengsu.github.io/lionlora.github.io</a></td></tr>
+<tr><td>💻 GitHub</td><td class="fail">无(项目页 Code 按钮指向作者个人主页,实测非代码仓库)</td></tr>
+<tr><td>🏢 机构</td><td>浙江大学 · 阿里达摩院 · 湖畔实验室</td></tr>
+<tr><td>🎯 骨干模型</td><td>CogVideoX(49 帧,480×720)</td></tr>
+<tr><td>📅 版本</td><td>v1,2025-07-08(唯一版本,无更新)</td></tr>
+</table>
+
+<h3>16.4 相关笔记</h3>
+<ul>
+  <li><a href="VideoGen-20260625-SCoPE.html">SCoPE:视线坐标位置编码</a> —— 相机几何"加法注入"路线,与本篇构成"注意力空间 vs 参数空间"的分工</li>
+  <li><a href="VideoGen-20251208-UCPE.html">UCPE:统一相机位置编码</a> —— 光线级编码 + LoRA 风格适配器(<span class="partial">本篇的范数归一可直接用于其多适配器组合</span>)</li>
+  <li><a href="VideoGen-20260618-视频生成相机可控性调研.html">视频生成中的相机可控性技术方向</a> —— 全景调研,本篇属其"轨迹级控制"分支</li>
+  <li><a href="VideoGen-20260427-视频生成几何一致性调研.html">视频生成中的几何一致性技术方向</a> —— 几何一致性的另一条脉络</li>
+  <li><a href="VideoGen-20260427-World-R1.html">World-R1</a> —— RL 诱导隐式 3D 一致性,与显式 LoRA 控制互补</li>
+  <li><a href="VideoGen-20240812-CogVideoX.html">CogVideoX</a> —— 本篇的骨干模型</li>
+</ul>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>📝 LiON-LoRA 阅读笔记 · 生成于 2026-09-22 · 领域:视频生成 / 相机可控 / LoRA 融合</p>
+  <p>📄 arXiv:2507.05678 · 浙江大学 · 阿里达摩院 · 湖畔实验室</p>
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
