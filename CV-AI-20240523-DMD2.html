@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMD2 算法原理与工程实现分析</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7; padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .figure{margin:22px 0}
+  .figure img{max-width:100%; border-radius:8px; border:1px solid #333; display:block; margin:0 auto}
+  .figure .caption{
+    text-align:center; color:var(--muted); font-size:13px; margin-top:10px;
+    background:var(--panel); border-radius:8px; padding:10px 16px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  .uncertain{background:rgba(251,146,60,0.1); border-left:3px solid var(--orange); padding:8px 14px; border-radius:4px; display:block; margin:8px 0; color:#fdba74}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2405.14867 · 2024 · CV · 📊 deep · NeurIPS 2024 Oral</span>
+    <h1>DMD2: 改进的分布匹配蒸馏用于快速图像合成</h1>
+    <p class="subtitle">把扩散模型蒸馏成 1~4 步生成器:去掉回归损失的双时间尺度更新 (TTUR) + 扩散判别器 GAN 损失 + backward simulation 多步训练 —— 在 ImageNet-64 (FID 1.28) 与 SDXL 文生图上以 500× 推理加速超越教师模型。</p>
+    <p class="authors">Tianwei Yin · Michaël Gharbi · Taesung Park · Richard Zhang · Eli Shechtman · Frédo Durand · William T. Freeman<br>
+    <span style="color:var(--muted);font-size:13px">MIT · Adobe Research(第一作者当时为 MIT 全职博士生)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2405.14867" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2405.14867v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2405.14867" target="_blank">📥 PDF</a>
+      <a href="https://github.com/tianweiy/DMD2" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/tianweiy/DMD2" target="_blank">🤗 HuggingFace</a>
+      <a href="https://tianweiy.github.io/dmd2/" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#m1">模块一:去回归损失 + TTUR</a></li>
+    <li><a href="#m2">模块二:GAN 损失与扩散判别器</a></li>
+    <li><a href="#m3">模块三:多步生成与 Backward Simulation</a></li>
+    <li><a href="#loss">损失函数总表</a></li>
+    <li><a href="#flow">训练与推理流程</a></li>
+    <li><a href="#impl">⚙️ 工程实现细节</a></li>
+    <li><a href="#exp">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#compare">🔄 同类方法对比分析</a></li>
+    <li><a href="#apply">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#improve">可改进方向分析</a></li>
+    <li><a href="#conclusion">总结与演进定位</a></li>
+    <li><a href="#team">👥 研究团队与资源链接</a></li>
+  </ol>
+</div>
+<!-- ==================== ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">扩散蒸馏的目标是把多步扩散教师压成 1~4 步的学生生成器。此前的 <strong>DMD(Distribution Matching Distillation, CVPR 2024)</strong> 通过匹配教师与学生的<strong>输出分布</strong>(而非逐步轨迹)实现了单步蒸馏,但训练稳定性依赖一个额外的<strong>回归损失</strong>——它要求先用教师 + 确定性采样器跑完整采样链,生成数百万「噪声-图像」对,仅数据构造成本就达到 DMD2 总训练算力的 4 倍以上,且把学生质量锁死在教师的采样路径上。</p>
+<p>DMD2 用三项技术解除这些限制:<strong>① 去回归损失 + 双时间尺度更新规则 (TTUR)</strong>——每 1 次生成器更新配 5 次 fake score(critic)更新,解决纯分布匹配的稳定性问题;<strong>② 集成 GAN 损失</strong>——在 fake score 网络的 UNet bottleneck 上接轻量分类头,判别真实图像与生成图像,让学生首次接触到教师之外的监督信号,从而<strong>超越教师</strong>;<strong>③ 多步生成 + backward simulation</strong>——训练时模拟推理时的多步生成输入,消除训练-推理输入不匹配。</p>
+<div class="grid grid-3">
+  <div class="card"><div class="num-big">1.28</div><p>ImageNet-64 单步 FID(加长训练),优于教师 EDM SDE 采样 (1.36) 与全部单步基线(表 1)</p></div>
+  <div class="card"><div class="num-big">8.35</div><p>SD v1.5 蒸馏 zero-shot COCO-2014 30K prompt FID,优于 DMD1 (11.49) 与 50 步教师 (8.59)(表 5)</p></div>
+  <div class="card"><div class="num-big">500×</div><p>相对教师的推理成本下降(摘要);SDXL 蒸馏 4 步即可生成 1024×1024 图像并胜过 50 步教师(用户研究)</p></div>
+</div>
+<div class="callout key">
+<p><strong>一句话核心贡献:</strong>证明「纯分布匹配 + 扩散判别器 GAN」足以稳定蒸馏且能<strong>超越教师</strong>——回归损失不是必需品,而 GAN 用真实数据提供的额外监督是把蒸馏上限从「教师水平」抬到「数据分布水平」的关键。</p>
+</div>
+<div class="figure">
+  <img src="images/2405.14867/teaser_0520.png" alt="DMD2 SDXL 4-step 生成样例" loading="lazy">
+  <div class="caption"><b>图 0(论文 Fig.1)</b> DMD2 蒸馏 SDXL 的 4-step 生成器产出的 1024×1024 样例——4 次前向替代教师 50 步 + CFG。</div>
+</div>
+</section>
+
+<!-- ==================== MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 DMD1 的三个具体失败模式</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4>💰 回归损失的数据构建成本失控</h4>
+    <p>DMD1 的回归损失需要预生成「噪声→教师图像」对:SDXL 生成一对约 5 秒,覆盖 LAION 6.0 的 1200 万 prompt 约需 <strong>700 A100-天</strong>,超过 DMD2 总训练算力的 <strong>4 倍</strong>(论文 §3 末 + 附录 F)。</p>
+  </div>
+  <div class="card">
+    <h4>🔒 学生被教师的采样路径锁死</h4>
+    <p>回归损失强制学生遵循教师确定性采样器的输出,「抵消了非配对分布匹配的核心优势」,学生质量被教师上界限制——这正是 DMD1 无法超越教师的结构性原因(摘要 + §4.1)。</p>
+  </div>
+  <div class="card">
+    <h4>🚶 只支持单步学生</h4>
+    <p>原始 DMD 仅支持 one-step 学生(§4.4 开头)。而 SDXL 这类大规模模型受限于学生容量与优化景观复杂度,一步蒸馏难以到位,需要多步训练机制。</p>
+  </div>
+</div>
+<h3>2.2 核心洞察 (Insight)</h3>
+<div class="callout key">
+<p><strong>洞察一(为什么去回归后会不稳定):</strong>fake score 网络 $\mu_{\text{fake}}$ 在生成器的<strong>非平稳输出分布</strong>上在线训练,跟不上分布变化时给出<strong>有偏梯度</strong>。回归损失本质上是在用「锚点」掩盖这个问题。解法不是重新加锚,而是让 critic 更新得更快——GAN 文献里的 TTUR 思想。</p>
+<p><strong>洞察二(为什么能超越教师):</strong>DMD 的 real score 来自冻结教师,教师对真实分布的估计误差会直接传给学生,而学生从未见过真实数据、无法自我修正。在蒸馏中引入<strong>以真实数据为参照的 GAN 判别</strong>,等于给学生一条独立于教师的监督通道。</p>
+<p><strong>洞察三(多步的隐藏陷阱):</strong>以往多步蒸馏训练时对「加噪真实图像」去噪,推理时输入却是「上一步生成器输出再加噪」——两者分布不同,损害质量。训练时直接<strong>模拟推理管线</strong>即可对齐。</p>
+</div>
+<div class="callout warn">
+<p><strong>假设的失效条件:</strong>① TTUR 依赖「fake critic 更新频率足够高即可跟踪分布」——若生成器单步分布漂移过快(如过大的生成器学习率),5:1 也可能不够,论文建议以「亮度等通用图像统计稳定」为调节标准(附录 C);② GAN 判别器在 VAE latent 空间、且只在 bottleneck 特征上判别——若 latent 空间与像素空间差异大(broken VAE),判别信号会失真;③ backward simulation 假设「训练时模拟的中间步输入 ≈ 推理时真实中间步输入」,当生成器快速更新时这仍是移动靶。</p>
+</div>
+</section>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+<h3>3.1 输入 / 输出定义</h3>
+<table>
+<tr><th>量</th><th>定义</th><th>形状(SDXL 路径)</th></tr>
+<tr><td>$z$</td><td>生成器输入噪声,$z\sim\mathcal{N}(0,\mathbf{I})$</td><td>$[B, 4, 128, 128]$ (VAE latent,$f{=}8$ 下采样)</td></tr>
+<tr><td>$G_\theta(z, t, c)$</td><td>学生生成器 = 微调的 UNet(与教师同构),输入噪声/带噪 latent + 时间步 + 文本嵌入</td><td>$[B,4,128,128] \to [B,4,128,128]$</td></tr>
+<tr><td>$\mu_{\text{real}}$</td><td>冻结教师(提供 real score)</td><td>同 UNet,requires_grad=False(<code>sd_guidance.py:50</code>)</td></tr>
+<tr><td>$\mu_{\text{fake}}$</td><td>fake score 网络 = 可训练的 UNet 拷贝,在线拟合学生输出分布</td><td>同 UNet,requires_grad=True(<code>sd_guidance.py:58</code>)</td></tr>
+<tr><td>$D$</td><td>GAN 判别器 = $\mu_{\text{fake}}$ 的 UNet bottleneck + 轻量分类头</td><td>$[B,4,128,128] \to [B]$ 标量 logit</td></tr>
+<tr><td>$F(x,t)$</td><td>前向扩散(DDIM 调度加噪)</td><td>保持 $[B,4,128,128]$</td></tr>
+</table>
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th></tr>
+<tr><td>$s_{\text{real}}, s_{\text{fake}}$</td><td>真实/生成分布的 score 函数 $\nabla_x \log p$,由 $\mu_{\text{real}}, \mu_{\text{fake}}$ 的去噪输出按式 (1) 换算</td></tr>
+<tr><td>$p_{\text{real},t}, p_{\text{fake},t}$</td><td>真实/生成样本经 $t$ 步前向扩散后的边缘分布</td></tr>
+<tr><td>$\alpha_t, \sigma_t$</td><td>noise schedule 系数;$q(x_t|x)\sim\mathcal{N}(\alpha_t x, \sigma_t^2 \mathbf{I})$</td></tr>
+<tr><td>$\mathcal{L}_{\text{DMD}}$</td><td>分布匹配损失(KL 的梯度形式,式 2)</td></tr>
+<tr><td>$\mathcal{L}_{\text{GAN}}$</td><td>扩散判别器 GAN 损失(式 4)</td></tr>
+<tr><td>$\{t_1,\dots,t_N\}$</td><td>$N$ 步采样的固定时间表,4-step 用 999/749/499/249</td></tr>
+<tr><td>TTUR 5:1</td><td>fake score 每步更新,生成器每 5 步更新一次</td></tr>
+</table>
+<h3>3.3 总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    Z["z ~ N(0,I) [B,4,128,128]"] --> G
+    subgraph GEN["学生生成器 G_θ (可训练 UNet)"]
+        G["去噪一步<br/>(多步时: backward simulation 模拟中间步)"] --> X0["生成图像 x̂ (VAE latent) [B,4,128,128]"]
+    end
+    X0 -->|"F(x,t) 加噪 t~[0,1000]"| XT["x_t"]
+    XT --> RT["μ_real (冻结教师)<br/>real score"]
+    XT --> FT["μ_fake (可训练 UNet)<br/>fake score"]
+    RT -->|"score 差 → KL 梯度"| DM["分布匹配梯度 (式 2)"]
+    FT --> DM
+    XT -.->|"同一 x_t 送判别分支"| DISC["D: μ_fake bottleneck<br/>+ 分类头 (式 4)"]
+    REAL["真实图像 (LAION 500K latents)"] -->|"加噪 F(x,t)"| DISC
+    DM --> LSUM["生成器损失 = L_DMD + λ·GAN"]
+    DISC --> LSUM
+    X0 -->|"detach"| FTRAIN["μ_fake 的去噪损失<br/>(ε-MSE, 每步)"]
+    DISC --> GANTRAIN["判别器损失 (每步)"]
+</div>
+<p><b>图 1</b> DMD2 总体数据流:两个损失通道(分布匹配 + GAN)共同驱动生成器;fake score 网络与 GAN 判别器共享 UNet 主体,每步更新;生成器每 5 步更新一次(TTUR)。</p>
+<div class="figure">
+  <img src="images/2405.14867/gan_pipeline_new.png" alt="DMD2 训练管线总览" loading="lazy">
+  <div class="caption"><b>图 2(论文 Fig.3)</b> 方法总览:训练在两个阶段间交替——(1) 用隐式分布匹配梯度(红)+ GAN 损失(绿)优化生成器;(2) 训练 fake score(蓝)与 GAN 判别器(绿)。灰色为冻结教师,红色为学生生成器(支持单步/多步)。</div>
+</div>
+</section>
+<!-- ==================== MODULE 1: TTUR ==================== -->
+<section id="m1">
+<h2><span class="num">4</span>模块一:去回归损失 + 双时间尺度更新 (TTUR)</h2>
+<span class="stage-tag stage-1">Why</span>
+<p><strong>失败模式定量证据:</strong>在 ImageNet-64 上朴素去掉回归损失,FID 从 2.62 恶化到 3.48(表 3 第 2 行);训练过程生成样本的平均像素亮度剧烈震荡不收敛(附录 C、Fig.8)。作者归因于 fake score 网络 $\mu_{\text{fake}}$ 的<strong>在线估计滞后</strong>:它在生成器非平稳输出分布上训练,更新不足时 score 估计有偏,生成器梯度方向随之漂移。</p>
+<p><strong>解法:</strong>借用 GAN 的 TTUR 思想(Heusel et al. 2017),但用在<strong>更新频率</strong>而非学习率上——fake score 每步更新,生成器每 5 步更新一次。附录 C 的收敛曲线(Fig.9)显示:频率 1(朴素)不稳定;频率 10 稳定但训练慢;5 是稳定性与速度的最佳平衡;「fake 模型学习率放大 5 倍」的异步学习率方案效果明显更差——说明瓶颈在<strong>估计精度</strong>而非梯度步长。</p>
+<h3>4.1 数学形式化</h3>
+<p>DMD 的核心是 KL 散度的梯度可以写成两个 score 之差(论文式 1、2):</p>
+<div class="equation">
+$$s_{\text{real}}(x_t,t)=\nabla_{x_t}\log p_{\text{real},t}(x_t)=-\frac{x_t-\alpha_t\mu_{\text{real}}(x_t,t)}{\sigma_t^2} \tag{1}$$
+<span class="label">score 与去噪输出的换算</span>
+</div>
+<div class="equation">
+$$\nabla\mathcal{L}_{\text{DMD}}=-\mathbb{E}_{t}\left(\int\big(s_{\text{real}}(F(G_\theta(z),t),t)-s_{\text{fake}}(F(G_\theta(z),t),t)\big)\frac{dG_\theta(z)}{d\theta}\,dz\right) \tag{2}$$
+<span class="label">分布匹配梯度 = 两个 score 之差回传</span>
+</div>
+<p>源码实现(<code>sd_guidance.py:235-241</code>)把 score 差换算到 $x_0$ 空间的「伪真值方向」并做尺度归一化:</p>
+<pre>
+p_real  = (latents - pred_real_image)          # 教师预测的残差方向
+p_fake  = (latents - pred_fake_image)          # fake score 的残差方向
+grad    = (p_real - p_fake) / |p_real|.mean()  # 归一化分布匹配梯度
+loss    = 0.5 * MSE(latents, (latents - grad).detach())   # fake-loss trick
+</pre>
+<div class="callout tip">
+<p><strong>机制解释——为什么归一化:</strong>score 差的绝对幅度随 $t$ 变化巨大(高噪声时 score 本身大),按 $|p_{\text{real}}|$ 的 batch 均值归一化让不同 $t$ 的梯度贡献大致同量级,避免训练被个别时间步主导。<code>torch.nan_to_num</code>(<code>sd_guidance.py:239</code>)兜底数值异常。</p>
+</div>
+<h3>4.2 模块内部流程</h3>
+<div class="mermaid">
+flowchart TD
+    S["step % 5 == 0 ?"] -->|"是: 生成器轮"| GT["生成器前向 + 分布匹配梯度<br/>(教师/判别器梯度关闭)"]
+    S -->|"否: 仅 critic 轮"| CT["fake score 去噪损失 + GAN 判别损失"]
+    GT --> UPD["更新 G_θ, lr=5e-7"]
+    CT --> UPD2["更新 μ_fake + 分类头, 每步"]
+    UPD2 --> NXT["下一步"]
+</div>
+<p><b>图 3</b> TTUR 交替更新:代码中 <code>COMPUTE_GENERATOR_GRADIENT = step % dfake_gen_update_ratio == 0</code>(<code>train_sd.py:330</code>),ratio=5。</p>
+<h3>4.3 监督信号</h3>
+<p>本模块的监督即式 (2) 的 KL 梯度,无任何配对数据。<strong>这是与 DMD1 的本质区别</strong>:DMD1 需要额外的 $\mathcal{L}_{\text{reg}}=\mathbb{E}_{(z,y)}d(G_\theta(z),y)$(式 3,$y$ 为教师确定性采样输出,$d$=LPIPS),DMD2 将其完全移除(SD v1.5/SDXL 多步路径;SDXL 1-step 例外,见 §9)。</p>
+</section>
+
+<!-- ==================== MODULE 2: GAN ==================== -->
+<section id="m2">
+<h2><span class="num">5</span>模块二:GAN 损失与扩散判别器</h2>
+<span class="stage-tag stage-2">How</span>
+<p><strong>动机:</strong>TTUR 只追平 DMD1(2.61 vs 2.62),学生仍受教师 score 估计误差限制。GAN 引入真实数据(LAION-Aesthetic 5.5+ 的 500K 张图,预提取 VAE latents)作为独立监督源,这是蒸馏模型首次能「超出教师所见」。</p>
+<h3>5.1 数学形式化</h3>
+<div class="equation">
+$$\mathcal{L}_{\text{GAN}}=\mathbb{E}_{x\sim p_{\text{real}},t\sim[0,T]}[\log D(F(x,t))]+\mathbb{E}_{z\sim p_{\text{noise}},t\sim[0,T]}[-\log(D(F(G_\theta(z),t)))] \tag{4}$$
+<span class="label">扩散判别器 GAN 损失</span>
+</div>
+<p>判别发生在<strong>多个噪声水平</strong>下:$x$ 与 $G(z)$ 都先经前向扩散加噪 $F(\cdot,t)$($t$ 均匀采样于 $[0,1000]$,<code>sd_guidance.py:147-151</code>)再送入判别分支。这继承了 DiffusionGAN 的思想:加噪相当于对判别输入做随机平滑,让单张图判别变成分布层面判别,抑制 GAN 过拟合与伪影。</p>
+<h3>5.2 网络结构表(判别分支)</h3>
+<table>
+<tr><th>层/算子</th><th>输入(SDXL, 1024² 图)</th><th>输出</th></tr>
+<tr><td>fake UNet encoder + mid block(共享)</td><td>$[B,4,128,128]$ 带噪 latent</td><td>bottleneck 特征 $[B,1280,4,4]$</td></tr>
+<tr><td>Conv2d k4 s2 + GN + SiLU ×3</td><td>$[B,1280,32,32]$</td><td>逐级下采样 $32{\to}16{\to}8{\to}4$</td></tr>
+<tr><td>Conv2d k4 s4(池化)</td><td>$[B,1280,4,4]$</td><td>$[B,1280,1,1]$</td></tr>
+<tr><td>Conv2d k1(线性分类头)</td><td>$[B,1280,1,1]$</td><td>$[B]$ 标量 logit</td></tr>
+</table>
+<p>结构定义在 <code>sd_guidance.py:108-122</code>(SDXL 版,3 个 stride-2 卷积;SD v1.5 版只有 1 个,<code>sd_guidance.py:125-133</code>,因其 latent 分辨率 64²,bottleneck 仅 8×8)。<strong>判别器与 fake score 网络共享 UNet 主体</strong>:分类分支从 <code>classify_forward</code>(<code>sd_unet_forward.py:249-251</code>)返回的 down/mid 特征列表中取最后一项(bottleneck),整条判别链路与 fake score 训练在同一轮更新中完成(<code>train_sd.py:386-408</code>)。</p>
+<h3>5.3 前向流程与损失</h3>
+<ol>
+<li>真实图像(latent)与生成图像分别加噪 $F(\cdot,t)$,$t\sim U[0,1000]$;</li>
+<li>经 fake UNet(带 <code>classify_mode=True</code>)提 bottleneck 特征;</li>
+<li>分类头输出 logit,判别器损失为 softplus 组合:<code>softplus(logits_on_fake) + softplus(-logits_on_real)</code>(<code>sd_guidance.py:391</code>,非饱和 GAN 的数值稳定等价形式);</li>
+<li>生成器侧接收 <code>softplus(-logits_on_fake)</code>(<code>sd_guidance.py:323</code>),乘权重后与分布匹配损失相加(<code>train_sd.py:371-372</code>)。</li>
+</ol>
+<div class="callout tip">
+<p><strong>为什么把判别头挂在 fake UNet 上而不是独立网络:</strong>① 省一份 UNet 前向与显存——判别特征复用 fake score 已有的 encoder 计算;② bottleneck 特征天然聚合了全图语义,与「全图真实感」判别目标对齐;③ 该设计承自 SDXL-Lightning / UFOGen / LADD 的「用扩散模型做判别器」路线(论文 §4.3)。</p>
+</div>
+<h3>5.4 监督信号</h3>
+<p>判别器:真实图像(latent + 文本嵌入)vs 生成图像(latent + 文本嵌入),逐 batch 二分类。生成器:GAN 梯度 + 分布匹配梯度联合。权重:ImageNet $3\times10^{-3}$ / SD v1.5 $10^{-3}$ / SDXL $5\times10^{-3}$(后者论文未写,来自 <code>experiments/sdxl/*.sh</code> 的 <code>gen_cls_loss_weight</code>)。</p>
+</section>
+
+<!-- ==================== MODULE 3: MULTI-STEP ==================== -->
+<section id="m3">
+<h2><span class="num">6</span>模块三:多步生成与 Backward Simulation</h2>
+<span class="stage-tag stage-3">How</span>
+<h3>6.1 多步采样格式</h3>
+<p>固定时间表 $\{t_1,\dots,t_N\}$,4-step 用 <strong>999, 749, 499, 249</strong>(教师以 1000 步训练)。推理时按 consistency model 的方式交替去噪-加噪:</p>
+<div class="equation">
+$$\hat{x}_{t_i}=G_\theta(x_{t_i},t_i),\qquad x_{t_{i+1}}=\alpha_{t_{i+1}}\hat{x}_{t_i}+\sigma_{t_{i+1}}\epsilon \tag{5}$$
+<span class="label">去噪 → 重加噪 → 下一时间步</span>
+</div>
+<p>实现见 <code>demo/text_to_image_sdxl.py:150-171</code>:硬编码 <code>all_timesteps=[999,749,499,249]</code>、<code>step_interval=250</code>,每步 UNet 前向后用 <code>get_x0_from_noise</code> 求 $x_0$ 预测,再 <code>scheduler.add_noise</code> 到下一时间步。与 diffusers 集成时用 <code>LCMScheduler</code> + <code>timesteps=[999,749,499,249]</code>(README)。</p>
+<h3>6.2 训练-推理输入不匹配(核心问题)</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>以往做法(左图)</h4>
+    <p>训练时把<strong>加噪的真实图像</strong>给学生去噪。推理时学生的输入却是「上一步学生输出再加噪」——分布完全不同,尤其是中间步,学生从未见过「自己生成的图像」长什么样。</p>
+  </div>
+  <div class="card">
+    <h4>DMD2 做法(右图)</h4>
+    <p>训练时用<strong>当前学生生成器跑前几步</strong>生成带噪合成图像 $x_{t_i}$,让学生去噪这些「自己的中间输出」。因为只跑几步,计算可行。这把训练输入分布与推理完全对齐。</p>
+  </div>
+</div>
+<div class="figure">
+  <img src="images/2405.14867/noise_sim_new.png" alt="训练-推理不匹配与 backward simulation" loading="lazy">
+  <div class="caption"><b>图 4(论文 Fig.4)</b> 左:以往方法用前向扩散模拟中间步(训练-推理不匹配);右:DMD2 在训练时模拟推理的 backward 过程。</div>
+</div>
+<h3>6.3 实现细节(<code>sd_unified_model.py:127-162</code>)</h3>
+<ol>
+<li>每个 batch 随机选中间步 $k\sim U\{0,\dots,N{-}1\}$,跨 GPU 同步(broadcast);</li>
+<li>从纯噪声出发,用当前生成器<strong>无梯度</strong>跑 $k$ 步(去噪→重加噪交替,新采样的不相关噪声);</li>
+<li>把跑出来的 $x_{t_k}$ 作为学生的训练输入,配对时间步 $t_k$;</li>
+<li>若 $t_k$ 为最后一个时间步(纯噪声),直接用原始噪声替换(<code>sd_unified_model.py:198-199</code>)。</li>
+</ol>
+<div class="callout key">
+<p><strong>与并发工作 Imagine Flash 的差异(论文 §4.5):</strong>对方动机相同(backward distillation),但其回归损失中的<strong>教师</strong>从未在合成图像上训练过——训练-测试差距被转移给教师,误差沿采样路径累积;DMD2 的分布匹配损失不依赖学生的输入分布(对任意 $x_t$ 都能给出 score 差),天然规避此问题。</p>
+</div>
+<h3>6.4 监督信号</h3>
+<p>与单步一致:分布匹配(式 2)+ GAN(式 4),只是学生输入从 $z$ 换成模拟的 $x_{t_k}$。消融显示去掉 backward simulation 后 SDXL patch FID 从 20.86 升到 24.21(表 4)。</p>
+</section>
+<!-- ==================== LOSS TABLE ==================== -->
+<section id="loss">
+<h2><span class="num">7</span>损失函数总表</h2>
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(真值 + 出处)</th><th>作用</th></tr>
+<tr><td>分布匹配 $\mathcal{L}_{\text{DMD}}$</td><td>式 (2),score 差回传</td><td>1.0(<code>train_sd.py:664</code> 默认,实验脚本未覆盖)</td><td>把学生输出分布拉向教师覆盖的数据分布</td></tr>
+<tr><td>fake score 去噪损失</td><td>$\mathbb{E}\|\epsilon_{\text{pred}} - \epsilon\|^2$(ε-prediction MSE,<code>sd_guidance.py:295-297</code>)</td><td>1.0(直接加入,<code>train_sd.py:398</code>)</td><td>在线训练 $\mu_{\text{fake}}$ 拟合学生输出分布</td></tr>
+<tr><td>GAN 判别器损失</td><td>softplus 组合(式 4 等价)</td><td>$1\times10^{-2}$(<code>guidance_cls_loss_weight</code>,全部实验脚本一致)</td><td>训练判别头区分真/生成图</td></tr>
+<tr><td>GAN 生成器损失</td><td>$\text{softplus}(-D)$</td><td>ImageNet $3\times10^{-3}$ / SD v1.5 $1\times10^{-3}$ / SDXL $5\times10^{-3}$(附录 F + <code>gen_cls_loss_weight</code>)</td><td>给生成器教师之外的监督,超越教师的关键</td></tr>
+<tr><td>回归损失(仅 SDXL 1-step 预训练)</td><td>式 (3),LPIPS</td><td>仅 10K 对短时预训练初始化(<code>experiments/sdxl/README.md</code>)</td><td>1-step SDXL 从纯噪声直接回归易 block noise 伪影,需锚点初始化</td></tr>
+</table>
+<div class="callout warn">
+<p><strong>宣称 vs 实现的一个差异:</strong>论文标题级卖点是「eliminate the regression loss」,但源码与 README 明确:SDXL <strong>1-step</strong> 生成器仍需先用 10K 对噪声-图像 ODE 对做回归预训练做初始化(再切换到 DMD2 主训练),并配合 timestep shift(条件时间步 399)对抗 block noise 伪影。4-step 路径才是完全无回归。<span class="uncertain">⚠️【存疑】</span>论文正文说「这些调整对多步模型或其他 backbone 不必要」,但 1-step 需要的根因(直接从纯噪声一步映射的优化难度)论文未给出消融量化。</p>
+</div>
+</section>
+
+<!-- ==================== FLOWCHART ==================== -->
+<section id="flow">
+<h2><span class="num">8</span>训练与推理流程</h2>
+<h3>8.1 训练流程(每个 step)</h3>
+<div class="mermaid">
+flowchart TD
+    A["采样噪声 z [B,4,128,128]"] --> B{"denoising 模式?"}
+    B -->|"4-step SDXL"| C["backward simulation:<br/>随机选 k∈[0,4), 生成器无梯度跑 k 步<br/>得模拟输入 x_tk"]
+    B -->|"1-step"| D["直接用 z, t=399(SDXL)或 999"]
+    C --> E["学生 UNet 前向 → x0 预测"]
+    D --> E
+    E --> F{"step % 5 == 0?"}
+    F -->|"生成器轮"| G["① 分布匹配: x0 加噪→ 教师/fake score 各自预测<br/>→ score 差归一化梯度回传<br/>② GAN: 判别头 softplus(-D) ×5e-3<br/>→ backward + clip(10.0) + AdamW 更新 G"]
+    F -->|"仅 critic 轮"| H["fake score ε-MSE + 判别器 softplus 损失<br/>→ 更新 μ_fake + 分类头"]
+    G --> I["下一步"]
+    H --> I
+    style G fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style H fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<p><b>图 5</b> 训练流程:生成器轮与 critic 轮按 5:1 交替;两个损失通道在同一生成器轮内联合回传。</p>
+<h3>8.2 推理流程(4-step SDXL)</h3>
+<div class="mermaid">
+flowchart LR
+    Z["z ~ N(0,I)"] --> T1["t=999: UNet → x0 预测"] --> R1["重加噪到 t=749"]
+    R1 --> T2["t=749: UNet → x0"] --> R2["重加噪到 t=499"]
+    R2 --> T3["t=499: UNet → x0"] --> R3["重加噪到 t=249"]
+    R3 --> T4["t=249: UNet → x0"] --> VAE["VAE decode → 1024² RGB"]
+    style VAE fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<p><b>图 6</b> 推理流程:4 次 UNet 前向 + 1 次 VAE 解码;guidance scale=0(CFG 已蒸馏进权重),无教师参与。</p>
+</section>
+
+<!-- ==================== IMPLEMENTATION ==================== -->
+<section id="impl">
+<h2><span class="num">9</span>⚙️ 工程实现细节</h2>
+<h3>9.1 源码级超参总表(SDXL 4-step 主线)</h3>
+<table>
+<tr><th>超参</th><th>值</th><th>出处</th></tr>
+<tr><td>生成器/critic 学习率</td><td>5e-7(两者相同)</td><td><code>experiments/sdxl/...backsim_scratch.sh:9-10</code></td></tr>
+<tr><td>TTUR 比例</td><td>5(critic 每步、生成器每 5 步)</td><td>同上 <code>:28</code>(dfake_gen_update_ratio)</td></tr>
+<tr><td>优化器</td><td>AdamW, betas (0.9, 0.999), weight decay 0.01</td><td><code>train_sd.py:191-202</code></td></tr>
+<tr><td>梯度裁剪</td><td>max_grad_norm 10.0</td><td>实验脚本 <code>:21</code></td></tr>
+<tr><td>全局 batch</td><td>2/GPU × 8 节点 × 8 GPU = 128</td><td>脚本 + 论文附录 F.4</td></tr>
+<tr><td>训练步数/时长</td><td>19K iters / 57 小时(FID 19.32 @19k checkpoint)</td><td><code>experiments/sdxl/README.md</code> Model Zoo</td></tr>
+<tr><td>分辨率</td><td>1024²(latent 128²)</td><td>脚本 <code>:16-17</code></td></tr>
+<tr><td>教师 CFG(real_guidance_scale)</td><td>8</td><td>脚本 <code>:19</code></td></tr>
+<tr><td>GAN 生成器权重</td><td>5e-3</td><td>脚本 <code>:35</code>(gen_cls_loss_weight)</td></tr>
+<tr><td>GAN 判别器权重</td><td>1e-2</td><td>脚本 <code>:36</code>(guidance_cls_loss_weight)</td></tr>
+<tr><td>扩散 GAN 时间步上限</td><td>1000(全噪声范围)</td><td>脚本 <code>:38</code></td></tr>
+<tr><td>DM 损失 t 采样范围</td><td>[2%, 98%] × 1000</td><td><code>max_step_percent 0.98</code>(脚本 <code>:32</code>)+ <code>min_step_percent</code> 默认 0.02(<code>train_sd.py:651</code>)</td></tr>
+<tr><td>精度</td><td>bf16 autocast(VAE 保持 fp32;ImageNet-64 EDM 路径 fp16 会发散,需 bf16)</td><td><code>sd_unified_model.py:111</code> + <code>experiments/imagenet/README.md</code></td></tr>
+<tr><td>分布式</td><td>FSDP hybrid_shard(节点内分片)× 8 节点</td><td><code>train_sd.py:185-189</code> + <code>create_sdxl_fsdp_configs.py</code></td></tr>
+</table>
+<h3>9.2 三套官方配置横向对照</h3>
+<table>
+<tr><th>配置</th><th>教师</th><th>lr(生成器)</th><th>TTUR</th><th>GAN 权重</th><th>batch(全局)</th><th>步数/时长</th><th>成果</th></tr>
+<tr class="best"><td>ImageNet-64 主线</td><td>EDM</td><td>2e-6</td><td>5:1</td><td>3e-3</td><td>280(40×7 GPU)</td><td>200K / 53h</td><td>FID 1.51</td></tr>
+<tr><td>ImageNet-64 加长(resume)</td><td>EDM</td><td>5e-7</td><td>5:1</td><td>3e-3</td><td>280</td><td>+140K / 38h</td><td><span class="best">FID 1.28</span></td></tr>
+<tr><td>SD v1.5 一步</td><td>SD v1.5</td><td>1e-5 → 5e-7</td><td>10:1</td><td>1e-3</td><td>2048(32×64)</td><td>40K+5K / 26h</td><td>FID 8.35</td></tr>
+<tr class="best"><td>SDXL 4-step</td><td>SDXL</td><td>5e-7</td><td>5:1</td><td>5e-3</td><td>128(2×64)</td><td>19K / 57h</td><td>FID 19.32</td></tr>
+<tr><td>SDXL 1-step</td><td>SDXL</td><td>5e-7</td><td>5:1</td><td>5e-3</td><td>128</td><td>24K / 57h</td><td>FID 19.01</td></tr>
+<tr><td>SDXL 4-step LoRA</td><td>SDXL</td><td>5e-5</td><td>5:1</td><td>5e-3</td><td>128</td><td>16K / 63h</td><td>FID 19.68</td></tr>
+</table>
+<p style="font-size:12px;color:var(--muted)">注:步数/时长与 FID 取自各 experiments/*/README.md 的 Model Zoo;SD v1.5 为两阶段(先无 GAN lr=1e-5 40K,再开 GAN lr=5e-7 5K);SDXL 1-step 含 10K 对回归预训练初始化。SD v1.5 的 TTUR 为 10:1(<code>sdv1.5/*.sh</code>),与论文附录 F.3 一致——TTUR 频率并非全局常数,随 backbone 调整。</p>
+<h3>9.3 资源账</h3>
+<ul>
+<li><strong>训练显存/硬件:</strong>SDXL 主线 64×A100(8 节点)× 57h ≈ 3648 A100·h;ImageNet 7×A100 × 53h ≈ 371 A100·h;SD v1.5 64×A100 × 26h ≈ 1664 A100·h。均来自 Model Zoo 的 Hours 列。</li>
+<li><strong>推理开销:</strong>4-step = 4 次 UNet 前向 + 1 次 VAE decode,CFG=0(无加倍);摘要称相比教师(50 步 × CFG=2 次/步前向)推理成本降 500×。<span class="uncertain">⚠️【待核实】</span>500× 的精确定义(50×2 前向 / 4 前向 ≈ 25×于前向数;论文摘要原文即 "500X reduction in inference cost",未附计算过程,推测含 VAE/文本编码等摊销差异。</li>
+<li><strong>依赖版本:</strong>Python 3.8 conda 环境,基于 diffusers(UNet2DConditionModel / DDIMScheduler)+ accelerate(FSDP)+ peft(LoRA)+ EDM 第三方代码(<code>requirements.txt</code> + README)。</li>
+<li><strong>数据预处理:</strong>① prompt 侧:LAION-Aesthetic 6.25+ 300 万条,取 caption 存 pkl;② GAN 真实图:LAION-Aesthetic 5.5+ 500K 张 ≥1024²,<strong>预先离线提取 VAE latents 存 LMDB</strong>(<code>generate_vae_latents.py</code>,训练时直接读 latent,省 VAE 编码算力且判别在 latent 空间进行);③ ImageNet 转 LMDB(<code>create_imagenet_lmdb.py</code>)。</li>
+</ul>
+<h3>9.4 落地坑(源码/README 明示)</h3>
+<ul>
+<li><strong>显存</strong>:训练要同时持有 3 份 UNet(生成器 + 冻结教师 + fake score)——这是 FSDP 分片 + 梯度检查点(<code>gradient_checkpointing</code>)+ 教师 bf16 的原因;单卡复现门槛高。</li>
+<li><strong>FSDP 参数不同步 bug</strong>:分类头随机初始化在 hybrid_shard 模式下各节点不同步,必须先存 checkpoint 0 再全体重载(<code>train_sd.py:104-105</code> 注释 + L164-180)。</li>
+<li><strong>ImageNet EDM 路径 fp16 发散</strong>:需 bf16(<code>experiments/imagenet/README.md</code> 明示)。</li>
+<li><strong>SDXL 原生 VAE 不支持半精度</strong>:须 fp32 或换 madebyollin/sdxl-vae-fp16-fix 或 Tiny VAE(<code>sd_unified_model.py:107-109</code> + demo)。</li>
+<li><strong>已知未解 issue</strong>:FSDP 下 SDXL 训练极慢、LoRA 训练反而比全量微调更慢且不省显存(README Known Issues)。</li>
+<li><strong>LCMScheduler 时间步陷阱</strong>:diffusers 推理必须显式传 <code>timesteps=[999,749,499,249]</code>,LCM 默认时间步与训练不一致(README 代码注释)。</li>
+</ul>
+</section>
+<!-- ==================== EXPERIMENTS ==================== -->
+<section id="exp">
+<h2><span class="num">10</span>实验结果</h2>
+<h3>10.1 ImageNet-64×64 类条件生成(表 1)</h3>
+<table>
+<tr><th>方法</th><th>前向次数 ↓</th><th>FID ↓</th></tr>
+<tr><td>BigGAN-deep</td><td>1</td><td>4.06</td></tr>
+<tr><td>ADM</td><td>250</td><td>2.07</td></tr>
+<tr><td>RIN</td><td>1000</td><td>1.23</td></tr>
+<tr><td>StyleGAN-XL</td><td>1</td><td>1.52</td></tr>
+<tr><td>Progressive Distillation</td><td>1</td><td>15.39</td></tr>
+<tr><td>DFNO</td><td>1</td><td>7.83</td></tr>
+<tr><td>BOOT</td><td>1</td><td>16.30</td></tr>
+<tr><td>TRACT</td><td>1</td><td>7.43</td></tr>
+<tr><td>Diff-Instruct</td><td>1</td><td>5.57</td></tr>
+<tr><td>Consistency Model</td><td>1</td><td>6.20</td></tr>
+<tr><td>iCT-deep</td><td>1</td><td>3.25</td></tr>
+<tr><td>CTM</td><td>1</td><td>1.92</td></tr>
+<tr><td>DMD1</td><td>1</td><td>2.62</td></tr>
+<tr class="best"><td>DMD2(Ours)</td><td>1</td><td>1.51</td></tr>
+<tr class="best"><td>DMD2 + 加长训练</td><td>1</td><td><strong>1.28</strong></td></tr>
+<tr><td>EDM 教师(ODE)</td><td>511</td><td>2.32</td></tr>
+<tr><td>EDM 教师(SDE)</td><td>511</td><td>1.36</td></tr>
+</table>
+<p>单步 DMD2 (1.51) 同时超过教师 ODE 采样 (2.32)、DMD1 (2.62) 与 CTM (1.92);加长训练 (1.28) 进一步超过教师 SDE (1.36),成为单步 SOTA。</p>
+<h3>10.2 SDXL 文生图(zero-shot COCO 2014,10K prompt,表 2)</h3>
+<table>
+<tr><th>方法</th><th>前向次数 ↓</th><th>FID ↓</th><th>Patch FID ↓</th><th>CLIP ↑</th></tr>
+<tr><td>LCM-SDXL</td><td>1</td><td>81.62</td><td>154.40</td><td>0.275</td></tr>
+<tr><td>LCM-SDXL</td><td>4</td><td>22.16</td><td>33.92</td><td>0.317</td></tr>
+<tr><td>SDXL-Turbo</td><td>1</td><td>24.57</td><td>23.94</td><td><strong>0.337</strong></td></tr>
+<tr><td>SDXL-Turbo</td><td>4</td><td>23.19</td><td>23.27</td><td>0.334</td></tr>
+<tr><td>SDXL-Lightning</td><td>4</td><td>24.46</td><td>24.56</td><td>0.323</td></tr>
+<tr class="best"><td>DMD2(Ours)</td><td>1</td><td><strong>19.01</strong></td><td>26.98</td><td>0.336</td></tr>
+<tr class="best"><td>DMD2(Ours)</td><td>4</td><td>19.32</td><td><strong>20.86</strong></td><td>0.332</td></tr>
+<tr><td>SDXL 教师 cfg=6</td><td>100</td><td>19.36</td><td>21.38</td><td>0.332</td></tr>
+<tr><td>SDXL 教师 cfg=8</td><td>100</td><td>20.39</td><td>23.21</td><td>0.335</td></tr>
+</table>
+<p>4-step DMD2 的 FID (19.32) 优于 cfg=6 教师 (19.36),patch FID (20.86) 优于两个教师配置——<strong>在蒸馏常用指标上超越教师</strong>。人类评估(Fig.5)显示 4-step DMD2 在图像质量上 24% 胜过 50 步教师,文本对齐持平,同时优于 SDXL-Turbo / LCM / Lightning 全部 4-step 基线。</p>
+<div class="figure">
+  <img src="images/2405.14867/human_eval.png" alt="用户研究结果" loading="lazy">
+  <div class="caption"><b>图 7(论文 Fig.5)</b> 用户研究:DMD2(4 步)vs 教师(50 步)与基线(4 步)的质量/对齐偏好,DMD2 两项均最佳。</div>
+</div>
+<h3>10.3 SD v1.5 蒸馏(附录表 5 摘录)</h3>
+<table>
+<tr><th>方法</th><th>步数</th><th>延迟 ↓</th><th>FID ↓</th></tr>
+<tr><td>GigaGAN</td><td>1</td><td>0.13s</td><td>9.09</td></tr>
+<tr><td>InstaFlow-0.9B</td><td>1</td><td>0.09s</td><td>13.10</td></tr>
+<tr><td>UFOGen</td><td>1</td><td>0.09s</td><td>12.78</td></tr>
+<tr><td>DMD1</td><td>1</td><td>0.09s</td><td>11.49</td></tr>
+<tr class="best"><td>DMD2</td><td>1</td><td>0.09s</td><td><strong>8.35</strong></td></tr>
+<tr><td>SD v1.5 教师(50 步 PNDM, cfg=3)</td><td>50</td><td>2.59s</td><td>8.59</td></tr>
+<tr><td>SD v1.5 教师(200 步 SDE, cfg=2)</td><td>200</td><td>10.25s</td><td>7.21</td></tr>
+</table>
+<p>单步 FID 8.35,较 DMD1 提升 3.14 点,超过 50 步教师;与 200 步 SDE 教师 (7.21) 仍有差距。</p>
+</section>
+
+<!-- ==================== ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">11</span>消融实验</h2>
+<h3>11.1 ImageNet-64(表 3)</h3>
+<table>
+<tr><th>DMD</th><th>去回归</th><th>TTUR</th><th>GAN</th><th>FID ↓</th></tr>
+<tr><td>✓</td><td></td><td></td><td></td><td>2.62</td></tr>
+<tr><td>✓</td><td>✓</td><td></td><td></td><td class="fail">3.48(不稳定)</td></tr>
+<tr><td>✓</td><td>✓</td><td>✓</td><td></td><td>2.61</td></tr>
+<tr class="best"><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><strong>1.51</strong></td></tr>
+<tr><td></td><td></td><td></td><td>✓</td><td>2.56</td></tr>
+<tr><td></td><td></td><td>✓</td><td>✓</td><td>2.52</td></tr>
+</table>
+<ul>
+<li><strong>去回归 → TTUR:</strong>去掉回归损失退化 0.86 点,TTUR 恢复 0.87 点(2.61 ≈ 2.62)——验证「不稳定根源是 critic 估计滞后」的假设,回归损失不是唯一稳定器。</li>
+<li><strong>+GAN:</strong>再降 1.1 点到 1.51,是超越教师的核心增量。</li>
+<li><strong>纯 GAN 基线:</strong>2.56,只加 TTUR 无改善(2.52)——分布匹配与 GAN 的组合有互补性,不是简单叠加。</li>
+</ul>
+<h3>11.2 SDXL(表 4)</h3>
+<table>
+<tr><th>变体</th><th>FID ↓</th><th>Patch FID ↓</th><th>CLIP ↑</th></tr>
+<tr><td>去 GAN</td><td>26.90</td><td>27.66</td><td>0.328</td></tr>
+<tr><td>去分布匹配(纯 GAN)</td><td class="fail">13.77<span style="font-size:11px">(看似最好)</span></td><td>27.96</td><td class="fail">0.307</td></tr>
+<tr><td>去 backward simulation</td><td>20.66</td><td>24.21</td><td>0.332</td></tr>
+<tr class="best"><td>DMD2 完整</td><td>19.32</td><td><strong>20.86</strong></td><td>0.332</td></tr>
+</table>
+<div class="callout warn">
+<p><strong>「纯 GAN FID 最低」的陷阱(论文自己指出):</strong>去掉分布匹配后 FID 降到 13.77,但 CLIP 掉到 0.307、patch FID 反而最差——模型贴近真实图像边缘分布却没有对齐文本,「FID 变好」是分布覆盖变宽的假象,美学质量显著下降(Fig.7 定性)。<strong>选型启示:单看 FID 会被纯 GAN 蒸馏误导。</strong></p>
+</div>
+<div class="figure">
+  <img src="images/2405.14867/sdxl_ablation_large.png" alt="SDXL 定性消融" loading="lazy">
+  <div class="caption"><b>图 8(论文 Fig.7)</b> SDXL 定性消融:去分布匹配→美学/对齐显著退化;去 GAN→过饱和过平滑;去 backward simulation→细节质量下降。</div>
+</div>
+<h3>11.3 TTUR 机制消融(附录 C,Fig.9)</h3>
+<p>更新频率 1 不稳定;5 稳定且收敛快;10 稳定但慢;「fake 学习率×5」的异步 lr 方案明显差于更新频率方案——<strong>瓶颈是估计精度不是步长</strong>。亮度监控(附录 C,Fig.8)是作者推荐的稳定性观测指标。</p>
+</section>
+
+<!-- ==================== COMPARISON ==================== -->
+<section id="compare">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+<h3>12.1 少步文生图蒸馏方法横向对比</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>蒸馏范式</th><th>监督信号</th><th>训练数据</th><th>步数</th><th>COCO FID ↓</th><th>开源</th></tr>
+<tr class="best"><td><strong>DMD2</strong></td><td>2024</td><td>分布匹配(score 差)+ GAN</td><td>教师 score + 真实图判别</td><td>LAION-Aes 6.25+ 3M prompt + 500K 真图</td><td>1 / 4</td><td>8.35(SD1.5)/ 19.32(SDXL)</td><td>✅ 代码+权重</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2311.18828">DMD1</a></td><td>2024</td><td>分布匹配 + 回归(LPIPS)</td><td>教师 score + ODE 配对</td><td>需 700 A100·天预生成配对</td><td>1</td><td>11.49(SD1.5)</td><td>✅</td></tr>
+<tr><td>SDXL-Turbo(ADD)</td><td>2023</td><td>对抗蒸馏(学生判别学生)</td><td>自判别 + 分数蒸馏</td><td>LAION(未配对)</td><td>1 / 4</td><td>24.57 / 23.19(SDXL)</td><td>✅ 权重</td></tr>
+<tr><td>SDXL-Lightning</td><td>2024</td><td>渐进式对抗蒸馏</td><td>教师逐步输出 + 判别</td><td>LAION</td><td>1 / 2 / 4 / 8</td><td>24.46(SDXL)</td><td>✅ 权重</td></tr>
+<tr><td>LCM / LCM-LoRA</td><td>2023</td><td>一致性蒸馏(CDI)</td><td>教师 ODE 轨迹自一致性</td><td>无需配对(在线)</td><td>1~8</td><td>22.16(SDXL 4-step)</td><td>✅</td></tr>
+<tr><td>CTM</td><td>2023</td><td>一致性轨迹模型</td><td>教师任意两点间转移</td><td>COCO/ImageNet</td><td>1</td><td>1.92(ImageNet-64)</td><td>✅</td></tr>
+<tr><td>UFOGen</td><td>2023</td><td>联合训练(生成+去噪双目标)</td><td>混合去噪 + GAN</td><td>CC3M+LAION</td><td>1</td><td>12.78(SD1.5 口径)</td><td>✅</td></tr>
+</table>
+<p style="font-size:12px;color:var(--muted)">注:COCO FID 的 prompt 数与分辨率口径不同(SD1.5:30K prompt/256²;SDXL:10K prompt/512²),跨列不可直接比,只看各自口径内的相对位置。各方法数字均取自 DMD2 论文表 1/2/5(即同一评估管线下的横向数字)。</p>
+<h3>12.2 机制层面对比结论</h3>
+<ul>
+<li><strong>vs DMD1:</strong>同属分布匹配家族,差异在「稳定机制」——DMD1 用回归损失锚定(代价:配对数据 + 教师上界),DMD2 用 TTUR(代价:5× critic 前向) + GAN(收益:真实数据监督)。DMD2 在两代方法同口径对比中全面占优(11.49 → 8.35)。</li>
+<li><strong>vs 对抗蒸馏(ADD/Turbo/Lightning):</strong>后者没有分布匹配项,仅靠判别器;DMD2 消融显示纯 GAN 的 FID 虽低但 CLIP/patch FID 崩(表 4)——分布匹配承担了「对齐教师语义分布」的角色,GAN 承担「真实感细节」,两者互补。</li>
+<li><strong>vs 一致性蒸馏(LCM/CTM):</strong>一致性类方法约束同轨迹自洽,不需真实数据;但约束的是教师 ODE 轨迹的内部几何,上限受教师约束;DMD2 的分布匹配 + GAN 可超出教师(表 1 单步超教师 ODE)。</li>
+<li><strong>vs UFOGen:</strong>同为「扩散+GAN 混合」,UFOGen 是从头联合训练,蒸馏语义弱;DMD2 是纯蒸馏框架,从预训练教师出发,计算上更省。</li>
+</ul>
+<h3>12.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>轨迹逐步压缩</td><td>Progressive Distill.(2022)→ SDXL-Lightning(2024)</td><td>教师确定性轨迹可减半</td><td>误差逐步累积;受教师路径限制</td></tr>
+<tr><td>一致性自监督</td><td>CM(2023)→ LCM(2023)→ CTM(2023)→ iCT-deep(2023)</td><td>同一 ODE 轨迹任意两点可互推</td><td>上限 = 教师轨迹几何;大模型上退化</td></tr>
+<tr><td>分布匹配</td><td>DMD1(2024)→ <strong>DMD2(本文)</strong>→ Imagine Flash / Self-Forcing 系(2024-2025)</td><td>只需输出分布对齐,score 差可回传</td><td>critic 在线估计滞后需 TTUR;多样性轻微下降</td></tr>
+<tr><td>对抗蒸馏</td><td>ADD/Turbo(2023)→ LADD(2024)</td><td>判别器给真实感监督</td><td>单独使用时文本对齐差(表 4 证据)</td></tr>
+</table>
+<h3>12.4 与库内兄弟笔记的交叉</h3>
+<ul>
+<li><strong><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></strong>:长视频 3D 生成系统用 DMD 把 35 步推理压到 4 步(194s→15s/80 帧),但官方明确 DMD 版削弱 prompt following、可能产生重复图案——正是 DMD2 论文承认的「多样性轻微下降」在 3D 长序列上的放大体现。Lyra2 的选择是「质量优先时关闭 DMD」。</li>
+<li><strong><a href="3D-20260821-ArtiFixer.html">ArtiFixer</a></strong>:其 Phase II 就是 DMD 蒸馏(Self-Forcing 式变体,蒸馏成因果自回归模型),说明 DMD 框架在视频/3D 域的迁移形态——分布匹配思想不变,critic 换成视频扩散模型。</li>
+<li>两者的共同点:在「少步 vs 质量」权衡上,DMD 系是目前唯一敢在系统级产品里默认开启的蒸馏路线(相比 LCM 的模糊与 Turbo 的过饱和)。</li>
+</ul>
+</section>
+<!-- ==================== APPLICATION ==================== -->
+<section id="apply">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+<h3>13.1 对我们 pipeline 的适配性评估</h3>
+<table>
+<tr><th>场景</th><th>适配性</th><th>理由</th></tr>
+<tr><td><strong>视频生成推理加速</strong>(Lyra2 同款:压 35 步→4 步)</td><td>✅ 直接可用</td><td>4 次 UNet 前向替代 50+ 次;CFG 蒸馏进权重后前向数再减半;官方 HF 权重(SDXL 4-step UNet/LoRA)开箱即用</td></tr>
+<tr><td><strong>3090 单卡边缘部署</strong></td><td>✅ 推理侧可行</td><td>fp16 UNet + Tiny VAE(demo 明示)下 SDXL 4-step 单卡显存友好;1-step(条件步 399)更快但质量略低</td></tr>
+<tr><td><strong>自训蒸馏(如蒸馏 Wan/自研视频模型)</strong></td><td>⚠️ 成本高</td><td>需同时持有 3 份 UNet(学生/教师/fake score)+ 真实图判别数据;官方 SDXL 配置 64×A100×57h;3090 无从复现训练,只能用现成权重或 LoRA 蒸馏小模型</td></tr>
+<tr><td><strong>3D 生成/重建 pipeline 的渲染后处理</strong></td><td>⚠️ 间接相关</td><td>DMD2 是图像域方法;对 3D 管线(如 ArtiFixer)它是「视频扩散蒸馏」的底层技术,选用时参照其 3D 域迁移笔记</td></tr>
+</table>
+<h3>13.2 落地成本速查</h3>
+<ul>
+<li><strong>数据成本(自训时):</strong>prompt 300 万条(LAION 6.25+,仅 caption,pkl 文件)+ GAN 真实图 500K 张(≥1024²,需预提 VAE latents 存 LMDB)。相比 DMD1 的 700 A100·天 ODE 配对生成,边际成本几乎为零。</li>
+<li><strong>算力成本:</strong>SDXL 4-step 全量蒸馏 ≈ 3648 A100·h;LoRA 版省不了多少时间(63h vs 57h,README Known Issues 明示)。</li>
+<li><strong>推理收益:</strong>SDXL 50 步(cfg=6,2×前向/步=100 前向)→ 4 前向;3090 上 1024² 生成从分钟级进入秒级。</li>
+<li><strong>许可:</strong>代码 CC BY-NC-SA 4.0(非商业!);模型权重继承教师许可(SDXL = CreativeML Open RAIL++-M)。商用需注意代码侧 NC 条款。</li>
+</ul>
+</section>
+
+<!-- ==================== IMPROVEMENTS ==================== -->
+<section id="improve">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 方法层面:固定 guidance scale 把用户自由度锁死</h4>
+<p><b>问题:</b>训练时 real_guidance_scale 硬编码(脚本 <code>:19</code> 固定 8),蒸馏后 CFG 被熔进权重,推理端无法调节引导强度——论文 §6 自己承认「限制了用户灵活性」。</p>
+<p><b>代码佐证:</b><code>experiments/sdxl/*.sh</code> 全部含 <code>--real_guidance_scale 8</code> / <code>--fake_guidance_scale 1.0</code>,且 <code>sd_guidance.py:90</code> 断言 <code>fake_guidance_scale == 1</code>;推理 demo 无 guidance 参数。</p>
+<p><b>改进:</b>把 guidance scale 作为条件变量(如扩散模型的时间嵌入风格)注入训练,蒸馏出「guidance-conditioned」学生;或蒸馏多个 scale 的 LoRA 插值。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 数据与评估:多样性退化缺少量化研究</h4>
+<p><b>问题:</b>论文承认多样性轻微下降(附录 B:0.61 vs 教师 0.64)但只在 LADD 的 128 条 PartiPrompts 子集上测,无跨 seed 方差分析;Lyra2 在 3D 长序列上观察到的「重复图案」提示该问题会随序列长度放大。</p>
+<p><b>改进:</b>在蒸馏评估中引入大样本 diversity 指标(如 DINO 特征空间覆盖率)+ 时序一致性指标;系统研究 GAN 权重与多样性的 trade-off 曲线(论文只给了一句「提高 GAN 权重可提升多样性」)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 工程实用性:TTUR=5 使 critic 侧算力占大头</h4>
+<p><b>问题:</b>fake score 每步更新 + 每步还要跑教师前向(分布匹配的真值),训练吞吐被 critic 侧主导;官方 Known Issues 承认 FSDP 下 SDXL 训练「really slow」且 LoRA 版「比全量微调还慢且不省显存」。</p>
+<p><b>代码佐证:</b><code>train_sd.py:330</code> 生成器 5 歧更新一次,其余 4 步只训 critic;README Known Issues 两连抱怨。</p>
+<p><b>改进:</b>① EMA fake score 替代高频更新(把 5 次更新摊成慢指针);② critic 用小模型/蒸馏版 UNet;③ 对 fake score 做低秩适配(只训 LoRA),把「critic 跟踪」成本降一个量级。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 方法层面:SDXL 1-step 的回归预训练依赖未消融</h4>
+<p><b>问题:</b>「消除回归损失」的卖点在 SDXL 1-step 路径上不成立——仍需 10K 对 ODE 配对的回归预训练初始化 + timestep shift(条件步 399)对抗 block noise。该依赖的必要性(是否只是初始化策略问题)没有消融实验支撑。</p>
+<p><b>代码佐证:</b><code>experiments/sdxl/README.md</code> 1-step 流程三步曲(下载 10K 对 → 回归预训练 → 主训练);<code>sdxl_cond399_...1step....sh:41</code> 加载 <code>generator_ckpt_path</code>(ODE 预训练产物)。</p>
+<p><b>改进:</b>对比「随机初始化 + 更长 TTUR」「GAN 提前介入」等替代初始化,把 1-step 的特殊性定位清楚;或研究 timestep shift 与 block noise 伪影的机理(论文仅引 OpenDMD/Pixart-Sigma 的经验做法)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级] 评估口径:COCO FID 的 512²/10K 与社区口径不一致</h4>
+<p><b>问题:</b>SDXL 对比用 10K prompt/512²(表 2),而 SD1.5 传统口径是 30K/256²(表 5)——两个口径不可互转,社区引用时易错;patch FID 是作者自设指标,无第三方基准。</p>
+<p><b>改进:</b>统一报告全验证集 40,504 张/30K prompt 口径,并开源 patch FID 计算脚本(实际已在 <code>coco_eval/cleanfid</code> 内,值得单独文档化)。</p>
+</div>
+<h3>优先级总览</h3>
+<table>
+<tr><th>#</th><th>改进点</th><th>维度</th><th>优先级</th></tr>
+<tr><td>1</td><td>guidance-conditioned 蒸馏</td><td>方法</td><td class="best">高</td></tr>
+<tr><td>2</td><td>多样性退化量化 + GAN 权重 trade-off 曲线</td><td>数据与评估</td><td class="best">高</td></tr>
+<tr><td>3</td><td>critic 更新成本(TTUR 5:1)优化</td><td>工程</td><td>中</td></tr>
+<tr><td>4</td><td>1-step 回归预训练依赖消融</td><td>方法</td><td>中</td></tr>
+<tr><td>5</td><td>评估口径统一与 patch FID 文档化</td><td>数据与评估</td><td>低</td></tr>
+</table>
+<div class="callout key">
+<p><strong>个人认为最关键的三点:</strong>① <strong>guidance scale 固定</strong>是产品化最大障碍——用户无法在「创意发散」与「严格遵循」间调节,这直接决定蒸馏模型能否替代原生 SDXL;② <strong>多样性退化</strong>在视频/3D 长序列上被放大(Lyra2 的教训),做系统选型时必须拿到自己场景的实测;③ <strong>critic 成本</strong>决定自训可行性,EMA/小模型 critic 是值得优先探索的降本方向。</p>
+</div>
+</section>
+
+<!-- ==================== CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">15</span>总结与演进定位</h2>
+<p>DMD2 是扩散蒸馏「分布匹配」路线的成熟标志:它移除了 DMD1 的数据构建负担(700 A100·天 → 0),用 TTUR 解决了纯分布匹配的稳定性,用扩散判别器 GAN 首次让蒸馏学生超越教师,并用 backward simulation 把框架扩展到多步采样。单步 FID 1.28(ImageNet-64)与 4 步 SDXL 超越 50 步教师的结果,使其成为 2024 年少步生成的事实基线——后续的 Imagine Flash、Self-Forcing、以及视频域的 ArtiFixer 蒸馏阶段,均直接构建在 DMD2 的「分布匹配 + GAN + TTUR」三件套之上。</p>
+<div class="callout key">
+<p><strong>选型一句话:</strong>需要 1~4 步 SDXL 推理且不能接受 LCM 的模糊 / Turbo 的过饱和,DMD2 官方权重是当前开源最优起点;自训蒸馏则要按「3 份 UNet 显存 + critic 5×更新算力 + 500K 真图判别数据」估预算,单卡环境基本只能走 LoRA 蒸馏小模型路线。</p>
+</div>
+<p><strong>演进定位:</strong>DMD1(CVPR 2024,回归锚定)→ <strong>DMD2(NeurIPS 2024 Oral,纯分布匹配 + GAN)</strong>→ Imagine Flash / Self-Forcing(2024-2025,视频域自回归化)→ ArtiFixer(2026,3D 渲染增强域)。其核心思想「score 差梯度 + 真实数据判别」已成为少步扩散蒸馏的标准组件。</p>
+</section>
+
+<!-- ==================== TEAM ==================== -->
+<section id="team">
+<h2><span class="num">16</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>16.1 研究团队</h3>
+<p><strong>Tianwei Yin</strong>(MIT,第一作者,通讯 tianweiy@mit.edu)—— 前作 DMD1 第一作者,蒸馏系列的一贯主线作者;Michaël Gharbi / Taesung Park / Richard Zhang / Eli Shechtman(Adobe Research);Frédo Durand / William T. Freeman(MIT)。致谢中提及 Zeqiang Lai 建议 timestep shift 技巧、Minguk Kang 与 Seungwook Kim 协助人类评估。</p>
+<h3>16.2 资源链接</h3>
+<table>
+<tr><th>资源</th><th>链接</th></tr>
+<tr><td>📄 arXiv abs</td><td><a href="https://arxiv.org/abs/2405.14867" target="_blank">arxiv.org/abs/2405.14867</a></td></tr>
+<tr><td>🌐 arXiv HTML 全文</td><td><a href="https://arxiv.org/html/2405.14867v2" target="_blank">arxiv.org/html/2405.14867v2</a></td></tr>
+<tr><td>💻 GitHub(训练+推理全开源)</td><td><a href="https://github.com/tianweiy/DMD2" target="_blank">github.com/tianweiy/DMD2</a></td></tr>
+<tr><td>🤗 HuggingFace(全系列权重)</td><td><a href="https://huggingface.co/tianweiy/DMD2" target="_blank">huggingface.co/tianweiy/DMD2</a></td></tr>
+<tr><td>🌐 项目主页</td><td><a href="https://tianweiy.github.io/dmd2/" target="_blank">tianweiy.github.io/dmd2</a></td></tr>
+</table>
+<p style="font-size:13px;color:var(--muted)">会议信息:项目主页与 GitHub 标注 NeurIPS 2024 <strong>Oral</strong>;arXiv abs 页 comments 字段未标注会议(2026-09-22 核实),按本库规范 badge 不标会议、正文记录于此。</p>
+<p style="font-size:13px;color:var(--muted)">配图来源:本页 13 张图均下载自 arXiv HTML 版自 <code>images/2405.14867/</code> 本地引用。</p>
+</section>
+
+</div>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-09-22 · 领域: 扩散蒸馏 / 少步生成 · 📊 depth: deep
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

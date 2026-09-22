@@ -782,6 +782,68 @@
    "anchors": []
   },
   {
+   "title": "DMD2: 改进的分布匹配蒸馏用于快速图像合成",
+   "meta": [
+    "📄 arXiv: 2405.14867 (v2, 2024-05-24)",
+    "📅 2024-05-23",
+    "🏢 MIT / Adobe Research",
+    "🏆 NeurIPS 2024 Oral (项目页标注)",
+    "✅ 开源"
+   ],
+   "tags": [
+    "扩散蒸馏",
+    "少步生成",
+    "Distribution Matching",
+    "TTUR",
+    "GAN",
+    "SDXL 4-step"
+   ],
+   "summary": "少步扩散蒸馏的「分布匹配」路线成熟作:去回归损失(DMD1 需 700 A100·天 ODE 配对)+ TTUR(生成器每 5 步更新,critic 每步)+ fake UNet bottleneck 判别器 GAN + backward simulation 多步训练。ImageNet-64 单步 FID 1.28 超教师 EDM,SDXL 4 步 COCO FID 19.32 超教师 cfg=6,SD v1.5 单步 8.35。自训需 3 份 UNet + 64×A100×57h(SDXL);推理 4 前向 CFG=0。Lyra2 / ArtiFixer 的蒸馏阶段即此框架。",
+   "links": [
+    {
+     "href": "CV-AI-20240523-DMD2.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2405.14867",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/tianweiy/DMD2",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://huggingface.co/tianweiy/DMD2",
+     "text": "🤗 HuggingFace"
+    }
+   ],
+   "file": "CV-AI-20240523-DMD2.html",
+   "section": "vg-notes-3",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "质量速度权衡与实时"
+   ],
+   "anchors": [
+    "abstract",
+    "motivation",
+    "overview",
+    "m1",
+    "m2",
+    "m3",
+    "loss",
+    "flow",
+    "impl",
+    "exp",
+    "ablation",
+    "compare",
+    "apply",
+    "improve",
+    "conclusion",
+    "team"
+   ]
+  },
+  {
    "title": "GEN3C: 3D-Informed World-Consistent Video Generation with Precise Camera Control",
    "meta": [
     "📄 arXiv: 2503.03751",
