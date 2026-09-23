@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界著名蚂蚁类群图鉴:形态、习性、分类与可核实数据</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+.sci{font-style:italic}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">科普图鉴 · 数据核对 2026-09-23 · 膜翅目 蚁科 Formicidae</span>
+    <h1>世界著名蚂蚁类群图鉴</h1>
+    <div class="subtitle">形态、习性、分类地位与可核实数据 —— 8 个经典类群的系统梳理</div>
+    <div class="authors">分类骨架以 AntCat(现存 16 亚科 / 350 属 / 14,451 种)为准;数字冲突处一律并排呈现,不做取舍掩饰</div>
+    <div class="org">面向科普写作与自主观察:每条关键数据均标注来源层级,存疑项集中在第 19 节</div>
+    <div class="links">
+      <a href="https://www.antcat.org/" target="_blank">AntCat 世界蚁类名录</a>
+      <a href="https://www.antweb.org/browse.do?name=formicidae&amp;rank=family&amp;project=allantwebants" target="_blank">AntWeb 标本图像库</a>
+      <a href="https://en.wikipedia.org/wiki/Ant" target="_blank">Wikipedia: Ant</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s0">阅读规则与来源分级</a></li>
+    <li><a href="#s1">总框架:类群分布与第一眼速查</a></li>
+    <li><a href="#s2">切叶蚁 Atta / Acromyrmex</a></li>
+    <li><a href="#s3">收获蚁 Pogonomyrmex / Messor</a></li>
+    <li><a href="#s4">行军蚁 Eciton / Dorylus</a></li>
+    <li><a href="#s5">弓背蚁 Camponotus</a></li>
+    <li><a href="#s6">织叶蚁 Oecophylla</a></li>
+    <li><a href="#s7">蜜罐蚁(跨属功能型)</a></li>
+    <li><a href="#s8">多刺蚁属 Polyrhachis</a></li>
+    <li><a href="#s9">全异蚁 Carebara diversa</a></li>
+    <li><a href="#s10">觅食策略谱系:蚂蚁吃什么</a></li>
+    <li><a href="#s11">单独狩猎的猎手:猛蚁型类群</a></li>
+    <li><a href="#s12">群体劫掠:行军蚁综合征</a></li>
+    <li><a href="#s13">蚂蚁与脊椎动物:谁捕食谁</a></li>
+    <li><a href="#s14">食植物的路径:种子、蜜露、蚁播、蚁植</a></li>
+    <li><a href="#s15">真菌栽培:农业被独立发明三次</a></li>
+    <li><a href="#s16">六个常见类群详解</a></li>
+    <li><a href="#s17">特色行为类群:七个案例</a></li>
+    <li><a href="#s18">横向对比总表</a></li>
+    <li><a href="#s19">存疑与冲突清单(必读)</a></li>
+    <li><a href="#s20">观察与入门建议</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 0 =================== -->
+<section class="section" id="s0">
+<h2><span class="num">0</span>阅读规则与来源分级</h2>
+
+<p>蚂蚁科普内容在国内网络上被大量复制与二次加工,同一个数字在不同页面能出现三四个版本,而绝大多数页面不给出处。本文档采用三条硬规则,目的是让你能判断"哪句话可以直接引用,哪句话必须回原始文献"。</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>规则一:分类骨架只认 AntCat</h4>
+    <p>学名、亚科归属、有效种数等以 <b>AntCat</b>(Barry Bolton 主编的世界蚁类名录)为准。中文百科页面的学名与中文名对应关系常有滞后数十年,只作线索不作依据。</p>
+  </div>
+  <div class="card">
+    <h4>规则二:冲突数字并排呈现</h4>
+    <p>两处来源给出不同数值时,<b>两个都写出来并标明各自来源</b>,不做平均、不择一。例如切叶蚁巢的个体数在不同来源间差了整整一个数量级。</p>
+  </div>
+  <div class="card">
+    <h4>规则三:不确定必须显式标注</h4>
+    <p>凡无法从原始文献或权威数据库核实的,一律用 <span class="uncertain">⚠️【待核实】</span> 标记,并在第 19 节汇总。宁可交一份带标注的诚实清单,也不给一段读来顺畅却站不住的结论。</p>
+  </div>
+</div>
+
+<h3>本文档的四个来源层级</h3>
+<table>
+  <tr><th>层级</th><th>来源举例</th><th>可引用程度</th></tr>
+  <tr class="best"><td><b>A 级 · 权威数据库</b></td><td>AntCat、AntWeb、AntWiki、物种原始描述文献</td><td>分类与分布可直接引用;引用时注明访问日期</td></tr>
+  <tr><td>B 级 · 学术综述与专业图鉴</td><td><i>Insect Systematics and Diversity</i> 系统学综述、《中国习见蚂蚁生态图鉴》、昆虫毒理学文献</td><td>数字与机制可引用,建议核对表号/页码</td></tr>
+  <tr><td>C 级 · 百科转述</td><td>Wikipedia 及其镜像站、iNaturalist 物种页</td><td>作为线索,需回引其参考文献核实</td></tr>
+  <tr class="fail"><td><b>D 级 · 用户编辑百科与商业站点</b></td><td>百度百科 / 搜狗百科 / 360 百科 / 夸克百科、蚁商页面</td><td><b>仅作线索</b>;本项目中发现其中的触角节数、体长、疗效宣称存在直接矛盾</td></tr>
+</table>
+
+<div class="callout warn">
+<b>必须提前知道的一件事:</b>你在中文资料里查某个中文蚁名对应的学名与形态数据时,拿到的内容几乎全部来自 D 级来源,而其中确实存在直接矛盾。本文档的处理方式是:矛盾逐条列出、不做取舍掩饰,并在第 19 节集中汇总全部待核实项——<b>这不是内容不完整,而是这个信息层级的现状本身值得你知道</b>。
+</div>
+</section>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>总框架:类群分布与第一眼速查</h2>
+
+<p>先破一个常见误解:<b>"切叶蚁、收获蚁、蜜罐蚁"这类名字不是分类单元</b>,而是按生态习性起的功能性称呼。切叶蚁只占真菌栽培蚁的一小部分,蜜罐蚁更是跨越多个互不相关的属各自演化出来的趋同现象。真正稳定的骨架是亚科—属两级。</p>
+
+<div class="mermaid">
+flowchart TD
+    F["蚁科 Formicidae<br/>16 现存亚科 · 350 属 · 14,451 种"]
+    F --> MY["切叶蚁亚科 Myrmicinae<br/>物种数最多"]
+    F --> FO["蚁亚科 Formicinae<br/>无螫针,具酸孔"]
+    F --> DO["行军蚁亚科 Dorylinae<br/>游牧-劫掠"]
+    F --> PO["猛蚁亚科 Ponerinae<br/>螫针发达,特化捕食"]
+
+    MY --> MY1["切叶蚁 Atta / Acromyrmex / Amoimyrmex<br/>真菌栽培"]
+    MY --> MY2["收获蚁 Pogonomyrmex / Messor<br/>种子收获"]
+    MY --> MY3["全异蚁 Carebara diversa<br/>极端工蚁多型"]
+    MY --> MY4["火蚁 Solenopsis · 大头蚁 Pheidole"]
+
+    FO --> FO1["弓背蚁 Camponotus<br/>全球最大属之一"]
+    FO --> FO2["织叶蚁 Oecophylla<br/>幼虫丝织叶巢"]
+    FO --> FO3["多刺蚁属 Polyrhachis<br/>树栖丝粘巢"]
+    FO --> FO4["蜜罐蚁 Myrmecocystus<br/>Camponotus inflatus · Melophorus"]
+
+    DO --> DO1["Eciton 新热带<br/>Dorylus 旧热带"]
+    PO --> PO1["猛蚁型单猎者<br/>Harpegnathos · Myrmecia · Odontomachus"]
+
+    style F fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style MY fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style FO fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style DO fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style PO fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>主要类群的第一眼速查</h3>
+<table>
+  <tr><th>类群</th><th>亚科</th><th>核心属</th><th>分布</th><th>一句话识别要点</th></tr>
+  <tr class="best"><td>切叶蚁</td><td>Myrmicinae</td><td><i>Atta</i>、<i>Acromyrmex</i>、<i>Amoimyrmex</i></td><td>新热带(南美、中美、墨西哥、美国南部)</td><td>背板 3 对刺且光滑(Atta)或 4 对刺且粗糙(Acromyrmex);可见搬叶片队列</td></tr>
+  <tr><td>收获蚁</td><td>Myrmicinae</td><td><i>Pogonomyrmex</i>、<i>Messor</i>、<i>Veromessor</i></td><td>美洲沙漠 + 旧大陆干旱区</td><td>头部下方有"胡须"状颏毛刷(psammophore);巢口周围寸草不生</td></tr>
+  <tr><td>行军蚁</td><td>Dorylinae</td><td><i>Eciton</i>、<i>Dorylus</i>、<i>Aenictus</i></td><td>新热带 + 旧热带</td><td>无固定巢,夜间结成活体"蚁团"(bivouac);蚁后腹部极度膨大</td></tr>
+  <tr><td>弓背蚁</td><td>Formicinae</td><td><i>Camponotus</i></td><td>全球</td><td>体型大、足长;筑巢于枯木,受惊喷甲酸</td></tr>
+  <tr><td>织叶蚁</td><td>Formicinae</td><td><i>Oecophylla</i></td><td>南亚—东南亚—澳洲北部;撒哈拉以南非洲</td><td>树冠上由叶片缝成的球形巢;工蚁腹部呈透明黄绿色</td></tr>
+  <tr><td>蜜罐蚁</td><td>Formicinae(多属)</td><td><i>Myrmecocystus</i>、<i>Camponotus</i>、<i>Melophorus</i></td><td>北美沙漠、澳洲干旱区</td><td>巢室内悬挂着腹部透明膨胀、不能移动的工蚁</td></tr>
+  <tr><td>多刺蚁属</td><td>Formicinae</td><td><i>Polyrhachis</i></td><td>非洲、亚洲、澳洲</td><td>前胸背板、并胸腹节、腹柄结各有成对长刺</td></tr>
+  <tr><td>全异蚁</td><td>Myrmicinae</td><td><i>Carebara</i></td><td>南亚—东南亚—中国南方</td><td>同巢内工蚁体型差可达 10 倍以上;觅食通道带土粒拱顶</td></tr>
+  <tr class="best"><td>猛蚁型类群(单猎者)</td><td>Ponerinae / Amblyoponinae / Myrmeciinae 等</td><td><i>Harpegnathos</i>、<i>Myrmecia</i>、<i>Odontomachus</i>、<i>Dinoponera</i></td><td>热带与亚热带为主</td><td>复眼发达、体型大、螫针完整;单独外出捕猎</td></tr>
+  <tr><td>大头蚁</td><td>Myrmicinae</td><td><i>Pheidole</i></td><td>全球</td><td>兵蚁头部异常硕大,工蚁呈明显离散二型</td></tr>
+  <tr><td>红火蚁</td><td>Myrmicinae</td><td><i>Solenopsis</i></td><td>原产南美,已入侵华南</td><td>体红褐、具螫针;受扰后大量涌出,地面隆起蚁丘</td></tr>
+  <tr><td>阿根廷蚁</td><td>Dolichoderinae</td><td><i>Linepithema</i></td><td>原产南美,全球入侵</td><td>体小褐黑、行走迅速;可形成跨区域超级群体</td></tr>
+</table>
+
+<div class="note">
+<b>术语约定:</b><span class="sci">Atta</span> 等拉丁学名一律斜体。中文名采用国内文献常见写法,并在首次出现处标注学名——因为同一中文名在不同资料中可能对应不同物种,反之亦然(第 8 节的写法说明与第 19 节的清单即为此类问题的典型案例)。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>切叶蚁 <i>Atta</i> / <i>Acromyrmex</i> / <i>Amoimyrmex</i></h2>
+
+<p>切叶蚁是科普写作的"顶流",但它最容易被讲错的一点是:它们<b>不为自己吃叶子</b>。切下的植物碎片是培养基,真正被消化的是一株被驯化了数千万年的真菌。</p>
+
+<h3>分类地位与"切叶"的边界</h3>
+<p>切叶蚁属于切叶蚁亚科(Myrmicinae)中的 <b>Attini 族</b>,即"真菌栽培蚁"。这里有个关键比例经常被混淆:<b>Attini 族中绝大多数成员并不切叶</b>——它们用落花、昆虫粪便、虫尸等易得基质栽培真菌,这类被称为"低级栽培蚁";真正会切割新鲜叶片的只有 <i>Atta</i>、<i>Acromyrmex</i> 和 2017 年前后从 <i>Acromyrmex</i> 中分出的 <i>Amoimyrmex</i> 三属,约 50 余种。</p>
+
+<div class="tag-row">
+  <span class="tag">亚科:Myrmicinae</span>
+  <span class="tag">族:Attini(真菌栽培蚁)</span>
+  <span class="tag">切叶者:Atta / Acromyrmex / Amoimyrmex</span>
+  <span class="tag">约 50 余种</span>
+  <span class="tag">分布:新热带</span>
+</div>
+
+<h3>形态与品级分化</h3>
+<p>两属的区分在外形上很直接,是初学者最好用的判别点:</p>
+<table>
+  <tr><th>特征</th><th><i>Atta</i>(切叶蚁属)</th><th><i>Acromyrmex</i>(刺切叶蚁属)</th></tr>
+  <tr class="best"><td>胸部背板刺</td><td>3 对</td><td>4 对</td></tr>
+  <tr><td>背板表面</td><td>光滑</td><td>粗糙多瘤突</td></tr>
+  <tr><td>工蚁多型程度</td><td>极端,品级间体型跨度大</td><td>有分化但幅度较小</td></tr>
+  <tr><td>典型群体规模</td><td>可达数百万头</td><td>约 5 万–50 万头</td></tr>
+  <tr><td>巢型</td><td>巨大地下巢,多腔室</td><td>较小,常近地表或落叶下</td></tr>
+</table>
+
+<p>成熟群体中的工蚁按体型分为四个品级,分工高度固定:</p>
+<div class="grid-2">
+  <div class="card">
+    <h4>minim(微型工蚁)</h4>
+    <p>头宽 &lt; 1 mm。留在巢内照料真菌圃与幼体,同时是清理寄生真菌的主力。</p>
+  </div>
+  <div class="card">
+    <h4>minor(小型工蚁)</h4>
+    <p>头宽约 1.8–2.2 mm。在觅食道上巡逻,是第一道防线,攻击靠近队列的外来者。</p>
+  </div>
+  <div class="card">
+    <h4>mediae(中型工蚁)</h4>
+    <p>真正的"伐木工"。外出切割叶片并沿信息素路径搬运回巢。</p>
+  </div>
+  <div class="card">
+    <h4>major / soldier(大型工蚁)</h4>
+    <p>头部与上颚极度发达。<i>Atta laevigata</i> 的最大兵蚁体长可达约 16 mm、头宽约 7 mm。除了守卫巢口,也承担清理主觅食道上的大块障碍物等任务。</p>
+  </div>
+</div>
+
+<h3>蚁-真菌互惠:一个三口之家的共生系统</h3>
+<div class="mermaid">
+flowchart LR
+    A["工蚁切割新鲜叶片"] --> B["嚼碎成浆<br/>不做消化"]
+    B --> C["接种到菌圃<br/>作为培养基"]
+    C --> D["真菌消化植物组织<br/>长出富含营养的菌丝球"]
+    D --> E["喂给幼虫<br/>成虫只吸食植物汁液"]
+    E --> F["废物(旧菌圃)运至<br/>专用垃圾腔室"]
+    F --> G["巢外另建垃圾堆<br/>避免病原回流"]
+    C -.->|"第三共生方"| H["工蚁体表共生放线菌<br/>分泌抗真菌物质"]
+    H -.->|"抑制"| I["寄生真菌 Escovopsis"]
+    I -.->|"威胁"| C
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style H fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style I fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<p>几个值得记住的机制细节:</p>
+<ul>
+  <li><b>菌种是如何传给下一代的:</b>新蚁后婚飞时,会把母巢菌圃的一小块菌丝<b>存在口腔内的口下囊(infrabuccal pocket)</b>里带走,落地建巢后用它接种出自己的第一片菌圃。整条农业传统靠雌性单传。</li>
+  <li><b>它们能"读出"真菌的反应:</b>若某类叶片对真菌有毒,群体此后不再采集该植物。这种识别是对真菌化学信号的响应,而非蚂蚁直接判断叶片毒性。</li>
+  <li><b>菌圃有专属清洁工:</b>minim 级工蚁不只是喂养者,它们负责剔除混入菌圃的杂菌与外来孢子。这让切叶蚁成为研究"农业中的病害管理"的经典模型。</li>
+</ul>
+
+<div class="callout warn">
+<b>真菌学名要当心:</b>栽培真菌的学名在文献中至少出现过三种写法——早期作 <span class="sci">Attamyces bromatificus</span>,中文科普最常写作 <span class="sci">Leucocoprinus gongylophorus</span>,较新的资料多写作 <span class="sci">Leucoagaricus gongylophorus</span>,而近年的系统发育研究提示这批栽培菌可能是白环蘑属/环柄菇属的一个复合群。<span class="uncertain">⚠️【待核实】具体应采用哪个学名及命名沿革,引用前请查阅原始分类文献。</span>
+</div>
+
+<h3>巢穴:地表之上能看到的只是通风口</h3>
+<div class="stat-row">
+  <div class="stat"><div class="v">30 m+</div><div class="l">中央土丘直径</div></div>
+  <div class="stat"><div class="v">80 m</div><div class="l">辐射小丘最大半径</div></div>
+  <div class="stat"><div class="v">30–600 m²</div><div class="l">巢域投影面积</div></div>
+  <div class="stat"><div class="v">2.5%</div><div class="l">新蚁后建群成功率</div></div>
+</div>
+
+<p>地下部分远大于地表所见:成熟巢可为多层腔室结构,中心土丘可达数米直径并带有数十个入口与通风烟囱。建群方面,新蚁后在空中与多头雄蚁交配,单次可储存约 3 亿精子,但幼龄蚁后的存活建群率极低,只有约 2.5% 能发展成长期存续的群体。</p>
+
+<div class="callout red">
+<b>一个数量级级别的冲突,请勿单方引用:</b>成熟切叶蚁巢的个体数,英文维基镜像页写 355 万,旧版内容与部分科普写作写 800 万,商业饲养资料写 500 万–800 万。差异可能来自统计口径(是否计入幼体)、巢龄与物种差异。<span class="uncertain">⚠️【待核实】引用前须回原始野外研究。</span>同样,"能举起体重 5000 倍"与"50 倍"两种说法在网络上并存,<span class="uncertain">⚠️【待核实】这两个数字差异过大,至少有一个是转述失真。</span>
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>收获蚁 <i>Pogonomyrmex</i> / <i>Messor</i> / <i>Veromessor</i></h2>
+
+<p>收获蚁的科普价值集中在两点:一是把"种子"做成了全年的主粮并演化出配套结构,二是其中的马里科帕须蚁持有<b>已知毒性最强的昆虫毒液</b>这项纪录。</p>
+
+<h3>属名与分布</h3>
+<ul>
+  <li><b><i>Pogonomyrmex</i>(须蚁属)</b>——美洲,主要分布于北美、中美、南美沙漠,另有海地特有种。至 2014 年记录 69 个现存种 + 1 个化石种。</li>
+  <li><b><i>Messor</i>(收获蚁属)</b>——旧大陆干旱区,是中国境内能见到的收获蚁类群。<span class="uncertain">⚠️【待核实】具体种与国内分布需查中国蚁类名录。</span></li>
+  <li><b><i>Veromessor</i></b>——北美西南部,曾长期被置于 <i>Messor</i> 属下。</li>
+</ul>
+
+<h3>形态:那撮"胡须"就是属名的来源</h3>
+<p><i>Pogonomyrmex</i> 的属名来自希腊语 <span class="sci">pōgōn</span>(胡须)+ <span class="sci">murmēx</span>(蚂蚁),指的就是头部下方那丛<b>颏毛刷(psammophore)</b>。它的功能是帮工蚁高效搬运细小种子与沙粒,以及在筑巢时清运细砂。这个结构在 <i>Ephebomyrmex</i> 亚属中缺失——该亚属因而得名"无须的少年",其成员个体与群体规模也普遍更小。这是"形态结构—生态功能"对应的干净案例。</p>
+
+<h3>习性:把种子当粮食</h3>
+<ul>
+  <li>挖掘深巢,内含大量地下腔室专门<b>储藏种子</b>,幼虫以种子为食。</li>
+  <li>多数 <i>Pogonomyrmex</i> 巢的周围植被被彻底清除,形成远处即可辨认的<b>裸露"光盘区"</b>。</li>
+  <li>工蚁昼行,具强螫针。部分类群(如 <i>P. barbatus</i> 复合群)存在稳定的杂交谱系,物种边界至今仍有争议。</li>
+  <li>生态角色:是沙漠植物的<b>重要种子传播者</b>,同时也是种子捕食者——两种效应叠加,使它在荒漠植物群落动态研究中长期是模式对象。</li>
+  <li>天敌高度专化:角蜥会专门取食须蚁;泥蜂属 <i>Clypeadon</i> 只捕食 <i>Pogonomyrmex</i> 工蚁,用毒液将其麻痹后带回巢中供幼虫食用。</li>
+</ul>
+
+<div class="callout key">
+<b>毒液纪录的具体数值(这是本节最值得精确记住的一条):</b><br>
+马里科帕须蚁 <span class="sci">Pogonomyrmex maricopa</span> 的毒液,小鼠静脉注射 LD50 为 <b>0.12 mg/kg</b>;作为对照,西方蜜蜂毒液为 <b>2.8 mg/kg</b>,即前者单位体积毒性约为后者的 20 余倍。该数据出自 1980 年 Schmidt 等在 <i>Toxicon</i> 发表的膜翅目刺蛰比较研究,并被吉尼斯世界纪录收录为"毒性最强的昆虫毒液"。<br>
+<span class="uncertain">⚠️【待核实】流传的"12 次蜇刺可杀死 2 kg 动物"是同一 LD50 数据的换算表述,且不同页面把对照对象写成小鼠/大鼠/婴儿,引用时请直接使用 LD50 原始值。</span><br>
+需注意:所谓"最毒"是在<b>已做过正式测定的昆虫</b>范围内的比较;绝大多数昆虫毒液从未被测定。
+</div>
+
+<div class="note">
+<b>中国读者的常见混淆:</b>红火蚁被误认为收获蚁的情况很普遍。两者同为切叶蚁亚科,但红火蚁属 <i>Solenopsis</i>,群体攻击性强、以杂食为主;<i>Pogonomyrmex</i> 在 undisturbed 状态下攻击性低得多、且<b>中国境内没有自然分布</b>。
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>行军蚁 <i>Eciton</i> / <i>Dorylus</i> / <i>Aenictus</i></h2>
+
+<p>行军蚁是最容易被影视化歪曲的类群。真实的它们对健康成年人威胁有限——行动速度慢,你完全走得开;但它们在生态系统中制造的是<b>结构性的扰动</b>,上百个其他物种的生存节律直接挂在它们的劫掠周期上。</p>
+
+<h3>分类:一次大规模的亚科合并</h3>
+<p>传统上,行军蚁被拆成多个独立亚科(Ecitoninae、Aenictinae、Cerapachyinae 等)。2014 年前后基于大规模分子系统发育的研究把这些类群一并并入 <b>Dorylinae(行军蚁亚科)</b>,今天的"行军蚁"因此在分类上是一个比过去宽得多的框。<span class="uncertain">⚠️【待核实】合并的具体文献与年份请查 Brady 等 2014 年的系统发育论文。</span></p>
+<div class="tag-row">
+  <span class="tag">Eciton——新热带(中美、南美)</span>
+  <span class="tag">Dorylus——旧热带(非洲、南亚)</span>
+  <span class="tag">Aenictus——旧大陆热带</span>
+  <span class="tag">Neivamyrmex——美洲</span>
+</div>
+
+<h3>生活周期:游牧相与静止相交替</h3>
+<div class="mermaid">
+flowchart LR
+    N["游牧相<br/>几乎每晚更换宿营地<br/>日间频繁发起劫掠"] --> S["静止相<br/>驻留同一地点约 2–3 周<br/>蚁后产卵、幼体发育"]
+    S --> E["卵孵化、幼体成长"]
+    E --> P["幼体化蛹、新一代成虫羽化"]
+    P --> N
+    N -.->|"夜间结营"| B["bivouac 活体蚁团<br/>由工蚁相互钩连悬挂而成"]
+    style N fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style S fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<p>这个循环是全套行为的定时器:<b>劫掠强度跟着幼体需求走</b>。幼虫进入快速生长期时,群体对蛋白质的需求陡增,于是进入几乎天天迁徙、日日大举出动的游牧相;当幼体化蛹、不再需要大量蛋白质,群体便停下来转入静止相,蚁后集中产卵。理解这条因果链,才能理解为什么行军蚁的"凶猛"是有节律的,而不是持续的。</p>
+
+<h3>形态与若干标志性行为</h3>
+<ul>
+  <li><b>蚁后</b>:腹部极度膨大(physogastric),常为工蚁状(ergatoid)——无翅、外形接近工蚁。这与大众印象中"蚁后是巨大有翅个体"的模板差异极大。行军蚁的蚁后基本不离开群体,由工蚁抬运迁徙。</li>
+  <li><b>bivouac(活体营)</b>:没有固定巢穴,夜间由数以万计的工蚁相互钩连成团,把蚁后与幼体包裹在内部。这是"巢"的功能被身体替代的极端方案。</li>
+  <li><b>蚁桥(ant bridge)</b>:迁徙途中工蚁会横跨沟壑、连接枝叶形成临时通道,通过后的个体再拆解桥梁前进。蚁桥的规模可根据通行需求动态调节,是研究集体智能与自组织行为的经典系统。</li>
+  <li><b>跟随者群体</b>:约 300 种其他生物依赖行军蚁的劫掠为生——包括跟随蚁群的蚁鸟、取食被驱赶昆虫的蝴蝶与甲虫、以及寄居在蚁群中的螨类与隐翅虫。<span class="uncertain">⚠️【待核实】此"约 300 种"常见于转述,建议核对以 <i>Eciton burchellii</i> 为对象的专项调查文献。</span></li>
+</ul>
+
+<div class="note">
+<b>中国的行军蚁:</b><i>Dorylus</i> 属在中国有分布,中文文献中可见"东方食植行军蚁"这一中文名(学名 <span class="sci">Dorylus orientalis</span>)。<span class="uncertain">⚠️【待核实】该中文名与学名的对应关系建议查中国蚁类名录及《中国习见蚂蚁生态图鉴》。</span>它们在农业上有时被记录为作物害虫。
+</div>
+
+<div class="callout warn">
+<b>关于劫掠规模的数字:</b>常见说法称单次劫掠队伍可达 20 万个体、日均消耗约 10 万件猎物。这两个数字广泛出现于科普站点,但不足以确证来源。<span class="uncertain">⚠️【待核实】引用前请回 <i>Eciton burchellii</i> 的野外定量研究。</span>
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>弓背蚁 <i>Camponotus</i></h2>
+
+<p>弓背蚁是蚁科的"第一大名门"之一,也是最容易接触到的类群——你家窗框里可能就住着一窝。</p>
+
+<h3>为什么它值得单独成节</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>物种数极大</h4>
+    <p>物种数在各来源间口径不一:英文资料常写"超过 1,000 种",iNaturalist 转述的维基文本写"超过 1,500 种"。<span class="uncertain">⚠️【待核实】以 AntCat 的属级统计为准。</span></p>
+  </div>
+  <div class="card">
+    <h4>木栖筑巢</h4>
+    <p>英文名 carpenter ant(木匠蚁)即由此而来:在枯木、树洞中营巢,也会蛀蚀建筑木构件,是重要的城市害虫。</p>
+  </div>
+  <div class="card">
+    <h4>防御方式</h4>
+    <p>属蚁亚科,<b>无螫针</b>,腹部末端为酸孔(acidopore),受威胁时喷出甲酸。这是与猛蚁类群最关键的行为差异。</p>
+  </div>
+</div>
+
+<h3>亚属分化与"伪装"成蜜罐蚁的成员</h3>
+<p>弓背蚁属内部划分出多个亚属,生态策略差别很大。其中澳大利亚的 <i>Myrmophyma</i> 亚属(意为"膀胱头弓背蚁")包含了会用腹部储蜜的成员——<span class="sci">Camponotus inflatus</span>,详见第 7 节。这说明"蜜罐蚁"不是某个属的专属特征,而是多个属各自演化出来的方案。</p>
+
+<div class="note">
+<b>具有中国代表性的种类:</b>日本弓背蚁 <span class="sci">Camponotus japonicus</span> 在东亚(含中国)极为常见,体型大、通体黑色,是入门观察最容易上手的对象之一。<span class="uncertain">⚠️【待核实】"最常见"属经验性表述,不同省份的优势种并不一致。</span>
+</div>
+
+<div class="callout tip">
+<b>研究模型价值:</b>弓背蚁属有多个物种被用作社会性昆虫的基因组与表观遗传学模型,因其体型较大、组织取样方便而适合研究品级分化背后的基因表达调控。<span class="uncertain">⚠️【待核实】具体模式种名录与研究文献。</span>
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>织叶蚁 <i>Oecophylla</i></h2>
+
+<p>织叶蚁的独特之处在于:它把<i>幼虫</i>当成建筑工具用。这是动物界里极为罕见的"借用未成熟个体完成集体工程"的案例。</p>
+
+<div class="callout key">
+<b>现存只有 2 种:</b><span class="sci">Oecophylla smaragdina</span>(南亚—东南亚—澳洲北部,中文常称黄猄蚁)与 <span class="sci">Oecophylla longinoda</span>(撒哈拉以南非洲)。历史上该属物种远多于今日,化石与已灭绝种另有记录。<span class="uncertain">⚠️【待核实】现存种数请核对 AntCat 的属级页面。</span>
+</div>
+
+<h3>织巢:三步协作</h3>
+<div class="mermaid">
+flowchart TD
+    S1["第一步:工蚁成链<br/>用身体把相邻叶片拉近"] --> S2["第二步:大型工蚁固定叶片边缘<br/>同时取来成熟幼虫"]
+    S2 --> S3["第三步:轻挤幼虫<br/>诱其吐出丝线"]
+    S3 --> S4["丝线将叶片缝合"]
+    S4 --> S5["多个巢室与通道逐层搭出<br/>形成球形或椭球形叶巢"]
+    style S1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S3 fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style S5 fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<p>丝由幼虫的唾液腺分泌,工蚁通过"挤"这个动作让它把丝吐在叶片接触面上;幼虫随后被送回巢内继续发育。参与织巢的工蚁有明显的体级分工:体型较大的个体负责拉合与固定叶片,较小个体负责携持幼虫——同一件工程里,不同体型的个体承担的动作是可区分的。</p>
+
+<h3>社会与生态特征</h3>
+<ul>
+  <li><b>多巢制(polydomy):</b>一个群体同时占据多棵树上的多个巢,通过信息素路径连接,领地可覆盖多株树木。对织叶蚁的"一个群体"计数,不能靠数巢。</li>
+  <li><b>摩擦发声招募:</b>工蚁通过摩擦身体发出振动信号,召集同伴协同完成超出个体能力的搬运与拉合任务。</li>
+  <li><b>防御:</b>无螫针,但咬合力强且会向伤口喷洒甲酸,痛感明显。</li>
+  <li><b>生态位:</b>树冠层的顶级捕食者与优势种,对同类及其他节肢动物压制力强。</li>
+  <li><b>文化利用:</b>东南亚部分地区将其幼虫与蛹作为食物。</li>
+</ul>
+
+<div class="callout warn">
+<b>"世界最早生物防治记录"这句话要谨慎使用:</b>中文资料普遍称晋代《南方草木状》记载了用黄猄蚁防治柑橘害虫,并因此被引为世界最早的生物防治记载。该说法流传极广,但涉及古籍版本、成书年代与原文解读等多重争议。<span class="uncertain">⚠️【待核实】引用前请核对古籍原文与相关科技史研究文献,不要直接采信转述。</span>
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>蜜罐蚁(跨属功能型)</h2>
+
+<div class="callout key">
+<b>最重要的一句话:</b>"蜜罐蚁"不是分类单元,而是<b>功能型称呼</b>。北美沙漠的 <i>Myrmecocystus</i>、澳洲中部的 <span class="sci">Camponotus inflatus</span>、澳洲的 <i>Melophorus</i> 等分属不同支系,却各自独立演化出同一套贮存方案。这正是趋同演化的教科书级案例。
+</div>
+
+<h3>replete:活体储蜜罐的运作机制</h3>
+<ol>
+  <li>部分工蚁被同伴通过口对口传递(trophallaxis)喂入大量蜜露、花蜜或昆虫体液。</li>
+  <li>其腹部(嗉囊与腹部节间膜)极度膨胀,体壁被拉伸至半透明,透出储存液的颜色。</li>
+  <li>个体基本失去移动能力,依靠足部悬挂在巢室天花板下,成为"活体储藏室"。</li>
+  <li>旱季或食物短缺时,由同伴舔舐或让其反吐,把储存物重新分配回群体。</li>
+  <li>replete 并非一次性消耗品:液体被取走后腹部可缓慢回缩并再次参与,但长期饥饿下群体也可能将其消耗殆尽。</li>
+</ol>
+
+<h3>三类代表性类群</h3>
+<table>
+  <tr><th>类群</th><th>分布</th><th>关键数据</th><th>备注</th></tr>
+  <tr class="best"><td><i>Myrmecocystus</i></td><td>美国西南部、墨西哥沙漠(索诺兰、莫哈维)</td><td>含 <span class="sci">M. mexicanus</span>、<span class="sci">M. mimicus</span></td><td>北美食用蜜蚁的传统来源</td></tr>
+  <tr><td><span class="sci">Camponotus inflatus</span></td><td>澳洲中部与南部(含 Uluru 周边、Musgrave 山地)</td><td>普通工蚁 5–8 mm;replete 可膨胀至约 17 mm;中央竖井深 1.5–1.8 m;巢口仅约 6 mm 宽且无土丘</td><td>replete 约占群体总数的一半,集中于最底层最大巢室</td></tr>
+  <tr><td><i>Melophorus</i></td><td>澳洲干旱区</td><td>含 <span class="sci">M. bagoti</span></td><td>澳洲原住民传统食物来源之一</td></tr>
+</table>
+
+<p><span class="sci">Camponotus inflatus</span> 的巢结构还提供了一个实用的野外识别线索:<b>巢口是沙地上的细缝,周围没有土丘</b>,但有向下延伸的竖直主井,底部才是容纳 replete 的大腔室。这类深巢是它们能在极端干旱中维持群体存续的基础设施。</p>
+
+<div class="callout warn">
+<b>需要打问号的三条:</b><br>
+① "不同 replete 储存不同物质(糖类琥珀色液体 vs 蛋白脂类乳白液体)"——流传较广但常见于爱好者站点。<span class="uncertain">⚠️【待核实】</span><br>
+② 蚂蚁蜂蜜具抗菌抗真菌活性(据称对金黄色葡萄球菌、隐球菌、曲霉有效,相关研究发表于 2023 年)。<span class="uncertain">⚠️【待核实】建议直接查该原始论文。</span><br>
+③ 澳洲原住民采食蜜蚁的文化细节(名称、仪轨、"蜜蚁梦创"与 Papunya Tula 艺术运动的关联)。<span class="uncertain">⚠️【待核实】涉及原住民文化表述,引用需格外谨慎。</span>
+</div>
+
+<div class="note">
+<b>为什么 replete 只在群体较大时才出现:</b>贮蜜需要稳定的食物脉冲(花期/蜜露高峰)与足够多的"冗余"劳动力。群体太小,任何一只工蚁被固定为储藏容器都是净损失。这也是饲养蜜罐蚁时"必须等群体足够大、持续供糖"的现实原因。
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>多刺蚁属 <i>Polyrhachis</i></h2>
+
+<p>多刺蚁属是蚁亚科中形态最"武装到牙齿"的一支:前胸、并胸腹节与腹柄结上成对伸出的长刺,让它们在树栖环境里几乎不可能被误认。</p>
+
+<div class="tag-row">
+  <span class="tag">亚科:Formicinae 蚁亚科</span>
+  <span class="tag">属:Polyrhachis 多刺蚁属</span>
+  <span class="tag">分布:非洲、亚洲、澳洲热带与亚热带</span>
+  <span class="tag">主要栖息层:树冠层</span>
+</div>
+
+<div class="note">
+<b>本节的写法说明:</b>该属的中文名与学名对应关系在中文资料中相当混乱——同一个中文名被套用到不同学名,同一个学名又被写成多个中文名,且转录来源普遍不给出原始描述文献。因此本节<b>只在属级给出稳定的形态与生态特征</b>,不逐一断言具体种的学名。做种级鉴定时请以 AntCat / AntWiki 的原描述为准。
+</div>
+
+<h3>形态:属级稳定特征</h3>
+<ul>
+  <li><b>成对刺与齿</b>:前胸背板前侧角、并胸腹节背板、腹柄结通常各具成对的刺或齿,这是"多刺蚁"之名的来源,也是最可靠的属级识别点。</li>
+  <li><b>腹柄结形态高度多样</b>:可能表现为单刺、成对长刺、齿突或板状结构,种间差异大,是分种的关键区域。</li>
+  <li><b>体壁与装饰</b>:体壁常坚硬且具明显刻纹;体表可覆柔毛、立毛或具金属光泽,部分种外观近似"金属质"。</li>
+  <li><b>防御方式</b>:属蚁亚科,<b>无螫针</b>,腹部末端为酸孔,受威胁时喷出甲酸;而那身长刺本身就是重要的物理防御结构。</li>
+  <li><b>触角</b>:显示为膝状。<span class="uncertain">⚠️【待核实】该属触角节数在中文资料中被写成 12 或 13 节两个版本;属级节数应以原始属征描述为准,不宜沿用二手转述。</span></li>
+</ul>
+
+<div class="callout key">
+<b>长刺的功能解释:</b>树栖蚁在枝条与叶面活动时,最大的威胁来自从上方或侧面捕食它们的节肢动物。成对的长刺既可以把身体撑离接触面、让捕食者难以用上颚锁定躯干,也能在巢内狭窄通道中形成有效的"卡口"防御。这是形态结构直接对应栖息环境的干净案例。
+</div>
+
+<h3>习性:树冠层的丝粘巢建造者</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>巢的结构</h4>
+    <p>由树枝、树叶、草屑、虫粪、沙粒等被丝状分泌物黏结而成,形状不规则,内部划分为多个相互连通的小室。出入口多在巢与枝条相接处。</p>
+  </div>
+  <div class="card">
+    <h4>巢的位置</h4>
+    <p>筑于树梢、枝梢或灌木丛中,少数在地表草丛。选择位置时明显偏好有一定遮蔽度、靠近水源而地面湿润的林区。</p>
+  </div>
+  <div class="card">
+    <h4>丝的来源</h4>
+    <p>与织叶蚁同属蚁亚科,同样利用<b>幼虫吐出的丝</b>作为黏结材料——这是蚁亚科内独立出现的第二种"以幼虫为工具"的筑巢方案。</p>
+  </div>
+  <div class="card">
+    <h4>筑巢节律</h4>
+    <p>雨后筑巢活动最频繁。<span class="uncertain">⚠️【待核实】流传的"3–6 日可筑成一巢"等具体周期数据来自用户编辑百科,未见原始研究。</span></p>
+  </div>
+</div>
+
+<h3>生态角色</h3>
+<ul>
+  <li><b>树冠层的重要捕食者与蜜露取食者</b>:多刺蚁属在亚洲与澳洲的树冠节肢动物群落中常占据显著地位,兼食昆虫与蜜露。</li>
+  <li><b>群体防卫反应强烈</b>:巢一旦受扰,大量工蚁迅速涌出。对野外观察者来说,这意味着观察时应避免直接破坏巢体。</li>
+  <li><b>分巢扩繁</b>:群体增大后可自动分裂出新巢。<span class="uncertain">⚠️【待核实】具体增长率数据出处。</span></li>
+  <li><b>与人居的关系</b>:部分种类适应林缘与园林环境,在中国南方是最常被公众注意到的树栖蚁类群之一。</li>
+</ul>
+
+<div class="callout tip">
+<b>观察建议:</b>在南方林区寻找多刺蚁,不要盯地面——<b>抬头看树梢</b>。它的巢是树冠上典型的深色不规则团块,一旦看到巢,顺着枝条能看到正在巡逻的工蚁。用 10 倍手持镜确认前胸与并胸腹节上的成对长刺,即可确认到属。
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>全异蚁 <i>Carebara diversa</i></h2>
+
+<p>全异蚁是"一个物种内部能长得有多不像"这个问题的极端答案。同巢工蚁的体型跨度可达十倍以上,最大个体的头部体积约为最小个体的十倍量级,两者几乎不可能被认为同种。</p>
+
+<div class="tag-row">
+  <span class="tag">学名:Carebara diversa (Jerdon, 1851)</span>
+  <span class="tag">旧名:Pheidologeton diversus</span>
+  <span class="tag">亚科:Myrmicinae</span>
+  <span class="tag">族:Solenopsidini</span>
+  <span class="tag">英文俗名:marauder ant / Asian army ant</span>
+</div>
+
+<p>属名变更值得记一笔:本种原置于 <i>Pheidologeton</i> 属,后经形态与分子证据被并入 <i>Carebara</i> 属,因此旧文献中的 <span class="sci">Pheidologeton diversus</span> 与今天的 <span class="sci">Carebara diversa</span> 是同一物种。中文名相应地有"全异巨首蚁""全异重头蚁"等称呼。</p>
+
+<h3>形态:连续渐变的多型</h3>
+<table>
+  <tr><th>品级</th><th>体长</th><th>形态要点</th><th>职能</th></tr>
+  <tr class="best"><td>minor(小型工蚁)</td><td>约 1.3–2.5 mm(另有来源作 2–3.5 mm)</td><td>体黄褐至红褐;上颚各具 5 齿;触角柄节短,不超出头部后缘;头部矩形</td><td>觅食侦察、照料幼体、搭便车</td></tr>
+  <tr><td>中间型</td><td>连续过渡</td><td>体型沿<b>连续异速生长</b>分布,并非离散几档</td><td>任务按体型渐变分配</td></tr>
+  <tr><td>major / supermajor</td><td>可达约 15–20 mm</td><td>体红褐至黑褐;头部近乎方形且显著放大;上颚粗大呈三角形,具尖锐端齿但咀嚼缘无明显齿;眼相对小;柄节约为头长一半</td><td>粉碎食物、守卫巢口与食源</td></tr>
+</table>
+
+<p>量化对比是这一节的亮点:最大工蚁的<b>头宽可达最小工蚁的约 12 倍</b>,而<b>干重差可达约 550 倍</b>。</p>
+<p><span class="uncertain">⚠️【待核实】这两个倍数常见于转述,原始出处应追溯到对该种异速生长的定量研究(Moffett 等的工作)。引用时建议核对原文表格数值。</span></p>
+
+<h3>习性:最像行军蚁的非行军蚁</h3>
+<ul>
+  <li><b>群体劫掠(swarm raid):</b>发现食源后调动大量个体,形成宽数厘米的密集推进带,靠数量压制猎物。捕食对象包括昆虫及其他小型无脊椎动物,也取食蜜露。</li>
+  <li><b>带拱顶的觅食通道(arcade):</b>最具标志性的行为——工蚁用土粒在觅食小径上方搭建"屋顶",形成遮光的隧道。这在蚁类中相当罕见,是野外识别该种的有力线索。<span class="uncertain">⚠️【待核实】该行为的定量描述建议查原始野外研究。</span></li>
+  <li><b>搭便车(hitchhiking):</b>小型工蚁常攀附在大型工蚁头部或身体上被一同搬运,可节省自身能量,同时也被视为对寄生蝇等威胁的协同防御。</li>
+  <li><b>对障碍的反应:</b>有实验报告称,在觅食路径上设置障碍后约 <b>94%</b> 的个体会尝试越障失败,最终群体选择绕行形成新路径。<span class="uncertain">⚠️【待核实】</span></li>
+  <li><b>食性随季节变化:</b>旱季种子可占食谱的相当比例,湿季转向动物性食物。<span class="uncertain">⚠️【待核实】"旱季种子占 50%"来自蚁商饲养资料。</span></li>
+</ul>
+
+<div class="callout red">
+<b>群体规模:两个来源差了三个数量级,必须并排看:</b><br>
+· AntWiki 类资料称本种"群体常由数百万个体组成";<br>
+· 饲养资料则给出单后群体约 2 万–3 万、多后群体可达约 5 万头,并称多后制下蚁后可达 16 头。<br>
+两者的差距无法用四舍五入解释。<span class="uncertain">⚠️【待核实】实际规模很可能强烈依赖于巢龄、栖息地生产力与多后程度,但这两个来源至少有一个在转述中失真。引用群体规模前必须回原始文献。</span>
+</div>
+
+<h3>与真行军蚁的区别(这是最容易被外行混淆的一点)</h3>
+<table>
+  <tr><th>维度</th><th>真行军蚁(Dorylinae)</th><th>全异蚁(<i>Carebara diversa</i>)</th></tr>
+  <tr><td>亚科</td><td>Dorylinae</td><td>Myrmicinae</td></tr>
+  <tr><td>巢</td><td>无固定巢,夜间结成 bivouac</td><td>固定的地下巢,可多巢相连</td></tr>
+  <tr><td>生活周期</td><td>游牧相与静止相交替</td><td>无周期性迁徙</td></tr>
+  <tr><td>蚁后形态</td><td>腹部极度膨大,常为无翅工蚁状</td><td>正常有翅蚁后,体长 20–25 mm</td></tr>
+  <tr><td>相似之处</td><td colspan="2">都形成大规模群体劫掠——但这是<b>趋同演化</b>的结果,不表示亲缘关系近</td></tr>
+</table>
+
+<div class="note">
+<b>分布:</b>从印度经东南亚延伸至中国南方、中国台湾与菲律宾;日本仅有最南端的少量记录(如冲绳岛)。偏好湿润、遮阴的环境,常出现在农田、园林甚至城市缝隙中,可在地下构筑庞大的通道系统。
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>觅食策略谱系:蚂蚁吃什么、怎么吃</h2>
+
+<p>前面九节是"按类群"组织。但理解蚂蚁的更好方式之一是<b>按能量来源</b>组织——因为你很快就会发现问题不在"这个蚁叫什么",而在"这套习性是靠什么机制成立的"。</p>
+
+<div class="mermaid">
+flowchart TD
+    ROOT["蚂蚁的能量来源"]
+    ROOT --> P["捕食其他无脊椎动物"]
+    ROOT --> S["取食种子"]
+    ROOT --> F["栽培真菌"]
+    ROOT --> N["取食蜜露"]
+    ROOT --> X["取食花蜜与植物分泌物"]
+    ROOT --> D["腐食与清道夫"]
+
+    P --> P1["单独狩猎<br/>猛蚁型类群为主"]
+    P --> P2["集体劫掠<br/>行军蚁综合征"]
+    S --> S1["收获蚁<br/>颏毛刷搬运"]
+    F --> F1["切叶蚁等 Attini 族<br/>真菌为唯一主食"]
+    N --> N1["与蚜虫、介壳虫互惠<br/>借道植物韧皮部汁液"]
+    X --> X1["花外蜜腺<br/>兼作植物保镖"]
+    D --> D1["取食尸体与有机碎屑"]
+
+    style ROOT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style S fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style F fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style N fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style X fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style D fill:#f1f5f9,stroke:#94a3b8,color:#334155
+</div>
+
+<h3>一个反直觉的核心事实:蚂蚁几乎没有真正"吃植物"的类群</h3>
+<div class="callout key">
+蚁科一万四千余种里,<b>直接啃食植物组织并消化利用的类群几乎不存在</b>。它们获取植物能量的三条路全部绕了弯:<br>
+① <b>通过植食性昆虫</b>——取食蚜虫、介壳虫排泄的蜜露,而蜜露本质是植物韧皮部汁液的过滤产物;<br>
+② <b>通过真菌</b>——切叶蚁把叶片嚼碎喂给真菌,消化植物组织的是真菌,蚂蚁吃的是真菌的菌丝球;<br>
+③ <b>通过种子</b>——取食的是植物的繁殖体与储藏营养,而非叶片。<br>
+所以"切叶蚁啃叶子"这个印象在因果链上错了两环:它们不为自己吃,也不消化植物。
+</div>
+
+<h3>六类策略的对照</h3>
+<table>
+  <tr><th>策略</th><th>代表类群</th><th>关键形态 / 结构适应</th><th>生态后果</th></tr>
+  <tr class="best"><td><b>捕食(单猎)</b></td><td>猛蚁型类群:<i>Harpegnathos</i>、<i>Myrmecia</i>、<i>Odontomachus</i>、<i>Dinoponera</i>、<i>Stigmatomma</i></td><td>体型大、复眼发达、保留螫针;视觉或振动定位</td><td>控制地表无脊椎动物种群;群体规模通常较小</td></tr>
+  <tr class="best"><td><b>捕食(集体)</b></td><td>Dorylinae 全亚科、<i>Carebara diversa</i>、部分 <i>Leptogenys</i></td><td>信息素招募、大颚、兵蚁级、群体规模极大</td><td>制造区域性"干扰脉冲",带动上百个伴生物种</td></tr>
+  <tr><td><b>取食种子</b></td><td><i>Pogonomyrmex</i>、<i>Messor</i>、<i>Veromessor</i></td><td>颏毛刷(psammophore);地下种子储藏室</td><td>既是种子捕食者也是传播者,塑造荒漠植物群落</td></tr>
+  <tr><td><b>栽培真菌</b></td><td>Attini 族(含切叶蚁)</td><td>口下囊携带菌种、菌圃腔室、共生放线菌抗菌</td><td>把植物初级生产力转化为巢内独立食物链</td></tr>
+  <tr><td><b>取食蜜露</b></td><td>蚁亚科、臭蚁亚科大量类群:<i>Camponotus</i>、<i>Lasius</i>、<i>Formica</i></td><td>嗉囊可扩张;信息素路径维护"牧场"</td><td>与蚜虫/介壳虫形成互惠网络,间接影响植物</td></tr>
+  <tr><td><b>花蜜与分泌物</b></td><td>树栖类群:<i>Oecophylla</i>、<i>Cephalotes</i>、<i>Pseudomyrmex</i></td><td>耐稀释糖液;攀附能力</td><td>成为蚁植物的常驻保镖(见第 14 节)</td></tr>
+</table>
+
+<div class="callout warn">
+<b>两点使用提醒:</b><br>
+① <b>不互斥</b>:上述分类按"主导策略"划定。弓背蚁兼食蜜露与昆虫,全异蚁兼食种子、猎物与蜜露,收获蚁也捕食少量昆虫。把某个物种贴上单一标签会失真。<br>
+② <b>活体储蜜不是营养级</b>:蜜罐蚁的 replete(第 7 节)是一种<b>分配策略</b>,不是独立的能量来源——它们储存的仍是蜜露与花蜜。<span class="uncertain">⚠️【待核实】把它们并列为"食性类型"是常见误写。</span>
+</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>单独狩猎的猎手:猛蚁型类群</h2>
+
+<p>"独自出门打猎"的蚂蚁,高度集中在蚁科系统树偏基部的猛蚁型类群(Poneromorphs)。它们的共同特征是:群体通常不大,但个体装备精良——体型大、复眼发达、螫针完整保留。</p>
+
+<h3>为什么不靠数量而靠个体</h3>
+<div class="callout key">
+群体劫掠需要庞大的个体数和成熟的信息素招募系统,这是"重资产"路线;单猎是"轻资产"路线:<b>一个个体的感官、机动与武器足够解决一顿饭</b>。猛蚁型类群把投资压在个体上,因此在地表捕食者这一生态位上取得了与行军蚁不同的成功。这是形态—行为—社会规模三者联动的直接体现。
+</div>
+
+<h3>六个值得知道的单猎者</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>跳镰猛蚁 <i>Harpegnathos saltator</i></h4>
+    <p>印度至东南亚。大型复眼主导的<b>视觉狩猎者</b>,能在落叶层中跃起扑击猎物。更具科学价值的是一种特殊的繁殖制度:该种<b>没有独立的蚁后级</b>,由交配过的工蚁(gamergate)通过触角搏斗争夺产卵权;而且这种转变是<b>可逆的</b>——gamergate 失势后可退回普通工蚁行为。它是研究"社会性昆虫品级可塑性"的模式系统。<span class="uncertain">⚠️【待核实】具体研究文献。</span></p>
+  </div>
+  <div class="card">
+    <h4>斗牛犬蚁 <i>Myrmecia</i></h4>
+    <p>澳洲特化类群。复眼极大、视力在蚁类中名列前茅,单独在地面巡逻捕猎。螫针剧毒,是澳洲医学上最重要的致敏蚁类之一。另有一项著名记录:<span class="sci">Myrmecia pilosula</span> 的雄蚁<b>只有一条染色体</b>(n=1),是已知染色体数最少的动物之一。<span class="uncertain">⚠️【待核实】</span></p>
+  </div>
+  <div class="card">
+    <h4>大齿猛蚁(陷阱颚蚁)<i>Odontomachus</i></h4>
+    <p>上颚可弹击闭合,速度达到每小时 126–230 km 量级,是动物界已知最快的附肢运动之一。除了捕猎,它还能<b>用上颚猛击地面形成反冲</b>,把自己弹离威胁(弹道逃逸)。<span class="uncertain">⚠️【待核实】速度区间的原始测定文献。</span></p>
+  </div>
+  <div class="card">
+    <h4>巨猛蚁 <i>Dinoponera</i></h4>
+    <p>南美。工蚁体型可达约 3 cm 量级,是蚁科最大的工蚁之一。与跳镰猛蚁类似,它同样采用 gamergate 制度,群体内存在明确的等级序列与竞争。<span class="uncertain">⚠️【待核实】最大体长记录。</span></p>
+  </div>
+  <div class="card">
+    <h4>钝猛蚁:所谓"德古拉蚁"</h4>
+    <p><i>Stigmatomma</i> 与 <i>Amblyopone</i> 等属。工蚁用上颚在自己的<b>幼虫体壁上划出小口,吸食血淋巴,但不杀死幼虫</b>——这种"非破坏性幼虫取食"让幼虫可以反复充当营养来源。英文俗称 dracula ants 即由此而来。<span class="uncertain">⚠️【待核实】该行为的定量研究与术语。</span></p>
+  </div>
+  <div class="card">
+    <h4>子弹蚁 <i>Paraponera clavata</i></h4>
+    <p>新热带雨林,属副猛蚁亚科(Paraponerinae)。体型大、螫针发达,其叮咬在 Schmidt 疼痛指数中属最高等级之一。虽然以捕猎为主,也会取食蜜露并与植物形成兼性互惠。<span class="uncertain">⚠️【待核实】疼痛指数的具体评级与来源。</span></p>
+  </div>
+</div>
+
+<h3>共用一个术语:gamergate</h3>
+<p>在猛蚁型类群中,"蚁后"这个概念会失效。许多种类的群体里没有形态特化的繁殖个体,<b>由交配过的工蚁承担产卵职能</b>,这类个体称为 gamergate。它在形态上仍与工蚁接近,并可通过行为竞争获得或失去地位。这与弓背蚁、切叶蚁那种"体型悬殊、有翅、终生专职产卵"的经典蚁后形成鲜明对比。<span class="uncertain">⚠️【待核实】gamergate 在蚁科中的分布范围,以及"只出现在猛蚁型类群"这一概括是否准确。</span></p>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>群体劫掠:行军蚁综合征的多次独立演化</h2>
+
+<p>把"猎手"从个体升级为群体,需要一整套协同特征同时到位,研究者把这套组合称为<b>行军蚁综合征</b>(army ant syndrome)。</p>
+
+<h3>综合征的五个组成部分</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>群体级招募</h4>
+    <p>靠信息素路径把大量个体同时调往同一目标,形成波次推进而非零散觅食。</p>
+  </div>
+  <div class="card">
+    <h4>游牧与驻留交替</h4>
+    <p>频繁整体迁移,巢只是临时的;迁移节律与幼体发育阶段挂钩。</p>
+  </div>
+  <div class="card">
+    <h4>繁殖个体特化</h4>
+    <p>蚁后腹部极度膨大、常失去飞行能力,无法独立建群,只能靠群体抬运。</p>
+  </div>
+  <div class="card">
+    <h4>体型分化</h4>
+    <p>出现专司粉碎或守卫的大型个体,把"处理猎物"从捕获中分离出来。</p>
+  </div>
+  <div class="card">
+    <h4>地表通吃</h4>
+    <p>不挑食,凡拦在推进带上的小型动物均被清除或搬走。</p>
+  </div>
+  <div class="card">
+    <h4>伴生物种群</h4>
+    <p>一整套食客与寄居者依附其劫掠节律生存,构成生态系统内的二级结构。</p>
+  </div>
+</div>
+
+<div class="mermaid">
+flowchart LR
+    A["Dorylinae 行军蚁亚科<br/>Eciton · Dorylus · Aenictus · Neivamyrmex"]
+    B["猛蚁亚科 Ponerinae<br/>细猛蚁属 Leptogenys 部分种"]
+    C["切叶蚁亚科 Myrmicinae<br/>全异蚁 Carebara diversa"]
+    D["行军蚁综合征<br/>群体劫掠 + 游牧 + 特化蚁后"]
+    A --> D
+    B --> D
+    C --> D
+    style D fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style A fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style B fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style C fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+
+<p>三张图上的箭头方向值得留意:<b>它们不是同一个祖先传下来的共同性状,而是各自独立凑齐了同一套方案</b>。判断趋同演化的标准不是"长得像",而是"在系统树上不构成一个单系群却具备同一套功能组合"——这三支恰好符合。</p>
+
+<div class="callout warn">
+<b>独立演化了几次?</b>文献中对"行军蚁综合征"的独立起源次数有不同说法,常见为"至少 4 次""4–6 次"这类区间表述。<span class="uncertain">⚠️【待核实】不同作者对"够不够格算行军蚁"的标准不一致(是否要求无固定巢、是否要求特化蚁后),导致计数差异。引用时应注明所依标准。</span>
+</div>
+
+<h3>为什么这套方案能够反复成功</h3>
+<ul>
+  <li><b>它把"发现食物"的搜索成本降下来</b>:一万个体同时扫过一片地表,覆盖面远超单猎者逐个搜索。</li>
+  <li><b>它把"处理猎物"工业化</b>:捕获、粉碎、搬运由不同体级并行完成,单位时间吞吐量极高。</li>
+  <li><b>它把"防御"变成副产品</b>:当个体数足够多时,任何单一捕食者的收益都变得不划算——数量本身成为铠甲。</li>
+  <li><b>代价是极度的环境依赖</b>:需要高生产力、结构复杂、小型动物密度高的生境。这也解释了为什么极端行军蚁类群集中在热带。</li>
+</ul>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>蚂蚁与脊椎动物:谁捕食谁</h2>
+
+<p>这一节需要先把一件事说清楚,因为它直接关系到"蚂蚁攻击动物"这类说法的可信度。</p>
+
+<div class="callout red">
+<b>蚂蚁几乎不捕食健康的成年脊椎动物。</b>影视作品里"行军蚁几分钟内把大型动物吃成骨架"是夸张:行军蚁推进速度慢,健康的成年个体完全走得开,真正构成风险的是<b>被困、失去行动能力、幼体或病弱个体</b>。写科普时,这一条是需要主动纠正的常见误解。
+</div>
+
+<h3>但确有捕食小型脊椎动物的记录</h3>
+<p>大型行军蚁群体在推进过程中,确实能杀死并搬运小型脊椎动物,包括雏鸟、蜥蜴、蛇与小型啮齿类幼体。这属于"群体压制下的偶发捕食",而不是"专门猎杀脊椎动物"。<span class="uncertain">⚠️【待核实】具体案例的野外记录文献与规模数据。</span></p>
+
+<h3>更重要的是反方向:有一整条脊椎动物支线专吃蚂蚁</h3>
+<div class="mermaid">
+flowchart TD
+    ANTS["蚂蚁与白蚁<br/>高密度 · 单个体营养价值低<br/>需要大量处理"]
+    ANTS --> M1["食蚁兽 Myrmecophaga<br/>新热带"]
+    ANTS --> M2["土豚 Orycteropus<br/>非洲"]
+    ANTS --> M3["穿山甲 Manis<br/>亚洲与非洲"]
+    ANTS --> M4["袋食蚁兽 Myrmecobius<br/>澳洲,主食白蚁"]
+    ANTS --> M5["蚁鸟等鸟类<br/>跟随行军蚁群觅食被驱赶的昆虫"]
+    M1 --> CONV["趋同方案<br/>无齿 · 长舌 · 强前肢 · 发达嗅觉"]
+    M2 --> CONV
+    M3 --> CONV
+    style ANTS fill:#FCEBEB,stroke:#E24B4A,color:#501313
+    style CONV fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<p><b>为什么会长成同一个样子:</b>蚂蚁与白蚁都是"高密度、单个体价值低、需要大量处理"的食物。要利用这类资源,就必须同时解决四件事——挖开硬化巢体、把舌头伸进狭窄通道、用嗅觉定位地下巢、并且放弃咀嚼。于是"无齿 + 长舌 + 强壮前爪 + 发达嗅觉"这套方案在四个互不相关的哺乳动物支系里被反复凑齐。</p>
+
+<div class="note">
+<b>一个必须区分的例子:</b>蚁鸟(antbirds)跟随行军蚁群时,吃的主要是<b>被蚁群惊飞逃窜的昆虫</b>,而不是蚂蚁本身。把它们当作"吃蚂蚁的鸟"是典型的转述失真。而澳洲的袋食蚁兽是昼行性、几乎只吃白蚁的专食者,连牙齿都高度退化。
+</div>
+
+<div class="callout warn">
+<b>涉及保护物种时的写法:</b>中华穿山甲在我国属国家一级保护动物、种群极度濒危。介绍它的食性时应限于生态学描述,不应包含栖息地定位、捕捉或利用方式的任何细节。
+</div>
+
+<h3>蚂蚁靠什么没被吃光</h3>
+<ul>
+  <li><b>化学防御</b>:蚁亚科喷甲酸、猛蚁类毒液含肽与生物碱、臭蚁亚科用萜类。</li>
+  <li><b>物理防御</b>:多刺蚁属的长刺、兵蚁的大颚、厚硬体壁。</li>
+  <li><b>数量与分工</b>:任何针对个体的捕食行为都会立刻招来大量同类。</li>
+  <li><b>地下与树冠生活</b>:大量类群把巢与活动空间放在捕食者难以到达的位置。</li>
+</ul>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>食植物的路径:种子、蜜露、蚁播与蚁植</h2>
+
+<p>第 10 节已经说明蚂蚁不直接啃食植物。这一节把三条绕行路径和由此衍生出的两类互惠关系讲清楚——这部分是蚂蚁-植物协同演化最精彩的地方。</p>
+
+<h3>路径一:取食种子</h3>
+<p>见第 3 节。要点是形态与行为配套:<b>颏毛刷</b>负责高效收集细小种子,<b>地下储藏室</b>负责把种子囤过旱季。这条路径让收获蚁同时扮演两个相反的角色——种子捕食者与种子传播者。</p>
+
+<h3>路径二:蜜露——蚂蚁最大宗的植物来源能量</h3>
+<div class="callout key">
+蜜露是蚜虫、介壳虫、角蝉等<b>植食性半翅昆虫</b>取食植物韧皮部汁液后,把多余的糖分与水分排出的液体。它的本质是植物光合产物经过昆虫体内"过滤"后的产物。因此:<br>
+<b>蚂蚁与蚜虫的互惠 = 蚂蚁借道昆虫获取植物能量。</b><br>
+蚂蚁提供的是保护(驱赶瓢虫、草蛉等天敌)、清洁(舔走蜜露避免霉变)与搬迁(把蚜虫搬到更嫩的枝条,甚至把蚜虫卵搬回巢内越冬)。这也是"蚂蚁养蚜虫"这一说法的准确版本——被养的其实是植物的能量流。
+</div>
+
+<h3>路径三:蚁播(myrmecochory)——种子与蚂蚁的双向交易</h3>
+<div class="mermaid">
+flowchart LR
+    S1["植物在种子表面<br/>长出富含脂类的油质体"]
+    S2["蚂蚁把种子搬回巢<br/>取食油质体"]
+    S3["种子被丢弃在巢内<br/>或巢旁垃圾堆"]
+    S4["种子在富含养分<br/>且相对安全的微生境萌发"]
+    S1 --> S2 --> S3 --> S4
+    S4 -.->|"提高植物适合度"| S1
+    style S1 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style S4 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+
+<p>这个系统的巧妙之处在于<b>双方都拿到了东西,而且成本极低</b>:蚂蚁得到高价值脂类食物,植物得到的是一个被搬到地下、避开种子捕食者、同时富含养分(巢内废弃物)的萌发位点。澳洲与南非的地中海气候灌丛中,蚁播植物的比例可占植物区系的相当大份额。<span class="uncertain">⚠️【待核实】具体比例数据。</span></p>
+
+<h3>路径四:蚁植物(myrmecophytes)——植物把住所和食物都准备好</h3>
+<table>
+  <tr><th>植物</th><th>提供的住所</th><th>提供的食物</th><th>常驻蚂蚁</th><th>分布</th></tr>
+  <tr class="best"><td><i>Acacia</i> 金合欢属部分种</td><td>中空膨大的托叶刺</td><td>叶尖的贝尔特体</td><td><i>Pseudomyrmex</i></td><td>新热带</td></tr>
+  <tr><td><i>Cecropia</i> 号角树</td><td>中空的茎节</td><td>叶柄基部的穆勒体</td><td><i>Azteca</i></td><td>新热带</td></tr>
+  <tr><td><i>Macaranga</i> 血桐属部分种</td><td>中空茎干</td><td>叶面分泌的脂类食物体</td><td><i>Crematogaster</i> 等</td><td>东南亚</td></tr>
+  <tr><td><i>Hydnophytum</i> / <i>Myrmecodia</i></td><td>块茎内迷宫状空腔</td><td>块茎表面分泌的花蜜</td><td>多种树栖蚁</td><td>东南亚至新几内亚</td></tr>
+</table>
+
+<p><b>交换条件非常明确:</b>植物付房租与餐费,蚂蚁付安保。实验来回验证过这条链——把常驻蚂蚁移走后,金合欢被食叶昆虫啃食的程度显著上升,结籽量下降。这是植物用"外包"方式解决防御问题的经典案例。</p>
+
+<div class="callout tip">
+<b>观察切入点:</b>血桐属与蚁栖植物是东南亚地区最容易观察到的蚁植物——砍一段中空茎干,往往能看到里面住着整窝蚂蚁和它们的幼体。这也是国内南方(如海南、云南南部)可行的观察路径,<span class="uncertain">⚠️【待核实】具体分布省区与常见种。</span>
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>真菌栽培:农业被独立发明三次</h2>
+
+<p>第 2 节讲了切叶蚁的真菌农场。但如果把视野拉开,会发现一件更惊人的事:<b>"驯化一种真菌、把它当饭吃"这件事在昆虫里被独立发明了三次。</b></p>
+
+<table>
+  <tr><th>类群</th><th>分类地位</th><th>栽培的真菌</th><th>基质</th><th>代表分布</th></tr>
+  <tr class="best"><td>真菌栽培蚁</td><td>蚁科 · 切叶蚁亚科 · Attini 族</td><td><i>Leucoagaricus gongylophorus</i> 等(学名见第 2 节注释)</td><td>新鲜叶片、落花、虫粪</td><td>新热带</td></tr>
+  <tr><td>培菌白蚁</td><td>等翅类 · 白蚁科 · 大白蚁亚科</td><td><i>Termitomyces</i> 鸡枞属</td><td>经初步消化的植物纤维</td><td>非洲、亚洲热带</td></tr>
+  <tr><td>食菌小蠹</td><td>鞘翅目 · 多个亚科的蛀木甲虫</td><td>多种虫道真菌</td><td>木质部虫道</td><td>全球林区</td></tr>
+</table>
+
+<div class="callout key">
+<b>三者的共同配方:</b><br>
+① <b>垂直传播</b>——新个体离家时把菌种带走(切叶蚁用口下囊,小蠹用体表贮菌器);<br>
+② <b>定向喂养</b>——持续供给经过处理的植物基质;<br>
+③ <b>病害管理</b>——靠共生微生物或巢内卫生行为抑制杂菌(切叶蚁用体表共生放线菌对抗寄生真菌 Escovopsis)。<br>
+要求三条同时成立,这就是为什么"农业"极其罕见。<b>人类农业不足一万年,而蚂蚁的真菌栽培已延续数千万年</b><span class="uncertain">⚠️【待核实】起源年代的具体估计与文献</span>。
+</div>
+
+<h3>规模对比:切叶蚁只是冰山一角</h3>
+<p>Attini 族(真菌栽培蚁)约有 250 种量级,其中真正切割新鲜叶片的只有 <i>Atta</i>、<i>Acromyrmex</i>、<i>Amoimyrmex</i> 三属约 50 余种。其余绝大多数是"低级栽培蚁",用落花、昆虫粪便等易得基质栽培真菌——<b>它们才是这个农业传统的主流</b>,但很少进入科普视野。<span class="uncertain">⚠️【待核实】Attini 族的物种数与"约 250 种"这一估计。</span></p>
+
+<h3>中国的观察入口</h3>
+<p>培菌白蚁在国内有一个极著名的产物:<b>鸡枞菌</b>。它是 <i>Termitomyces</i> 属真菌的子实体,只从白蚁巢上长出,与白蚁形成专性共生——菌丝球供养白蚁,白蚁提供稳定的温湿度与基质。采鸡枞必须找蚁巢,这是"昆虫农业"在中文语境下最直观的实例。<span class="uncertain">⚠️【待核实】鸡枞菌与具体白蚁种的对应关系。</span></p>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>六个常见类群详解</h2>
+
+<p>以下是第 1 节总表里提过、但值得单独展开的六个类群。它们的共同点是"高频出现在日常生活或科普写作中,但常被讲错"。</p>
+
+<h3>16.1 红火蚁 <i>Solenopsis invicta</i></h3>
+<div class="tag-row">
+  <span class="tag">亚科:Myrmicinae</span>
+  <span class="tag">属:Solenopsis 火蚁属</span>
+  <span class="tag">原产地:南美</span>
+  <span class="tag">现状:华南重要入侵种</span>
+</div>
+<ul>
+  <li><b>形态</b>:体红褐色,腹部末端具螫针(这一点与无螫针的蚁亚科类群可直接区分)。</li>
+  <li><b>行为</b>:受扰时大量工蚁迅速涌出攻击,不是逐只防御。蚁丘隆起于地面,是野外识别线索。</li>
+  <li><b>危害机制</b>:毒液以生物碱类成分为主,叮咬后产生灼痛与脓疱,部分人群会出现严重过敏反应,需及时就医。</li>
+  <li><b>科学价值</b>:该种在入侵地表现出两种社会型——单后型与多后型。两种型的差异与特定基因区段的多态性相关,是研究<b>社会行为遗传基础</b>的经典系统,也是理解"生物入侵为何成功"的样本。<span class="uncertain">⚠️【待核实】具体基因位点与最新研究进展。</span></li>
+</ul>
+<div class="callout warn">
+<b>我国入侵时间:</b>红火蚁传入中国大陆的首次确认时间与地点,常见说法为 2000 年代中期在广东首次确认。<span class="uncertain">⚠️【待核实】具体年份、地点与官方公告出处,引用前务必查证。</span>
+</div>
+
+<h3>16.2 大头蚁 <i>Pheidole</i></h3>
+<ul>
+  <li><b>为什么叫大头</b>:工蚁呈明确二型。小型工蚁(minor)体型小、行动灵活,负责觅食与照料幼体;大型工蚁(major/soldier)头部极度放大、上颚强壮,承担粉碎种子、守卫与搬运。</li>
+  <li><b>物种规模</b>:该属是蚁科中物种数最多的属之列,常被引为超过 1,000 种。<span class="uncertain">⚠️【待核实】确切种数以 AntCat 属级统计为准。</span></li>
+  <li><b>科学价值</b>:二型分明、且兵蚁比例可随群体需求调节,使其成为研究<b>品级决定机制</b>最常用的类群之一。</li>
+  <li><b>与全异蚁的对比</b>:这是理解"工蚁多型"两种形态的最好配对——<i>Pheidole</i> 是<b>离散的两档</b>,全异蚁(第 9 节)是<b>连续渐变</b>。同样是体型分化,发育调控方式不同。</li>
+  <li><b>分布</b>:全球广泛,中国境内常见。</li>
+</ul>
+
+<h3>16.3 红褐林蚁 <i>Formica rufa</i> 与温带蚁丘</h3>
+<ul>
+  <li><b>形态与巢</b>:欧洲温带针阔混交林中的大型穹顶蚁丘,由松针、小枝、植物碎屑堆叠而成,内部布满通道与腔室。<span class="uncertain">⚠️【待核实】蚁丘高度的具体范围。</span></li>
+  <li><b>生态功能</b>:蚁丘是森林中的"热点",通过持续搬运有机物、改土与调节微气候,影响蚁丘周边的土壤理化性质与林下植物分布。它们也是林地捕食者的重要食物源——欧洲有专食林蚁的鸟类与哺乳类。</li>
+  <li><b>保护地位</b>:该种及近缘种在欧洲多国被列为受保护物种,原因正是其在森林生态系统中的结构作用。</li>
+  <li><b>与中国的对应</b>:中国有蚁属 <i>Formica</i> 的多种分布,但要落到"哪种在中国最常见"需要查中国蚁类名录。<span class="uncertain">⚠️【待核实】</span></li>
+</ul>
+
+<h3>16.4 子弹蚁 <i>Paraponera clavata</i></h3>
+<ul>
+  <li><b>分类</b>:属副猛蚁亚科(Paraponerinae),该亚科只含极少种数,是蚁科中一个"独苗式"的类群。</li>
+  <li><b>形态</b>:新热带雨林的大型黑色蚁,体型粗壮、螫针发达,外形与习性都属于典型的地表猎手。</li>
+  <li><b>疼痛</b>:其叮咬在 Schmidt 疼痛指数的分级中位居最高档,痛感可持续数小时到一天。<span class="uncertain">⚠️【待核实】疼痛指数具体等级与来源。</span></li>
+  <li><b>兼性互惠</b>:除了捕猎,它也取食花外蜜腺与蜜露,并因此成为部分热带植物的兼性保镖。这说明"捕食者"与"保镖"两个角色在同一个体身上可以并存。</li>
+</ul>
+
+<h3>16.5 小黄家蚁(法老蚁)<i>Monomorium pharaonis</i></h3>
+<ul>
+  <li><b>为什么难以根除</b>:该种在室内条件下形成多后群体,并通过分巢(芽殖)扩散。室内环境温暖稳定,往往不需要通过婚飞扩散,交配可在巢内完成——这意味着<b>你不会在室外找到"源头巢"</b>。</li>
+  <li><b>防治逻辑</b>:正因如此,喷洒式杀虫剂只会造成群体分裂、越杀越分散。有效方案依赖毒饵:由工蚁把饵剂带回巢内,通过交哺传递给蚁后与幼体——目标是破坏繁殖链,而不是杀死看到的工蚁。这是"理解社会性才能正确防治"的代表案例。</li>
+  <li><b>注意</b>:文中所述的防治逻辑是一般性原理，具体处置请依专业机构的建议执行。</li>
+</ul>
+
+<h3>16.6 阿根廷蚁 <i>Linepithema humile</i>——超级群体的机制</h3>
+<div class="callout key">
+<b>这是全文最值得深挖的一个机制:</b>阿根廷蚁在入侵地形成了横跨陆地尺度的"超级群体"——不同巢的蚂蚁相遇不互相攻击,于是事实上的群体边界消失。<br>
+解释它的经典框架是:<b>入侵地的奠基群体遗传多样性低 → 巢间识别信号(体表碳氢化合物谱)差异变小 → 不同巢的个体互相认可 → 不互斗 → 资源可以共享 → 连成一个巨大的协作网络。</b>而在原产地南美,遗传多样性高、识别信号分化明显,群体之间照常冲突。<br>
+换句话说:<b>入侵本身导致了"合作范围的扩大",而这种扩大反过来推动了入侵成功</b>——这是一个正反馈。
+</div>
+<ul>
+  <li><b>生态影响</b>:主要通过挤占本地蚁类来间接影响生态系统。本地蚁被替代后,依赖本地蚁的捕食者(如部分食蚁蜥蜴与地栖鸟类)随之受影响。</li>
+  <li><b>常被引用的规模</b>:地中海沿岸约 6,000 km 的超级群体。<span class="uncertain">⚠️【待核实】该长度数据的原始出处与测定方式。</span></li>
+  <li><b>分类地位</b>:臭蚁亚科(Dolichoderinae),无螫针。</li>
+</ul>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>特色行为类群:七个值得单独讲的案例</h2>
+
+<p>以下是形态—行为—生态之间对应关系最极端的七个案例。它们共同说明了同一个道理:<b>蚂蚁的"创新"几乎总能找到可见的形态基础</b>。</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>① 爆炸蚁 <i>Colobopsis saundersi</i></h4>
+    <p>东南亚。工蚁在受威胁且无法脱身时,主动剧烈收缩腹部,使体壁破裂,把具有粘性的腺体分泌物喷向攻击者,自身随之死亡。这是已知最彻底的自我牺牲式防御。(该种曾置于弓背蚁属 <i>Camponotus</i> 下。)<span class="uncertain">⚠️【待核实】分类归属与行为细节。</span></p>
+  </div>
+  <div class="card">
+    <h4>② 龟蚁 <i>Cephalotes</i>:堵门与滑翔</h4>
+    <p>两套绝技。其一:兵蚁头部背面呈扁平的盾状,可像瓶塞一样堵住巢口,形成物理闸门(称为 phragmosis)。其二:树栖于树冠层,一旦从枝条跌落,能<b>通过姿态调节实现有方向的空中下降</b>,落回树干而不是掉进林下层。<span class="uncertain">⚠️【待核实】滑翔行为的原始研究文献。</span></p>
+  </div>
+  <div class="card">
+    <h4>③ 陷阱颚蚁 <i>Odontomachus</i></h4>
+    <p>见第 11 节。上颚弹击既用于捕猎,也用于弹道逃逸——同一套武器承担两个完全不同的功能。这种"一器多用"在蚁类中屡见不鲜。</p>
+  </div>
+  <div class="card">
+    <h4>④ 悍蚁 <i>Polyergus</i>:蚁奴制</h4>
+    <p>专性社会性寄生。悍蚁工蚁的上颚特化为纯粹的刺状武器,无法照料幼体、也几乎无法自行取食;它们靠<b>掠夺近缘蚁(通常是 <i>Formica</i>)的蛹</b>回巢,羽化后的异种工蚁承担全部内勤工作。这类行为称为蚁奴制(dulosis)。<span class="uncertain">⚠️【待核实】具体宿主种与掠夺频率。</span></p>
+  </div>
+  <div class="card">
+    <h4>⑤ 走到终点的寄生:<i>Teleutomyrmex</i> 等</h4>
+    <p>在社会性寄生的极端一端,出现了<b>完全没有工蚁级</b>的类群:蚁后形态高度特化,生活在宿主巢内,甚至需要用腿附着在宿主蚁后的身上取食。<i>Anergates</i> 属同样没有工蚁。这代表社会性寄生的演化终局——把"社会"整个外包出去后,自身的分工体系瓦解。<span class="uncertain">⚠️【待核实】属名拼写、宿主属与形态描述细节。</span></p>
+  </div>
+  <div class="card">
+    <h4>⑥ <i>Allomerus</i>:用真菌搭陷阱台</h4>
+    <p>新热带,寄居于蚁植物 <i>Hirtella</i> 上。工蚁用植物毛与<b>真菌菌丝</b>在枝条上构筑一座带孔洞的"平台",自身藏在孔洞中,从洞中探出上颚,伏击降落在平台上的大型昆虫,并用带倒刺的跗爪把猎物牢牢固定。把真菌同时当作建筑材料、黏合剂与结构骨架。<span class="uncertain">⚠️【待核实】行为与结构的原始研究文献。</span></p>
+  </div>
+  <div class="card">
+    <h4>⑦ 斗牛犬蚁的染色体极限</h4>
+    <p>见第 11 节。<span class="sci">Myrmecia pilosula</span> 的雄蚁仅有 1 条染色体,是已知染色体数最少的动物之一;而由于单倍二倍体机制,雌性为二倍体、雄性为单倍体——同一物种内部两种性别拥有完全不同的染色体数目。<span class="uncertain">⚠️【待核实】</span></p>
+  </div>
+</div>
+
+<div class="callout tip">
+<b>社会性寄生的连续谱(值得单独记的框架):</b><br>
+① <b>临时寄生</b>——新蚁后进入宿主巢产卵,宿主工蚁抚养其幼体,寄主工蚁随后逐渐消亡;<br>
+② <b>蚁奴制(dulosis)</b>——掠夺宿主蛹,羽化后的异种工蚁终身服役;<br>
+③ <b>永久性寄生(inquilinism)</b>——寄生者永久生活在宿主巢内,常与宿主蚁后共存;<br>
+④ <b>极度退化</b>——寄生者的工蚁级完全消失。<br>
+这是一条"靠别人干活的代价是把自身的劳动能力退掉"的清晰演化路径。
+</div>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>横向对比总表</h2>
+
+<table>
+  <tr>
+    <th>类群</th><th>主导觅食策略</th><th>巢型</th><th>工蚁多型</th><th>防御手段</th><th>识别首查特征</th>
+  </tr>
+  <tr class="best"><td>切叶蚁</td><td>栽培真菌(基质为鲜叶)</td><td>巨型地下巢 + 垃圾专用腔室</td><td>极强(离散 4 品级)</td><td>上颚;兵蚁守卫</td><td>背板刺对数与表面质地</td></tr>
+  <tr><td>收获蚁</td><td>取食种子</td><td>深地下巢 + 种子储藏室</td><td>弱至中等</td><td>螫针(毒性极强)</td><td>颏毛刷;巢周裸地光盘</td></tr>
+  <tr><td>行军蚁</td><td>集体劫掠</td><td>无固定巢,活体 bivouac</td><td>中等(体级分化)</td><td>螫针 + 数量压制</td><td>蚁后形态;是否整体迁徙</td></tr>
+  <tr><td>弓背蚁</td><td>蜜露 + 捕食</td><td>枯木、树洞、建筑木构件</td><td>弱(连续体级)</td><td>酸孔喷甲酸</td><td>体型大、足细长;无螫针</td></tr>
+  <tr><td>织叶蚁</td><td>捕食 + 蜜露 + 花蜜</td><td>树冠叶片缝制的多巢</td><td>明显(major / minor)</td><td>酸孔喷甲酸 + 咬合</td><td>叶巢;工蚁腹呈黄绿透明</td></tr>
+  <tr><td>蜜罐蚁</td><td>蜜露 + 花蜜(活体储存)</td><td>深地下巢,replete 悬于顶壁</td><td>弱</td><td>酸孔喷甲酸</td><td>巢室内可见透明膨胀个体</td></tr>
+  <tr><td>多刺蚁属</td><td>蜜露 + 捕食</td><td>树栖丝粘巢</td><td>不明显</td><td>体刺 + 酸孔</td><td>前胸、并胸腹节、腹柄结成对长刺</td></tr>
+  <tr><td>全异蚁</td><td>集体劫掠 + 种子 + 蜜露</td><td>地下巢,可多巢相连</td><td><b>极强(连续渐变)</b></td><td>颚 + 数量压制</td><td>同巢工蚁体型差 &gt; 10 倍;拱顶通道</td></tr>
+  <tr><td>猛蚁型类群(单猎者)</td><td>单独狩猎</td><td>土壤或枯木中的小型巢</td><td>弱</td><td>螫针为主要武器</td><td>复眼发达、体型大、结节单一</td></tr>
+  <tr><td>大头蚁</td><td>种子 + 捕食 + 蜜露</td><td>地下巢</td><td>明显(离散二型)</td><td>兵蚁大颚</td><td>兵蚁头部异常硕大</td></tr>
+  <tr><td>红火蚁</td><td>杂食,兼捕食与种子</td><td>地面隆起蚁丘</td><td>中等</td><td>螫针 + 群体攻击</td><td>体红褐;受扰后大量涌出</td></tr>
+  <tr><td>阿根廷蚁</td><td>蜜露 + 腐食 + 捕食</td><td>土壤、缝隙,可形成超级群体</td><td>弱</td><td>化学防御,无螫针</td><td>体小、褐黑、行走迅速</td></tr>
+</table>
+
+<div class="callout key">
+<b>从这张表能读出的四条规律:</b><br>
+① <b>无螫针的类群(弓背蚁、织叶蚁、蜜罐蚁、多刺蚁、阿根廷蚁)全部属蚁亚科或臭蚁亚科</b>,统一改用酸孔喷甲酸或化学分泌物——这是可以拿去做野外快速判断的稳定判据。<br>
+② <b>极端工蚁多型只出现在任务物理需求最重的类群</b>:切叶蚁(搬运叶片)、全异蚁(粉碎猎物与种子)、大头蚁(粉碎种子)。多型不是"高级"的标志,而是特定劳动分工的产物。<br>
+③ <b>群体会劫掠的方案至少在三支不同亚科里独立出现</b>(第 12 节),真菌栽培至少在三类昆虫里独立出现(第 15 节)——蚂蚁与昆虫的生态成功很大程度上来自这种反复试错的趋同创新。<br>
+④ <b>"单独狩猎"与"集体劫掠"几乎不共存于同一物种</b>,因为两者对体型、感官与招募系统的要求方向相反。这是形态与行为相互约束的直接证据。
+</div>
+</section>
+
+<!-- =================== 19 =================== -->
+<section class="section" id="s19">
+<h2><span class="num">19</span>存疑与冲突清单(必读)</h2>
+
+<p>以下每一条都是本文档明确<b>未采用</b>的结论或<b>无法核实</b>的数字。写科普时若要用,请先完成"建议核实路径"这一列。</p>
+
+<table>
+  <tr><th>条目</th><th>冲突 / 不明之处</th><th>建议核实路径</th></tr>
+  <tr class="fail">
+    <td><b>多刺蚁属触角节数</b></td>
+    <td>中文资料同时存在"12 节"与"13 节"两种写法</td>
+    <td>触角节数是关键属征,须查该属的原始属征描述,不可沿用二手转述</td>
+  </tr>
+  <tr class="fail">
+    <td><b>多刺蚁属物种数</b></td>
+    <td>中文资料未给出可靠数字</td>
+    <td>查 AntCat 属级统计</td>
+  </tr>
+  <tr class="fail">
+    <td><b>切叶蚁巢个体数</b></td>
+    <td>355 万 / 800 万 / 500–800 万,来源间不一致</td>
+    <td>回原始野外巢穴挖掘与标记重捕研究</td>
+  </tr>
+  <tr class="fail">
+    <td><b>切叶蚁负重倍数</b></td>
+    <td>"5000 倍体重"与"50 倍体重"并存</td>
+    <td>差异达百倍,至少一个为转述失真;查原始力学测定</td>
+  </tr>
+  <tr>
+    <td>栽培真菌学名</td>
+    <td>Attamyces / Leucocoprinus / Leucoagaricus gongylophorus 三种写法并存</td>
+    <td>查真菌分类学原始文献与近期系统发育研究</td>
+  </tr>
+  <tr>
+    <td>Attini 族物种数</td>
+    <td>"约 250 种"为常见估计</td>
+    <td>查 AntCat 族级统计</td>
+  </tr>
+  <tr>
+    <td>蚂蚁真菌栽培的起源年代</td>
+    <td>"数千万年"为常见表述</td>
+    <td>查分子钟与化石联合定年研究</td>
+  </tr>
+  <tr>
+    <td>全异蚁群体规模</td>
+    <td>"数百万"与"单后 2–3 万 / 多后约 5 万"相差三个数量级</td>
+    <td>核对原始野外群体调查;须区分巢龄与多后程度</td>
+  </tr>
+  <tr>
+    <td>全异蚁多型倍数</td>
+    <td>头宽 12 倍、干重 550 倍为转述值</td>
+    <td>追溯该种异速生长的定量研究原文表格</td>
+  </tr>
+  <tr>
+    <td>全异蚁拱顶通道与 94% 越障失败</td>
+    <td>行为描述流传广但未见原始出处</td>
+    <td>查该种的野外行为学研究</td>
+  </tr>
+  <tr>
+    <td>行军蚁亚科合并文献</td>
+    <td>合并年份与作者未逐字核对</td>
+    <td>查 Brady 等 2014 年系统发育论文原文</td>
+  </tr>
+  <tr>
+    <td>行军蚁劫掠规模</td>
+    <td>"单次 20 万个体、日均 10 万件猎物"来源非权威</td>
+    <td>回 <i>Eciton burchellii</i> 野外定量研究</td>
+  </tr>
+  <tr>
+    <td>"约 300 种跟随行军蚁的生物"</td>
+    <td>常见转述,未见原始统计表</td>
+    <td>查以 <i>E. burchellii</i> 为对象的专性伴生物种调查</td>
+  </tr>
+  <tr>
+    <td>行军蚁综合征独立演化次数</td>
+    <td>"至少 4 次""4–6 次"等说法并存</td>
+    <td>计数差异源于"行军蚁"判定标准不同,引用须注明所依标准</td>
+  </tr>
+  <tr>
+    <td>蚂蚁捕食小型脊椎动物的案例</td>
+    <td>常被笼统表述,缺乏具体野外记录</td>
+    <td>查行军蚁野外观测报告;避免采信影视化描述</td>
+  </tr>
+  <tr>
+    <td>织叶蚁现存种数</td>
+    <td>"现存仅 2 种"未逐一核对 AntCat</td>
+    <td>查 <i>Oecophylla</i> 属页面(含化石种)</td>
+  </tr>
+  <tr>
+    <td>黄猄蚁与《南方草木状》</td>
+    <td>"世界最早生物防治记载"涉及古籍版本与年代争议</td>
+    <td>查古籍原文与科技史专门研究</td>
+  </tr>
+  <tr>
+    <td>蜜罐蚁储存物二分说</td>
+    <td>称不同 replete 分别储存糖类 / 蛋白脂类液体</td>
+    <td>查 replete 内容物的成分分析研究</td>
+  </tr>
+  <tr>
+    <td>蚂蚁蜂蜜抗菌活性</td>
+    <td>转述称 2023 年研究报告对多种病原菌有效</td>
+    <td>查该原始论文的方法与样本量</td>
+  </tr>
+  <tr>
+    <td>澳洲原住民蜜蚁文化细节</td>
+    <td>名称、仪轨、艺术运动关联均来自爱好者站点</td>
+    <td>查人类学文献;涉及原住民文化表述须格外谨慎</td>
+  </tr>
+  <tr>
+    <td>收获蚁毒液"12 刺杀 2 kg 动物"</td>
+    <td>换算对象在不同页面被写成小鼠 / 大鼠 / 婴儿</td>
+    <td>直接引用 LD50 = 0.12 mg/kg(小鼠静脉注射)原始值</td>
+  </tr>
+  <tr>
+    <td>腮毛刷功能的完整表述</td>
+    <td>搬运种子、清运沙粒、搬运卵三种功能并存</td>
+    <td>查形态功能学实验研究</td>
+  </tr>
+  <tr>
+    <td><i>Messor</i> 属在中国的分布种</td>
+    <td>未核实到具体种</td>
+    <td>查中国蚁类名录</td>
+  </tr>
+  <tr>
+    <td>陷阱颚弹击速度</td>
+    <td>"126–230 km/h"区间来源为非权威汇总</td>
+    <td>查高速摄影测定的原始论文</td>
+  </tr>
+  <tr>
+    <td><i>Myrmecia pilosula</i> 雄蚁 n=1</td>
+    <td>未见原始核型文献</td>
+    <td>查该种染色体研究的原始论文</td>
+  </tr>
+  <tr>
+    <td>"德古拉蚁"非破坏性幼虫取食</td>
+    <td>行为描述与适用属范围未核对</td>
+    <td>查该行为的原始研究文献</td>
+  </tr>
+  <tr>
+    <td>爆炸蚁分类归属与行为</td>
+    <td>属名历经变更;行为细节来自转述</td>
+    <td>查 AntCat 与自我牺牲防御的原始研究</td>
+  </tr>
+  <tr>
+    <td>龟蚁空中滑翔</td>
+    <td>未见原始研究文献</td>
+    <td>查树冠层蚁类滑翔行为的实验论文</td>
+  </tr>
+  <tr>
+    <td><i>Teleutomyrmex</i> / <i>Anergates</i></td>
+    <td>属名拼写与宿主属、形态细节未核对</td>
+    <td>查社会性寄生专论与 AntCat</td>
+  </tr>
+  <tr>
+    <td><i>Allomerus</i> 菌丝陷阱台</td>
+    <td>行为与结构描述来自转述</td>
+    <td>查该属的野外行为与结构解剖研究</td>
+  </tr>
+  <tr>
+    <td><i>Polyergus</i> 蚁奴制细节</td>
+    <td>宿主种与掠夺频率未核实</td>
+    <td>查蚁奴制的专项研究</td>
+  </tr>
+  <tr>
+    <td><i>Harpegnathos</i> gamergate 可逆性</td>
+    <td>结论方向可信但未核文献</td>
+    <td>查该种品级可塑性的分子研究</td>
+  </tr>
+  <tr>
+    <td>gamergate 的分布范围</td>
+    <td>"仅见于猛蚁型类群"这一概括未验证</td>
+    <td>查蚁科繁殖制度综述</td>
+  </tr>
+  <tr>
+    <td>红火蚁传入中国大陆的时间地点</td>
+    <td>常见说法为 2000 年代中期在广东首次确认</td>
+    <td>查官方疫情公告与入侵生物学文献</td>
+  </tr>
+  <tr>
+    <td>红火蚁社会型的遗传基础</td>
+    <td>具体基因位点与最新进展未核实</td>
+    <td>查社会型多态的分子遗传研究</td>
+  </tr>
+  <tr>
+    <td>大头蚁物种数</td>
+    <td>"超过 1,000 种"未核实</td>
+    <td>查 AntCat 属级统计</td>
+  </tr>
+  <tr>
+    <td>红褐林蚁蚁丘高度</td>
+    <td>具体范围未核实</td>
+    <td>查该种的巢穴测量研究</td>
+  </tr>
+  <tr>
+    <td>阿根廷蚁超级群体长度</td>
+    <td>"地中海沿岸约 6,000 km"来自非权威汇总</td>
+    <td>查超级群体遗传学原始研究</td>
+  </tr>
+  <tr>
+    <td>弓背蚁物种数</td>
+    <td>"超过 1,000 种"与"超过 1,500 种"并存</td>
+    <td>以 AntCat 属级统计为准</td>
+  </tr>
+  <tr>
+    <td>子弹蚁疼痛指数等级</td>
+    <td>具体评级与来源未核对</td>
+    <td>查 Schmidt 疼痛指数量表原始文献</td>
+  </tr>
+  <tr>
+    <td>蚁播植物占比</td>
+    <td>"澳洲与南非灌丛中占比相当大"为定性表述</td>
+    <td>查蚁播植物区系统计研究</td>
+  </tr>
+  <tr>
+    <td>蚁植物的分布与常见种</td>
+    <td>国内可观察种类未核实</td>
+    <td>查植物志与蚁植物专项调查</td>
+  </tr>
+  <tr>
+    <td>鸡枞菌与白蚁种的对应关系</td>
+    <td>物种对应未核实</td>
+    <td>查培菌白蚁与 <i>Termitomyces</i> 的共生专性研究</td>
+  </tr>
+</table>
+
+<div class="callout key">
+<b>这份清单本身就是知识点。</b>它说明:中文互联网上的蚂蚁科普内容,在"分类地位"和"定量数字"两类信息上失真率明显偏高,而"行为描述"相对可靠。这与信息传播的方式有关——行为容易用文字复述,而学名与数字在转述中每次都可能被改错且难以自查。<br>
+本文档选择把所有待核实项<b>原样保留</b>而不是删去,因为"哪些说法可信度低"与"哪些说法可信"同样是你需要的信息。
+</div>
+</section>
+
+<!-- =================== 20 =================== -->
+<section class="section" id="s20">
+<h2><span class="num">20</span>观察与入门建议</h2>
+
+<h3>把上面的内容变成可动手的观察题</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>按食性策略设计诱饵</h4>
+    <p>同一地点放四类诱饵:金枪鱼(捕食者)、饼干屑(种子与杂食)、蜂蜜(蜜露取食者)、糖水加酵母(发酵/腐食)。间隔 20 分钟记录到访蚁种与个体数。第 10 节的策略分类会在一个下午内被你亲自验证。</p>
+  </div>
+  <div class="card">
+    <h4>用四项判据定到亚科</h4>
+    <p>10 倍手持镜依次确认:腹柄结节数、腹末是螫针还是酸孔、触角节数与膝状程度、跗节节数。第 18 节规律①(无螫针者集中在蚁亚科与臭蚁亚科)是可以当场验证的。</p>
+  </div>
+  <div class="card">
+    <h4>找结构而不是找蚂蚁</h4>
+    <p>拱顶通道、裸地光盘、叶缝巢、丝粘巢、蚁丘——这些痕迹比蚂蚁本身更容易发现,也更适合长期记录。看到巢,再判断它属于哪套策略。</p>
+  </div>
+  <div class="card">
+    <h4>记录比鉴定更重要</h4>
+    <p>业余条件下种级鉴定往往做不到。把坐标、生境、日期、行为、照片编号记全,即使只定到属,数据依然有长期价值,也便于日后请人复核。</p>
+  </div>
+</div>
+
+<h3>可以深挖的四条延伸线索</h3>
+<ol>
+  <li><b>趋同演化:</b>把切叶蚁的真菌栽培、织叶蚁与多刺蚁的丝织巢、蜜罐蚁的活体贮蜜、三支独立出现的群体劫掠、四支独立出现的"食蚁哺乳动物"放在一起看——同一套问题在不同支系被反复解决。</li>
+  <li><b>品级分化的两种形态:</b>以大头蚁(离散二型)与全异蚁(连续渐变)为对照,理解"体型—任务"分配规则的两种发育实现。</li>
+  <li><b>社会性寄生的退化路径:</b>临时寄生 → 蚁奴制 → 永久性寄生 → 工蚁级消失。这是一条少见的"演化在做减法"的清晰案例,而且第 17 节里每个阶段都有现成的代表类群。</li>
+  <li><b>信息可靠性本身:</b>拿第 19 节当练习材料,挑三条自己去追到原始文献,就能体会到这一领域的科普写作门槛究竟在哪里。</li>
+</ol>
+
+<h3>主要资料来源</h3>
+<div class="refs">
+  <p>
+    · <a href="https://www.antcat.org/" target="_blank">AntCat</a> —— Bolton 主编的全球蚁类名录,分类与命名的基准;本文档的"16 现存亚科 / 350 属 / 14,451 种"即于 2026-09-23 查询该站首页统计。<br>
+    · <a href="https://www.antweb.org/" target="_blank">AntWeb</a>(加州科学院)—— 标本高清图像与分布;注意其家族页会把化石亚科一并列出,不能当作现存种数。<br>
+    · <a href="https://www.antwiki.org/" target="_blank">AntWiki</a> —— 物种级形态与行为资料,含大量原始文献线索。<br>
+    · Oberski 等,《Ant systematics: past, present, and future》,<i>Insect Systematics and Diversity</i>,2025 —— 系统学现状综述,提出 16 亚科 342 属框架,并支持 Leptanillomorpha 为现存蚂蚁基部分支。<br>
+    · 周善义、冉浩等,《中国蚂蚁名录》系列(含猛蚁型亚科群、蚁型亚科群),《广西师范大学学报(自然科学版)》—— 中国区系分类的基础工作。<br>
+    · 周善义、陈志林 编,《中国习见蚂蚁生态图鉴》—— 收录 161 种,涵盖 11 亚科 67 属,是目前少见的、以生态照片为主的中文图鉴。<br>
+    · Guinness World Records 与 Schmidt 等 1980 年《Toxicon》论文 —— 马里科帕须蚁毒液 LD50 数据的来源。<br>
+    · 英文维基百科及其镜像、iNaturalist 物种页 —— 本文多处"转述性数字"的出处,均已在正文标注需回原始文献核实。
+  </p>
+</div>
+
+<div class="callout warn">
+<b>最后一条使用提醒:</b>本文档中凡标注 <span class="uncertain">⚠️【待核实】</span> 的内容,都是查证后<b>仍未取得可靠出处</b>的部分。它们不代表结论错误,但代表引用风险。做正式科普写作时,建议优先使用第 19 节之外的、来源层级为 A 或 B 的内容。
+</div>
+</section>
+
+<div class="footer">
+  世界著名蚂蚁类群图鉴 · 数据核对日期 2026-09-23<br>
+  分类骨架以 AntCat 为准;所有存疑项已集中在第 19 节,共 43 条
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
