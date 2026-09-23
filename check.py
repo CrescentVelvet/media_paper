@@ -2,16 +2,22 @@
 # -*- coding: utf-8 -*-
 """media_paper 知识库完整性校验(离线,无需网络)
 
+文档分两类(定义见 AGENTS.md「三」):
+  · 库内笔记 —— 登记在 papers.json、进入 index.html 的论文调研笔记;
+  · 库外文档 —— Eco- 前缀的博物学科普,随库维护但**不进** papers.json 与 index。
+
 硬性校验(任一失败则退出码 1,禁止 commit):
-  1. 站内链接:所有 .html 中 href="*.html" 指向的文件必须存在
-  2. index 收录:所有笔记 .html 必须被 index.html 链接
-  3. 本地图片:src="images/..." 指向的文件必须存在
+  1. 站内链接:所有 .html 中 href="*.html" 指向的文件必须存在(两类文档都查)
+  2. index 收录:所有**库内笔记**必须被 index.html 链接(库外文档不参与本项)
+  3. 本地图片:src="images/..." 指向的文件必须存在(两类文档都查)
   4. 生成同步:index.html 必须与 papers.json + index_style.css 的生成结果一致
+  5. 库内/库外不混淆:库外文档不得被登记进 papers.json 的 notes[]
 
 报告项(仅统计,不失败):
-  5. 不确定标注:【存疑】/【推测】/【待核实】数量(供定期核实)
-  6. 样式统一进度:仍为旧扁平样式(class="header")的笔记清单,即待迁移篇目
-     (统一格式规范见 AGENTS.md「四」「八」)
+  6. 不确定标注:【存疑】/【推测】/【待核实】数量(供定期核实,两类文档都算)
+  7. 样式统一进度:仍为旧扁平样式(class="header")的**库内笔记**清单
+     (库外文档不参与统一格式迁移;统一格式规范见 AGENTS.md「四」「八」)
+  8. 库外文档清单:Eco- 前缀文档列表(防静默遗忘)
 
 外链图片存活检测需要网络,见 check_images.py。
 """
@@ -25,7 +31,13 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 html_files = sorted(glob.glob("*.html"))
-notes = [f for f in html_files if f != "index.html"]
+
+# 库外文档:随库维护但不进 papers.json / index.html(见 AGENTS.md「三」)。
+# 前缀即判据 —— 新增库外前缀时改这里一处即可。
+OFF_LIBRARY_PREFIXES = ("Eco-",)
+off_docs = [f for f in html_files if f.startswith(OFF_LIBRARY_PREFIXES)]
+notes = [f for f in html_files if f != "index.html" and f not in off_docs]
+all_docs = notes + off_docs
 errors = []
 
 # 1. 站内死链
@@ -39,13 +51,23 @@ if dead:
     errors.append(f"站内死链 {len(dead)} 处:")
     errors += [f"  {f} -> {h}" for f, h in dead]
 
-# 2. index 收录完整性
+# 2. index 收录完整性(只针对库内笔记;库外文档不进索引,见 AGENTS.md「三」)
 idx = open("index.html", encoding="utf-8", errors="ignore").read()
 linked = set(re.findall(r'href="([^"#?]+\.html)"', idx))
 missing = [f for f in notes if f not in linked]
 if missing:
     errors.append(f"index.html 未收录 {len(missing)} 篇:")
     errors += [f"  {f}" for f in missing]
+
+# 2b. 库内/库外不得混淆:库外文档只能留在仓库里,不许登记进 papers.json
+try:
+    _files = [n["file"] for n in json.load(open("papers.json", encoding="utf-8"))["notes"]]
+    mixed = [f for f in _files if f.startswith(OFF_LIBRARY_PREFIXES)]
+    if mixed:
+        errors.append(f"库外文档被登记进 papers.json({len(mixed)} 篇,应移出 notes[]):")
+        errors += [f"  {f}" for f in mixed]
+except Exception:
+    pass  # papers.json 缺失/损坏由第 4 项统一报错
 
 # 3. 本地图片完整性
 badimg = []
@@ -79,30 +101,36 @@ except FileNotFoundError as e:
 except Exception as e:
     errors.append(f"index 重生成失败: {type(e).__name__}: {e}")
 
-# 5. 不确定标注统计(报告项)
+# 6. 不确定标注统计(报告项;库内外都算 —— 库外文档的待核实项同样需要定期回原文)
 # 只统计正文中的标记;出现在 <pre>/<code> 里的多是在"讲解标记用法"(如规范贴的验证清单),
 # 不是真实标注,计入会造成假计数。
 CODE_BLOCK_RE = re.compile(r"<(pre|code)\b[^>]*>.*?</\1>", re.S)
 unc = {}
-for f in notes:
+for f in all_docs:
     s = CODE_BLOCK_RE.sub("", open(f, encoding="utf-8", errors="ignore").read())
     n = sum(s.count(k) for k in ("【存疑】", "【推测】", "【待核实】"))
     if n:
         unc[f] = n
 
-# 6. 样式统一进度(报告项):统一格式用 .hero,旧扁平样式用 .header
+# 7. 样式统一进度(报告项):统一格式用 .hero,旧扁平样式用 .header
+# 只算库内笔记 —— 库外文档不参与统一格式迁移(见 AGENTS.md「三」)
 legacy = []
 for f in notes:
     s = open(f, encoding="utf-8", errors="ignore").read()
     if 'class="hero"' not in s and 'class="header"' in s:
         legacy.append(f)
 
-print(f"笔记 {len(notes)} 篇 | 站内链接 | index 收录 | 本地图片")
+print(f"笔记 {len(notes)} 篇(库内,进 index) | 站内链接 | index 收录 | 本地图片")
+if off_docs:
+    print(f"库外文档 {len(off_docs)} 篇(不进 index,见 AGENTS.md 三):")
+    for f in off_docs:
+        print(f"  {f}")
 if unc:
     print(f"不确定标注: {sum(unc.values())} 处 / {len(unc)} 篇"
           "(【存疑】【推测】【待核实】,供定期核实)")
 unified = len(notes) - len(legacy)
-print(f"统一格式进度: {unified}/{len(notes)} 篇已用高端样式, {len(legacy)} 篇待迁移")
+print(f"统一格式进度: {unified}/{len(notes)} 篇已用高端样式, {len(legacy)} 篇待迁移"
+      "(仅统计库内笔记)")
 if gen_date:
     print(f"index.html 最近生成日期: {gen_date}(仅供追溯,不影响校验)")
 if legacy:

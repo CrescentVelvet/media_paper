@@ -145,8 +145,8 @@
   <div class="hero-content">
     <span class="badge">经验分享 · 2026-08-13 · AI 协作方法论</span>
     <h1>用 AI 做论文调研:从链接到深度分析笔记的工作流</h1>
-    <p class="subtitle">基于 media_paper 知识库(63 个 HTML 笔记 / 4 大领域)的真实协作沉淀 —— 讲清楚怎么把"读论文"从一次性消耗战,变成可累积、可检索、可复用的知识资产。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
-    <p class="authors">面向技术同事 · 配套仓库 <code>media_paper</code>(含 AGENTS.md 规范 + 63 个范例笔记)</p>
+    <p class="subtitle">基于 media_paper 知识库(74 篇库内笔记 + 1 篇库外文档 / 6 大分区)的真实协作沉淀 —— 讲清楚怎么把"读论文"从一次性消耗战,变成可累积、可检索、可复用的知识资产。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。</p>
+    <p class="authors">面向技术同事 · 配套仓库 <code>media_paper</code>(含 AGENTS.md 规范 + 74 篇范例笔记)</p>
     <div class="links">
       <a href="#why">为什么用 AI</a>
       <a href="#workflow">5 步工作流</a>
@@ -185,7 +185,7 @@
 <div class="grid grid-3">
   <div class="card"><div class="num-big">63</div><p>篇调研笔记(index 编号 1–63)</p></div>
   <div class="card"><div class="num-big">63</div><p>个自包含 HTML 文件</p></div>
-  <div class="card"><div class="num-big">6</div><p>大领域:VideoGen / 3D / SR / ImageGen / WorldModel / Meta</p></div>
+  <div class="card"><div class="num-big">6</div><p>大分区:VideoGen / 3D / SR / ImageGen / WorldModel / Meta(另设 <code>Eco-</code> 库外文档,不进索引)</p></div>
 </div>
 <p>从 git log 看,合作经历了清晰的三个阶段:</p>
 <table>
@@ -290,11 +290,11 @@ flowchart TD
 </ol>
 
 <h3>3.2 AGENTS.md 的 8 个必备模块</h3>
-<p>本知识库的 AGENTS.md(294 行)覆盖这 8 块,可作为模板:</p>
+<p>本知识库的 AGENTS.md(320 行)覆盖这 8 块,可作为模板:</p>
 <table>
   <tr><th>模块</th><th>内容</th><th>为什么重要</th></tr>
   <tr><td>① 工作流</td><td>5 步:输入解析→并行抓取→子代理深读→框图→分点解析</td><td>让 AI 知道"先做什么后做什么",不会跳步</td></tr>
-  <tr><td>② 文件命名</td><td><code>PREFIX-YYYYMMDD-Name.html</code>,前缀即领域(3D-/VideoGen-/SR-/ImageGen-/WorldModel-/Meta-)</td><td>排序即分类,日期即版本,一眼看出归属</td></tr>
+  <tr><td>② 文件命名</td><td><code>PREFIX-YYYYMMDD-Name.html</code>,前缀即领域(3D-/VideoGen-/SR-/ImageGen-/WorldModel-/Meta-;<strong>库外文档</strong>用 <code>Eco-</code>,不进索引)</td><td>排序即分类,日期即版本,一眼看出归属</td></tr>
   <tr><td>③ HTML 样式</td><td><strong>全库唯一</strong>高端样式,Hero + 2 列目录 + 数字徽章标题 + Mermaid + MathJax</td><td>样式不再需要"选",消除双轨带来的分裂与错配</td></tr>
   <tr><td>④ 内容精度</td><td>四项硬要求:思路 / 算法逻辑 / 工程细节 / 同类方法对比</td><td>格式统一的重点是这四项,不是换皮</td></tr>
   <tr><td>⑤ 公式处理</td><td>三档:MathJax(默认)/ 纯文本 <code>.formula</code> / <code>&lt;code&gt;</code> 内联</td><td>按公式密度选,不必每篇都上 MathJax</td></tr>
@@ -306,7 +306,7 @@ flowchart TD
 <h3>3.3 验证清单(直接抄)</h3>
 <p>这是 AGENTS.md 最后一节,成稿前逐条自查:</p>
 <pre><code># 硬性项(脚本校验,不通过禁止 commit)
-python check.py        # 0 站内死链 / index 全收录 / 本地图片完整 / index 与 papers.json 同步
+python check.py        # 0 站内死链 / 库内笔记 index 全收录 / 本地图片完整 / index 与 papers.json 同步 / 库外文档未混入 papers.json
 
 # 真实性项
 - [ ] 无编造:代码引用有真实文件路径+行号,数字有原文出处(表号/章节/README)
@@ -315,7 +315,7 @@ python check.py        # 0 站内死链 / index 全收录 / 本地图片完整 /
 
 # 格式项(统一高端样式)
 - [ ] 使用高端样式:.hero + .toc(2 列)+ &lt;h2&gt;&lt;span class="num"&gt;N&lt;/span&gt;
-- [ ] &lt;html lang="zh-CN"&gt;;文件名符合 PREFIX-YYYYMMDD-Name.html
+- [ ] &lt;html lang="zh-CN"&gt;;文件名符合 PREFIX-YYYYMMDD-Name.html(前缀见「三」,库外文档用 Eco-)
 - [ ] 图像有 loading="lazy" 与 alt;Mermaid/MathJax CDN 与 init 脚本正确
 - [ ] 至少 3 张图(总体数据流 / 模块内部 / 训练或推理流程)
 
@@ -659,19 +659,19 @@ foreach ($u in $urls) {
 <!-- ==================== 9. RETRIEVAL ==================== -->
 <section id="retrieval">
 <h2><span class="num">9</span>从论文库到知识库:让知识可检索</h2>
-<p class="lead">论文调研做到 63 篇 × ~14 节 ≈ 880 个知识点时,新痛点浮现:<strong>知识点记不住、需要用时找不到在哪一篇</strong>。这不是记忆力问题,是索引粒度问题 —— 你需要的不是"背下来",而是"查得到"。</p>
+<p class="lead">论文调研做到 74 篇 × ~14 节 ≈ 1040 个知识点时,新痛点浮现:<strong>知识点记不住、需要用时找不到在哪一篇</strong>。这不是记忆力问题,是索引粒度问题 —— 你需要的不是"背下来",而是"查得到"。</p>
 
 <h3>9.1 痛点本质:索引粒度太粗</h3>
 <p>当前 <code>papers.json</code> 是<strong>论文维度</strong>的索引 —— 每篇一个条目,带 kind/depth/topics/tags/anchors。查"3D 一致性"能定位到一批论文,但定位不到具体章节/段落。tag 到论文级,不到知识点级。</p>
 <div class="callout key">
-<p><strong>已落地的一半</strong>:<code>papers.json</code> 里每篇的 <code>anchors</code> 字段(该篇内所有 <code>id="..."</code> 章节锚点列表)就是"知识点索引"的雏形 —— 有了它,索引才能深链到 <code>笔记.html#loss</code> 这样的具体章节。目前 <strong>17/63 篇</strong> 已填写 anchors,其余为缺省空数组。这印证了原设计判断:锚点要显式维护,不能靠事后抓取。</p>
+<p><strong>已落地的一半</strong>:<code>papers.json</code> 里每篇的 <code>anchors</code> 字段(该篇内所有 <code>id="..."</code> 章节锚点列表)就是"知识点索引"的雏形 —— 有了它,索引才能深链到 <code>笔记.html#loss</code> 这样的具体章节。目前 <strong>28/74 篇</strong> 已填写 anchors,其余为缺省空数组。这印证了原设计判断:锚点要显式维护,不能靠事后抓取。</p>
 </div>
 <table>
   <tr><th>维度</th><th>当前(论文索引 papers.json)</th><th>需要(知识点索引)</th></tr>
   <tr><td>粒度</td><td>1 篇 = 1 条目</td><td>1 节/1 公式/1 表 = 1 条目</td></tr>
   <tr><td>查"X 怎么做"</td><td class="fail">返回一批论文,需逐篇翻</td><td class="best">直接跳到相关段落</td></tr>
   <tr><td>跨论文对比</td><td class="fail">手动翻多篇</td><td class="best">主题页自动聚合</td></tr>
-  <tr><td>条目数</td><td>63</td><td>~880</td></tr>
+  <tr><td>条目数</td><td>74</td><td>~1040</td></tr>
 </table>
 
 <h3>9.2 解法一:知识点索引(条目化)</h3>
@@ -718,7 +718,7 @@ flowchart LR
 <p>三阶段递进,前两阶段用关键词就够,不必向量检索:</p>
 <table>
   <tr><th>阶段</th><th>做什么</th><th>检索方式</th><th>何时做</th></tr>
-  <tr><td><span class="stage-tag stage-1">一</span> 条目化</td><td>拆 63 篇为 ~880 条目,带锚点+关键词</td><td>grep / 关键词</td><td class="best">现在(anchors 已起步)</td></tr>
+  <tr><td><span class="stage-tag stage-1">一</span> 条目化</td><td>拆 74 篇为 ~1040 条目,带锚点+关键词</td><td>grep / 关键词</td><td class="best">现在(anchors 已起步)</td></tr>
   <tr><td><span class="stage-tag stage-2">二</span> 主题聚合</td><td>按高频问题建主题入口页</td><td>浏览主题页</td><td>条目化后</td></tr>
   <tr><td><span class="stage-tag stage-3">三</span> 向量检索</td><td>条目向量化,语义检索</td><td>RAG</td><td>关键词不够用时</td></tr>
 </table>
@@ -730,7 +730,7 @@ flowchart LR
 <!-- ==================== 10. SUMMARY ==================== -->
 <section id="summary">
 <h2><span class="num">10</span>经验总结:知识沉淀的三层境界</h2>
-<p class="lead">回看这 63 篇笔记的演进,其实是知识沉淀的三层境界。</p>
+<p class="lead">回看这 74 篇笔记的演进,其实是知识沉淀的三层境界。</p>
 
 <div class="grid grid-3">
   <div class="card">
@@ -770,7 +770,7 @@ flowchart LR
 </ol>
 
 <div class="callout tip">
-<p><strong>最后一句</strong>:AI 协作做调研,真正的杠杆不在"AI 多聪明",而在<em>你有没有把规范、工作流、验证清单沉淀下来</em>。这套东西沉淀好,换任何 AI 工具都能复用,且产出会越来越稳。media_paper 知识库就是这套思路的活样本 —— 63 篇笔记、一条清晰的演进线(堆量 → 深耕 → 规范化 → 格式统一),全部开源可参考。</p>
+<p><strong>最后一句</strong>:AI 协作做调研,真正的杠杆不在"AI 多聪明",而在<em>你有没有把规范、工作流、验证清单沉淀下来</em>。这套东西沉淀好,换任何 AI 工具都能复用,且产出会越来越稳。media_paper 知识库就是这套思路的活样本 —— 74 篇笔记、一条清晰的演进线(堆量 → 深耕 → 规范化 → 格式统一),全部开源可参考。</p>
 </div>
 </section>
 
@@ -778,7 +778,7 @@ flowchart LR
 
 <div class="footer">
   用 AI 做论文调研:从链接到深度分析笔记的工作流 · 经验分享<br>
-  📝 基于 media_paper 知识库(63 个 HTML 笔记) · 生成于 2026-08-13 · 修订于 2026-09-17(同步格式统一) · 面向技术同事
+  📝 基于 media_paper 知识库(74 篇库内笔记 + 1 篇库外文档) · 生成于 2026-08-13 · 修订于 2026-09-23(同步库外文档规范) · 面向技术同事
 </div>
 
 <script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
