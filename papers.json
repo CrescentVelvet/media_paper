@@ -3359,6 +3359,310 @@
    ]
   },
   {
+   "title": "4DVD:级联解耦的稠密视角视频扩散模型",
+   "meta": [
+    "📄 arXiv: 2508.04467",
+    "📅 2025-08-06",
+    "🏢 PKU 深圳研究生院 × 大湾区大学 × 腾讯"
+   ],
+   "tags": [
+    "多视角视频扩散",
+    "4D 生成",
+    "级联解耦",
+    "Video Diffusion Prior",
+    "LoRA"
+   ],
+   "summary": "把 4D 生成拆成「低分辨率稠密布局」与「结构感知高清外观」两个子任务:主动用分辨率换视角密度(16 路 vs SV4D 的 8 路),再用 MAP 模块把单目视频外观按布局索引铺到所有视角。<strong>收益几乎全部落在一致性维度——FVD-V 从 482.64 降到 314.44(降 34.8%),而 LPIPS 只从 0.136 小胜到 0.133</strong>。训练数据 D-Objaverse(17k 动态资产)未释放,无公开代码。",
+   "links": [
+    {
+     "href": "3D-20250806-4DVD.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2508.04467",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://4dvd.github.io/",
+     "text": "🏠 项目页"
+    }
+   ],
+   "file": "3D-20250806-4DVD.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "3D 生成",
+    "几何与时序一致性"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
+   "title": "Flex4DHuman:只靠相对相机位姿的多视角视频扩散",
+   "meta": [
+    "📄 arXiv: 2606.13655",
+    "📅 2026-06-11",
+    "🏢 University of Washington × World Labs"
+   ],
+   "tags": [
+    "多视角视频扩散",
+    "Camera Pose",
+    "PRoPE",
+    "4D 人体重建",
+    "无几何先验"
+   ],
+   "summary": "把 Wan 2.1 自注意力的位置编码从三轴扩成五轴(<strong>时间 16 + 视角槽 8 + SE(3) 20 维</strong>,空间 42+42 不变),删掉骨架/深度/法线等一切显式几何先验,只用相对相机位姿驱动多视角视频生成。DNA-Rendering 25.44 dB,超过依赖 GT 骨架的 Diffuman4D(24.23 dB);1→4 个参考视角时 PSNR 25.21→31.90 dB,同一 checkpoint 无需重训。代价是相机平移被缩放到单位距离、<strong>绝对尺度丢失</strong>;论文无任何组件消融。",
+   "links": [
+    {
+     "href": "3D-20260611-Flex4DHuman.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.13655",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://andy-cheng.github.io/Flex4DHuman",
+     "text": "🏠 项目页"
+    },
+    {
+     "href": "https://github.com/Andy-Cheng/Flex4DHuman",
+     "text": "💻 GitHub(仅 README)"
+    }
+   ],
+   "file": "3D-20260611-Flex4DHuman.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "相机控制与位姿条件",
+    "几何与时序一致性"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
+   "title": "AHOY!:遮挡下的可动画 3DGS 人体",
+   "meta": [
+    "📄 arXiv: 2603.17975",
+    "📅 2026-03-18",
+    "🏢 Tübingen AI Center × MPI-INF × Imperial College London × KAUST",
+    "🏆 ECCV 2026"
+   ],
+   "tags": [
+    "4D 人体重建",
+    "Video Diffusion Prior",
+    "Gaussian Splatting",
+    "FLAME",
+    "遮挡",
+    "扩散反演"
+   ],
+   "summary": "把「遮挡」从要避开的前提变成默认输入:用身份微调的视频扩散(Wan 2.2 + LoRA rank 128)为从未观测的区域造稠密监督。核心机制是 <strong>map-pose / LBS-pose 解耦</strong>——map pose 在序列内共享以强制同一套高斯,逐帧 LBS pose 可优化以吸收扩散生成的多视角不一致。BEHAVE 24.12 / 22.81 dB,YouTube 22.01 / 23.05 dB。工程超参取自项目页补充材料 PDF,无公开代码。",
+   "links": [
+    {
+     "href": "3D-20260318-AHOY.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2603.17975",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://miraymen.github.io/ahoy/",
+     "text": "🏠 项目页"
+    }
+   ],
+   "file": "3D-20260318-AHOY.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "微动与非刚性人体重建",
+    "人脸手部细节与增强",
+    "鲁棒性与干扰过滤"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
+   "title": "StudioRecon:低重叠相机的 4D 人体-场景重建",
+   "meta": [
+    "📄 arXiv: 2607.09125",
+    "📅 2026-07-10",
+    "🏢 Seoul National University",
+    "🏆 SIGGRAPH 2026"
+   ],
+   "tags": [
+    "4D 人体重建",
+    "4DGS",
+    "稀疏视角",
+    "SMPL",
+    "多视角一致性",
+    "开源"
+   ],
+   "summary": "只有 4 台低重叠(最近邻夹角 70°)、未标定相机时重建 4D 人体-场景。核心是「背景与人体受益于不同先验」:背景交给视频扩散稠密化(481 个 GEN3C 新视角),人体交给 SMPL 几何约束。<strong>附录用 PCK 直接量化了这个分工的必要性——GEN3C 出的人体 PCK@0.05 仅 55.6%,显式重建为 93.1%</strong>。五篇中唯一放出完整源码(非商用许可)。源码与论文的定值差异见笔记 §12。",
+   "links": [
+    {
+     "href": "3D-20260710-StudioRecon.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2607.09125",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://sisyphm.github.io/studiorecon-page/",
+     "text": "🏠 项目页"
+    },
+    {
+     "href": "https://github.com/sisyphm/StudioRecon",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260710-StudioRecon.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "稀疏与少视角重建",
+    "数字人 Pipeline 工程",
+    "视频扩散先验用于 3D"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17",
+    "s18"
+   ]
+  },
+  {
+   "title": "Latent-to-4D:绕过 RGB 的潜空间直连 4D 生成",
+   "meta": [
+    "📄 arXiv: 2608.10744",
+    "📅 2026-08-11",
+    "🏢 ReLER, CCAI, Zhejiang University"
+   ],
+   "tags": [
+    "潜空间接口",
+    "4D 生成",
+    "Video Diffusion Prior",
+    "LoRA",
+    "共享 VAE"
+   ],
+   "summary": "问的是接口层面的问题:共享同一 VAE 的多个视频 DiT,其最终去噪 latent 能否作为「一次几何监督、服务多个生成器」的可复用接口?做法是把 latent 绕过 RGB 解码,直接对齐到预训练 4D 解码器的 token 网格(固定三线性重采样 + 可学习 3D 卷积 + 逐帧/全局交替注意力)。<strong>约 1K 条重建 clip 训练,单 checkpoint 在三个同 VAE 的 DiT 间不变迁移</strong>,DINO-F1 比同 latent 的 Wan+4RC 级联高 2.88–3.45(Text4D-200)与 5.81(I4D-200)。无源码。",
+   "links": [
+    {
+     "href": "3D-20260811-LatentTo4D.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.10744",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://hayd-zju.github.io/Beyond-Pixels/",
+     "text": "🏠 项目页"
+    },
+    {
+     "href": "https://github.com/hayd-zju/Beyond-Pixels",
+     "text": "💻 GitHub(仅 README)"
+    }
+   ],
+   "file": "3D-20260811-LatentTo4D.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "standard",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "3D 生成",
+    "前馈式大重建模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

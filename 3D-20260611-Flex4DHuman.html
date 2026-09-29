@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flex4DHuman:只靠相对相机位姿的多视角视频扩散</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2606.13655v2 · 2026-06-11 · 多视角视频扩散 / 4D 人体</span>
+    <h1>Flex4DHuman:把几何先验全部删掉,只留相对相机位姿</h1>
+    <div class="subtitle">Flex4DHuman: Flexible Multi-view Video Diffusion for 4D Human Reconstruction</div>
+    <div class="authors">Jen-Hao Cheng · Yipeng Wang · Hao Zhang · Gengshan Yang · Jenq-Neng Hwang</div>
+    <div class="org">University of Washington · World Labs(项目负责人属 World Labs)&nbsp;|&nbsp; cs.CV; cs.GR · 无会议标注(arXiv abs 的 comments 仅项目页)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2606.13655" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2606.13655v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://andy-cheng.github.io/Flex4DHuman" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/Andy-Cheng/Flex4DHuman" target="_blank">💻 GitHub(仅 README,无源码)</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:几何先验的传染性误差</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">核心贡献:五轴投影位置编码</a></li>
+    <li><a href="#s5">36 通道输入布局与 token 组织</a></li>
+    <li><a href="#s6">三阶段训练课程</a></li>
+    <li><a href="#s7">多视角 caption 语料构建</a></li>
+    <li><a href="#s8">时序 rollout 与两个维度的外推</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">组件分析:论文以「分析实验」替代消融</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结、演进定位与资源</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p>Flex4DHuman 是华盛顿大学与 World Labs 合作的多视角视频扩散工作。它的主张极其干净,几乎是一句可证伪的假设:</p>
+
+<div class="callout key">
+<b>一句话概括:</b>生成多视角一致的动态人体,<b>不需要骨架、不需要深度、不需要法线、也不需要渲染目标视角的几何</b>——只需要<b>参考视角与目标视角之间的相对相机位姿</b>。<br>
+实现方式同样干净:<b>保留 Wan 2.1 骨干结构不变</b>,唯一的架构改动是把自注意力的位置编码换成<b>五轴形式</b>(空间 + 帧 + 视角槽 + 连续 SE(3) 相机几何)。其余全部靠训练课程与数据。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">128</div><div class="l">注意力头维度,重分配为 16+8+20+42+42</div></div>
+  <div class="stat"><div class="v">25.44 dB</div><div class="l">DNA-Rendering PSNR(超过 GT-skeleton 的 24.23)</div></div>
+  <div class="stat"><div class="v">1 → 15</div><div class="l">训练时动态参考视角数范围(总视角 V=16)</div></div>
+  <div class="stat"><div class="v">25,031</div><div class="l">多视角 caption 条数(平均 268 词)</div></div>
+</div>
+
+<h3>三个宣称的贡献</h3>
+<ol>
+  <li><b>无显式几何先验的多视角视频扩散</b>:把 Wan 2.1 改造成多视角视频生成器,只通过相对相机位姿的位置编码做条件;训练与推理期间都<b>不需要骨架拟合、深度估计、法线预测或目标视角几何渲染</b>。</li>
+  <li><b>灵活的同步生成</b>:支持多种输入输出组合——单目与可变稀疏视角输入、任意目标视角、动态的参考→目标视角条件、以及时序 rollout。</li>
+  <li><b>单目视频 → 4D 高斯</b>:证明生成的多视角视频足够一致,可直接喂给下游 4D 高斯优化(论文用 FreeTimeGS)。</li>
+</ol>
+
+<div class="callout warn">
+<b>先给一个结论性的观察:论文没有消融实验。</b>全文表格只有 Table 1(caption 语料统计)、Table 2/3/4(三个数据集结果),<b>没有对「视角槽 band」「SE(3) band」「背景随机丢弃」「多视角 caption」「三阶段课程」中任何一个组件做消融</b>。§5.2 的三组分析(参考视角鲁棒性、参考视角扩展、时序 rollout)是<b>性能刻画</b>,不是组件消融。这一点在 §12 展开。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:几何先验的传染性误差</h2>
+
+<h3>2.1 此前方法的失败模式</h3>
+
+<p>论文对两条同类路线的批评都很具体,落点都是「<b>几何输入本身是错的</b>」:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Diffuman4D:依赖每个目标视角的 SMPL 骨架渲染</h4>
+    <p>它需要在每个目标视角渲染 SMPL 骨架作为条件。在真实部署里,目标视角的骨架无法获得——论文指出 Diffuman4D 的 GT-skeleton 设置是「<b>在标定好的多视角 rig 上从所有参考与目标视角三角化出来的骨架,一个在真实单参考部署中不可获得的最好情况</b>」。</p>
+    <p>其单目变体 Diffuman4D-mono-skeleton 用 Sapiens-Pose / Sapiens-Depth 从单参考视角提升骨架,还要<b>锚定到场景的真值胯部位置与身高</b>——这个锚定本身就是额外的 GT 泄漏。</p>
+  </div>
+  <div class="card">
+    <h4>MV-Performer:依赖单目深度与人体法线</h4>
+    <p>它从参考视角估计单目深度与人体法线,把点云 splat 到目标视角,再用扩散模型精修渲染结果。</p>
+    <p>论文的评价是:这类方法<b>继承了其几何输入的局限</b>——估计误差传播进生成结果,方法被绑死在人体专用模型上,推理往往耦合于固定的相机配置或参考视角假设。</p>
+  </div>
+</div>
+
+<h3>2.2 核心洞察与关键假设</h3>
+
+<div class="callout">
+<b>洞察:</b>既然几何先验的误差会传染,那就<b>不要在条件里放几何</b>。在全部可用信号中,相机位姿是唯一「<b>已知且可信</b>」的几何信息——它来自标定或可靠估计,而不是从单张图里猜出来的深度/法线。因此把几何条件压缩成「<b>相对相机变换</b>」这一件事,交给注意力机制去消化。
+</div>
+
+<p>作者进一步给了一个<b>架构层面的理由</b>,解释为什么这件事能做成而不需要新参数:</p>
+
+<div class="callout tip">
+Wan 2.1 给每个注意力头分配 $128$ 维,原本分给时间/高/宽三个 band:$(D_t,D_h,D_w)=(44,42,42)$。作者指出<b>SE(3) 分量复用了原本分配给时间编码的 RoPE 维度</b>,因此「Wan 2.1 从运动中预训练学到的位置先验,可以自然地扩展到多视角相机几何,<b>而不引入任何额外参数</b>」。
+</div>
+
+<h3>2.3 假设在什么条件下会失效</h3>
+
+<div class="callout warn">
+<b>作者自陈的失效边界(§7 Limitations):</b>
+<ol>
+  <li><b>训练数据仍以静态棚拍 rig 为主</b>,因此对<b>动态相机运动、in-the-wild 环境、以及极端视角(大俯仰、顶视)</b>的泛化受限。虽然 PRoPE 条件在形式上支持任意逐帧相机变换,但鲁棒性需要动态多相机采集来提升。</li>
+  <li><b>长时域 rollout 会漂移</b>:teacher-forced 历史条件能支撑 rollout,但更长时域需要额外的漂移抑制策略(作者点名 self-forcing、diffusion forcing)。</li>
+</ol>
+<b>本笔记补充的一条隐含边界:</b>「相对相机位姿足够」这一假设的成立前提是<b>参考视角本身信息充分</b>。论文实验里参考视角从 1 增到 4 时 PSNR 从 25.21 涨到 31.90 dB(见 §11.4),说明当参考信息不足时,单靠相对位姿无法凭空恢复——相机位姿解决的是「<b>往哪个方向长</b>」,不是「<b>长什么样</b>」。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>3.1 任务定义</h3>
+
+<p>输入:一段或多段参考视角视频 + 它们的相机位姿 + 期望的目标相机位姿。输出:目标相机处的 RGB 帧。<b>生成在视角与时间上是联合进行的</b>(每个时间 chunk 内跨视角同时去噪),chunk 之间顺序 rollout 以产出超过训练时域长度的视频。可选文本 prompt 用来在<b>所有生成视角间保持一致的主体外观</b>。</p>
+
+<h3>3.2 符号表</h3>
+
+<table>
+<thead><tr><th>符号</th><th>含义</th><th>取值 / 形状</th></tr></thead>
+<tbody>
+<tr><td>$D$</td><td>注意力头维度</td><td>128(Wan 2.1 原设定)</td></tr>
+<tr><td>$(D_t,D_h,D_w)$</td><td>Wan 2.1 原始 RoPE 分配</td><td>$(44,42,42)$</td></tr>
+<tr><td>$(D_{\text{time}},D_{\text{view}},D_{\text{SE(3)}},D_h,D_w)$</td><td>本文重分配后的五轴</td><td>$(16,8,20,42,42)$,和为 128</td></tr>
+<tr><td>$\mathbf{T}_i,\mathbf{T}_j$</td><td>token $i,j$ 对应的相机位姿</td><td>$\mathrm{SE}(3)$</td></tr>
+<tr><td>$Q^{\text{SE(3)}}_i$、$K^{\text{SE(3)}}_j$</td><td>分配给 SE(3) band 的 query / key 子向量</td><td>维度 20</td></tr>
+<tr><td>$\mathbf{x}_1$ / $\mathbf{x}_0$</td><td>干净 latent / 高斯噪声</td><td>$\mathbf{x}_0\sim\mathcal{N}(0,I)$</td></tr>
+<tr><td>$\mathbf{x}_t$</td><td>线性插值 latent</td><td>$(1-t)\mathbf{x}_0+t\mathbf{x}_1$</td></tr>
+<tr><td>$\mathbf{v}_\theta$</td><td>速度场预测网络</td><td>Wan 2.1 1.3B DiT</td></tr>
+<tr><td>$N_{\text{ref}}$</td><td>参考视角数</td><td>训练 $1\dots15$;评测 1 / 2 / 4</td></tr>
+<tr><td>$V$</td><td>总视角数</td><td>训练 16;推理可外推更多</td></tr>
+<tr><td>$T$</td><td>每视角帧数(chunk 长度)</td><td>$1,2,4,8,16,32$(多任务)</td></tr>
+<tr><td>$\mathcal{O}$</td><td>相邻 chunk 之间的重叠帧数</td><td>实验用 $\mathcal{O}=1$</td></tr>
+</tbody>
+</table>
+
+<div class="figure">
+  <img src="images/2606.13655/teaser.png" loading="lazy" alt="Flex4DHuman 任务设定">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>任务设定。</b>Flex4DHuman 仅用相机位姿与文本条件,把单目或稀疏视角视频转成同步的稠密多视角视频。给定一段或多段参考视角视频、它们的相机位姿以及目标相机位姿,模型在目标视角上合成一致的视频。这些生成的多视角视频可直接用于下游的动态高斯重建。</div>
+</div>
+
+<h3>3.3 总体数据流</h3>
+
+<div class="mermaid">
+flowchart TD
+    REF["参考视角视频 1 到 N_ref + 相机位姿"] --> CH["36 通道输入布局<br/>16 噪声 latent + 16 条件 latent + 4 mask"]
+    TGT["目标相机位姿"] --> CH
+    CH --> PATCH["Conv3D 1x2x2 空间降采样"]
+    PATCH --> TOK["token 序列<br/>view-major 打包"]
+    TOK --> DIT["Wan 2.1 1.3B DiT 骨干<br/>仅改自注意力位置编码"]
+    PE["五轴投影位置编码<br/>time 16 + view 8 + SE3 20 + h 42 + w 42"] --> DIT
+    DIT --> OUT["目标视角 RGB 帧"]
+    OUT --> ROLL["chunk 重叠 O 帧<br/>历史 clean token 回灌"]
+    ROLL --> DIT
+    OUT --> GS["FreeTimeGS<br/>动态高斯重建"]
+    style REF fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style PE fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style DIT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style GS fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<div class="figure">
+  <img src="images/2606.13655/arch.png" loading="lazy" alt="Flex4DHuman 架构与投影位置编码">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>Flex4DHuman 架构与投影位置编码。</b>参考视角与目标视角用 36 通道特征布局表示:16 通道噪声 latent、16 通道干净 latent(目标视角处置零)、4 通道标识参考视角的二值 mask。经 $\mathrm{Conv3D}(1{\times}2{\times}2)$ 空间 patch 降采样后,各视角特征被展平成 token 序列交由 DiT 骨干处理。自注意力使用投影位置编码,在 RoPE 基础上增补视角与相机几何信息。</div>
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>核心贡献:五轴投影位置编码</h2>
+
+<p>这是全文唯一的结构改动,也是最值得精度对齐的一节。</p>
+
+<h3>4.1 PRoPE 基础</h3>
+
+<p>RoPE 及其扩展通过<b>旋转</b>而非学习式嵌入来编码位置,天生具备长度不变性。PRoPE 进一步把 RoPE 扩展到连续的 $\mathrm{SE}(3)$ 变换,使相机几何能<b>直接进入注意力机制</b>。对每个 token,把分配给 SE(3) band 的 query / key 子向量按自身相机位姿做变换:</p>
+
+<div class="equation">
+$$Q^{\text{SE(3)}}_{i}\leftarrow\mathbf{T}^{\!\top}_{i}\,Q^{\text{SE(3)}}_{i},\qquad
+K^{\text{SE(3)}}_{j}\leftarrow\mathbf{T}^{-1}_{j}\,K^{\text{SE(3)}}_{j}$$
+<span class="tag">(式 1)</span>
+</div>
+
+<div class="callout key">
+<b>为什么这样就「相对」了:</b>对 query 施加 $\mathbf{T}^{\!\top}_i$、对 key 施加 $\mathbf{T}^{-1}_j$,使注意力计算结果只依赖两个 token 之间的<b>相对相机变换</b>。论文强调这一形式<b>不引入额外输入通道,也不引入可学习的相机参数</b>,因此能自然泛化到任意的参考/目标视角配置。
+</div>
+
+<h3>4.2 维度重分配</h3>
+
+<p>Wan 2.1 把每个注意力头的 RoPE 维度分配为 $(D_t,D_h,D_w)=(44,42,42)$。本文把<b>时间 band 重新划分</b>为时间、视角、SE(3) 几何三个子 band,同时<b>保留原有空间编码容量不变</b>:</p>
+
+<div class="equation">
+$$(D_{\text{time}},D_{\text{view}},D_{\text{SE(3)}},D_{h},D_{w})=(16,8,20,42,42)$$
+<span class="tag">(式 2)</span>
+</div>
+
+<table>
+<thead><tr><th>band</th><th>维度</th><th>作用</th><th>来源</th></tr></thead>
+<tbody>
+<tr><td>时间</td><td>16</td><td>帧索引(离散),编码时序位置</td><td>原 Wan 时间 band 的 44 维中分出</td></tr>
+<tr><td>视角槽</td><td>8</td><td><b>离散</b>视角标识,区分相机身份</td><td>同上</td></tr>
+<tr><td>SE(3)</td><td>20</td><td><b>连续</b>相对相机几何,直接进入注意力</td><td>同上</td></tr>
+<tr><td>高 / 宽</td><td>42 / 42</td><td>空间编码,<b>容量原样保留</b></td><td>不动</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>离散 + 连续的分工(论文原话要点):</b>「<b>离散的视角 band 区分相机身份,连续的 SE(3) 分量泛化到任意相机布局</b>。二者合起来使多视角生成<b>对相机数量与空间排布都不变</b>(camera-rig-agnostic)。」这正是它能同时支持「1 参考 → 47 目标」与「4 参考 → 47 目标」而不需重训的原因。
+</div>
+
+<div class="note">
+<b>记号不一致提醒:</b>论文 Fig.2 说明与 §3.2 正文用 $(D_{\text{frame}},D_{\text{view}},D_{\text{SE(3)}})=(16,8,20)$,式(2)用 $D_{\text{time}}$。二者指同一件事。本笔记统一写作 $D_{\text{time}}$,并保留这一出处差异的说明。
+</div>
+
+<h3>4.3 数值稳定性的工程处理</h3>
+
+<p>论文给出一条很具体的实现细节:<b>相机位姿按序列归一化</b>——把所有相机表达为相对<b>第一个相机</b>的变换,并把平移<b>缩放到单位距离</b>,理由是数值稳定性。</p>
+
+<div class="callout warn">
+<b>这条缩放的隐含后果(本笔记的推断):</b>把平移统一缩放到单位距离,意味着<b>绝对尺度信息被丢弃</b>。对「生成多视角视频」无害(只需相对几何),但如果下游要做<b>度量尺度</b>的重建(如我们 pipeline 里要与人体的真实身高 / 骨长对齐),就<b>不能依赖生成器提供的尺度</b>,必须从几何侧另行恢复。论文未讨论这一点。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>36 通道输入布局与 token 组织</h2>
+
+<h3>5.1 参考视角与目标视角共用一套布局</h3>
+
+<p>参考视角与目标视角用<b>同一个 36 通道输入布局</b>表示,这是「一个注意力操作内跨视角跨时间传播信息」的关键:</p>
+
+<table>
+<thead><tr><th>通道</th><th>通道数</th><th>参考视角填什么</th><th>目标视角填什么</th></tr></thead>
+<tbody>
+<tr><td>噪声 latent</td><td>16</td><td>—</td><td>待去噪的 latent</td></tr>
+<tr><td>条件 latent</td><td>16</td><td>编码后的参考视角 latent</td><td><b>零</b></td></tr>
+<tr><td>二值条件 mask</td><td>4</td><td><b>全 1</b></td><td><b>零</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>一个很小但关键的工程细节:</b>原 Wan 2.1 T2V checkpoint 期望 <b>16</b> 个输入通道,而新布局是 <b>36</b> 通道。做法是——<b>复制原通道的预训练权重,把新引入的参数零初始化</b>,从而在扩大输入投影的同时不破坏预训练特征。这属于「扩通道而不破权重」的标准手法,值得记下。
+</div>
+
+<h3>5.2 token 的组织方式</h3>
+
+<ul>
+  <li>先经 $\mathrm{Conv3D}(1{\times}2{\times}2)$ 空间 patch 降采样;</li>
+  <li>每个视角的特征被展平成 token 序列;</li>
+  <li>token 按 <b>view-major 顺序</b>打包,使每个 token 可同时由其<b>视角索引</b>与<b>时序位置</b>索引。</li>
+</ul>
+
+<h3>5.3 「干净条件 mask」的双重用途</h3>
+
+<div class="callout key">
+这套 4 通道二值 mask 用来<b>区分「已观测的参考 token」与「待生成的目标 token」</b>:
+<ul>
+  <li><b>训练时</b>:让参考信息在视角与时间上<b>双向传播</b>(参考 token 是干净的,目标 token 被去噪);</li>
+  <li><b>推理时</b>:同一机制被复用,把前一个 chunk 的<b>干净历史 token</b> 喂进来,实现时序 rollout。</li>
+</ul>
+<b>同一套机制服务两个目的</b>,这是我在本文里看到的最简洁的设计点——不需要为 rollout 单独设计模块。
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>三阶段训练课程</h2>
+
+<p>每个阶段从上一阶段的 checkpoint 初始化,并引入一个新的难度维度。</p>
+
+<table>
+<thead><tr><th>阶段</th><th>视角配置</th><th>帧数</th><th>分辨率</th><th>新增的难度</th><th>迭代数</th></tr></thead>
+<tbody>
+<tr><td>Stage 1</td><td>单参考 <b>1r1t</b></td><td>$T=1$</td><td>$256^2$</td><td>让预训练 Wan 2.1 骨干<b>适配新的相机/视角感知位置编码</b></td><td>30k</td></tr>
+<tr><td>Stage 2</td><td>动态参考采样 $N_{\text{ref}}\in\{1,\dots,15\}$,总视角 $V=16$</td><td>$T=1$</td><td>先 $256^2$,后 $512^2$</td><td>同步多视角生成在<b>可变的参考→目标配置</b>下成立;引入<b>背景随机丢弃</b>增强</td><td>30k(2.1)+ 30k(2.2)</td></tr>
+<tr><td>Stage 3</td><td>动态视角-时间布局(V 与 T 多任务)</td><td>$T$ 可变</td><td>$512^2$</td><td><b>teacher-forced 历史条件</b>,支持超出训练窗口的时序 rollout</td><td>15k</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>Stage 3 的多任务配置(原文给出两组):</b>在一个共享 token 预算下同时训 $\{32{\times}1,\,16{\times}2,\,8{\times}4\}$ 与 $\{8{\times}8,\,4{\times}16,\,2{\times}32\}$(记作 $V{\times}T$)。这样一个 checkpoint 就能泛化到不同的视角数与时间长度。<b>从 Stage 2 起随机移除背景</b>,使模型同时支持「仅前景」与「带完整背景」两种生成。
+</div>
+
+<div class="figure">
+  <img src="images/2606.13655/training_curriculum.png" loading="lazy" alt="三阶段训练课程与时序 rollout">
+  <div class="caption"><b>图3</b>(论文 Figure 3)<b>训练课程与时序 rollout。</b>三阶段课程:Stage 1 在「单参考单目标」设置下让预训练骨干适配新的相机感知位置编码;Stage 2 引入动态参考视角采样与随机背景丢弃增强,实现可变参考→目标配置下的同步多视角生成;Stage 3 在动态视角-时间布局上训练,配 teacher-forced 历史条件,实现超出训练窗口的时序 rollout。</div>
+</div>
+
+<h3>6.4 目标函数</h3>
+
+<p>与 Wan 2.1 相同的 <b>flow matching</b> 目标。给定干净 latent $\mathbf{x}_1$、高斯噪声 $\mathbf{x}_0\sim\mathcal{N}(0,I)$、从 logit-normal 调度采样的时间步 $t\in[0,1]$,构造线性插值 $\mathbf{x}_t=(1-t)\mathbf{x}_0+t\mathbf{x}_1$,模型预测速度并最小化:</p>
+
+<div class="equation">
+$$\mathcal{L}=\mathbb{E}\left[\left\|\mathbf{v}_{\theta}(\mathbf{x}_{t},t)-(\mathbf{x}_{1}-\mathbf{x}_{0})\right\|_{2}^{2}\right]$$
+<span class="tag">(式 3)</span>
+</div>
+
+<ul>
+  <li>损失在<b>所有 token 上均匀平均</b>;</li>
+  <li>干净的参考 token 与历史 token 通过 §5 的条件通道提供,使模型学会<b>保留已观测 token、去噪未知目标 token</b>;</li>
+  <li>为无分类器引导(CFG),<b>以 $0.1$ 的概率把文本条件置为零嵌入</b>。</li>
+</ul>
+
+<h3>6.5 模块五件套(位置编码模块)</h3>
+
+<h4>① 网络结构表</h4>
+<table>
+<thead><tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr></thead>
+<tbody>
+<tr><td>参考+目标视角特征,36 通道</td><td>$\mathrm{Conv3D}(1{\times}2{\times}2)$</td><td>降采样后的特征网格</td></tr>
+<tr><td>特征网格</td><td>Flatten(view-major)</td><td>token 序列</td></tr>
+<tr><td>token query/key 的 SE(3) 子向量(20 维)</td><td>$\mathbf{T}^{\!\top}_i$ / $\mathbf{T}^{-1}_j$ 变换</td><td>旋转变换后的子向量</td></tr>
+<tr><td>token query/key 的 view band(8 维)</td><td>离散视角槽编码</td><td>视角身份编码</td></tr>
+<tr><td>token query/key 的 time band(16 维)</td><td>时序 RoPE</td><td>帧位置编码</td></tr>
+<tr><td>全部</td><td>DiT 自注意力</td><td>注意力输出 → 速度场 $\mathbf{v}_\theta$</td></tr>
+</tbody>
+</table>
+
+<h4>② 数学形式化</h4>
+<p>见式(1)与式(2)。核心是「<b>只依赖相对相机变换</b>」这一性质,由 query/key 的互逆变换保证。</p>
+
+<h4>③ 前向流程</h4>
+<ol>
+  <li>36 通道输入 → Conv3D 降采样 → view-major flatten 得 token;</li>
+  <li>为每个 token 关联三个几何量:帧索引、视角槽索引、相机位姿 $\mathbf{T}$;</li>
+  <li>把 attention head 的 128 维切成 5 段 $(16,8,20,42,42)$,分别施加时间/视角/SE(3) 旋转与空间旋转;</li>
+  <li>注意力计算时,SE(3) 段自然退化为相对变换形式;</li>
+  <li>DiT 输出速度场,flow matching 采样得到目标视角 latent,再解码为 RGB。</li>
+</ol>
+
+<h4>④ 模块内部 Mermaid</h4>
+<div class="mermaid">
+flowchart LR
+    T["token @ 视角 v, 帧 f, 位姿 Tv"] --> SP["拆分头维度 128"]
+    SP --> B1["time band 16"]
+    SP --> B2["view band 8"]
+    SP --> B3["SE3 band 20"]
+    SP --> B4["h band 42"]
+    SP --> B5["w band 42"]
+    B3 --> RT["Q 乘 Tv^T, K 乘 Tv^-1"]
+    RT --> ATT["自注意力<br/>结果只依赖相对位姿"]
+    B1 --> ATT
+    B2 --> ATT
+    B4 --> ATT
+    B5 --> ATT
+    ATT --> V["速度场 v_theta"]
+    style SP fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style RT fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style ATT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style V fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h4>⑤ 该模块的监督信号</h4>
+<p><b>无独立监督</b>。位置编码是骨干的一部分,由式(3)的 flow matching 损失端到端训练。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>多视角 caption 语料构建</h2>
+
+<p>这一节的产物直接支撑「测试期文本控制」这一能力,论文把它当成一条独立贡献。</p>
+
+<h3>7.1 三个数据集与语料规模(论文 Table 1)</h3>
+
+<table>
+<thead>
+<tr><th>来源</th><th>主体</th><th>#IDs</th><th>#Seq</th><th>#视角</th><th>分辨率</th><th>FPS</th><th>#帧(每视角)</th><th>caption 窗口</th><th>#captions</th><th>平均词数</th></tr>
+</thead>
+<tbody>
+<tr><td>DNA-Rendering(Diffuman4D 处理版)</td><td>人体</td><td>548</td><td>1,038</td><td>48</td><td>$1024\times1024$</td><td>15</td><td>229.2k</td><td>10 帧 / 0.7 s</td><td>23,410</td><td>268</td></tr>
+<tr><td>ActorsHQ</td><td>人体</td><td>8</td><td>14</td><td>160</td><td>$747\times1022$</td><td>25</td><td>31.2k</td><td>20 帧 / 0.8 s</td><td>1,566</td><td>269</td></tr>
+<tr><td>DFA(Artemis 的 Dynamic Furry Animals)</td><td>动物</td><td>9</td><td>23</td><td>36 / 72</td><td>$1920\times1080$</td><td>30</td><td>4.0k</td><td>60 帧 / 2.0 s</td><td>55</td><td>238</td></tr>
+<tr class="best"><td><b>合计</b></td><td>—</td><td><b>565</b></td><td><b>1,075</b></td><td>—</td><td>—</td><td>—</td><td><b>264.4k</b></td><td>—</td><td><b>25,031</b></td><td><b>268</b></td></tr>
+</tbody>
+</table>
+
+<p class="note">表中 #IDs 计的是不同主体数,#帧 计的是每视角帧数,Window 是不可重叠的 caption 窗口(帧数 / 秒数)。注意 DFA 只有 <b>55</b> 条 caption——动物侧的语料规模极小,这解释了 §11.5 里 cross-animal 泛化的表现。</p>
+
+<h3>7.2 caption 怎么生成</h3>
+
+<ol>
+  <li>把每段序列切成<b>不重叠的时间窗</b>(DNA-Rendering 10 帧、ActorsHQ 20 帧、DFA 60 帧);</li>
+  <li>窗内均匀采样帧,从四个近似正交的视角(前、后、左、右)拼成一张 <b>$2\times2$ 图像网格</b>,居中于前景主体,<b>背景被 mask 掉</b>;</li>
+  <li>把网格帧序列连同提示词交给 <b>Gemini 3 Flash</b>,要求描述主体外观:体型、头发/毛发特征、服装、配饰、以及可见的文字或 logo;对动物额外要求总结可观察到的行为(步态、头部姿态、尾部动作);</li>
+  <li>最终产出 <b>25,031</b> 条 caption,平均 <b>268</b> 词。</li>
+</ol>
+
+<div class="callout key">
+<b>一个很诚实的工程发现,值得单独记:</b>作者<b>有意让人体 caption 聚焦外观而非细粒度运动</b>。原因是——在预实验(pilot study)中发现,当主体从非规范相机角度被观察时,生成的运动描述<b>频繁把运动方向搞错</b>(左右、前后颠倒)。这类错误会引入<b>噪声监督</b>,反而妨碍训练。改为强调外观属性后,条件信号更可靠、时间上更稳定。<br>
+对动物则保留高层行为描述,因为走、小跑、跑、尾部姿态这类动作<b>通常在体心坐标系下定义</b>,跨视角是一致的。
+</div>
+
+<div class="callout tip">
+<b>另一个防过拟合的细节:</b>训练时每段采样 clip 配对的是「<b>包含其起始帧的那个时间窗</b>」对应的 caption。因此同一序列在不同时刻会见到<b>不同的文本描述</b>,提升 caption 多样性并降低对单一静态描述的过拟合。
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>时序 rollout 与两个维度的外推</h2>
+
+<p>推理时模型要在<b>视角</b>与<b>时间</b>两个维度上都超出训练分布。</p>
+
+<h3>8.1 时间维:分块 rollout</h3>
+
+<div class="mermaid">
+flowchart LR
+    C1["第 1 个 chunk<br/>仅参考视角 token 作干净条件"] --> C2["第 2 个 chunk<br/>起点前移 T - O 帧"]
+    C2 --> C3["第 3 个 chunk"]
+    C3 --> DOTS["..."]
+    C1 -. "复用最后 O 帧预测<br/>作为干净历史 token" .-> C2
+    C2 -. "同上" .-> C3
+    style C1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style C3 fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<p>每次迭代对所有视角去噪一个 $T$ 帧的 chunk。第一个迭代只用参考视角 token 作为干净条件;后续迭代<b>前进 $T-\mathcal{O}$ 帧</b>,并把上一个 chunk 的 $\mathcal{O}$ 个<b>重叠预测</b>复用为所有目标视角的干净历史 token。</p>
+
+<h3>8.2 视角维:直接外推</h3>
+
+<p>视角外推不做特殊处理——模型合成<b>远多于训练时观察到的目标视角</b>。评测时的具体幅度是:训练 Stage 2 的总视角数 $V=16$,而 DNA-Rendering 评测用 <b>1 参考 + 47 目标</b>(共 48 视角),即外推约 3 倍。</p>
+
+<h3>8.3 rollout 长度的实验结论</h3>
+
+<div class="figure">
+  <img src="images/2606.13655/rollout_exp.png" loading="lazy" alt="时序 rollout 对比">
+  <div class="caption"><b>图4</b>(论文 Figure 6)<b>时序 rollout。</b>在相同的 42 帧窗口上、重叠 $\mathcal{O}=1$ 条件下对比 $T=4$(14 次迭代)与 $T=16$(3 次迭代)的分块 rollout。虚线标记 chunk 边界。两种设置的 PSNR 接近——$T=4$ 为 <b>24.79 dB</b>,$T=16$ 为 <b>24.86 dB</b>——尽管 $T=4$ 需要更多 rollout 迭代。论文据此认为 teacher-forced 历史条件支持稳定的长时域 rollout,而<b>短 chunk 是显存更友好的工作点</b>。</div>
+</div>
+
+<div class="callout warn">
+<b>一个值得点出的细节:</b>$T=4$ 与 $T=16$ 的 PSNR 只差 0.07 dB,但论文<b>没有报告两者的显存占用</b>。所以「短 chunk 更省显存」是<b>由设计推断,而非实测数据</b>。它对工程落地是重要信息,却恰好缺失。
+</div>
+
+<h3>8.4 单目视频 → 4D 资产的完整链路</h3>
+
+<ol>
+  <li>给定一段静态相机录制 + 用户指定的目标相机;</li>
+  <li>模型生成<b>同步的多视角视频</b>;</li>
+  <li>用 <b>MatAnyone2</b> 分割出前景主体;</li>
+  <li>用 <b>FreeTimeGS</b> 拟合这些视角,重建动态高斯;</li>
+  <li>重建出的 4D actor 可合成进生成式 3D 场景(论文用 <b>Marble worlds</b>),并用 <b>SparkJS</b> 在浏览器里交互渲染。</li>
+</ol>
+
+<div class="figure">
+  <img src="images/2606.13655/application.png" loading="lazy" alt="把 4D actor 合成进生成式场景">
+  <div class="caption"><b>图5</b>(论文 Figure 8)<b>把 4D actor 合成进生成式场景。</b>模型生成的同步多视角视频被分割并重建为动态高斯;重建出的 actor 随后被合成进场景并在浏览器环境中渲染,展示了一条「单目视频 → 4D」的动态 actor 工作流。</div>
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>9.1 训练流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    D["DNA-Rendering 1,038 序列 x 48 视角"] --> CAP["Gemini 3 Flash 生成 25,031 条 caption"]
+    CAP --> S1["Stage 1: 1r1t, T=1, 256^2, 30k 迭代<br/>适配相机感知位置编码"]
+    S1 --> S2A["Stage 2.1: N_ref 1..15, V=16, 256^2, 30k 迭代<br/>背景随机丢弃"]
+    S2A --> S2B["Stage 2.2: 512^2, 30k 迭代"]
+    S2B --> S3["Stage 3: V x T 多任务配置, 512^2, 15k 迭代<br/>teacher-forced 历史条件"]
+    S3 --> CKPT["可复用的单一 checkpoint"]
+    style D fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CAP fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style S3 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style CKPT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.2 推理流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    A["1 到 N_ref 段参考视角视频 + 相机位姿"] --> B["给定目标相机位姿(可外推到 47 路)"]
+    B --> C["36 通道布局组装<br/>参考填条件 latent 与 mask, 目标置零"]
+    C --> D["flow matching 采样 40 步<br/>文本 CFG 权重 3.0"]
+    D --> E["一个 chunk 的所有视角同时去噪"]
+    E --> F{"还有下一段?"}
+    F -->|是| G["重叠 O 帧的历史 token 回灌"]
+    G --> E
+    F -->|否| H["同步多视角视频"]
+    H --> I["MatAnyone2 分割前景"]
+    I --> J["FreeTimeGS 拟合动态高斯"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style D fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style H fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style J fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节</h2>
+
+<div class="callout warn">
+<b>诚实声明:</b>Flex4DHuman 的 GitHub 仓库 <code>Andy-Cheng/Flex4DHuman</code> 存在(102 stars,pushed 2026-06-15),但根目录<b>只有 <code>README.md</code>(2,892 字节)、<code>.gitattributes</code> 和一个演示 gif</b>——<b>没有任何源码</b>。因此本节全部数值只能来自论文正文,无法给出 <code>file:line</code> 级佐证。凡论文未写的项,一律标「未给出」,不估计。
+</div>
+
+<h3>10.1 训练配置</h3>
+
+<table>
+<thead><tr><th>项</th><th>取值</th><th>出处</th></tr></thead>
+<tbody>
+<tr><td>骨干</td><td>Wan 2.1 <b>1.3B</b> T2V DiT,从该 T2V checkpoint 微调</td><td>§3.1 / Abstract</td></tr>
+<tr><td>硬件</td><td><b>32 × H100</b> GPU</td><td>§5.1</td></tr>
+<tr><td>Stage 1 迭代</td><td>30k</td><td>§5.1</td></tr>
+<tr><td>Stage 2 迭代</td><td>2.1 与 2.2 各 30k</td><td>§5.1</td></tr>
+<tr><td>Stage 3 迭代</td><td>15k</td><td>§5.1</td></tr>
+<tr><td>训练数据</td><td>DNA-Rendering(Diffuman4D processed release),ActorsHQ 与 DFA 不进训练(前者 zero-shot,后者单独微调)</td><td>§4 / §5.3</td></tr>
+<tr><td>推理采样步数</td><td><b>40</b> 步</td><td>§5.1</td></tr>
+<tr><td>文本 CFG 权重</td><td><b>3.0</b></td><td>§5.1</td></tr>
+<tr><td>训练时文本丢弃概率</td><td>0.1</td><td>§3.3</td></tr>
+<tr><td>优化器 / 学习率 / batch size / LoRA</td><td class="fail">论文未给出</td><td>—</td></tr>
+<tr><td>参数量</td><td class="fail">论文未给出(可推断为 Wan 2.1 1.3B,但论文未明写微调后总参数量)</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3>10.2 资源账</h3>
+
+<table>
+<thead><tr><th>项</th><th>数值</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>训练算力</td><td><b>32 × H100</b></td><td>论文唯一给出的算力信息;未给总 GPU 小时</td></tr>
+<tr><td>推理显存</td><td class="fail">未给出</td><td>在对「短 chunk 更省显存」的论证中是关键缺失</td></tr>
+<tr><td>推理耗时</td><td class="fail">未给出</td><td>48 视角 × 40 步去噪的成本无法估算</td></tr>
+<tr><td>数据规模</td><td>训练用 1,038 序列 / 548 身份 / 48 视角 / 229.2k 帧</td><td>来自 Table 1</td></tr>
+</tbody>
+</table>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">32 × H100</div><div class="l">训练算力(论文未给 GPU 小时)</div></div>
+  <div class="stat"><div class="v">40 步</div><div class="l">推理去噪步数(每秒 chunk 内跨 48 视角)</div></div>
+  <div class="stat"><div class="v">105k</div><div class="l">三阶段迭代数合计(30+30+30+15)</div></div>
+</div>
+
+<h3>10.3 落地坑与隐藏约束</h3>
+<ul>
+  <li><b>算力门槛极高</b>:32 × H100 是本库见过的最高训练配置之一。即便权重放出,微调或续训在单卡 3090 上不可行。</li>
+  <li><b>仓库只有 README</b>:<b>没有推理脚本、没有权重下载说明</b>。README 的 2.9KB 内容仅包含项目名、一句话描述与演示 gif,连「Code coming soon」这种承诺都没有。<b>当前状态是「不可用」而非「即将可用」</b>。</li>
+  <li><b>数据侧反而是友好的</b>:训练用的 DNA-Rendering processed 版是 Diffuman4D 的公开发布,ActorsHQ 与 DFA 也是公开数据集。也就是说<b>复现的瓶颈在代码与算力,不在数据</b>——这一点与 4DVD(数据未释放 + 无代码)形成对比。</li>
+  <li><b>绝对尺度被丢弃</b>:见 §4.3。</li>
+  <li><b>评测用前景指标</b>:Table 2 的指标是 foreground-only(见 §11.1),不能与全图指标混比。</li>
+</ul>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 评测协议(必须先讲清,否则数字没法比)</h3>
+
+<table>
+<thead><tr><th>项</th><th>设定</th></tr></thead>
+<tbody>
+<tr><td>DNA-Rendering</td><td>16 场景的 <b>Diffuman4D 测试划分</b>;<b>1 参考视角 + 47 目标视角</b>;直接与 GT 目标帧比,报告 per-frame <b>前景</b>指标</td></tr>
+<tr><td>ActorsHQ</td><td><b>零样本</b>(训练时完全未用,且相机 rig 与 DNA-Rendering 不同);先在固定合成目标 rig 上生成多视角视频,用 <b>FreeTimeGS</b> 拟合,再在 ActorsHQ 真值相机处重渲染后评测;<b>14</b> 序列 × <b>200</b> 帧</td></tr>
+<tr><td>DFA</td><td>在 Stage 3 checkpoint 上<b>微调</b>;<b>directly</b> 与 GT 目标视角比,$T=1$,帧步长 8</td></tr>
+<tr><td>指标</td><td>PSNR / SSIM / LPIPS,<b>全部在前景上计算</b></td></tr>
+<tr><td>两个设置</td><td><b>foreground-only</b>(用抠好的参考)与 <b>whole-scene</b>(用完整 RGB 参考)</td></tr>
+</tbody>
+</table>
+
+<h3>11.2 DNA-Rendering(论文 Table 2)</h3>
+
+<table>
+<thead><tr><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr></thead>
+<tbody>
+<tr><td>MV-Performer</td><td>17.44</td><td>0.7204</td><td>0.2697</td></tr>
+<tr><td>Diffuman4D-mono-skeleton</td><td>16.12</td><td>0.8760</td><td>0.1580</td></tr>
+<tr><td>Diffuman4D-GT-skeleton</td><td>24.23</td><td>0.9479</td><td>0.0744</td></tr>
+<tr><td>Flex4DHuman-unmatted(本文)</td><td>25.27</td><td class="fail">0.9268</td><td class="fail">0.0977</td></tr>
+<tr class="best"><td><b>Flex4DHuman-fg(本文)</b></td><td><b>25.44</b></td><td><b>0.9516</b></td><td><b>0.0617</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>相对改进逐个按表复核(全部命中,无一例外):</b>
+<table style="margin:10px 0">
+<thead><tr><th>论文表述</th><th>按 Table 2 复核</th><th>结论</th></tr></thead>
+<tbody>
+<tr><td>较 Diffuman4D-GT-skeleton <b>+1.21 dB PSNR</b></td><td>25.44 − 24.23 = <b>1.21</b></td><td>✅ 一致</td></tr>
+<tr><td>+0.0037 SSIM</td><td>0.9516 − 0.9479 = <b>0.0037</b></td><td>✅ 一致</td></tr>
+<tr><td>−0.0127 LPIPS</td><td>0.0744 − 0.0617 = <b>0.0127</b></td><td>✅ 一致</td></tr>
+<tr><td>较 Diffuman4D-mono-skeleton <b>+9.32 dB</b></td><td>25.44 − 16.12 = <b>9.32</b></td><td>✅ 一致</td></tr>
+<tr><td>较 MV-Performer <b>+8.00 dB</b></td><td>25.44 − 17.44 = <b>8.00</b></td><td>✅ 一致</td></tr>
+</tbody>
+</table>
+这条核对本身是有价值的:论文把表格数字二次加工成结论句时最容易出错(本库在 <a href="VideoGen-20250708-LiON-LoRA.html">LiON-LoRA</a> 笔记里就抓到过一次 37.8% vs 53.8% 的对比对象错误)。<b>Flex4DHuman 的 5 条相对声明全部与表格自洽。</b>
+</div>
+
+<div class="callout warn">
+<b>一条论文没强调、但值得使用者注意的观察:</b><b>Flex4DHuman-unmatted(whole-scene 输入)的 SSIM 与 LPIPS 反而输给 Diffuman4D-GT-skeleton</b>(SSIM 0.9268 vs 0.9479,LPIPS 0.0977 vs 0.0744),只有 PSNR(25.27 vs 24.23)更高。<br>
+也就是说 <b>「用完整 RGB 参考」这个更实用的设置并不是全面占优的</b>。论文对此没有解释。可能的机制是:带背景的输入让模型把一部分容量花在背景一致性上,前景的感知质量(SSIM/LPIPS 都是感知相关指标)因此下降——但这只是【推测】,论文未给出分析。
+</div>
+
+<h3>11.3 ActorsHQ 零样本(论文 Table 3)</h3>
+
+<table>
+<thead><tr><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr></thead>
+<tbody>
+<tr><td>Diffuman4D-mono-skeleton</td><td>17.97</td><td>0.815</td><td>0.307</td></tr>
+<tr class="best"><td><b>Flex4DHuman-fg(本文)</b></td><td><b>21.32</b></td><td><b>0.856</b></td><td><b>0.277</b></td></tr>
+</tbody>
+</table>
+
+<p>相对改进 <b>+3.35 dB PSNR / +0.041 SSIM / −0.030 LPIPS</b>——按表复核同样全部命中(21.32−17.97=3.35;0.856−0.815=0.041;0.307−0.277=0.030)。</p>
+
+<p>论文特别指出:<b>定性上的差距主要出现在「背面朝外的目标视角」</b>,理由是单目人体姿态估计在这些视角上更不可靠。Flex4DHuman 因为不依赖显式人体几何先验,对<b>跨 rig 的相机偏移更鲁棒</b>。</p>
+
+<div class="figure">
+  <img src="images/2606.13655/qualitative_result.png" loading="lazy" alt="DNA-Rendering 上的定性对比">
+  <div class="caption"><b>图6</b>(论文 Figure 7)<b>定性对比。</b>每个场景左侧列为参考视角,右侧两列为两个目标视角;每个目标列内对比 MV-Performer、Diffuman4D-GT-skeleton、Flex4DHuman-fg(本文)与真值。</div>
+</div>
+
+<h3>11.4 三组性能刻画(论文 Figure 5)</h3>
+
+<div class="figure">
+  <img src="images/2606.13655/exp_analysis.png" loading="lazy" alt="DNA-Rendering 测试集上的分析">
+  <div class="caption"><b>图7</b>(论文 Figure 5)<b>DNA-Rendering 测试集上的分析。</b>(a) 参考视角鲁棒性:在四个基准参考方位角(前 $0^\circ$、右 $+90^\circ$、后 $180^\circ$、左 $-90^\circ$)下评测逐目标视角 PSNR,每个子图固定一个参考视角;(b) 参考视角扩展:在相同目标视角协议下把参考视角数从 1 变为 2 与 4。</div>
+</div>
+
+<table>
+<thead><tr><th>分析</th><th>协议</th><th>结果</th></tr></thead>
+<tbody>
+<tr><td><b>参考视角鲁棒性</b></td><td>四个基准方位角各选一个参考视角,每场景前 40 帧,47 目标视角,16 场景</td><td>跨方位角均值落在 <b>25.2–26.1 dB</b>,跨参考视角波动<b>小于 1 dB</b></td></tr>
+<tr><td><b>参考视角扩展</b></td><td>同前 40 帧协议:1 个参考($0^\circ$)、2 个($\{0^\circ,180^\circ\}$)、4 个($\{0^\circ,\pm90^\circ,180^\circ\}$)</td><td>PSNR <b>单调上升</b>:<b>25.21 → 28.62 → 31.90 dB</b>。同一 checkpoint 直接吸收更多参考证据,无需重训</td></tr>
+<tr><td><b>时序 rollout</b></td><td>$\mathcal{O}=1$,同一 42 帧窗口,参考相机 25 + 47 目标视角</td><td>$T=4$(14 次迭代)<b>24.79 dB</b> vs $T=16$(3 次迭代)<b>24.86 dB</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>「参考视角扩展」这组数据是本篇最实用的结论。</b>25.21 → 31.90 dB 意味着:只要多给相机,同一个模型就能持续变好,而<b>不需要重训、不需要改架构</b>。这对我们「先拍少、事后加相机补拍」的自采场景直接有用——它把「视角数」从设计期约束变成了<b>可以事后追加的输入</b>。
+</div>
+
+<h3>11.5 超越人体:动物多视角生成(论文 Table 4)</h3>
+
+<table>
+<thead><tr><th>设定</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th></tr></thead>
+<tbody>
+<tr><td>within-animal 均值($n=6$)</td><td>22.16</td><td>0.9079</td><td>0.0925</td></tr>
+<tr><td>cross-animal 均值($n=3$)</td><td>20.32</td><td>0.8757</td><td>0.1097</td></tr>
+</tbody>
+</table>
+
+<p>在 Stage 3 checkpoint 上微调 DFA。<b>within-animal</b> 指所有物种都在训练中出现、仅测试 clip 留出;<b>cross-animal</b> 指目标物种被完全排除在训练之外。论文的说法是:跨物种设定平均只掉约 <b>1.8 dB PSNR</b>,说明同一套形式在<b>不引入人体专用几何先验、且微调预算很小</b>的情况下能迁移到人体之外。</p>
+
+<div class="callout warn">
+<b>对这条结论的保留意见:</b>cross-animal 只有 <b>$n=3$</b> 个物种、<b>55</b> 条 caption 参与训练(见 §7.1 Table 1)。$n=3$ 的均值不足以支撑「泛化性好」这种强度的结论,论文自己也只写「a small fine-tuning budget」。建议把它视为<b>方向性证据而非定量结论</b>。
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>组件分析:论文以「分析实验」替代消融</h2>
+
+<div class="callout red">
+<b>核心事实(已逐表核实):Flex4DHuman 没有组件消融实验。</b>全文的表格只有 Table 1(caption 语料统计)、Table 2/3/4(三个数据集的结果)。<b>没有任何一行是「去掉某个组件后的性能」。</b>§5.2 的三组分析(参考视角鲁棒性 / 参考视角扩展 / 时序 rollout)刻画的是<b>模型的性能特性</b>,不是<b>组件的贡献</b>。
+</div>
+
+<h3>12.1 因此以下问题在论文中没有答案</h3>
+
+<table>
+<thead><tr><th>未被消融的组件</th><th>本想回答的问题</th><th>缺失的影响</th></tr></thead>
+<tbody>
+<tr><td><b>SE(3) band(20 维)</b></td><td>没有连续相机几何时掉多少?</td><td class="fail">最大问题:这是论文的<b>核心贡献</b>,却是零证据</td></tr>
+<tr><td><b>view band(8 维)</b></td><td>只有 SE(3) 而没有离散视角标识时,能否区分相机身份?</td><td class="fail">无法判断「离散 + 连续」的拆分是否必要</td></tr>
+<tr><td><b>band 维度分配 $(16,8,20)$</b></td><td>换一种分配会怎样?</td><td class="fail">超参无依据</td></tr>
+<tr><td><b>三阶段课程</b></td><td>直接从 Stage 3 训会怎样?跳掉 Stage 2 会怎样?</td><td class="fail">课程设计无法验证是否必要</td></tr>
+<tr><td><b>背景随机丢弃</b></td><td>它对「仅前景」与「带背景」两用能力贡献多少?</td><td class="fail">该增强是「必要」还是「顺手加的」不明</td></tr>
+<tr><td><b>多视角 caption</b></td><td>没有 caption 时质量掉多少?(论文声称它支撑测试期文本控制)</td><td class="fail">贡献不可量化</td></tr>
+<tr><td><b>teacher-forced 历史条件</b></td><td>换其他条件方式(如无历史)在该 42 帧协议下差多少?</td><td class="fail">rollout 机制的有效性只有 $T{=}4$ vs $T{=}16$ 的对比,两者都用了同一机制</td></tr>
+</tbody>
+</table>
+
+<h3>12.2 唯一接近消融的一组:rollout 长度对比</h3>
+
+<p>§8.3 的 $T=4$ vs $T=16$(24.79 vs 24.86 dB)是全文最接近消融的实验,但它比较的是同一个机制下的两个超参,而非「有/无机制」。所以它<b>不能替代对 teacher-forced 历史条件本身的验证</b>。</p>
+
+<h3>12.3 与同类工作的对照</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>4DVD 的消融强度(对照)</h4>
+    <p><a href="3D-20250806-4DVD.html">4DVD</a> 给出了 Table 3:Stage 1 单独跑、w/ ControlNet、w/ T2I-adapter、MAP w/ feature、Full Model 五行,逐条隔离条件分支架构与 MAP 的贡献。且强调「所有设置都含 MAP」以保证隔离干净。</p>
+  </div>
+  <div class="card">
+    <h4>StudioRecon 的消融强度(对照)</h4>
+    <p><a href="3D-20260710-StudioRecon.html">StudioRecon</a> 给了 5 张消融表:跨视角关联策略(Only spatial / Only pose / 混合)、流水线组件(+ViewSynth / +Enhance)、一致性注入(w/o vs w/)、运动自适应注入、以及对输入扰动的敏感性扫描(掩码腐蚀 / SMPL 噪声 / 关键点噪声)。</p>
+  </div>
+</div>
+
+<div class="callout">
+<b>评价:</b>Flex4DHuman 的贡献声明强度(「不需要任何显式几何先验」)与它的证据强度(无消融)之间<b>存在明显落差</b>。作者用一个非常干净的架构改动实现了很强的能力,但<b>没有用实验证明「删掉几何先验」这一取舍的代价与收益</b>——而这恰恰是读者最想知道的事。这是本笔记对该文最主要的批评。
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<div class="callout warn">
+<b>读表前的重要声明:</b>下表混合了<b>两类来源</b>——① Flex4DHuman 论文 Table 2 中报告的对比数值(即<b>该论文的测量</b>,不一定是原方法的自报值);② 其他论文/库内笔记的自报值。两种来源的数字<b>原则上不可直接比较</b>,因为不同工作在 DNA-Rendering 上的测试划分、参考/目标视角设置、前景/全图口径都可能不同。表中每一格的来源都在备注里点明。
+</div>
+
+<table>
+<thead>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+</thead>
+<tbody>
+<tr class="best">
+  <td><b>Flex4DHuman</b></td><td>2026-06</td><td><b>1 到 N_ref 段参考视频 + 相机位姿;无条件几何先验</b></td><td>多视角视频 → FreeTimeGS 动态高斯</td><td>flow matching(式 3)</td><td>DNA-Rendering 1,038 序列 / 48 视角(Diffuman4D processed 版)</td><td class="fail">32 × H100,总迭代 105k,时长未给出</td><td class="fail">未给出</td><td class="fail">未给出</td><td>DNA-Rendering <b>25.44 dB PSNR / 0.9516 SSIM / 0.0617 LPIPS</b>(1 参考 47 目标,前景)</td><td><b>仅 README,无代码</b></td>
+</tr>
+<tr>
+  <td>Diffuman4D</td><td>2025-07</td><td>4 路稀疏视角视频;<b>每个目标视角需骨架渲染</b></td><td>4DGS(LongVolcap 官方 / splatfacto 备选)</td><td>去噪 MSE(骨架图 + Plücker 相机,文本条件关闭)</td><td>自建 dna_rendering_processed(1000+ 序列 × 48 相机 × 150/225 帧)</td><td>—</td><td>—</td><td>—</td><td>GT-skeleton 24.23 dB / mono-skeleton 16.12 dB(均为 Flex4DHuman 论文复测)</td><td>是(zju3dv/Diffuman4D)</td>
+</tr>
+<tr>
+  <td>MV-Performer</td><td>2025-10</td><td>参考视频 + 单目深度与人体法线</td><td>多视角视频 → 下游重建</td><td>去噪 + 几何渲染条件</td><td>主要依托 MVHumanNet</td><td>—</td><td>—</td><td>—</td><td>17.44 dB PSNR(Flex4DHuman 论文复测)</td><td>是(zyhbili/MV-Performer)</td>
+</tr>
+<tr>
+  <td><a href="3D-20260820-4DAnyone.html">4DAnyone</a></td><td>2026-08</td><td>未标定的随手单目视频;3D 骨架当条件</td><td>多视角视频(6–48 路) → FreeTimeGS</td><td>去噪 MSE</td><td>自建 MVGameHuman(38k 视频 / 24 相机)+ light-stage + 真实视频</td><td>128 × H20-3E(库内笔记)</td><td>—</td><td>—</td><td>DNA-Rendering 24.33 dB PSNR <span class="uncertain">【待核实】取自库内笔记与调研综述的二手源,且测试协议可能与本文不同</span></td><td>是(Apache-2.0)</td>
+</tr>
+<tr>
+  <td><a href="3D-20250806-4DVD.html">4DVD</a></td><td>2025-08</td><td>单目视频,<b>单物体可环绕</b>(非人体)</td><td>多视角视频 → 4D 高斯(DreamGaussian4D 表示)</td><td>去噪 MSE(级联解耦)</td><td>D-Objaverse 17k 资产,16 视角 × 21 帧</td><td class="fail">未给出</td><td>381 s(单张 A6000)</td><td>约 30 GB</td><td>LPIPS 0.133(FVD-V 314.44)——<b>与本文不同数据集,不可比</b></td><td>否</td>
+</tr>
+</tbody>
+</table>
+
+<h3>13.1 对比结论:Flex4DHuman 凭什么强</h3>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>① 条件信号的「抗噪性」</h4>
+    <p>Diffuman4D 依赖骨架、MV-Performer 依赖深度 + 法线。这些几何量在<b>目标视角</b>上无法直接获得,必须从单目估计或 rig 三角化——两者都会引入误差,并在生成阶段被放大。Flex4DHuman 把条件换成<b>相机位姿</b>:这是唯一「不用猜」的几何量。</p>
+  </div>
+  <div class="card">
+    <h4>② 相对编码带来的「配置无关性」</h4>
+    <p>因为相机编码是<b>相对</b>的、视角槽是<b>置换不变</b>的,同一个 checkpoint 能吸收 1 / 2 / 4 个参考视角(§11.4 的 25.21 → 31.90 dB),也能把视角数外推 3 倍(训练 16 → 评测 48)。这些能力 Diffuman4D 需要固定的参考视角假设。</p>
+  </div>
+  <div class="card">
+    <h4>③ 零样本跨 rig 迁移</h4>
+    <p>ActorsHQ 的相机 rig 与 DNA-Rendering 不同,仍在单参考设定下超过 Diffuman4D-mono-skeleton <b>+3.35 dB</b>(§11.3)。跨 rig 的鲁棒性正是「不依赖显式几何」的直接红利。</p>
+  </div>
+</div>
+
+<h3>13.2 它凭什么弱</h3>
+<ul>
+  <li><b>绝对尺度缺失</b>:相机平移被缩放到单位距离(§4.3),无法直接支撑度量重建。</li>
+  <li><b>对动态相机运动与极端视角不鲁棒</b>:作者自陈(§2.3),因为训练数据全是静态棚拍 rig。</li>
+  <li><b>长时域漂移</b>:作者自陈,建议引入 self-forcing / diffusion forcing。</li>
+  <li><b>算力与代码门槛</b>:32 × H100 训练,且仓库无代码,实际不可用。</li>
+  <li><b>无法解释「whole-scene 反而更差」</b>:见 §11.2 的观察。</li>
+</ul>
+
+<h3>13.3 演进定位表</h3>
+
+<table>
+<thead><tr><th>范式</th><th>代表方法</th><th>核心先验(条件信号)</th><th>局限</th></tr></thead>
+<tbody>
+<tr><td>几何渲染条件</td><td>MV-Performer</td><td>视角相关的法线图 / 部分点云渲染</td><td>信息量大但依赖单目几何质量,误差传染</td></tr>
+<tr><td>骨架条件</td><td>Diffuman4D、<a href="3D-20260820-4DAnyone.html">4DAnyone</a></td><td>每个目标视角的 3D 骨架(稀疏但准确)</td><td>丢失体型/衣物细节线索;多视角几何复杂度 O(N)</td></tr>
+<tr><td>上下文工程</td><td><a href="3D-20260820-4DAnyone.html">4DAnyone</a>(RCP + TCR)</td><td>在骨架条件之上解决「有界注意力上下文」</td><td>仍需骨架;泛化到真实无控场景有限</td></tr>
+<tr class="best"><td><b>无几何先验 · 纯相对位姿</b></td><td><b>Flex4DHuman</b></td><td><b>只有相对相机变换(SE(3))+ 离散视角槽</b></td><td><b>一致性完全压给生成模型;绝对尺度丢失;无消融</b></td></tr>
+<tr><td>绕过 RGB 的中介</td><td><a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a></td><td>共享 VAE 的最终去噪 latent 当 4D decoder 的输入</td><td>局限于同 VAE 家族;尚无人体专用版本</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>库内交叉链接:</b>本工作在综述里属于「路线 A · 无几何系」;同路线对照见 <a href="3D-20260820-4DAnyone.html">4DAnyone</a>(上下文工程)与 <a href="3D-20250806-4DVD.html">4DVD</a>(级联解耦);把生成当补全器的两条人体工作见 <a href="3D-20260318-AHOY.html">AHOY!</a> 与 <a href="3D-20260710-StudioRecon.html">StudioRecon</a>;路线全景见 <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>,相机控制上游能力见 <a href="VideoGen-20260618-视频生成相机可控性调研.html">视频生成相机可控性调研</a>。
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<p>判断基准仍是本库主线的实际约束:<b>单卡 RTX 3090(24GB)、WSL2、12–16 路中等稀疏可控场景、目标是人体</b>。</p>
+
+<table>
+<thead><tr><th>维度</th><th>Flex4DHuman 的情况</th><th>与我们的匹配度</th></tr></thead>
+<tbody>
+<tr><td><b>输入形态</b></td><td>1 到多段参考视角视频 + 相机位姿;训练时最多 15 个参考视角</td><td class="best"><b>高度匹配</b>——我们正好有 12–16 路中等稀疏的多视角视频,且相机位姿由 COLMAP 可得</td></tr>
+<tr><td><b>条件依赖</b></td><td class="best">不需要骨架 / 深度 / 法线</td><td><b>高价值</b>——省掉 Sapiens/MHR 拟合这一步及其误差</td></tr>
+<tr><td><b>参考视角可扩展性</b></td><td class="best">同一 checkpoint 吸收 1→4 参考视角,PSNR 25.21→31.90 dB</td><td><b>直接可用</b>:先少拍、事后加相机,不必重训</td></tr>
+<tr><td><b>下游兼容</b></td><td>论文验证了 FreeTimeGS;我们的链路用 3DGS 拆分(head / body / scene)</td><td>可替换下游,但论文未验证 Deformable-GS 类表示</td></tr>
+<tr><td><b>算力</b></td><td class="fail">训练 32 × H100;仓库无代码无权重</td><td class="fail"><b>不可用</b>——推理脚本都不存在</td></tr>
+<tr><td><b>绝对尺度</b></td><td class="fail">相机平移缩放至单位距离,尺度信息丢失</td><td class="fail">我们的 3DMM / MHR 对齐需要度量尺度,得从几何侧另补</td></tr>
+<tr><td><b>输出分辨率</b></td><td>训练 $512^2$</td><td>低于我们做面部细节增强所需的分辨率(面部需要更精细)</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>结论:概念上最贴合,工程上最不可用。</b><br>
+Flex4DHuman 的<b>问题设定与我们的场景几乎完美对应</b>(多视角视频 + 已知相机位姿 → 稠密视角 → 4DGS,不要几何先验,参考视角可增量追加),这是五篇论文里与主线最契合的一篇。<br>
+但它同时是<b>可用性最差的一篇</b>之一:无代码、无权重、32×H100 训练门槛。<b>因此它的价值是「路线指引」而非「组件采用」</b>——它证明了「我们这条路走得通」,但没法让我们现在就跑起来。<br>
+真要在我们场景里复现这个思路,现实路径是:<b>借它的位置编码设计(五轴 PRoPE),在自己的 12–16 路数据上微调一个更小的视频 DiT</b>,而不是等它的代码。
+</div>
+
+<div class="callout tip">
+<b>一条可立刻采用的工程经验:</b>§7 里「<b>caption 只描述外观、不描述运动</b>」这条发现,与我们「<b>固定表情系数以消除面部微动</b>」的思路在动机上完全一致——都是<b>主动剔除不可靠的运动监督信号</b>。如果将来我们要给多视角生成加文本条件,这条经验可以直接照搬:非规范视角下生成的运动方向描述不可信。
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<h3>方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 核心贡献完全没有消融。</b></p>
+<p><b>问题:</b>论文的全部卖点集中在「五轴位置编码 + 无几何先验」,但<b>没有任何实验量化 SE(3) band、view band、band 维度分配、三阶段课程的贡献</b>(详见 §12)。读者无法知道「如果去掉 SE(3) band,性能会掉多少」,也就无法判断这个设计的必要性。</p>
+<p><b>佐证:</b>全文表格仅有 Table 1/2/3/4,无消融行。§5.2 的三组分析全是性能刻画。</p>
+<p><b>改进建议:</b>至少补四行消融——① w/o SE(3) band(只留 view band);② w/o view band(只留 SE(3));③ band 分配改为 $(8,8,28)$ 或 $(32,0,12)$;④ 跳过 Stage 2 直接从 Stage 1 训 Stage 3。这四条实验的成本远低于 32×H100 的完整训练。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 绝对尺度被主动丢弃,却没有替代方案。</b></p>
+<p><b>问题:</b>相机平移被缩放到单位距离以求数值稳定(§4.3)。这对「生成」无害,但把输出从「可度量」降级为「仅相似」。论文在 Limitations 和 Conclusion 都未提及此事。</p>
+<p><b>佐证:</b>§3.2 原文「camera poses are normalized on a per-sequence basis by expressing all cameras relative to the first camera and scaling translations to unit distance」。</p>
+<p><b>改进建议:</b>把尺度作为一个显式的输出头(类似 <a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a> 里的相机与深度头)或在训练时引入一个尺度监督项;至少应在论文里明确提示下游使用者「需要自行恢复尺度」。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] whole-scene 设置反而更差,但论文未解释。</b></p>
+<p><b>问题:</b>Flex4DHuman-unmatted 的 SSIM / LPIPS 输给 Diffuman4D-GT-skeleton(0.9268 / 0.0977 vs 0.9479 / 0.0744),只有 PSNR 更高(§11.2)。论文把这组设置作为「更实用」的变体提出,却没有分析为什么它的感知质量反而下降。</p>
+<p><b>改进建议:</b>做一次「背景占比 / 背景复杂度 × 前景指标」的扫描,判断是容量竞争还是背景 mask 处理的问题。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] 长时域漂移只有定性描述,没有定量曲线。</b></p>
+<p><b>问题:</b>作者承认长 horizon 需要漂移抑制,但 §11.4 的 rollout 实验只覆盖 <b>42 帧</b>。比这更长时会发生什么、漂移的累积速率如何,没有数据。</p>
+<p><b>改进建议:</b>给出「帧数 × PSNR(或光流 warp 误差)」的曲线,并至少实现一个作者点名的方案(self-forcing / diffusion forcing)做对照。</p>
+</div>
+
+<h3>数据与评估</h3>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[高优先级] 训练数据全是静态棚拍 rig,与「casual video」的宣称存在落差。</b></p>
+<p><b>问题:</b>Abstract 与 Conclusion 反复强调面向 casual / in-the-wild 视频,但训练集是 DNA-Rendering(48 相机固定 rig、棚拍)。作者在 Limitations 里承认了这点,但<b>没有任何零样本 in-the-wild 的定量结果</b>——ActorsHQ 虽然换 rig,但仍是<b>棚拍</b>(160 相机)。</p>
+<p><b>改进建议:</b>补一个真实手持/单目数据集(如 EgoHumans / Mobile Stage)上的零样本评测,与 ActorsHQ 并列报告,让「casual」这个词有数据支撑。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[中优先级] 评测指标全是 PSNR / SSIM / LPIPS,没有几何度量。</b></p>
+<p><b>问题:</b>ActorsHQ 那组已经是「生成 → FreeTimeGS重建 → 重渲染」的完整链路,本可以直接报告重建后的几何误差(点云 Chamfer、重投影误差、时序一致性),但论文只报了图像指标。</p>
+<p><b>改进建议:</b>参照 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 用 PCK 直接量人体几何误差的做法,补一组几何指标。</p>
+</div>
+
+<h3>工程实用性</h3>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<p><b>[高优先级] 仓库只有 README,项目处于「不可用」状态。</b></p>
+<p><b>问题:</b>GitHub 仓库 102 stars、最近 push 2026-06-15,但内容只有 README(2.9KB)、.gitattributes 与一个演示 gif。<b>没有推理脚本、没有权重、连「coming soon」都没写。</b></p>
+<p><b>改进建议:</b>哪怕只放出推理脚本 + 权重下载说明,也能让这条路线从「论文」变成「可评估的工具」。对比 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 放出了完整 Python 源码(1836 KB,含 configs / scripts / 子模块),这是同领域更值得效仿的做法。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);">
+<p><b>[中优先级] 推理侧显存与耗时完全缺失。</b></p>
+<p><b>问题:</b>48 视角 × 40 步去噪的开销不小,而论文连一个数字都没给,导致外部无法评估可行性。§8.3 甚至用「短 chunk 更省显存」作为论点,却没有显存数据。</p>
+<p><b>改进建议:</b>补一张「视角数 × chunk 长度 × 显存 / 单帧耗时」的表。</p>
+</div>
+
+<h3>优先级总览</h3>
+
+<table>
+<thead><tr><th>优先级</th><th>改进点</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>[高]</td><td>核心贡献无消融</td><td>贡献声明与证据强度落差最大处;补实验成本却最低</td></tr>
+<tr><td>[高]</td><td>绝对尺度被丢弃且无替代</td><td>直接决定输出能否用于度量重建</td></tr>
+<tr><td>[高]</td><td>训练数据全为棚拍 rig,缺 in-the-wild 定量</td><td>「casual video」是核心宣称,却无对应证据</td></tr>
+<tr><td>[高]</td><td>仓库无代码无权重</td><td>决定这条路线当前能否被任何人使用</td></tr>
+<tr><td>[中]</td><td>whole-scene 变体更差未解释</td><td>影响实际部署时应选哪种输入</td></tr>
+<tr><td>[中]</td><td>长时域漂移无定量</td><td>决定能否做长视频</td></tr>
+<tr><td>[中]</td><td>缺几何度量</td><td>「候选多视角是否几何正确」只有图像指标</td></tr>
+<tr><td>[中]</td><td>推理显存 / 耗时缺失</td><td>影响落地可行性判断</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>个人认为最关键的三点:</b>
+<ol>
+  <li><b>核心贡献零消融</b>——一篇把全部筹码押在「位置编码 + 去掉几何先验」上的论文,却没有一条实验能说明这个位置编码带来了多少增益。这是最大的方法学缺口。</li>
+  <li><b>绝对尺度丢失</b>——这是一个「不写就没人知道」的隐性约束,却直接决定输出能否与我们的 MHR / 3DMM 度量对齐。</li>
+  <li><b>仓库不可用</b>——概念上最贴合我们主线的论文,恰恰是当前一行代码都没有的那一篇。评估其价值时必须把这个现实因素计入。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结、演进定位与资源</h2>
+
+<h3>一句话总结</h3>
+
+<div class="callout key">
+Flex4DHuman 是「<b>用极简架构改动 + 大量数据/课程工程换取能力</b>」的典型:唯一的结构改动是把 Wan 2.1 自注意力的位置编码从三轴扩成五轴(时间 16 / 视角 8 / SE(3) 20 维),配合三阶段课程与 25,031 条多视角 caption,就在 DNA-Rendering 上超过了依赖 GT 骨架的 Diffuman4D(<b>25.44 vs 24.23 dB</b>),并在跨 rig 的 ActorsHQ 上零样本领先 <b>+3.35 dB</b>。<b>它的价值是「证明了只靠相对相机位姿就够了」这一判断,而不是提供了一个可用的工具。</b>
+</div>
+
+<h3>对本库的三条可带走结论</h3>
+<ol>
+  <li><b>相机位姿是一种「可加」的资源</b>:25.21 → 28.62 → 31.90 dB(1/2/4 参考视角),同一 checkpoint 无需重训。对我们的自采场景,这意味着「先拍 4 路、事后补拍」在方法上是成立的。</li>
+  <li><b>不可靠的监督信号应该被主动剔除,而不是被更好地建模</b>:论文剔除的是「非规范视角下的运动方向描述」,我们剔除的是「面部微动」——同一思路。</li>
+  <li><b>「无需几何先验」的收益是鲁棒性而非精度</b>:它在所有设置下都不需要骨架/深度,代价是绝对尺度与极端视角下的性能。取舍是清晰的,但<b>论文没有量化这个取舍</b>(无消融)。</li>
+</ol>
+
+<h3>在研究脉络中的位置</h3>
+<p>这条线的演进是逐步「减条件」的过程:MV-Performer 用<b>法线/点云渲染</b>(信息最多、最依赖估计质量)→ Diffuman4D 与 4DAnyone 用<b>3D 骨架</b>(稀疏但准确)→ Flex4DHuman 用<b>相对相机位姿</b>(最通用、最不依赖估计)。与此同时,另一条路在「<b>换接口</b>」而不是「<b>换条件</b>」:<a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a> 主张把生成与重建之间的接口从 RGB 下沉到 VAE latent。而 <a href="3D-20260318-AHOY.html">AHOY!</a> 与 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 走的是第三条路——<b>承认观测缺失,把生成当补全器</b>,并用人机分工(StudioRecon)或解耦吸收不一致(AHOY!)来处理生成内容的不自洽。</p>
+
+<h3>👥 研究团队</h3>
+<p>Jen-Hao Cheng、Yipeng Wang、Hao Zhang、Gengshan Yang、Jenq-Neng Hwang。<b>University of Washington + World Labs</b>;论文标注项目负责人(†)属 World Labs。致谢提到 Marble worlds 与 SparkJS 团队提供指导与支持(两者均为 World Labs 相关技术),以及 Fei-Fei Li、Christoph Lassner、Ben Mildenhall 等人的支持。</p>
+
+<h3>🔗 资源链接</h3>
+<div class="tag-row">
+  <a class="tag" href="https://arxiv.org/abs/2606.13655" target="_blank">📄 arXiv abs (2606.13655)</a>
+  <a class="tag" href="https://arxiv.org/html/2606.13655v2" target="_blank">🌐 arXiv HTML 全文</a>
+  <a class="tag" href="https://arxiv.org/pdf/2606.13655" target="_blank">📥 PDF</a>
+  <a class="tag" href="https://andy-cheng.github.io/Flex4DHuman" target="_blank">🏠 项目页</a>
+  <a class="tag" href="https://github.com/Andy-Cheng/Flex4DHuman" target="_blank">💻 GitHub(仅 README)</a>
+</div>
+
+<div class="note">
+<b>开源状态(2026-09-29 核实):</b>仓库 <code>github.com/Andy-Cheng/Flex4DHuman</code> 存在,102 stars,语言字段为空,pushed 2026-06-15;仓库大小 265 MB(含 assets 与大文件),但<b>根目录只有 <code>.gitattributes</code>、<code>README.md</code>(2,892 字节)与一个演示 gif <code>flex4dhuman_demo_short.gif</code></b>。<b>无源码、无权重、无推理脚本。</b>
+</div>
+
+<div class="note">
+相关库内笔记:<a href="3D-20250806-4DVD.html">4DVD</a> · <a href="3D-20260318-AHOY.html">AHOY!</a> · <a href="3D-20260710-StudioRecon.html">StudioRecon</a> · <a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a> · <a href="3D-20260820-4DAnyone.html">4DAnyone</a> · <a href="3D-20260512-VidSplat.html">VidSplat</a> · <a href="VideoGen-20260618-视频生成相机可控性调研.html">视频生成相机可控性调研</a> · <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>
+</div>
+</section>
+
+<div class="footer">
+📝 阅读笔记 · 生成于 2026-09-29 · 论文 arXiv:2606.13655v2(2026-06-11)· 所有数字与引文均取自原文(Table 1–4、§3.1–§3.3、§4、§5.1–§5.4、§7)· 无公开源码,工程细节均标注出处或标为「未给出」· 相对改进已逐条按表复核
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
+
+

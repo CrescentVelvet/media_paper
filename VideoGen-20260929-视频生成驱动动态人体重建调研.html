@@ -393,7 +393,7 @@ flowchart LR
 <li><b>主张</b>：不需要骨架、深度、法线、也不需要渲染目标视角的几何，<b>只用相对相机位姿</b>就能驱动多视角视频生成。</li>
 <li><b>实现</b>：以 Wan 2.1 的 1.3B text-to-video 为 backbone 并保留其结构；把相机与视角信息编码为<b>五轴位置编码</b>——在时空 RoPE 之外加入视角索引与连续 SE(3) 相对相机几何（PRoPE 路线）。输入布局为 36 通道（16 通道噪声 latent + 16 通道条件 latent，目标视角条件位置补零 + 4 通道二值 mask 标识参考/目标）。</li>
 <li><b>训练课程</b>：三阶段——① 单参考单目标下适配新的相机感知位置编码；② 引入动态参考视角采样 + 背景随机丢弃，学会可变参考→目标配置；③ temporal rollout（用 clean 的历史目标 token 训练，支持长序列）。另加入多视角 caption 以支持测试期文本控制。</li>
-<li><b>下游</b>：FreeTimeGS；在 DNA-Rendering / ActorsHQ 上评测。<span class="uncertain">⚠️【待核实】二手站点称其在 DNA-Rendering 上超过 Diffuman4D-GT-skeleton 约 +1.21 dB PSNR、相对单目基线 +8~9 dB，未回原文核对</span></li>
+<li><b>下游</b>：FreeTimeGS；在 DNA-Rendering / ActorsHQ 上评测。<b>✅ 已回原文核实</b>：DNA-Rendering（1 参考 47 目标）上 <b>25.44 dB PSNR / 0.9516 SSIM / 0.0617 LPIPS</b>，超过 Diffuman4D-GT-skeleton（24.23 / 0.9479 / 0.0744）即 <b>+1.21 dB / +0.0037 SSIM / −0.0127 LPIPS</b>；相对单目基线 Diffuman4D-mono-skeleton（16.12 dB）为 <b>+9.32 dB</b>、相对 MV-Performer（17.44 dB）为 <b>+8.00 dB</b>；零样本 ActorsHQ 上领先 mono 变体 <b>+3.35 dB</b>。另有 1→4 个参考视角时 PSNR 25.21→31.90 dB 的扩展性数据。详见 <a href="3D-20260611-Flex4DHuman.html">库内笔记</a></li>
 <li><b>与 4DAnyone 的差异</b>（第三方交叉解读，<span class="uncertain">⚠️【推测】</span>）：Flex4DHuman 更「通用/少条件」，支持动物类；4DAnyone 的可辩护增量在于容纳未知内参、不把相机参数直接喂给生成模型、并用 RCP/TCR 把更多视角纳入同一套一致性设计。</li>
 </ul>
 </div>
@@ -450,7 +450,7 @@ flowchart LR
 <div class="grid grid-2">
   <div class="card">
     <h4>AHOY!（2026-03）— 遮挡下的可动画 avatar</h4>
-    <p><b>arXiv 2603.17975</b>（v2 2026-06-28）｜MPI 等｜项目页含 GitHub</p>
+    <p><b>arXiv 2603.17975</b>（v2 2026-06-28）｜Tübingen AI Center · MPI-INF · Imperial College London · KAUST｜<b>ECCV 2026</b>（abs comments 字段确认）｜项目页<b>无代码链接</b>（2026-09-29 核实）｜<a href="3D-20260318-AHOY.html">库内笔记</a></p>
     <ul>
       <li><b>靶子</b>：现有 avatar 重建都假设输入「无遮挡、全身可见、常在规范姿态」，而真实视频里的人常被家具、物体、他人挡住。</li>
       <li><b>四个组件</b>：① hallucination-as-supervision——用身份微调过的扩散模型为未观测区域生成<b>稠密监督</b>；② canonical → pose-dependent 两阶段架构，从稀疏观测 bootstrap 出完整 pose-dependent 高斯图；③ <b>map-pose / LBS-pose 解耦</b>——专门用来吸收生成数据带来的多视角不一致；④ head/body 分开监督以保住面部身份。</li>
@@ -741,26 +741,26 @@ flowchart TD
 <h3>路线 A · 多视角视频生成 → 4DGS</h3>
 <ul>
 <li><b>4DAnyone</b> — <a href="https://arxiv.org/abs/2608.20335" target="_blank">arXiv</a> · <a href="https://ant-research.github.io/4DAnyone/" target="_blank">项目页</a> · <a href="https://github.com/ant-research/4DAnyone" target="_blank">GitHub</a> · <a href="https://huggingface.co/AntResearch/4DAnyone" target="_blank">HuggingFace</a> · 库内笔记 <a href="3D-20260820-4DAnyone.html">3D-20260820-4DAnyone</a></li>
-<li><b>Flex4DHuman</b> — <a href="https://arxiv.org/abs/2606.13655" target="_blank">arXiv 2606.13655</a></li>
+<li><b>Flex4DHuman</b> — <a href="https://arxiv.org/abs/2606.13655" target="_blank">arXiv 2606.13655</a> · 库内笔记 <a href="3D-20260611-Flex4DHuman.html">3D-20260611-Flex4DHuman</a></li>
 <li><b>Diffuman4D</b> — <a href="https://arxiv.org/abs/2507.13344" target="_blank">arXiv 2507.13344</a> · 官方代码 zju3dv/Diffuman4D</li>
 <li><b>MV-Performer</b> — <a href="https://arxiv.org/abs/2510.07190" target="_blank">arXiv 2510.07190</a> · <a href="https://github.com/zyhbili/MV-Performer" target="_blank">GitHub</a></li>
 <li><b>Human4DiT</b> — <a href="https://arxiv.org/abs/2405.17405" target="_blank">arXiv 2405.17405</a> · <a href="https://human4dit.github.io/" target="_blank">项目页</a></li>
 <li><b>CAT4D</b> — <a href="https://arxiv.org/abs/2411.18613" target="_blank">arXiv 2411.18613</a> · <a href="https://cat-4d.github.io/" target="_blank">项目页</a></li>
 <li><b>SV4D</b> — <a href="https://arxiv.org/abs/2407.17470" target="_blank">arXiv 2407.17470</a> · <a href="http://sv4d.github.io/" target="_blank">项目页</a>；<b>SV4D 2.0</b> <a href="https://arxiv.org/abs/2503.16396" target="_blank">arXiv 2503.16396</a></li>
-<li><b>4DVD</b> — <a href="https://arxiv.org/abs/2508.04467" target="_blank">arXiv 2508.04467</a> · <a href="https://4dvd.github.io/" target="_blank">项目页</a></li>
+<li><b>4DVD</b> — <a href="https://arxiv.org/abs/2508.04467" target="_blank">arXiv 2508.04467</a> · <a href="https://4dvd.github.io/" target="_blank">项目页</a> · 库内笔记 <a href="3D-20250806-4DVD.html">3D-20250806-4DVD</a></li>
 </ul>
 
 <h3>路线 B / E / F</h3>
 <ul>
-<li><b>Latent-to-4D（Beyond Pixels）</b> — <a href="https://arxiv.org/abs/2608.10744" target="_blank">arXiv 2608.10744</a> · <a href="https://hayd-zju.github.io/Beyond-Pixels/" target="_blank">项目页</a></li>
+<li><b>Latent-to-4D（Beyond Pixels）</b> — <a href="https://arxiv.org/abs/2608.10744" target="_blank">arXiv 2608.10744</a> · <a href="https://hayd-zju.github.io/Beyond-Pixels/" target="_blank">项目页</a> · 库内笔记 <a href="3D-20260811-LatentTo4D.html">3D-20260811-LatentTo4D</a></li>
 <li><b>DreamHand</b> — <a href="https://arxiv.org/abs/2608.20308" target="_blank">arXiv 2608.20308</a> · <a href="https://github.com/ggxxii/dreamhand" target="_blank">GitHub</a></li>
 <li><b>AvatarDynamizer</b> — <a href="https://arxiv.org/abs/2608.19900" target="_blank">arXiv 2608.19900</a> · <a href="https://vcai.mpi-inf.mpg.de/projects/AvatarDynamizer" target="_blank">项目页</a></li>
 </ul>
 
 <h3>路线 C / D</h3>
 <ul>
-<li><b>AHOY!</b> — <a href="https://arxiv.org/abs/2603.17975" target="_blank">arXiv 2603.17975</a></li>
-<li><b>StudioRecon</b> — <a href="https://arxiv.org/abs/2607.09125" target="_blank">arXiv 2607.09125</a> · <a href="https://sisyphm.github.io/studiorecon-page/" target="_blank">项目页</a></li>
+<li><b>AHOY!</b> — <a href="https://arxiv.org/abs/2603.17975" target="_blank">arXiv 2603.17975</a> · 库内笔记 <a href="3D-20260318-AHOY.html">3D-20260318-AHOY</a></li>
+<li><b>StudioRecon</b> — <a href="https://arxiv.org/abs/2607.09125" target="_blank">arXiv 2607.09125</a> · <a href="https://sisyphm.github.io/studiorecon-page/" target="_blank">项目页</a> · <a href="https://github.com/sisyphm/StudioRecon" target="_blank">GitHub（完整源码）</a> · 库内笔记 <a href="3D-20260710-StudioRecon.html">3D-20260710-StudioRecon</a></li>
 <li><b>PhyGenHOI</b> — <a href="https://arxiv.org/abs/2605.30268" target="_blank">arXiv 2605.30268</a></li>
 <li><b>WonderHuman</b> — <a href="https://arxiv.org/abs/2502.01045" target="_blank">arXiv 2502.01045</a></li>
 <li><b>Vidu4D</b>（生成视频 → 动态高斯面元，下游重建器参照）— <a href="https://arxiv.org/abs/2405.16822" target="_blank">arXiv 2405.16822</a></li>
@@ -769,6 +769,11 @@ flowchart TD
 <h3>库内兄弟笔记（交叉参考）</h3>
 <ul>
 <li><a href="3D-20260820-4DAnyone.html">3D-20260820-4DAnyone</a> — 路线 A 的 deep 级精读，含 RCP/TCR 的完整机制与源码级细节</li>
+<li><a href="3D-20260611-Flex4DHuman.html">3D-20260611-Flex4DHuman</a> — 路线 A 无几何系：五轴 PRoPE 位置编码、三阶段课程、无消融（deep）</li>
+<li><a href="3D-20250806-4DVD.html">3D-20250806-4DVD</a> — 路线 A 级联解耦：用分辨率换视角密度，MAP 模块的 Q/KV 交换（standard）</li>
+<li><a href="3D-20260811-LatentTo4D.html">3D-20260811-LatentTo4D</a> — 路线 B：绕过 RGB、以共享 VAE latent 作 4D 接口，约 1K clip 训练（standard）</li>
+<li><a href="3D-20260318-AHOY.html">3D-20260318-AHOY</a> — 路线 C：遮挡下可动画 3DGS 人体，map-pose/LBS-pose 解耦吸收生成不一致（deep，含补充材料超参）</li>
+<li><a href="3D-20260710-StudioRecon.html">3D-20260710-StudioRecon</a> — 路线 C：低重叠相机的解耦重建，五篇中唯一完整开源；含 <b>源码 vs 论文定值差异核查</b>（deep）</li>
 <li><a href="VideoGen-20260427-视频生成几何一致性调研.html">VideoGen-20260427-视频生成几何一致性调研</a> — 生成侧的 3D 一致性方向（World-R1 / Robust Dreamer / MVTrack4Gen）</li>
 <li><a href="VideoGen-20260618-视频生成相机可控性调研.html">VideoGen-20260618-视频生成相机可控性调研</a> — 相机控制方向，是路线 A 的上游能力</li>
 <li><a href="3D-20260810-微动人体三维重建调研.html">3D-20260810-微动人体三维重建调研</a> — 可变形 3DGS / 姿态引导 / 动转静</li>

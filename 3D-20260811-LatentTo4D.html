@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latent-to-4D:绕过 RGB 的潜空间直连 4D 生成</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2608.10744v1 · 2026-08-11 · 潜空间直连 4D</span>
+    <h1>Latent-to-4D:为什么生成与重建之间的接口必须是 RGB?</h1>
+    <div class="subtitle">Beyond Pixels: From Video Priors to 4D Worlds</div>
+    <div class="authors">Zihao Liu · Xiaolong Shen · Zhenglin Zhou · Ruijie Quan · Yi Yang</div>
+    <div class="org">ReLER, CCAI, Zhejiang University(Yi Yang 为通讯作者)&nbsp;|&nbsp; cs.CV · 无会议标注(arXiv abs 的 comments 仅项目页)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.10744" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2608.10744v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2608.10744" target="_blank">📥 PDF</a>
+      <a href="https://hayd-zju.github.io/Beyond-Pixels/" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/hayd-zju/Beyond-Pixels" target="_blank">💻 GitHub(仅 README,无源码)</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:两种范式的取舍</a></li>
+    <li><a href="#s3">问题形式化与符号表</a></li>
+    <li><a href="#s4">共享 latent 接口:为什么能复用</a></li>
+    <li><a href="#s5">L4AR 之对齐模块</a></li>
+    <li><a href="#s6">L4AR 之时空精修模块</a></li>
+    <li><a href="#s7">4D 解码器与训练目标</a></li>
+    <li><a href="#s8">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s9">⚙️ 工程实现细节</a></li>
+    <li><a href="#s10">实验结果</a></li>
+    <li><a href="#s11">人类偏好研究</a></li>
+    <li><a href="#s12">消融与诊断分析</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结、演进定位与资源</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p>这篇论文来自浙大 ReLER / CCAI。<b>它提出的问题比它的方法更值得记住。</b></p>
+
+<div class="callout key">
+<b>一句话概括:</b>现有 4D 生成要么「先生成 RGB 视频、再单独用一个重建模型抬升到 4D」(<b>generate-then-reconstruct</b>),要么「把某个特定视频生成器改造成直接预测几何」(<b>integrated feed-forward</b>)。前者保留了模块性,但让一个<b>在窄得多</b>的数据上训练的重建模型插在视频先验与 4D 输出之间,分布错配与误差会逐级传播;后者转移先验更直接,但把 4D 预测<b>绑死在特定生成器与条件协议</b>上,换一个生成器就得重训几何监督。<br>
+本文问的是:<b>共享同一个 VAE 的多个视频 DiT,其「最终去噪 latent」能不能作为「一次几何监督、服务多个生成器」的可复用接口?</b> 答案是可以,方法是<b>绕过 RGB 解码</b>,把 final denoised latent 直接对齐到预训练 4D 解码器的 token 网格上。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">≈1K</div><div class="l">训练 clip 数(最终阶段 1,143 条,来自 6 个重建数据集)</div></div>
+  <div class="stat"><div class="v">3</div><div class="l">一个 checkpoint 直接服务的兼容 DiT 数</div></div>
+  <div class="stat"><div class="v">+2.88~3.45</div><div class="l">Text4D-200 上 DINO-F1 相对同 latent Wan+4RC 的增益</div></div>
+  <div class="stat"><div class="v">+5.81</div><div class="l">I4D-200 上 DINO-F1 增益</div></div>
+</div>
+
+<h3>三个宣称的贡献</h3>
+<ol>
+  <li><b>概念上</b>:提出「直接 latent-to-4D 生成」——把 video DiT 的<b>最终去噪 VAE latent 当作可复用接口</b>,连接兼容的多个视频生成器与显式 4D 预测。这绕过了生成 RGB,并把 4D 监督与特定生成器/条件协议解耦。</li>
+  <li><b>技术上</b>:给出 <b>L4AR</b>(Latent-to-4D Alignment and Refinement)网络——对齐 video latent 的网格、用逐帧与全局注意力精修,再交给结构化 4D 解码。约 1K 条重建 clip 训练,单 checkpoint 在<b>共享同一 VAE 的多个视频生成器之间不变地迁移</b>。</li>
+  <li><b>实验上</b>:在 Text4D-200 与 I4D-200 上,单 checkpoint 跨多个同 VAE 的生成器,投影 DINO-F1 高于<b>同 latent 的 generate-then-reconstruct 基线</b>,且人类评测在几何合理性、完整性、时序稳定性上更偏好其输出。</li>
+</ol>
+
+<div class="callout warn">
+<b>论文自己的诚实边界(Conclusion 原话要点):</b>「证据仍局限于<b>共享同一 VAE 约定</b>的设定,且<b>基于投影的评估无法为生成场景建立度量精度</b>。」<br>
+这句话很重要——它同时承认了<b>适用范围</b>(同一 VAE)与<b>评估口径</b>(DINO 分数是「可见几何一致性/完整性的外观相关代理」,不是度量 4D 精度)。论文在 §Experiments 里反复强调这一点,这种自我限定在同类论文里并不常见。
+</div>
+
+<div class="callout tip">
+<b>为什么这篇对本库重要:</b>如果将来要把「视频先验」接进自研的重建链路,<b>这条路线给出的核心建议是——接口层尽量下沉到 latent,而不是渲染成 RGB 再喂</b>。RGB 接口会引入一次不可逆的信息损失与分布错配。但要注意两个前提:① 该工作面向<b>通用 4D 场景</b>,<b>尚未见人体专用版本</b>;② 它要求生成器与重建器<b>共享同一 VAE 约定</b>,这对本库现有的 HYPIR / 3DGS 链路并不成立。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:两种范式的取舍</h2>
+
+<h3>2.1 两种范式的具体失败模式</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>范式一:generate-then-reconstruct</h4>
+    <p><b>做法</b>:先合成多视角或时序的 RGB 观测,再由一个<b>独立的重建模型</b>转成显式动态场景。</p>
+    <p><b>论文指出的问题</b>:它保留了生成器的模块性,但<b>RGB 接口把「一个在窄得多(且往往只有重建数据)上单独训练的重建器」插在了视频先验与 4D 输出之间</b>。开放域内容与时序伪影因此会传播成不稳定的几何——即 <b>distribution mismatch + error propagation</b> 的双重问题。</p>
+  </div>
+  <div class="card">
+    <h4>范式二:integrated feed-forward</h4>
+    <p><b>做法</b>:让几何成为生成过程的原生输出——要么直接预测显式 4D 表示,要么联合建模 RGB 与几何视频。</p>
+    <p><b>论文指出的问题</b>:先验转移更直接,但<b>把 4D 预测绑死在某个特定生成器或条件协议上</b>,于是「换一个预训练视频模型」就可能需要<b>新的几何监督训练</b>。</p>
+  </div>
+</div>
+
+<div class="callout">
+<b>这个 trade-off 被「4D 监督稀缺」这件事放大:</b>论文明确指出,4D 监督相对于大规模视频数据是稀缺的。因此「每换一次生成器就重训一次几何」的代价极高。<br>
+于是核心问题被提炼为:<b>如何建立一个可复用的接口,既能绕过生成的 RGB,又能让「一条几何监督通路」服务多个兼容的视频生成器?</b>
+</div>
+
+<h3>2.2 核心洞察</h3>
+
+<div class="callout key">
+<b>共享 VAE 的潜在空间是一个天然候选接口。</b>论文的推理链条是:
+<ol>
+  <li>虽然不同生成器的 <b>DiT 骨干与条件协议可能不同</b>,但<b>共享同一 VAE checkpoint、latent 归一化、布局与压缩约定</b>的模型,其最终去噪 latent 落在<b>同一表示空间</b>里;</li>
+  <li>而这个表示位于 <b>RGB 解码的上游</b>;</li>
+  <li>因此它是「一个几何监督的 4D 通路可以访问不同兼容 DiT 所产生的<b>外观、运动与条件信息</b>」的天然切点。</li>
+</ol>
+可以说得更直白:<b>RGB 是渲染产物,latent 才是生成器真正「思考」的东西。</b>既然重建需要的几乎所有信息(外观、运动、条件)都已经在 latent 里,中间插一步 RGB 解码再编码就是纯粹的信息损失。
+</div>
+
+<div class="figure">
+  <img src="images/2608.10744/intro_pipeline_comparison.png" loading="lazy" alt="两种 video-to-4D 接口的对比">
+  <div class="caption"><b>图1</b>(论文 Figure 2)<b>video-to-4D 接口的对比。</b>此前方法先把 video latent 解码成 RGB 再做重建(上),而本文直接把 latent 映射到 4D(下),经由 L4AR。</div>
+</div>
+
+<h3>2.3 假设在什么条件下会失效</h3>
+
+<div class="callout warn">
+<b>作者自陈的边界:</b>
+<ol>
+  <li><b>兼容性要求</b>:视频 DiT 必须<b>共享 VAE checkpoint、latent 归一化、张量布局、压缩约定,以及一个受支持的 latent 形状</b>。在此边界内,DiT 架构与条件协议可以不同。<b>跨 VAE 家族则不成立。</b></li>
+  <li><b>评估边界</b>:离轴 DINO 分数是「可见几何一致性与完整性的<b>外观相关代理</b>,不是度量 4D 精度」;人类判断与真值消融提供补充证据。</li>
+</ol>
+<b>本笔记补充的一条隐含边界:</b>这套设计的收益来自「<b>生成器产生的 latent 与训练时用的「观测视频 latent」分布足够接近</b>」。但论文自己承认「<b>两个来源的 latent 遵循同样的 VAE 缩放、张量布局与压缩约定,尽管它们的分布不必一致</b>」。<br>
+也就是说,<b>训练时用的是编码真实视频得到的 latent,推理时用的是 DiT 最终去噪的 latent——两者分布并不相同</b>。论文用一组「DiT 残差敏感度」实验来处理这个 gap(§12.3),但这是一个需要持续警惕的假设。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>问题形式化与符号表</h2>
+
+<h3>3.1 形式化定义</h3>
+
+<p>论文把「直接 latent-to-4D 生成」形式化为一个<b>跨表示空间的映射</b>:从视频 VAE 的 latent 空间映射到预训练 4D 重建器的结构化 token 空间。</p>
+
+<p>记 $(E_{\mathrm{v}},D_{\mathrm{v}})$ 为某视频生成器的时空 VAE,$\mathcal{Z}_{\mathrm{v}}$ 为其 latent 空间。一个 video latent $\mathbf{z}_{\mathrm{v}}\in\mathcal{Z}_{\mathrm{v}}$ 编码了视频解码所需的外观与运动信息。而预训练的 4D 层级操作在一个结构化 token 空间 $\mathcal{Z}_{\mathrm{4D}}$ 上,其元素 $\mathbf{Q}\in\mathcal{Z}_{\mathrm{4D}}$ 支持相机与动态几何预测。</p>
+
+<div class="callout warn">
+<b>两个空间虽然都是时空的,但在三件事上不同</b>——<b>时间分辨率、空间网格、特征维度</b>——因此<b>不能直接互换</b>。这就是必须有一个对齐模块的原因。
+</div>
+
+<p>核心问题是要在<b>不经过 RGB</b> 的前提下桥接这两个表示空间。具体地,寻找一个对齐映射:</p>
+
+<div class="equation">
+$$\mathcal{A}_{\phi}:\mathcal{Z}_{\mathrm{v}}\rightarrow\mathcal{Z}_{\mathrm{4D}},\qquad\mathbf{Q}^{(0)}=\mathcal{A}_{\phi}(\mathbf{z}_{\mathrm{v}})$$
+<span class="tag">(式 1)</span>
+</div>
+
+<p>使得对齐后的 token $\mathbf{Q}^{(0)}$ 能被精修并解码为一个离散 4D 场景:</p>
+
+<div class="equation">
+$$\mathcal{Y}=\left\{(\mathbf{C}_{t},\mathbf{P}_{t})\right\}_{t=1}^{T},\qquad\mathbf{P}_{t}\in\mathbb{R}^{H\times W\times 3}$$
+<span class="tag">(式 2)</span>
+</div>
+
+<p>其中 $\mathbf{C}_{t}$ 是 $t$ 时刻的相机,$\mathbf{P}_{t}$ 是表达在<b>共享世界坐标系</b>下的稠密点图。这个表示同时刻画了时变几何与渲染新视角所需的相机轨迹。</p>
+
+<h3>3.2 与 generate-then-reconstruct 的形式对照</h3>
+
+<p>常规的 generate-then-reconstruct 流水线预测的是:</p>
+
+<div class="equation">
+$$\widehat{\mathcal{Y}}_{\mathrm{rgb}}=R\!\left(D_{\mathrm{v}}(\mathbf{z}_{\mathrm{v}})\right)$$
+<span class="tag">(式 3)</span>
+</div>
+
+<p>其中 $D_{\mathrm{v}}$ 先把 video latent 解码成 RGB 帧,随后一个<b>独立训练的重建器</b> $R$ 把这些帧抬升到 4D。<b>论文指出:这条流水线引入了一个 RGB 表示边界,生成与解码的伪影可以穿过它传播到几何预测。</b></p>
+
+<p>本文的目标则是学习一个直接映射 $\mathcal{Z}_{\mathrm{v}}\rightarrow\mathcal{Z}_{\mathrm{4D}}\rightarrow\mathcal{Y}$,<b>同时绕过 RGB 解码与随后的 RGB 重编码</b>。</p>
+
+<h3>3.3 符号表</h3>
+
+<table>
+<thead><tr><th>符号</th><th>含义</th><th>备注</th></tr></thead>
+<tbody>
+<tr><td>$(E_{\mathrm{v}},D_{\mathrm{v}})$</td><td>视频生成的时空 VAE 编码器 / 解码器</td><td>本文用<b>冻结的 Wan VAE</b></td></tr>
+<tr><td>$\mathcal{Z}_{\mathrm{v}}$</td><td>VAE latent 空间</td><td>—</td></tr>
+<tr><td>$\mathcal{Z}_{\mathrm{4D}}$</td><td>预训练 4D 重建器的结构化 token 空间</td><td>来自 4RC</td></tr>
+<tr><td>$\mathbf{z}^{\mathrm{obs}}$</td><td>观测视频经 VAE 编码的 <b>posterior-mean latent</b>$\mathbf{z}^{\mathrm{obs}}=\mu(E_{\mathrm{v}}(\mathbf{V}))$</td><td><b>训练时用</b></td></tr>
+<tr><td>$\mathbf{z}^{\mathrm{gen}}$</td><td>兼容 video DiT 产生的<b>最终去噪 latent</b>$\mathbf{z}^{\mathrm{gen}}=G_{\theta}(c,\boldsymbol{\epsilon})$</td><td><b>推理时用</b></td></tr>
+<tr><td>$G_{\theta}$</td><td>兼容的 video DiT</td><td>Wan2.1-T2V-14B / 1.3B、Wan2.2-I2V-A14B</td></tr>
+<tr><td>$\mathcal{A}_{\phi}$</td><td>对齐模块(可训练)</td><td>$\phi$ 为参数</td></tr>
+<tr><td>$\mathcal{R}$</td><td><b>固定的三线性重采样算子</b></td><td>对齐模块第一步,<b>无参数</b></td></tr>
+<tr><td>$\mathcal{S}_{\phi}$</td><td><b>可学习的 3D 卷积</b></td><td>聚合局部时空邻域并把通道投到目标维度</td></tr>
+<tr><td>$\mathbf{Q}^{(0)}$</td><td>对齐后的 token</td><td>$\in\mathbb{R}^{T\times M\times d}$</td></tr>
+<tr><td>$T$ / $M$ / $d$</td><td>帧数 / 每帧空间 token 数 / token 维度</td><td>—</td></tr>
+<tr><td>$\mathcal{H}_{\psi,\Delta\psi}$</td><td>时空精修模块</td><td>$\psi$ 冻结预训练权重,$\Delta\psi$ 轻量可训练更新</td></tr>
+<tr><td>$\mathbf{S}$</td><td><b>冻结的相机与时间 token</b></td><td>复用预训练 4D 层级的</td></tr>
+<tr><td>$\mathcal{D}_{\omega}$</td><td>4D 解码器</td><td>预测逐帧相机与世界空间几何</td></tr>
+<tr><td>$\widehat{d}_{t}(u),\widehat{\mathbf{o}}_{t},\widehat{\mathbf{r}}_{t}(u)$</td><td>逐像素预测深度、世界射线原点与单位方向</td><td>带置信度</td></tr>
+<tr><td>$\widehat{\mathbf{C}}_{t}$</td><td>预测相机</td><td>用 <b>9D 位姿–FOV 参数化</b></td></tr>
+</tbody>
+</table>
+
+<h3>3.4 分解式的总映射</h3>
+
+<p>对任一来源的 latent $\mathbf{z}\in\{\mathbf{z}^{\mathrm{obs}},\mathbf{z}^{\mathrm{gen}}\}$,Latent-to-4D 把直接映射分解为<b>对齐、时空精修、结构化 4D 解码</b>三步:</p>
+
+<div class="equation">
+$$\widehat{\mathcal{Y}}=\mathcal{D}_{\omega}\!\left(\mathcal{H}_{\psi,\Delta\psi}\bigl(\mathcal{A}_{\phi}(\mathbf{z});\mathbf{S}\bigr)\right)$$
+<span class="tag">(式 4)</span>
+</div>
+
+<ul>
+  <li><b>对齐模块</b> $\mathcal{A}_{\phi}$:把 VAE latent 张量映射到预训练 4D 层级期望的时空 token 网格;</li>
+  <li><b>时空精修模块</b> $\mathcal{H}_{\psi,\Delta\psi}$:用<b>冻结的预训练权重 $\psi$</b> 与<b>轻量可训练更新 $\Delta\psi$</b> 把对齐后的 token 转成有上下文的 4D latent;$\mathbf{S}$ 为冻结的相机与时间 token;</li>
+  <li><b>4D 解码器</b> $\mathcal{D}_{\omega}$:预测逐帧相机与动态世界空间几何。</li>
+</ul>
+
+<h3>3.5 谁被训练、谁被冻结</h3>
+
+<table>
+<thead><tr><th>阶段</th><th>输入的 latent</th><th>被优化</th><th>video DiT</th></tr></thead>
+<tbody>
+<tr><td><b>训练</b></td><td>$\mathbf{z}^{\mathrm{obs}}$(真实视频编码)</td><td>对齐模块 + 轻量精修更新 + 几何 / 相机头</td><td class="best"><b>既不执行也不优化</b></td></tr>
+<tr><td><b>推理</b></td><td>$\mathbf{z}^{\mathrm{gen}}$(DiT 最终去噪)</td><td>—(通路完全不变)</td><td>只作为 latent 提供者</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>「因为条件已经在生成的 latent 里被具现化,所以不需要条件专用的 4D 分支,也不需要显式的任务标识符」</b>——这是论文一句关键论断。<br>
+它的含义是:<b>文本条件、图像条件、相机条件、动作条件的差别,在 latent 层面已经被生成器消化掉了</b>,4D 通路只需面对「一个 latent」,不需要知道它是怎么来的。这正是「统一 text- 与 image-conditioned 4D 生成」能用同一个 checkpoint 做到的原因。<br>
+代价是:一旦某个条件的实现方式<b>改变了 latent 的分布特征</b>(而不只是改变其内容),这个「不感知条件」的假设就会失效。
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>共享 latent 接口:为什么能复用</h2>
+
+<h3>4.1 两个 latent 来源</h3>
+
+<p>给定观测视频张量 $\mathbf{V}$,VAE 编码器给出 posterior-mean latent $\mathbf{z}^{\mathrm{obs}}=\mu(E_{\mathrm{v}}(\mathbf{V}))\in\mathcal{Z}_{\mathrm{v}}$(<b>观测来源,训练用</b>)。给定条件 $c$ 与采样噪声 $\boldsymbol{\epsilon}$,一个兼容的 video DiT $G_{\theta}$ 产生<b>紧邻 VAE 解码之前</b>的最终去噪 latent $\mathbf{z}^{\mathrm{gen}}=G_{\theta}(c,\boldsymbol{\epsilon})\in\mathcal{Z}_{\mathrm{v}}$(<b>生成来源,推理用</b>)。</p>
+
+<h3>4.2 兼容性的确切条件</h3>
+
+<p>论文对「兼容」给了明确清单。两个 latent 来源遵循<b>同样的 VAE 缩放、张量布局与压缩约定</b>,尽管<b>它们的分布不必重合</b>。兼容要求视频 DiT:① 共享<b>同一 VAE checkpoint</b>;② 共享 <b>latent 归一化</b>;③ 共享<b>张量布局</b>;④ 共享<b>压缩约定</b>;⑤ 以及一个<b>受支持的 latent 形状</b>。在此边界内,<b>DiT 架构与条件协议可以不同</b>——论文用一个 checkpoint 服务了两个 text-to-video DiT 与一个 image-to-video DiT。</p>
+
+<div class="callout warn">
+<b>这里有一个必须记住的工程事实:</b>「共享 VAE 缩放、布局与压缩约定」听起来只是格式问题,但它实际上<b>排除了绝大多数跨模型组合</b>。以本库场景为例,我们的链路里有 HYPIR(图像修复)、SAM3(分割)、3DGS、以及各类 3DMM 拟合器——<b>它们之间没有任何共享的 VAE 约定</b>。所以这条路线目前对本库是一个<b>方法论指引</b>,而不是可直接套用的接口。
+</div>
+
+<h3>4.3 训练与推理的对称性</h3>
+
+<div class="callout key">
+<b>这套设计最优雅的地方在于「同一条通路,两种输入」:</b>
+<ul>
+  <li><b>训练期</b>:通路接收来自<b>带 4D 标注的视频</b>的 $\mathbf{z}^{\mathrm{obs}}$,监督更新对齐模块、轻量精修更新、几何与相机头。<b>video DiT 不参与</b>。</li>
+  <li><b>推理期</b>:把 $\mathbf{z}^{\mathrm{obs}}$ <b>替换</b>为 $\mathbf{z}^{\mathrm{gen}}$,$\mathbf{z}$ 下游的整条通路<b>保持不变</b>。</li>
+</ul>
+这个「换输入不换通路」的性质,正是它能「一次几何监督、服务多个生成器」的机制来源——<b>不需要为每个生成器训练新的几何头,因为通路看到的东西在格式上是同一个东西。</b>
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>L4AR 之对齐模块</h2>
+
+<h3>5.1 为什么不能直接用</h3>
+
+<p>VAE latent <b>不能被预训练 4D 层级直接消费</b>,因为两个表示在<b>时间分辨率、空间网格、特征维度</b>三个维度上都不同。因此对齐分两步走:先把分辨率对上,再把特征空间对上。</p>
+
+<h3>5.2 两步对齐</h3>
+
+<ol>
+  <li><b>固定的三线性重采样算子 $\mathcal{R}$</b>:把时间与空间分辨率匹配到 4D 层级的要求。<b>这一步无参数</b>——它只做尺度匹配,不做语义变换。</li>
+  <li><b>可学习的 3D 卷积 $\mathcal{S}_{\phi}$</b>:聚合同部时空邻域,并把 latent 的通道数投影到 4D 层级期望的特征维度。</li>
+</ol>
+
+<p>把空间维度展平之后,对齐后的 token 为:</p>
+
+<div class="equation">
+$$\mathbf{Q}^{(0)}=\mathcal{A}_{\phi}(\mathbf{z})=\operatorname{Flatten}\!\left(\mathcal{S}_{\phi}\!\left(\mathcal{R}(\mathbf{z})\right)\right)\in\mathbb{R}^{T\times M\times d}$$
+<span class="tag">(式 5)</span>
+</div>
+
+<p>其中 $T$ 是帧数,$M$ 是每帧的空间 token 数,$d$ 是 token 维度。</p>
+
+<div class="callout key">
+<b>「固定重采样 + 学习式 3D 卷积」这个拆分本身就是设计:</b>
+<ul>
+  <li><b>重采样用固定算子</b>:因为「把 latent 的时空尺寸对上」是一个纯几何问题,不需要学。用固定算子可以避免可学习上采样在大跨度尺度变化时的不稳定。</li>
+  <li><b>通道投影用 3D 卷积</b>:因为「哪些通道承载什么信息」是语义问题,必须学。而用 <b>3D</b> 卷积(而不是逐帧的 2D)的原因是——<b>它能在转换阶段就聚合时间邻域的运动证据</b>,而不是等到后面的注意力层才看到时间。</li>
+</ul>
+论文的原话是:3D 卷积「<b>在 latent 网格上执行共享的局部转换,使邻近的外观与运动证据在全局推理之前就被聚合</b>」。
+</div>
+
+<h3>5.3 五件套(对齐模块)</h3>
+
+<table>
+<thead><tr><th>项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>① 结构</td><td>输入 video latent $\mathbf{z}$(来自 $\mathbf{z}^{\mathrm{obs}}$ 或 $\mathbf{z}^{\mathrm{gen}}$)→ 固定三线性重采样 $\mathcal{R}$ → 可学习 3D 卷积 $\mathcal{S}_\phi$ → Flatten 空间维 → token $\mathbf{Q}^{(0)}\in\mathbb{R}^{T\times M\times d}$</td></tr>
+<tr><td>② 数学</td><td>式(5)</td></tr>
+<tr><td>③ 前向流程</td><td>① 分辨率对齐(无参数);② 通道投影与局部时空聚合(可学习);③ 展平为 token 序列</td></tr>
+<tr><td>④ 图示</td><td>见 §8 流程图</td></tr>
+<tr><td>⑤ 监督</td><td><b>无独立监督</b>,由式(7)的总损失端到端训练</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>L4AR 之时空精修模块</h2>
+
+<h3>6.1 为什么对齐还不够</h3>
+
+<div class="callout warn">
+论文的理由很直接:<b>对齐模块产生的 token 网格虽然兼容,但它的局部感受野无法捕捉长程对应关系、视角变化与跨序列的运动。</b><br>
+换句话说,3D 卷积只解决了「局部邻域内的信息聚合」,而 4D 推断需要的是<b>全局的时空推理</b>——某个人体部位在另一帧的位置、某个表面在不同视角下的对应。
+</div>
+
+<h3>6.2 两种注意力的分工</h3>
+
+<p>论文引入一个<b>层次化精修模块</b>,结合逐帧与全局的时空自注意力。给定形状为 $(B,T,M,d)$ 的 token:</p>
+
+<table>
+<thead><tr><th>注意力类型</th><th>reshape 后形状</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><b>逐帧注意力(frame-wise)</b></td><td>$(BT,M,d)$</td><td>在<b>每一帧内部</b>整合空间结构</td></tr>
+<tr><td><b>全局注意力(global)</b></td><td>$(B,TM,d)$</td><td>在<b>所有空间位置与时间步之间</b>交换信息</td></tr>
+</tbody>
+</table>
+
+<p>层次结构的工作方式是:<b>先通过逐帧注意力建立逐帧结构,然后交替两种注意力模式</b>,让全局块传播对应关系、视角与运动证据,而<b>穿插其间的逐帧块保留细致的空间结构</b>。</p>
+
+<div class="callout key">
+<b>这个「交替」的设计动机值得理解:</b>如果只有全局注意力,$O((TM)^2)$ 的注意力会把细节平均掉(尤其是当 $T\times M$ 很大时,每个 token 的注意力被稀释);如果只有逐帧注意力,则完全没有跨帧对应。<b>交替让两种信息互相「刷新」</b>:全局层负责建立对应,逐帧层负责把对应关系落回像素级细节,再交给下一轮全局层。<br>
+这也解释了消融实验里为什么不能去掉任何一方(见 §12)——<b>去掉 frame-wise 时 Comp 从 5.418 恶化到 20.806;去掉 global 时 19.742。两者都大幅下降。</b>
+</div>
+
+<h3>6.3 多层级表示的收集</h3>
+
+<p>论文<b>在层级中的多个深度收集中间表示</b>:在每个选定深度,把<b>最近的逐帧特征与全局特征拼接</b>,组成一个<b>多层级表示</b>,其中既包含空间细节也包含序列级上下文。这个表示被交给 4D 解码器,提供互补的<b>帧内几何</b>与<b>跨帧运动</b>线索。</p>
+
+<h3>6.4 与预训练权重的结合方式</h3>
+
+<p>精修模块的权重构成是本文「低成本复用」的关键:</p>
+
+<table>
+<thead><tr><th>部分</th><th>状态</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>$\psi$:预训练 Transformer 权重</td><td class="best">冻结</td><td>来自 4RC 的 <b>31 块</b>精修层级</td></tr>
+<tr><td>$\Delta\psi$:轻量可训练更新</td><td>可训练</td><td><b>rank-16 LoRA</b></td></tr>
+<tr><td>相机与时间 token $\mathbf{S}$</td><td class="best">冻结</td><td>复用预训练 4D 层级的</td></tr>
+<tr><td>对齐模块 $\mathcal{A}_{\phi}$ + 预测头</td><td>可训练</td><td>从初始化开始训</td></tr>
+<tr><td>video 生成器 / VAE / 原始 Transformer 权重 / 运动解码器 / 跟踪头</td><td class="best">冻结</td><td>论文明确列出</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>「用 LoRA 微调而不是全量训练」在这篇里不只是省算力,而是设计的一部分:</b>因为推理时要面对的 $\mathbf{z}^{\mathrm{gen}}$ 与训练时的 $\mathbf{z}^{\mathrm{obs}}$ <b>分布不同</b>(§2.3)。如果让 $\Delta\psi$ 的容量太大,精修模块就可能<b>过拟合到观测 latent 的分布</b>,反而在生成 latent 上表现更差。<br>
+rank-16 这个较小的大概正是为了<b>让适配保持「轻」</b>——只做必要的域适配,不重构整个特征空间。这与「单一 checkpoint 跨三个 DiT 不变」这一目标是一致的。
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>4D 解码器与训练目标</h2>
+
+<h3>7.1 几何头:深度 + 世界射线 + 置信度</h3>
+
+<p>4D 解码器把精修后的特征层级转换成显式的动态场景结构。对<b>每一帧 $t$ 与每个像素 $u$</b>,一个<b>多层级几何头</b>预测:</p>
+
+<ul>
+  <li>一个深度值 $\widehat{d}_{t}(u)$;</li>
+  <li>一条<b>世界空间射线</b>,由原点 $\widehat{\mathbf{o}}_{t}$ 与单位方向 $\widehat{\mathbf{r}}_{t}(u)$ 表示;</li>
+  <li>以及它们各自的<b>置信度</b>。</li>
+</ul>
+
+<p>按解码器的射线参数化,对应的世界空间点按式(6)恢复:</p>
+
+<div class="equation">
+$$\widehat{\mathbf{P}}_{t}(u)=\widehat{\mathbf{o}}_{t}+\widehat{d}_{t}(u)\widehat{\mathbf{r}}_{t}(u)$$
+<span class="tag">(式 6)</span>
+</div>
+
+<h3>7.2 相机头</h3>
+
+<p>与几何头并行,一个<b>相机头</b>通过 <b>9D 位姿–视场角参数化</b>预测 $\widehat{\mathbf{C}}_{t}$。设计动机与前文一致——<b>预测的相机与动态点图共同构成 $\widehat{\mathcal{Y}}$,它可以跨视角与跨时间重投影,而不局限于输入视频的观测</b>。</p>
+
+<div class="callout key">
+<b>「为什么解码器输出的是射线而不是深度」是一个值得记的细节。</b>只用深度,点的世界坐标就依赖于一个全局相机假设;而输出「射线原点 + 方向 + 深度」三者,让每个像素的世界位置<b>在相机本身也被预测的前提下仍然可解</b>。这使得相机与几何可以<b>联合预测</b>、互相约束,而不是先定相机再定几何。
+</div>
+
+<h3>7.3 训练目标</h3>
+
+<p>给定一个带标注的序列 $(\mathbf{V},\mathcal{Y})$,冻结的 VAE 产生 $\mathbf{z}^{\mathrm{obs}}$,latent-to-4D 通路由下式监督:</p>
+
+<div class="equation">
+$$\mathcal{L}=\mathcal{L}_{\mathrm{unc}}+\mathcal{L}_{\mathrm{cam}}+\mathcal{L}_{\mathrm{geom}}$$
+<span class="tag">(式 7)</span>
+</div>
+
+<table>
+<thead><tr><th>项</th><th>组成</th></tr></thead>
+<tbody>
+<tr><td>$\mathcal{L}_{\mathrm{unc}}$</td><td><b>不确定性感知项</b>:包含<b>置信度加权</b>的深度损失、深度梯度损失、世界射线损失</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{cam}}$</td><td>监督<b>相机平移、旋转与视场角</b></td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{geom}}$</td><td>结合<b>度量深度</b>与<b>射线</b>监督,加上世界空间点上的<b>均值与尾部误差</b>,以及一项<b>表面法线损失</b></td></tr>
+</tbody>
+</table>
+
+<p>这些目标共同训练<b>对齐模块</b>、<b>轻量精修更新</b>以及<b>几何与相机头</b>,全部来自度量的 4D 标注。</p>
+
+<div class="callout warn">
+<b>论文对训练顺序给了一句重要的说明:</b>「我们<b>逐步激活可训练组件</b>,以避免破坏预训练的几何先验。」<br>
+这与「冻结预训练权重」的思路是一致的一套组合拳:<b>先冻结、再逐步解冻</b>。同类做法在本库其他论文里也出现过(如 <a href="3D-20260318-AHOY.html">AHOY!</a> 的两处「零偏移预热」)。<b>凡是「在预训练模型上加小模块」的场合,逐步激活几乎都是标配。</b>
+</div>
+
+<h3>7.4 五件套(4D 解码器)</h3>
+
+<table>
+<thead><tr><th>项</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>① 结构</td><td>多层级融合特征 → 几何头(深度 + 射线原点 + 单位方向 + 各自置信度)→ 世界点;并行相机头(9D 位姿–FOV)</td></tr>
+<tr><td>② 数学</td><td>式(6)点恢复;式(7)总损失</td></tr>
+<tr><td>③ 前向</td><td>精修特征 → 逐帧逐像素预测 → 按射线参数化恢复世界点 → 输出 $\widehat{\mathcal{Y}}=\{(\widehat{\mathbf{C}}_t,\widehat{\mathbf{P}}_t)\}$</td></tr>
+<tr><td>④ 图示</td><td>见 §8 流程图</td></tr>
+<tr><td>⑤ 监督</td><td>式(7)的三项损失,均来自度量 4D 标注</td></tr>
+</tbody>
+</table>
+
+<div class="figure">
+  <img src="images/2608.10744/latent_to_4d_pipeline.png" loading="lazy" alt="Latent-to-4D 训练流水线">
+  <div class="caption"><b>图2</b>(论文 Figure 3)<b>Latent-to-4D 训练流水线。</b>一个冻结的视频 VAE 把观测视频编码成 VAE 空间的 latent。L4AR 通过一个可学习的 3D 卷积对齐 latent 网格、复用冻结的相机与时间 token,并通过交替的逐帧与全局注意力精修表示。4D 解码器预测相机与动态世界空间几何。</div>
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>8.1 训练流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    V["带 4D 标注的视频 clip<br/>最终阶段 1143 条, 来自 6 个重建数据集"] --> VAE["冻结的 Wan VAE 编码"]
+    VAE --> ZO["z_obs = posterior-mean latent"]
+    ZO --> ALIGN["对齐模块: 固定三线性重采样 R + 可学习 3D 卷积 S_phi"]
+    ALIGN --> Q0["token Q0, 形状 T x M x d"]
+    TOK["冻结的相机与时间 token S"] --> REF
+    Q0 --> REF["时空精修: 31 块层级<br/>冻结权重 psi + rank-16 LoRA dpsi"]
+    REF --> MULTI["多层级融合: 逐帧与全局特征拼接"]
+    MULTI --> DEC["4D 解码器: 几何头 + 相机头"]
+    DEC --> Y["预测 Y = 相机 + 动态世界点图"]
+    Y --> LOSS["式 7: L_unc + L_cam + L_geom"]
+    lossnote["逐步激活可训练组件<br/>避免破坏预训练几何先验"] -.-> LOSS
+    style V fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style ALIGN fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style REF fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style Y fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>8.2 推理流程(三种条件、一个 checkpoint)</h3>
+
+<div class="mermaid">
+flowchart TD
+    C1["文本条件"] --> D1["Wan2.1-T2V-14B"]
+    C1 --> D2["Wan2.1-T2V-1.3B"]
+    C2["图像条件"] --> D3["Wan2.2-I2V-A14B"]
+    C3["动作 / 轨迹 / 外观等兼容条件"] --> D4["同 VAE 家族的其他骨干"]
+    D1 --> ZG["各自的最终去噪 latent z_gen<br/>共享同一 VAE 约定"]
+    D2 --> ZG
+    D3 --> ZG
+    D4 --> ZG
+    ZG --> L4AR["同一条 L4AR 通路<br/>checkpoint 不变"]
+    L4AR --> OUT["4D 输出: 相机 + 动态世界点图"]
+    style C1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C2 fill:#fce7f3,stroke:#ec4899,color:#831843
+    style ZG fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style L4AR fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<div class="callout key">
+<b>第二张图是本篇的核心主张的可视化:</b>四个不同的生成器、三种不同的条件类型,<b>汇聚到同一个 latent 约定上,再由同一条 L4AR 通路处理</b>。<br>
+这在工程上的含义非常实际:<b>几何监督只需训一次,生成能力可以随上游模型一起升级</b>。论文在「Broader Applications」一节里展示的正是这一点——同一个 checkpoint 直接继承了上游的运动、外观、姿态、轨迹、操作、导航等控制能力(见 §9.4 的两张配图)。
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>⚙️ 工程实现细节</h2>
+
+<div class="callout warn">
+<b>诚实声明:</b>Latent-to-4D 的 GitHub 仓库 <code>hayd-zju/Beyond-Pixels</code> 存在(仓库大小仅 <b>16 KB</b>,pushed 2026-08-16),但<b>根目录只有一个 <code>README.md</code>(6,430 字节),没有任何源码</b>。因此本节数值<b>全部来自论文正文</b>,无 <code>file:line</code> 级佐证。凡论文未写明的项,一律标「未给出」,不估计。
+</div>
+
+<h3>9.1 架构与训练配置</h3>
+
+<table>
+<thead><tr><th>项</th><th>取值</th><th>出处</th></tr></thead>
+<tbody>
+<tr><td>冻结的 VAE</td><td><b>Wan VAE</b>(冻结)</td><td>§Experimental Setup</td></tr>
+<tr><td>精修层级</td><td>初始化自 <b>4RC</b> 的 <b>31 块</b>层级 + 预测头</td><td>§Experimental Setup</td></tr>
+<tr><td>对齐模块</td><td>固定三线性重采样 $\mathcal{R}$ + 可学习 3D 卷积 $\mathcal{S}_\phi$</td><td>§Method (L4AR)</td></tr>
+<tr><td>精修适配</td><td><b>rank-16 LoRA</b>(适配精修层级)</td><td>§Experimental Setup</td></tr>
+<tr><td>可训练部分</td><td>对齐模块 + 预测头 + 精修层级的 LoRA</td><td>§Experimental Setup</td></tr>
+<tr><td>冻结部分</td><td>video 生成器、VAE、原始 Transformer 权重、相机与时间 token、<b>运动解码器</b>、<b>跟踪头</b></td><td>§Method (Training Objective)</td></tr>
+<tr><td>训练数据起点</td><td>「从一个 4RC 对齐的 latent 适配器出发」</td><td>§Experimental Setup</td></tr>
+<tr><td>最终阶段训练数据</td><td><b>1,143 条 clip</b>,来自<b>六个重建数据集</b></td><td>§Experimental Setup</td></tr>
+<tr><td>训练阶段</td><td>多阶段几何监督训练(论文未给出各阶段的迭代数与数据组成)</td><td>§Experimental Setup</td></tr>
+<tr><td>测试期适配</td><td class="best"><b>无</b>(所有 benchmark 均留出)</td><td>§Experimental Setup</td></tr>
+<tr><td>优化器 / 学习率 / batch size / 迭代数</td><td class="fail">论文未给出(称「完整架构与训练细节见附录」)</td><td>—</td></tr>
+<tr><td>参数量</td><td class="fail">未给出</td><td>—</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>「训练数据只有约 1K 条 clip」是本文最值得注意的工程事实之一。</b>对比 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> 用 1,038 个序列(229.2k 帧)训一个视频生成器、<a href="3D-20260820-4DAnyone.html">4DAnyone</a> 用 38k 合成视频训骨干——本文<b>只训一条「接口」</b>,所以 1K 条就够了。<br>
+<b>这正是「复用接口」这一设计的经济学:</b>生成能力由(frozen 的)上游模型提供,你只需要学「如何把它的表示翻译成几何」。<b>训练成本从「训一个生成器」降到了「训一个翻译器」。</b>
+</div>
+
+<h3>9.2 benchmark 与指标</h3>
+
+<table>
+<thead><tr><th>项</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>Text4D-200</td><td><b>锁定</b>的 200 例文本条件 benchmark,每个方法都在每一例上评测</td></tr>
+<tr><td>I4D-200</td><td><b>锁定</b>的 200 例图像条件 benchmark,同上</td></tr>
+<tr><td>指标</td><td>Text CLIP、RGB 参考 CLIP-I、DINO 全局相似度、有效 patch 的 DINO 匹配、<b>DINO 集合 F1</b></td></tr>
+<tr><td>评测方式</td><td>把每个预测的点序列<b>从两台离轴相机渲染</b>后计算</td></tr>
+<tr><td>RGB 的用途</td><td class="best"><b>仅用于评测与着色,不作为几何输入</b>(论文明确声明)</td></tr>
+<tr><td>指标性质</td><td class="fail">离轴 DINO 分数是「可见几何一致性与完整性的<b>外观相关代理</b>,不是度量 4D 精度」</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<b>「锁定 200 例、每个方法都在每一例上评测」这两个细节值得注意。</b>很多论文的 benchmark 是「从某个大测试集里采样」,导致不同论文的数字不可比。用固定的 200 例并声明「每个方法跑每一例」,是把可比性写进了协议。这是本库在评估协议上应当学习的做法。<br>
+同时,论文<b>主动声明了指标的性质局限</b>(外观相关代理 ≠ 度量精度),并用「多视角人类判断 + 真值消融」作为互补证据。<b>这种「自己先说清指标的边界」的态度,比那些把代理指标当精度指标的论文要可靠得多。</b>
+</div>
+
+<h3>9.3 对照比较的设置</h3>
+
+<table>
+<thead><tr><th>类别</th><th>方法</th></tr></thead>
+<tbody>
+<tr><td>本文服务的目标生成器</td><td>Wan2.1-T2V-14B、Wan2.1-T2V-1.3B、Wan2.2-I2V-A14B(共享冻结的 Wan VAE)。<b>一个 checkpoint 全部服务</b></td></tr>
+<tr><td>额外的文本视频生成器</td><td>CogVideoX-5B</td></tr>
+<tr><td>generate-then-reconstruct 基线</td><td>把对应 latent 解码后用 <b>4RC</b>、<b>π³</b>、或 <b>Any4D</b> 重建</td></tr>
+<tr><td>原生 Image-to-4D 基线</td><td>官方 <b>4DNeX</b></td></tr>
+<tr><td>受控对比</td><td class="best">「Ours vs 匹配的 Wan 级联」是<b>同 latent 的受控比较</b>(即两者用<b>同一个</b>生成 latent)</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>「同 latent 受控比较」是本文实验设计的核心:</b>把「生成质量差异」这个混淆变量固定住,只比较<b>「从 latent 到 4D 这一段的处理方式」</b>。这样才能把增益归因到「绕开 RGB」这一设计本身,而不是归因于「我们的生成器更好」。<br>
+论文同时把论证边界说清楚:「这些 generated-latent benchmark 是我们的<b>主要鲁棒性测试</b>——L4AR 只在观测视频编码上训练,却在三个条件 DiT 的样本上<b>不变地</b>评测。」
+</div>
+
+<h3>9.4 落地坑与隐藏约束</h3>
+<ul>
+  <li><b>仓库无代码</b>:16 KB 的仓库只有一个 README。<b>当前不可复现</b>。</li>
+  <li><b>强耦合「共享 VAE」这一前提</b>:见 §4.2。这条约束让方法无法跨 VAE 家族使用。</li>
+  <li><b>训练用观测 latent、推理用生成 latent,分布不一致</b>:这是设计上的固有 gap,论文用「DiT 残差敏感度」实验(§12.3)来刻画其影响,但<b>gap 本身无法消除</b>。</li>
+  <li><b>评测无度量精度</b>:DINO 族指标是外观代理,论文自己承认「无法为生成场景建立度量精度」。<b>如果下游任务需要真实尺度,不能仅依赖论文里的分数。</b></li>
+  <li><b>无人体专用验证</b>:论文的实验全部是通用 4D 场景(text / image 条件),<b>未见人体相关的实验或讨论</b>。对本库的人体主线属于间接参考。</li>
+</ul>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 4D 生成主表(论文 Table 1)</h3>
+
+<p>两视图投影分数(×100,越高越好)。<b>Ours 与匹配的 Wan 级联共享同一个生成 latent。</b></p>
+
+<table>
+<thead>
+<tr><th>方法</th><th>Text CLIP ↑</th><th>RGB-ref. CLIP-I ↑</th><th>DINO 全局 ↑</th><th>DINO 匹配 ↑</th><th>DINO F1 ↑</th></tr>
+</thead>
+<tbody>
+<tr><td colspan="6" style="background:var(--panel2);color:var(--text-dim);font-size:13px">Text-to-4D</td></tr>
+<tr><td>CogVideoX-5B + 4RC</td><td>26.887</td><td><b>75.33</b></td><td>42.71</td><td>53.47</td><td>53.27</td></tr>
+<tr><td>CogVideoX-5B + π³</td><td>26.293</td><td>74.84</td><td>38.74</td><td>50.29</td><td>49.72</td></tr>
+<tr><td>CogVideoX-5B + Any4D</td><td>25.414</td><td>72.66</td><td>29.46</td><td>45.97</td><td>45.12</td></tr>
+<tr><td>Wan2.1-14B + 4RC</td><td><b>28.116</b></td><td>71.20</td><td>42.45</td><td>54.31</td><td>53.56</td></tr>
+<tr><td>Wan2.1-14B + π³</td><td>26.594</td><td>68.70</td><td>34.79</td><td>48.69</td><td>47.50</td></tr>
+<tr><td>Wan2.1-14B + Any4D</td><td>26.261</td><td>67.56</td><td>29.97</td><td>46.80</td><td>45.55</td></tr>
+<tr><td>Wan2.1-1.3B + 4RC</td><td>27.829</td><td>71.34</td><td>43.30</td><td>54.97</td><td>54.21</td></tr>
+<tr><td>Wan2.1-1.3B + π³</td><td>27.034</td><td>70.23</td><td>38.51</td><td>51.23</td><td>50.10</td></tr>
+<tr><td>Wan2.1-1.3B + Any4D</td><td>26.326</td><td>68.19</td><td>31.00</td><td>47.26</td><td>46.06</td></tr>
+<tr class="best"><td><b>Ours(Wan2.1-14B)</b></td><td><b>28.544</b></td><td>72.24</td><td><b>45.43</b></td><td><b>57.52</b></td><td><b>57.01</b></td></tr>
+<tr class="best"><td><b>Ours(Wan2.1-1.3B)</b></td><td>28.434</td><td>72.32</td><td><b>46.02</b></td><td><b>57.64</b></td><td><b>57.09</b></td></tr>
+<tr><td colspan="6" style="background:var(--panel2);color:var(--text-dim);font-size:13px">Image-to-4D</td></tr>
+<tr><td>4DNeX</td><td>22.844</td><td>61.11</td><td>11.31</td><td>30.53</td><td>28.33</td></tr>
+<tr><td>Wan2.2-I2V-A14B + 4RC</td><td>26.340</td><td>70.55</td><td>47.83</td><td>56.25</td><td>55.79</td></tr>
+<tr><td>Wan2.2-I2V-A14B + π³</td><td>24.678</td><td>66.65</td><td>33.50</td><td>45.08</td><td>43.82</td></tr>
+<tr><td>Wan2.2-I2V-A14B + Any4D</td><td>24.362</td><td>65.30</td><td>27.21</td><td>43.54</td><td>42.17</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>27.340</b></td><td><b>72.87</b></td><td><b>54.85</b></td><td><b>61.85</b></td><td><b>61.60</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>相对改进逐条按表复核(全部命中):</b>
+<table style="margin:10px 0">
+<thead><tr><th>论文表述</th><th>按 Table 1 复核</th><th>结论</th></tr></thead>
+<tbody>
+<tr><td>Text4D-200 上比匹配 Wan+4RC 高 <b>2.88–3.45</b> DINO-F1</td><td>14B:57.01−53.56=<b>3.45</b>;1.3B:57.09−54.21=<b>2.88</b></td><td>✅ 一致</td></tr>
+<tr><td>I4D-200 上高 <b>5.81</b> DINO-F1</td><td>61.60−55.79=<b>5.81</b></td><td>✅ 一致</td></tr>
+</tbody>
+</table>
+这是本库的例行核对(在 <a href="VideoGen-20250708-LiON-LoRA.html">LiON-LoRA</a> 笔记里曾抓到过对比对象错误,在 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> 笔记里全部命中)。<b>Latent-to-4D 的两条相对声明与表格自洽。</b>
+</div>
+
+<h3>10.2 论文主动让出的一项指标</h3>
+
+<div class="callout warn">
+<b>论文明确写:「CogVideoX-5B+4RC 保持了最高的 RGB-ref. CLIP-I,因此我们不宣称在每一个指标上都取胜。」</b><br>
+核对表格即可看到:CogVideoX-5B+4RC 的 CLIP-I 是 <b>75.33</b>,高于 Ours 的 72.24 / 72.32,也高于所有其他方法。<br>
+这一处值得记下来,原因有二:① 它是<b>论文自己指出的失败项</b>,而不是被读者发现;② 它揭示了一个机制——<b>CLIP-I 衡量的是「与参考 RGB 的相似度」,而本方法的核心主张恰恰是「不依赖 RGB」</b>。所以在这个指标上不占优是<b>设计使然,不是缺陷</b>。论文用 DINO 族(衡量几何/结构的可见一致性)来主张自己的优势,选择是自洽的。
+</div>
+
+<h3>10.3 一个很值得注意的现象:1.3B 与 14B 几乎打平</h3>
+
+<div class="callout key">
+分别用 <b>Wan2.1-14B</b> 与 <b>Wan2.1-1.3B</b> 作为 latent 提供者,Ours 的 DINO-F1 分别是 <b>57.01</b> 与 <b>57.09</b>——<b>1.3B 甚至略高</b>。而在级联基线上,两者的差距是 53.56(14B) vs 54.21(1.3B),同样是 1.3B 略高。<br>
+也就是说:<b>在这个 benchmark 上,上游生成器的参数量(10 倍差距)几乎没有影响 DINO-F1。</b>论文没有评论这一点,但这可能意味着两件事之一:① 几何一致性主要由 L4AR 通路与 latent 的<b>格式/约定</b>决定,而不是由生成质量决定;② 或者 DINO 族指标<b>对生成质量不敏感</b>,无法分辨两者的差别。<br>
+<b>本笔记倾向于【推测】第一种解释</b>——因为 CLIP-I 上两者也有差别(72.24 vs 72.32,差异很小),而 Text CLIP 上 14B 更高(28.544 vs 28.434)。总的来说,这提示了一个值得进一步验证的问题:<b>这套接口对上游模型的「强」是否真的不敏感?</b>
+</div>
+
+<h3>10.4 定性结果</h3>
+
+<div class="figure">
+  <img src="images/2608.10744/t-4d.png" loading="lazy" alt="Text-to-4D 对比">
+  <div class="caption"><b>图3</b>(论文 Figure 4)<b>Text-to-4D 对比。</b>文本在展示中被缩写。RGB 基线重建解码后的视频,而 Ours 直接消费其终点 latent。覆盖的案例包括:关节运动的主体、交互元素、<b>细结构、半透明材质</b>与细微运动。论文称本文方法一般能保留主体以及更多周围场景支撑,而 RGB 基线呈现空洞、破碎表面或缺失结构。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.10744/ti-4d.png" loading="lazy" alt="Image-to-4D 对比">
+  <div class="caption"><b>图4</b>(论文 Figure 5)<b>Image-to-4D 对比。</b>每行展示输入条件与 4D 结果。RGB 基线重建解码后的视频,而 Ours 直接消费其终点 latent。案例跨室内外场景、人物、动物与相机运动。论文称 Ours 比 generate-then-reconstruct 保留更多前景与源结构。</div>
+</div>
+
+<div class="callout warn">
+<b>对定性结论的一个必要限定(论文自己给的):</b>论文明确指出,展示的点云只呈现<b>一个离轴帧</b>,因此它们评估的是<b>几何合理性、完整性与内容保持</b>,而<b>不是时序稳定性</b>。<br>
+这是一个精确的自我限定——<b>单帧点云无法证明时序一致</b>。要把这一点说出来,需要作者对自己证据的边界非常清楚。
+</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>人类偏好研究</h2>
+
+<h3>11.1 协议</h3>
+
+<table>
+<thead><tr><th>项</th><th>设置</th></tr></thead>
+<tbody>
+<tr><td>参与者</td><td><b>50</b> 人</td></tr>
+<tr><td>样本量</td><td>每个 benchmark 抽 <b>50</b> 个案例</td></tr>
+<tr><td>形式</td><td><b>随机化、匿名化的成对比较</b></td></tr>
+<tr><td>操作自由度</td><td>可以<b>重放运动</b>、<b>检查多个视角</b>后再判断</td></tr>
+<tr><td>四个判断维度</td><td>条件保真度、几何与完整性、时序稳定性、整体质量</td></tr>
+<tr><td>评审强度</td><td><b>每个案例收到 10 个评分</b></td></tr>
+<tr><td>报告方式</td><td>案例平均偏好率 + <b>95% bootstrap 置信区间</b></td></tr>
+</tbody>
+</table>
+
+<h3>11.2 结果(论文 Table 2)</h3>
+
+<table>
+<thead><tr><th>任务</th><th>条件保真度 ↑</th><th>几何与完整性 ↑</th><th>时序稳定性 ↑</th><th>整体质量 ↑</th></tr></thead>
+<tbody>
+<tr class="best"><td>Text-to-4D</td><td>59.2%<br>[54.1–64.3]</td><td><b>66.8%</b><br>[62.0–71.5]</td><td>63.5%<br>[58.4–68.5]</td><td>65.7%<br>[60.8–70.5]</td></tr>
+<tr class="best"><td>Image-to-4D</td><td>66.4%<br>[61.8–70.9]</td><td><b>72.1%</b><br>[67.8–76.3]</td><td>68.3%<br>[63.7–72.8]</td><td>70.6%<br>[66.2–74.9]</td></tr>
+</tbody>
+</table>
+
+<p class="note">表中数值为「偏好 Ours 而非基线的比例(%)」,方括号为 95% bootstrap 置信区间。</p>
+
+<div class="callout key">
+<b>三点解读:</b>
+<ol>
+  <li><b>所有区间的下界都超过 50%</b>(最低的是 Text-to-4D 条件保真度的 54.1%),即每一项都在统计上显著优于基线。</li>
+  <li><b>偏好最强的是「几何与完整性」</b>(66.8% / 72.1%)——这与方法的设计目标完全一致:绕开 RGB 是为了<b>保住几何</b>,而不是为了更好看。</li>
+  <li><b>偏好最弱的是「条件保真度」</b>(59.2% / 66.4%)——这也合理,因为条件保真度主要由<b>上游生成器</b>决定,而不是由 latent→4D 这一段的处理方式决定。<b>这条反而是对方法边界的一个侧面印证。</b></li>
+</ol>
+</div>
+
+<h3>11.3 对其他证据的定位</h3>
+
+<p>论文对这套人类评测的定位说得很清楚:「这些判断支持<b>更合理、更稳定</b>的 4D 输出,但<b>不度量度量几何</b>。」也就是说,人类偏好与 DINO 分数一样,都是<b>互补证据</b>,而非精度证明。</p>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融与诊断分析</h2>
+
+<h3>12.1 组件消融(论文 Table 3)</h3>
+
+<p>在 7-Scenes(18 个场景)与 NRGBD(9 个场景)上评测。<b>Acc 与 Comp 单位为 cm,越低越好;NC(法线一致性)越高越好。</b></p>
+
+<table>
+<thead>
+<tr><th rowspan="2">变体</th><th colspan="3">7-Scenes(18)</th><th colspan="3">NRGBD(9)</th></tr>
+<tr><th>Acc ↓</th><th>Comp ↓</th><th>NC ↑</th><th>Acc ↓</th><th>Comp ↓</th><th>NC ↑</th></tr>
+</thead>
+<tbody>
+<tr><td>w/o Grid</td><td>3.783</td><td>6.844</td><td>0.608</td><td>5.823</td><td>9.686</td><td>0.726</td></tr>
+<tr><td>w/o 3D Conv</td><td>6.944</td><td>15.806</td><td>0.554</td><td>12.439</td><td>26.511</td><td>0.594</td></tr>
+<tr class="fail"><td>w/o Frame</td><td>6.688</td><td><b>20.806</b></td><td><b>0.513</b></td><td>12.367</td><td><b>36.982</b></td><td><b>0.502</b></td></tr>
+<tr class="fail"><td>w/o Global</td><td>6.754</td><td>19.742</td><td>0.559</td><td>13.818</td><td>36.207</td><td>0.515</td></tr>
+<tr class="best"><td><b>Full</b></td><td><b>3.121</b></td><td><b>5.418</b></td><td><b>0.628</b></td><td><b>5.202</b></td><td><b>8.187</b></td><td><b>0.766</b></td></tr>
+</tbody>
+</table>
+
+<h3>12.2 本笔记按表计算的 Δ(相对 Full)</h3>
+
+<table>
+<thead><tr><th>变体</th><th>ΔAcc(7-Scenes)</th><th>ΔComp(7-Scenes)</th><th>ΔComp(NRGBD)</th><th>解读</th></tr></thead>
+<tbody>
+<tr><td>w/o Grid</td><td>+0.662</td><td>+1.426</td><td>+1.499</td><td><b>影响最小</b>——去掉网格对齐只带来轻微退化</td></tr>
+<tr><td>w/o 3D Conv</td><td class="fail">+3.823</td><td>+10.388</td><td>+18.324</td><td><b>对 Acc 影响最大</b>(3.121→6.944,恶化 122%)</td></tr>
+<tr><td>w/o Frame</td><td>+3.567</td><td class="fail">+15.388</td><td class="fail">+28.795</td><td><b>对 Comp 影响最大</b>(5.418→20.806,恶化 284%)</td></tr>
+<tr><td>w/o Global</td><td>+3.633</td><td>+14.324</td><td>+28.020</td><td>与 w/o Frame 接近,略好</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>本笔记的一个原创观察:两种注意力与 3D 卷积的「伤害模式」不同。</b>
+<ul>
+  <li><b>去掉 3D 卷积</b>:对 <b>Acc(精度)</b> 的伤害最大(+3.823 cm,7-Scenes),但对 Comp(完整性)的伤害相对小一些。</li>
+  <li><b>去掉逐帧或全局注意力</b>:对 <b>Comp(完整性)</b> 的伤害极大(+15.4 与 +14.3 cm,7-Scenes),而对 Acc 的伤害略小于去掉 3D 卷积。</li>
+</ul>
+机制上可以这样理解:<b>3D 卷积负责「把 latent 的局部证据翻译成几何上正确的位置」→ 直接决定精度;而两种注意力负责「把缺失的区域补出来」→ 直接决定完整性。</b><br>
+论文自己的表述是「每次移除都会让两个真值 benchmark 退化;最大的下降出现在去掉 3D 卷积或任一注意力范围时」——这与我算出的结论一致,但论文没有区分这两种伤害模式。
+</div>
+
+<div class="callout warn">
+<b>需要指出的方法学问题:论文没有给出「显式的 RGB 中介」作为消融对照。</b>消融表的四个变体分别是 w/o Grid、w/o 3D Conv、w/o Frame、w/o Global,但<b>没有一行是「用 RGB 解码 + 重编码代替 latent 对齐」</b>——而这恰恰是本文核心主张的直接对照组。<br>
+也就是说:消融证明了「<b>在 latent 空间内部</b>,各组件的必要性」,但<b>没有在表里直接证明「latent 对齐优于 RGB 中介」</b>。后者只能从主表(Table 1 的 Ours vs 各 RGB 级联基线)间接推断。
+</div>
+
+<h3>12.3 诊断实验:对 DiT 残差的敏感度(论文 Figure 6)</h3>
+
+<p>这是一个设计得很精巧的诊断,用来回答关键疑虑:<b>推理时的 $\mathbf{z}^{\mathrm{gen}}$ 与训练时的 $\mathbf{z}^{\mathrm{obs}}$ 分布不同,那么这条通路对「DiT 特有的成分」有多敏感?</b></p>
+
+<p>做法是把<b>经验上的近终点残差 $\mathbf{z}_{45}-\mathbf{z}_{50}$</b> 投影到 <b>Grid-Align 的宽度零空间(width-null space)</b> 上,再加到一个观测视频的 latent 上,并对<b>两条通路施加相同的扰动</b>(构造细节在附录)。</p>
+
+<table>
+<thead><tr><th>结果</th><th>数值</th></tr></thead>
+<tbody>
+<tr><td>比较次数</td><td><b>30</b> 次,<b>全部 30 次都偏好 Ours</b></td></tr>
+<tr class="best"><td>$\rho=0.6$ 时的点图漂移(Ours)</td><td><b>0.0053</b>(7-Scenes)/ <b>0.0047</b>(NRGBD)</td></tr>
+<tr class="fail"><td>$\rho=0.6$ 时的点图漂移(基线)</td><td><b>0.3827</b>(7-Scenes)/ <b>0.3160</b>(NRGBD)</td></tr>
+<tr><td>相机估计</td><td>呈相同趋势</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>这组数字的差距是「两个数量级」级别:</b>Ours 的点图漂移 0.0053 对基线的 0.3827——<b>相差约 72 倍</b>。这远大于主表里 DINO-F1 的差距(57.01 vs 53.56,约 6%)。<br>
+但<b>必须注意论文自己加的限定</b>:「<b>这隔离的是一个残差成分,而不是任意的 DiT 误差。</b>」也就是说,这个实验测的不是「面对真实 DiT 误差的鲁棒性」,而是「面对一个特定构造的、落在对齐模块零空间上的扰动成分的敏感度」。<br>
+<b>它的价值在于「有指向性地证明了对齐模块确实在对齐」</b>——如果对齐没生效,把扰动投影到它的零空间上不应该产生这种差异。<b>但它不能被外推为「对一切 DiT 误差都鲁棒」。</b>
+</div>
+
+<h3>12.4 论文对消融表定位的克制表述</h3>
+
+<div class="callout warn">
+<b>原话要点(值得原样记下):</b>「每一种移除都会让两个真值 benchmark 退化;最大的下降出现在去掉 3D 卷积或任一注意力范围时。<b>这验证了设计本身,而不是声称在重建的分布外上取得优势。</b>」<br>
+这句话信息量很大:<b>作者明确拒绝了从消融表推出「我们的方法在分布外更好」这一结论</b>。因为消融是在真值 benchmark(7-Scenes、NRGBD,用的是<b>观测 latent</b>)上做的,与推理时的<b>生成 latent</b> 场景并不相同。<br>
+<b>这种对「证据能支持什么、不能支持什么」的清晰划分,是本库应当推崇的写作标准。</b>对照本库已记录的另一类问题(把表格数字二次加工成结论时出错、在 stat 卡里写凭空的倍数),可见「严格限定结论边界」比「把数字说得更响」更能建立可信度。
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<div class="callout warn">
+<b>来源声明:</b>下表来源为 ① Latent-to-4D 论文 Table 1 中的对比数值(即<b>该论文的测量</b>);② 各方法的公开事实。<b>不同方法跑在不同设定下的数字不可直接比较</b>,故「关键指标」列注明场景。凡本笔记未核实的写 <code>—</code>。
+</div>
+
+<table>
+<thead>
+<tr><th>方法</th><th>年份</th><th>范式</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标(Text4D-200 / I4D-200)</th><th>开源</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td>4RC(主要基线)</td><td>2026</td><td>generate-then-reconstruct</td><td>RGB 视频(由生成 latent 解码而来)</td><td>相机 + 动态点图</td><td>度量 4D 标注</td><td>重建数据集</td><td>—</td><td>—</td><td>—</td><td>Wan2.1-14B+4RC:<b>53.56</b> DINO-F1;I2V+4RC:55.79</td><td>—</td>
+</tr>
+<tr>
+  <td>π³</td><td>2026</td><td>generate-then-reconstruct</td><td>RGB 视频</td><td>相机 + 稠密点图</td><td>重建监督</td><td>重建数据集</td><td>—</td><td>—</td><td>—</td><td>Wan2.1-14B+π³:<b>47.50</b>;I2V+π³:43.82</td><td>是(库内笔记 <a href="3D-20250717-Pi3.html">Pi3</a>)</td>
+</tr>
+<tr>
+  <td>Any4D</td><td>2025</td><td>generate-then-reconstruct</td><td>RGB 视频</td><td>动态点图 / 场景流</td><td>重建监督</td><td>重建数据集</td><td>—</td><td>—</td><td>—</td><td>Wan2.1-14B+Any4D:<b>45.55</b>;I2V+Any4D:42.17</td><td>—</td>
+</tr>
+<tr>
+  <td>4DNeX</td><td>2025</td><td>integrated feed-forward(原生 I2D)</td><td>单张图</td><td>动态点云</td><td>几何监督</td><td>—</td><td>—</td><td>—</td><td>—</td><td>I4D-200:<b>28.33</b> DINO-F1(显著低于级联基线)</td><td>—</td>
+</tr>
+<tr>
+  <td>CogVideoX-5B 级联</td><td>2025</td><td>generate-then-reconstruct</td><td>文本 → 视频 → RGB</td><td>相机 + 点图</td><td>重建监督</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Text4D-200:<b>53.27</b>(+4RC);CLIP-I <b>75.33 为全表最高</b></td><td>是(见 <a href="VideoGen-20240812-CogVideoX.html">CogVideoX</a>)</td>
+</tr>
+<tr class="best">
+  <td><b>Latent-to-4D</b>(本文)</td><td>2026-08</td><td class="best"><b>直接 latent-to-4D(绕过 RGB)</b></td><td class="best">共享同一 VAE 约定的任意兼容 DiT 的最终去噪 latent;text / image / 动作 / 轨迹条件均可</td><td>相机 + 动态世界点图</td><td>$\mathcal{L}_{\mathrm{unc}}+\mathcal{L}_{\mathrm{cam}}+\mathcal{L}_{\mathrm{geom}}$,来自度量 4D 标注</td><td class="best"><b>约 1K clip(最终阶段 1,143 条,6 个重建数据集)</b></td><td class="fail">未给出</td><td class="fail">未给出</td><td class="fail">未给出</td><td class="best">Text4D-200:<b>57.01 / 57.09</b>;I4D-200:<b>61.60</b></td><td class="fail">仅 README</td>
+</tr>
+</tbody>
+</table>
+
+<h3>13.1 对比结论:它凭什么强</h3>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>① 把「接口」当设计对象</h4>
+    <p>绝大多数工作优化的是<b>模型</b>;这篇优化的是<b>模型之间的接口</b>。因为接口一旦对了,几何监督就能从「每个生成器一次」变成「一次服务所有」。<b>在 4D 监督稀缺的前提下,这个杠杆可能比模型改进更大。</b></p>
+  </div>
+  <div class="card">
+    <h4>② 训练成本极低</h4>
+    <p>约 1K clip 就能训出可跨三个 DiT 迁移的接口,因为<b>生成能力由冻结的上游提供</b>。相比之下,<a href="3D-20260820-4DAnyone.html">4DAnyone</a> 需要 38k 合成视频 + 128 张 H20 训骨干。</p>
+  </div>
+  <div class="card">
+    <h4>③ 对证据边界极其诚实</h4>
+    <p>论文主动声明「CLIP-I 不占优」「DINO 不是度量精度」「诊断只隔离一个残差成分」「验证的是设计而非 OOD 优势」。<b>共四处自我限定</b>,在本库读过的论文里属于最克制的一档。</p>
+  </div>
+</div>
+
+<h3>13.2 它凭什么弱</h3>
+<ul>
+  <li><b>需要共享 VAE 前提</b>:这条约束把它锁在「同一 VAE 家族」内,跨家族不可用。</li>
+  <li><b>仓库无代码</b>:16 KB 只有 README,当前不可复现。</li>
+  <li><b>无度量精度证据</b>:全部指标是外观代理;论文自己承认无法为生成场景建立度量精度。</li>
+  <li><b>无人体专用验证</b>:与人体主线的关联是间接的。</li>
+  <li><b>资源账全缺</b>:GPU、耗时、显存、参数量均未给出。</li>
+  <li><b>4DNeX 的对比口径可能不同</b>:4DNeX 是面向图像条件的原生 4D 生成器(单张图输入),而本文的 I4D 路径用的是 Wan2.2-I2V 的视频 latent。<b>两者的输入信息量不同</b>,28.33 vs 61.60 的差距不能直接读作「方法优劣」。</li>
+</ul>
+
+<h3>13.3 演进定位表</h3>
+
+<table>
+<thead><tr><th>范式</th><th>代表方法</th><th>核心先验 / 接口</th><th>局限</th></tr></thead>
+<tbody>
+<tr><td>逐资产 SDS 优化</td><td>DreamFusion 系、4D-fy、DreamGaussian4D</td><td>2D / 视频扩散当 score 函数,逐资产优化动态 NeRF / 高斯</td><td>每个输出都要单独优化,慢</td></tr>
+<tr><td>generate-then-reconstruct</td><td>Diffusion4D、4Diffusion、CAT4D、Any4D、4RC、π³</td><td>先生成多视角 / 时序 RGB,再由独立重建器抬升</td><td><b>RGB 接口引入分布错配与误差传播</b></td></tr>
+<tr><td>integrated feed-forward</td><td>4DNeX、Diff4Splat、WorldReel、WorldForge</td><td>让生成器直接输出几何或联合预测 RGB+几何</td><td><b>绑死在特定生成器与条件协议上,换模型需重训几何</b></td></tr>
+<tr><td>任务专用感知复用</td><td>VIST3A(把视频 VAE 接静态 3D 重建器)</td><td>把一个生成器改造成任务专用感知模型</td><td>针对<b>单一</b>选定的模型对做对齐,不追求跨生成器</td></tr>
+<tr class="best"><td><b>直接 latent-to-4D(可复用接口)</b></td><td><b>Latent-to-4D</b></td><td><b>把「共享 VAE 的最终去噪 latent」当作接口;一次几何监督服务多个兼容 DiT</b></td><td><b>仅限同 VAE 家族;无度量精度证据;尚未见人体专用版本</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>把它放进本库的路线图里看:它补上了此前所有路线都没处理的一环。</b>
+<ul>
+  <li><a href="3D-20250806-4DVD.html">4DVD</a>、<a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a>、<a href="3D-20260820-4DAnyone.html">4DAnyone</a> 都在优化「<b>怎么生成多视角视频</b>」(即接口的<b>上游</b>);</li>
+  <li><a href="3D-20260710-StudioRecon.html">StudioRecon</a> 在优化「<b>怎么把生成内容与几何约束组合起来</b>」(即接口的<b>下游</b>);</li>
+  <li><a href="3D-20260318-AHOY.html">AHOY!</a> 在优化「<b>怎么用生成当补全监督</b>」(即把生成放到<b>训练回路</b>里);</li>
+  <li><b>Latent-to-4D 在优化「接口本身」——即上游与下游之间该传递什么表示。</b></li>
+</ul>
+用一个类比:前几篇在造更好的<b>引擎</b>或更好的<b>变速箱</b>,这一篇在问<b>「传动轴该用哪种规格」</b>。<b>它的问题意识是这五篇里最"元"的。</b>
+</div>
+
+<div class="callout tip">
+<b>库内交叉链接:</b>本文所属的「路线 B:潜空间直连 4D」在综述里与「路线 A:多视角视频生成」并列,见 <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>。前馈 3D 重建主线见 <a href="3D-20250717-Pi3.html">Pi3</a>、<a href="3D-20250314-VGGT.html">VGGT</a>、<a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a>;视频生成骨干见 <a href="VideoGen-20240812-CogVideoX.html">CogVideoX</a>、<a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a>、<a href="VideoGen-20250728-Wan2.2.html">Wan2.2</a>;人体路线对照见 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a>、<a href="3D-20260318-AHOY.html">AHOY!</a>、<a href="3D-20260710-StudioRecon.html">StudioRecon</a>、<a href="3D-20250806-4DVD.html">4DVD</a>。
+</div>
+
+<div class="figure">
+  <img src="images/2608.10744/broader_control_demos.png" loading="lazy" alt="额外的控制能力">
+  <div class="caption"><b>图5</b>(论文 Figure 7)<b>额外的控制能力。</b>运动、外观、姿态与轨迹输入。同一个 L4AR checkpoint 直接继承了上游的这些控制能力。论文对这类结果的定位很明确:「<b>这些例子展示的是接口的兼容性,而不是动作的成功率或物理正确性。</b>」</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.10744/world_action_demos.png" loading="lazy" alt="动作条件 4D">
+  <div class="caption"><b>图6</b>(论文 Figure 8)<b>动作条件的 4D。</b>来自一个兼容骨干的操作(manipulation)与导航(navigation)latent。同样,论文声明这展示的是接口兼容性而非动作成功或物理正确。</div>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<p>判断基准:本库主线为<b>单卡 RTX 3090(24GB)、WSL2、12–16 路中等稀疏可控场景、目标人体</b>,链路是 <b>COLMAP → 3DGS → HYPIR → SAM3</b>。Latent-to-4D 面向的是<b>通用 4D 场景生成</b>,与我们的场景有明显距离。</p>
+
+<table>
+<thead><tr><th>维度</th><th>Latent-to-4D 的情况</th><th>与我们的匹配度</th></tr></thead>
+<tbody>
+<tr><td><b>核心前提:共享 VAE</b></td><td class="fail">要求生成器与重建器共享同一 VAE checkpoint、归一化、布局、压缩约定</td><td class="fail"><b>我们的链路里不存在任何共享 VAE 的模型对</b>(HYPIR / SAM3 / 3DGS 各成体系)。<b>这条前提目前不成立</b></td></tr>
+<tr><td><b>目标输出</b></td><td>相机 + 动态世界点图</td><td>我们的目标是 3DGS 拆分(head / body / scene)与 avatar,表示不同</td></tr>
+<tr><td><b>人体支持</b></td><td class="fail">无人体专用验证</td><td class="fail">无法直接迁移</td></tr>
+<tr><td><b>训练成本</b></td><td class="best">约 1K clip,LoRA rank-16</td><td class="best"><b>思路可借鉴</b>——「用极小的适配层接住一个大模型的表示」是我们 pipeline 里反复出现的模式</td></tr>
+<tr><td><b>生成器冻结</b></td><td class="best">完全不训练 video DiT</td><td class="best">与我们的偏好一致(不重训大模型)</td></tr>
+<tr><td><b>可复现性</b></td><td class="fail">仓库仅 16 KB README,无源码</td><td class="fail">不可用</td></tr>
+<tr><td><b>资源账</b></td><td class="fail">GPU / 耗时 / 显存全缺</td><td class="fail">无法评估</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>结论:方法论价值大于工程价值,且不能直接落地。</b>
+<ol>
+  <li><b>不能做的</b>:直接套用它的接口——因为共享 VAE 前提在我们链路里不成立;也没有人体版本可参考。</li>
+  <li><b>可以带走的一条判断</b>:<b>「如果你要在两个大模型之间传信息,传 latent 比传渲染结果更保真」</b>。这条判断对我们有<b>具体的一个落点</b>:我们的 HYPIR 增强链路是「渲染 → 图像域增强 → 再回灌」,如果将来要换成「latent 域增强」,这篇论文提供的正是「<b>为什么应该这样做</b>」的论证与「<b>如何对齐两个表示空间</b>」的方法模板(固定重采样 + 学习式 3D 卷积 + 交替注意力 + 多层级融合)。</li>
+  <li><b>可以带走的第二条</b>:<b>「用一个小时的几何监督服务多个生成器」这种经济学</b>。我们的 pipeline 里每换一个上游模型(如换增强器、换分割器)往往要重调下游,如果能在中间定义一个稳定的接口,就能把 N×M 的适配成本降成 N+M。</li>
+</ol>
+</div>
+
+<div class="callout warn">
+<b>一条必须防误读的提醒:</b>不要因为 Table 1 里 Ours 的 DINO-F1 高就认为「这条路线在几何上更准」。论文自己反复声明:<b>DINO 族是外观相关代理,不是度量精度</b>;而且这个 benchmark 的「几何」是按<b>投影后的可见一致性</b>评估的。<br>
+对本库而言,<b>如果需要的是「可与人体的真实身高、骨长对齐的度量几何」,这篇论文没有提供对应证据。</b>要验证,只能自己在有真值的重建数据集(如 7-Scenes、NRGBD 这类有 GT 的)上跑它的 Acc / Comp / NC——而那需要源码,而源码目前没有。
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<h3>方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 消融缺少「RGB 中介」这一直接对照组。</b></p>
+<p><b>问题:</b>全文的核心主张是「<b>绕过 RGB 优于经过 RGB</b>」,但消融表(Table 3)的四个变体全是在 latent 通路<b>内部</b>做减法(w/o Grid / 3D Conv / Frame / Global),<b>没有任何一行是「把 latent 先解码成 RGB、再用同样的 4D 解码器处理」</b>。</p>
+<p><b>佐证:</b>Table 3 的变体清单见 §12.1;论文在 §Diagnostic Analyses 里也承认这组消融「验证的是设计,而不是声称在重建的分布外上取得优势」。</p>
+<p><b>改进建议:</b>补一行「Latent → VAE 解码 → RGB → 用同一套 4D 解码器(或一个 RGB 编码器)」的对照,保持其他一切不变(同 latent、同数据、同迭代数)。<b>这是唯一能把「绕过 RGB 的收益」从主表的间接推断变成直接测量的实验。</b>它的成本很低——因为论文已经有 4RC 这类 RGB 重建器,只需把它的输入换成「同一条 latent 解码出的 RGB」。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 训练用 $\mathbf{z}^{\mathrm{obs}}$、推理用 $\mathbf{z}^{\mathrm{gen}}$ 的分布 gap 只被「一个特定残差」刻画。</b></p>
+<p><b>问题:</b>论文自己承认两个 latent 来源的分布「不必重合」。唯一的诊断实验只隔离了「近终点残差投影到宽度零空间」这一种成分,并明确声明「<b>这隔离的是一个残差成分,而不是任意的 DiT 误差</b>」。那么<b>真实 DiT 误差的其余部分</b>会造成什么影响?没有测量。</p>
+<p><b>改进建议:</b>① 做一个<b>分布距离的定量刻画</b>(如 $\mathbf{z}^{\mathrm{obs}}$ 与 $\mathbf{z}^{\mathrm{gen}}$ 在各通道上的均值/方差/协方差差异),让读者知道 gap 有多大;② 做一组<b>受控退化实验</b>:把 $\mathbf{z}^{\mathrm{obs}}$ 人为加噪或做 VAE 往返(encode→decode→encode),测 DINO-F1 随退化程度的变化——这样能给出「latent 质量 → 4D 质量」的敏感度曲线。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] 「换生成器不重训」的验证只覆盖了同一 VAE 家族内的三个 DiT,缺少边界案例。</b></p>
+<p><b>问题:</b>论文的三个目标生成器是 Wan2.1-T2V-14B、Wan2.1-T2V-1.3B、Wan2.2-I2V-A14B,<b>全部来自 Wan 家族、共享同一个 VAE</b>。真正的压力测试应该是:① 一个<b>不同架构但共享 VAE</b> 的 DiT(如果存在);② 一个<b>故意偏离一点 VAE 约定</b>的模型(如不同的 latent 归一化),看退化到什么程度。</p>
+<p><b>改进建议:</b>补一组「VAE 约定被扰动」的实验——按通道改缩放系数、改 latent 通道顺序、改时间压缩比——给出「约定偏离度 × DINO-F1」的曲线。<b>这能告诉使用者这条接口的容差有多少,而这恰恰是工程上最需要的信息。</b></p>
+</div>
+
+<h3>数据与评估</h3>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[高优先级] 全部指标都是外观相关代理,没有度量精度。</b></p>
+<p><b>问题:</b>Text4D-200 / I4D-200 用 Text CLIP、CLIP-I、DINO 族评估,论文自己承认「无法为生成场景建立度量精度」。这意味着<b>这套评测无法回答「生成的 4D 场景的尺度/位置对不对」</b>。<br>
+值得注意的是:论文<b>有</b>度量几何的证据能力——Table 3 的 7-Scenes / NRGBD 上的 Acc / Comp / NC 就是度量指标。但那只用于<b>消融</b>,没有用于<b>主对比</b>。</p>
+<p><b>改进建议:</b>把 Table 3 的度量协议也用在「Ours vs RGB 级联」的主对比上(哪怕只在有 GT 的少数场景上)。<b>这样就能把主结论从「外观代理更优」提升为「度量几何更准」</b>,论证强度会有质的变化。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[中优先级] 两个 benchmark 是「构造的 200 例」,其来源与难度分布未说明。</b></p>
+<p><b>问题:</b>Text4D-200 与 I4D-200 被描述为「锁定的 200 例」,但<b>论文正文没有说明这些案例从哪里来、如何挑选、覆盖哪些难度</b>(说「构造与指标定义见附录」)。一个锁定但来源未公开的 benchmark,其可比性只在论文内部成立。</p>
+<p><b>改进建议:</b>公开 benchmark 的构造脚本与案例清单。这样后续工作才能真正在同一协议上比较——这也是「锁定 200 例」这一良好初衷的必要配套。</p>
+</div>
+
+<h3>工程实用性</h3>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<p><b>[高优先级] 仓库只有 README,16 KB。</b></p>
+<p><b>问题:</b>论文的核心贡献是一个<b>网络结构 + 一套对齐方法</b>(L4AR),这些东西没有代码几乎无法复现——尤其是「固定三线性重采样 + 3D 卷积」的具体尺度参数、「多层级特征在哪些深度收集」这类细节,论文文字描述不足以还原。</p>
+<p><b>改进建议:</b>即使只放出 L4AR 模块本身(不含上游生成器与 4RC 权重),也能让社区验证「对齐方法」这一核心贡献。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);">
+<p><b>[中优先级] 资源账全缺。</b></p>
+<p><b>问题:</b>GPU 型号数量、训练总时长、推理耗时、显存、参数量——<b>一个都没有</b>。虽然训练数据只有 1K clip 是个好信号,但「1K clip 要训多久」恰恰决定了它能否被小团队复现。</p>
+<p><b>改进建议:</b>参照同领域已开源工作的做法给出逐阶段耗时表。本库里 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 的 Table S1 就是一个可直接照抄的模板(视图合成 50 min / 人体位姿 3 min / 背景重建 30 min / 人体重建 40 min / 增强 3.3 s per frame,端到端 130 min 单卡)。</p>
+</div>
+
+<h3>优先级总览</h3>
+
+<table>
+<thead><tr><th>优先级</th><th>改进点</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>[高]</td><td>缺「RGB 中介」直接对照组</td><td>核心主张缺少直接实验证据,只能从主表间接推断</td></tr>
+<tr><td>[高]</td><td>latent 分布 gap 只测了一个特定成分</td><td>这是设计成立与否的根本假设</td></tr>
+<tr><td>[高]</td><td>主对比缺度量精度</td><td>论文已有度量协议,却只用于消融</td></tr>
+<tr><td>[高]</td><td>仓库无代码</td><td>核心贡献不可复现</td></tr>
+<tr><td>[中]</td><td>兼容性边界未做压力测试</td><td>「约定偏离多少还能用」是工程最需要的信息</td></tr>
+<tr><td>[中]</td><td>benchmark 来源未公开</td><td>影响跨论文可比性</td></tr>
+<tr><td>[中]</td><td>资源账全缺</td><td>决定能否被小团队复现</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>个人认为最关键的三点:</b>
+<ol>
+  <li><b>缺「RGB 中介」的消融对照</b>——一篇主张「绕过 RGB 更好」的论文,最该做的那一行对照却没有做。补它的成本很低,收益是直接把核心论断从间接变直接。</li>
+  <li><b>latent 分布 gap 的刻画不足</b>——训练用观测 latent、推理用生成 latent,这个 gap 是整套设计成立的前提,但目前只有一个「特定残差成分」的诊断。需要的是分布层面的定量刻画 + 退化敏感度曲线。</li>
+  <li><b>度量精度的证据用错了地方</b>——论文明明有 7-Scenes / NRGBD 的 Acc/Comp/NC 这套度量协议,却只用在了消融上。把它用到主对比上,论证强度会有质变。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结、演进定位与资源</h2>
+
+<h3>一句话总结</h3>
+
+<div class="callout key">
+Latent-to-4D 的贡献是<b>提出并回答了一个接口层面的问题</b>:既然多个视频 DiT 共享同一个 VAE,那么它们的<b>最终去噪 latent 就落在同一个表示空间里</b>——这个空间位于 RGB 解码的上游,因此可以作为「<b>一次几何监督、服务多个生成器</b>」的可复用接口。<br>
+实现上是把 latent 对齐到预训练 4D 解码器的 token 网格(固定三线性重采样 + 可学习 3D 卷积),再用交替的逐帧与全局注意力精修,最后解码出相机与动态世界点图。<b>约 1K 条重建 clip 训练,单个 checkpoint 在三个同 VAE 的 DiT 之间不变迁移</b>,在 Text4D-200 / I4D-200 上的 DINO-F1 比同 latent 的 Wan+4RC 级联高 <b>2.88–3.45</b> 与 <b>5.81</b> 点。
+</div>
+
+<h3>对本库的三条可带走结论</h3>
+<ol>
+  <li><b>两个大模型之间传信息,优先传 latent 而不是渲染结果。</b>RGB 是渲染产物,中间插一次解码再编码就是纯粹的信息损失——论文把这称为「RGB 表示边界」,生成与解码的伪影可以穿过它传播到几何。</li>
+  <li><b>「一次监督、多处复用」的接口经济学值得学。</b>当上游模型会不断更新(更强的生成器、更强的增强器)时,把下游适配<b>从 N×M 降到 N+M</b> 的收益很大。反过来说:设计接口时要问「这个接口能撑住上游换几代」。</li>
+  <li><b>先把结论的边界写清楚,再讲数字。</b>论文四处主动限定:CLIP-I 不占优、DINO 不是度量精度、诊断只隔离一个残差成分、消融验证设计而非 OOD 优势。<b>这种克制反而让它的主张更可信</b>——本库在写笔记与选型判断时应当沿用这个标准。</li>
+</ol>
+
+<h3>在研究脉络中的位置</h3>
+
+<p>这五篇论文合起来正好覆盖了「视频生成驱动 4D」这条链路上的不同环节,把它们放在一起看能看清各自的位置:</p>
+
+<table>
+<thead><tr><th>环节</th><th>论文</th><th>它优化的是什么</th></tr></thead>
+<tbody>
+<tr><td>生成侧(上游)</td><td><a href="3D-20250806-4DVD.html">4DVD</a></td><td>用级联解耦把「布局」与「外观」分开,换取更多视角</td></tr>
+<tr><td>生成侧(上游)</td><td><a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a></td><td>去掉一切几何先验,只用相对相机位姿驱动多视角生成</td></tr>
+<tr><td>生成侧(上游)</td><td><a href="3D-20260820-4DAnyone.html">4DAnyone</a></td><td>把瓶颈诊断为「有界注意力上下文」,用 RCP + TCR 做上下文工程</td></tr>
+<tr><td><b>接口层</b></td><td><b>Latent-to-4D(本文)</b></td><td><b>上游与下游之间该传递什么表示——答案是 latent 而不是 RGB</b></td></tr>
+<tr><td>重建侧(下游)</td><td><a href="3D-20260710-StudioRecon.html">StudioRecon</a></td><td>把生成与几何的组合方式设计对:背景交生成、人体交 SMPL,并用可信度加权</td></tr>
+<tr><td>监督回路</td><td><a href="3D-20260318-AHOY.html">AHOY!</a></td><td>把生成放进训练回路,当作未观测区域的监督源,并设计机制吸收其不一致</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>本笔记认为这一视角比单篇结论更有用:</b>当有人问「视频生成能不能用于 4D 重建」时,答案取决于你在问哪一个环节。<b>上游已经相当成熟(多篇 SOTA + 开源),下游的可信度分层也已有人系统处理,而中间这一层——接口——是 Latent-to-4D 唯一提出的问题。</b>它的答案(共享 VAE latent)有明确适用范围,但问题本身会一直有效。
+</div>
+
+<h3>👥 研究团队</h3>
+<p>Zihao Liu · Xiaolong Shen · Zhenglin Zhou · Ruijie Quan · <b>Yi Yang</b>(通讯作者)。全部来自 <b>ReLER, CCAI, Zhejiang University</b>。<br>
+ReLER 是浙大在视觉与学习领域长期活跃的实验室,与库内 <a href="3D-20260820-4DAnyone.html">4DAnyone</a> 同属浙大体系(不同组)。<b>本库的 3D 与视频生成相关笔记里,浙大来源的比例值得留意。</b></p>
+
+<h3>🔗 资源链接</h3>
+<div class="tag-row">
+  <a class="tag" href="https://arxiv.org/abs/2608.10744" target="_blank">📄 arXiv abs (2608.10744)</a>
+  <a class="tag" href="https://arxiv.org/html/2608.10744v1" target="_blank">🌐 arXiv HTML 全文</a>
+  <a class="tag" href="https://arxiv.org/pdf/2608.10744" target="_blank">📥 PDF</a>
+  <a class="tag" href="https://hayd-zju.github.io/Beyond-Pixels/" target="_blank">🏠 项目页</a>
+  <a class="tag" href="https://github.com/hayd-zju/Beyond-Pixels" target="_blank">💻 GitHub(仅 README,无源码)</a>
+</div>
+
+<div class="note">
+<b>开源状态(2026-09-29 核实):</b>仓库 <code>github.com/hayd-zju/Beyond-Pixels</code> 存在,描述为「Official repository for Beyond Pixels: From Video Priors to 4D Worlds」,但<b>仓库大小仅 16 KB,根目录只有 <code>README.md</code>(6,430 字节)</b>——<b>无源码、无权重、无推理脚本</b>。会议状态:arXiv abs 的 comments 字段仅给出项目页,<b>无会议标注</b>,故本笔记不加会议徽章。
+</div>
+
+<div class="note">
+相关库内笔记:<a href="3D-20250806-4DVD.html">4DVD</a> · <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> · <a href="3D-20260318-AHOY.html">AHOY!</a> · <a href="3D-20260710-StudioRecon.html">StudioRecon</a> · <a href="3D-20260820-4DAnyone.html">4DAnyone</a> · <a href="3D-20250717-Pi3.html">Pi3</a> · <a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a> · <a href="VideoGen-20240812-CogVideoX.html">CogVideoX</a> · <a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a> · <a href="VideoGen-20250728-Wan2.2.html">Wan2.2</a> · <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a> · <a href="3D-20250717-Pi3.html">Pi3</a>
+</div>
+</section>
+
+<div class="footer">
+📝 阅读笔记 · 生成于 2026-09-29 · 论文 arXiv:2608.10744v1(2026-08-11)· 无会议标注(abs comments 仅项目页)· 所有数字与引文均取自原文(Table 1–3、Figure 1–8、§Introduction–§Conclusion)· 无公开源码,工程细节均标注「未给出」而非估计 · 相对改进已逐条按表复核
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

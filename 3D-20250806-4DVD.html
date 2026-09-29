@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4DVD:级联解耦的稠密视角视频扩散模型</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2508.04467 · 2025-08-06 · 4D 生成 / 多视角视频扩散</span>
+    <h1>4DVD:把 4D 生成拆成「先布局、后外观」的级联视频扩散</h1>
+    <div class="subtitle">4DVD: Cascaded Dense-view Video Diffusion Model for High-quality 4D Content Generation</div>
+    <div class="authors">Shuzhou Yang · Xiaodong Cun · Xiaoyu Li · Yaowei Li · Jian Zhang</div>
+    <div class="org">北京大学深圳研究生院 · 大湾区大学 · 腾讯 &nbsp;|&nbsp; cs.CV · 无会议标注(arXiv abs 的 comments 字段为空)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2508.04467" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2508.04467v1" target="_blank">🌐 arXiv HTML 全文(含补充材料)</a>
+      <a href="https://4dvd.github.io/" target="_blank">🏠 项目页</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:T×V 网格的两难</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">阶段一:粗粒度稠密视角布局生成</a></li>
+    <li><a href="#s5">阶段二:结构感知时空生成</a></li>
+    <li><a href="#s6">MAP 模块:被交换的 Q 与 KV</a></li>
+    <li><a href="#s7">训练目标与两阶段解耦</a></li>
+    <li><a href="#s8">D-Objaverse 数据集构建</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结、演进定位与资源</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p>4DVD 是北京大学深圳研究生院、大湾区大学与腾讯合作的 4D 内容生成工作,任务设定是<b>「给定一段单目视频,生成该动态物体的稠密多视角视频,并据此重建显式 4D 表示(4D 高斯)」</b>。它的贡献不在某个模块的巧思,而在<b>问题分解的方式</b>。</p>
+
+<div class="callout key">
+<b>一句话概括:</b>不要用一个网络去同时啃 <code>T×V</code> 的高维网格。作者观察到<b>多视角视频里空间信息是「过冗余」的</b>(同一块视觉内容会在不同视角、不同帧上重复出现),于是主动<b>牺牲分辨率换取视角密度</b>——先用低分辨率、16 视角训一个「粗糙布局」生成器,再用这个布局当条件、把输入单目视频的高清外观「传播」到所有视角。把 4D 生成拆成<b>布局建模</b>与<b>外观生成</b>两个子任务,论文称其为 cascaded / decoupled。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">16</div><div class="l">生成视角数(前作 SV4D 为 8,4Diffusion 为 4)</div></div>
+  <div class="stat"><div class="v">381 s</div><div class="l">单卡 A6000 端到端耗时(51 s + 330 s)</div></div>
+  <div class="stat"><div class="v">0.133</div><div class="l">多视角视频 LPIPS(全表最优,SV4D 为 0.136)</div></div>
+  <div class="stat"><div class="v">17k</div><div class="l">D-Objaverse 筛出的高质量动态资产数</div></div>
+</div>
+
+<h3>四个宣称的贡献</h3>
+<ol>
+  <li><b>级联式 4D 生成流水线</b>:用「前所未有的稠密视角(16 路)」同时建模 3D 空间与运动,提升生成质量。</li>
+  <li><b>结构感知时空生成分支</b>:把输入单目视频与稠密视角粗结果结合,把引导条件<b>逐层注入</b>主干模型。</li>
+  <li><b>D-Objaverse 数据集</b>:从 Objaverse 系列数据中筛选、渲染出 16 视角视频数据,每物体 21 帧。</li>
+  <li><b>多视角视频合成与 4D 重建双 SOTA</b>:论文宣称在两项任务上均达到当时最优(见 §11)。</li>
+</ol>
+
+<div class="callout warn">
+<b>归属说明:</b>本文的评测数据是<b>动态物体</b>(D-Objaverse),不是人体;它在本库的定位是「路线 A:多视角视频生成 → 4DGS 重建」的<b>通用起点</b>,与 <a href="3D-20260820-4DAnyone.html">4DAnyone</a>、<a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> 这类人体专用工作同路线但不同靶子。对人的迁移性需要单独评估(见 §14)。
+</div>
+
+<div class="figure">
+  <img src="images/2508.04467/teaser.png" loading="lazy" alt="4DVD 任务设定">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>任务设定。</b>4DVD 以一段单目视频为输入,生成多视角视频。得益于前所未有的稠密视角建模,生成结果保持了很高的空间与时间一致性。</div>
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:T×V 网格的两难</h2>
+
+<h3>2.1 此前方法的具体失败模式</h3>
+
+<p>论文把前作分成两支,并分别指出失败模式——这一点做得比多数论文具体:</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>SDS 蒸馏系(STAG4D 等)</h4>
+    <p>用 SDS 把多视角/图像生成模型的 3D 先验与视频扩散模型的时间先验蒸到 4D 表示里。三个具体问题:</p>
+    <ul>
+      <li><b>每个资产都要单独优化,耗时长</b>(论文 Table 2 实测 STAG4D 4200 秒,是全表最慢);</li>
+      <li>结果<b>过度平滑(over-smooth)</b>并伴随 <b>Janus 问题</b>(多面同一张脸);</li>
+      <li>先验来自<b>不同模型</b>(视频来自视频模型、视角来自图像模型),优化过程中<b>彼此冲突</b>。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>大重建模型(L4GM)</h4>
+    <p>直接前馈预测每帧的 3D 高斯参数,无需迭代采样,速度极快(15 秒)。但:</p>
+    <ul>
+      <li>训练需要巨大 GPU 资源;</li>
+      <li>「直接预测隐式参数」这一建模方式本身限制了生成质量,论文明确写 <i>"its generation quality is limited by complex modeling of implicit prediction parameters"</i>;</li>
+      <li>对细长结构(Fig.6 的细腿狗)出现明显几何错误。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>多视角视频模型(SV4D / 4Diffusion)</h4>
+    <p>把最终 4D 内容看成一张 <code>T×V</code> 图像网格,模型负责按边缘条件补全网格。质量最高,但有一个硬约束:</p>
+    <ul>
+      <li>每个 batch 都要处理 <code>T×V</code> 张图,<b>显存(V RAM)限制视角数</b>——论文指出即使在最先进的 GPU 上,V 也只能取到 4(4Diffusion)或 8(SV4D);</li>
+      <li>稀疏视角导致「无法充分感知完整 3D 空间」,也<b>无法作为稠密视图输入去重建显式 4D 表示</b>(4D 高斯通常需要稠密视角)。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 本文的核心洞察</h3>
+
+<div class="callout">
+<b>关键假设:</b>在「多视角视频生成」这一具体场景下,<b>空间信息是过冗余的</b>——同一块视觉内容反复出现在不同视角与帧上,因此「分辨率」与「视角密度」并非等价的资源,可以拿前者换后者。<br>
+论文的原话是空间信息 <i>"over-redundant"</i>,并认为这种取舍 <i>"worthwhile and effective"</i>。
+</div>
+
+<p>基于这个假设,4DVD 先预测<b>跨视角与跨时间一致的稠密视角布局</b>(以牺牲空间细节为代价),再基于这些布局做<b>结构感知的条件生成</b>,得到高质量 4D 资产。论文还给了一个很好记的类比:<b>这与人类视觉系统的工作方式一致——先一眼感知动态物体的整体布局,再聚焦丰富细节</b>。</p>
+
+<h3>2.3 假设在什么条件下会失效</h3>
+
+<div class="callout warn">
+<b>作者自己给出的失效边界(§3.3):</b>「理论上可以通过进一步降低视频分辨率来用更多视角训练,但我们观察到 <b>VAE 编解码器无法忠实重建分辨率过低的图像</b>」——作者推测原因是 VAE 是在高分辨率高质量图像上预训练的。因此 16 视角并非可无限扩展的参数,<b>256×256 已经是第一阶段的实用下限</b>。<br>
+<b>另一个未明说的边界:</b>「过冗余」假设成立的前提是<b>单物体、可环绕、背景干净</b>。4DVD 的全部训练数据是 Objaverse 单物体资产(D-Objaverse),没有多物体交互、没有复杂场景、没有人物。对人体的宽松衣物、头发、自遮挡是否会破坏这个假设,论文没有讨论。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>3.1 输入 / 输出定义</h3>
+
+<p>给定一段动态物体的单目视频 $\textbf{I}\in\mathbb{R}^{T\times D}$,其中 $T$ 为帧数,$D=3\times H\times W$ 为单帧维度。4DVD 的目标是把视频从 $\mathbb{R}^{T\times D}$ <b>扩展</b>到 $\mathbb{R}^{T\times V\times D}$,$V$ 为视角数:</p>
+
+<div class="equation">
+$$\textbf{I}\in\mathbb{R}^{T\times D}\;\longrightarrow\;\hat{\textbf{I}}\in\mathbb{R}^{T\times V\times D},\qquad D=3\times H\times W$$
+<span class="tag">(任务定义)</span>
+</div>
+
+<p>论文明确指出:更多视角有助于更完整地建模动态 3D 空间,因此选择「由粗到细」的级联结构——先把 <code>T×V</code> 网格在<b>低分辨率</b>下解出来,再在<b>部分视角高分辨率</b>下精修。</p>
+
+<h3>3.2 符号表</h3>
+
+<table>
+<thead><tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr></thead>
+<tbody>
+<tr><td>$\textbf{I}$</td><td>输入单目视频</td><td>$\mathbb{R}^{T\times D}$</td></tr>
+<tr><td>$T$</td><td>视频帧数(完整 21 帧,训练时取 5 帧窗)</td><td>训练 $T=5$,推理 21</td></tr>
+<tr><td>$V$</td><td>视角数</td><td>训练 stage1 = 16;stage2 = 4;推理 = 16</td></tr>
+<tr><td>$D$</td><td>单帧像素维度</td><td>$3\times H\times W$</td></tr>
+<tr><td>$\textbf{z}_0$</td><td>VAE 编码后的干净 latent</td><td>—</td></tr>
+<tr><td>$\textbf{z}_t$</td><td>加噪 $t$ 步的 latent</td><td>$\sqrt{\bar\alpha_t}\textbf{z}_0+\sqrt{1-\bar\alpha_t}\bm\epsilon$</td></tr>
+<tr><td>$\textbf{c}_f$</td><td>参考视频条件(stage 1)</td><td>—</td></tr>
+<tr><td>$\textbf{c}_v$</td><td>参考视角条件(stage 1)</td><td>—</td></tr>
+<tr><td>$F^{\text{ref}}$</td><td>参考视频的归一化 VAE 特征</td><td>—</td></tr>
+<tr><td>$F^{\text{LR}}$</td><td>粗粒度多视角布局特征</td><td>形状 $T\times V$(条件分支内部)</td></tr>
+<tr><td>$L_Q,L_K,L_V$</td><td>计算 Q / K / V 的线性层</td><td>—</td></tr>
+<tr><td>$WH$</td><td>当前层的空间分辨率(论文按 <code>WHV</code> 记)</td><td>—</td></tr>
+<tr><td>$N_c$</td><td>当前层的特征通道数</td><td>—</td></tr>
+<tr><td>$\theta$</td><td>可训练参数(stage 1 为 LoRA;stage 2 为条件分支)</td><td>—</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>说明:</b>论文式(3)把 Q/K/V 的形状写成 $\mathbb{R}^{WHV\times N_c}$ 与 $\mathbb{R}^{N_c\times WHV}$,与常规注意力的 $[\text{tokens}\times\text{channels}]$ 记号不一致(疑似笔误或沿用作者内部记号)。此处<b>照录原文形状</b>,不做「修正」以免与原论文对不上。
+</div>
+
+<h3>3.3 两阶段的职责划分</h3>
+
+<table>
+<thead><tr><th>阶段</th><th>做什么</th><th>分辨率</th><th>视角数</th><th>训练/推理差异</th></tr></thead>
+<tbody>
+<tr><td>Stage 1 · 粗粒度稠密视角生成</td><td>继承 SV4D 结构,用 LoRA 在稠密低分辨率视频上微调,只求<b>跨视角/跨时间一致的布局先验</b></td><td>256×256</td><td>16</td><td>只训 LoRA(注入三个注意力块)</td></tr>
+<tr><td>Stage 2 · 结构感知时空生成</td><td>冻结主干 SV4D,训一个<b>结构条件分支</b>(卷积块 + MAP 模块),按布局条件生成高清外观</td><td>576×576</td><td>训练随机 4 路;推理全 16 路</td><td>只训条件分支</td></tr>
+</tbody>
+</table>
+
+<h3>3.4 总体数据流图</h3>
+
+<div class="mermaid">
+flowchart TD
+    IN["单目视频 I, T x D"] --> SV3D["SV3D 合成首帧新视角"]
+    IN --> S1["阶段一: LoRA 微调的 SV4D<br/>低分辨率 256 稠密 16 视角"]
+    SV3D --> S1
+    S1 --> LAYOUT["粗粒度多视角布局<br/>16 视角 256 x 256<br/>一致但模糊"]
+    LAYOUT --> BR["结构条件分支<br/>卷积块 + MAP 模块"]
+    IN --> MAP["MAP: 参考视频当 Q<br/>布局特征当 KV"]
+    BR --> MAP
+    MAP --> S2["阶段二: 冻结 SV4D 主干<br/>576 x 576 高分辨率生成"]
+    LAYOUT --> S2
+    S2 --> MV["稠密多视角高清视频<br/>16 视角"]
+    MV --> GS["4D 高斯优化<br/>DreamGaussian4D 表示"]
+    GS --> OUT["显式 4D 资产"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style LAYOUT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style MAP fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style MV fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style OUT fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>阶段一:粗粒度稠密视角布局生成</h2>
+
+<h3>4.1 为什么不直接调 SV4D 的超参</h3>
+
+<p>SV4D 这类多视角视频生成模型在稀疏视角视频上训练。理论上「直接把推理时的视角数调大」就能出更多视角,论文用一张图否掉了这条路——这是本文动机最硬的证据:</p>
+
+<div class="figure">
+  <img src="images/2508.04467/fig2.png" loading="lazy" alt="SV4D 与本文阶段一的视觉与残差对比">
+  <div class="caption"><b>图2</b>(论文 Figure 3)<b>视觉与残差结果。</b>给出 GT、SV4D 结果、本文阶段一结果,以及各自相对 GT 的残差图。强制 SV4D 输出 16 视角会导致大误差(红框区域),而本文阶段一微调后残差更小。论文的解释是:SV4D 受限于稀疏训练视角(最先进 GPU 上仅 8 视角),难以完整建模 4D 空间,强行泛化到更多视角就暴露了这个能力缺陷。</div>
+</div>
+
+<h3>4.2 做法</h3>
+
+<ol>
+  <li>把多视角视频降采样到低分辨率版本,<b>在低分辨率上用更密的视角训练</b>,换取更高效的 3D 空间建模。</li>
+  <li>用 <b>LoRA</b> 在 SV4D 上微调,以适配显存。LoRA 被注入到<b>三个注意力块</b>,分别负责:处理空间特征、与输入视频融合、与参考视角融合。</li>
+  <li>给定单目视频为输入时,先用<b>已有的图像到 3D 方法</b>(论文引用 [51] = SV3D)为首帧合成新视角,再以「参考视频 + 16 个参考视角」为输入,让网络在低分辨率下预测 $T\times V$ 图像网格。</li>
+</ol>
+
+<div class="callout tip">
+<b>目标函数的细节:</b>作者特意强调「我们的目标不是直接预测 16 视角的时空信息,而<b>只是获得跨视角一致的 4D 布局先验</b>」。这句限定很重要——它解释了为什么第二阶段还需要 MAP 模块来补外观。
+</div>
+
+<h3>4.3 分辨率选择的机制解释</h3>
+
+<p>论文给出了一个来自实验的边界条件(而非单纯的经验值):</p>
+<ul>
+  <li>理论上可以继续降分辨率、上更多视角,但 <b>VAE 编解码器在分辨率过低时无法忠实重建图像</b>;作者推测原因是该 VAE 预训练于高分辨率高质量图像。</li>
+  <li>16 视角已经<b>足够稠密</b>地覆盖 4D 物体;继续降分辨率有「把想要的布局信息本身也擦掉」的风险。</li>
+  <li>最终实验选择 <b>256×256</b> 作为阶段一分辨率,论文认为这「足以支撑稠密视角训练」。</li>
+</ul>
+
+<div class="callout">
+<b>机制解释(为什么降分辨率能换来更好的 4D 建模):</b>同一块视觉内容在多视角视频里反复出现,因此「表达这块内容」并不需要那么多像素。把省下的像素预算换成视角数,等于让注意力机制在<b>同一 batch 内看到更多真实的三维约束</b>——视角之间的对应关系本身携带了 3D 信息。这与后面 4DAnyone 用 RCP 压缩参考上下文、Diffuman4D 用滑窗扩大感受野属于同一类「在有限注意力下争夺全局一致性」的思路(见 §13)。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>阶段二:结构感知时空生成</h2>
+
+<h3>5.1 问题定义</h3>
+
+<p>阶段一通过注意力机制同时生成多视角视频,因此空间与时间上的结构信息是一致的。但这些布局<b>纹理模糊、分辨率低、质量与输入视频有差距</b>。阶段二的目标是<b>基于这些一致布局产出高质量稠密视角视频</b>。</p>
+
+<h3>5.2 结构条件分支</h3>
+
+<p>受既有条件生成方法(ControlNet、T2I-Adapter、Animate Anyone)启发,4DVD 也采用「特定分支提特征 → 注入基模型」的范式:</p>
+
+<ol>
+  <li>主干仍是 <b>SV4D</b>;</li>
+  <li>新增一个<b>可训练的结构条件分支</b>,把粗粒度多视角布局编码到与主干对齐的 latent 空间,并注入主干;</li>
+  <li>条件分支由<b>卷积块 + MAP 模块</b>堆叠而成;</li>
+  <li>训练时<b>冻结主干、只更新条件分支参数</b>。</li>
+</ol>
+
+<div class="callout key">
+<b>一个反直觉但关键的取舍:</b>受显存限制,阶段二每次训练迭代<b>只随机选 4 个视角</b>做 $576\times576$ 监督,而不是全部 16 路。理由是——条件分支已经把<b>对齐后的布局特征</b>注入主干,而阶段二的目标已经不是「建模 4D 结构」而是「为每个视角提供更好的布局引导」,所以<b>不需要提供全视角条件</b>。推理时因为没有反向传播,可以一次性用完整的 16 视角布局做条件。
+</div>
+
+<h3>5.3 逐层注入的架构对比</h3>
+
+<div class="figure">
+  <img src="images/2508.04467/supp_workflow.png" loading="lazy" alt="三种结构条件分支的网络架构对比">
+  <div class="caption"><b>图3</b>(论文 Figure 8)<b>不同条件分支的网络架构。</b>展示了阶段二使用的三种可选结构条件分支:(a) 本文方法,(b) T2I-Adapter,(c) ControlNet。消融实验(§12)表明 T2I-Adapter 只把特征注入主干的 encoder 部分,<b>会破坏阶段一的布局</b>,反而导致性能下降;ControlNet 有改善但幅度有限。</div>
+</div>
+
+<h3>5.4 模块五件套</h3>
+
+<h4>① 网络结构表</h4>
+<table>
+<thead><tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr></thead>
+<tbody>
+<tr><td>阶段一布局 $\hat{\textbf{I}}^{\text{LR}}$,形状 $T\times V$(低分辨率)</td><td>VAE 编码 → 卷积块堆叠</td><td>与主干对齐的布局 latent $F^{\text{LR}}$</td></tr>
+<tr><td>输入单目视频 $\textbf{I}$,形状 $T\times 1$</td><td>VAE 编码 + 归一化</td><td>外观参考特征 $F^{\text{ref}}$</td></tr>
+<tr><td>$F^{\text{ref}}$,$F^{\text{LR}}$</td><td>MAP 交叉注意力(Q 取自 $F^{\text{ref}}$,KV 取自 $F^{\text{LR}}$)</td><td>融合特征,逐层注入 SV4D 主干</td></tr>
+<tr><td>主干加噪 latent $\textbf{z}_t$</td><td>SV4D DiT(冻结)</td><td>噪声预测 $\varepsilon_\theta(\textbf{z}_t,t,\textbf{I})$</td></tr>
+</tbody>
+</table>
+
+<h4>② 数学形式化</h4>
+<div class="equation">
+$$\mathbf{Q}=L_{Q}(F^{ref})\in\mathbb{R}^{WHV\times N_{c}},\qquad
+\mathbf{K}=L_{K}(F^{LR})\in\mathbb{R}^{N_{c}\times WHV},\qquad
+\mathbf{V}=L_{V}(F^{LR})\in\mathbb{R}^{WHV\times N_{c}}$$
+<span class="tag">(式 3,原文形状照录)</span>
+</div>
+
+<h4>③ 前向流程</h4>
+<ol>
+  <li>参考视频输入前先<b>重复 $V$ 次</b>,使 Q 的 token 数与多视角布局对齐(训练 $V=4$,推理 $V=16$)。</li>
+  <li>在每个 MAP 模块中:参考视频提供<b>查询 Q</b>,粗粒度布局提供<b>键 K / 值 V</b>。</li>
+  <li>注意力结果为「以布局为索引、从参考视频取外观」的加权组合,逐层注入主干,相当于把单视角高清外观<b>按布局的几何索引铺到所有视角</b>。</li>
+  <li>主干据注入特征去噪,输出 $T\times V$ 高清多视角视频。</li>
+</ol>
+
+<h4>④ 模块内部 Mermaid</h4>
+<div class="mermaid">
+flowchart LR
+    REF["单目视频 T x 1"] --> ENC1["VAE 编码 + 归一化"]
+    ENC1 --> REP["重复 V 次"]
+    REP --> Q["L_Q 得到 Q"]
+    LAY["阶段一布局 T x V"] --> ENC2["VAE 编码"]
+    ENC2 --> KV["L_K / L_V 得到 K, V"]
+    Q --> ATT["交叉注意力"]
+    KV --> ATT
+    ATT --> INJ["逐层注入 SV4D 主干"]
+    INJ --> DIT["SV4D DiT 去噪"]
+    DIT --> OUT["T x V 高清多视角视频"]
+    style REF fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style LAY fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style ATT fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h4>⑤ 该模块的监督信号</h4>
+<p>该模块<b>无独立监督损失</b>,其参数完全由阶段二的整体去噪目标(式 5)反向传播更新。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>MAP 模块:被交换的 Q 与 KV</h2>
+
+<p>MAP(Monocular Appearance Propagation,单目外观传播)是本文最「手工」也最值得单独记一笔的设计。</p>
+
+<h3>6.1 常规做法为什么不适用</h3>
+
+<p>常规交叉注意力用<b>当前模型的特征</b>算 Q,用<b>外部条件</b>算 K/V。但 4DVD 的情形是:</p>
+<ul>
+  <li>条件分支的特征描述的是<b>多视角布局</b>,形状是 $T\times V$;</li>
+  <li>参考视频只记录<b>单个视角</b>的高质量内容,形状是 $T\times 1$。</li>
+</ul>
+<p>两者<b>不对齐</b>:如果沿用常规做法(用多视角粗结果当 Q、用单目视频当 KV),就退化成「<b>基于单目视频强行把多视角粗结果放大</b>」——这正是论文实验发现会产生明显视觉伪影的用法。</p>
+
+<h3>6.2 本文的交换</h3>
+
+<div class="callout key">
+<b>把 Q 与 KV 的计算互换:</b>用<b>高质量参考视频</b>当 Q,用<b>粗粒度多视角布局</b>当 K/V。语义上,模型的任务从「把单目视频放大成多视角」变成了<b>「以多视角布局为索引,把高质量参考视频扩展到新视角」</b>。<br>
+论文明确说这比常规操作<b>更容易训练</b>,消融实验(§12)证明其效果更好。
+</div>
+
+<p>为了支持这种改过的跨视角计算,参考视频在相乘前<b>重复 $V$ 次</b>。训练时 $V=4$,推理时用完整的粗粒度图像网格即 $V=16$。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>训练目标与两阶段解耦</h2>
+
+<h3>7.1 扩散模型预备知识(§3.1)</h3>
+
+<div class="equation">
+$$\mathbf{z}_{t}=\sqrt{\bar{\alpha}_{t}}\mathbf{z}_{0}+\sqrt{1-\bar{\alpha}_{t}}\mathbf{\epsilon}$$
+<span class="tag">(式 1)</span>
+</div>
+
+<div class="equation">
+$$\min_{\bm{\theta}}\;\mathbb{E}_{\textbf{z}_{0},\bm{\varepsilon}\sim\mathcal{N}(0,I),t}\left\|\bm{\varepsilon}-\varepsilon_{\bm{\theta}}(\textbf{z}_{t},t,\textbf{c})\right\|_{2}^{2}$$
+<span class="tag">(式 2,标准 LDM 去噪目标)</span>
+</div>
+
+<h3>7.2 阶段一目标</h3>
+
+<p>强制模型在<b>参考视频条件 $\textbf{c}_f$ 与参考视角条件 $\textbf{c}_v$</b> 下产生 16 视角视频,优化对象是被加入的 LoRA 参数 $\theta$:</p>
+
+<div class="equation">
+$$\min_{\bm{\theta}}\;\mathbb{E}_{\textbf{z}_{0},\bm{\varepsilon}\sim\mathcal{N}(0,I),t}\left\|\bm{\varepsilon}-\varepsilon_{\bm{\theta}}(\textbf{z}_{t},t,\textbf{c}_{f},\textbf{c}_{v})\right\|_{2}^{2}$$
+<span class="tag">(式 4)</span>
+</div>
+
+<h3>7.3 阶段二目标</h3>
+
+<p>优化条件分支,条件为<b>随机采样的 4 个粗粒度布局</b> $\textbf{I}\in\mathbb{R}^{T\times 4}$:</p>
+
+<div class="equation">
+$$\min_{\bm{\theta}}\;\mathbb{E}_{\textbf{z}_{0},\bm{\varepsilon}\sim\mathcal{N}(0,I),t}\left\|\bm{\varepsilon}-\varepsilon_{\bm{\theta}}(\textbf{z}_{t},t,\textbf{I})\right\|_{2}^{2}$$
+<span class="tag">(式 5)</span>
+</div>
+
+<div class="callout tip">
+<b>两阶段是「解耦训练」的:</b>阶段一只动 LoRA,阶段二冻结主干只动条件分支。这意味着<b>两个阶段可以分别调、分别省显存</b>,也让阶段二的训练不必重跑阶段一。
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>D-Objaverse 数据集构建</h2>
+
+<p>这一节在论文里被当作「主要贡献之一」,因为它直接决定模型能不能学到稠密视角的 4D 先验。</p>
+
+<h3>8.1 为什么要重建数据集</h3>
+
+<p>Objaverse 里绝大多数物体是<b>静态</b>的,无法用于训练多视角视频模型。可用的开源动态 3D 数据(如 SV4D 用的 ObjaverseDy、Consistent4D)要么样本量有限,要么包含大量低质量样本。论文把低质量归纳为三种具体表现:</p>
+
+<div class="grid-3">
+  <div class="card"><h4>① 结构不完整</h4><p>很多 3D 物体只是常见物体的一部分,比如一条手臂、一条腿。</p></div>
+  <div class="card"><h4>② 运动异常</h4><p>部分样本运动幅度过大,或者几乎看不出运动。</p></div>
+  <div class="card"><h4>③ 内容未定义</h4><p>画面模糊/混乱,虽然也是动态 3D 物体但无法使用。</p></div>
+</div>
+
+<h3>8.2 三个过滤指标(与三类低质一一对应)</h3>
+
+<table>
+<thead><tr><th>针对的问题</th><th>使用的判据</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>① 结构不完整</td><td><b>多模态大模型 CogVLM</b></td><td>用 MLLM 过滤掉含不完整结构的样本</td></tr>
+<tr><td>② 运动异常</td><td><b>帧间光流</b></td><td>通过计算帧间光流保留「运动合理」的样本</td></tr>
+<tr><td>③ 内容未定义 / 质量差</td><td><b>LPIPS</b></td><td>用 LPIPS 筛选出质量可接受的样本</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>数据规模(原文数字):</b>基于 ObjaverseDy 收集 <b>41k</b> 个动态 3D 资产(其中 ObjaverseDy 提供 <b>27k</b> 个样本),加上其他可获取的动态 3D 数据,最终筛选出 <b>17k</b> 个满足条件的样本,每个带 16 视角视频。论文承诺「4DVD 发表时释放 D-Objaverse」。
+</div>
+
+<div class="figure">
+  <img src="images/2508.04467/supp_data.png" loading="lazy" alt="D-Objaverse 中的样本示例">
+  <div class="caption"><b>图4</b>(论文 Figure 4)<b>D-Objaverse 中的部分样本。</b>这里展示的是各物体的前视角画面。论文称 D-Objaverse 是从 Objaverse 数据中小心筛选并渲染出的高质量动态 3D 数据集。</div>
+</div>
+
+<h3>8.3 渲染规格</h3>
+
+<ul>
+  <li>用 <b>Blender</b> 渲染,每资产 <b>16 视角</b>,分辨率 $576\times576$。</li>
+  <li>每段视频 <b>10 FPS</b>,并降采样出对应的低分辨率版本($256\times256$)供粗阶段使用。</li>
+  <li>每物体 <b>21 帧</b>(摘要中明确数字)。</li>
+</ul>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>9.1 训练流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    A["D-Objaverse: 16 视角 x 21 帧, 576 x 576"] --> B["降采样得 256 x 256 低分辨率版"]
+    B --> C["阶段一训练<br/>16 视角低分辨率监督<br/>只训 LoRA, T=5"]
+    C --> D["得到粗粒度布局生成器"]
+    D --> E["用阶段一在低分辨率下产出 16 视角布局"]
+    E --> F["阶段二训练<br/>每次随机取 4 视角 576 x 576<br/>冻结主干, 只训条件分支"]
+    A --> F
+    F --> G["4DVD 完整模型"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style F fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style G fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.2 推理流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    A["输入单目视频(21 帧)"] --> B["SV3D 为首帧合成参考视角"]
+    B --> C["阶段一: 10 步采样<br/>产出 5 x 16 低分辨率布局"]
+    C --> D["阶段二: 10 步采样<br/>以完整 16 视角布局为条件"]
+    A --> D
+    D --> E["5 x 16 高分辨率图像网格, 约 30GB 显存"]
+    E --> F["SV4D 同款 anchor-sampling<br/>扩展到 21 帧完整视频"]
+    F --> G["稠密多视角视频"]
+    G --> H["DreamGaussian4D 表示<br/>优化 4D 高斯"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style D fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style H fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.3 训练/推理的超参对照</h3>
+
+<table>
+<thead><tr><th>项</th><th>训练</th><th>推理</th></tr></thead>
+<tbody>
+<tr><td>帧窗 $T$</td><td>5</td><td>5(再靠 anchor-sampling 扩到 21 帧)</td></tr>
+<tr><td>视角数 $V$</td><td>阶段一 16;阶段二随机 4</td><td>16</td></tr>
+<tr><td>分辨率</td><td>阶段一 256²;阶段二 576²</td><td>阶段一 256²;阶段二 576²</td></tr>
+<tr><td>采样步数</td><td>—</td><td><b>每阶段各 10 步</b>(SV4D 官方代码为 20 步)</td></tr>
+<tr><td>显存</td><td class="fail">论文未给出</td><td>约 <b>30GB</b>(可一次输出完整的 $5\times16$ 高清网格)</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节</h2>
+
+<div class="callout warn">
+<b>重要的诚实声明:</b>4DVD <b>没有公开代码仓库</b>(截至 2026-09-29 检索:项目页仅提供论文与视频,无 Code 链接;GitHub 上以 4DVD 为名的仓库均为无关项目)。因此下表中每一项都<b>只能来自论文正文 / 补充材料</b>,无法像 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 那样给出 <code>file:line</code> 级源码佐证。凡论文未写明的项,本表标「未给出」而<b>不估计数值</b>。
+</div>
+
+<h3>10.1 训练配置</h3>
+
+<table>
+<thead><tr><th>项</th><th>取值</th><th>出处</th></tr></thead>
+<tbody>
+<tr><td>数据集</td><td>D-Objaverse(自建);随机选 <b>50</b> 个动态物体评测,其余用于训练</td><td>§5.1</td></tr>
+<tr><td>渲染</td><td>Blender,16 视角,每视角 $576\times576$,<b>10 FPS</b></td><td>§5.1 / §8</td></tr>
+<tr><td>序列长度</td><td>训练用 5 帧窗;完整 21 帧(推理靠 anchor-sampling 扩)</td><td>§5.1</td></tr>
+<tr><td>阶段一监督</td><td>16 视角低分辨率视频</td><td>§5.1</td></tr>
+<tr><td>阶段二</td><td>每迭代随机取 4 视角高清,产 $5\times4$ 图像网格</td><td>§5.1</td></tr>
+<tr><td>可训练模块</td><td>阶段一:LoRA(注入 3 个注意力块);阶段二:结构条件分支</td><td>§3.3 / §3.4</td></tr>
+<tr><td>冻结模块</td><td>两阶段的 SV4D 主干(阶段二明确「冻结基模型」)</td><td>§3.4</td></tr>
+<tr><td>LoRA rank / 学习率 / 优化器 / batch size</td><td class="fail">论文未给出</td><td>—</td></tr>
+<tr><td>训练总步数 / GPU 型号数量 / 训练时长</td><td class="fail">论文未给出</td><td>—</td></tr>
+<tr><td>采样步数</td><td>推理时每阶段 <b>10</b> 步(SV4D 官方为 20 步)</td><td>§5.4</td></tr>
+</tbody>
+</table>
+
+<h3>10.2 资源账</h3>
+
+<table>
+<thead><tr><th>项</th><th>数值</th><th>出处 / 备注</th></tr></thead>
+<tbody>
+<tr><td>推理峰值显存</td><td>约 <b>30GB</b>(一次输出完整 $5\times16$ 高清网格)</td><td>§5.1 原文 "within 30GB VRAM"</td></tr>
+<tr><td>端到端推理耗时</td><td><b>381 秒</b>= 阶段一 51 s + 阶段二 330 s</td><td>Table 2,单张 <b>A6000</b></td></tr>
+<tr><td>参数量</td><td class="fail">论文未给出</td><td>—</td></tr>
+<tr><td>训练总时长</td><td class="fail">论文未给出</td><td>—</td></tr>
+</tbody>
+</table>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">30 GB</div><div class="l">推理显存(一次出 5×16 高清网格)</div></div>
+  <div class="stat"><div class="v">51 + 330 s</div><div class="l">阶段一 + 阶段二(单张 A6000)</div></div>
+  <div class="stat"><div class="v">10 + 10</div><div class="l">采样步数(对比 SV4D 的 20 步)</div></div>
+</div>
+
+<h3>10.3 落地坑与隐藏约束</h3>
+<ul>
+  <li><b>强依赖 SV4D 与 SV3D 权重</b>:阶段一继承 SV4D 并用 LoRA 微调,首帧新视角依赖 SV3D 合成。硬件门槛实际由这两个基座决定,而非 4DVD 自身体量。</li>
+  <li><b>数据是自建且尚未释放</b>:论文写「4DVD 发表时释放 D-Objaverse」,在数据集公开前训练侧不可复现。评测集只是从中随机取的 50 个物体。</li>
+  <li><b>没有人体 / 场景数据</b>:见 §14,这是迁移到本库 pipeline 的硬约束。</li>
+  <li><b>VAE 分辨率下限</b>:见 §4.3,不能靠无限降分辨率换视角数。</li>
+</ul>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 评测设置</h3>
+
+<p>三个指标 + 三个 FVD 变体。论文对 FVD 变体的定义值得记下,因为它揭示了这个任务里「一致性」到底怎么被量化:</p>
+<ul>
+  <li><b>FVD-F</b>:固定视角、跨帧计算 FVD → 衡量<b>时间一致性</b>;</li>
+  <li><b>FVD-V</b>:固定帧、跨视角计算 FVD → 衡量<b>跨视角(空间)一致性</b>;</li>
+  <li><b>FVD-Diag</b>:对 $T\times V$ 网格的<b>对角图像</b>计算 FVD → 衡量<b>时空联合一致性</b>。</li>
+</ul>
+<p>另有 LPIPS(感知质量)与 CLIP-S(视觉质量)。基线为 STAG4D(SDS 优化)、L4GM(大重建模型)、4Diffusion 与 SV4D(多视角视频模型)。</p>
+
+<div class="callout warn">
+<b>一个必须点出的评测不对称:</b>4DVD 能出 16 视角、其他方法不能,所以对比时<b>只取四个正交视角</b>算多视角视频指标。论文自己承认这点(<i>"we only use videos from the four orthogonal viewpoints for comparison"</i>)——也就是说 Table 1 左侧的胜利是在<b>对 4DVD 不利</b>的裁剪条件下取得的,这反而是可信的加分项。
+</div>
+
+<h3>11.2 多视角视频与 4D 资产(论文 Table 1)</h3>
+
+<table>
+<thead><tr><th rowspan="2">模型</th><th rowspan="2">类型</th><th colspan="5">多视角视频</th><th colspan="3">4D 资产</th></tr>
+<tr><th>LPIPS ↓</th><th>CLIP-S ↑</th><th>FVD-F ↓</th><th>FVD-V ↓</th><th>FVD-Diag ↓</th><th>LPIPS ↓</th><th>CLIP-S ↑</th><th>FVD ↓</th></tr></thead>
+<tbody>
+<tr><td>STAG4D</td><td>优化式(SDS)</td><td>0.156</td><td>0.892</td><td>714.51</td><td>528.06</td><td>652.17</td><td>0.157</td><td>0.902</td><td>879.19</td></tr>
+<tr><td>L4GM</td><td>大重建模型</td><td>0.144</td><td>0.910</td><td>606.90</td><td>467.81</td><td>525.22</td><td>0.143</td><td>0.911</td><td>543.57</td></tr>
+<tr><td>4Diffusion</td><td>多视角视频模型</td><td>0.155</td><td>0.899</td><td>853.89</td><td>776.92</td><td>816.88</td><td>0.165</td><td>0.874</td><td>822.29</td></tr>
+<tr><td>SV4D</td><td>多视角视频模型</td><td>0.136</td><td>0.913</td><td>586.41</td><td>482.64</td><td>542.87</td><td>0.161</td><td>0.897</td><td>677.56</td></tr>
+<tr class="best"><td><b>4DVD</b></td><td>多视角视频模型</td><td><b>0.133</b></td><td><b>0.927</b></td><td><b>507.12</b></td><td><b>314.44</b></td><td><b>456.01</b></td><td><b>0.136</b></td><td><b>0.919</b></td><td><b>438.41</b></td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>怎么读这张表(本笔记的原创观察):</b>LPIPS 与 CLIP-S 上 4DVD 对 SV4D 只是<b>小胜</b>(0.136→0.133、0.913→0.927);但 <b>FVD-V(跨视角一致性)从 482.64 降到 314.44,降幅 34.8%</b>;<b>FVD-Diag</b> 从 542.87 降到 456.01,降 16.0%;<b>4D 资产 FVD</b> 从 677.56 降到 438.41,降 35.3%。也就是说<b>4DVD 的收益主要落在一「一致性」维度上,而不是外观质量维度</b>——这与它「用稠密视角换一致性」的设计动机完全自洽。若只看 LPIPS 会严重低估这篇工作的定位。
+</div>
+
+<h3>11.3 运行时对比(论文 Table 2)</h3>
+
+<table>
+<thead><tr><th>方法</th><th>STAG4D</th><th>L4GM</th><th>4Diffusion</th><th>SV4D</th><th>4DVD</th></tr></thead>
+<tbody>
+<tr><td>Runtime(s) ↓</td><td class="fail">4200</td><td class="best">15</td><td>480</td><td>565</td><td><b>381</b>(51 + 330)</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>级联反而更快,这是本文一个容易被忽略的反直觉结论。</b>论文解释很干净:SV4D 从零生成,官方代码迭代 <b>20 步</b>;4DVD 是解耦级联——阶段一只出低分辨率粗结果,低分辨率前向更快,<b>10 步</b>够用;阶段二已拿到粗结果作为控制提示,同样 <b>10 步</b>足够。所以「两阶段」不等于「两倍耗时」。
+</div>
+
+<h3>11.4 定性对比</h3>
+
+<div class="figure">
+  <img src="images/2508.04467/workflow.png" loading="lazy" alt="4DVD 总体 pipeline">
+  <div class="caption"><b>图5</b>(论文 Figure 2)<b>4DVD 的 pipeline。</b>模型由两阶段构成:粗粒度稠密视角生成接收单目视频与参考视角,产出粗粒度 16 视角布局;基于布局条件,结构感知时空生成预测细节丰富的多视角视频。为获取外观引导,把输入单目视频当作外部条件,并用 Monocular Appearance Propagation(MAP)模块整合进去(紫色区域)。</div>
+</div>
+
+<div class="figure">
+<div class="figure">
+  <img src="images/2508.04467/com_video.png" loading="lazy" alt="生成多视角视频的视觉对比">
+  <div class="caption"><b>图6</b>(论文 Figure 5)<b>生成多视角视频的视觉对比。</b>每个例子展示两个时间步与两个视角。相比其他基线方法,4DVD 能实现更高质量的生成——纹理更细、外观更合理、一致性更好。</div>
+</div>
+
+  <img src="images/2508.04467/com_4d.png" loading="lazy" alt="生成 4D 输出的视觉对比">
+  <div class="caption"><b>图7</b>(论文 Figure 6)<b>生成 4D 输出的视觉对比。</b>每个例子展示两个时间步与两个视角。借助 4DVD 生成的稠密视角视频,4D 高斯可被较好地重建。对比之下 SV4D 只产出 8 视角视频,不足以重建显式 4D 表示;L4GM 对细长结构(如细腿狗)建模失败。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2508.04467/supp_com4d.png" loading="lazy" alt="生成 4D 输出的更多视觉对比">
+  <div class="caption"><b>图8</b>(论文 Figure 7)<b>不同方法生成 4D 输出的更多视觉对比。</b>论文认为 4DVD 的优势主要来自「更一致的多视角视频」与「前所未有的稠密观察角」。</div>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+
+<h3>12.1 定量(论文 Table 3)</h3>
+
+<table>
+<thead><tr><th>设置</th><th>LPIPS ↓</th><th>CLIP-S ↑</th><th>FVD-F ↓</th><th>FVD-V ↓</th><th>FVD-Diag ↓</th></tr></thead>
+<tbody>
+<tr><td>Stage 1(仅粗阶段)</td><td>0.147</td><td>0.901</td><td>668.25</td><td>422.56</td><td>605.73</td></tr>
+<tr><td>w/ ControlNet</td><td>0.141</td><td>0.920</td><td>558.42</td><td>407.75</td><td>535.14</td></tr>
+<tr class="fail"><td>w/ T2I-adapter</td><td>0.173</td><td>0.896</td><td>802.40</td><td>609.45</td><td>714.37</td></tr>
+<tr><td>MAP w/ feature(常规注意力用法)</td><td>0.152</td><td>0.912</td><td>572.91</td><td>397.36</td><td>512.15</td></tr>
+<tr class="best"><td><b>Full Model</b></td><td><b>0.133</b></td><td><b>0.927</b></td><td><b>507.12</b></td><td><b>314.44</b></td><td><b>456.01</b></td></tr>
+</tbody>
+</table>
+
+<h3>12.2 条件分支消融</h3>
+<ul>
+  <li><b>T2I-Adapter 会「帮倒忙」</b>:它只把特征注入主干 encoder 部分的层,<b>直接破坏了阶段一的布局</b>,导致性能下降(LPIPS 0.133 → 0.173,全表最差)。</li>
+  <li><b>ControlNet 有改善但幅度有限</b>(LPIPS 0.141),仍明显差于本文分支(0.133)。</li>
+  <li>论文强调<b>这些设置全都包含 MAP</b>,因此这组对比<b>干净地隔离了条件分支架构本身</b>的贡献。</li>
+  <li>另一细节:阶段一结果「次优甚至畸变」(如卡通角色的手脚),现有生成方法难以纠正,而 4DVD 能修正——说明第二阶段增益不只是「变清晰」,还包括<b>凭输入视频外观把粗阶段的几何错误纠回来</b>。</li>
+</ul>
+
+<h3>12.3 MAP 消融</h3>
+<ul>
+  <li>换成常规注意力计算(「MAP w/ feature」:用当前模型特征算 Q、外部条件算 KV)后,训练出的模型<b>会引入明显的视觉伪影(如颜色偏移)</b>。</li>
+  <li>论文的结论句值得原样记下:<b>「相比基于单个视角放大多视角内容,基于对应布局把高质量参考扩展到新视角更高效。」</b></li>
+</ul>
+
+<div class="figure">
+  <img src="images/2508.04467/supp_abla.png" loading="lazy" alt="消融研究的视觉结果">
+  <div class="caption"><b>图9</b>(论文 Figure 9)<b>消融研究的视觉结果。</b>阶段一结果粗糙,只作为后续生成的提示。与主流条件分支(ControlNet、T2I-Adapter)相比,本文分支表现最好。此外,把 MAP 改成用模型特征做 Q 矩阵时会引入不想要的<b>颜色偏移与伪影</b>。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<div class="callout warn">
+<b>方法论说明:</b>除 4DVD 论文自带的四个基线外,补入 <b>CAT4D</b> 与 <b>Diffuman4D</b>——前者是同路线的多视角视频扩散代表作,后者是人体专用的稀疏视角多视角视频扩散。凡本库尚无笔记、或我未从原文核实的数据,一律写 <code>—</code>,不填估计值。
+</div>
+
+<table>
+<thead>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><b>4DVD</b>(本文)</td><td>2025-08</td><td>单目视频,单物体,可环绕</td><td>多视角视频 → 4D 高斯(DreamGaussian4D 表示)</td><td>去噪 MSE(两阶段解耦:LoRA / 条件分支)</td><td>D-Objaverse 17k 资产,16 视角 × 21 帧</td><td class="fail">未给出</td><td><b>381 s</b>(A6000)</td><td><b>约 30 GB</b></td><td>LPIPS 0.133 / FVD-V 314.44</td><td><b>否</b></td>
+</tr>
+<tr>
+  <td>SV4D</td><td>2024-07</td><td>单目视频 → 5 帧 × 8 视角</td><td>动态 NeRF / 隐式 4D</td><td>去噪 MSE</td><td>Objaverse 系合成物体</td><td>—</td><td>565 s(A6000,论文复测)</td><td>—</td><td>LPIPS 0.136 / FVD-V 482.64</td><td>是(基座)</td>
+</tr>
+<tr>
+  <td>4Diffusion</td><td>2024-05</td><td>单目视频,4 视角</td><td>4D 高斯</td><td>去噪 MSE</td><td>—</td><td>—</td><td>480 s(A6000,论文复测)</td><td>—</td><td>LPIPS 0.155 / FVD-V 776.92</td><td>—</td>
+</tr>
+<tr>
+  <td>L4GM</td><td>2024-06</td><td>单目视频,4 视角</td><td>直接预测每帧 3D 高斯参数</td><td>几何 + 渲染回归</td><td>Objaverse 系</td><td>—</td><td><b>15 s</b>(A6000,全表最快)</td><td>—</td><td>LPIPS 0.144 / FVD-V 467.81</td><td>—</td>
+</tr>
+<tr>
+  <td>STAG4D</td><td>2024</td><td>单目视频</td><td>时空锚定 4D 高斯</td><td>SDS 蒸馏</td><td>—</td><td>—</td><td class="fail">4200 s(全表最慢)</td><td>—</td><td>LPIPS 0.156 / FVD-V 528.06</td><td>—</td>
+</tr>
+<tr>
+  <td>CAT4D</td><td>2024-11</td><td>单目视频;论文正文提及:面对 soft structure 运动时形变严重</td><td>可变形 3DGS</td><td>多视角视频扩散</td><td>动态场景基准(如 DyCheck)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+</tr>
+<tr>
+  <td>Diffuman4D</td><td>2025-07</td><td>4 路同步稀疏视角视频 → 44 路目标视角</td><td>4DGS(LongVolcap 官方 / splatfacto 备选)</td><td>去噪 MSE(骨架图条件,文本条件关闭)</td><td>自建 dna_rendering_processed(1000+ 序列 × 48 相机)</td><td>—</td><td>—</td><td>—</td><td>DNA-Rendering 上 <b>24.23 dB PSNR</b>(GT-skeleton 设置)</td><td>是(zju3dv/Diffuman4D)</td>
+</tr>
+</tbody>
+</table>
+
+<h3>13.1 对比结论:它凭什么强、凭什么弱</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>强在「问题分解」而非模块</h4>
+    <p>4DVD 的每个组件都不是原创发明:SV4D 脊骨是继承的、LoRA 是现成的、交叉注意力是现成的、ControlNet / T2I-Adapter 是现成的。它的增益来自<b>把「生成 <code>T×V</code> 高维网格」重写为「生成布局 + 传播外观」</b>,并把「视角密度 vs 分辨率」的资源取舍<b>显式化</b>。这类贡献迁移成本最低——不需要新算子,只需要新的训练课程。</p>
+  </div>
+  <div class="card">
+    <h4>弱在「数据域」与「不可复现训练」</h4>
+    <p>全部训练与评测都在合成单物体资产上。SDS 系(如 STAG4D)虽慢、虽过平滑,但先验来自<b>大规模真实图像/视频模型</b>,天然覆盖开放域;4DVD 的先验被锁在 Objaverse 的渲染风格里。此外 D-Objaverse 尚未释放,训练侧目前不可复现。</p>
+  </div>
+</div>
+
+<div class="callout">
+<b>与 SV4D 的差异机制(逐条):</b>
+<ul>
+  <li><b>视角数</b> 8 → 16:不是「调大超参」,而是先把训练分辨率打到 256²,让 16 视角能进同一 batch,再单独训条件分支恢复高清外观。</li>
+  <li><b>一致性</b> FVD-V 降 34.8%:机制是「同一 batch 里看到更多真实视角约束」,注意力跨视角对应关系更密。</li>
+  <li><b>外观质量</b> LPIPS 仅小胜:外观红利被 256² 粗阶段限制,只能靠第二阶段 MAP 补回一部分。</li>
+  <li><b>速度</b> 反而更快(565 → 381 s):低分辨率粗阶段只需 10 步采样。</li>
+</ul>
+</div>
+
+<h3>13.2 与 Diffuman4D / Flex4DHuman 的数值交叉核对</h3>
+
+<p>这是一条对本库有价值的核对:Diffuman4D 在 DNA-Rendering 上报告 <b>24.23 dB PSNR</b>(Diffuman4D-GT-skeleton 设置),而 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a>(其直接后续)报告 <b>25.44 dB</b>。两个数字分别取自各自论文的 Table 2,且<b>用的是同一评测协议</b>(16 场景 Diffuman4D 测试划分、1 参考视角、47 目标视角)——Flex4DHuman 使用的正是 Diffuman4D 的 processed 数据发布,所以可比。这说明「路线 A」在 2025-07 → 2026-06 约一年内把 PSNR 抬高了约 1.2 dB;而 4DVD(2025-08,物体域)是这条线的通用起点。</p>
+
+<h3>13.3 演进定位表</h3>
+
+<table>
+<thead><tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr></thead>
+<tbody>
+<tr><td>SDS 蒸馏优化</td><td>STAG4D、4D-fy、DreamGaussian4D</td><td>2D/多视角图像扩散 + 视频扩散的时间先验,蒸到 4D 表示</td><td>逐资产优化,数十分钟;过平滑;Janus;不同来源先验互相冲突</td></tr>
+<tr><td>大重建模型直出</td><td>L4GM</td><td>前馈直接回归每帧高斯参数</td><td>训练资源巨大;隐式参数建模难度限制质量;细长结构崩坏</td></tr>
+<tr><td>多视角视频扩散 · 稀疏</td><td>SV4D(8 视角)、4Diffusion(4 视角)</td><td>一个模型同时出多视角与多帧,网格补全</td><td>显存限制视角数;视角稀疏导致无法重建显式 4D 表示</td></tr>
+<tr class="best"><td><b>多视角视频扩散 · 级联解耦</b></td><td><b>4DVD</b></td><td><b>空间信息过冗余 → 用分辨率换视角密度;布局与外观分阶段</b></td><td><b>单物体合成域;粗阶段分辨率受 VAE 下限约束;训练数据未释放</b></td></tr>
+<tr><td>多视角视频扩散 · 上下文工程</td><td><a href="3D-20260820-4DAnyone.html">4DAnyone</a>、<a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a></td><td>把瓶颈归因为「有界注意力上下文」,用 RCP/TCR 或历史 token rollout 解决</td><td>人体专用;泛化到真实无控场景仍有限</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>库内交叉链接:</b>同路线的后续人体工作见 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a>(去掉显式几何先验、纯相对相机位姿)与 <a href="3D-20260820-4DAnyone.html">4DAnyone</a>(RCP + TCR 上下文工程);「绕过 RGB 中介」的另一条路线见 <a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a>;把生成当补全器的两条人体工作见 <a href="3D-20260318-AHOY.html">AHOY!</a> 与 <a href="3D-20260710-StudioRecon.html">StudioRecon</a>。上游相机控制能力见 <a href="VideoGen-20250305-GEN3C.html">GEN3C</a> 与 <a href="VideoGen-20260618-视频生成相机可控性调研.html">视频生成相机可控性调研</a>;路线全景见 <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>。
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<p>判断基准是本库主线的实际约束:<b>单卡 RTX 3090(24GB)、WSL2、12–16 路中等稀疏的可控/自采场景、目标是人体</b>。</p>
+
+<table>
+<thead><tr><th>维度</th><th>4DVD 的情况</th><th>能不能进我们的 pipeline</th></tr></thead>
+<tbody>
+<tr><td>显存</td><td class="fail">推理约 30GB,<b>超过 3090 的 24GB</b></td><td><b>直接跑不了</b>。要跑必须降视角数 / 降分辨率 / 分块推理,论文未提供这些变体的可行性数据</td></tr>
+<tr><td>耗时</td><td>381 s / 资产(A6000,约比 3090 快 1.5–2×)</td><td>单资产可接受,换 3090 会更慢</td></tr>
+<tr><td>数据域</td><td class="fail">纯合成单物体(Objaverse 渲染风格)</td><td><b>域差是最大障碍</b>。人体、宽松衣物、头发均未训练</td></tr>
+<tr><td>输入假设</td><td>单目视频,单物体,可环绕</td><td>我们的场景是多人 + 场景 + 遮挡,与「单物体可环绕」不符</td></tr>
+<tr><td>可复现性</td><td class="fail">无代码;D-Objaverse 未释放</td><td>只能作为<b>方法论参考</b>,不能作为组件采用</td></tr>
+<tr><td>可借鉴的组件</td><td><b>MAP 的 Q/KV 交换</b>、<b>「布局先行、外观后补」的训练课程</b>、<b>分辨率换视角密度的取舍逻辑</b></td><td><b>这三条可独立借用</b>,尤其适用于我们「多视角视频 → 3DGS 拆分(head/body/scene)」链路里视角不足的情况</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>结论:</b>4DVD <b>不可直接落地</b>,但<b>分工思想可直接借用</b>。最实际的迁移路径是把它的「低分辨率粗布局 + 高清外观传播」拆开看:粗阶段解决<b>几何 / 一致性</b>,精阶段解决<b>纹理 / 外观</b>。这与本库 <a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline</a> 里「先 COLMAP 定几何、再 HYPIR 做增强」在结构上同构——<b>先用便宜的、确定性强的一步定结构,再用生成模型补质量</b>,是本库已经验证过的工程范式。
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<h3>方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 粗阶段的 256² 是硬瓶颈,而作者未给出规避路径。</b></p>
+<p><b>问题:</b>论文承认 VAE 在过低分辨率下无法忠实重建图像,因此「16 视角 + 256²」已是实用极限。但论文<b>没有实验数据支撑这个下限具体在哪</b>——只说「我们观察到」,未给分辨率扫描曲线。</p>
+<p><b>佐证:</b>§3.3 原文 <i>"we observe that the VAE encoder-decoder cannot reproduce images with too low resolution faithfully"</i>;Table 3 中 Stage 1 单独跑的 LPIPS 为 0.147,最终为 0.133,说明粗阶段的外观损失确实要靠第二阶段补。</p>
+<p><b>改进建议:</b>把「分辨率下限」当超参去扫(256²/192²/128² × 视角 16/24/32),给出 FVD-V 与 LPIPS 的权衡曲线;或换用分辨率自适应的 VAE / 在同一模型内做多尺度 latent 金字塔,让不同尺度承担不同职责。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] 阶段二每迭代只用 4 个视角监督,缺乏「为什么是 4」的证据。</b></p>
+<p><b>问题:</b>论文说因显存限制随机取 4 视角,并论证「阶段二不需要全视角条件」。但随机 4 路意味着每迭代只覆盖 1/4 视角,<b>论文没有给出视角采样数(4/8/16)的消融</b>,也没说明随机采样的方差不影响收敛。</p>
+<p><b>改进建议:</b>补一张「每迭代采样视角数 × 收敛步数 × 最终 FVD-V」的三维表;若方差确实大,可改用「按布局质量加权的确定性视角调度」而非纯随机。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] 两阶段之间没有反馈:粗阶段的错误只能被「纠正一部分」。</b></p>
+<p><b>问题:</b>阶段一固定后训练阶段二,阶段一不会因阶段二的失败而调整。论文承认阶段一会输出畸变(如卡通角色的手脚),阶段二「有能力修正」,但<b>没有量化修正了多少 / 有多少错误被固化</b>。</p>
+<p><b>改进建议:</b>加一条从阶段二回到阶段一的梯度或迭代精修(类似 StudioRecon 的 iterative refinement:在优化中点用生成结果反过来补充监督),形成真正的闭环。</p>
+</div>
+
+<h3>数据与评估</h3>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[高优先级] 全部数据为合成单物体,且数据集未释放。</b></p>
+<p><b>问题:</b>D-Objaverse 全部来自 Objaverse 系渲染,没有真实拍摄、没有多人、没有场景、没有人体。论文在 Limitation 中承认「复杂几何与复杂运动可能表现不佳」,但把原因归给「网络容量与训练数据」,未展开。<b>且论文承诺发表时释放,至今(2026-09)未见公开仓库</b>。</p>
+<p><b>改进建议:</b>补一版在真实视频(如 MVHumanNet / DNA-Rendering)上微调的实验,至少给出「域迁移后的性能衰减曲线」,让使用者知道迁移成本。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[中优先级] FVD-V / FVD-Diag 是「分布距离」而非「几何正确性」,论文未做几何验证。</b></p>
+<p><b>问题:</b>4DVD 的核心卖点是「更一致的多视角」,但全部多视角指标都是 FVD 族(感知分布距离)。论文没有报告任何<b>几何层面的度量</b>(如多视角重投影误差、Chamfer 距离、点云法线一致性)。作为对照,<a href="3D-20260710-StudioRecon.html">StudioRecon</a> 用 PCK@0.05 直接量了 GEN3C 与自身在人体位姿上的几何误差(55.6% vs 93.1%),这种证据更硬。</p>
+<p><b>改进建议:</b>补一组「把生成的多视角视频重建为 4D 高斯后,与 GT 4D 资产做几何比对」的指标。</p>
+</div>
+
+<h3>工程实用性</h3>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<p><b>[中优先级] 30GB 显存门槛把工作排除在消费级显卡之外。</b></p>
+<p><b>问题:</b>论文把「一次出完整 5×16 高清网格」当作卖点,代价是 30GB 显存。3090(24GB)与 4090(24GB)都跑不了。</p>
+<p><b>改进建议:</b>给出分块推理(order-agnostic 的视角分组 + 重叠融合)方案与质量损失数据;这一件事直接把可用人群扩大数倍。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);">
+<p><b>[低优先级] 训练侧超参、显存、时长全部缺失,无法复现训练。</b></p>
+<p><b>问题:</b>LoRA rank、学习率、优化器、batch size、训练步数、GPU 数量与型号均未给出(见 §10.1)。即便数据集释放,复现训练仍然缺关键信息。</p>
+<p><b>改进建议:</b>照 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 的做法,把优化配置集中在一个 config 文件里随代码放出。</p>
+</div>
+
+<h3>优先级总览</h3>
+
+<table>
+<thead><tr><th>优先级</th><th>改进点</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>[高]</td><td>粗阶段分辨率下限缺证据</td><td>这是整个方法可扩展性的天花板,且改动成本低(补一组扫描实验)</td></tr>
+<tr><td>[高]</td><td>数据域为纯合成单物体且未释放</td><td>直接决定它能否被任何真实场景使用</td></tr>
+<tr><td>[中]</td><td>每迭代 4 视角缺乏消融</td><td>影响收敛稳定性与显存/质量权衡的可调性</td></tr>
+<tr><td>[中]</td><td>两阶段无反馈闭环</td><td>粗阶段错误会被固化,是质量上限的主要来源</td></tr>
+<tr><td>[中]</td><td>缺几何正确性度量</td><td>「更一致」目前只有感知指标支撑</td></tr>
+<tr><td>[中]</td><td>30GB 显存门槛</td><td>决定落地人群规模</td></tr>
+<tr><td>[低]</td><td>训练超参缺失</td><td>影响复现,但不影响方法本身的正确性</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>个人认为最关键的三点:</b>
+<ol>
+  <li><b>分辨率下限的证据缺失</b>——它决定了「用分辨率换视角密度」这个核心假设能走多远,而论文只用一句话带过。</li>
+  <li><b>数据域太窄</b>——合成单物体到真人/真实场景的跨度,远大于论文 Limitation 里那句话所暗示的程度。</li>
+  <li><b>缺几何度量</b>——一篇以「一致性」为核心卖点的论文,全部多视角指标都是感知分布距离,这是论证链上最薄弱的一环。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结、演进定位与资源</h2>
+
+<h3>一句话总结</h3>
+
+<div class="callout key">
+4DVD 是一篇<b>「用资源取舍换一致性」的方法论论文</b>:它没有发明新算子,而是识别出「多视角视频中空间信息过冗余」这一结构性事实,把 4D 生成拆成<b>低分辨率稠密布局</b>与<b>结构感知高清外观传播</b>两个可分别优化、可分别省显存的子任务。<b>它的收益几乎全部落在跨视角/时空一致性维度上(FVD-V 降 34.8%),而非外观质量维度(LPIPS 仅小胜)</b>——理解了这一点,才能判断它对本库是否有用。
+</div>
+
+<h3>对本库的价值</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>可以拿走的</h4>
+    <ul>
+      <li><b>「先便宜地定结构,再用生成模型补质量」</b>的两阶段分工——与我们的 COLMAP → HYPIR 链路同构。</li>
+      <li><b>MAP 的 Q/KV 交换</b>:当「条件是全局结构、查询是局部高清」时,把 Q 交给高清源、把 KV 交给结构源,比反过来更好训。这是一条可证伪的具体经验。</li>
+      <li><b>资源取舍显式化</b>:把「分辨率 vs 视角数」当设计变量而不是超参。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>不能拿走的</h4>
+    <ul>
+      <li>模型本身(30GB 显存 + 无代码 + 无数据)。</li>
+      <li>任何人体相关的结论(训练数据里没有人体)。</li>
+      <li>它的 SOTA 数字无法与人体工作直接比较(评测集与协议都不同)。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>在研究脉络中的位置</h3>
+<p>4DVD 处在「路线 A:多视角视频生成 → 4DGS 重建」的<b>通用起点</b>位置。它之前是 SV4D(稀疏视角)、CAT4D(相机/时间解耦);它之后,这条线在人体方向分化出 <a href="3D-20260820-4DAnyone.html">4DAnyone</a>(上下文工程:用 RCP 压缩参考、TCR 轮换目标分组)与 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a>(取消一切显式几何先验,只留相对相机位姿)。另一条更激进的路线 <a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a> 则质疑了整条路线的前提——「生成与重建之间的接口为什么必须是 RGB」。</p>
+
+<h3>👥 研究团队</h3>
+<p>Shuzhou Yang(PKU 深圳研究生院)、Xiaodong Cun(大湾区大学)、Xiaoyu Li(腾讯)、Yaowei Li(PKU 深圳研究生院)、Jian Zhang(PKU 深圳研究生院)。致谢提到本工作受<b>广东省超高清沉浸媒体技术重点实验室</b>资助(Grant No. 2024B1212010006)。</p>
+
+<h3>🔗 资源链接</h3>
+<div class="tag-row">
+  <a class="tag" href="https://arxiv.org/abs/2508.04467" target="_blank">📄 arXiv abs (2508.04467)</a>
+  <a class="tag" href="https://arxiv.org/html/2508.04467v1" target="_blank">🌐 arXiv HTML 全文</a>
+  <a class="tag" href="https://arxiv.org/pdf/2508.04467" target="_blank">📥 PDF</a>
+  <a class="tag" href="https://4dvd.github.io/" target="_blank">🏠 项目页</a>
+  <a class="tag" href="https://objaverse.allenai.org/" target="_blank">🗂 Objaverse 数据源</a>
+</div>
+
+<div class="note">
+<b>开源状态(2026-09-29 核实):</b>项目页 <code>4dvd.github.io</code> <b>未提供代码链接</b>,纯论文 + 视频展示页。GitHub 检索「4DVD」得到的结果(<code>dafrenchyman/4dvd</code>、<code>omarpimient/4DVD</code>、<code>JSiegel0516/4DVD-React</code> 等)均与本论文无关。<b>D-Objaverse 数据集论文承诺「发表时释放」,截至检索日未见公开入口。</b>
+</div>
+
+<div class="note">
+相关库内笔记:<a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> · <a href="3D-20260318-AHOY.html">AHOY!</a> · <a href="3D-20260710-StudioRecon.html">StudioRecon</a> · <a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a> · <a href="3D-20260820-4DAnyone.html">4DAnyone</a> · <a href="VideoGen-20250305-GEN3C.html">GEN3C</a> · <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a> · <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a> · <a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline 详解</a>
+</div>
+</section>
+
+<div class="footer">
+📝 阅读笔记 · 生成于 2026-09-29 · 论文 arXiv:2508.04467v1(2025-08-06)· 所有数字与引文均取自原文(Table 1–3、§3.2–§3.5、§5.1–§5.5、§6)· 无公开源码,工程细节均标注出处或标为「未给出」
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
+
+

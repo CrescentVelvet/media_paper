@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AHOY!:遮挡下的可动画 3DGS 人体</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2603.17975v2 · ECCV 2026 · 遮挡下的可动画人体</span>
+    <h1>AHOY!:把「遮挡」从要避开的问题变成可用的数据源</h1>
+    <div class="subtitle">AHOY! Animatable Humans under Occlusion from YouTube Videos with Gaussian Splatting and Video Diffusion Priors</div>
+    <div class="authors">Aymen Mir · Riza Alp Guler · Xiangjun Tang · Peter Wonka · Gerard Pons-Moll</div>
+    <div class="org">Tübingen AI Center / University of Tübingen · MPI for Informatics · Imperial College London · KAUST&nbsp;|&nbsp; cs.CV · <b>ECCV 2026</b>(arXiv abs 的 comments 字段确认)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2603.17975" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2603.17975v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2603.17975" target="_blank">📥 PDF</a>
+      <a href="https://miraymen.github.io/ahoy/" target="_blank">🏠 项目页</a>
+      <a href="https://miraymen.github.io/ahoy/static/ahoy_supplementary.pdf" target="_blank">📎 补充材料 PDF</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:被排除的绝大多数真实视频</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">阶段一:粗粒度 avatar 构建</a></li>
+    <li><a href="#s5">阶段二:身份微调的视频扩散模型</a></li>
+    <li><a href="#s6">阶段二:结构化运动与 RF-Inversion 幻觉</a></li>
+    <li><a href="#s7">阶段三:pose-dependent 高斯图</a></li>
+    <li><a href="#s8">阶段三:map/LBS 解耦与联合优化</a></li>
+    <li><a href="#s9">阶段三:FLAME 头部路径与总目标</a></li>
+    <li><a href="#s10">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结、演进定位与资源</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p>AHOY! 来自图宾根 AI Center、MPI-INF、帝国理工与 KAUST,已中稿 <b>ECCV 2026</b>。它要解决的是一件被整个领域<b>刻意绕开</b>的事:</p>
+
+<div class="callout key">
+<b>一句话概括:</b>此前所有单目人体重建方法都假设输入「<b>无遮挡、全身可见、常常还是规范姿态</b>」。这个假设把互联网上绝大多数真人视频排除在外——YouTube 上有数以十亿计的人在做日常活动的视频,身体被家具、物体或其他人挡住。AHOY! 的做法是<b>承认大片人体区域永远不会被观测到</b>,然后用一个<b>身份微调过的视频扩散模型</b>去「幻觉」出这些区域的稠密监督,再用这些监督训练一个完整的、可动画的 3DGS avatar。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">22.01 / 23.05</div><div class="l">YouTube PSNR(遮挡输入 / 规范姿态输入)</div></div>
+  <div class="stat"><div class="v">24.12 / 22.81</div><div class="l">BEHAVE PSNR(新视角 / 新姿态)</div></div>
+  <div class="stat"><div class="v">50</div><div class="l">自采集 YouTube 视频数(均有显著遮挡)</div></div>
+  <div class="stat"><div class="v">4 项</div><div class="l">宣称贡献(见下)</div></div>
+</div>
+
+<h3>四个宣称的贡献</h3>
+<table>
+<thead><tr><th>#</th><th>贡献</th><th>解决的问题</th></tr></thead>
+<tbody>
+<tr><td>①</td><td><b>hallucination-as-supervision</b>:用身份微调的扩散模型为从未观测过的身体区域生成稠密监督</td><td>大片区域无任何直接监督</td></tr>
+<tr><td>②</td><td><b>canonical → pose-dependent 两阶段架构</b>:从稀疏观测 bootstrap 到完整的 pose-dependent 高斯图</td><td>每个姿态都没有多视角监督,无法学姿态相关形变</td></tr>
+<tr><td>③</td><td><b>map-pose / LBS-pose 解耦</b>:吸收生成数据带来的多视角不一致</td><td>扩散生成的多视角视频<b>几何上互相不一致</b>,直接训会产生伪影</td></tr>
+<tr><td>④</td><td><b>head/body 分开监督</b>:保住面部身份</td><td>视频扩散模型生成的人脸<b>身份不一致</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>为什么这篇对本库特别重要:</b>贡献 ③(map/LBS 解耦)与贡献 ④(head/body 拆分)在结构上与我们的 <b>3DGS 拆分架构(head_gs / body_gs / scene_gs)</b> 是同构问题。更重要的是它给出了一个可复用的原则——<b>当生成式监督不可避免地带入不一致时,与其想办法让生成更一致,不如在表示层设计一个「吸收不一致」的自由度</b>。这条原则比它的具体实现更值得带到我们的 pipeline 里。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:被排除的绝大多数真实视频</h2>
+
+<h3>2.1 此前方法的假设与代价</h3>
+
+<p>论文的批评非常直白:基于 NeRF 与 3DGS 的 avatar 方法已经能产出高保真、可实时摆动姿态的结果,<b>但这些方法都假设输入无遮挡、主体全身可见、常常还是规范姿态</b>。</p>
+
+<div class="callout warn">
+这个假设的代价被作者算得很清楚:<b>YouTube 上有数以十亿计的人在做日常活动(做饭、锻炼、交谈)的视频,身体被家具、其他人或场景本身遮挡</b>。视角有限,身体的大片区域可能从未被观察到,或者在镜头里被切掉。<br>
+反过来看收益:如果能从这类视频重建完整 avatar,就<b>解锁了一个几乎无限的多样化人体外观来源</b>(各种体型与服装风格),而且<b>不需要受控采集、不需要多视角相机阵列、不需要被拍摄者配合</b>。
+</div>
+
+<h3>2.2 四个具体挑战(与四个贡献一一对应)</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>挑战一:从局部观测 bootstrap 出完整 avatar</h4>
+    <p>大片身体区域从未被观测,avatar 的相当一部分<b>没有任何直接监督</b>。论文用三步解决:① 先从「部分观测主体生成的多视角图像」建一个粗 3DGS avatar;② 让粗 avatar 做结构化运动,用身份微调的视频扩散 + 扩散反演把渲染结果<b>精修成幻觉监督视频</b>;③ 用这些幻觉视频训练带姿态相关形变的完整 avatar。</p>
+  </div>
+  <div class="card">
+    <h4>挑战二:没有多视角采集,却要学姿态相关外观</h4>
+    <p>高保真 avatar 需要 pose-dependent 形变来刻画衣物随身体构型的变化。但第一阶段<b>没有任何针对姿态相关形变的多视角监督</b>,所以只能先学一个不建模姿态相关形变的 avatar(时间不变的 canonical 高斯图)。缺失的监督靠第二阶段设计的<b>结构化运动序列</b>补齐——这构成了「canonical → pose-dependent」这一步的架构洞察。</p>
+  </div>
+  <div class="card">
+    <h4>挑战三:吸收扩散生成数据的多视角不一致</h4>
+    <p>每段幻觉视频是<b>独立从扩散模型采样</b>的,因此跨视角、跨帧<b>并不几何一致</b>。naive 地在这上面训练会产生伪影。解法是引入两个不同的姿态:一个「map pose」(跨相似姿态帧共享,保证高斯属性预测一致)与一个「LBS pose」(逐帧优化,用来吸收扩散模型固有的几何不一致)。</p>
+  </div>
+  <div class="card">
+    <h4>挑战四:扩散输出不可靠时保住面部身份</h4>
+    <p>视频扩散模型生成的<b>人脸身份不一致</b>。做法是通过 SMPL-to-FLAME 顶点对应把 avatar 划分成头与身体,<b>把头部像素从基于扩散的身体监督中 mask 掉</b>,改用专门的<b>多视角人脸扩散模型</b>监督头部以保身份。</p>
+  </div>
+</div>
+
+<h3>2.3 假设在什么条件下会失效</h3>
+
+<div class="callout warn">
+<b>作者自陈(§5 Conclusion):</b>
+<ol>
+  <li><b>身份微调模型可能对「从未被观测过的区域」幻觉出「看似合理但错误」的细节</b>——生成模型没有事实依据可依,只能靠先验猜。</li>
+  <li><b>最终 avatar 的质量上界由视频扩散模型的保真度决定</b>。</li>
+  <li><b>流水线需要多阶段优化与多次扩散推理,因此显著慢于前馈方法。</b></li>
+</ol>
+<b>本笔记补充的一条隐含边界:</b>整套机制依赖「<b>输入视频里有足够可见区域来微调身份</b>」。身份微调需要从输入视频学 LoRA + 文本 token;如果遮挡过于严重(比如只露出头与肩膀),身份先验本身就学不好,幻觉质量会随之崩塌。论文在 50 个 YouTube 视频上没有给出「遮挡比例 × 质量」的曲线来界定这个边界。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>3.1 任务定义</h3>
+
+<p>给定一段人体被部分遮挡的单目视频,目标是重建<b>完整的、可动画的 3D 高斯 avatar</b>,并可用任意姿态驱动。流水线分四步:</p>
+
+<ol>
+  <li>从部分观测主体构建粗 avatar;</li>
+  <li>通过身份微调的视频扩散生成幻觉监督;</li>
+  <li>用这些监督训练带 pose-dependent 高斯图的完整 avatar;</li>
+  <li>动画与场景合成。</li>
+</ol>
+
+<h3>3.2 符号表</h3>
+
+<table>
+<thead><tr><th>符号</th><th>含义</th><th>取值 / 备注</th></tr></thead>
+<tbody>
+<tr><td>$\{\mathbf{I}_t\}_{t=1}^{T}$</td><td>输入单目视频帧</td><td>—</td></tr>
+<tr><td>$(\bm{\theta}_t,\bm{\beta})$</td><td>逐帧 SMPL 姿态 / 共享形状参数</td><td>由 <b>NLF</b> 估计</td></tr>
+<tr><td>$\{\mathbf{M}_t\}$</td><td>可见性掩码</td><td>由 <b>SAM 3</b> 得到</td></tr>
+<tr><td>$\bm{\theta}_{*}$</td><td>固定的正面规范姿态</td><td>—</td></tr>
+<tr><td>$\mathbf{I}_{*}^{\mathrm{part}}$</td><td>部分规范姿态图像(未观测区域为空)</td><td>由 DensePose 反查 warp 得到</td></tr>
+<tr><td>$\mathbf{I}_{*}$</td><td>完整规范姿态图像</td><td>由 <b>FLUX</b> inpainting 补全</td></tr>
+<tr><td>$V$</td><td>规范姿态视角数</td><td>$V=4$(前 + 后 + 左 + 右)</td></tr>
+<tr><td>$\{\bm{\gamma}_v\}$</td><td>规范视角相机</td><td>正交相机</td></tr>
+<tr><td>$N_H$</td><td>SMPL 网格上采样的点数 / 高斯数</td><td class="fail">论文未给出具体值</td></tr>
+<tr><td>$\mathcal{G}^{H}_{*}$</td><td>canonical 高斯模板</td><td>由 $N_H$ 个点定义</td></tr>
+<tr><td>$S$</td><td>StyleUNet,预测逐像素高斯属性偏移 + 蒙皮权重</td><td>第三阶段会<b>重新初始化</b></td></tr>
+<tr><td>$\mathbf{w}^{H}_{k,j}$</td><td>第 $k$ 个高斯的第 $j$ 个关节蒙皮权重</td><td>$j=1,\dots,J$</td></tr>
+<tr><td>$\mathcal{T}(\mathcal{G}^{H};\bm{\theta})$</td><td>LBS 形变算子</td><td>由 $\mathbf{w}$ 驱动</td></tr>
+<tr><td>$\mathbf{v}_{\phi}$</td><td>身份微调后的速度场</td><td>基于 <b>Wan 2.2</b></td></tr>
+<tr><td>$[\mathrm{v}]$</td><td>绑定目标身份的可学习文本 token</td><td>在文本编码器嵌入空间中学习</td></tr>
+<tr><td>$\mathbf{A}\mathbf{B}$</td><td>LoRA 更新,$\mathbf{W}'=\mathbf{W}+\mathbf{A}\mathbf{B}$</td><td>—</td></tr>
+<tr><td>$N$</td><td>结构化运动序列数</td><td class="fail">论文未给出具体值</td></tr>
+<tr><td>$\{\tilde{\mathbf{V}}_n\}_{n=1}^{N}$</td><td>幻觉监督视频集</td><td>RF-Inversion 产出</td></tr>
+<tr><td>$\bm{\theta}^{\mathrm{map}}_{n}$</td><td><b>map pose</b>:StyleUNet 的输入,序列内固定</td><td>每个序列共享</td></tr>
+<tr><td>$\bm{\theta}^{\mathrm{lbs}}_{n,t}$</td><td><b>LBS pose</b>:把高斯形变到 posed 空间,逐帧变化</td><td>逐帧</td></tr>
+<tr><td>$\Delta\bm{\theta}_{n,t}$、$\Delta\bm{\gamma}_{n,t}$</td><td>逐帧 LBS 姿态修正 / 相机修正</td><td>可学习</td></tr>
+<tr><td>$\bm{\psi}_{p}$</td><td>FLAME 表情参数</td><td>头部路径</td></tr>
+<tr><td>$\mathcal{H}_{\mathrm{head}}$</td><td>SMPL 头部区域对应的高斯索引集合</td><td>$\subset\{1,\dots,N_H\}$</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 总体数据流</h3>
+
+<div class="mermaid">
+flowchart TD
+    IN["带遮挡的单目 YouTube 视频"] --> B1["Block 1: 粗 avatar 构建"]
+    B1 --> TEX["DensePose UV 累积到规范纹理图<br/>first-write-wins"]
+    TEX --> FLUXI["FLUX 补全未观测区域"]
+    FLUXI --> MV["多视角扩散生成 3 个额外规范视角<br/>V=4"]
+    MV --> COARSE["canonical 高斯图 + StyleUNet + LBS<br/>粗 3DGS avatar"]
+    IN --> B2["Block 2: 身份微调 Wan 2.2 + LoRA + token v"]
+    COARSE --> RENDER["粗 avatar 做结构化运动并渲染"]
+    B2 --> RFI["RF-Inversion 精修渲染"]
+    RENDER --> RFI
+    RFI --> HALL["幻觉监督视频集"]
+    HALL --> B3["Block 3: pose-dependent 高斯图<br/>map pose / LBS pose 解耦"]
+    B2 --> HEAD["CAP4D 多视角人脸扩散<br/>FLAME 头部路径"]
+    B3 --> FULL["完整可动画 avatar"]
+    HEAD --> FULL
+    FULL --> B4["Block 4: 新姿态驱动 + 合成进 3DGS 场景"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style COARSE fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style RFI fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style FULL fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style B4 fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+
+<div class="figure">
+  <img src="images/2603.17975/method_font2.png" loading="lazy" alt="AHOY 方法总览">
+  <div class="caption"><b>图1</b>(论文 Figure 2)<b>方法总览。</b>Block 1:把部分遮挡视频中观测到的纹理经 DensePose UV 对应映射到规范姿态,用 FLUX 补全缺失区域,再用多视角扩散生成规范姿态多视角图像,以此监督一个使用 canonical 高斯图的粗 3DGS avatar。Block 2:用 LoRA 微调视频扩散模型(Wan 2.2)以捕捉主体身份,让粗 avatar 执行结构化运动序列,并通过 RF-Inversion 在身份微调的 latent 空间中精修这些渲染,产出幻觉监督视频。Block 3:幻觉视频监督一个带 pose-dependent 高斯图的完整 avatar,其中逐帧姿态与相机被联合优化以吸收多视角不一致;另有一条独立的 FLAME 头部路径保住面部身份。Block 4:推理时 avatar 被新姿态驱动并合成进 3DGS 场景。</div>
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>阶段一:粗粒度 avatar 构建</h2>
+
+<h3>4.1 纹理映射与补全</h3>
+
+<ol>
+  <li>用 <b>NLF</b> 估计逐帧 SMPL 参数 $\{(\bm{\theta}_t,\bm{\beta})\}$,用 <b>SAM 3</b> 得到可见性掩码 $\{\mathbf{M}_t\}$;</li>
+  <li>用 <b>DensePose</b> 给每个可见像素分配 UV 坐标,<b>逐帧累积</b>到一张规范纹理图上,采用 <b>first-write-wins</b> 规则以避免时间混合伪影;</li>
+  <li>定义一个固定的正面规范姿态 $\bm{\theta}_{*}$,通过 <b>DensePose 逆对应</b>把纹理图 warp 回该姿态,得到<b>部分</b>规范姿态图像 $\mathbf{I}_{*}^{\mathrm{part}}$——<b>从未被观测的区域留空</b>;</li>
+  <li>用预训练的 <b>FLUX</b> inpainting 模型填充这些缺失区域,得到完整的规范姿态图像 $\mathbf{I}_{*}$。</li>
+</ol>
+
+<div class="callout">
+<b>「first-write-wins」这个细节值得记:</b>如果对同一 UV 位置按多帧做平均或加权合成,前景人物自身的运动就会在纹理图上留下<b>时间混合伪影</b>(拖影)。先写先赢意味着<b>只信任第一次观测</b>,主动放弃后续观测——在一个「反正大部分区域要交给 inpainting」的流程里,这个取舍是合理的。
+</div>
+
+<h3>4.2 多视角生成与粗 3DGS</h3>
+
+<p>补全后的规范图像只提供<b>一个视角</b>。为了获得更广覆盖,用预训练的多视角扩散模型生成 <b>$V-1=3$</b> 个额外的规范姿态视角(后、左、右),<b>丢弃它的 3D 重建分支</b>。连同正面视角 $\mathbf{I}_{*}^{1}=\mathbf{I}_{*}$,得到 $V=4$ 张规范姿态图像 $\{\mathbf{I}_{*}^{v}\}_{v=1}^{V}$,相机 $\{\bm{\gamma}_v\}$ 已知且为正交。</p>
+
+<h4>Canonical 高斯图</h4>
+<p>沿用既有工作(论文引用 [85] 与 [71])的做法:在规范姿态 $\bm{\theta}_{*}$ 的 SMPL 网格上<b>稠密采样 $N_H$ 个点</b>,定义 canonical 高斯模板 $\mathcal{G}^{H}_{*}$;从<b>正面与背面</b>投影生成 canonical 位置图,建立<b>像素到高斯的一一对应</b>。</p>
+
+<div class="callout warn">
+<b>与既有工作的关键差异(作者明确点出):</b>不同于 [85] 里<b>姿态相关</b>的人体高斯图,这里用的是<b>时间不变的 canonical 图</b>。理由是——「我们的单目遮挡设定缺少姿态条件偏移所需的多视角覆盖」。这是一次<b>诚实的能力降级</b>:不是不想做 pose-dependent,而是数据条件不允许。这也直接催生了阶段二「用结构化运动把缺失的多视角监督造出来」的设计。
+</div>
+
+<h4>StyleUNet 预测</h4>
+<p>一个 <b>StyleUNet</b> $S$ 处理 canonical 位置图,为每个高斯属性预测相对模板的<b>逐像素偏移</b>,得到 canonical 高斯集合 $\mathcal{G}^{H}=S(\bm{\theta}_{*})$。此外 $S$ 还预测每个高斯的<b>蒙皮权重</b> $\mathbf{w}^{H}_{k,j}$,$j=1,\dots,J$ 为关节索引。</p>
+
+<h4>LBS 形变</h4>
+<p>对每一帧 $t$,用估计姿态 $\bm{\theta}_t$ 通过线性混合蒙皮(LBS)与预测的蒙皮权重 $\mathbf{w}^{H}_{k,j}$ 把 canonical 高斯形变到 posed 空间,记整个形变为 $\mathcal{T}(\mathcal{G}^{H};\bm{\theta}_t)$。<b>颜色与不透明度保持 StyleUNet 的预测不变</b>。</p>
+
+<h3>4.3 训练目标</h3>
+
+<p>粗 avatar 由两个来源监督:① 已知相机下的 $V$ 张规范姿态图像;② 估计姿态与观测相机 $\bm{\gamma}^{\mathrm{obs}}$ 下的 $T$ 帧观测视频。记 $\hat{\mathbf{I}}_{t}=\mathcal{R}(\mathcal{T}(\mathcal{G}^{H};\bm{\theta}_{t});\bm{\gamma}^{\mathrm{obs}})$ 为第 $t$ 帧渲染结果:</p>
+
+<div class="equation">
+$$\mathcal{L}_{\mathrm{coarse}}=\sum_{v=1}^{V}\|\mathbf{I}_{*}^{v}-\mathcal{R}(\mathcal{G}^{H};\bm{\gamma}_{v})\|_{1}\;+\;\sum_{t=1}^{T}\|(\mathbf{I}_{t}-\hat{\mathbf{I}}_{t})\odot\mathbf{M}_{t}\|_{1}$$
+<span class="tag">(式 1)</span>
+</div>
+
+<p>其中 $\odot$ 为逐元素乘,$\mathbf{M}_t$ 把遮挡区域 mask 掉。另加一个<b>同样带掩码的感知损失</b>(细节在补充材料)。结果是一个「<b>对可见部分忠实、但未观测区域有伪影</b>」的粗 avatar。</p>
+
+<div class="callout">
+<b>这个损失的设计需要点出来:</b>监督被<b>显式拆成两项</b>——规范视角项(无条件、全图)与观测帧项(带掩码)。关键在于未观测区域<b>在第二项里被 $\mathbf{M}_t$ 屏蔽</b>,所以那个区域在阶段一<b>确实没有任何监督</b>。这正是伪影的来源,也是阶段二必须存在的理由。
+</div>
+
+<h3>4.4 模块五件套</h3>
+
+<h4>① 网络结构表</h4>
+<table>
+<thead><tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr></thead>
+<tbody>
+<tr><td>SMPL 网格上采样 $N_H$ 个点</td><td>正 / 背面投影</td><td>canonical 位置图(像素↔高斯一一对应)</td></tr>
+<tr><td>canonical 位置图</td><td>StyleUNet $S$</td><td>逐像素高斯属性偏移 + 蒙皮权重 $\mathbf{w}^H_{k,j}$</td></tr>
+<tr><td>canonical 高斯 + 姿态 $\bm{\theta}_t$</td><td>LBS 形变 $\mathcal{T}$</td><td>posed 空间高斯</td></tr>
+<tr><td>posed 高斯 + 相机 $\bm{\gamma}$</td><td>可微光栅化 $\mathcal{R}$</td><td>渲染图像 $\hat{\mathbf{I}}$</td></tr>
+</tbody>
+</table>
+
+<h4>② 数学形式化</h4>
+<p>见式(1)。监督的拆项结构决定了「未观测区域无监督」这一后果。</p>
+
+<h4>③ 前向流程</h4>
+<ol>
+  <li>DensePose 累积纹理图 → 逆 warp 到规范姿态 → FLUX 补全 → 多视角扩散生成 4 视角;</li>
+  <li>SMPL 采样 $N_H$ 点 → 正背投影得位置图;</li>
+  <li>StyleUNet 从位置图预测高斯属性偏移与蒙皮权重;</li>
+  <li>逐帧 LBS 形变到 posed 空间并光栅化;</li>
+  <li>用式(1)反向传播更新 StyleUNet 与高斯属性。</li>
+</ol>
+
+<h4>④ 模块内部 Mermaid</h4>
+<div class="mermaid">
+flowchart LR
+    VID["遮挡视频 I_t + 掩码 M_t"] --> UV["DensePose UV 累积<br/>first-write-wins"]
+    UV --> ATLAS["规范纹理图"]
+    ATLAS --> WARP["逆 DensePose warp 到 theta_*"]
+    WARP --> PART["部分规范图像 I_*^part"]
+    PART --> FLUX["FLUX inpainting"]
+    FLUX --> I0["完整规范图像 I_*"]
+    I0 --> MVD["多视角扩散<br/>生成后 / 左 / 右 3 视角"]
+    MVD --> VIEWS["V=4 规范视角"]
+    SMPL["SMPL 网格采样 N_H 点"] --> POS["正背投影位置图"]
+    POS --> SUNET["StyleUNet S<br/>属性偏移 + 蒙皮权重"]
+    SUNET --> GH["canonical 高斯"]
+    GH --> LBS["LBS 形变 + 光栅化"]
+    VIEWS --> LOSS["式 1 监督"]
+    VID --> LOSS
+    LBS --> LOSS
+    style UV fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style FLUX fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style SUNET fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style LOSS fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h4>⑤ 该模块的监督信号</h4>
+<p>式(1)的 masked L1 + 同掩码感知损失。<b>关键局限:未观测区域无监督</b>(被 $\mathbf{M}_t$ 屏蔽)。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>阶段二:身份微调的视频扩散模型</h2>
+
+<p>阶段二的逻辑起点很清晰:粗 avatar 只被 $V=4$ 张规范视角图与<b>被遮挡的</b>输入帧监督。这个覆盖度意味着<b>未观测区域(背部、手臂内侧、被遮挡物持续挡住的任何区域)重建质量差</b>,且 avatar 无法泛化到训练中未见的新姿态与新相机角。</p>
+
+<h3>5.1 为什么必须做身份微调</h3>
+
+<div class="callout key">
+一个通用视频扩散模型<b>不认识这个具体主体的外观</b>。所以要在输入视频上微调它,建立一个<b>身份专属的先验</b>。如果不微调,后续的「幻觉」就会生成<b>任意一个穿戴类似衣物的人</b>,而不是视频里的这个人。
+</div>
+
+<h3>5.2 做法:把 Dynamic Concepts 的身份编码迁到 Wan 2.2</h3>
+
+<p>论文把 <b>Dynamic Concepts</b> 的身份编码阶段适配到 <b>Wan 2.2</b> 上:</p>
+
+<ul>
+  <li>记预训练整流流模型的速度场为 $\mathbf{v}_{\phi}$;</li>
+  <li>学习一个 <b>LoRA 更新 $\mathbf{A}\mathbf{B}$</b>,同时学习一个<b>可学习文本 token $[\mathrm{v}]$</b>,它在文本编码器的嵌入空间中<b>绑定到目标身份</b>;</li>
+  <li>沿用 Dynamic Concepts 的做法,<b>把输入视频当作一组无序帧</b>(去掉时间信息),使 LoRA 只捕捉<b>外观与身份</b>,而不把运动动态纠缠进来。</li>
+</ul>
+
+<h3>5.3 训练目标:流匹配损失</h3>
+
+<div class="equation">
+$$\mathcal{L}_{\mathrm{id}}=\mathbb{E}_{\tau,\mathbf{z}_{0}}\left[\left\|(\mathbf{z}_{1}-\mathbf{z}_{0})-\mathbf{v}_{\phi}(\mathbf{z}_{\tau},\tau;\text{``a}\;[\mathrm{v}]\;\text{person''})\right\|^{2}\right]$$
+<span class="tag">(式 2)</span>
+</div>
+
+<p>其中 $\mathbf{z}_{0}=\mathsf{Enc}(\mathbf{I}_{t})$ 是 VAE 编码的 latent;$\mathbf{z}_{1}\sim\mathcal{N}(\mathbf{0},\mathbb{I})$ 是噪声($\mathbb{I}$ 为单位矩阵);$\mathbf{z}_{\tau}=(1-\tau)\mathbf{z}_{0}+\tau\mathbf{z}_{1}$ 是流时间 $\tau\in[0,1]$ 处的插值 latent;速度场由施加在预训练权重 $\mathbf{W}$ 上的 LoRA 更新 $\mathbf{W}'=\mathbf{W}+\mathbf{A}\mathbf{B}$ 参数化。</p>
+
+<div class="callout tip">
+<b>「无序帧」这个设计是本节最关键的一步:</b>把视频当帧集合处理,等价于<b>主动丢弃时序结构</b>。目的不是简化,而是<b>隔离变量</b>——让微调只学到「这个人长什么样」,而不是「这个人怎么动」。这样后面用该模型去精修「任意姿态的渲染」时,它提供的是<b>纯粹的外观先验</b>,不会与目标动作冲突。<br>
+<b>本笔记的对照:</b>这与我们在 pipeline 里「<b>固定所有帧的表情系数以消除面部微动</b>」是同一种思路——都是主动把某个方差源置零,以免它污染真正想学的东西。
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>阶段二:结构化运动与 RF-Inversion 幻觉</h2>
+
+<h3>6.1 为什么要「设计」运动序列</h3>
+
+<p>不是随便生成任意动作,而是<b>精心策划 $N$ 段运动序列</b>,目的有二:<b>① 系统性地把所有身体表面暴露给相机;② 提供学习 pose-dependent 高斯图所需的多视角覆盖。</b></p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>结构化运动(转体类 / turn)</h4>
+    <p>每段序列把一个<b>目标身体动作</b>(如抬臂、双臂高举)与一次<b>完整 360° 身体旋转</b>配对。</p>
+    <p><b>关键观察:</b>这种序列里的所有帧都可以视为<b>同一姿态在不同角度下的视图</b>——身体动作近似恒定,而旋转扫过了人的四周。因此一段 $T'$ 帧的转体,提供了对<b>单一姿态的 $T'$ 视角监督</b>,使模型能学到「在该特定身体构型下,高斯表示从每个方向看应该是什么样」。</p>
+  </div>
+  <div class="card">
+    <h4>结构化运动(静态类 / static)</h4>
+    <p>某些姿态(如<b>坐姿</b>)与全身转体不兼容。对这些姿态,论文生成<b>同一坐姿在多个不同相机角度下的多段视频</b>,然后<b>把姿态匹配的帧跨视频同步</b>,用所有对应视频的图像监督每个姿态。</p>
+    <p>这提供了与转体序列「视频内多视角」等价的<b>跨视频多视角</b>监督。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>这一节的洞察是全文最漂亮的一处:</b>「一个姿态 × 环绕视角」被<b>等价转化</b>为「$T'$ 个视角对同一姿态的监督」。它把「没有多视角采集」这个硬约束,用<b>受控的运动设计</b>绕过去了——因为你控制着让 avatar 做动作,所以你也就控制了它被观察的方式。<br>
+这是「<b>主动制造监督</b>」而非「被动等待监督」的思路,与本库 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 用视频扩散<b>合成数百个新视角来稠密化背景监督</b>属于同一类策略。
+</div>
+
+<h3>6.2 粗渲染</h3>
+
+<p>对每个运动序列 $n$,用对应的姿态 $\{\bm{\theta}'_t\}_{t=1}^{T'}$ 驱动粗 avatar,并从观测相机 $\bm{\gamma}^{\mathrm{obs}}$ 渲染:</p>
+
+<div class="equation">
+$$\hat{\mathbf{V}}_{n}=\bigl\{\mathcal{R}\!\bigl(\mathcal{T}(\mathcal{G}^{H};\bm{\theta}^{\prime}_{t});\,\bm{\gamma}^{\mathrm{obs}}\bigr)\bigr\}_{t=1}^{T^{\prime}}$$
+<span class="tag">(式 3)</span>
+</div>
+
+<p>这些渲染<b>捕捉到了正确的身体姿态与轮廓</b>,但在输入视频中被遮挡的区域带有伪影与缺失纹理。</p>
+
+<h3>6.3 通过 RF-Inversion 做幻觉</h3>
+
+<p>精修的方式是把每段视频<b>过一遍身份微调模型的 latent 空间</b>,用 RF-Inversion 把伪影替换成身份一致的外观。记 $\mathsf{Enc}$ / $\mathsf{Dec}$ 为 VAE 编解码器,$\mathbf{z}_{0}=\mathsf{Enc}(\hat{\mathbf{V}}_{n})$ 为编码后的粗视频:正向前向整流流 ODE 把它映射到噪声 latent $\mathbf{z}_{1}$,再用身份微调模型反向流动并解码出幻觉视频:</p>
+
+<div class="equation">
+$$\mathbf{z}_{1}=\mathbf{z}_{0}+\!\int_{0}^{1}\mathbf{v}_{\phi}(\mathbf{z}_{\tau},\tau)\,\mathrm{d}\tau,\qquad
+\tilde{\mathbf{z}}_{0}=\mathbf{z}_{1}+\!\int_{1}^{0}\mathbf{v}_{\phi}(\mathbf{z}_{\tau},\tau)\,\mathrm{d}\tau,\qquad
+\tilde{\mathbf{V}}_{n}=\mathsf{Dec}(\tilde{\mathbf{z}}_{0})$$
+<span class="tag">(式 4)</span>
+</div>
+
+<div class="callout">
+<b>为什么这个「正反两遍」是必要的(论文的解释):</b>
+<ul>
+  <li><b>正向过程</b>把粗渲染的<b>空间结构(身体姿态与轮廓)编码进 $\mathbf{z}_{1}$</b>——这一步是「编码结构」;</li>
+  <li><b>反向过程</b>在保留这个布局的同时,<b>通过 LoRA 把外观引向主体身份</b>,从而把先前缺失的区域填上合理纹理——这一步是「注入身份」。</li>
+</ul>
+换句话说:<b>结构来自渲染,外观来自扩散先验</b>。二者分工明确,这也是它既能保住姿态又能补出纹理的原因。
+</div>
+
+<p>对全部 $N$ 段运动序列施加该过程,得到幻觉视频集 $\{\tilde{\mathbf{V}}_{n}\}_{n=1}^{N}$,它提供了后续训练完整 avatar 所需的多视角身体覆盖。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>阶段三:pose-dependent 高斯图</h2>
+
+<h3>7.1 从 canonical 升级到 pose-dependent 的条件已经具备</h3>
+
+<p>阶段一用的是<b>时间不变的 canonical 图</b>,因为当时没有针对多个姿态的多视角监督。现在幻觉视频<b>提供了这个覆盖</b>:</p>
+
+<ul>
+  <li>在转体序列里,所有 $T'$ 帧观察到<b>近似同一个身体姿态</b>,但来自不同视角 → 对该姿态<b>等效 $T'$ 视角监督</b>;</li>
+  <li>在静态姿态序列里(如坐姿),把不同角度的多段视频中<b>同一个姿态出现处的帧同步起来</b> → <b>跨视频多视角监督</b>。</li>
+</ul>
+
+<p>有了这些稠密覆盖,就可以按既有工作(Animatable Gaussians 系)的做法升级为 pose-dependent 高斯图:<b>对每一帧把 posed SMPL 顶点投影到前 / 后 UV 图</b>,并用一个<b>重新初始化的 StyleUNet</b> $S$ 以这些 pose-dependent 图为输入,预测相对 canonical 模板的逐像素高斯属性偏移:</p>
+
+<div class="equation">
+$$\mathcal{G}^{H}_{n}=S(\bm{\theta}_{n}^{\mathrm{map}})$$
+<span class="tag">(pose-dependent 高斯集)</span>
+</div>
+
+<h3>7.2 全文最关键的设计:同一个「姿态」的两个角色</h3>
+
+<div class="callout key">
+<table style="margin:10px 0">
+<thead><tr><th>角色</th><th>符号</th><th>作用</th><th>粒度</th></tr></thead>
+<tbody>
+<tr><td><b>map pose</b></td><td>$\bm{\theta}_{n}^{\mathrm{map}}$</td><td>作为 StyleUNet $S$ 的<b>输入</b>,决定生成哪一套高斯属性</td><td><b>序列内固定</b>(所有帧共享)</td></tr>
+<tr><td><b>LBS pose</b></td><td>$\bm{\theta}_{n,t}^{\mathrm{lbs}}$</td><td>把 $S$ 预测出的高斯<b>形变到 posed 空间</b></td><td><b>逐帧变化</b></td></tr>
+</tbody>
+</table>
+以转体序列为例:map pose 编码<b>目标身体构型</b>(如双臂高举),使 $S$ 产出<b>一套</b>代表该姿态的高斯;逐帧的 LBS pose 则负责身体旋转,把同一套高斯映射到每个视角下正确的 3D 朝向。
+</div>
+
+<div class="callout">
+<b>本笔记的机制解读(论文未明说):</b>map/LBS 解耦的本质是<b>把一个「N 个视角 × 1 个姿态」的欠定问题,从 N 套参数压成 1 套参数</b>。参数被共享,不一致就只能体现在被显式优化的修正量上;而修正量受 $\mathcal{L}_{\mathrm{reg}}$ 约束,不会无限增长。这是一个<b>用参数共享换一致性</b>的设计——与 <a href="3D-20250806-4DVD.html">4DVD</a> 用「稠密视角共享同一 batch」换一致性在心理模型上属于同一类。
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>阶段三:map/LBS 解耦与联合优化</h2>
+
+<h3>8.1 初始化</h3>
+
+<p>因为幻觉视频是<b>无遮挡</b>的,可以直接用 <b>NLF</b> 估计 SMPL 姿态,并假设相机在 NLF 参考系下。这些估计<b>同时初始化</b>两件事:map pose $\bm{\theta}_{n}^{\mathrm{map}}$(用于构造 $S$ 的 pose-dependent 输入图)与逐帧 LBS pose $\bm{\theta}_{n,t}^{\mathrm{lbs}}$。</p>
+
+<h3>8.2 联合优化的对象</h3>
+
+<p>优化的东西有三类,<b>同时进行</b>:① <b>StyleUNet $S$</b> 本身(重新初始化);② <b>逐帧 LBS 姿态修正</b> $\{\Delta\bm{\theta}_{n,t}\}$;③ <b>逐帧相机修正</b> $\{\Delta\bm{\gamma}_{n,t}\}$。</p>
+
+<p>记 $\tilde{\mathbf{I}}_{n,t}$ 为第 $n$ 段幻觉视频的第 $t$ 帧。用 <b>Sapiens</b> 与 <b>SAM 3</b> 得到的分割掩码 $\mathbf{M}_{n,t}^{\mathrm{head}}$ <b>排除头部像素</b>(因为扩散生成的人脸对身份保真不可靠)。身体监督损失为:</p>
+
+<div class="equation">
+$$\mathcal{L}_{\mathrm{body}}=\sum_{n,t}\bigl\|\bigl(\tilde{\mathbf{I}}_{n,t}-\hat{\mathbf{I}}_{n,t}\bigr)\odot\bigl(1-\mathbf{M}_{n,t}^{\mathrm{head}}\bigr)\bigr\|_{1}
+,\qquad
+\hat{\mathbf{I}}_{n,t}=\mathcal{R}\!\bigl(\mathcal{T}(\mathcal{G}^{H}_{n};\,\bm{\theta}_{n,t}^{\mathrm{lbs}}\!+\!\Delta\bm{\theta}_{n,t});\;\bm{\gamma}^{\mathrm{obs}}\!+\!\Delta\bm{\gamma}_{n,t}\bigr)$$
+<span class="tag">(式 5)</span>
+</div>
+
+<div class="callout key">
+<b>「故意制造 map pose 与 LBS pose 的分歧」——这句话是全文的机制核心(论文原话要点):</b><br>
+map pose $\bm{\theta}_{n}^{\mathrm{map}}$ 在序列 $n$ 的所有帧间<b>共享</b>,因此每个幻觉视角都在监督<b>同一张 pose-dependent 高斯图</b>。而 LBS 姿态修正 $\Delta\bm{\theta}_{n,t}$ <b>逐帧不同</b>,专门用来吸收扩散生成数据里逐帧的多视角不一致。论文明确说这引入了「<b>一个有意的分歧</b>」,使 canonical 高斯保持彼此一致、而形变能适配每一帧。
+</div>
+
+<h3>8.3 保留的观测帧监督(防漂移锚点)</h3>
+
+<div class="equation">
+$$\mathcal{L}_{\mathrm{obs}}=\sum_{t}\|(\mathbf{I}_{t}-\hat{\mathbf{I}}_{t}^{\mathrm{obs}})\odot\mathbf{M}_{t}\|_{1}$$
+<span class="tag">(与式 1 第二项同构)</span>
+</div>
+
+<p>其中 $\hat{\mathbf{I}}_{t}^{\mathrm{obs}}$ 用<b>原始估计的姿态与相机</b>(不加修正)渲染。<b>这一项是防止「幻觉漂移太远」的锚点</b>——它始终把 avatar 拉回真实观测。</p>
+
+<h3>8.4 五件套</h3>
+
+<h4>① 网络结构表</h4>
+<table>
+<thead><tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr></thead>
+<tbody>
+<tr><td>pose-dependent 前后 UV 图(由 $\bm{\theta}^{\mathrm{map}}_{n}$ 投影得来)</td><td>StyleUNet $S$(重新初始化)</td><td>$\mathcal{G}^{H}_{n}$:该姿态下的高斯集</td></tr>
+<tr><td>$\mathcal{G}^{H}_{n}$ + $\bm{\theta}^{\mathrm{lbs}}_{n,t}+\Delta\bm{\theta}_{n,t}$</td><td>LBS 形变 $\mathcal{T}$</td><td>posed 空间高斯</td></tr>
+<tr><td>posed 高斯 + $\bm{\gamma}^{\mathrm{obs}}+\Delta\bm{\gamma}_{n,t}$</td><td>可微光栅化 $\mathcal{R}$</td><td>$\hat{\mathbf{I}}_{n,t}$</td></tr>
+<tr><td>渲染 + 掩码 $1-\mathbf{M}^{\mathrm{head}}$</td><td>式(5) L1</td><td>梯度回传到 $S$、$\Delta\bm{\theta}$、$\Delta\bm{\gamma}$</td></tr>
+</tbody>
+</table>
+
+<h4>② 数学形式化</h4>
+<p>式(5)。可学习量是 $\{S,\Delta\bm{\theta}_{n,t},\Delta\bm{\gamma}_{n,t}\}$;map pose 是<b>固定输入</b>,不是可学习量——这一点是解耦的核心。</p>
+
+<h4>③ 前向流程</h4>
+<ol>
+  <li>NLF 在无遮挡的幻觉视频上估姿态 → 初始化 map pose(序列级)与 LBS pose(帧级);</li>
+  <li>用 map pose 投影 SMPL 顶点到前后 UV 图;</li>
+  <li>StyleUNet 预测该姿态下的高斯集;</li>
+  <li>用 LBS pose + 逐帧修正形变到 posed 空间,用相机 + 修正渲染;</li>
+  <li>用式(5)计算身体损失(屏蔽头部像素)并反向传播;</li>
+  <li>同时施加观测帧监督 $\mathcal{L}_{\mathrm{obs}}$,防止漂移。</li>
+</ol>
+
+<h4>④ 模块内部 Mermaid</h4>
+<div class="mermaid">
+flowchart TD
+    HALL["幻觉视频(无遮挡)"] --> NLF["NLF 估 SMPL 姿态"]
+    NLF --> MP["map pose: 序列内固定"]
+    NLF --> LP["LBS pose: 逐帧"]
+    MP --> UV["投影到前后 UV 图"]
+    UV --> S["StyleUNet S(重新初始化)"]
+    S --> GH["该序列的 pose-dependent 高斯集"]
+    LP --> DTH["+ 逐帧姿态修正"]
+    GH --> TRANS["LBS 形变"]
+    DTH --> TRANS
+    TRANS --> REND["渲染 + 逐帧相机修正"]
+    REND --> MASK["屏蔽头部像素"]
+    MASK --> LOSS["式 5 身体损失"]
+    OBS["输入观测帧 + 掩码"] --> LOSSO["观测监督(锚点)"]
+    style HALL fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style MP fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style LP fill:#fce7f3,stroke:#ec4899,color:#831843
+    style LOSS fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style LOSSO fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h4>⑤ 监督信号</h4>
+<p>式(5)身体损失(屏蔽头部)+ 观测帧损失 $\mathcal{L}_{\mathrm{obs}}$。头部由独立路径监督(见 §9)。</p>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>阶段三:FLAME 头部路径与总目标</h2>
+
+<h3>9.1 为什么头部必须走独立路径</h3>
+
+<div class="callout warn">
+论文直说:<b>Wan 生成的视频里,头部区域对「面部身份」是不可靠的</b>。这与 §5 里「无序帧」设计想解决的问题同源——视频扩散模型的强项是场景与外观的合理性,不是<b>特定人脸的身份保持</b>。<br>
+因此策略是彻底的「<b>不信任 + 替换</b>」:把头部像素从扩散监督里 mask 掉(§8.2),再用一个专门保身份的多视角人脸扩散模型单独监督头部。
+</div>
+
+<h3>9.2 做法</h3>
+
+<ol>
+  <li>用 <b>CAP4D</b> 的多视角人脸扩散模型,从 $P$ 个已知相机 $\{\bm{\gamma}_{p}^{\mathrm{face}}\}$ 生成<b>身份一致</b>的头部图像 $\{\mathbf{I}^{\mathrm{face}}_{p}\}_{p=1}^{P}$;</li>
+  <li>用 <b>SMPL-to-FLAME 顶点对应</b>把 canonical 高斯划分成头与身体两部分:</li>
+</ol>
+
+<div class="equation">
+$$\mathcal{G}^{\mathrm{head}}=\bigl\{(\bm{\mu}_{k},\ldots)\in\mathcal{G}^{H}\;\big|\;k\in\mathcal{H}_{\mathrm{head}}\bigr\}$$
+<span class="tag">(式 6)</span>
+</div>
+
+<p>其中 $\mathcal{H}_{\mathrm{head}}\subset\{1,\ldots,N_{H}\}$ 是 SMPL 头部区域对应的高斯索引集合。</p>
+
+<ol start="3">
+  <li>头部监督时<b>只形变这些头部高斯</b>,用 FLAME 表情参数 $\bm{\psi}_{p}$:</li>
+</ol>
+
+<div class="equation">
+$$\mathcal{L}_{\mathrm{head}}=\sum_{p=1}^{P}\bigl\|\mathbf{I}^{\mathrm{face}}_{p}-\mathcal{R}\!\bigl(\mathcal{T}_{\mathrm{FLAME}}(\mathcal{G}^{\mathrm{head}};\,\bm{\psi}_{p});\,\bm{\gamma}_{p}^{\mathrm{face}}\bigr)\bigr\|_{1}$$
+<span class="tag">(式 7)</span>
+</div>
+
+<p>其中 $\mathcal{T}_{\mathrm{FLAME}}$ 对头部高斯施加基于 FLAME 的形变,<b>但它们的 canonical 位置与整体身体表示是共享的</b>。</p>
+
+<div class="callout tip">
+<b>「canonical 位置与整体身体表示共享」这一句是设计要点:</b>头部高斯<b>不是</b>一个独立的小 avatar 再拼上去,而是<b>同一套高斯集合的子集</b>——只是监督信号与形变算子不同。这样头部与脖子、肩部之间不会有接缝。这一点与「分离训练再拼接」的做法在工程结果上是不同的。
+</div>
+
+<h3>9.3 总目标</h3>
+
+<div class="equation">
+$$\mathcal{L}=\lambda_{\mathrm{body}}\mathcal{L}_{\mathrm{body}}+\lambda_{\mathrm{obs}}\mathcal{L}_{\mathrm{obs}}+\lambda_{\mathrm{head}}\mathcal{L}_{\mathrm{head}}+\lambda_{\mathrm{per}}\mathcal{L}_{\mathrm{per}}+\lambda_{\mathrm{reg}}\mathcal{L}_{\mathrm{reg}}$$
+<span class="tag">(式 8)</span>
+</div>
+
+<p>其中 $\mathcal{L}_{\mathrm{per}}$ 是感知损失,$\mathcal{L}_{\mathrm{reg}}$ 把蒙皮权重<b>正则向 SMPL 推导出的值</b>。论文<b>没有给出具体的 $\lambda$ 数值</b>(原文只写这些系数用于平衡各项),细节在补充材料。</p>
+
+<div class="callout warn">
+<span class="uncertain">【待核实】</span> 式(8)的五个 $\lambda$ 权重、$N_H$ 的具体值、$N$ 的具体值、$P$ 的取值、训练迭代数与硬件配置,主论文(<code>arxiv.org/html/2603.17975v2</code>)均未给出。本笔记尝试从项目页的补充材料 PDF 获取,但该 PDF <b>始终无法连通</b>(SSL 握手超时 / UNEXPECTED_EOF,重试多次均失败),因此<b>未能核实</b>。所有相关项在 §11 中标为「未获取」。
+</div>
+
+<h3>9.4 推理时的动画与场景合成</h3>
+
+<p>前面各阶段产出一个完整的、可动画的 3DGS avatar,可以由任意 SMPL 姿态通过 LBS + pose-dependent 高斯图驱动。动画部分沿用 <b>AHA!</b> 的做法在重建好的 3DGS 场景中驱动 avatar。<b>为防分布外伪影,推理时施加基于 PCA 的姿态投影</b>,把新驱动姿态约束到训练分布内(细节在补充材料)。</p>
+
+<p>给定一个从随手手机视频重建的静态高斯集 $\mathcal{G}^{S}$ 与 $T''$ 帧驱动运动 $\{\bm{\theta}_{t}\}$:</p>
+
+<div class="equation">
+$$\mathbf{I}_{\mathrm{out}}=\mathcal{R}\!\bigl(\mathcal{T}(\mathcal{G}^{H}_{t};\,\bm{\theta}_{t})\cup\mathcal{G}^{S};\;\bm{\gamma}\bigr),\qquad \mathcal{G}^{H}_{t}=S(\bm{\theta}_{t})$$
+<span class="tag">(场景合成与渲染)</span>
+</div>
+
+<div class="callout">
+<b>「PCA 姿态投影」这个工程细节值得记:</b>pose-dependent 高斯图只在训练见过的姿态分布上可靠。把驱动姿态投影到训练姿态的主成分空间内,是一种<b>廉价的 OOD 防护</b>——避免生成模型在未见姿态下崩坏。这是纯工程性的补丁,但它决定了 demos 是否会出现诡异动作。
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>10.1 训练流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    A["遮挡单目视频"] --> B["阶段 1a: DensePose 纹理图 + FLUX 补全"]
+    B --> C["阶段 1b: 多视角扩散出 4 规范视角"]
+    C --> D["阶段 1c: 训 canonical 高斯图 + StyleUNet"]
+    A --> E["阶段 2a: 无序帧微调 Wan 2.2<br/>LoRA + token v 学身份"]
+    D --> F["阶段 2b: 粗 avatar 执行结构化运动并渲染"]
+    E --> G["阶段 2c: RF-Inversion 精修渲染"]
+    F --> G
+    G --> H["幻觉监督视频集"]
+    E --> I["阶段 3a: CAP4D 生成多视角头部图像"]
+    H --> J["阶段 3b: 训 pose-dependent 高斯图<br/>联合优化 S, 逐帧 LBS 姿态修正, 相机修正"]
+    I --> K["阶段 3c: FLAME 头部路径<br/>只形变头部高斯子集"]
+    J --> L["完整可动画 avatar"]
+    K --> L
+    L --> M["阶段 4: 新姿态驱动 + 合成进 3DGS 场景"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style E fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style G fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style L fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style M fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+
+<h3>10.2 推理流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    A["新驱动姿态序列 theta_t"] --> B["PCA 姿态投影<br/>约束到训练分布内"]
+    B --> C["StyleUNet S 按姿态生成 pose-dependent 高斯图"]
+    C --> D["LBS 形变到 posed 空间"]
+    D --> E["与静态场景高斯 G_S 取并集"]
+    E --> F["渲染任意视角"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style F fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>10.3 各阶段的输入输出对照</h3>
+
+<table>
+<thead><tr><th>阶段</th><th>输入</th><th>输出</th><th>可训练部分</th></tr></thead>
+<tbody>
+<tr><td>1 粗 avatar</td><td>遮挡视频 + SMPL 估计 + FLUX 补全图 + 4 规范视角</td><td>canonical 高斯图 + StyleUNet</td><td>StyleUNet、高斯属性(含蒙皮权重)</td></tr>
+<tr><td>2a 身份微调</td><td>输入视频(作为无序帧)</td><td>身份专属视频扩散模型 $\mathbf{v}_\phi$</td><td>LoRA $\mathbf{A}\mathbf{B}$、文本 token $[\mathrm{v}]$</td></tr>
+<tr><td>2b/2c 幻觉</td><td>粗 avatar 的转体 / 静姿渲染</td><td>幻觉监督视频集 $\{\tilde{\mathbf{V}}_n\}$</td><td>无可训练参数(纯推理)</td></tr>
+<tr><td>3b/3c 完整 avatar</td><td>幻觉视频 + CAP4D 头部图像</td><td>pose-dependent 高斯图 + 完整 avatar</td><td>StyleUNet(重初始化)、$\Delta\bm{\theta}$、$\Delta\bm{\gamma}$、头部高斯</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节</h2>
+
+<div class="callout tip">
+<b>本节的数据来源说明:</b>主论文正文<b>几乎不给超参</b>(全部指向补充材料)。本笔记从项目页的补充材料 PDF(<code>miraymen.github.io/ahoy/static/ahoy_supplementary.pdf</code>,8 页,2.5 MB)取到了完整的架构规格与逐阶段训练配置,<b>以下数值均出自该 PDF 的 Sec. 8–9</b>。论文与补充材料均<b>未公开代码</b>,故无 <code>file:line</code> 级佐证。
+</div>
+
+<h3>11.1 StyleUNet 架构规格(补充材料 §8)</h3>
+
+<table>
+<thead><tr><th>部件</th><th>规格</th></tr></thead>
+<tbody>
+<tr><td>输入</td><td>$512\times512$ 位置图,3 通道</td></tr>
+<tr><td>初始卷积</td><td>$3\to128$ 通道,输出 $256\times256$</td></tr>
+<tr><td>Encoder</td><td>5 个 ConvBlock 逐步降采样到 $8\times8$ bottleneck(512 通道);每级把位置图独立降采样后经 $1\times1$ 卷积作为<b>残差</b>加回主特征路径</td></tr>
+<tr><td>通道宽度</td><td>128@$256^2$ → 256@$128^2$ → 512@$64^2$ 至 $8^2$</td></tr>
+<tr><td>Decoder</td><td><b>两条并行分支</b>(前 / 后 UV 图);6 个上采样级,用 StyleGAN2 式 $3\times3$ 调制卷积(权重解调 + 逐像素噪声注入)</td></tr>
+<tr><td>分辨率提升</td><td>bottleneck → $512\times512$(Haar 小波域)→ <b>逆 Haar 变换</b> → $1024\times1024$</td></tr>
+<tr><td>Decoder 通道</td><td>512($16^2$–$64^2$) → 256@$128^2$ → 128@$256^2$ → 64@$512^2$;标准 U-Net skip 逐级拼接</td></tr>
+<tr><td>最终输出图</td><td>$1024\times2048$(前后两张 UV 图并排)</td></tr>
+<tr><td>Style 映射网络</td><td>像素归一化 + 两个等化学习率线性层($512\to512$,<code>lr_mul=0.01</code>);style 向量为 <b>512 维</b>,初始化为常数单位向量,<b>推理时固定不变</b></td></tr>
+<tr><td>输出头</td><td>三个:① 颜色头($C_{out}=3$,RGB 偏移);② 位置头($C_{out}=3$,3D 位置偏移,<b>缩放 0.05</b>);③ 属性头($C_{out}=8$:不透明度 1 + 尺度 3 + 旋转四元数 4)</td></tr>
+<tr><td>视角相关颜色</td><td>小型 CNN(<code>Conv2d(1→64, 4×4, s2)</code> + LeakyReLU → <code>Conv2d(64→128, 4×4, s2)</code>)编码<b>视角方向点积图</b>(表面法线与视向的点积),在 decoder 的 $256\times256$ 层<b>加性注入</b></td></tr>
+<tr><td>额外输出</td><td>逐高斯蒙皮权重 $\mathbf{w}^{H}_{k,j}$</td></tr>
+</tbody>
+</table>
+
+<h3>11.2 身份微调 LoRA(补充材料 §8)</h3>
+<ul>
+  <li>LoRA <b>rank $r=128$</b>,施加在 <b>Wan 2.2</b> 的速度场上;</li>
+  <li>另学习一个绑定主体身份的文本 token $[\mathrm{v}]$。</li>
+</ul>
+
+<h3>11.3 逐阶段训练配置(补充材料 §9,全文最有价值的部分)</h3>
+
+<table>
+<thead><tr><th>项</th><th>Stage 1 粗 avatar</th><th>Stage 2 身份 LoRA</th><th>Stage 3 完整 avatar</th></tr></thead>
+<tbody>
+<tr><td>预热</td><td>先在 canonical 图上训 <b>约 2,000</b> 迭代,目标偏移为零(强制先学恒等映射)</td><td>—</td><td>先在随机姿态相关图上训 <b>约 2,000</b> 迭代,以粗 avatar 的最终高斯为目标</td></tr>
+<tr><td>优化器</td><td>Adam($\beta_1{=}0.9$,$\beta_2{=}0.999$)</td><td>AdamW($\beta_1{=}0.9$,$\beta_2{=}0.99$,weight decay 0.01)</td><td>Adam($\beta_1{=}0.9$,$\beta_2{=}0.999$)</td></tr>
+<tr><td>初始学习率</td><td>$10^{-4}$ + 余弦退火($\eta_{min}=0.05$)</td><td>LoRA $10^{-4}$;文本 token $10^{-5}$</td><td>$10^{-4}$ + 同一余弦退火</td></tr>
+<tr><td>总迭代数</td><td><b>400,000</b></td><td><b>600</b></td><td><b>500,000</b></td></tr>
+<tr><td>batch size</td><td>1</td><td>8</td><td>1</td></tr>
+<tr><td>每迭代监督</td><td>随机取一个相机视角,渲染 $512\times512$ patch</td><td>—</td><td>随机取一个相机视角,渲染 $512\times512$ patch</td></tr>
+<tr><td>损失权重</td><td>$\lambda_1{=}1.0$,$\lambda_{per}{=}0.1$,$\lambda_{reg}{=}0.005$</td><td>—</td><td>$\lambda_{body}{=}1.0$,$\lambda_{obs}{=}1.0$,$\lambda_{head}{=}0.5$,$\lambda_{per}{=}0.1$,$\lambda_{reg}{=}0.005$</td></tr>
+<tr><td>其他</td><td>—</td><td>梯度裁剪 max norm 0.05;LoRA $\mathbf{B}$ 矩阵 dropout <b>0.8</b>;文本 prompt dropout 0.1</td><td>$\{\Delta\bm{\theta}_{n,t}\},\{\Delta\bm{\gamma}_{n,t}\}$ 初始化为零</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>两条很容易被忽略但很有价值的实现经验:</b>
+<ol>
+  <li><b>「先学恒等映射」的预热</b>:Stage 1 的 StyleUNet 先在 canonical 图上训 2,000 迭代、目标为零偏移;Stage 3 的重新初始化版本先在随机姿态图上训 2,000 迭代、目标为粗 avatar 的高斯。<b>两次预热都是为了给网络一个「什么都不改」的起点</b>,避免一开始就输出乱码再慢慢纠回来。这是一个通用、几乎零成本的稳定化技巧。</li>
+  <li><b>LoRA 的 $\mathbf{B}$ 矩阵 dropout 高达 0.8</b>:因为 Stage 2 只有 <b>600 次迭代</b>、batch size 8,数据量极小,强 dropout 是防过拟合的必要手段。</li>
+</ol>
+</div>
+
+<h3>11.4 PCA 姿态投影的完整公式(补充材料 §7)</h3>
+
+<p>在训练期间收集的位置图特征 $\{x_t\}$ 上做 PCA,保留 $N_{pca}$ 个主成分 $S$ 及其标准差 $\{\sigma_i\}$。对新的驱动姿态位置图特征 $x$:</p>
+
+<div class="equation">
+$$\xi=S^{\top}(x-\bar{x}),\qquad \xi_i\leftarrow\mathrm{clip}(\xi_i,\,-2\sigma_i,\,2\sigma_i),\qquad x_{\mathrm{recon}}=S\xi+\bar{x}$$
+<span class="tag">(式 9,补充材料)</span>
+</div>
+
+<p>$\bar{x}$ 为训练均值。<b>把系数裁剪到 $\pm2\sigma$ 内</b>即把新姿态约束在训练分布内,保证 StyleUNet 收到分布内输入。</p>
+
+<h3>11.5 LBS 形变的具体形式(补充材料 §5)</h3>
+
+<div class="equation">
+$$\mathbf{R}^{H}_{k,t}=\sum_{j=1}^{J}\mathbf{w}^{H}_{k,j}\,\mathbf{R}^{\mathrm{SMPL}}_{j}(\bm{\theta}_{t}),\qquad
+\bm{\mu}'_{k,t}=\mathbf{R}^{H}_{k,t}\bm{\mu}_{k}+\mathbf{t}^{H}_{k,t},\qquad
+\bm{\Sigma}'_{k,t}=\mathbf{R}^{H}_{k,t}\bm{\Sigma}_{k}\bigl(\mathbf{R}^{H}_{k,t}\bigr)^{\!\top}$$
+<span class="tag">(式 5–6,补充材料)</span>
+</div>
+
+<p>即<b>先按蒙皮权重加权融合各关节旋转矩阵</b>得到逐高斯旋转,再同时变换均值与协方差(协方差用 $\mathbf{R}\bm{\Sigma}\mathbf{R}^\top$ 保持正半定)。</p>
+
+<h3>11.6 资源账</h3>
+
+<table>
+<thead><tr><th>项</th><th>状态</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>训练迭代数</td><td>✅ 已知</td><td>400k(粗)+ 600(LoRA)+ 500k(完整)+ 3×2k 预热</td></tr>
+<tr><td>GPU 型号 / 数量</td><td class="fail">论文与补充材料均未给出</td><td>无法判断单卡可行性</td></tr>
+<tr><td>训练总时长</td><td class="fail">未给出</td><td>900k 迭代 × batch 1 的开销只能大致推断,本笔记不做估计</td></tr>
+<tr><td>推理显存</td><td class="fail">未给出</td><td>—</td></tr>
+<tr><td>推理耗时</td><td class="fail">未给出</td><td>论文只说「显著慢于前馈方法」</td></tr>
+<tr><td>高斯数量 $N_H$</td><td class="fail">未给出</td><td>只说明「在 SMPL 网格上稠密采样」</td></tr>
+<tr><td>运动序列数 $N$</td><td class="fail">未给出</td><td>只说精心设计了若干段</td></tr>
+<tr><td>头部视角数 $P$</td><td class="fail">未给出</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3>11.7 落地坑与隐藏约束</h3>
+<ul>
+  <li><b>依赖链条很长</b>:NLF(SMPL 估计)+ SAM 3(掩码)+ DensePose(UV)+ FLUX(inpainting)+ 自训多视角扩散 + Wan 2.2(身份微调)+ RF-Inversion + CAP4D(人脸)+ Sapiens(头部掩码)+ AHA!(场景动画)。<b>任一环失败都会中断整条链</b>,且这些依赖分布在多个不同的模型与许可体系里。</li>
+  <li><b>优化规模大</b>:粗 avatar 400k、完整 avatar 500k 迭代,而 batch size 只有 1。</li>
+  <li><b>「重建任意真人」的伦理风险被作者自己写进了补充材料</b>:从公开视频、未经当事人配合地生成照片级数字复制体,涉及隐私、同意与滥用风险(未授权 deepfake、身份冒充)。作者声明本方法面向研究与创意应用,所有 YouTube 视频均公开可得,并呼吁采用水印、来源追踪与同意框架。<b>这条对本库同样适用——若基于真人视频重建 avatar,需事前定下数据使用边界。</b></li>
+  <li><b>作者自陈的偏见风险</b>:重建质量取决于底层视频扩散模型,而该模型可能继承训练数据中的偏见,导致<b>不同人群、体型、服装风格上的质量不均</b>。作者建议后续工作审计并处理此类偏见。<b>这是很少见的一段自我披露,对本库做人体 / 人脸增强时同样值得警惕。</b></li>
+</ul>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+
+<h3>12.1 评测设置</h3>
+
+<table>
+<thead><tr><th>项</th><th>设定</th></tr></thead>
+<tbody>
+<tr><td>基准一</td><td><b>BEHAVE</b>:4 台 Kinect 相机的多视角捕获,人体与物体交互 → 显著遮挡;评测 <b>8</b> 个序列。有多视角真值,可做严格定量评测</td></tr>
+<tr><td>基准二</td><td><b>YouTube 视频</b>:自采集 <b>50</b> 段,涵盖多样日常活动且具显著遮挡。无多视角真值,因此与<b>原视频的留出帧</b>比较</td></tr>
+<tr><td>指标</td><td>PSNR / SSIM / LPIPS</td></tr>
+<tr><td>baseline 输入设置</td><td>两种:① 直接给<b>原始遮挡帧</b>(视频第一帧);② 给<b>本流水线生成的无遮挡规范姿态图像</b>(即给 baseline 最好的输入)</td></tr>
+<tr><td>baseline 选择</td><td>可动画方法:LHM、IDOL;静态重建方法:PSHuman、SyncHuman(二者不产出可动画 avatar)</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<b>一处诚实但重要的说明(论文自己写的):</b>AdaHuman、Dream-Lift-Animate、MoGA、MEAT <b>都是合理的 baseline,但都没有公开代码</b>,因此未被纳入对比。这句话本身就在提示:该领域的对比覆盖并不完整。
+</div>
+
+<h3>12.2 静态重建与 BEHAVE(论文 Table 1)</h3>
+
+<table>
+<thead>
+<tr><th rowspan="2">方法</th><th colspan="3">YouTube 静态 · 遮挡输入</th><th colspan="3">YouTube 静态 · 规范姿态输入</th><th colspan="3">BEHAVE · 新视角</th><th colspan="3">BEHAVE · 新姿态</th></tr>
+<tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+</thead>
+<tbody>
+<tr><td>PSHuman</td><td>19.47</td><td>0.811</td><td>0.197</td><td>21.88</td><td>0.858</td><td>0.145</td><td>18.47</td><td>0.812</td><td>0.198</td><td colspan="3">n/a</td></tr>
+<tr><td>SyncHuman</td><td>19.82</td><td>0.819</td><td>0.189</td><td>22.03</td><td>0.863</td><td>0.140</td><td>19.34</td><td>0.831</td><td>0.172</td><td colspan="3">n/a</td></tr>
+<tr><td>LHM</td><td>19.12</td><td>0.803</td><td>0.207</td><td>21.18</td><td>0.845</td><td>0.160</td><td>18.21</td><td>0.807</td><td>0.203</td><td>16.93</td><td>0.774</td><td>0.238</td></tr>
+<tr><td>IDOL</td><td>17.31</td><td>0.771</td><td>0.241</td><td>19.78</td><td>0.819</td><td>0.189</td><td>17.38</td><td>0.783</td><td>0.231</td><td>15.87</td><td>0.748</td><td>0.267</td></tr>
+<tr class="best"><td><b>Ours(AHOY)</b></td><td><b>22.01</b></td><td><b>0.881</b></td><td><b>0.109</b></td><td><b>23.05</b></td><td><b>0.892</b></td><td><b>0.098</b></td><td><b>24.12</b></td><td><b>0.905</b></td><td><b>0.090</b></td><td><b>22.81</b></td><td><b>0.889</b></td><td><b>0.110</b></td></tr>
+</tbody>
+</table>
+
+<h3>12.3 动画对比(论文 Table 2)</h3>
+
+<table>
+<thead><tr><th rowspan="2">方法</th><th colspan="3">遮挡输入</th><th colspan="3">规范姿态输入</th></tr>
+<tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+<tbody>
+<tr><td>LHM</td><td>19.03</td><td>0.821</td><td>0.181</td><td>20.17</td><td>0.842</td><td>0.159</td></tr>
+<tr><td>IDOL</td><td>16.52</td><td>0.769</td><td>0.231</td><td>18.52</td><td>0.808</td><td>0.191</td></tr>
+<tr class="best"><td><b>AHOY(本文)</b></td><td><b>22.81</b></td><td><b>0.887</b></td><td><b>0.107</b></td><td><b>22.83</b></td><td><b>0.888</b></td><td><b>0.106</b></td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>本笔记从 Table 2 读出的一条关键结论(论文未显式强调):</b>AHOY 在<b>两种输入下成绩几乎相同</b>(22.81 vs 22.83 dB,SSIM 0.887 vs 0.888),而 LHM 从 19.03 升到 20.17、IDOL 从 16.52 升到 18.52——<b>给 baseline 无遮挡的规范姿态图只会让它们变好,而 AHOY 本来就不需要这份「优待」</b>。<br>
+换句话说<b>AHOY 的性能不依赖输入是否被遮挡</b>,这直接支撑了它的核心主张:它确实能吃「遮挡的 in-the-wild 视频」。相对优势幅度也远大于 baseline 因输入改善而获得的幅度:AHOY 比 LHM 在遮挡输入下高 <b>+3.78 dB</b>,在规范姿态输入下仍高 <b>+2.66 dB</b>。
+</div>
+
+<h3>12.4 定性结果</h3>
+
+<div class="figure">
+  <img src="images/2603.17975/comparison.png" loading="lazy" alt="困难全身可见姿态下的重建对比">
+  <div class="caption"><b>图2</b>(论文 Figure 5)<b>困难的全可见姿态下的重建。</b>静态方法在困难姿态下重建人体有困难,而本文方法允许对 3DGS avatar 重新摆姿以匹配目标姿态。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2603.17975/figures__fig3_comp_anim__obama_input.png" loading="lazy" alt="动画对比(放大)">
+  <div class="caption"><b>图3</b>(论文 Figure 3)<b>动画对比(放大细节)。</b>上排:规范姿态输入;下排:遮挡输入。两种设置下本文都产出更高保真度的 avatar。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2603.17975/figures__fig4_comp_static__black_input.png" loading="lazy" alt="静态重建对比(放大)">
+  <div class="caption"><b>图4</b>(论文 Figure 4)<b>静态重建对比(放大细节)。</b>上排:规范姿态输入;下排:遮挡输入。本文的可动画 avatar 被摆姿以匹配目标视角。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2603.17975/figures__fig6_behave__input__front_crop.jpg" loading="lazy" alt="BEHAVE 新视角评测">
+  <div class="caption"><b>图5</b>(论文 Figure 6)<b>BEHAVE 上的新视角评测。</b>把每种重建结果从留出的 BEHAVE 侧向相机渲染,并与真值侧视帧对比。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2603.17975/figures__fig8_scenes__sc1.jpeg" loading="lazy" alt="在 3DGS 场景中的动画">
+  <div class="caption"><b>图6</b>(论文 Figure 8)<b>在 3DGS 场景中动画。</b>来自遮挡 YouTube 视频的 avatar 被动画驱动并合成进从随手手机视频重建的 3DGS 场景。这是本文宣称的端到端能力——<b>从普通 RGB 输入到照片级人体-场景渲染</b>。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+
+<h3>13.1 定量(论文 Table 3)</h3>
+
+<table>
+<thead>
+<tr><th rowspan="2">配置</th><th colspan="3">新视角</th><th colspan="3">新姿态</th></tr>
+<tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr></thead>
+<tbody>
+<tr class="best"><td><b>AHOY(完整)</b></td><td><b>24.12</b></td><td><b>0.905</b></td><td><b>0.090</b></td><td><b>22.81</b></td><td><b>0.889</b></td><td><b>0.110</b></td></tr>
+<tr class="fail"><td>(A) 仅粗 avatar</td><td>16.10</td><td>0.753</td><td>0.258</td><td>14.30</td><td>0.718</td><td>0.301</td></tr>
+<tr><td>(B) 去掉 RF-Inversion</td><td>21.10</td><td>0.862</td><td>0.143</td><td>19.40</td><td>0.838</td><td>0.168</td></tr>
+<tr><td>(C) 去掉 map/LBS 解耦</td><td>22.60</td><td>0.886</td><td>0.118</td><td>20.60</td><td>0.856</td><td>0.152</td></tr>
+<tr><td>(D) 去掉 head/body 拆分</td><td>23.60</td><td>0.898</td><td>0.098</td><td>22.20</td><td>0.882</td><td>0.120</td></tr>
+</tbody>
+</table>
+
+<h3>13.2 四行消融的解读(本笔记按表计算 Δ)</h3>
+
+<table>
+<thead><tr><th>配置</th><th>ΔPSNR(新视角)</th><th>ΔPSNR(新姿态)</th><th>解读</th></tr></thead>
+<tbody>
+<tr><td>(A) 仅粗 avatar</td><td class="fail">−8.02 dB</td><td class="fail">−8.51 dB</td><td><b>最大贡献者。</b>这行同时去掉了「幻觉监督」与「pose-dependent 外观」两件事,巨大跌幅说明<b>后两个阶段的存在本身就是核心</b></td></tr>
+<tr><td>(B) 去掉 RF-Inversion</td><td>−3.02 dB</td><td>−3.41 dB</td><td>第二大。<b>注意它并没有把幻觉监督整个去掉</b>,只是把「过一遍身份微调 latent 空间」这一步换成直接监督——说明「精修」本身贡献约 3 dB</td></tr>
+<tr><td>(C) 去掉 map/LBS 解耦</td><td>−1.52 dB</td><td>−2.21 dB</td><td>第三。<b>新姿态上的跌幅(−2.21)大于新视角(−1.52)</b>,与设计意图一致——解耦主要解决「跨帧 / 跨视角不一致在摆新姿态时暴露」的问题</td></tr>
+<tr><td>(D) 去掉 head/body 拆分</td><td>−0.52 dB</td><td>−0.61 dB</td><td>数值上最小,但见下方保留意见</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<b>对 (D) 这一行的两点保留意见:</b>
+<ol>
+  <li><b>PSNR 跌幅小不代表它不重要。</b>这行的目的是「<b>保面部身份</b>」,而 PSNR / SSIM / LPIPS 都是<b>整体感知指标</b>,对「脸是不是同一个人」并不敏感。论文在正文里明确说去掉它「面部身份会丢失」,并用 Fig.7(D) 做视觉证据——<b>也就是说这一项的真正证据是定性的,定量的 0.5 dB 会严重低估其作用</b>。</li>
+  <li>论文<b>没有给「人脸区域」单独的指标</b>(如 Face ID 相似度、face landmark 误差)。既然贡献点就是「保住面部身份」,缺一个针对面部的定量指标是明显短板。</li>
+</ol>
+</div>
+
+<div class="figure">
+  <img src="images/2603.17975/ablation_figure2.png" loading="lazy" alt="视觉消融">
+  <div class="caption"><b>图7</b>(论文 Figure 7)<b>视觉消融。</b>每对图显示被消融的结果(标 w/o)与完整流水线的结果。<b>(A)</b> 没有幻觉时,仅粗 avatar 在未观测区域缺乏细节;<b>(B)</b> 没有 RF-Inversion 时,幻觉监督保留了渲染伪影;<b>(C)</b> 没有 map/LBS 解耦时,多视角不一致导致模糊;<b>(D)</b> 没有 head/body 拆分时,<b>面部身份丢失</b>。</div>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+
+<div class="callout warn">
+<b>来源声明:</b>下表混合「AHOY 论文自己报告的数值」与「公开事实」。<b>不同方法跑在不同数据集上时数字不可直接比较</b> —— AHOY 的 PSNR 同时给了 YouTube 与 BEHAVE 两套,下面按数据集分列。凡本笔记未核实的一律写 <code>—</code>。
+</div>
+
+<table>
+<thead>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练规模</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+</thead>
+<tbody>
+<tr class="best">
+  <td><b>AHOY!</b>(本文)</td><td>2026-03(ECCV 2026)</td><td class="best"><b>单目 in-the-wild 视频,允许重度遮挡</b>;需 NLF 估 SMPL、SAM3 出掩码</td><td>完整可动画 3DGS avatar(StyleUNet 预测 pose-dependent 高斯图)</td><td>粗阶段 masked L1 + 感知;完整阶段幻觉视频 L1 + FLUX/扩散路径</td><td>自采 50 段 YouTube 视频(评测)/ BEHAVE 8 序列</td><td class="fail">粗 400k + 完整 500k 迭代,batch 1;GPU 未给</td><td class="fail">未给出</td><td class="fail">未给出</td><td>YouTube <b>22.01 / 23.05 dB</b>;BEHAVE <b>24.12 / 22.81 dB</b></td><td><b>否</b>(项目页无 Code 链接)</td>
+</tr>
+<tr>
+  <td>LHM</td><td>2025(ICCV)</td><td>单张图 → 前馈出可动画人体</td><td>可动画 3DGS / 人体表示</td><td>大规模人体数据监督</td><td>大规模人体数据集</td><td>—</td><td>论文称「秒级」前馈</td><td>—</td><td>YouTube 遮挡输入 19.12 dB;BEHAVE 新视角 18.21 dB</td><td>是</td>
+</tr>
+<tr>
+  <td>IDOL</td><td>2025(CVPR)</td><td>单张图 → 照片级 3D 人体</td><td>3D 人体表示</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>YouTube 遮挡输入 17.31 dB;BEHAVE 新视角 17.38 dB</td><td>是</td>
+</tr>
+<tr>
+  <td>PSHuman</td><td>2025(CVPR)</td><td>单张图 → 照片级人体(静态)</td><td>显式重网格化人体(非可动画)</td><td>跨尺度多视角扩散</td><td>—</td><td>—</td><td>—</td><td>—</td><td>YouTube 遮挡输入 19.47 dB;BEHAVE 新视角 18.47 dB</td><td>是</td>
+</tr>
+<tr>
+  <td>SyncHuman</td><td>2025(NeurIPS)</td><td>单张图(静态重建)</td><td>2D + 3D 生成模型同步</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>YouTube 遮挡输入 19.82 dB;BEHAVE 新视角 19.34 dB</td><td>—</td>
+</tr>
+<tr>
+  <td><a href="3D-20260710-StudioRecon.html">StudioRecon</a></td><td>2026-07(SIGGRAPH 2026)</td><td>4 台<b>低重叠</b>未标定相机,多人遮挡</td><td>解耦背景高斯 + 逐人动态高斯</td><td>背景视图合成监督 + 人体 SMPL 几何约束</td><td>EgoHumans / Harmony4D / Mobile Stage / SelfCap</td><td class="fail">背景 7k + 人体 10k 迭代;单张 A6000</td><td>视图合成 50 min / 增强 3.3 s 每帧(单卡 A6000)</td><td>未给出(单卡 A6000 可跑)</td><td>360° 场景 18.58–22.75 dB</td><td>是(完整 Python 源码)</td>
+</tr>
+</tbody>
+</table>
+
+<h3>14.1 对比结论:AHOY 凭什么强</h3>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>① 靶子选得对</h4>
+    <p>所有 baseline 都假设输入无遮挡。AHOY 是唯一把「遮挡」当成<b>默认情况</b>而非边界情况的方法。所以它在遮挡场景下的 +3~4 dB 优势,本质是<b>问题设定上的错位</b>,而不是同一个问题上的技术碾压。</p>
+  </div>
+  <div class="card">
+    <h4>② 把「不一致」当成一等公民</h4>
+    <p>绝大数用生成模型做监督的工作,都在努力<b>让生成更一致</b>。AHOY 反过来:<b>承认生成一定不一致,然后在表示层开一个自由度去吸收它</b>(map/LBS 解耦)。这个转向在工程上更可行,因为「让扩散模型跨视角一致」是个开放难题,而「给姿态加一个可优化修正量」是标准操作。</p>
+  </div>
+  <div class="card">
+    <h4>③ 主动制造监督</h4>
+    <p>用「目标动作 + 360° 转身」把「一个姿态的 $T'$ 帧」等价转换为「一个姿态的 $T'$ 个视角」。这不是数据增强,而是<b>把数据采集问题转化为控制问题</b>——因为你控制 avatar,所以你能决定它被怎样观察。</p>
+  </div>
+</div>
+
+<h3>14.2 AHOY 凭什么弱</h3>
+<ul>
+  <li><b>速度</b>:作者自陈显著慢于前馈方法。粗 400k + 完整 500k 迭代 + 多次扩散推理,LHM 这类前馈方法在秒级完成。</li>
+  <li><b>质量上界被生成模型锁死</b>:作者明确写「未观测区域可能被幻觉出看似合理但错误的细节」。</li>
+  <li><b>依赖链极长</b>:见 §11.7,10 个外部模型/组件。</li>
+  <li><b>只支持单目单主体</b>:输入是「一个人被遮挡」的视频;多人交互、多主体遮挡不在讨论范围。</li>
+  <li><b>未开源,且论文几乎不报资源账</b>:GPU、显存、耗时全缺。</li>
+</ul>
+
+<h3>14.3 演进定位表</h3>
+
+<table>
+<thead><tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr></thead>
+<tbody>
+<tr><td>多视角/受控采集重建</td><td>NeRF / 3DGS 系人体重建、Animatable Gaussians</td><td>稠密多视角 + 每姿态有覆盖</td><td>需要受控采集,无法用于日常视频</td></tr>
+<tr><td>单图前馈重建</td><td>LHM、IDOL、PSHuman、SyncHuman</td><td>大规模人体数据学到的强外观先验</td><td><b>假设输入无遮挡</b>;遮挡下崩</td></tr>
+<tr class="best"><td><b>生成当补全器(单目+遮挡)</b></td><td><b>AHOY!</b></td><td><b>身份微调视频扩散提供未观测区域监督;map/LBS 解耦吸收不一致;head/body 拆分保身份</b></td><td><b>慢;质量受扩散模型上界限制;依赖链长;未开源</b></td></tr>
+<tr><td>人机分工(背景交生成、人体交几何)</td><td><a href="3D-20260710-StudioRecon.html">StudioRecon</a></td><td>视频扩散只负责背景;人体由 SMPL 强几何约束</td><td>需要多视角(4 路)输入;人体细节受 SMPL 表达力限制</td></tr>
+<tr><td>多视角视频扩散绕过几何先验</td><td><a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a></td><td>只有相对相机位姿;不需要骨架/深度/法线</td><td>一致性完全压给生成模型;绝对尺度丢失</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>库内交叉链接:</b>与 AHOY 同属综述的「路线 C:生成当补全器」的姊妹工作是 <a href="3D-20260710-StudioRecon.html">StudioRecon</a>;同为多视角视频生成路线但走「无几何先验」的是 <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> 与 <a href="3D-20250806-4DVD.html">4DVD</a>;参数化人体先验的库内笔记见 <a href="3D-20251109-MHR.html">MHR</a>;路线全景见 <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>。人体相关的工程侧笔记见 <a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline 详解</a> 与 <a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a>。
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性</h2>
+
+<p>判断基准:本库主线是<b>单卡 RTX 3090(24GB)、WSL2、12–16 路中等稀疏可控场景、目标是人体</b>;而 AHOY 的设定是<b>单目 in-the-wild 视频 + 重度遮挡</b>。两者的匹配关系比较微妙,需要逐项看。</p>
+
+<table>
+<thead><tr><th>维度</th><th>AHOY 的情况</th><th>与我们的匹配度</th></tr></thead>
+<tbody>
+<tr><td>输入形态</td><td>单目视频(1 视角)</td><td class="best"><b>比我们的场景更宽松</b>——我们有多视角,而它连一个都没用满</td></tr>
+<tr><td>遮挡处理</td><td class="best">把遮挡当默认情况,正面解决</td><td><b>高价值</b>——我们的多人场景同样存在相互遮挡,目前是当作「要过滤掉的干扰」处理(见 <a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a>)。AHOY 的思路是把遮挡区域交给生成先验,而不是丢弃观测</td></tr>
+<tr><td>head/body 拆分</td><td class="best">用 SMPL-to-FLAME 对应把头/身体分成两部分,各自独立监督,但<b>共享同一套 canonical 高斯</b></td><td class="best"><b>与本库的 head_gs / body_gs / scene_gs 拆分直接同构</b>,而且它给出了一个关键设计原则:<b>拆分应该是「监督与形变算子分开」而不是「两套独立高斯拼起来」</b>——后者会产生接缝</td></tr>
+<tr><td>map/LBS 解耦</td><td class="best">用参数共享 + 逐帧修正量吸收生成数据的不一致</td><td><b>可迁移</b>——我们的 SAM3 person mask ID 映射与 track 去重本质也在处理「多视角不一致」,但它处理的是身份不一致,AHOY 处理的是几何不一致</td></tr>
+<tr><td>面部身份保持</td><td>用专用多视角人脸扩散模型(CAP4D)替换掉不可靠的通用扩散人脸</td><td><b>可迁移</b>——我们的人脸增强链路(HYPIR / SAM3)同样面临「通用增强会改变身份」的问题,「<b>对不可靠区域屏蔽通用监督 + 换专用监督</b>」是一条明确的解法</td></tr>
+<tr><td>算力与速度</td><td class="fail">900k 迭代 + 多轮扩散推理;GPU/显存/耗时全未给</td><td class="fail"><b>不可用</b>。我们无法评估在 3090 上要跑多久</td></tr>
+<tr><td>开源</td><td class="fail">项目页无 Code 链接;GitHub 检索无相关仓库</td><td class="fail">无法采用</td></tr>
+<tr><td>数据前提</td><td class="fail">需要 NLF 估 SMPL + DensePose UV + 可用的 FLUX 修复</td><td>NLF 与 DensePose 我们链路里没有;引入成本不低</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<b>结论:机制可借,代码不可用。</b><br>
+AHOY 对我们的价值集中在<b>三条设计原则</b>,它们与代码是否开源无关:
+<ol>
+  <li><b>拆分要「共享表示、分开监督」,不要「独立训练再拼接」</b>——这对我们的 head_gs / body_gs 设计是直接的指导。</li>
+  <li><b>不一致不要试图消灭,要给它一个可优化的出口</b>——用一组低维修正量(map/LBS 解耦里的 $\Delta\bm{\theta}$)吸收生成误差。</li>
+  <li><b>对已知不可靠的区域,屏蔽通用监督 + 接入专用监督</b>——头部像素被 mask 掉后交给专用人脸模型,是我们人脸增强链路可以直接照搬的策略。</li>
+</ol>
+</div>
+
+<div class="callout tip">
+<b>一条不太显眼但很实用的工程经验(§11.3):</b>StyleUNet 在 Stage 1 与 Stage 3 都先做 <b>2,000 迭代的「零偏移预热」</b>——先让网络学会「什么都不改」。对任何「预测相对偏移」的模块,这都是一个几乎零成本、但能显著改善训练稳定性的技巧。我们如果要做逐人高斯属性的残差预测,这一条可以直接用。
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<h3>方法层面</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 幻觉的质量没有任何「可信度」度量,而这是整条链的命门。</b></p>
+<p><b>问题:</b>作者自己在 Conclusion 里承认「身份微调模型可能对从未被观测的区域幻觉出看似合理但错误的细节」。但论文<b>没有给出任何量化「幻觉对了吗」的实验</b>——没有把幻觉结果与真值比较(在 BEHAVE 上其实是可以的,因为 BEHAVE 有多视角真值)。</p>
+<p><b>佐证:</b>§5 原文 <i>"the identity-finetuned model may hallucinate plausible but incorrect details for body regions that are never observed"</i>;BEHAVE 的评测只报告最终渲染指标,未单独报告幻觉视频的质量。</p>
+<p><b>改进建议:</b>在 BEHAVE 上做一组「遮挡受控实验」:人为遮挡某人体的固定区域比例(如 30% / 50% / 70%),然后测量「幻觉出来的区域」与真值的误差。这能直接给出<b>「遮挡容忍度曲线」</b>,而这正是使用者最需要的先验知识。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<p><b>[高优先级] 「面部身份保持」这个核心贡献缺乏针对面部的定量指标。</b></p>
+<p><b>问题:</b>贡献④ 是「保住面部身份」,消融 (D) 是「去掉 head/body 拆分」,但评测只用 PSNR / SSIM / LPIPS 三个整体指标,消融 (D) 的跌幅仅 0.5–0.6 dB(见 §13.2)。<b>整体指标对面部身份的敏感度极低</b>,导致这一贡献在定量上看起来无关紧要,而其真实重要性只能靠 Fig.7(D) 的定性图来体现。</p>
+<p><b>改进建议:</b>补三组指标——① 人脸区域的裁剪 PSNR/LPIPS;② Face ID 相似度(如 ArcFace 嵌入余弦);③ 面部 landmark 误差。本库里 <a href="3D-20260217-SAM-3D-Body.html">SAM 3D Body</a> 与 <a href="3D-20251109-MHR.html">MHR</a> 笔记都涉及密集面部 landmark,可以借用同一套评估口径。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] map pose 在整个训练中固定,但论文没有论证「固定」优于「也参与优化」。</b></p>
+<p><b>问题:</b>设计上 map pose 是固定输入,LBS pose 逐帧可修正。这是一个明确的二元选择,但论文<b>没有做「只优化 map pose」「两个都优化」「都不优化」的对照</b>。消融 (C) 只是把整个解耦机制去掉了。</p>
+<p><b>改进建议:</b>加一组「map pose 也允许微调」的对照。这会直接回答「解耦的有效性来自参数共享,还是来自可修正自由度」这个机制问题。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<p><b>[中优先级] 结构化运动序列是人工设计的,没有说明覆盖度与冗余度。</b></p>
+<p><b>问题:</b>运动序列数 $N$ 未给出,也没说这些序列如何被挑选、是否覆盖了足够的姿态分布。<b>而整个 pose-dependent 学习的监督完全来自这些序列</b>——如果它们覆盖不足,后续的 PCA 姿态投影就会频繁触发裁剪。</p>
+<p><b>改进建议:</b>给出 $N$、姿态空间覆盖度指标(如与训练集姿态分布的距离分布),以及 PCA 裁剪被触发频率的统计。</p>
+</div>
+
+<h3>数据与评估</h3>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[中优先级] YouTube 评测没有多视角真值,只有「与留出帧比较」。</b></p>
+<p><b>问题:</b>50 段 YouTube 视频的评测是「把重建结果渲染回输入视角,与原视频留出帧比较」。这是一个<b>自洽性检查</b>,不是<b>新视角正确性检查</b>——它无法证明未见区域重建对了。而 BEHAVE 有多视角真值,却只有 8 个序列。</p>
+<p><b>改进建议:</b>扩大 BEHAVE(或类似多视角遮挡数据集)上的评测规模,并明确区分「可见区域」与「不可见区域」的指标。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<p><b>[中优先级] 用户自陈的偏见风险没有对应的任何实验。</b></p>
+<p><b>问题:</b>补充材料里写了「质量可能随人群、体型、服装风格而不均」,并建议未来工作审计。但论文<b>自己没有做这个审计</b>。</p>
+<p><b>改进建议:</b>这是一个相对便宜的实验——按人群/体型/服装风格分组报告指标即可。既然作者已经意识到了问题,顺手做掉比留作 future work 更有价值。</p>
+</div>
+
+<h3>工程实用性</h3>
+
+<div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+<p><b>[高优先级] 资源账几乎全部缺失。</b></p>
+<p><b>问题:</b>GPU 型号、数量、训练总时长、推理显存、推理耗时<b>全部未给出</b>(补充材料只给了迭代数与优化器)。而论文明确包含「粗 400k + 完整 500k 迭代、batch size 1」这种重负载训练。这让任何人都无法评估可行性。</p>
+<p><b>改进建议:</b>照 <a href="3D-20260710-StudioRecon.html">StudioRecon</a> 的做法给出逐阶段耗时表(它给了 Table S1:单张 A6000 上视图合成 50 min、人体位姿 3 min、背景重建 30 min、人体重建 40 min、增强 3.3 s/帧)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent);">
+<p><b>[高优先级] 代码未开源,且已有 ECCV 2026 的中稿身份。</b></p>
+<p><b>问题:</b>项目页只提供论文、补充材料与视频;<b>无 GitHub 链接</b>。GitHub 全库检索「AHOY + occlusion」也没有对应仓库。也就是说这篇中稿了 ECCV 2026 的工作目前完全不可复现(且当年就已是中稿状态)。</p>
+<p><b>改进建议:</b>哪怕只放出粗 avatar 阶段 + StyleUNet 的代码,也能让「先学恒等映射预热」「Pose-dependent 高斯图」这些可复用组件被社区用起来。</p>
+</div>
+
+<h3>优先级总览</h3>
+
+<table>
+<thead><tr><th>优先级</th><th>改进点</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>[高]</td><td>幻觉质量无「对不对」的度量</td><td>整条链的命门,却在 BEHAVE 上本可做而未做</td></tr>
+<tr><td>[高]</td><td>面部身份缺专门定量指标</td><td>核心贡献在定量上被整体指标掩盖</td></tr>
+<tr><td>[高]</td><td>资源账全缺</td><td>决定任何人能否评估可行性</td></tr>
+<tr><td>[高]</td><td>代码未开源</td><td>中稿状态却不可复现</td></tr>
+<tr><td>[中]</td><td>map pose 不该固定这一点未做对照</td><td>机制层面的开放问题</td></tr>
+<tr><td>[中]</td><td>结构化运动序列覆盖度未量化</td><td>决定 pose-dependent 学习的数据基础</td></tr>
+<tr><td>[中]</td><td>YouTube 评测是自洽性而非新视角正确性</td><td>影响结论强度</td></tr>
+<tr><td>[中]</td><td>偏见风险自陈但未审计</td><td>便宜且作者已有意识</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<b>个人认为最关键的三点:</b>
+<ol>
+  <li><b>幻觉质量缺少可信度度量</b>——如果把它放到 BEHAVE 上做受控遮挡实验,就能给出「遮挡容忍度曲线」。这既是科学问题,也是使用者最想知道的事。</li>
+  <li><b>面部身份没有专门指标</b>——贡献声明与证据之间存在口径错配,0.5 dB 的跌幅会误导读者的重要度判断。</li>
+  <li><b>资源账与代码双缺</b>——这决定了它目前只能被「读」而不能被「用」,与 <a href="3D-20260710-StudioRecon.html">StudioRecon</a>(同领域、同方向、完整开源 + 完整耗时表)形成鲜明对比。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结、演进定位与资源</h2>
+
+<h3>一句话总结</h3>
+
+<div class="callout key">
+AHOY! 的核心不是「又做了一个更好的 avatar」,而是<b>重新划分了「可重建」与「不可重建」的边界</b>——它把此前被当作前提排除掉的「遮挡」变成了默认输入,并用「<b>身份微调视频扩散造监督 + map/LBS 解耦吸收不一致 + head/body 拆分保身份</b>」这三件套把欠观测区域的几何问题转成了生成问题。<b>它的三条设计原则(共享表示分开监督、给不一致一个可优化出口、对不可靠区域换专用监督)比它的具体数字更有迁移价值</b>,尤其与我们的 head_gs / body_gs / scene_gs 拆分架构直接相关。
+</div>
+
+<h3>对本库的三条可带走结论</h3>
+<ol>
+  <li><b>拆分要「共享表示、分开监督」</b>:头部高斯是整体高斯集合的子集,只是监督信号与形变算子不同。这避免了「独立重建再拼接」的接缝问题——对我们的 head_gs / body_gs 设计是直接指导。</li>
+  <li><b>不一致不要试图消灭,要给它一个出口</b>:用一组低维、受正则约束的逐帧修正量吸收生成误差,比「努力让生成更一致」在工程上可行得多。</li>
+  <li><b>「零偏移预热」是便宜且通用的稳定化技巧</b>:任何预测相对偏移的模块,先训 2,000 迭代「什么都不改」,再开始真正学习。</li>
+</ol>
+
+<div class="callout warn">
+<b>一条必须记下的伦理边界(出自补充材料 §1):</b>本方法能从公开视频、未经当事人配合地重建照片级数字复制体,涉及隐私、同意与滥用风险(未授权 deepfake、身份冒充)。作者声明所有 YouTube 视频均公开可得、方法面向研究与创意用途,并呼吁社区采用水印、来源追踪与同意框架。<b>若本库要把这类能力用到真人素材上,应先把数据使用边界写进规范。</b>
+</div>
+
+<h3>在研究脉络中的位置</h3>
+<p>AHOY 属于综述里的「<b>路线 C:生成当补全器 / 伪监督源</b>」——与它同在路线 C 的是 <a href="3D-20260710-StudioRecon.html">StudioRecon</a>(人机分工:背景交生成、人体交几何)。二者的差别值得记清:<b>StudioRecon 不信任生成模型处理人体,只用它管背景;AHOY 则把人体本身未观测的部分整个交给生成模型</b>。前者保守但稳,后者激进但能处理「连人体都没拍全」的极端情况。这两条分支代表了「生成先验用在人体上的哪一部分」这个问题的两种答案。</p>
+
+<h3>👥 研究团队</h3>
+<p>Aymen Mir(图宾根 AI Center)· Riza Alp Guler(帝国理工;DensePose 原作者)· Xiangjun Tang(KAUST)· Peter Wonka(KAUST,†共同指导)· Gerard Pons-Moll(图宾根 + MPI-INF,†共同指导)。<br>
+团队组合值得注意:<b>Pons-Moll 组是 SMPL / 参数化人体的核心来源之一,而 Guler 是 DensePose 的作者</b>——这解释了为什么 AHOY 的流水线在 SMPL + DensePose UV 这条几何路线上做得如此顺滑。</p>
+
+<h3>🔗 资源链接</h3>
+<div class="tag-row">
+  <a class="tag" href="https://arxiv.org/abs/2603.17975" target="_blank">📄 arXiv abs (2603.17975)</a>
+  <a class="tag" href="https://arxiv.org/html/2603.17975v2" target="_blank">🌐 arXiv HTML 全文</a>
+  <a class="tag" href="https://arxiv.org/pdf/2603.17975" target="_blank">📥 PDF</a>
+  <a class="tag" href="https://miraymen.github.io/ahoy/" target="_blank">🏠 项目页</a>
+  <a class="tag" href="https://miraymen.github.io/ahoy/static/ahoy_supplementary.pdf" target="_blank">📎 补充材料 PDF(8 页)</a>
+</div>
+
+<div class="note">
+<b>开源状态(2026-09-29 核实):</b>项目页 <code>miraymen.github.io/ahoy/</code> 的全部外链为:arXiv、补充材料 PDF、四位作者的个人主页,以及若干机构 logo。<b>没有任何指向代码仓库的链接。</b>GitHub 检索 <code>AHOY occlusion</code> 无结果。会议状态:<b>ECCV 2026</b>(arXiv abs 的 comments 字段明确写 <code>ECCV 2026</code>)。
+</div>
+
+<div class="note">
+相关库内笔记:<a href="3D-20260710-StudioRecon.html">StudioRecon</a> · <a href="3D-20260611-Flex4DHuman.html">Flex4DHuman</a> · <a href="3D-20250806-4DVD.html">4DVD</a> · <a href="3D-20260811-LatentTo4D.html">Latent-to-4D</a> · <a href="3D-20260820-4DAnyone.html">4DAnyone</a> · <a href="3D-20251109-MHR.html">MHR</a> · <a href="3D-20260217-SAM-3D-Body.html">SAM 3D Body</a> · <a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline 详解</a> · <a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a> · <a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>
+</div>
+</section>
+
+<div class="footer">
+📝 阅读笔记 · 生成于 2026-09-29 · 论文 arXiv:2603.17975v2(2026-03-18)· 会议:ECCV 2026(abs comments 字段)· 正文数字取自 Table 1–3 与 §3–§5;工程超参取自项目页补充材料 PDF 的 Sec. 4–9 · 无公开代码,资源账相关项见 §11.6
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
