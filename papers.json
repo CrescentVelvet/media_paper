@@ -747,6 +747,72 @@
    ]
   },
   {
+   "title": "视频生成模型驱动动态人体重建调研 (六条技术路线)",
+   "meta": [
+    "📄 综述: 2608.20335 / 2606.13655 / 2507.13344 / 2405.17405 / 2510.07190 / 2407.17470 / 2411.18613 / 2508.04467 等 14 篇",
+    "📅 2024-05 ~ 2026-08(编撰 2026-09-29)",
+    "📂 Survey · 动态人体重建 × 视频扩散"
+   ],
+   "tags": [
+    "4D 人体重建",
+    "多视角视频扩散",
+    "4DGS",
+    "VDM 复用",
+    "上下文工程",
+    "技术路线调研"
+   ],
+   "summary": "按<strong>视频生成模型在重建链路中承担什么角色</strong>切分六条路线：<strong>A 多视角视频生成→4DGS</strong>(4DAnyone/Flex4DHuman/Diffuman4D/MV-Performer/Human4DiT/CAT4D/SV4D/4DVD，补视角缺失，竞争焦点已从生成能力转向 RCP/TCR 式上下文预算管理)、<strong>B 潜空间直连 4D</strong>(Latent-to-4D，绕过 RGB 中介)、<strong>C 生成当补全/伪监督</strong>(AHOY!/StudioRecon，人机分工：扩散只补背景与遮挡区)、<strong>D 视频扩散当 SDS</strong>(PhyGenHOI 等，面向生成而非重建)、<strong>E VDM 当确定性几何编码器</strong>(DreamHand，clean-latent 单次前向，ARCTIC MPJPE-p -30%)、<strong>F 纹理空间生成动态外观</strong>(AvatarDynamizer)。含固定维度对比表、演进定位表、单卡 3090 落地适配与三步验证顺序。",
+   "links": [
+    {
+     "href": "VideoGen-20260929-视频生成驱动动态人体重建调研.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.20335",
+     "text": "📄 4DAnyone"
+    },
+    {
+     "href": "https://arxiv.org/abs/2606.13655",
+     "text": "📄 Flex4DHuman"
+    },
+    {
+     "href": "https://arxiv.org/abs/2507.13344",
+     "text": "📄 Diffuman4D"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.10744",
+     "text": "📄 Latent-to-4D"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.20308",
+     "text": "📄 DreamHand"
+    }
+   ],
+   "file": "VideoGen-20260929-视频生成驱动动态人体重建调研.html",
+   "section": "vg-notes-2",
+   "kind": "survey",
+   "depth": "standard",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "微动与非刚性人体重建"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13"
+   ]
+  },
+  {
    "title": "Cosmos 3: NVIDIA 全模态世界模型",
    "meta": [
     "📄 arXiv: 2606.02800 (v4, 2026-06-23)",

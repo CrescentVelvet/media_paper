@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频生成模型驱动动态人体重建调研（六大路线）</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .loss-tag{
+    display:inline-block; padding:3px 10px; border-radius:5px; font-size:12px;
+    margin:2px;
+  }
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  .quote{border-left:3px solid var(--accent2); padding-left:16px; margin:16px 0; color:var(--muted); font-style:italic}
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+  .uncertain{
+    display:inline-block; background:rgba(251,146,60,0.12); border-left:3px solid var(--orange);
+    padding:2px 8px; color:#fdba74; border-radius:4px; font-size:12px;
+  }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-content">
+    <div class="badge">📊 standard · Survey · 视频扩散先验用于 3D</div>
+    <h1>视频生成模型驱动动态人体重建：六条技术路线调研</h1>
+    <p class="subtitle">把「视频扩散模型」当作动态人体重建链路中的一个可插拔部件——它可能生成视角、补全遮挡、提供 SDS 监督、充当几何编码器，或干脆只生成动态纹理。本调研按「视频生成模型在链路中承担什么角色」切分六大路线，覆盖 2024-05 ~ 2026-08 的 14 篇代表作。</p>
+    <p class="authors">📅 论文时间跨度 2024-05 ~ 2026-08（编撰 2026-09-29） · 📂 关键词：4D 人体重建 / 多视角视频扩散 / 4DGS / VDM 复用 · 🔗 库内兄弟笔记：4DAnyone / 微动人体三维重建调研 / 视频生成几何一致性调研 / 视频生成相机可控性调研</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.20335" target="_blank">📄 4DAnyone</a>
+      <a href="https://arxiv.org/abs/2606.13655" target="_blank">📄 Flex4DHuman</a>
+      <a href="https://arxiv.org/abs/2507.13344" target="_blank">📄 Diffuman4D</a>
+      <a href="https://arxiv.org/abs/2405.17405" target="_blank">📄 Human4DiT</a>
+      <a href="https://arxiv.org/abs/2510.07190" target="_blank">📄 MV-Performer</a>
+      <a href="https://arxiv.org/abs/2608.10744" target="_blank">📄 Latent-to-4D</a>
+      <a href="https://arxiv.org/abs/2608.20308" target="_blank">📄 DreamHand</a>
+      <a href="https://arxiv.org/abs/2608.19900" target="_blank">📄 AvatarDynamizer</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">结论先行：六条路线一张表</a></li>
+    <li><a href="#s2">问题定义：动态人体重建缺什么</a></li>
+    <li><a href="#s3">路线 A：多视角视频生成 → 4DGS</a></li>
+    <li><a href="#s4">路线 B：潜空间直连 4D（绕过 RGB）</a></li>
+    <li><a href="#s5">路线 C：生成当补全 / 监督源</a></li>
+    <li><a href="#s6">路线 D：视频扩散当 SDS 训练信号</a></li>
+    <li><a href="#s7">路线 E：VDM 当确定性几何编码器</a></li>
+    <li><a href="#s8">路线 F：视频扩散生成动态外观</a></li>
+    <li><a href="#s9">关键技术对比表（固定维度）</a></li>
+    <li><a href="#s10">演进脉络与定位</a></li>
+    <li><a href="#s11">落地适配：单卡 3090 与本仓现状</a></li>
+    <li><a href="#s12">未解问题与可改进方向</a></li>
+    <li><a href="#s13">资源链接与兄弟笔记</a></li>
+  </ol>
+</div>
+
+<!-- ==================== S1 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>结论先行：六条路线一张表</h2>
+
+<p class="lead">「用视频生成模型解决动态人体重建」不是一个单一赛道，而是<b>同一种能力（大规模视频先验）在重建链路四个不同位置上的插入方式</b>。按插入位置划分，当前可归为六条路线：</p>
+
+<table>
+<thead>
+<tr><th>路线</th><th>视频生成模型的角色</th><th>代表工作</th><th>输出表示</th><th>补的是哪种缺口</th><th>主要风险</th></tr>
+</thead>
+<tbody>
+<tr><td><b>A</b></td><td>虚拟相机阵列（生成多视角视频）</td><td>4DAnyone / Flex4DHuman / Diffuman4D / MV-Performer / Human4DiT / CAT4D / SV4D / 4DVD</td><td>4DGS / 动态 NeRF</td><td>视角缺失</td><td>跨视角不一致 → 4DGS 直接崩；背面属「脑补」</td></tr>
+<tr><td><b>B</b></td><td>提供 latent 接口（不经 RGB）</td><td>Latent-to-4D（Beyond Pixels）</td><td>4D decoder</td><td>接口错配</td><td>绑定同 VAE 家族的生成器；4D 监督稀缺</td></tr>
+<tr><td><b>C</b></td><td>补全器 / 伪监督源</td><td>AHOY! / StudioRecon（+ 2D 扩散系的 WonderHuman、OccFusion）</td><td>3DGS avatar / 解耦高斯</td><td>观测缺失（遮挡、出画）</td><td>生成的多视角本身不自洽，需专门机制吸收</td></tr>
+<tr><td><b>D</b></td><td>SDS 训练信号</td><td>PhyGenHOI / Animate3D / AKD / DreamPhysics</td><td>可变形高斯 + 物理仿真</td><td>监督信号缺失</td><td>SDS 固有过饱和、纹理漂移；多面向「生成」而非「重建」</td></tr>
+<tr><td><b>E</b></td><td>确定性几何 / 运动编码器（非生成式）</td><td>DreamHand</td><td>3D 手部轨迹</td><td>几何与运动线索缺失</td><td>离线片段级，延迟高；依赖可见锚点质量</td></tr>
+<tr><td><b>F</b></td><td>动态外观生成器（texel 空间条件生成）</td><td>AvatarDynamizer</td><td>动态纹理 → 3D Gaussians</td><td>表面动力学缺失（褶皱）</td><td>依赖准确姿态估计与纹理初始化</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<h4>三条可直接用于决策的判断</h4>
+<ol>
+<li><b>主战场是路线 A，且 2026 年的竞争焦点已经从「模型能生成什么」转到「上下文怎么管」。</b>DiT 单次前向能容纳的目标视角数有上限，超过就必须分组，而分组会带来参考侧 O(N) 膨胀与目标侧组间结构漂移。4DAnyone 的 RCP/TCR、Diffuman4D 的滑动迭代去噪、4DVD 的级联解耦，都是对同一个问题的不同工程解。</li>
+<li><b>路线 E / F 是 2026 年才出现、但性价比可能更高的「非生成式」用法。</b>DreamHand 明确把 VDM 从「随机多步渲染器」降级为「确定性编码器」（clean latent 单次前向），绕开了采样延迟与生成伪影传播；AvatarDynamizer 则把视频扩散用在 2D 纹理空间，避开了 3D 一致性难题。二者都比「让扩散模型直接吐多视角视频」更稳。</li>
+<li><b>路线 C 的人机分工思路对自采数据最实用。</b>StudioRecon 明确写「video diffusion 对人体直接给出几何不一致的结果」，因此只让视频扩散负责<b>背景</b>的稠密视角合成，人体走几何关联 + 关键点三角化初始化，最后用递归增强模块统一。这是一个「承认生成模型能力边界、按部件分配职责」的范式，比端到端生成更接近可交付工程。</li>
+</ol>
+</div>
+
+<p><span class="uncertain">⚠️【待核实】跨论文的 PSNR/指标不可直接横向比较</span>：这些工作分别在 DNA-Rendering、ActorsHQ、DyMVHumans、Objaverse 派生集上评测，且「重建后的渲染 PSNR」与「生成视频本身的 PSNR」口径不同，选型时不能只看数字大小。</p>
+</section>
+
+<!-- ==================== S2 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>问题定义：动态人体重建缺什么，视频生成模型能补什么</h2>
+
+<p>先把任务与缺口拆开，六条路线的划分才有依据。动态人体重建的目标是：从<b>单目或稀疏多视角视频</b>得到可自由视角回放的 4D 表示（4DGS / 可变形高斯 / 动态 NeRF）。与「数十台同步相机的容积捕获」相比，它同时在三个维度上欠定：</p>
+
+<div class="grid grid-3">
+  <div class="card">
+    <h4>① 视角缺失</h4>
+    <p>输入相机数远小于重建所需（典型 4 路 vs 44-48 路）。这是路线 A 存在的理由：<b>让生成模型把「那台不存在的相机」拍到的画面造出来</b>。</p>
+  </div>
+  <div class="card">
+    <h4>② 观测缺失</h4>
+    <p>遮挡、出画、自遮挡导致某些身体区域全程无观测。这是路线 C 的靶子：生成内容作为伪监督，去补「从没被拍到过」的区域。</p>
+  </div>
+  <div class="card">
+    <h4>③ 监督缺失</h4>
+    <p>4D 真值稀缺，变形场/物理参数无直接监督。这是路线 D 的靶子：用视频先验经 SDS 蒸馏成可微信号。</p>
+  </div>
+</div>
+
+<p>此外还有第四个常被忽略的<b>接口问题</b>：即便生成模型造出了正确的动态内容，它也必须先解码成 RGB 再交给重建器，而重建器是在更窄的数据分布上训练的（路线 B 的靶子）。</p>
+
+<div class="mermaid">
+flowchart TD
+    IN["输入: 单目 / 稀疏多视角 人体视频"] --> Q{"重建缺什么?"}
+    Q -->|"缺视角"| A["路线A: 多视角视频生成 → 4DGS"]
+    Q -->|"缺观测(遮挡/出画)"| C["路线C: 生成补全当伪监督"]
+    Q -->|"缺监督信号"| D["路线D: 视频扩散 SDS 先验"]
+    Q -->|"接口错配(RGB 中介)"| B["路线B: 潜空间直连 4D"]
+    Q -->|"缺几何/运动线索"| E["路线E: VDM 当确定性几何编码器"]
+    Q -->|"缺表面动力学"| F["路线F: 视频扩散生成动态纹理"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style Q fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style A fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style C fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style B fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style D fill:#ffe4e6,stroke:#f43f5e,color:#881337
+    style E fill:#cffafe,stroke:#06b6d4,color:#164e63
+    style F fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+
+<div class="callout">
+<h4>为什么视频生成模型（而不是图像生成模型）</h4>
+<p>动态人体重建需要的是<b>时序一致 + 跨视角一致</b>的观测。2D 图像扩散只保证单帧合理，直接拿来补帧会闪烁；视频扩散模型天然建模时序，且在大规模视频上预训练后隐含了人体运动学与遮挡常识。这是 2024 年后这条路线成立的底层前提。<b>例外</b>：只补静态外观（如单姿态遮挡）时，2D 扩散 + SDS 仍够用（WonderHuman、OccFusion 即属此类，本调研把它们作为对照保留）。</p>
+</div>
+</section>
+<!-- ==================== S3 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>路线 A：多视角视频生成 → 4DGS 重建</h2>
+
+<p class="lead">核心范式（<em>generate-then-reconstruct</em>）：把视频扩散模型当作「虚拟相机阵列」，输入单目或稀疏视角视频，输出 N 路同步且时序一致的多视角视频，再交给 off-the-shelf 的 4DGS / 动态 NeRF 优化器重建。这条路线的全部技术难点只有一句话：<b>如何让 N 个视角在同一时刻指向同一个人</b>。</p>
+
+<div class="mermaid">
+flowchart LR
+    V["单目 / 稀疏视角视频"] --> REF["参考视角编码"]
+    V --> COND["条件信号"]
+    COND --> C1["3D 骨架 (投影为骨架图 / latent)"]
+    COND --> C2["深度 / 法线 / 点云部分渲染"]
+    COND --> C3["相对相机位姿 (PRoPE)"]
+    COND --> C4["SMPL 序列 + 相机参数 + 身份图"]
+    REF --> DIT["多视角视频 DiT"]
+    C1 --> DIT
+    C2 --> DIT
+    C3 --> DIT
+    C4 --> DIT
+    DIT --> CTX["上下文管理"]
+    CTX --> X1["滑动迭代去噪 (Diffuman4D)"]
+    CTX --> X2["RCP + TCR (4DAnyone)"]
+    CTX --> X3["级联两阶段 (4DVD)"]
+    CTX --> X4["历史 target token rollout (Flex4DHuman)"]
+    X1 --> MV["N 路同步多视角视频"]
+    X2 --> MV
+    X3 --> MV
+    X4 --> MV
+    MV --> GS["4DGS 优化器"]
+    GS --> R1["FreeTimeGS (4DAnyone / Flex4DHuman)"]
+    GS --> R2["splatfacto 3DGS (Diffuman4D 备选)"]
+    GS --> R3["动态 NeRF (SV4D)"]
+    R1 --> OUT["自由视角 4D 人体"]
+    R2 --> OUT
+    R3 --> OUT
+    style DIT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style CTX fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style MV fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style OUT fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+
+<h3>3.1 通用场景的起点：CAT4D / SV4D / 4DVD</h3>
+
+<p>人体专用方法的技术底座来自「单目视频 → 4D 场景」的通用工作，它们证明了「多视角视频扩散 + 可变形高斯」这条路可行，但训练分布是<b>物体/场景</b>，迁移到人体（宽松衣物、头发、自遮挡）会显著退化——Diffuman4D 的论文正文明确指出了这一点（CAT4D 面对 soft structure 的运动时形变严重）。</p>
+
+<div class="grid grid-3">
+  <div class="card">
+    <h4>CAT4D · 2024-11</h4>
+    <p><b>arXiv 2411.18613</b>（Google DeepMind / Columbia / UCSD）。多视角视频扩散模型，核心卖点是<b>解耦相机控制与时间控制</b>：可生成「固定视角变时间」「固定时间变视角」「两者同变」三类序列；配合新的采样策略把单目视频变成多视角视频，再优化可变形 3DGS。评测在 DyCheck 一类动态场景基准上。<span class="uncertain">⚠️【待核实】会议标注 CVPR 2025 来自 IEEE 收录信息，非 arXiv abs 的 comments 字段</span></p>
+  </div>
+  <div class="card">
+    <h4>SV4D · 2024-07</h4>
+    <p><b>arXiv 2407.17470</b>（Stability AI / NEU）。统一的 latent video diffusion：一次采样直接出 <b>5 帧 × 8 视角</b>的 novel-view 视频，再优化隐式 4D 表示，明确避免以往「图像+视频+多视角三个扩散模型 + SDS」的重型组合。训练数据来自 Objaverse（合成物体）。<b>SV4D 2.0</b>（arXiv 2503.16396）去掉参考多视角依赖、引入 3D/frame attention blending、渐进式 3D-4D 训练与两阶段精修。<span class="uncertain">⚠️【待核实】官方 blog 称 SV4D 1.0 单次推理 5帧×8视角约 40 秒、4D 优化约 20-25 分钟</span></p>
+  </div>
+  <div class="card">
+    <h4>4DVD · 2025-08</h4>
+    <p><b>arXiv 2508.04467</b>。级联解耦：先用一个分支预测<b>粗糙的多视角布局</b>（跨视角与时间一致性优先），再用结构感知分支把布局先验与输入单目视频的精细外观融合，生成最终稠密视角视频。训练集 D-Objaverse（每物体 16 视角 × 21 帧）。思路与「先结构后纹理」的课程学习一致。</p>
+  </div>
+</div>
+
+<h3>3.2 人体专用主线：Human4DiT → Diffuman4D → MV-Performer → 4DAnyone → Flex4DHuman</h3>
+
+<div class="card">
+<h4>Human4DiT（2024-05）— 4D DiT 的注意力分解范式</h4>
+<p><b>arXiv 2405.17405</b>｜清华 + 新畅元｜项目页标注 SIGGRAPH Asia 2024（Journal Track）｜<span class="uncertain">⚠️【待核实】arXiv abs 的 comments 字段仅给出项目网址，会议信息取自项目页</span></p>
+<ul>
+<li><b>架构</b>：级联的 4D Transformer，把自注意力<b>分解为三个 block</b>——2D image block（帧内空间自注意力）、view block（跨视角对应）、temporal block（跨时间）。</li>
+<li><b>条件注入</b>：参考图编码出的人体身份 + 相机参数 + 时间信号，分别注入对应 block。</li>
+<li><b>数据与训练</b>：收集跨图像 / 视频 / 多视角 / 有限 4D 捕捉的多维数据集，配多维训练策略。</li>
+<li><b>推理</b>：两阶段时空采样——第一阶段把 360° 视频当单视角长序列（最大化时间窗保长期一致），第二阶段当多视角短 clip（较大视角窗保视角一致）。</li>
+<li><b>定位</b>：它把「视角 × 时间 × 空间」三维注意力的分解方式确定下来，后来者（Diffuman4D 的 3D 自注意力、4DAnyone 的 target context routing）都在这个框架内做上下文工程。</li>
+</ul>
+</div>
+
+<div class="card">
+<h4>Diffuman4D（2025-07）— 稀疏视角 + 骨架条件 + 滑动迭代去噪</h4>
+<p><b>arXiv 2507.13344</b>｜浙大 zju3dv｜<span class="uncertain">⚠️【待核实】未从 abs 页核实会议信息，此处不标会议</span></p>
+<ul>
+<li><b>输入/输出</b>：4 路同步稀疏视角视频 → <b>44 路</b>目标视角视频（序列长度 150 / 225 帧），再由输入的 4 路 + 生成的 44 路一起重建 4DGS。</li>
+<li><b>样本网格</b>：所有视角与时间步的 latent 组织成 $(N+M)\times T$ 的 4D 网格，用 3D 自注意力在视角与时间之间交换信息。</li>
+<li><b>滑动迭代去噪</b>：受 GPU 显存限制，视频扩散一次只能处理有限帧，直接分组去噪会让各组独立收敛、产生不一致；该文用滑窗沿空间与时间<b>交替</b>去噪，使信息在网格内充分流动，从而扩大有效感受野而不爆显存。</li>
+<li><b>条件</b>：3D 人体骨架投影到各视角并渲成 RGB map，编码进同一 latent 空间；相机参数用 Plücker 坐标编码。文本条件被显式关闭（prompt 置空）。</li>
+<li><b>附带的工程资产</b>：重新标定了 DNA-Rendering（相机参数、CCM 颜色校正、前景 mask、骨架），开源 <code>dna_rendering_processed</code>：<b>1000+ 序列 × 48 相机 × 225(150) 帧，约千万张图</b>。这是这条路线后续工作共同的训练底座。</li>
+<li><b>下游</b>：官方用 LongVolcap（未开源）做 4DGS，另给 nerfstudio 的 <code>splatfacto</code> 3DGS 作为可跑的替代。</li>
+</ul>
+</div>
+
+<div class="card">
+<h4>MV-Performer（2025-10）— 把「部分点云渲染的法线」当条件，解决 360° 歧义</h4>
+<p><b>arXiv 2510.07190</b>｜港中深（CUHKSZ）等｜SIGGRAPH Asia 2025 conference track（arXiv HTML 页含 ACM DOI）｜代码开源 <code>github.com/zyhbili/MV-Performer</code></p>
+<ul>
+<li><b>问题</b>：视频扩散模型可作为「隐式 4D 新视角合成器」，但以往方法只能在前视角附近挪相机轨迹，<b>做不到 360°</b>。</li>
+<li><b>做法</b>：从 oriented partial point cloud 渲染出<b>视角相关的法线图</b>作为条件信号——用有限的几何先验缓解「见过的区域 vs 没见过的区域」的歧义；再用一个人体中心的多视角视频扩散模型融合参考视频、部分渲染与不同视角的信息以保持同步。另提供 in-the-wild 的鲁棒推理流程，抑制单目深度估计误差带来的伪影。</li>
+<li><b>数据</b>：主要依托 MVHumanNet。</li>
+</ul>
+</div>
+
+<div class="card">
+<h4>4DAnyone（2026-08）— 把瓶颈诊断为「有界注意力上下文」并做上下文工程</h4>
+<p><b>arXiv 2608.20335</b>｜浙大 / Ant Group / Robbyant / HKUST / CUHK｜SIGGRAPH Asia 2026（项目页）｜Apache-2.0 开源｜<b>库内已有 deep 笔记</b> <a href="3D-20260820-4DAnyone.html">3D-20260820-4DAnyone.html</a></p>
+<ul>
+<li><b>输入/输出</b>：未标定的随手单目视频 → 数十路多视角一致视频 → FreeTimeGS。无需 rig、无需标定、无需三脚架；输出视角数可选（6 路环绕到 48 路）。</li>
+<li><b>诊断（本调研认为这是 2026 年最重要的框架性贡献）</b>：当目标视角数超过单个 DiT 的前向容量时，必须分组去噪，于是出现两个耦合瓶颈——参考侧条件成本随视角数 <b>O(N)</b> 增长，稀释跨视角外观指导（后生成的视角越来越不像本人）；目标侧组间无法直接交换信息，产生整体结构漂移（每组各自长出一个几何）。</li>
+<li><b>RCP（Reference Context Packing）</b>：把不断增长的参考视角压成固定长度的混合分辨率上下文，参考侧复杂度从 O(N) 降到 <b>O(1)</b>。</li>
+<li><b>TCR（Target Context Routing）</b>：去噪过程中轮换目标视角的分组——高噪声阶段频繁交换组内容以确定全局结构，低噪声阶段固定相邻组以稳定细节。</li>
+<li><b>条件信号取舍</b>：用 <b>3D 骨架</b>（稀疏但准确）替代稠密深度（脆弱）与不可靠的相机参数，作者把 in-the-wild 的鲁棒性归因于此。</li>
+<li><b>数据与规模</b>：自建 MVGameHuman（游戏引擎合成，38k 视频 / 24 相机 / 318 actors），混入 light-stage 与真实视频；backbone 为 Wan2.2-TI2V-5B；训练用 128×H20-3E。</li>
+<li><b>数字</b>（据论文与报道，二手源）：DNA-Rendering PSNR <b>24.33 dB</b>（对比方法最好 21.47 dB）；DyMVHumans 上 21.03 dB——后者明显更低，作者也承认真实无控场景下的泛化仍是短板，背面细节本质上是「与正面合理自洽的推测」。</li>
+</ul>
+</div>
+
+<div class="card">
+<h4>Flex4DHuman（2026-06）— 去掉一切显式几何先验，只用相对相机位姿</h4>
+<p><b>arXiv 2606.13655</b>｜University of Washington + World Labs｜<span class="uncertain">⚠️【待核实】未从 abs 页核实会议信息，此处不标会议</span></p>
+<ul>
+<li><b>主张</b>：不需要骨架、深度、法线、也不需要渲染目标视角的几何，<b>只用相对相机位姿</b>就能驱动多视角视频生成。</li>
+<li><b>实现</b>：以 Wan 2.1 的 1.3B text-to-video 为 backbone 并保留其结构；把相机与视角信息编码为<b>五轴位置编码</b>——在时空 RoPE 之外加入视角索引与连续 SE(3) 相对相机几何（PRoPE 路线）。输入布局为 36 通道（16 通道噪声 latent + 16 通道条件 latent，目标视角条件位置补零 + 4 通道二值 mask 标识参考/目标）。</li>
+<li><b>训练课程</b>：三阶段——① 单参考单目标下适配新的相机感知位置编码；② 引入动态参考视角采样 + 背景随机丢弃，学会可变参考→目标配置；③ temporal rollout（用 clean 的历史目标 token 训练，支持长序列）。另加入多视角 caption 以支持测试期文本控制。</li>
+<li><b>下游</b>：FreeTimeGS；在 DNA-Rendering / ActorsHQ 上评测。<span class="uncertain">⚠️【待核实】二手站点称其在 DNA-Rendering 上超过 Diffuman4D-GT-skeleton 约 +1.21 dB PSNR、相对单目基线 +8~9 dB，未回原文核对</span></li>
+<li><b>与 4DAnyone 的差异</b>（第三方交叉解读，<span class="uncertain">⚠️【推测】</span>）：Flex4DHuman 更「通用/少条件」，支持动物类；4DAnyone 的可辩护增量在于容纳未知内参、不把相机参数直接喂给生成模型、并用 RCP/TCR 把更多视角纳入同一套一致性设计。</li>
+</ul>
+</div>
+
+<h3>3.3 三个关键技术分歧</h3>
+
+<div class="grid grid-3">
+  <div class="card">
+    <h4>分歧一：条件信号用什么</h4>
+    <p><b>骨架系</b>（Diffuman4D、4DAnyone）：稀疏但准确，误差不会像稠密深度那样灾难性传播，代价是丢失体型/衣物细节线索。<br>
+    <b>几何渲染系</b>（MV-Performer 的视角相关法线图、部分点云渲染）：信息量大，但依赖单目几何估计质量。<br>
+    <b>无几何系</b>（Flex4DHuman 的纯相对位姿）：最通用于任意动态主体，但也意味着一致性完全压给生成模型本身。</p>
+  </div>
+  <div class="card">
+    <h4>分歧二：上下文怎么管</h4>
+    <p>这是 2025→2026 的核心战场。<b>滑动迭代去噪</b>（在 latent 网格上滑窗交替去噪）、<b>RCP+TCR</b>（压缩参考 + 轮换目标分组）、<b>级联解耦</b>（先布局后外观）、<b>历史 token rollout</b>（长序列自回归）。四者的共同目标都是在有限注意力/显存下维持全局一致。</p>
+  </div>
+  <div class="card">
+    <h4>分歧三：下游用什么重建器</h4>
+    <p><b>4DGS</b>（FreeTimeGS / Deformable-GS）为主流；<b>3DGS</b>（splatfacto）适合只需静态+位移近似的场景；<b>动态 NeRF</b>（SV4D）在稀疏视角下插值更好，但有实时性代价——SV4D 2.0 项目页明确说 4D Gaussians 在其稀疏设定下会出现时序闪烁与漂浮点。</p>
+  </div>
+</div>
+</section>
+<!-- ==================== S4 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>路线 B：潜空间直连 4D（绕过 RGB 中介）</h2>
+
+<p class="lead">这条路线提出的问题比它的方法更值得记住：<b>生成与重建之间的接口，为什么一定要是 RGB？</b></p>
+
+<div class="card">
+<h4>Latent-to-4D / Beyond Pixels: From Video Priors to 4D Worlds（2026-08）</h4>
+<p><b>arXiv 2608.10744</b>｜浙大 ReLER / CCAI｜项目页 <code>hayd-zju.github.io/Beyond-Pixels</code></p>
+<ul>
+<li><b>对既有两条范式的批评</b>：
+  <ul>
+    <li><em>generate-then-reconstruct</em>（路线 A）：保留了生成器的模块性，但让一个在<b>窄得多的重建数据</b>上单独训练的 4D/重建模型插在视频先验与 4D 输出之间——开放域内容与时序伪影会传播成不稳定的几何（distribution mismatch + error propagation）。</li>
+    <li><em>integrated feed-forward</em>（让某个视频生成器直接预测几何）：先验转移更直接，但把 4D 预测绑定在该生成器与条件协议上，换一个预训练视频模型就要重训几何监督。</li>
+  </ul>
+</li>
+<li><b>核心洞察</b>：共享同一个 VAE（同 latent 归一化 / 布局 / 压缩约定）的多个 video DiT，其<b>最终去噪 latent 落在同一表示空间</b>；而该空间位于 RGB 解码的上游，因此可以作为「一次几何监督、服务多个生成器」的可复用接口。</li>
+<li><b>实现</b>：把 video latent 对齐到预训练 4D decoder 的 token grid，配 frame-wise 与 global 的时空注意力精修；约 <b>1K 条重建 clip</b> 训练，单个 checkpoint 在同 VAE 家族的多个 video DiT 间<b>直接迁移、无需改动</b>。</li>
+<li><b>数字</b>：Text4D-200 / I4D-200 上，投影 DINO-F1 相比「同 latent 的 Wan + 4RC 级联」分别高 <b>2.88-3.45</b> 与 <b>5.81</b> 点，人工评分在几何、时序稳定性、整体质量上均更受偏好。</li>
+<li><b>与本项目的相关性</b>：如果后续要把「视频先验」接进自研重建链路，这条路线给出的建议是——<b>接口层尽量下沉到 latent，而不是渲染成 RGB 再喂</b>；RGB 接口会引入一次不可逆的信息损失与分布错配。注意该工作面向通用 4D 场景，尚未见人体专用版本。</li>
+</ul>
+</div>
+</section>
+
+<!-- ==================== S5 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>路线 C：生成当补全器 / 伪监督源（遮挡与欠观测）</h2>
+
+<p class="lead">这是与「自采 in-the-wild 视频」最贴近的一条路线。它的前提是承认：<b>真实拍摄中总有大片人体区域从未被观测</b>，几何上无解，只能引入生成先验；而生成内容本身多视角不自洽，必须设计专门机制吸收。</p>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h4>AHOY!（2026-03）— 遮挡下的可动画 avatar</h4>
+    <p><b>arXiv 2603.17975</b>（v2 2026-06-28）｜MPI 等｜项目页含 GitHub</p>
+    <ul>
+      <li><b>靶子</b>：现有 avatar 重建都假设输入「无遮挡、全身可见、常在规范姿态」，而真实视频里的人常被家具、物体、他人挡住。</li>
+      <li><b>四个组件</b>：① hallucination-as-supervision——用身份微调过的扩散模型为未观测区域生成<b>稠密监督</b>；② canonical → pose-dependent 两阶段架构，从稀疏观测 bootstrap 出完整 pose-dependent 高斯图；③ <b>map-pose / LBS-pose 解耦</b>——专门用来吸收生成数据带来的多视角不一致；④ head/body 分开监督以保住面部身份。</li>
+      <li><b>结果</b>：在 YouTube 视频与含显著遮挡的多视角捕获数据上报告 SOTA，且重建出的 avatar 可用新姿态驱动、合成进手机视频拍的 3DGS 场景。</li>
+      <li><b>可借鉴点</b>：③ 的「解耦吸收不一致」比「想办法让生成更一致」更工程可行。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>StudioRecon（2026-07）— 人机分工：视频扩散只管背景</h4>
+    <p><b>arXiv 2607.09125</b>｜首尔大学｜SIGGRAPH Conference Papers 2026（DOI 10.1145/3799902.3811165）｜项目页 <code>sisyphm.github.io/studiorecon-page</code></p>
+    <ul>
+      <li><b>设定</b>：健身房/家庭等真实场景下，只有 4 台<b>低重叠</b>（约 90° 分布）、未标定的相机，多人频繁遮挡。</li>
+      <li><b>关键判断（原文）</b>：近期方法在欠观测区域仍有明显伪影；<b>video diffusion models 作为另一条可选路线，对人体会给出几何不一致的结果</b>。</li>
+      <li><b>因此的分工</b>：背景用 camera-controlled 视频扩散合成<b>数百个</b>视角做稠密监督；人体走几何路线——cross-view identity association + 三角化多视角关键点拟合，得到可变形高斯人的鲁棒初始化；最后用递归增强模块 + motion-adaptive consistency injection 把二者合成的结果统一，消除残留伪影。</li>
+      <li><b>能力</b>：四个真实数据集上 SOTA 的新视角合成，支持新轨迹渲染与人体替换。</li>
+      <li><b>与本项目的相关性</b>：我们的 12-16 视角（中度稀疏）场景比它的 4 路低重叠友好得多，但「背景交给生成、人体交给几何」这条分工原则可以直接借用。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout warn">
+<h4>对照：用 2D 图像扩散（不是视频扩散）做同样的事</h4>
+<ul>
+<li><b>WonderHuman</b>（arXiv 2502.01045）：单目动态人体重建中「幻觉出未见部位」。核心是 <b>Dual-Space SDS</b>——在<b>规范空间与观测空间同时</b>做 score distillation，前者保证内容自然完整，后者处理跨姿态的动态；另配视角选择策略与姿态特征注入，以调和 SDS 预测与已知观测的冲突。评测覆盖 ZJU-MoCap / MonoCap / MVHumanNet / in-the-wild。</li>
+<li><b>OccFusion</b>（Stanford CS191 项目，非 arXiv）：三阶段——部分可见 mask → 完整人体 mask 的初始化；3D 高斯在 SDS 额外监督下优化出完整几何；in-context inpainting 精修欠观测部位。在 ZJU-MoCap 与 OcMotion 上报告 SOTA。<span class="uncertain">⚠️【待核实】来源为课程项目页 PDF，非正式发表</span></li>
+</ul>
+<p><b>为什么仍把它们归入路线 C</b>：靶子相同（观测缺失），机制相同（生成先验当监督）。差别只在先验的维度——视频先验额外提供时序一致性，静态遮挡场景下 2D 先验已够用，成本低得多。</p>
+</div>
+</section>
+
+<!-- ==================== S6 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>路线 D：视频扩散当 SDS 训练信号</h2>
+
+<p class="lead">这一族的共同特征：视频扩散模型<b>不产出数据，只产出梯度</b>。它面向的是「生成」而非「重建真实人」，但机制（视频先验如何变成可微信号）对重建同样有效，故单列路线。</p>
+
+<div class="grid grid-3">
+  <div class="card">
+    <h4>PhyGenHOI（2026-05）</h4>
+    <p><b>arXiv 2605.30268</b>。文本驱动的 4D 人-物交互生成：人体作为语义 agent 由 motion diffusion 的 <b>HMSD</b>（Human Motion Score Distillation）驱动，物体作为物理 agent 由 MPM 仿真，接触检测后重新仿真以体现动量传递与形变；最后用 <b>Temporally-Masked Video-SDS</b>——只在<b>接触帧附近</b>注入视频先验，既提升交互保真度又不破坏物理上已 grounded 的运动。对比 4D-fy 与 AnimateAnyMesh。<br><b>对重建的启发</b>：SDS 的作用域可以是局部的（只作用于接触/遮挡区间），不必全程施加——这能大幅减轻 SDS 常见的过饱和与过度平滑。</p>
+  </div>
+  <div class="card">
+    <h4>Animate3D / AKD</h4>
+    <p>用视频扩散模型对静态 3D 资产做动画生成（多视角视频 + 4D SDS 组合）。<span class="uncertain">⚠️【待核实】未核实具体 arXiv 编号，此处只记方法名与所属家族</span></p>
+  </div>
+  <div class="card">
+    <h4>DreamPhysics</h4>
+    <p>用视频扩散先验<b>估计 3DGS 的物理属性</b>（材料/弹性等），再配合 MPM 仿真生成 4D 内容；提出用 SDS + 帧插值 + log gradient 优化物理参数，而非直接用生成视频做显式监督。与并行工作 PhysDreamer 属同一问法。<span class="uncertain">⚠️【待核实】检索得到的 arXiv 链接形式异常（2406.1476 非 2024 年合法编号），编号待核实，此处不给链接</span></p>
+  </div>
+</div>
+
+<div class="callout warn">
+<h4>对重建任务的风险提示</h4>
+<p>SDS 的固有问题是把 2D/视频先验「投影」进 3D 时产生的过饱和、纹理漂移与多视角 Janus 问题；且它优化的是「看起来像」，不是「几何正确」。若目标是<b>可交付的真实人体资产</b>，SDS 更适合作为<b>局部、短时、有掩码约束</b>的正则项（如 PhyGenHOI 的做法），而非主要监督。</p>
+</div>
+</section>
+
+<!-- ==================== S7 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>路线 E：VDM 当确定性几何编码器（非生成式复用）</h2>
+
+<div class="card">
+<h4>DreamHand: Repurposing Video Diffusion Models for Occlusion-Robust Egocentric 3D Hand Motion Recovery（2026-08）</h4>
+<p><b>arXiv 2608.20308</b>｜SJTU / NTU / CUHK / ACE Robotics｜代码 <code>github.com/ggxxii/dreamhand</code></p>
+<ul>
+<li><b>问题</b>：第一人称视频里手被物体遮挡、甚至短暂离开画面（out-of-sight）时，单帧回归器无从下手；滑窗模型超出窗口即断；而近期的生成式做法要跑<b>多步随机采样先渲染出 RGB</b>，既有延迟又把生成伪影带进姿态估计。</li>
+<li><b>核心做法</b>：把预训练 VDM 改造成<b>确定性几何编码器</b>——不做生成，只在 clean latent 上做<b>一次前向</b>提取特征（Deterministic Clean-Latent Encoder），再用双向时空解码器（Bidirectional Spatiotemporal Decoder）在整段 clip 上推理，让后面的可见帧帮前面的遮挡时刻；另提供基于射线的相机求解器（Ray-Based Camera Solver）以支持测试期不提供内参的配置。</li>
+<li><b>数字</b>：五个第一人称基准上 SOTA；遮挡严重的 ARCTIC 上 MPJPE-p 降 <b>30%</b>，HOT3D 降 <b>40%</b>；把「出画的手」也纳入评测后提升达 <b>46%-61%</b>。不依赖外部手部检测器。</li>
+<li><b>为什么值得单独列为一条路线</b>：它把 VDM 从「渲染器」降级为「编码器」，代价是放弃像素输出，收益是<b>更快、更确定、无生成伪影</b>。这与重建任务的需求高度契合——重建要的是几何与对应关系，不是好看的中间帧。</li>
+<li><b>对本项目的直接启发</b>：我们的链路目前靠 COLMAP + 3DMM + 657 点 landmarks 提供几何线索；在遮挡/欠约束片段，可以考虑用 VDM 的 clean-latent 特征做「时序补全的对应先验」，而不是先渲染多视角视频再重建。注意其局限：<b>离线片段级</b>，不适合在线/实时；对可见锚点质量敏感。</li>
+</ul>
+</div>
+</section>
+
+<!-- ==================== S8 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>路线 F：视频扩散生成动态外观（pose-dependent dynamics）</h2>
+
+<div class="card">
+<h4>AvatarDynamizer: From Static to Dynamic Human Avatars via Generative Dynamic Textures（2026-08）</h4>
+<p><b>arXiv 2608.19900</b>｜MPI for Informatics + 波恩等｜项目页 <code>vcai.mpi-inf.mpg.de/projects/AvatarDynamizer</code></p>
+<ul>
+<li><b>靶子</b>：person-agnostic 方法能从单图/视频/文本得到静态 3D avatar，但骨架驱动的动画<b>没有真实的表面动力学</b>（衣物褶皱）；person-specific 方法动力学真实却需要昂贵的多视角逐人采集。</li>
+<li><b>洞察（原文关键判断）</b>：差异在于<b>表面动力学的嵌入位置</b>。图像空间方法把动力学嵌入视频先验与 3D 姿态控制，能用上基础模型但牺牲 3D 一致性；texel / 高斯回归方法把动力学嵌入确定性的前馈回归，天然保 3D 一致却<b>无法直接利用预训练 2D/视频生成先验</b>，且在数据有限时容易退化成过度平滑或近乎静态。</li>
+<li><b>做法</b>：引入 <b>texture-space 表面动力学嵌入</b>——把 pose-dependent 动力学显式写进彩色的<b>动态纹理图</b>（texel 空间时空自洽、且与预训练视频扩散模型兼容），再由 Generalized Gaussian Decoder 解码为 3D Gaussians 保证多视角一致渲染；Dynamic Texture Generator 则把动力学学习表述为 texel 空间的<b>条件图生图</b>任务（输入静态纹理 + 姿态法线图，输出带褶皱的动态纹理），从而直接复用视频生成先验。</li>
+<li><b>数据</b>：自建 DynaHuman——<b>58 位 actor × 100 台 4K 相机，每段序列约 27000 帧</b>。</li>
+<li><b>定位</b>：不解决「重建」，解决的是「重建之后动画起来像不像」。对以「固定表情系数消除微动」为目标的链路，这条路线提示了另一条思路：<b>把难建模的高频动力学搬到 2D 纹理空间去生成</b>，而不是在 3D 表示里硬拟合。</li>
+</ul>
+</div>
+</section>
+<!-- ==================== S9 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>关键技术对比表（固定维度）</h2>
+
+<p>维度按知识库规范固定，缺失值一律写 <code>—</code> 而不省略列。<b>训练时长 / 推理耗时 / 显存</b>三项在多数论文中未给出可比较的数字，故大量为 <code>—</code>，不做估算。</p>
+
+<table>
+<thead>
+<tr>
+  <th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督 / 条件信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>CAT4D</td><td>2024-11</td><td>单目视频（含相机位姿）</td><td>可变形 3DGS</td><td>多视角视频扩散 + 新采样策略</td><td>混合多数据集（含动态捕获）</td><td>—</td><td>—</td><td>—</td><td>DyCheck 等动态重建基准上报告有竞争力</td><td>—</td>
+</tr>
+<tr>
+  <td>SV4D</td><td>2024-07</td><td>单目参考视频</td><td>动态 NeRF</td><td>统一 latent video diffusion（免 SDS）</td><td>Objaverse 派生动态物体集</td><td>—</td><td><span class="uncertain">⚠️ 40s / 5帧×8视角</span></td><td>—</td><td>新视角视频合成 + 4D 生成 SOTA（用户研究）</td><td>✅（HF 权重，社区许可）</td>
+</tr>
+<tr>
+  <td>Human4DiT</td><td>2024-05</td><td>单张参考图 + SMPL 序列 + 相机参数</td><td>4D 视频（可自由视角播放）</td><td>身份 / 相机 / 时间分别注入对应 transformer block</td><td>图像+视频+多视角+有限 4D 捕捉</td><td>—</td><td>—</td><td>—</td><td>单目 / 多视角 / 静态 3D / 自由视角多任务对比占优</td><td>✅（项目页给 Code / Data）</td>
+</tr>
+<tr>
+  <td>4DVD</td><td>2025-08</td><td>单目视频</td><td>4D Gaussian</td><td>级联：粗布局 → 结构感知外观生成</td><td>D-Objaverse（16 视角 × 21 帧/物体）</td><td>—</td><td>—</td><td>—</td><td>新视角合成与 4D 生成 SOTA</td><td>—</td>
+</tr>
+<tr>
+  <td>Diffuman4D</td><td>2025-07</td><td>4 路同步稀疏视角视频（已知相机）</td><td>4DGS（LongVolcap）/ 3DGS（splatfacto 备选）</td><td>骨架 latent + Plücker 相机；文本条件置空</td><td>DNA-Rendering 重标注（1000+ 序列 × 48 相机）</td><td>—</td><td>—</td><td>—</td><td>4→44 视角，150/225 帧；大幅优于 Genwarp / CAT4D 类基线</td><td>✅（zju3dv 官方 + HF 权重 + 数据）</td>
+</tr>
+<tr>
+  <td>MV-Performer</td><td>2025-10</td><td>单目全身视频</td><td>多视角同步视频（4D NVS）</td><td>oriented partial point cloud 渲染的视角相关法线图</td><td>MVHumanNet 为主</td><td>—</td><td>—</td><td>—</td><td>三个数据集上 360° 同步合成 SOTA</td><td>✅ github.com/zyhbili/MV-Performer</td>
+</tr>
+<tr>
+  <td>4DAnyone</td><td>2026-08</td><td>未标定随手单目视频</td><td>4DGS（FreeTimeGS）</td><td>3D 骨架条件 + RCP/TCR 上下文管理</td><td>MVGameHuman（38k 视频 / 24 相机 / 318 actors）+ light-stage + 真实视频</td><td>三阶段 curriculum（0.5 / 1 / 1.5 天，128×H20-3E）</td><td>—</td><td>—</td><td>DNA-Rendering PSNR <b>24.33</b>（对比最好 21.47）；DyMVHumans 21.03</td><td>✅（Apache-2.0 + HF 权重）</td>
+</tr>
+<tr>
+  <td>Flex4DHuman</td><td>2026-06</td><td>单目或稀疏多视角（静态相机）</td><td>动态 Gaussian Splats（FreeTimeGS）</td><td><b>仅</b>相对相机位姿（五轴 PRoPE）+ 可选多视角 caption</td><td>DNA-Rendering / ActorsHQ（+ 人-动物混合训练）</td><td>三阶段课程</td><td>—</td><td>—</td><td><span class="uncertain">⚠️ 二手源：超 Diffuman4D-GT-skeleton +1.21 dB</span></td><td>—</td>
+</tr>
+<tr>
+  <td>Latent-to-4D</td><td>2026-08</td><td>文本 / 图像（4D 生成，非重建）</td><td>4D decoder 的显式几何</td><td>video DiT 最终去噪 latent（不经 RGB）</td><td>约 1K 条重建 clip</td><td>—</td><td>—</td><td>—</td><td>vs 同 latent Wan+4RC 级联：DINO-F1 +2.88~3.45（Text4D-200）/ +5.81（I4D-200）</td><td>—</td>
+</tr>
+<tr>
+  <td>AHOY!</td><td>2026-03</td><td>in-the-wild 单目视频（可重度遮挡）</td><td>可动画 3DGS avatar</td><td>identity-finetuned 扩散生成密集监督 + map/LBS 姿态解耦</td><td>YouTube 视频 + 多视角捕获（含遮挡）</td><td>—</td><td>—</td><td>—</td><td>遮挡场景重建质量 SOTA（无统一数值口径）</td><td>—</td>
+</tr>
+<tr>
+  <td>StudioRecon</td><td>2026-07</td><td>4 路低重叠、未标定同步视频</td><td>背景高斯 + 解耦的人体可变形高斯</td><td>背景用 camera-controlled 视频扩散合成数百视角；人体用跨视角身份关联 + 关键点三角化</td><td>四个真实世界数据集</td><td>—</td><td>—</td><td>—</td><td>四个真实数据集上新视角合成 SOTA</td><td>—</td>
+</tr>
+<tr>
+  <td>DreamHand</td><td>2026-08</td><td>第一人称视频片段（可无内参配置）</td><td>双手 3D 轨迹（度量）</td><td>VDM clean-latent 单次确定性前向 + 双向时空解码</td><td>ARCTIC / HOT3D / HOI4D 等五个基准</td><td>—</td><td><span class="uncertain">⚠️ 离线片段级；论文称比生成式路线快 33×</span></td><td>—</td><td>ARCTIC MPJPE-p <b>-30%</b>；HOT3D <b>-40%</b>；含出画手 <b>-46~61%</b></td><td>✅ github.com/ggxxii/dreamhand</td>
+</tr>
+<tr>
+  <td>AvatarDynamizer</td><td>2026-08</td><td>静态 3D avatar（单图/文本/扫描/多视角均可）+ 目标动作</td><td>动态纹理 → 3D Gaussians</td><td>texel 空间条件图生图，复用预训练视频扩散先验</td><td>DynaHuman（58 actors × 100 台 4K 相机，27k 帧/序列）</td><td>—</td><td>—</td><td><span class="uncertain">⚠️ 论文称扩散先验带来较高计算成本</span></td><td>视觉保真度优于同类通用可动画方法（尤其动态数据有限时）</td><td>项目页（代码情况未核实）</td>
+</tr>
+</tbody>
+</table>
+
+<p><span class="uncertain">⚠️【待核实】</span>本表数值来自 arXiv 摘要页 / HTML 全文 / 项目页与本仓既有 4DAnyone 笔记；标 <span class="uncertain">⚠️</span> 项为二手来源或未回原文核对。会议信息仅在有 arXiv <code>comments</code> 字段或 ACM DOI 佐证时写入，未佐证者留空。</p>
+</section>
+
+<!-- ==================== S10 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>演进脉络与定位</h2>
+
+<div class="mermaid">
+flowchart TD
+    Y24["2024 · 范式建立<br/>CAT4D(单目→多视角→3DGS)<br/>SV4D(统一 latent video diffusion)<br/>Human4DiT(4D DiT 注意力分解)<br/>Vidu4D(生成视频→动态高斯面元)"]
+    Y25["2025 · 人体专用 + 条件工程<br/>Diffuman4D(4→44 视角, 骨架+滑动迭代去噪)<br/>MV-Performer(360°, 法线条件)<br/>4DVD(级联布局→外观)<br/>WonderHuman(2D SDS 补未见部位)"]
+    Y26["2026 · 上下文工程 + 接口下沉 + 非生成式复用<br/>4DAnyone(RCP/TCR, 骨架条件, 单目 casual)<br/>Flex4DHuman(去几何先验, 五轴 PRoPE)<br/>Latent-to-4D(latent 直连 4D decoder)<br/>AHOY! / StudioRecon(补全当监督, 人机分工)<br/>DreamHand(VDM 当几何编码器)<br/>AvatarDynamizer(纹理空间动力学)"]
+    Y24 --> Y25 --> Y26
+    TR["贯穿主线: 一致性从『模型能力问题』变成『上下文预算问题』"]
+    Y26 --> TR
+    style Y24 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style Y25 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style Y26 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style TR fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+
+<table>
+<thead>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+</thead>
+<tbody>
+<tr><td>通用 4D 生成（单目→多视角→重建）</td><td>CAT4D、SV4D、4DVD</td><td>大规模动态物体/场景的先验</td><td>在人体（宽松衣物、头发、自遮挡）上退化明显</td></tr>
+<tr><td>人体 4D DiT（生成即新视角合成）</td><td>Human4DiT、MV-Performer</td><td>身份 + 相机 + 骨架/法线条件</td><td>视角数受单次前向容量限制；360° 需大量人体多视角数据</td></tr>
+<tr><td>稀疏视角 + 条件工程</td><td>Diffuman4D</td><td>骨架 latent + Plücker 相机</td><td>依赖已知相机；分组去噪不一致需滑窗补偿</td></tr>
+<tr><td>上下文工程（规模化的关键）</td><td>4DAnyone</td><td>3D 骨架 + RCP/TCR 注意力预算管理</td><td>真实无控场景泛化仍差（DyMVHumans 21.03 vs 24.33）；背面属推测</td></tr>
+<tr><td>去几何先验（通用性优先）</td><td>Flex4DHuman</td><td>仅相对相机位姿（PRoPE）</td><td>一致性全压给生成模型；人体细节线索（体型、贴身衣物）无处输入</td></tr>
+<tr><td>接口下沉（绕过 RGB）</td><td>Latent-to-4D</td><td>同 VAE 家族的共享 latent 空间</td><td>绑定 VAE 家族；4D 监督数据稀缺；尚无人体专用版</td></tr>
+<tr><td>补全当监督（承认边界、分工）</td><td>AHOY!、StudioRecon</td><td>扩散生成密集伪监督 + 几何关联</td><td>需专门机制吸收生成数据的不一致；流程长</td></tr>
+<tr><td>非生成式复用（编码器）</td><td>DreamHand</td><td>VDM 的 clean-latent 特征</td><td>离线片段级、非实时；依赖可见锚点</td></tr>
+<tr><td>动态外观生成（texel 空间）</td><td>AvatarDynamizer</td><td>视频扩散的条件图生图能力</td><td>依赖准确姿态与纹理初始化；计算成本高</td></tr>
+</tbody>
+</table>
+
+<div class="callout key">
+<h4>一句话脉络</h4>
+<p>2024 年解决的是「能不能」（多视角扩散 + 可变形高斯能否闭合）；2025 年解决的是「人体上准不准」（骨架/法线条件、360° 覆盖、级联解耦）；<b>2026 年解决的是「规模与接口」</b>——上下文怎么在有限注意力下保持全局一致（RCP/TCR）、生成与重建的接口放在哪一层（latent vs RGB）、以及视频先验能不能不做生成就直接当特征用（DreamHand）。</p>
+</div>
+</section>
+
+<!-- ==================== S11 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>落地适配：单卡 3090 与本仓现状</h2>
+
+<div class="mermaid">
+flowchart TD
+    S{"目标是什么?"} -->|"真实人自由视角回放"| T1{"相机是否已知?"}
+    T1 -->|"已知, 稀疏多视角"| P1["Diffuman4D 路线<br/>骨架条件 + 滑动迭代去噪"]
+    T1 -->|"单目 casual / 未标定"| T2{"能否接受骨架先验?"}
+    T2 -->|"能"| P2["4DAnyone 路线<br/>RCP/TCR 管上下文 (5B 级, 显存重)"]
+    T2 -->|"不能 / 要通用主体"| P3["Flex4DHuman 路线<br/>1.3B, 只用相对位姿 (单卡友好)"]
+    S -->|"遮挡严重 / 只要可动画 avatar"| P4["AHOY! / StudioRecon 式<br/>生成当监督 + 人机分工"]
+    S -->|"只要几何与运动线索"| P5["DreamHand 式<br/>VDM 当确定性编码器"]
+    S -->|"已有静态资产, 要动画质感"| P6["AvatarDynamizer / HumanDreamer<br/>纹理空间或解耦生成"]
+    style S fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style P1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P2 fill:#ffe4e6,stroke:#f43f5e,color:#881337
+    style P3 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style P4 fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style P5 fill:#cffafe,stroke:#06b6d4,color:#164e63
+    style P6 fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h4>硬件现实（单卡 3090 24GB）</h4>
+    <ul>
+      <li><b>backbone 规模决定可行性</b>：Flex4DHuman 建在 <b>Wan 2.1 1.3B</b> 上，是本调研中显存最友好的多视角生成路线；4DAnyone 建在 <b>Wan2.2-TI2V-5B</b> 上，且要同时生成数十个视角，原始配置是 128×H20-3E 训练，单卡复现需要显著降采样或分组。</li>
+      <li><b>分组不是可选项而是必选项</b>：只要目标视角数超过单次前向容量，就必须分组，也就必然遇到 4DAnyone 指出的两个瓶颈（参考侧 O(N)、目标侧组间漂移）。选型时应优先看方法有没有针对性的上下文管理机制，而不是看生成样例好不好看。</li>
+      <li>Diffuman4D 提供了 <code>demo_4d_tiny</code>（4 输入相机 × 15 帧 → 44 相机 × 15 帧）这类小配置，适合先验证链路再放大。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>与本仓既有资产的对接点</h4>
+    <ul>
+      <li><b>本仓已有 <code>4danyone/</code> 复现脚本</b>（<code>00_setup_env</code> / <code>00a_setup_env</code> / <code>01_download_models</code> / <code>02_run_inference</code> / <code>run_all</code>），说明路线 A 已进入工程验证阶段；下一步的瓶颈更可能在显存与视角数，而非环境。</li>
+      <li><b>条件信号我们全都有</b>：COLMAP 相机位姿、3DMM/MHR 头模、SAM3 person mask、ExpTracker 657 点 landmarks——这恰好能拼出 Diffuman4D / 4DAnyone 需要的「骨架 + 相机」条件。相对而言，<b>骨架条件路线对我们是低改造成本的</b>；Flex4DHuman 的纯位姿路线改造更少但与现有先验脱钩。</li>
+      <li><b>「固定表情系数消除微动」的目标下，路线 A 的整段生成可能过重</b>：若微动是主要矛盾，路线 C 的分工思路（背景用生成、人体用几何 + 局部生成补全）比端到端生成更可控，也不会把生成的身份漂移引进人脸区域。</li>
+      <li><b>注意生成与重建的口径差</b>：生成视频 PSNR 高 ≠ 4DGS 重建质量高；4DAnyone 的 DNA-Rendering 24.33 dB 是<b>重建后的渲染指标</b>，与「生成视频的 PSNR」不是一回事。</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout tip">
+<h4>推荐的三步验证顺序（低风险 → 高风险）</h4>
+<ol>
+  <li><b>先做条件可用性验证</b>：把我们现有的 MHR/landmarks 投影成骨架条件图，在 Diffuman4D 的小配置上跑通「4 视角 → 44 视角 → 3DGS」，确认生成的视角对我们的人体（贴身/宽松衣物）是否可用。</li>
+  <li><b>再验证上下文规模</b>：把目标视角从 44 提到 100+，观察是否出现目标侧结构漂移；若出现，则 4DAnyone 的 RCP/TCR 就不是可选项。</li>
+  <li><b>最后才考虑换 backbone</b>：若 1.3B 级质量不足以支撑人脸/手部细节，再评估 5B 级 backbone 在 24GB 上的可行降级方案（分块、降帧、降低目标视角数）。</li>
+</ol>
+</div>
+</section>
+
+<!-- ==================== S12 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>未解问题与可改进方向</h2>
+
+<div class="card" style="border-left:4px solid var(--accent2)">
+<h4>[高优先级] 评测口径不统一，跨论文数字不可比</h4>
+<p>各工作分别报告重建后渲染 PSNR（DNA-Rendering）、生成视频质量、用户研究（SV4D）、以及不同基线下的相对提升。4DAnyone 与 Flex4DHuman 都声称在 DNA-Rendering / ActorsHQ 上超越前作，但基线配置（是否给 GT 骨架、目标视角数、帧数）并不一致。<b>改进建议</b>：内部复核时统一「同一批输入视频 + 同一 4DGS 优化器 + 同一评测帧」的三同口径，只比较生成视频的质量与一致性，不比较论文 headline 数字。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--accent)">
+<h4>[高优先级] 生成区域没有可信度标记</h4>
+<p>所有路线 A/C 的方法都在「脑补」未观测区域，但输出里没有任何机制告诉下游「这块是观测到的、那块是生成的」。4DAnyone 自己承认背面细节是「与正面合理自洽的推测」。<b>改进建议</b>：在 4DGS 优化时按观测覆盖率为每个高斯带上置信度权重，让人脸等关键区域只被真实观测约束，生成内容只作用于低置信度区域——这正好契合我们「人脸必须可信」的需求。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 时序一致性缺标准指标</h4>
+<p>FV4D 只在 SV4D 2.0 等少数工作中使用，多数人体工作仍以单帧 PSNR/SSIM/LPIPS 报告，而「时序闪烁」恰恰是这条路线最典型的失败模式（SV4D 2.0 项目页明确提到 4D Gaussians 的时序闪烁与漂浮点）。<b>改进建议</b>：内部验收加一项「静态段落的帧间差分抖动」指标。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[中优先级] 生成与重建的接口仍以 RGB 为主</h4>
+<p>路线 A 的绝大多数工作都要先把 latent 解码成视频再喂重建器，而 Latent-to-4D 已经证明同 VAE 家族的 latent 可以直接对接 4D 解码器并带来可观提升。<b>改进建议</b>：若后续在自研链路上引入视频先验，优先评估 latent 直连，避免 RGB 往返的信息损失。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--pink)">
+<h4>[低优先级] 非生成式复用尚未在人体全身重建上验证</h4>
+<p>DreamHand 证明了 VDM 的 clean-latent 特征可以替代多步采样做几何回归，但只做了手部。全身人体（含衣物、自遮挡）能否用同样方式提取「遮挡感知的对应特征」仍是空白。<b>潜在机会</b>：这可能是比「生成多视角视频再重建」更轻量的路线，尤其适合 3090 这类单卡资源。</p>
+</div>
+
+<table>
+<thead><tr><th>优先级</th><th>问题</th><th>可否自行验证</th><th>预期收益</th></tr></thead>
+<tbody>
+<tr><td class="best">高</td><td>评测口径不可比</td><td>可以（统一三同口径）</td><td>避免被 headline 数字误导选型</td></tr>
+<tr><td class="best">高</td><td>生成区域无置信度标记</td><td>可以（用 SAM3 mask + 观测覆盖率）</td><td>保护人脸/手部不被脑补内容污染</td></tr>
+<tr><td>中</td><td>时序一致性无指标</td><td>可以（帧间差分抖动）</td><td>提前发现闪烁，避免后期返工</td></tr>
+<tr><td>中</td><td>接口仍以 RGB 为主</td><td>需要改造，成本中等</td><td>减少信息损失，提升跨视角一致</td></tr>
+<tr><td>低</td><td>VDM 特征复用未在全身验证</td><td>需要实验，风险较高</td><td>可能打开更轻量的重建路线</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ==================== S13 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>资源链接与兄弟笔记</h2>
+
+<h3>路线 A · 多视角视频生成 → 4DGS</h3>
+<ul>
+<li><b>4DAnyone</b> — <a href="https://arxiv.org/abs/2608.20335" target="_blank">arXiv</a> · <a href="https://ant-research.github.io/4DAnyone/" target="_blank">项目页</a> · <a href="https://github.com/ant-research/4DAnyone" target="_blank">GitHub</a> · <a href="https://huggingface.co/AntResearch/4DAnyone" target="_blank">HuggingFace</a> · 库内笔记 <a href="3D-20260820-4DAnyone.html">3D-20260820-4DAnyone</a></li>
+<li><b>Flex4DHuman</b> — <a href="https://arxiv.org/abs/2606.13655" target="_blank">arXiv 2606.13655</a></li>
+<li><b>Diffuman4D</b> — <a href="https://arxiv.org/abs/2507.13344" target="_blank">arXiv 2507.13344</a> · 官方代码 zju3dv/Diffuman4D</li>
+<li><b>MV-Performer</b> — <a href="https://arxiv.org/abs/2510.07190" target="_blank">arXiv 2510.07190</a> · <a href="https://github.com/zyhbili/MV-Performer" target="_blank">GitHub</a></li>
+<li><b>Human4DiT</b> — <a href="https://arxiv.org/abs/2405.17405" target="_blank">arXiv 2405.17405</a> · <a href="https://human4dit.github.io/" target="_blank">项目页</a></li>
+<li><b>CAT4D</b> — <a href="https://arxiv.org/abs/2411.18613" target="_blank">arXiv 2411.18613</a> · <a href="https://cat-4d.github.io/" target="_blank">项目页</a></li>
+<li><b>SV4D</b> — <a href="https://arxiv.org/abs/2407.17470" target="_blank">arXiv 2407.17470</a> · <a href="http://sv4d.github.io/" target="_blank">项目页</a>；<b>SV4D 2.0</b> <a href="https://arxiv.org/abs/2503.16396" target="_blank">arXiv 2503.16396</a></li>
+<li><b>4DVD</b> — <a href="https://arxiv.org/abs/2508.04467" target="_blank">arXiv 2508.04467</a> · <a href="https://4dvd.github.io/" target="_blank">项目页</a></li>
+</ul>
+
+<h3>路线 B / E / F</h3>
+<ul>
+<li><b>Latent-to-4D（Beyond Pixels）</b> — <a href="https://arxiv.org/abs/2608.10744" target="_blank">arXiv 2608.10744</a> · <a href="https://hayd-zju.github.io/Beyond-Pixels/" target="_blank">项目页</a></li>
+<li><b>DreamHand</b> — <a href="https://arxiv.org/abs/2608.20308" target="_blank">arXiv 2608.20308</a> · <a href="https://github.com/ggxxii/dreamhand" target="_blank">GitHub</a></li>
+<li><b>AvatarDynamizer</b> — <a href="https://arxiv.org/abs/2608.19900" target="_blank">arXiv 2608.19900</a> · <a href="https://vcai.mpi-inf.mpg.de/projects/AvatarDynamizer" target="_blank">项目页</a></li>
+</ul>
+
+<h3>路线 C / D</h3>
+<ul>
+<li><b>AHOY!</b> — <a href="https://arxiv.org/abs/2603.17975" target="_blank">arXiv 2603.17975</a></li>
+<li><b>StudioRecon</b> — <a href="https://arxiv.org/abs/2607.09125" target="_blank">arXiv 2607.09125</a> · <a href="https://sisyphm.github.io/studiorecon-page/" target="_blank">项目页</a></li>
+<li><b>PhyGenHOI</b> — <a href="https://arxiv.org/abs/2605.30268" target="_blank">arXiv 2605.30268</a></li>
+<li><b>WonderHuman</b> — <a href="https://arxiv.org/abs/2502.01045" target="_blank">arXiv 2502.01045</a></li>
+<li><b>Vidu4D</b>（生成视频 → 动态高斯面元，下游重建器参照）— <a href="https://arxiv.org/abs/2405.16822" target="_blank">arXiv 2405.16822</a></li>
+</ul>
+
+<h3>库内兄弟笔记（交叉参考）</h3>
+<ul>
+<li><a href="3D-20260820-4DAnyone.html">3D-20260820-4DAnyone</a> — 路线 A 的 deep 级精读，含 RCP/TCR 的完整机制与源码级细节</li>
+<li><a href="VideoGen-20260427-视频生成几何一致性调研.html">VideoGen-20260427-视频生成几何一致性调研</a> — 生成侧的 3D 一致性方向（World-R1 / Robust Dreamer / MVTrack4Gen）</li>
+<li><a href="VideoGen-20260618-视频生成相机可控性调研.html">VideoGen-20260618-视频生成相机可控性调研</a> — 相机控制方向，是路线 A 的上游能力</li>
+<li><a href="3D-20260810-微动人体三维重建调研.html">3D-20260810-微动人体三维重建调研</a> — 可变形 3DGS / 姿态引导 / 动转静</li>
+<li><a href="3D-20260812-3DGS多视角重建SOTA调研.html">3D-20260812-3DGS 多视角重建 SOTA 调研</a> — 静态多视角侧的选型结论</li>
+<li><a href="3D-20231110-前馈3D重建模型综述.html">3D-20231110-前馈 3D 重建模型综述</a> · <a href="3D-20250314-VGGT.html">3D-20250314-VGGT</a> · <a href="3D-20250717-Pi3.html">3D-20250717-Pi3</a> — 与「生成补信息」相对的另一条主线：前馈直接回归几何</li>
+<li><a href="3D-20260512-VidSplat.html">3D-20260512-VidSplat</a> — 视频输入的高斯重建路径</li>
+<li><a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">3D-20260814-三维重建质量速度 Pareto 全谱调研</a> — 质量/速度口径与评测协议的坑</li>
+</ul>
+
+<hr>
+<p style="color:var(--muted);font-size:13px;text-align:center">
+本调研为编撰型综述，结论基于各论文 arXiv 摘要页 / HTML 全文 / 项目页与官方代码仓库的公开信息整理；<br>
+凡未能回原文核实的数值与会议信息均已用 <span class="uncertain">⚠️【待核实】</span> 标注，请勿直接引用未标注来源的二手数字。<br>
+流程图使用 Mermaid.js 渲染，公式使用 MathJax 渲染。
+</p>
+</section>
+
+</div>
+
+<div class="footer">
+  视频生成模型驱动动态人体重建调研 · 六条技术路线 · 2024-05 ~ 2026-08 · 编撰 2026-09-29
+</div>
+
+<script>
+  mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>
