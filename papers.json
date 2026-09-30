@@ -1409,6 +1409,71 @@
    ]
   },
   {
+   "title": "ACE-Ego-Hand(原 DreamHand):VDM 当确定性几何编码器的第一人称双手 3D 轨迹恢复",
+   "meta": [
+    "📄 arXiv: 2608.20308",
+    "📅 2026-08-20 (v3 2026-09-01)",
+    "🏢 SJTU / NTU / CUHK / ACE Robotics",
+    "📑 cs.CV"
+   ],
+   "tags": [
+    "第一人称视频",
+    "3D 手部重建",
+    "Video Diffusion Prior",
+    "确定性编码器",
+    "LoRA",
+    "MANO",
+    "K-free",
+    "Wan2.2"
+   ],
+   "summary": "把预训练视频扩散模型(Wan2.2-Fun-5B)从「多步采样渲染器」改造为「σ=0 单次前向的确定性几何编码器」:block-15 取特征 + LoRA 端到端适配,接 48-query 双向时空解码器与射线场 mixed-PnP 相机求解,无需检测器恢复整段双手 MANO 轨迹。五基准 SOTA:ARCTIC/HOT3D MPJPE-p 较 ViDiHand 降 <strong>29.6%/40.1%</strong>,含出画手降 <strong>45.9%–61.1%</strong>,速度 63.1 fps(<strong>33×</strong>)。K-free 配置测试时免内参。本笔记源码复核发现:发布推理代码的 K-free 解码缺论文所述相机拟合步骤。",
+   "links": [
+    {
+     "href": "3D-20260820-ACE-Ego-Hand.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.20308",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://ggxxii.github.io/ace-ego-hand",
+     "text": "🏠 项目页"
+    },
+    {
+     "href": "https://github.com/ggxxii/ACE-Ego-Hand",
+     "text": "💻 GitHub(仅推理)"
+    }
+   ],
+   "file": "3D-20260820-ACE-Ego-Hand.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "视频扩散先验用于 3D",
+    "人脸手部细节与增强",
+    "人体先验与参数化模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16"
+   ]
+  },
+  {
    "title": "3D-GIMP:当 3D 高斯修复遇上 PatchMatch",
    "meta": [
     "📄 arXiv: 2607.20789",

@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACE-Ego-Hand(原 DreamHand):视频扩散模型改造成确定性几何编码器,抗遮挡第一人称双手 3D 轨迹恢复</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure video{max-width:100%;border-radius:10px;border:1px solid var(--border);background:#000}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2608.20308v3 · v1 2026-08-20 / v3 2026-09-01 · 视频扩散先验 → 确定性几何编码器</span>
+    <h1>ACE-Ego-Hand:把视频扩散模型当「编码器」而非「渲染器」,单次前向恢复抗遮挡第一人称双手 3D 轨迹</h1>
+    <div class="subtitle">ACE-Ego-Hand: Repurposing Video Diffusion Models for Occlusion-Robust Egocentric 3D Hand Motion Recovery(v1 题名 DreamHand)</div>
+    <div class="authors">Yufei Liu · Xixi Wang · Hao Li · Ganlong Zhao · Kaitong Cai · Chengkai Jin · Chunxiao Liu · Jianbo Liu · Siyuan Huang · Xingang Pan · Hongsheng Li</div>
+    <div class="org">Shanghai Jiao Tong University · Nanyang Technological University · The Chinese University of Hong Kong · ACE Robotics&nbsp;|&nbsp;cs.CV · 无会议标注(abs 页 comments 仅项目页链接,不加会议 badge)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.20308" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2608.20308v3" target="_blank">🌐 arXiv HTML 全文(v3)</a>
+      <a href="https://arxiv.org/pdf/2608.20308" target="_blank">📥 PDF</a>
+      <a href="https://ggxxii.github.io/ace-ego-hand" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/ggxxii/ACE-Ego-Hand" target="_blank">💻 GitHub(仅推理代码,MIT)</a>
+      <a href="https://huggingface.co/acerobotics2025/ACE-Ego-Hand" target="_blank">🤗 模型权重</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:确定性 Clean-Latent 编码器</a></li>
+    <li><a href="#s5">模块二:双向时空解码器</a></li>
+    <li><a href="#s6">模块三:基于射线的相机求解器</a></li>
+    <li><a href="#s7">训练方案与损失函数总表</a></li>
+    <li><a href="#s8">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s9">⚙️ 工程实现细节(源码验证)</a></li>
+    <li><a href="#s10">实验结果</a></li>
+    <li><a href="#s11">消融与设计分析</a></li>
+    <li><a href="#s12">🔄 同类方法对比分析</a></li>
+    <li><a href="#s13">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s14">可改进方向分析</a></li>
+    <li><a href="#s15">总结与演进定位</a></li>
+    <li><a href="#s16">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>第一人称(egocentric)视频里恢复带度量尺度的双手 3D 轨迹,最大难点是手-物遮挡与手出画(out-of-sight, OOS)。此前路线要么逐帧「检测-裁剪-回归」、手一出画就丢,要么像 ViDiHand 那样把视频扩散模型(VDM)当<b>像素渲染器</b>多步采样再回归姿态,又慢又把生成伪影带进几何。ACE-Ego-Hand 的做法是把预训练 VDM(Wan2.2-Fun-5B-Control)<b>改造成确定性几何编码器</b>:对干净 latent 做<b>单次 σ=0 前向</b>,在 block-15 处取特征,接 LoRA 端到端微调;再用一个<b>双向时空解码器</b>整段恢复双手 MANO 轨迹,并用<b>射线场相机求解器</b>把度量放置与相机内参解耦(K-free 配置测试时完全不需要内参)。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把「视频扩散先验」从「随机多步渲染器」降级为「单次前向的确定性编码器」,配合全片段双向注意力,在五个第一人称基准上把出画手的腕部对齐误差从最强基线的 126–164mm 拉到 35–39mm,同时速度快 33×。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">-30% / -40%</div><div class="l">ARCTIC / HOT3D 上 MPJPE-p 相对 ViDiHand(21.67→15.26 / 21.51→12.89mm,表 1 复核 29.6% / 40.1%)</div></div>
+  <div class="stat"><div class="v">-46% ~ -61%</div><div class="l">含出画手后 MPJPE+OOS 降幅(ARCTIC 45.9%、HOT3D 61.1%,按表 1 数值复核)</div></div>
+  <div class="stat"><div class="v">33×</div><div class="l">单卡 A100 63.1 fps vs ViDiHand 1.91 fps(附录 C.4)</div></div>
+  <div class="stat"><div class="v">45 / 48</div><div class="l">主对比中胜出的指标数(论文 §1 宣称)</div></div>
+</div>
+
+<div class="figure">
+  <video src="images/2608.20308/teaser_demo.mp4" controls muted loop preload="metadata"></video>
+  <div class="caption"><b>图1</b>(对应论文 Figure 1)<b>抗遮挡第一人称 3D 手部运动恢复演示。</b>⚠️ 论文 v3 HTML 版中 Figure 1 未导出位图(原图为视频帧拼版),此处嵌入项目页官方演示视频(<code>ggxxii.github.io/ace-ego-hand/assets/ACE-Ego-Hand_demo.mp4</code>,2026-09-30 下载存档)。要点:手暂时离开视野(黄色帧)时,ACE-Ego-Hand 仍保持手的身份与轨迹连续;右侧雷达图显示其在 7 项指标中的 6 项领先(F1、MPJPE-p、PA-p、EPE2D-p、GO-p、CT-p、Jitter,均为 ARCTIC/HOT3D/HOI4D 均值)。</div>
+</div>
+
+<h3>三个宣称的贡献(论文 §1)</h3>
+<ol>
+  <li><b>框架</b>:离线片段级(clip-level)框架,把 VDM  repurposing 成 Deterministic Clean-Latent Encoder,<b>无需任何外部手部检测器</b>即恢复带度量尺度的双手轨迹。</li>
+  <li><b>解码与相机</b>:Bidirectional Spatiotemporal Decoder(空间锚定 query + 片段级形状先验 + 双向推理)负责重建出画手;Ray-Based Camera Solver 把手部运动与相机内参/ ego-motion 解耦,支持测试时无内参(K-free)推理。</li>
+  <li><b>实验</b>:五个第一人称基准(ARCTIC / HOT3D / HOI4D 零样本 / H2O / OakInk2)48 项主指标胜出 45 项,严重遮挡与手出画场景下保持稳定。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ 改名与版本:</b>本文 v1(2026-08-20)题为 <b>DreamHand</b>,v3(2026-09-01)更名为 <b>ACE-Ego-Hand</b>,GitHub 仓库同步从 <code>ggxxii/dreamhand</code> 迁移到 <code>ggxxii/ACE-Ego-Hand</code>(旧地址 302 跳转)。库内《<a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>》以 DreamHand 名字收录(route E「确定性几何/运动编码器」),指的是同一篇。本笔记按 v3 标题为准。<br>
+<b>代码状态:</b>GitHub 于 2026-09-10 放出<b>仅推理代码</b>(README 原文 "This repository ships inference only; training code is not included yet"),权重在 HuggingFace <code>acerobotics2025/ACE-Ego-Hand</code>(K-given / K-free 两个 checkpoint)。<b>训练代码、数据预处理、评测代码均未发布</b>,因此本文所有训练侧超参与损失权重只能引论文附录,无法源码复核(见 §9 的可信度说明)。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 三条既有路线的具体失败模式</h3>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>① 单帧「检测-裁剪-回归」</h4>
+    <p><b>代表</b>:InterWild、HaMeR、Hamba、WiLoR、WildHands、EgoForce(表 1 的六个单帧基线)。</p>
+    <p><b>失败模式</b>:尺度与深度绑定在检测框上,手被严重遮挡或出画时<b>根本不产生输出</b>——不是误差变大,而是轨迹断裂。附录 C.2 的数据显示,这类方法在出画手帧上集体塌进 126–164mm 的窄带,且排名与可见帧排名完全无关,等于「没有在做人」。</p>
+  </div>
+  <div class="card">
+    <h4>② SLAM 锚定跟踪</h4>
+    <p><b>代表</b>:HaWoR(DROID-SLAM + 补全)。</p>
+    <p><b>失败模式</b>:误差随时间累积;81 帧(2.7s)短片段上 DROID-SLAM 不稳定。论文评测时被逼把 HaWoR 的 SLAM 与补全两级都关掉、只评其相机空间前端(附录 A.3 明确声明这是对 HaWoR 不利的设定)——即便如此它的 MPJPE-p 仍是 ARCTIC 最差的 45.4mm。</p>
+  </div>
+  <div class="card">
+    <h4>③ 窗口化时序模型 / 生成式补全</h4>
+    <p><b>代表</b>:OmniHands(9 帧融合)、Dyn-HaMR、GENMO、EgoH4;<b>以及最直接的对手 ViDiHand</b>(VACE 微调 Wan 生成几何叠加图,再从去噪特征回归 MANO,12–25 步采样)。</p>
+    <p><b>失败模式</b>:窗口化模型手出画即失去历史上下文,重回画面后无法连贯续接;ViDiHand 式「渲染再回归」路线要付出完整采样轨迹的延迟(1.91 fps),且<b>骨干网络吃不到重建目标的梯度</b>(解码器在冻结缓存特征上训练),生成伪影会直接传播成几何误差。</p>
+  </div>
+</div>
+
+<h3>2.2 作者的关键假设与核心洞察</h3>
+
+<div class="callout key">
+<b>核心洞察(论文 §1 原文逻辑,两条):</b>
+<ol>
+  <li><b>VDM 对重建的最大价值是当编码器,不是当渲染器。</b>rectified-flow 预训练的 DiT 在序列级学到了物体恒存性(object permanence)、3D 结构一致性、遮挡推理等时空先验——这些先验<b>已经在其中间层特征里</b>,一次 σ=0 的干净前向就能读出来,不需要真的把视频「生成」出来。</li>
+  <li><b>通用特征必须经端到端 3D 监督改造才能变成几何感知特征。</b>冻结特征直接回归(ViDiHand 路线)浪费了适应性,因此用 LoRA 把骨干放进训练回路。</li>
+</ol>
+配套判断:<b>度量 3D 手部轨迹恢复本质上是离线片段级时空推理任务</b>——出画区间的合理重建需要同时看到过去与未来,因果跟踪器在结构上做不到。
+</div>
+
+<h3>2.3 这些假设在什么条件下会失效</h3>
+
+<div class="callout warn">
+<b>论文自陈与可推导的失效条件(交叉核对 §5 与附录 F):</b>
+<ol>
+  <li><b>「VDM 特征含有用先验」只在训练域相机族内成立。</b>附录 F.1:预测射线场「在训练中见过的相机族内泛化最好」;发布的 checkpoint 只在针孔数据上训练,鱼眼直接拒绝服务(代码 <code>geodit_arch.py:70-87</code> 对鱼眼内参抛 <code>NotImplementedError</code>)。</li>
+  <li><b>离线假设 = 无法闭环控制。</b>整个 backbone 对全片段做一次双向前向,延迟下界是片段长度而非 63.1 fps 吞吐——它是「从录像里采机器人数据」的工具,不是控制器(附录 F.1 原文)。</li>
+  <li><b>出画恢复的上限是「腕部对齐的合理性」,不是「度量放置」。</b>OOS 区间的绝对位置依赖回归深度与方位角,无图像证据约束;论文明确说「没有任何表格度量出画手的绝对放置」(附录 F.1)。夸大解读 OOS 数字是读这篇文章最容易犯的错。</li>
+  <li><b>伪 GT 污染。</b>HOI4D 与 H2O 的 MANO 标注部分来自逐帧估计器的伪真值;H2O 还在训练混合里,等于「在自己训练过的标注分布上考试」(附录 A.2 自陈)。头条数字只应看 ARCTIC/HOT3D(原生 MANO GT)。</li>
+</ol>
+</div>
+
+<div class="callout tip">
+<b>与库内调研的关系:</b>本文正是《<a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>》路线 E(「确定性几何/运动编码器——非生成式复用」)的唯一代表工作。该综述的判断「把 VDM 从随机多步渲染器降级为确定性编码器,绕开采样延迟与生成伪影传播」在本文得到完整工程落地与 SOTA 验证;其指出的风险(离线片段级延迟、依赖可见锚点质量)也与本文附录 F 的自陈一致。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<h3>3.1 输入 / 输出定义</h3>
+
+<p><b>输入</b>:一段第一人称 RGB 视频片段 $V=\{I_t\}_{t=1}^{T}$(基准协议 $T=81$ 帧;RoPE 使单次前向可外推到整段录像,附录 D.2 实测 594–1087 帧)。标准配置额外需要相机内参 $K$(仅用于平移求解的方位角);K-free 配置测试时不需要任何相机信息。<b>输出</b>:逐帧双手 MANO 参数——全局朝向 $\hat{R}_t$、姿态 $\hat{\theta}_t$、相机系平移 $\hat{\tau}_t$,以及<b>每片段每手一个</b>的形状 $\hat{\beta}$;MANO 层 $\mathcal{M}$ 把参数映射成网格与 21 个关节;另输出逐帧存在性(existence)与可见性(visibility)分数。</p>
+
+<h3>3.2 符号表</h3>
+
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+<tr><td>$V,\ I_t$</td><td>输入视频片段与其第 $t$ 帧</td><td>$T=81$ 帧(训练窗口),$672{\times}480$(ARCTIC)/ $480{\times}480$(HOT3D)</td></tr>
+<tr><td>$z=\mathcal{E}(V)$</td><td>冻结 Wan2.2 VAE 编码的干净视频 latent</td><td>48 通道;$T{=}81 \to T'{=}21$ latent 帧(4× 时间、16× 空间压缩)</td></tr>
+<tr><td>$\Phi,\ L^{\star}$</td><td>Wan2.2-Fun-5B-Control 的 DiT(30 块)与特征 tap 位置</td><td>$L^{\star}=15$(零基,即跑前 16 块),宽度 $D=3072$</td></tr>
+<tr><td>$F=\{F_\ell\}$</td><td>tap 出的时空特征网格</td><td>$[T'{=}21,\ 42{\times}30,\ 3072]$(672×480 输入时,16×16 像素/格)</td></tr>
+<tr><td>$\hat{r}(u)$</td><td>Ray Head 预测的单位视线方向场</td><td>每格 $(\hat r_x,\hat r_y,\hat r_z)$,沿时间池化为单场</td></tr>
+<tr><td>$X_\ell$</td><td>解码器第 $\ell$ 帧的 patch token</td><td>$W_F$ 投影到 384 维 + 空间 PE + 射线 PE</td></tr>
+<tr><td>$\hat{p}_j,\ A_j$</td><td>关节 $j$ 的 2D 锚点与其 cross-attention 热力图</td><td>$\hat p_j\in[0,1]^2$,soft-argmax 亚格子精度</td></tr>
+<tr><td>$\hat{R}_t,\hat{\theta}_t,\hat{\beta}$</td><td>MANO 全局朝向 / 姿态 / 形状</td><td>6D 旋转(Gram–Schmidt 正交化);$\hat\beta$ 每片段每手一个</td></tr>
+<tr><td>$\hat{\zeta},\ \hat{t}_z$</td><td>Camera Head 的 log-depth 与光轴深度</td><td>$\hat t_z=\exp(\hat\zeta)>0$</td></tr>
+<tr><td>$b_j=(b^x_j,b^y_j)$</td><td>关节 $j$ 的方位角(无量纲 $x/z,\ y/z$)</td><td>K-free:从 $\hat r$ 拟合的等效针孔算;标准:由 $K$ 算</td></tr>
+<tr><td>$\hat{\tau}=(\hat t_x,\hat t_y,\hat t_z)$</td><td>相机系平移(m)</td><td>$\hat t_x,\hat t_y$ 由 mixed-PnP 闭式解出</td></tr>
+</table>
+
+<h3>3.3 三模块划分与总体数据流</h3>
+
+<div class="mermaid">
+flowchart TD
+    V["输入: 第一人称 RGB 片段<br/>T=81 帧 672x480"] --> VAE["冻结 Wan2.2 VAE 编码器<br/>4x 时间 / 16x 空间压缩"]
+    VAE --> Z["干净 latent z<br/>21 帧 x 42x30 x 48ch"]
+    Z --> DIT["Wan2.2-Fun-5B DiT (30 块)<br/>单次确定性前向 sigma=0<br/>仅 patch-embed + LoRA 可训"]
+    DIT -->|"block-15 tap(后 14 块跳过)"| F["特征网格 F<br/>21 x 42x30 x 3072"]
+    F --> RH["Ray Head<br/>零初始化 1x1 Conv<br/>预测射线场 r-hat"]
+    F --> DEC["Bidirectional Spatiotemporal Decoder<br/>48 queries/帧 = 2 手 + 42 关节 + 4 register<br/>4 层交替 空间Cross-Attn / 时间Self-Attn(RoPE)"]
+    RH -->|"射线 PE 注入 token"| DEC
+    DEC --> HEADS["读出头:<br/>Joint Head(soft-argmax 2D + 腕相对 3D)<br/>Pose Head(R, theta 6D)<br/>Camera Head(log-depth)<br/>Shape Head(片段级 beta)<br/>存在性/可见性"]
+    HEADS --> PNP["Mixed-PnP 平移求解<br/>t_z 回归 + (t_x,t_y) 闭式最小二乘<br/>门限不满足回退腕部射线反投影"]
+    RH -.->|"K-free: 方位角来源<br/>(标准配置用 GT 内参)"| PNP
+    PNP --> OUT["输出: 逐帧双手 MANO<br/>R, theta, tau + 片段级 beta"]
+    style V fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style DIT fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style DEC fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style PNP fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style OUT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/method.png" loading="lazy" alt="ACE-Ego-Hand 总览">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>方法总览。</b>原始视频经 Wan VAE 编码后由 Wan DiT 在 σ=0 单次前向处理;block-15 特征(灰色块被跳过)分两支到 Ray Head 与双向时空解码器。只有 patch embedding、LoRA、Ray Head、解码器被训练。相机内参仅在训练时监督 Ray Head 与 K-free 相机拟合;测试时被丢弃(K-free)或只作平移求解的方位角来源(标准配置)。</div>
+</div>
+
+<div class="callout">
+<b>两个配置的关系(常被误读的一点):</b>标准配置与 K-free 配置是<b>分别训练的两个模型</b>(论文 §3.3 明确:"the K-free rows in Table 1 report a separately trained model, not a test-time solver switch"),不是同一个 checkpoint 的两种推理开关。二者架构唯一差别是平移求解的方位角来源(预测射线场 vs GT 内参);发布侧对应 <code>ace_ego_hand_k.pt</code> / <code>ace_ego_hand_kfree.pt</code> 两个权重与两个 yml(源码 diff 证实配置只差 <code>self_ray_decode</code> 一项,见 §9)。
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:Deterministic Clean-Latent Encoder(确定性干净隐变量编码器)</h2>
+<h3>4.1 网络结构表</h3>
+
+<table>
+<tr><th>阶段</th><th>输入</th><th>算子</th><th>输出</th></tr>
+<tr><td>VAE 编码(冻结)</td><td>$V$: $[B,3,81,480,672]$</td><td>Wan2.2 因果 VAE $\mathcal{E}$(4× 时间、16× 空间)</td><td>$z$: $[B,48,21,30,42]$</td></tr>
+<tr><td>DiT 前 16 块</td><td>$x{=}z$(48ch)+ 全零控制通道(100ch),$t{=}0$</td><td>patch embedding(可训)+ block 0..15(self/cross-attn + FFN,LoRA 注入)</td><td>$F$: token 序列 $[B,\ 21{\cdot}42{\cdot}30,\ 3072]$</td></tr>
+<tr><td>跳过部分</td><td colspan="3">block 16..29 与扩散输出头不执行,单次前向算力约省一半(论文 §3.1);附录 B.1 确认这些块的 LoRA B 矩阵训练后仍逐比特为零</td></tr>
+</table>
+
+<h3>4.2 数学形式化</h3>
+
+<p>骨干 $\Phi$ 是以 rectified flow 在加噪 latent $x_\sigma=(1-\sigma)z+\sigma\epsilon$ 上预训练的 DiT。本文把它<b>严格当编码器用</b>:冻结 VAE 编码器压出干净 latent $z=\mathcal{E}(V)$,在零噪声水平做单次确定性前向,并截断到第 $L^{\star}=15$ 块:</p>
+
+<div class="equation">
+$$F=\Phi_{0:L^{\star}}(z;\sigma=0)$$
+<span class="tag">(式 1,论文 Eq.1)</span>
+</div>
+
+<p>得到 $T'=21$ 个 latent 帧(对应 $T=81$ RGB 帧)的特征序列 $F=\{F_\ell\}_{\ell=1}^{T'}$,每帧是 $D=3072$ 通道的空间网格(672×480 输入时为 $42\times30$,即 16×16 像素/格)。</p>
+
+<h3>4.3 前向流程(数据流与可导性)</h3>
+<ol>
+  <li>视频 → VAE:<b>冻结</b>,无梯度(推理时占端到端耗时的 72%,附录 C.4)。</li>
+  <li>$z$ 进 DiT 的「噪声样本」输入槽(48ch),控制槽(100ch)填零,$t=0$ → <b>σ=0 的确定性前向</b>(源码 <code>geodit_arch.py:298-314</code> 证实:<code>feature_mode=noised_video</code> + <code>nv_sigma=0.0</code> 时 $x=(1-0)z+0\cdot\epsilon=z$,$t=0\cdot1000=0$)。</li>
+  <li>patch embedding <b>全量微调</b>;30 块全部注入 LoRA(rank 64,α 64,无 dropout,每块 10 个线性层,源码 <code>wan_backbone.py:134-136</code>),但梯度只流经前 16 块。</li>
+  <li>block-15 输出同时喂给 Ray Head(§6)与双向时空解码器(§5)。</li>
+</ol>
+
+<h3>4.4 为什么这样做(机制解释)</h3>
+
+<div class="callout key">
+<b>为什么读 σ=0 而不是带噪 latent?</b>论文附录 D.4 的对照实验:同一配方把读取噪声水平换成 σ=0.5,MPJPE-p 从 15.26 涨到 17.66mm(+2.40mm),CT-p 恶化 39%(0.0208→0.0343m),而 PA-p 只差 0.52mm——<b>噪声主要破坏的是度量几何而非关节结构</b>;且因为不做生成采样,注入噪声带来的多样性完全用不上,纯亏。31 个验证 checkpoint 里 29 个都是 σ=0 更优(均值差 1.2mm)。<br>
+<b>为什么 tap 在 block-15?</b>附录 D.3 的 tap 深度扫描(表 S6):block-10 差 1.67mm,block-20/24 最多再买好 0.17mm 且两项指标排序不一致(被判为运行间噪声)。中层特征已保留几乎全部可用精度,跳过后半省约一半前向算力。<br>
+<b>为什么 LoRA 而不是全微调?</b>5B 骨干全微调既贵又容易冲掉预训练先验。LoRA(161.2M)+ patch-embed(1.8M)让 3D 监督「重塑」特征而不是「覆盖」特征;消融(表 2)显示去掉 LoRA,MPJPE-p 16.95→23.10mm、MPJPE<sup>OOS</sup> 41.5→50.1mm,任务适配的价值是实打实的。
+</div>
+
+<h3>4.5 监督信号</h3>
+<p>该模块<b>无独立损失</b>,但通过 LoRA / patch embedding 接收全部下游损失($\mathcal{L}_{\mathrm{rot}}$、$\mathcal{L}_{\mathrm{joint}}$、$\mathcal{L}_{\mathrm{img}}$、$\mathcal{L}_{\mathrm{cam}}$、$\mathcal{L}_{\mathrm{tmp}}$、$\mathcal{L}_{\mathrm{ray}}$)的反传梯度——这正是与 ViDiHand「冻结缓存特征」路线的本质区别(论文 §2 明确指出后者骨干吃不到重建梯度)。</p>
+
+<div class="note">
+<b>论文没写、源码里看到的两个细节(§9 展开):</b>① DiT 的 cross-attention 文本条件是一个<b>固定不变的 caption embedding</b>,内容竟是渲染生成血统遗留的 "Three geometry renders of two hands on black background: color-coded depth, joint skeleton, surface normals."(<code>scripts/precompute_caption.py:26-27</code>);② 100 通道控制分支在推理时全零,视频只走「噪声输入」槽。</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:Bidirectional Spatiotemporal Decoder(双向时空解码器)</h2>
+<h3>5.1 网络结构表</h3>
+
+<table>
+<tr><th>组件</th><th>输入</th><th>算子</th><th>输出</th></tr>
+<tr><td>token 化</td><td>$F_\ell$: $[42{\times}30,\ 3072]$</td><td>$W_F$ 线性投影 3072→384 + LayerNorm;加空间 PE(可学习 16×16 网格双线性 resize)与射线 PE</td><td>$X_\ell$: $[1260,\ 384]$</td></tr>
+<tr><td>查询集合</td><td colspan="3">每 latent 帧 48 个 query:<b>2 手 token(固定左/右槽位)+ 42 关节 token(2×21)+ 4 register token</b>(可学习,源码 <code>memory_encoder.py:399</code> 证实计数);register 作「草稿纸」不更新 $F$</td></tr>
+<tr><td>交替注意力 ×4 层</td><td>query + $X_\ell$(read-only memory)</td><td>每层 = 帧内空间 Cross-Attention → 全片段时间 Self-Attention(8 头,FFN×4,RoPE)</td><td>精化后的 48 query/帧</td></tr>
+<tr><td>关节读出(Joint Head)</td><td>精化关节 token 对 $X_\ell$ 做最终 cross-attn</td><td>注意力权重即热力图 $A_j$ → soft-argmax 得 2D 锚点 $\hat p_j$; attended feature → MLP 回归腕相对 3D</td><td>$\hat p_j\in[0,1]^2$,$\bar J_j\in\mathbb{R}^3$(m)</td></tr>
+<tr><td>Pose Head</td><td>手 token</td><td>MLP → 6D 旋转(Gram–Schmidt 正交化)</td><td>$\hat R$(global orient)、$\hat\theta$(15 关节姿态)</td></tr>
+<tr><td>Camera Head</td><td>手 token</td><td>MLP → log-depth $\hat\zeta$</td><td>$\hat t_z=\exp(\hat\zeta)$</td></tr>
+<tr><td>Shape Head</td><td>手 token 沿时间池化</td><td>MLP(片段级,每手一次)</td><td>$\hat\beta\in\mathbb{R}^{10}$</td></tr>
+<tr><td>存在性/可见性头</td><td>手 token</td><td>MLP → sigmoid 分数(阈值 0.5)</td><td>exists / visibility</td></tr>
+<tr><td>时间分辨率恢复</td><td colspan="3">时间注意力在 latent 帧率 $T'{=}21$ 上跑,输出<b>线性插值</b>回 $T{=}81$ 帧;关节坐标直接按坐标插值,手特征按特征插值后逐帧读头(附录 A.1「Reading Jitter」+ 源码 <code>memory_projector.py:1138-1159</code>);整段注意力成本约为全帧率的 $(T'/T)^2\approx1/15$</td></tr>
+</table>
+
+<h3>5.2 数学形式化</h3>
+
+<p>每个 latent 帧的 patch token 由两项加性位置编码构成:</p>
+
+<div class="equation">
+$$X_{\ell}=\mathrm{LN}(W_{F}F_{\ell})+P^{\mathrm{sp}}+g\big(\Gamma(\hat{r})\big)$$
+<span class="tag">(式 2,论文 Eq.2)</span>
+</div>
+
+<p>$W_F$ 把 3072 通道投影到 384 维解码器空间;$P^{\mathrm{sp}}$ 是可学习 16×16 网格双线性重采样到 token 分辨率的空间 PE;$\Gamma$ 对 Ray Head 预测的视线方向做 8 倍频傅里叶编码(方位角/仰角的 sin/cos,源码 <code>memory_projector.py:99-148</code>),零初始化 MLP $g$ 映射到解码器维度——<b>把「每个像素朝哪看」的几何先验直接注入 token</b>。</p>
+
+<p>关节 $j$ 的 2D 锚点由其 query 的 cross-attention 权重做 soft-argmax:</p>
+
+<div class="equation">
+$$\hat{p}_{j}=\sum_{u}A_{j}(u)\,u,\qquad\sum_{u}A_{j}(u)=1$$
+<span class="tag">(式 3,论文 Eq.3)</span>
+</div>
+
+<p>$u$ 遍历 $[0,1]^2$ 归一化格子中心。该形式可导、亚格子精度,且 anchor 不依赖检测框(直接省掉匈牙利匹配)。源码 <code>memory_encoder.py:562-565, 629-638</code> 逐行对应。</p>
+
+<h3>5.3 前向流程与设计机制</h3>
+<ol>
+  <li><b>空间锚定 query</b>:关节 query 绑定物理关键点,而不是让一个大向量回归全部 21 点——消融(表 3)显示把关节 query 换成手内池化,MPJPE-p +1.880mm、EPE2D-p +1.681px。</li>
+  <li><b>交替结构</b>:每层先在帧内从 patch 网格读空间细节(Cross-Attn),再让全部帧的 query 互相交换运动信息(Temporal Self-Attn)。与「先池化成每帧 1-2 个 token 再做时间注意力」相比,空间细节<b>不会被池化掉</b>(源码 docstring:这是移植 <a href="3D-20260514-VGGT-Omega.html">VGGT-Omega</a> 的 register-token 交替注意力思路)。</li>
+  <li><b>RoPE 时间轴</b>:旋转相对位置编码(base 10000,源码 <code>memory_encoder.py:57-68</code>)消除绝对长度约束——同一份权重可以单次前向解码任意长度(附录 D.2 实测整段 594–1087 帧直出)。换成绝对 PE,MPJPE-p +2.523mm、Jitter 2.704→2.948。</li>
+  <li><b>无因果掩码</b>:每帧同时条件于过去与未来——这是「重建」出画手而非「外推」出画手的结构基础,也是它只能离线的根本原因。</li>
+  <li><b>片段级形状先验</b>:$\hat\beta$ 对整段只预测一次/手(物理上同一个人手型恒定),防止逐帧估计在遮挡与运动下的尺寸闪烁与漂移。代码:<code>betas_scope=per_hand, per_hand_betas_source=slot_mean</code>(<code>memory_projector.py:897-898</code>,对手槽时间均值过 <code>head_betas_hand</code>)。</li>
+</ol>
+
+<div class="mermaid">
+flowchart LR
+    subgraph FRAME["每个 latent 帧 l"]
+        Q["48 queries<br/>2 手 + 42 关节 + 4 register"] --> CA["空间 Cross-Attention<br/>(KV = 该帧 patch 网格 X_l)"]
+    end
+    CA --> TA["时间 Self-Attention<br/>全片段双向 + RoPE(8 头)"]
+    TA --> CA2["... x4 层交替 ..."]
+    CA2 --> RO["最终读出 Cross-Attn"]
+    RO -->|"注意力图 A_j"| SA["soft-argmax<br/>2D 锚点 p_j"]
+    RO -->|"attended feature"| J3["MLP → 腕相对 3D"]
+    Q2["手 token(时间池化)"] --> BETA["Shape Head → beta(每片段每手)"]
+    Q3["手 token(逐帧)"] --> POSE["Pose/Camera Head<br/>6D 旋转 + log-depth"]
+    style Q fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style TA fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style SA fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/projector.png" loading="lazy" alt="双向时空解码器结构">
+  <div class="caption"><b>图3</b>(论文 Figure 3)<b>双向时空解码器结构。</b>预测射线场 $\hat r$ 以射线 PE 形式加进空间 PE;4 层交替「空间 Cross-Attention / 时间 Self-Attention」;读出头输出 MANO 参数并喂给 mixed-PnP 平移求解。两个配置架构上只差方位角来源(K-free 用 $\hat r$,标准用内参)。</div>
+</div>
+
+<h3>5.4 监督信号</h3>
+<p>该模块是损失的主要落点:$\mathcal{L}_{\mathrm{rot}}$(朝向/姿态/形状)、$\mathcal{L}_{\mathrm{joint}}$(腕相对/相机系/腕部 3D)、$\mathcal{L}_{\mathrm{img}}$(2D 锚点 + 重投影)、$\mathcal{L}_{\mathrm{cam}}$(经 PnP 求解器反传)、$\mathcal{L}_{\mathrm{pres}}$(存在性/可见性 BCE)、$\mathcal{L}_{\mathrm{tmp}}$(3D 加速度平滑)。权重见 §7 总表。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:Ray-Based Camera Solver(基于射线的相机求解器)</h2>
+<h3>6.1 问题:为什么要「解」相机而不「回归」平移</h3>
+
+<p>直接在相机系回归 3D 平移会把<b>手部关节运动与头部 ego-motion 耦合</b>在一起,并且让读出头去「背」某台相机的像素-度量映射——换内参就失效(论文 §3.3:"Readout heads that memorize the pixel-to-metric mapping of one camera fail to generalize across intrinsics")。ACE-Ego-Hand 的方案是把相机几何显式参数化为<b>连续视线场</b>(ray field),平移只剩一个可闭式求解的小问题。</p>
+
+<h3>6.2 Ray Head:免内参射线场预测</h3>
+
+<table>
+<tr><th>属性</th><th>值</th><th>出处</th></tr>
+<tr><td>结构</td><td>对 $F$ 的零初始化 1×1 卷积,输出每格 3 维方向,归一化为单位射线 $\hat r$</td><td>论文 §3.3;源码 <code>geodit_arch.py:233-238</code>(<code>nn.Conv3d(base_lc, 3, kernel_size=1)</code>,weight/bias 置零)</td></tr>
+<tr><td>时间处理</td><td>沿时间池化为单场(片段内内参恒定)</td><td>论文 §3.3;源码 <code>geodit_arch.py:425</code>(<code>raymap[layer].mean(dim=2)</code>)</td></tr>
+<tr><td>参数量</td><td>9,219(3072×3 + 3)</td><td>论文附录 B.1</td></tr>
+<tr><td>监督</td><td>余弦距离 $\mathcal{L}_{\mathrm{ray}}$(式 4),GT 内参反投影的单位射线作目标</td><td>论文 §3.3</td></tr>
+</table>
+
+<div class="equation">
+$$\mathcal{L}_{\mathrm{ray}}=\frac{1}{|\Omega|}\sum_{u\in\Omega}\big(1-\langle\hat{r}(u),\,r_{K}(u)\rangle\big)$$
+<span class="tag">(式 4,论文 Eq.4)</span>
+</div>
+
+<p>一个头同时兼容针孔与鱼眼相机模型(训练混合里 Re:InterHand 是鱼眼渲染),测试时不需要内参输入。<b>但发布版 checkpoint 只在针孔数据上训练</b>,鱼眼输入被代码直接拒绝(见 §9)。</p>
+
+<h3>6.3 Mixed-PnP 平移求解(全文最巧的一步)</h3>
+
+<p><b>思路</b>:不回归完整 3D 平移。Camera Head 只回归光轴深度 $\hat t_z=\exp(\hat\zeta)$(指数保证正定度量深度);平面内平移 $(t_x,t_y)$ 用模型<b>自己的</b> 2D 关节锚点闭式解出。逐帧逐手:MANO 前向得「未放置」关节 $J^{\mathrm{can}}=\mathcal{M}(\hat R,\hat\theta,\hat\beta)$,关节 $j$ 深度 $z_j=J^{\mathrm{can}}_{z,j}+\hat t_z$;方位角 $b_j$ 两个来源(K-free:对 $\hat r$ 拟合等效针孔 $(\hat f,\hat c)$,$b_j=(\hat p_j-\hat c)/\hat f$;标准:$((u_j-c_x)/f_x,(v_j-c_y)/f_y)$)。透视投影对平面位移是线性的,故 $t_x$ 有加权最小二乘闭式解:</p>
+
+<div class="equation">
+$$b^{x}_{j}=\frac{J^{\mathrm{can}}_{x,j}+t_{x}}{z_{j}}\;\Rightarrow\;\hat{t}_{x}=\frac{\sum_{j}m_{j}z_{j}^{-1}\big(b^{x}_{j}-J^{\mathrm{can}}_{x,j}/z_{j}\big)}{\sum_{j}m_{j}z_{j}^{-2}}$$
+<span class="tag">(式 5,论文 Eq.5)</span>
+</div>
+
+<p>$t_y$ 对称。$m_j\in\{0,1\}$ 是投票门:<b>关节在相机前 ≥5cm 且锚点在画面内留 ≥2% 边距</b>。<b>有效关节 &lt;6 个、或重投影 RMS 残差 &gt; max(15px, 手部 2D 框对角线 × 0.25)</b> 时,整只手回退到「腕部射线在深度 $\hat t_z$ 上的反投影」。这些常数在源码里逐字对应:<code>memory_projector.py:1252-1257</code>(<code>_PNP_Z_NEAR=0.05</code>、<code>_PNP_INTERIOR_MARGIN=0.02</code>、<code>_PNP_MIN_INTERIOR=6</code>、<code>_PNP_RESID_MIN_PX=15.0</code>、<code>_PNP_RESID_FRAC=0.25</code>)。</p>
+
+<div class="callout key">
+<b>为什么这个设计重要(机制):</b>① 深度与平面位移<b>解耦</b>——深度由网络全局估计,平面位置被 2D 锚点「钉死」,二者误差不再互相放大;② 求解器<b>可微</b>,$\mathcal{L}_{\mathrm{cam}}$ 的梯度穿过闭式解流回 2D 锚点头、MANO 头与 log-depth 头(附录 B.3);③ 门控回退保证 OOS / 出画边界帧有一个物理合理的兜底,而不是让 LSQ 在 0 个有效关节上发散。消融(表 3):把 mixed-PnP 换成纯反投影,CT-p 0.020→0.030m;换成直接回归平移,EPE2D-p +1.231px(但 Jitter 最低 2.658——论文明确说这是他们不做的 trade)。
+</div>
+
+<h3>6.4 K-free 的相机拟合与两个配置的差别</h3>
+
+<p>K-free 配置额外学一个「从射线场拟合等效针孔相机」的闭式逐轴线性回归(有方差下限 $10^{-4}$ 与焦距区间保护;失败的片段——包括鱼眼 Re:InterHand 训练臂——回退到直接读射线场),并用 $\mathcal{L}_{\mathrm{fit}}$(拟合相机方位角对 GT 的误差,权重 5,前 500 步线性 warmup)监督。拟合相机的价值:能<b>外推出画锚点</b>并给逐 token 射线场去噪。附录 D.1 量化:不加拟合时,画面最外圈(r>0.75)平移误差从 0.048 涨到 0.165m(ARCTIC,3.4×)/ 0.035→0.190m(HOT3D,5.4×),而腕对齐姿态几乎不变——<b>边缘失败是纯度量放置问题</b>;加上拟合后 OOS 平移误差 ARCTIC 0.55→0.10m、HOT3D 0.52→0.11m、OakInk2 0.45→0.06m,HOT3D 假阴从 2,491 降到 74。</p>
+
+<div class="callout warn">
+<b>⚠️【待核实】宣称 vs 发布代码的出入(本笔记源码复核发现):</b>论文 §3.3/附录 B 说 K-free 的<b>解码</b>用「拟合出的等效针孔」提供方位角;但发布的推理代码里,mixed-PnP 的 ray 模式是<b>直接在每个关节像素处 grid_sample 原始射线场</b>取方位(<code>memory_projector.py:1341-1355</code>),腕部回退同理(<code>memory_projector.py:1173-1185</code>);而等效针孔拟合 <code>_fit_pred_K</code>(<code>inference.py:24-45</code>)的结果<b>只被写进输出的 <code>pred_intrinsics</code> 元数据,没有参与解码</b>。也就是说,发布代码的 K-free 解码路径对应论文附录 D.1 里「w/o camera fit」的变体,表 1 的 K-free 数字是否由带拟合的解码产生、拟合是否只在训练回路里起作用,<b>在训练/评测代码发布前无法确认</b>。实际部署 K-free 时,画面边缘的平移精度应预期接近附录 D.1 的下限而非表 1。
+</div>
+
+<h3>6.5 监督信号</h3>
+<p>$\mathcal{L}_{\mathrm{ray}}$(权重 1)监督射线场;$\mathcal{L}_{\mathrm{fit}}$(权重 5,仅 K-free)监督拟合相机,其梯度只经 4 个拟合参数流回射线场;$\mathcal{L}_{\mathrm{cam}}$(权重 1)穿过 PnP 求解器监督平移。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>训练方案与损失函数总表</h2>
+<h3>7.1 总目标与损失权重表</h3>
+
+<p>可训练组件(patch embedding、LoRA、Ray Head、解码器)联合优化:$\mathcal{L}=\mathcal{L}_{\mathrm{rot}}+\mathcal{L}_{\mathrm{joint}}+\mathcal{L}_{\mathrm{img}}+\mathcal{L}_{\mathrm{cam}}+\mathcal{L}_{\mathrm{pres}}+\mathcal{L}_{\mathrm{tmp}}+\mathcal{L}_{\mathrm{ray}}$(论文 Eq.6),K-free 再加 $\mathcal{L}_{\mathrm{fit}}$。各项权重出自论文附录 B.3(<b>训练代码未发布,权重无法源码复核</b>):</p>
+
+<table>
+<tr><th>损失项</th><th>公式 / 形式</th><th>权重</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{\mathrm{rot}}$</td><td>朝向/姿态:geodesic $\arccos(\tfrac12(\mathrm{tr}(\hat R^\top R)-1))$ + 旋转矩阵 MSE;形状 $\ell_1$</td><td>1 / 1 / 0.1</td><td>MANO 旋转与形状监督</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{joint}}$</td><td>腕相对(10)/ 相机系(5)/ 腕部(2)3D 关节 $\ell_1$</td><td><b>10</b> / 5 / 2</td><td>主导项,关节几何</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{img}}$</td><td>训练相机下 soft-argmax 2D 锚点 + 重投影 MANO 关节(腕部 0.5)</td><td>1(腕 0.5)</td><td>图像空间对齐</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{cam}}$</td><td>装配后平移 $\ell_1$,梯度穿过 mixed-PnP</td><td>1</td><td>度量放置</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{pres}}$</td><td>存在性 / 可见性 BCE</td><td>0.5 / 0.25</td><td>免检测器的开关</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{tmp}}$</td><td>3D 关节加速度 $\|\hat J_{t+1}-2\hat J_t+\hat J_{t-1}\|_1$</td><td>0.5</td><td>时序平滑(Jitter 2.4–3.2 的来源)</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{ray}}$</td><td>射线场余弦距离(式 4)</td><td>1</td><td>相机几何</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{fit}}$(仅 K-free)</td><td>拟合相机方位角对 GT 的误差,前 500 步线性 warmup</td><td>5</td><td>免内参解码;梯度只经 4 个拟合参数回射线场</td></tr>
+</table>
+
+<h3>7.2 三条关键监督策略(论文 §3.4)</h3>
+<ol>
+  <li><b>出画手全监督,不掩码</b>:OOS 帧的 GT 照常参与损失,强迫双向注意力从时间上下文「脑补」不可见的手——这是 OOS 指标能到 35–39mm 的训练侧根因。</li>
+  <li><b>无 MANO 标注的数据源路由损失</b>:RHD(只有 21 个 3D 关节、无 MANO 拟合)只监督 2D 锚点、3D 关节与存在性头,旋转/形状项置零——加外观多样性同时不污染 MANO 头。</li>
+  <li><b>内参永不进编码器/解码器</b>:只作 $\mathcal{L}_{\mathrm{img}}$、$\mathcal{L}_{\mathrm{ray}}$、$\mathcal{L}_{\mathrm{fit}}$ 的监督目标(标准配置另作 PnP 方位角来源)。发布配置源码侧印证:两个 yml 都开 <code>self_ray_pe: true</code>,即射线 PE 一律来自<b>预测</b>射线场。</li>
+</ol>
+
+<h3>7.3 数据与优化(论文附录 A.2 / B.2)</h3>
+
+<table>
+<tr><th>项</th><th>值</th></tr>
+<tr><td>训练混合(7 源,按批采样权重)</td><td>ARCTIC 14 · HOT3D 18 · H2O 10 · OakInk2 14(以上第一人称视频+MANO)· Re:InterHand 16(鱼眼渲染视频)· FreiHAND 14 · RHD 14(静态图,复制成 5 帧静片段);HOI4D 完全留出作零样本测试</td></tr>
+<tr><td>训练窗口</td><td>全长录像中每步随机取 21 latent 帧(81 RGB 帧)窗口;30fps 不抽帧</td></tr>
+<tr><td>优化器</td><td>AdamW,20k 步,weight decay $10^{-2}$,grad clip 1.0,cosine 衰减,200 步 warmup</td></tr>
+<tr><td>三组学习率</td><td>解码器+头 $2{\times}10^{-4}$;LoRA $1{\times}10^{-4}$;patch embedding $2{\times}10^{-5}$</td></tr>
+<tr><td>批量与硬件</td><td>每 GPU 4 clips;标准配置 16×A100(等效 batch 64),K-free 8×A100(等效 batch 32)</td></tr>
+<tr><td>输入分辨率</td><td>ARCTIC 672×480;HOT3D 480×480;H2O/OakInk2 宽 832 等比(内参同步缩放,保证 latent 网格为偶数)</td></tr>
+<tr><td>测试切分</td><td>ARCTIC 按被试(s05)、H2O 按被试(subject 4)、HOT3D 按录像(126/72)、OakInk2 按片段(202 段公共子集);<b>仅 ARCTIC/H2O 被试隔离</b>(附录 F.1 自陈)</td></tr>
+</table>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>逻辑流程图(训练 / 推理)</h2>
+<h3>8.1 训练流程</h3>
+
+<div class="mermaid">
+flowchart TD
+    D["7 源加权混合采样<br/>(视频源取随机 81 帧窗口<br/>图像源复制成 5 帧静片段)"] --> E["冻结 VAE → 干净 latent z"]
+    E --> FWD["DiT sigma=0 单次前向<br/>patch-embed 微调 + 30 块 LoRA<br/>tap block-15"]
+    FWD --> RAY["Ray Head → 射线场 r-hat<br/>(时间池化)"]
+    FWD --> DEC["双向时空解码器<br/>(48q x 21 帧, 4 层交替注意力)"]
+    RAY -->|"射线 PE"| DEC
+    DEC --> MANO["MANO 参数 + 2D 锚点<br/>+ log-depth + 存在性"]
+    MANO --> PNP["mixed-PnP 可微求解<br/>→ 平移 tau"]
+    PNP --> L["七项损失联合反传<br/>(K-free 加 L_fit)"]
+    L -->|"梯度穿过 PnP 回 MANO/2D/log-z 头"| DEC
+    L -->|"经 LoRA 重塑特征(仅前 16 块可达)"| FWD
+    K["GT 内参 K"] -.->|"只作 L_img/L_ray/L_fit 目标<br/>标准配置另作 PnP 方位角"| L
+    style D fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style FWD fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style PNP fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style K fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>8.2 推理流程(对应发布代码 <code>infer_video.py</code>)</h3>
+
+<div class="mermaid">
+flowchart TD
+    V["任意长度 RGB 视频"] --> TRIM["帧数裁到 4k+1<br/>(因果 VAE 约束)"]
+    TRIM --> RS["等比缩放到宽 832<br/>双边对齐 32 网格"]
+    RS --> VAE["Wan VAE 编码<br/>(占耗时 ~72%)"]
+    VAE --> MODE{"模式?"}
+    MODE -->|"tiled(默认,基准协议)"| TILE["22-latent 窗口滑窗<br/>对齐 81 帧段"]
+    MODE -->|"full(长序列)"| FULL["单次前向整段<br/>(RoPE 长度外推)"]
+    TILE --> DEC["block-15 特征 →<br/>Ray Head + 解码器"]
+    FULL --> DEC
+    DEC --> PNP["mixed-PnP → MANO + 平移"]
+    PNP --> OUT["每段/整段 pkl:<br/>go/hp/betas/cam_trans/<br/>joints2d/exists..."]
+    OUT --> FIT["_fit_pred_K: 从射线场拟合<br/>等效针孔写入 pred_intrinsics<br/>(仅元数据,不回喂解码)"]
+    style V fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style DEC fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style PNP fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style FIT fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<p class="note">红色节点即 §6.4 指出的「宣称 vs 实现」出入点:论文说拟合相机参与解码,发布代码里拟合结果只落盘。两种模式对应论文的两组数字:tiled = 表 1 基准协议;full = 附录 D.2 长序列设定(MPJE-p 涨 18% 换 Jitter 降 4%)。</p>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>⚙️ 工程实现细节(源码验证)</h2>
+<div class="callout warn">
+<b>可信度声明:</b>官方仓库 <code>ggxxii/ACE-Ego-Hand</code>(commit <code>9757868</code>,2026-09-10)<b>只发布推理代码</b>,训练器、数据 pipeline、评测器均未发布;MANO 权重因许可证需自行转换(<code>scripts/convert_mano_pkls.py</code>)。本节区分两类信息:✅ = 发布源码逐行核实(附 file:line);📄 = 仅论文/附录自述,无法源码复核。仓库目录:<code>ace_ego_hand/{archs,models}/*.py</code> + <code>infer_video.py</code> + <code>options/*.yml</code> + <code>scripts/*.py</code>,共约 3,100 行 Python。
+</div>
+
+<h3>9.1 配置级事实(✅ <code>options/ace_ego_hand_kfree.yml</code> 逐行)</h3>
+
+<table>
+<tr><th>配置键</th><th>值</th><th>与论文对照</th></tr>
+<tr><td><code>backbone.tap_layers</code></td><td>[15]</td><td>✅ block-15(跑前 16/30 块)</td></tr>
+<tr><td><code>backbone.feature_mode / nv_sigma</code></td><td>noised_video / 0.0</td><td>✅ σ=0 干净 latent;$x=z$、控制槽全零、$t=0$(<code>geodit_arch.py:298-314</code>)</td></tr>
+<tr><td><code>backbone.mh_expand</code></td><td>false</td><td>✅ 不用多头几何渲染手术(那是 ViDiHand 血统的遗产,noised_video 强制要求关闭,<code>geodit_arch.py:139-140</code>)</td></tr>
+<tr><td><code>lora</code></td><td>rank 64 / α 64 / dropout 0</td><td>✅ 附录 B.1;注入每块 10 个线性层(<code>wan_backbone.py:134-136</code>:self/cross-attn 的 qkvo + ffn.0/ffn.2)</td></tr>
+<tr><td><code>raymap / self_ray_pe / self_ray_decode</code></td><td>true / true / true(标准配置仅最后一项 false)</td><td>✅ 两配置唯一 diff;射线 PE 都来自预测场</td></tr>
+<tr><td><code>projector.hidden_dim / num_heads / ffn_mult / alt_num_layers</code></td><td>384 / 8 / 4 / 4</td><td>✅ 384 维解码器、4 层交替</td></tr>
+<tr><td><code>alt_query_mode / alt_num_register / alt_temporal_rope</code></td><td>joint / 4 / true</td><td>✅ 关节 query、4 register、RoPE</td></tr>
+<tr><td><code>cam_trans_decode</code></td><td>mixed_pnp</td><td>✅ §3.3</td></tr>
+<tr><td><code>betas_scope / per_hand_betas_source</code></td><td>per_hand / slot_mean</td><td>✅ 片段级形状,手槽时间均值(<code>memory_projector.py:897-898</code>)</td></tr>
+<tr><td><code>joints2d_readout</code></td><td>pooled</td><td>⚠️ 名义为 pooled,但交替编码器的关节读出(<code>alt_j2d</code>)在 <code>memory_projector.py:836-842</code> <b>覆盖</b> pooled 结果——实际生效的就是论文的 soft-argmax 读出;该键是历史遗留</td></tr>
+</table>
+
+<h3>9.2 参数账(📄 附录 B.1,部分 ✅ 代码结构印证)</h3>
+
+<table>
+<tr><th>分组</th><th>参数量</th><th>说明</th></tr>
+<tr><td>冻结预训练权重</td><td>5.002 B</td><td>Wan2.2-Fun-5B-Control low-noise DiT:30 块、宽 3072、FFN 14336、输入 148ch(48 noisy + 100 control)、输出 48ch;全程冻结</td></tr>
+<tr><td>LoRA 适配器</td><td>161.219 M(5.37 M/块 × 30)</td><td>rank=α=64;但<b>梯度实际只到达前 16 块内的 85.983 M</b>——附录 B.1 确认 20k 步后 tap 之后的 LoRA B 矩阵「逐比特为零」,即恒等映射</td></tr>
+<tr><td>patch embedding</td><td>1.822 M</td><td>全量微调</td></tr>
+<tr><td>解码器+读出头</td><td>20.347 M(实际路由 12.287 M)</td><td>384 维、4 层交替、各读出 MLP</td></tr>
+<tr><td>Ray Head</td><td>9,219</td><td>1×1 Conv 3072→3,零初始化(✅ <code>geodit_arch.py:233-238</code>)</td></tr>
+<tr><td>优化器总注册 / 梯度可达</td><td><b>183.99 M / 100.10 M</b></td><td>对照:ViDiHand 生成路线骨干无梯度(0)</td></tr>
+</table>
+
+<h3>9.3 初始化工程(✅ 源码,论文未提的「冷启动」细节)</h3>
+
+<ul>
+  <li><b>Camera Head</b> 末层零初始化 + bias $[0,0,-0.693]$ → 初始深度 $t_z=e^{-0.693}\approx0.5$ m(<code>memory_projector.py:580-581</code>);<b>腕部头</b> bias $[0,0,0.5]$(:590-591);<b>存在性头</b> bias $-1$(初始 sigmoid≈0.27,偏「不存在」,保守起步,:586-589)。</li>
+  <li><b>射线 PE 投影</b>末层零初始化 → 训练开始时射线 PE 是无操作残差(<code>memory_projector.py:111-117</code>);<b>Ray Head</b> 同理(零初始化 1×1 Conv)。</li>
+  <li><b>K-given 配置推理时必须给内参</b>,否则报错退出;K-free 会构造一个「标称 60° 占位相机」但代码注释明确「K-free does not read it」(<code>infer_video.py:147-156</code>)。</li>
+  <li><b>固定文本条件</b>:DiT cross-attention 的 context 是预计算的 umT5 固定 caption 嵌入,文本为 <i>"Three geometry renders of two hands on black background: color-coded depth, joint skeleton, surface normals."</i>(<code>scripts/precompute_caption.py:26-27</code>)——渲染生成血统(ViDiHand/GeoDiT 谱系)的遗留,论文通篇未提文本条件。<b>这意味着编码器实际读的是「视频 latent + 一句几何渲染提示」的组合</b>,换一个 caption 的影响从未被消融过。</li>
+</ul>
+
+<h3>9.4 推理管线与资源账</h3>
+
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>吞吐</td><td>63.1 fps(标准)/ 63.3 fps(K-free),单卡 A100,81 帧段端到端,72% 耗时在 VAE 编码</td><td>📄 附录 C.4(协议:同机同段、≥3 次取中位、不计加载与渲染)</td></tr>
+<tr><td>对照</td><td>ViDiHand 1.91 fps(精度配置)→ <b>33×</b>;crop 系五基线共享 ViTDet-H+ViTPose 前端,聚在 1.5–1.7 fps</td><td>📄 附录 C.4</td></tr>
+<tr><td>长序列</td><td><code>--mode full</code> 单次前向整段(21→任意 latent 帧,RoPE 外推);<code>tiled</code> 用 22-latent 窗口对齐 81 帧段(✅ <code>inference.py:62-107</code>)</td><td>✅ + 📄 附录 D.2</td></tr>
+<tr><td>显存</td><td>论文/README 均未给。5B bf16 权重 ≈10GB + VAE + 解码器,<span class="uncertain">⚠️【推测】单卡 24GB(3090)做推理应可行;训练(16×A100)非单卡可复现</span></td><td>—</td></tr>
+<tr><td>依赖钉版</td><td>Python 3.10 / CUDA 12.1 / torch 2.5.1 / diffusers 0.36.0 / transformers 4.57.3 / peft 0.18.1 / smplx 0.1.28;骨干经 VideoX-Fun(clone 到 <code>third_party/</code>)加载</td><td>✅ <code>requirements.txt</code></td></tr>
+<tr><td>相机限制</td><td><b>仅针孔</b>:鱼眼内参抛 <code>NotImplementedError</code>(✅ <code>geodit_arch.py:70-87</code>,注释解释:MEI 广角下针孔反投影会把水平方位角压约 7×,「看起来合理但全错」比报错更危险);鱼眼素材需先去畸变</td><td>✅</td></tr>
+<tr><td>已知坑</td><td>MANO 官方 pkl 依赖 chumpy,新版 numpy 无法 import——必须跑 <code>convert_mano_pkls.py</code> 转纯 numpy(✅ README + requirements 注释); intrinsics 按「标定分辨率」解释、随视频分辨率自动缩放(<code>infer_video.py:124-137</code>)</td><td>✅</td></tr>
+</table>
+
+<h3>9.5 「宣称 vs 实现」复核清单</h3>
+
+<table>
+<tr><th>论文宣称</th><th>源码复核结果</th><th>结论</th></tr>
+<tr><td>σ=0 单次确定性前向</td><td><code>feature_mode=noised_video, nv_sigma=0.0</code> → $x=z$、$t=0$、无采样循环(<code>geodit_arch.py:298-314</code>)</td><td>✅ 一致</td></tr>
+<tr><td>block-15 tap(前 16 块)</td><td><code>tap_layers: [15]</code>;<code>forward_features</code> 在 block i 输出处取 tap,默认 <code>run_head=False</code> 时第 15 块后直接返回(<code>wan_backbone.py:245-260</code>)</td><td>✅ 一致</td></tr>
+<tr><td>48 queries(2 手+42 关节+4 register)</td><td><code>n_hand=2, n_joint=42, num_register=4, n_camera=0</code>(<code>memory_encoder.py:387-400</code>)</td><td>✅ 一致</td></tr>
+<tr><td>soft-argmax 2D 锚点(式 3)</td><td><code>memory_encoder.py:562-565</code> 取 attn 权重,<code>_soft_argmax</code>(:629-638)按网格坐标加权</td><td>✅ 一致</td></tr>
+<tr><td>PnP 门限(5cm / 2% / 6 关节 / max(15px, 0.25·diag))</td><td><code>memory_projector.py:1252-1257</code> 常数逐字相同</td><td>✅ 一致</td></tr>
+<tr><td>K-free 用「拟合的等效针孔」提供解码方位角</td><td>解码直接 grid_sample 原始射线场(<code>memory_projector.py:1341-1355</code>);<code>_fit_pred_K</code> 只写 <code>pred_intrinsics</code> 元数据(<code>inference.py:24-45, 65</code>)</td><td>⚠️【待核实】不一致,见 §6.4</td></tr>
+<tr><td>训练:20k 步、3 组 LR、损失权重、数据混合</td><td>训练代码未发布</td><td>📄 无法复核</td></tr>
+</table>
+
+<div class="note">
+<b>顺带发现的工程背景:</b>发布仓库是从一个更大的训练代码库(内部名 <b>GeoDiT</b>)裁剪出来的——<code>geodit_arch.py</code> 里仍保留 D-mode 流匹配训练、生成渲染头、oracle 几何注入探针等完整实验脚手架;注释记录了「单手 PnP 拟合焦距在同一片段上散布 28°–108° HFOV」这类实测结论(<code>inference.py:71-76</code>),说明作者确实试过「从手拟合相机」并因不稳定放弃,改投「从全图射线场拟合」。这类失败实验记录比论文正文更能说明设计动机。
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>实验结果</h2>
+<h3>10.1 主对比(论文表 1,ARCTIC / HOT3D / 零样本 HOI4D)</h3>
+
+<p>指标:MPJPE-p / PA-p(mm,腕对齐 / Procrustes 对齐,带漏检惩罚),MPJPE+OOS(mm,含出画手的全体平均),EPE2D-p(px),GO-p(°),CT-p(m),Jitter(mm/frame²)。粗体=该列最优;<span style="color:#a7f3d0">绿行</span>=本文。基线行引用 ViDiHand 已发布评测(同协议),EgoForce 与本文行由作者复跑;⚠️ 注意 H2O/HOI4D 含伪 GT(§2.3),头条结论以 ARCTIC/HOT3D 为准。</p>
+
+<table>
+<tr><th>方法</th><th>F1↑</th><th>MPJPE-p↓</th><th>PA-p↓</th><th>MPJPE+OOS↓</th><th>EPE2D-p↓</th><th>GO-p↓</th><th>CT-p↓</th><th>Jitter↓</th></tr>
+<tr><td colspan="9" style="background:var(--panel2);color:var(--accent)"><b>ARCTIC</b>(重度双手遮挡)</td></tr>
+<tr><td>HaMeR(单帧)</td><td>0.957</td><td>29.197</td><td>14.596</td><td>38.183</td><td>65.289</td><td>24.907</td><td>0.095</td><td>18.279</td></tr>
+<tr><td>WiLoR(单帧)</td><td>0.974</td><td>22.012</td><td>11.873</td><td>31.502</td><td>71.527</td><td>17.358</td><td>0.075</td><td>24.091</td></tr>
+<tr><td>WildHands(单帧)</td><td>0.960</td><td>25.704</td><td>13.941</td><td>33.915</td><td>50.517</td><td>22.320</td><td>0.058</td><td>12.972</td></tr>
+<tr><td>EgoForce‡(单帧+卡尔曼)</td><td>0.963</td><td>22.388</td><td>14.322</td><td>32.193</td><td>61.761</td><td>21.073</td><td>0.069</td><td>24.158</td></tr>
+<tr><td>OmniHands(9 帧融合)</td><td>0.954</td><td>29.674</td><td>14.203</td><td>38.191</td><td>51.505</td><td>24.580</td><td>0.087</td><td>45.312</td></tr>
+<tr><td>HaWoR(相机系前端)</td><td>0.895</td><td>45.357</td><td>26.375</td><td>53.443</td><td>158.062</td><td>43.325</td><td>0.149</td><td>19.789</td></tr>
+<tr><td>ViDiHand(VDM 生成路线)</td><td>0.999</td><td>21.668</td><td>9.821</td><td>31.045</td><td>12.407</td><td>14.642</td><td>0.047</td><td>3.183</td></tr>
+<tr class="best"><td>ACE-Ego-Hand</td><td>1.000</td><td>15.256</td><td>7.474</td><td>16.783</td><td>9.180</td><td>11.807</td><td>0.021</td><td>2.700</td></tr>
+<tr class="best"><td>ACE-Ego-Hand(K-free)</td><td>1.000</td><td>16.615</td><td>8.756</td><td>18.061</td><td>11.014</td><td>12.208</td><td>0.028</td><td>2.770</td></tr>
+<tr><td colspan="9" style="background:var(--panel2);color:var(--accent)"><b>HOT3D</b>(广角复杂视角)</td></tr>
+<tr><td>WiLoR</td><td>0.937</td><td>30.966</td><td>19.980</td><td>52.014</td><td>72.978</td><td>25.746</td><td>0.098</td><td>17.976</td></tr>
+<tr><td>ViDiHand</td><td>0.983</td><td>21.514</td><td>11.383</td><td>44.440</td><td>14.953</td><td>15.829</td><td>0.040</td><td>3.741</td></tr>
+<tr class="best"><td>ACE-Ego-Hand</td><td>0.996</td><td>12.888</td><td>6.436</td><td>17.273</td><td>6.418</td><td>7.924</td><td>0.025</td><td>3.159</td></tr>
+<tr class="best"><td>ACE-Ego-Hand(K-free)</td><td>0.995</td><td>13.535</td><td>6.768</td><td>18.703</td><td>6.067</td><td>8.362</td><td>0.026</td><td>3.426</td></tr>
+<tr><td colspan="9" style="background:var(--panel2);color:var(--accent)"><b>HOI4D</b>(零样本,完全未参与训练;无 OOS GT)</td></tr>
+<tr><td>WiLoR</td><td>0.972</td><td>33.710</td><td>14.903</td><td>–</td><td>41.579</td><td>25.527</td><td>0.115</td><td>17.449</td></tr>
+<tr><td>ViDiHand</td><td>0.990</td><td>30.090</td><td>13.960</td><td>–</td><td>24.460</td><td>23.420</td><td>0.117</td><td>4.010</td></tr>
+<tr class="best"><td>ACE-Ego-Hand</td><td>0.974</td><td>23.031</td><td>11.664</td><td>–</td><td>14.987</td><td>18.426</td><td>0.057</td><td>2.393</td></tr>
+<tr class="best"><td>ACE-Ego-Hand(K-free)</td><td>0.985</td><td>22.154</td><td>11.213</td><td>–</td><td>18.004</td><td>17.242</td><td>0.055</td><td>2.317</td></tr>
+</table>
+
+<div class="callout key">
+<b>百分比复核(按表内原始值手算,论文结论句核对):</b>
+<ul>
+<li>ARCTIC MPJPE-p:21.668→15.256 = <b>-29.6%</b>(论文写 30% ✓);HOT3D:21.514→12.888 = <b>-40.1%</b>(论文写 40% ✓);HOI4D:30.090→23.031 = <b>-23.5%</b>(论文写 23% ✓)。</li>
+<li>含出画手 MPJPE+OOS:ARCTIC 31.045→16.783 = <b>-45.9%</b>;HOT3D 44.440→17.273 = <b>-61.1%</b>——摘要「46%–61%」精确对应这两数 ✓。注意 ARCTIC 出画手帧只占 6.9%,混合指标被可见帧主导(附录 A.1 专门警告两指标不可混用)。</li>
+<li>「PA-p 较 ViDiHand 降 24%」(ARCTIC 9.821→7.474 = -23.9% ✓);「几乎减半 OmniHands 的 MPJPE-p」(29.674→15.256 = -48.6% ✓)。</li>
+<li>HOI4D 上 <b>K-free 反而优于标准配置</b>(22.154 vs 23.031mm)——论文解释为零样本域上自学射线场比硬编码内参更稳;EPE2D-p 偏高被解释为「找回了难检测样本进入匹配集」。</li>
+</ul>
+</div>
+
+<h3>10.2 出画手分层(表 S4,本文真正的卖点)</h3>
+
+<table>
+<tr><th>方法</th><th>ARCTIC 可见</th><th>ARCTIC 出画</th><th>HOT3D 可见</th><th>HOT3D 出画</th></tr>
+<tr><td>十个基线的出画误差带</td><td colspan="3" style="color:var(--orange)">全部塌进 <b>126–164mm</b> 窄带,排序与可见帧排名无关(= 无出画重建能力)</td><td></td></tr>
+<tr><td>最强基线(WildHands)</td><td>26.404</td><td>135.437</td><td>46.412</td><td>126.358</td></tr>
+<tr><td>ViDiHand</td><td>22.311</td><td>149.113</td><td>21.513</td><td>151.703</td></tr>
+<tr class="best"><td>ACE-Ego-Hand</td><td>15.423</td><td><b>35.165</b></td><td>12.703</td><td><b>38.649</b></td></tr>
+</table>
+
+<p>出画层降幅:ARCTIC -76.4%、HOT3D -74.5%(对 ViDiHand);对最强基线 WildHands 为 -74.0% / -69.4%(论文 C.2 原文复核一致)。<b>但必须记住附录 F.1 的限定:这些是腕对齐误差,只证明「出画期间关节结构与全局朝向保持合理」,不证明绝对位置——出画放置依赖回归深度与方位角,没有任何基准评它。</b></p>
+
+<h3>10.3 H2O / OakInk2(附录表 S3,in-domain)</h3>
+
+<table>
+<tr><th>方法</th><th>H2O MPJPE-p↓</th><th>H2O PA-p↓</th><th>OakInk2 MPJPE-p↓</th><th>OakInk2 PA-p↓</th></tr>
+<tr><td>WiLoR</td><td>16.390</td><td>5.633</td><td>26.520</td><td>12.481</td></tr>
+<tr><td>EgoForce‡</td><td>16.219</td><td>6.020</td><td>36.725</td><td>18.198</td></tr>
+<tr><td>ViDiHand</td><td>17.320</td><td>7.987</td><td>38.996</td><td>22.827</td></tr>
+<tr class="best"><td>ACE-Ego-Hand</td><td>9.223</td><td>4.894</td><td>8.988</td><td>5.887</td></tr>
+<tr class="best"><td>ACE-Ego-Hand(K-free)</td><td>10.310</td><td>5.522</td><td>9.813</td><td>6.362</td></tr>
+</table>
+
+<p>论文宣称 OakInk2 -66%(26.520→8.988 = -66.1% ✓)、H2O -43%(16.219→9.223 = -43.1% ✓)。⚠️ 附录 C.1 自陈两条告诫:① 每行只是单次训练运行;② 这两个数据集对本文是 in-domain、对所有基线是 out-of-domain,且 H2O 伪 GT 分布就在训练混合里——「读作 in-domain 上限,不是同口径对比」。</p>
+
+<h3>10.4 效率(附录 C.4 + 图 S1)</h3>
+
+<div class="figure">
+  <img src="images/2608.20308/speed.png" loading="lazy" alt="精度-速度平面">
+  <div class="caption"><b>图4</b>(论文 Figure S1)<b>精度-速度平面。</b>横轴端到端吞吐(A100 单卡,81 帧段,去掉加载/解码/渲染),纵轴三数据集平均 MPJPE-p。ACE-Ego-Hand 两种配置同速(63.1 / 63.3 fps),ViDiHand 1.91 fps(33×),crop 系基线 1.5–1.7 fps(检测前端决定成本)。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/compare_visual.png" loading="lazy" alt="定性对比">
+  <div class="caption"><b>图5</b>(论文 Figure 4)<b>ARCTIC(上)/ HOT3D(下)定性对比。</b>每组:输入帧上的预测网格 + 共享世界系中的轨迹(GT 相机位姿摆放,展示「放置」而非相机运动)。ARCTIC 双手遮挡下多个基线只找回一只手;广角 HOT3D 上基线把手散落到地面平面上;ACE-Ego-Hand 轨迹连续且贴合 GT。</div>
+</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>消融与设计分析</h2>
+<h3>11.1 特征源消融(表 2,「VDM 先验是否必要」的直接证据)</h3>
+
+<p>配方:仅 ARCTIC、10k 步的缩减训练(因此数值只表内可比)。</p>
+
+<table>
+<tr><th>特征源</th><th>MPJPE-p↓</th><th>PA-p↓</th><th>Jitter↓</th><th>MPJPE<sup>OOS</sup>↓</th></tr>
+<tr class="best"><td>ACE-Ego-Hand(Wan2.2 + LoRA)</td><td>16.95</td><td>8.16</td><td>2.69</td><td>41.5</td></tr>
+<tr><td>去 LoRA(冻结 Wan2.2)</td><td>23.10</td><td>10.83</td><td>3.35</td><td>50.1</td></tr>
+<tr><td>换 V-JEPA 2(冻结,判别式)</td><td>17.81</td><td>8.74</td><td>4.56</td><td>66.1</td></tr>
+<tr><td>换 VideoMAE(冻结,判别式)</td><td>22.53</td><td>10.42</td><td>5.60</td><td>77.6</td></tr>
+<tr><td>只用 VAE latent</td><td>32.50</td><td>12.89</td><td>3.35</td><td>79.3</td></tr>
+<tr class="fail"><td>原始 RGB</td><td>46.50</td><td>16.93</td><td>4.37</td><td>98.3</td></tr>
+</table>
+
+<div class="callout key">
+<b>这张表是全文最有信息量的一张:</b>① VAE latent(32.50)→ DiT 特征(16.95)证明<b>价值在 DiT 的时空处理,不在 VAE 压缩</b>;② 冻结 Wan(23.10)→ LoRA(16.95)证明<b>端到端适配必要</b>;③ 最关键的对比:判别式自监督 V-JEPA 2 在可见帧几乎追平(17.81 vs 16.95),但出画误差 66.1 vs 41.5mm——而同样冻结时 Wan(50.1)也优于 V-JEPA 2(66.1)。<b>生成式预训练带来了判别式预训练没有的「在观测缺失处做合理预测」的先验</b>——这正是论文标题论点的实验支撑。
+</div>
+
+<h3>11.2 相机与解码器消融(表 3,ARCTIC,缩减配方)</h3>
+
+<table>
+<tr><th>变体</th><th>MPJPE-p↓</th><th>PA-p↓</th><th>EPE2D-p↓</th><th>CT-p↓</th><th>Jitter↓</th></tr>
+<tr><td>ACE-Ego-Hand(标准)</td><td>15.256</td><td>7.474</td><td>9.180</td><td>0.021</td><td>2.700</td></tr>
+<tr><td>K-free</td><td>15.264</td><td>7.770</td><td>13.168</td><td>0.020</td><td>2.704</td></tr>
+<tr><td>　w/o mixed-PnP(纯反投影)</td><td>16.134</td><td>8.002</td><td>14.425</td><td>0.030</td><td>2.874</td></tr>
+<tr><td>　w/o PnP 求解(直接回归平移)</td><td>15.546</td><td>7.955</td><td>14.399</td><td>0.023</td><td>2.658</td></tr>
+<tr><td>w/o 空间 PE</td><td>15.348</td><td>8.101</td><td>13.141</td><td>0.023</td><td>2.686</td></tr>
+<tr><td>w/o 关节 query(手内池化)</td><td>17.144</td><td>8.916</td><td>14.849</td><td>0.029</td><td>2.727</td></tr>
+<tr><td>形状 β 改从 register 出</td><td>15.622</td><td>7.760</td><td>14.078</td><td>0.020</td><td>2.714</td></tr>
+<tr class="fail"><td>w/o RoPE(改绝对 PE)</td><td>17.787</td><td>8.671</td><td>13.915</td><td>0.033</td><td>2.948</td></tr>
+</table>
+
+<p>要点:K-free 与标准在此配方下几乎打平(15.264 vs 15.256);<b>RoPE(-2.523mm)与关节 query(-1.880mm)是最大的两个设计杠杆</b>。论文诚实声明:手内池化与绝对 PE 两个变体跑在减半的数据并行宽度上,部分差距可能来自更小等效 batch 而非设计本身。直接回归平移虽然 Jitter 最低,但图像空间放置变差(EPE2D-p +1.231px),论文明确不取这个 trade。</p>
+
+<h3>11.3 设计选择扫描(附录 D)</h3>
+
+<table>
+<tr><th>问题</th><th>设置</th><th>结论</th></tr>
+<tr><td>tap 深度(表 S6)</td><td>block 10 / <b>15</b> / 20 / 24</td><td>16.10(block15)vs 15.93/15.95(更深)→ 中层已饱和,深至多买 0.17mm;block10 明显差(+1.67mm)。选 15 是「半价钱买全精度」</td></tr>
+<tr><td>干净 vs 加噪 latent(表 S7)</td><td>σ=0 vs σ=0.5</td><td>MPJPE-p 15.26 vs 17.66(+2.40mm)、CT-p 恶化 39%;31 个验证 checkpoint 中 29 个 σ=0 更优 → 确定性读取胜出;差距集中在度量放置而非关节</td></tr>
+<tr><td>解码长度(图 S2)</td><td>81 → 整段(594–1087 帧)单 pass</td><td>125 帧内精度不降反微升;整段直出 MPJPE-p 17.99(+18%),Jitter 2.585(-4%)——长程解码是「精度换平滑」的工作点,但仍比 ViDiHand 窗口式的 21.668 低 17%</td></tr>
+<tr><td>画面边缘误差(表 S5)</td><td>按到主点归一化距离分 bin</td><td>无相机拟合时最外圈 CT 0.165 vs 0.048m(3.4×);姿态不受影响 → 边缘失败是<b>射线场采样噪声</b>导致的纯度量放置问题,拟合等效针孔可修复</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2608.20308/length.svg" loading="lazy" alt="解码长度扫描" style="background:#fff">
+  <div class="caption"><b>图6</b>(论文 Figure S2,原图为矢量 SVG)<b>单次前向解码长度的影响。</b>横轴单次解码帧数,左轴 MPJPE-p、右轴 Jitter;虚线是 81 帧训练窗口位置,星号是整段录像一次解完(横坐标 645 为名义值,实际 594–1087 帧)。精度平台期远超训练窗口,验证了 RoPE 的长度外推。</div>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+<h3>12.1 横向对比表(固定维度;数据取自论文表 1/附录 C 与各方法公开信息,缺项写 —)</h3>
+
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>推理耗时</th><th>ARCTIC MPJPE-p</th><th>OOS 能力</th><th>开源</th></tr>
+<tr><td>HaMeR</td><td>2024</td><td>单帧 RGB + 检测框</td><td>逐帧 MANO</td><td>多数据集全监督</td><td>~1.5–1.7 fps(含检测)</td><td>29.197</td><td>无(出画 141mm)</td><td>✅</td></tr>
+<tr><td>WiLoR</td><td>2024</td><td>单帧 + 内参(弱透视)</td><td>逐帧 MANO</td><td>全监督</td><td>同上前端</td><td>22.012</td><td>无(149mm)</td><td>✅</td></tr>
+<tr><td>WildHands</td><td>2024</td><td>单帧 + 内参条件</td><td>逐帧 MANO</td><td>第一人称数据</td><td>同上前端</td><td>25.704</td><td>无,但基线中最强(135mm)</td><td>✅</td></tr>
+<tr><td>EgoForce</td><td>2025</td><td>单帧 + 前臂引导相机解</td><td>MANO + 因果滤波</td><td>全监督</td><td>fp16 单独计时</td><td>22.388</td><td>无(149mm)</td><td>✅</td></tr>
+<tr><td>OmniHands</td><td>2024</td><td>9 帧双手 crop 融合</td><td>窗口 MANO</td><td>全监督</td><td>—</td><td>29.674</td><td>仅画面内遮挡(139mm)</td><td>✅</td></tr>
+<tr><td>Dyn-HaMR</td><td>2024</td><td>单目视频 + SLAM 外参</td><td>世界系 4D</td><td>优化式</td><td>慢(优化调度)</td><td>27.904</td><td>无(150mm)</td><td>✅</td></tr>
+<tr><td>HaWoR</td><td>2025</td><td>视频 + DROID-SLAM</td><td>世界系轨迹</td><td>全监督+SLAM</td><td>—(评测关 SLAM)</td><td>45.357</td><td>名义有(靠补全,149mm)</td><td>✅</td></tr>
+<tr><td>ViDiHand</td><td>2026</td><td>整段视频(无需检测器)</td><td>VDM 渲染→特征回归</td><td>冻结特征训解码器</td><td><b>1.91 fps</b>(12–25 步采样)</td><td>21.668</td><td>弱(149mm)</td><td>❌ 无公开实现</td></tr>
+<tr class="best"><td>ACE-Ego-Hand</td><td>2026</td><td>整段视频(K-free 连内参都不用)</td><td>VDM 确定性编码 + 双向解码 + MANO</td><td>端到端(LoRA 进骨干)</td><td><b>63.1 fps</b></td><td><b>15.256</b></td><td><b>35–39mm</b></td><td>✅ 仅推理(MIT)</td></tr>
+</table>
+
+<h3>12.2 逐条机制解释(为什么强 / 为什么弱)</h3>
+
+<ol>
+<li><b>对 crop 系单帧方法(HaMeR/WiLoR/WildHands/EgoForce)</b>:差距不只在时序。detect-crop 范式把手从场景上下文里抠出来,尺度/深度锚在检测框上;ACE-Ego-Hand 的「整帧进 VAE、锚点 soft-argmax」保留了全局上下文,且存在性头把「检测」内化成无需匈牙利匹配的读出。结果:检测 F1 0.95→1.00,同时免去 ViTDet-H+ViTPose 前端(那正是基线们 1.5–1.7 fps 的成本大头)。</li>
+<li><b>对 OmniHands(画面内遮挡专精)</b>:9 帧窗口只能补「画面内」被挡的手;ARCTIC MPJPE-p 几乎减半(29.674→15.256)说明<b>窗口时序 ≠ 片段时序</b>——出画需要的是整段双向证据。</li>
+<li><b>对 HaWoR(SLAM 系)</b>:世界系重建依赖 SLAM 外参,而第一人称快速头动下 DROID-SLAM 在 81 帧短段上不稳定;相机系方法绕开了这个误差源。HaWoR 的 45.4mm 部分是协议所致(论文自陈关了它的 SLAM/补全),但即便考虑这一点,差距也是数量级的。</li>
+<li><b>对 ViDiHand(同族对手,最重要的对比)</b>:同一个 Wan 血统、同一个评测协议,差别纯在「怎么用 VDM」。ViDiHand = 生成式用法(VACE 微调生成几何叠加图,12–25 步采样,解码器读冻结特征);ACE-Ego-Hand = 编码式用法(σ=0 单次前向 + LoRA 端到端)。结果:精度 -30~40%,速度 33×,OOS 149→35mm。<b>这基本宣判了「渲染再回归」路线在此任务上的终结</b>——生成能力没有被用到,反而付了采样延迟与伪影传播两份税。</li>
+</ol>
+
+<h3>12.3 演进定位表</h3>
+
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>检测-裁剪-回归(单帧)</td><td>HaMeR → WiLoR/WildHands/EgoForce</td><td>大规模 2D/3D 手部数据</td><td>出画即丢;尺度绑检测框</td></tr>
+<tr><td>窗口时序融合</td><td>OmniHands、GENMO、EgoH4</td><td>短时运动连续性</td><td>窗口外无记忆,出画无法续接</td></tr>
+<tr><td>SLAM/优化式 4D</td><td>HaWoR、Dyn-HaMR</td><td>多视图几何 + SLAM</td><td>外参误差累积;第一人称头动下脆弱</td></tr>
+<tr><td>VDM 作生成器(渲染再回归)</td><td>ViDiHand</td><td>视频扩散的物理/交互先验</td><td>采样延迟;伪影传播;骨干无重建梯度</td></tr>
+<tr><td><b>VDM 作确定性编码器(本文)</b></td><td><b>ACE-Ego-Hand</b></td><td>同上,但直接读特征 + 端到端适配</td><td>离线;OOS 放置无真值约束;针孔限定</td></tr>
+</table>
+
+<p>库内脉络交叉引用:本文与《<a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>》路线 E 互为印证(该综述已预言「非生成式复用性价比可能更高」);其解码器架构直接移植 <a href="3D-20260514-VGGT-Omega.html">VGGT-Omega</a> 的 register-token 交替注意力;骨干 Wan2.2 与库内 <a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a> 同族(2.2 的 A14B/Fun 系列,时间 4× 空间 16× 因果 VAE)。</p>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+<h3>13.1 它解决什么、不解决什么</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>✅ 适合</h4>
+    <ul>
+      <li><b>机器人操作数据采集</b>(论文的核心动机):从日常第一人称录像批量产出带度量尺度的双手 MANO 轨迹,做模仿学习/retargeting(附录 E.3 已演示到 Inspire 灵巧手,且 63 fps 不是采集瓶颈)。</li>
+      <li><b>离线标注工具</b>:81 帧段 63 fps,整段录像也可单 pass(精度换平滑),适合给自建第一人称数据补 3D 手部 GT。</li>
+      <li><b>无标定素材</b>:K-free 配置完全不需要内参,HOT3D 这种广角场景下 2D 锚点与有内参配置打平(F1 0.995 vs 0.996)。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>❌ 不适合</h4>
+    <ul>
+      <li><b>在线/闭环控制</b>:整段双向注意力,延迟下界=片段长度;作者自己定位是「数据采编工具,不是控制器」。</li>
+      <li><b>鱼眼原生素材</b>:发布 checkpoint 针孔限定,鱼眼直接报错——需先去畸变(会改变边缘几何分布)。</li>
+      <li><b>需要出画手绝对位置的场合</b>:OOS 只有腕对齐保证,绝对深度在出画期间无约束(附录 F.1)。</li>
+      <li><b>第三人称/多视角</b>:全部训练数据是第一人称;论文未做任何第三人称评估。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>13.2 对 vggt_human 主线的适配评估</h3>
+
+<table>
+<tr><th>关注点</th><th>评估</th></tr>
+<tr><td>硬件门槛(单卡 3090)</td><td>推理侧:5B bf16 骨干(≈10GB)+ VAE + 解码器,只跑前 16 块,<span class="uncertain">⚠️【推测】24GB 可行</span>;官方数据是 A100 上的 63 fps,3090 预计明显更慢但仍是「实时级吞吐」。训练(16×A100)与复现训练(无训练代码)均不可行——<b>只能当 frozen 推理工具用</b>。</td></tr>
+<tr><td>与现有 pipeline 的接口</td><td>输入只需 RGB 视频(K-free)或 RGB+内参(标准);输出逐帧 MANO(go/hp/betas/cam_trans)+ 21 关节 + 存在性分数,pkl 格式(<code>infer_video.py</code> 的 <code>_pack</code>)。<b>如果未来要给手部特写/交互片段补手部几何约束(例如手部高斯的初始化与绑定),这是目前库内唯一「VDM 先验当编码器」且带开源权重的手部方案。</b></td></tr>
+<tr><td>可迁移的技术元件</td><td>① 「σ=0 单次前向读 VDM 特征」的范式可直接搬到其他需要视频先验的回归任务(附录 D.4 给了干净读取的量化证据);② 射线场 + mixed-PnP 的「深度回归 + 平面闭式解」平移分解,适用于任何单目度量放置问题;③ 软-argmax 关节锚点 + 免检测器设计,可替代 detect-crop 前端。</td></tr>
+<tr><td>数据成本</td><td>若要用自己的第一人称数据:直接推理即可(域外表现参考 HOI4D 零样本行);若要适配新相机族,论文自陈射线场「在见过的相机族内泛化最好」,新相机需关注边缘 CT 退化(表 S5)。</td></tr>
+</table>
+
+<div class="callout tip">
+<b>落地建议:</b>把它当「手部轨迹的离线标注器」而非「在线跟踪器」接入;K-free 权重优先(免标定),但记住 §6.4 的发布代码出入——<b>画面边缘的平移精度以附录 D.1 的下限预期</b>,素材构图尽量让手保持在画面内 2/3。鱼眼运动相机素材先去畸变。
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/visual_3.png" loading="lazy" alt="重定向到灵巧手">
+  <div class="caption"><b>图7</b>(论文 Figure S6)<b>从第一人称视频到灵巧手的逐步转换。</b>四个 in-domain 数据集各一段:源 RGB → 恢复的手部网格 → 重定向到 Inspire 灵巧手(手指屈曲从预测 3D 关节读出,而非 MANO 姿态参数)。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/robot_strip.png" loading="lazy" alt="两分钟长程重定向">
+  <div class="caption"><b>图8</b>(论文 Figure S7)<b>两分钟录像的重定向。</b>约为 81 帧训练窗口的 45× 时长,四个采样时刻双手仍被正确跟踪与识别——对应附录 D.2 的 RoPE 长程解码能力。</div>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<p>按三维度分点,每点给证据与建议。标注:📄=论文自陈,✅=源码佐证,💡=本笔记推断。</p>
+
+<h3>14.1 方法层面</h3>
+
+<div class="grid-2">
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 出画手的度量放置无任何评估与约束 💡📄</h4>
+<p><b>问题</b>:OOS 指标全部是腕对齐的;附录 F.1 自陈「手在出画期间的位置依赖回归深度与方位角,无图像证据约束,失败签名是姿态合理但深度漂移的手」。而「手出画后去哪了」恰恰是机器人数据采集最关心的问题。</p>
+<p><b>建议</b>:① 评测侧:构造带 OOS 绝对位置 GT 的协议(如用多视角/动补标注的子集);② 方法侧:OOS 区间的深度不确定性应该被显式建模(输出分布而非点估计),至少给存在性头之外再加一个「放置置信度」。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] K-free 解码的「相机拟合」在发布代码中缺失 ✅</h4>
+<p><b>问题</b>:§6.4 已述——论文说解码用拟合相机,发布代码直接采样原始射线场,拟合只写元数据。按附录 D.1,这意味着发布的 K-free 推理在画面外圈 CT 可能差 3.4–5.4×。</p>
+<p><b>建议</b>:复现/部署时在 <code>_decode_cam_trans_mixed_pnp</code> 的 ray 模式前插入 <code>_fit_pred_K</code> 的等效针孔,用 $(\hat p_j-\hat c)/\hat f$ 替代逐点采样;或等官方训练代码发布后核对真实实现。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 离线结构 → 流式变体 📄</h4>
+<p><b>问题</b>:全片双向注意力使延迟=片段长度。附录 F.1 给出的方向是「蒸馏成因果变体」。</p>
+<p><b>建议</b>:代码库里其实已留好脚手架——<code>memory_encoder.py</code> 的 <code>_MemGRU</code> 跨窗口记忆(<code>alt_mem_tokens</code>,当前配置 =0 关闭)与 <code>temporal_window</code> 时间范围层级。以 K-free 权重为教师做因果学生蒸馏,并量化「多少精度来自未来帧」(作者自己点名的实验)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 固定 caption 的影响从未消融 ✅</h4>
+<p><b>问题</b>:DiT cross-attention 吃的是固定文本「Three geometry renders of two hands on black background...」(<code>precompute_caption.py:26-27</code>)——一句描述<b>渲染任务</b>的提示词,而当前任务是视频编码。这个失配是渲染血统遗留,论文与消融均未提及。</p>
+<p><b>建议</b>:把 caption 换成空串/手部描述做对照;若差异显著,说明 σ=0 编码读出的特征仍受文本条件调制,发布配置的选择可能只是「训练时沿用了遗产」。</p>
+</div>
+</div>
+
+<h3>14.2 数据与评估层面</h3>
+
+<div class="grid-2">
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 基准 GT 与切分不均 📄</h4>
+<p><b>问题</b>:仅 ARCTIC/H2O 被试隔离;HOI4D/H2O 部分伪 GT;H2O 还在训练混合里(附录 F.1/A.2 自陈)。H2O 的 -43% 与 OakInk2 的 -66% 都应按「in-domain 上限」打折看待。</p>
+<p><b>建议</b>:引用本文数字时只用 ARCTIC/HOT3D(原生 MANO GT);后续工作补一个全员 out-of-domain 的基准。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 鱼眼支持缺口 📄✅</h4>
+<p><b>问题</b>:射线场理论上兼容鱼眼(§3.3),但发布 checkpoint 针孔限定、代码硬拒绝鱼眼;训练混合里的鱼眼臂(Re:InterHand)在拟合失败时回退读场。第一人称硬件(Aria、GoPro)大量是鱼眼。</p>
+<p><b>建议</b>:按附录 F.1 的方向补径向方位模型(OpenCV-KB / MEI 的射线参数化已在代码注释中提及),而不是要求用户去畸变——去畸变会裁掉 FOV 边缘,而边缘恰是手部常出现的位置。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[低优先级] 单次运行的随机性 📄</h4>
+<p><b>问题</b>:附录 C.1 自陈每个 H2O/OakInk2 条目来自单次训练运行;附录 D.3 把 block-20/24 的 ±0.17mm 判为运行间噪声——说明 run-to-run 噪声量级约 0.2mm,表 1 里 K-free 与标准的部分差距同量级。</p>
+<p><b>建议</b>:精读时对小差距保持警惕;复现应报多种子均值。</p>
+</div>
+</div>
+
+<h3>14.3 工程实用性层面</h3>
+
+<div class="grid-2">
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 训练不可复现 ✅</h4>
+<p><b>问题</b>:只发布推理;20k 步 × 16 A100 的配方、损失路由、数据预处理全部黑箱。论文 §9.5 表里所有训练侧数字无法验证;社区无法在其数据上继续训练。</p>
+<p><b>建议</b>:关注仓库 TODO(Evaluation code / Training code);短期内的工程定位是「frozen 推理工具」。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[低优先级] 单手相机拟合的失败经验值得形式化 ✅💡</h4>
+<p><b>问题/机会</b>:代码注释实测「单手 PnP 拟合焦距在同片段上散布 28°–108° HFOV」(<code>inference.py:71-76</code>)——手太小太平面,约束不住焦距。这解释了为什么射线场要在全图网格上预测+时间池化。</p>
+<p><b>建议</b>:这一实测应写进论文正文;对其他想「从手反推相机」的工作是直接的反面教材。</p>
+</div>
+</div>
+
+<h3>14.4 优先级总览与「最关键的三点」</h3>
+
+<table>
+<tr><th>优先级</th><th>改进点</th></tr>
+<tr><td>高</td><td>OOS 度量放置无评估无约束;K-free 相机拟合在发布解码中缺失</td></tr>
+<tr><td>中</td><td>流式化(代码已留 GRU 记忆脚手架);固定 caption 失配未消融;基准 GT/切分不均;鱼眼支持</td></tr>
+<tr><td>低</td><td>单运行随机性报告;单手拟合失败经验形式化</td></tr>
+</table>
+
+<div class="callout key">
+<b>个人认为最关键的三点:</b>
+<ol>
+<li><b>OOS 放置问题</b>——它决定这篇论文是「出画手恢复」还是「出画手姿态猜测」。目前的证据只支持后者,而摘要的 46–61% 极易被误读成前者。</li>
+<li><b>发布代码与论文的解码出入</b>——直接影响任何基于发布权重做 K-free 部署的精度预期,是工程使用者最该知道的坑。</li>
+<li><b>流式化</b>——离线定位挡住了最大的应用面(在线交互/实时 retargeting),而脚手架已在代码里。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>总结与演进定位</h2>
+<h3>15.1 总结</h3>
+
+<p>ACE-Ego-Hand 给「视频扩散模型还能怎么用」提供了一个范式级答案:<b>不当渲染器,当编码器</b>。三个具体的技术决策支撑了这个答案:① σ=0 单次前向 + block-15 tap + LoRA 端到端适配——用一半算力把 5B VDM 变成确定性特征提取器,且特征被 3D 监督「重塑」成几何感知;② 48-query 双向交替时空解码器 + 片段级形状先验——结构上保证出画手是「重建」而非「外推」,RoPE 顺带解锁了任意长度单 pass;③ 射线场 + mixed-PnP——把度量放置分解成「网络回归深度 + 2D 锚点闭式解平面位移」,并让梯度穿过求解器。结果是五个基准的全面 SOTA、出画手腕对齐误差 4× 于最强基线的改善、以及 33× 于同族生成式方法的速度。</p>
+
+<p><b>对读者最重要的三条保留:</b>① 出画数字全部是腕对齐的,绝对放置没有证据;② 发布的 K-free 推理代码缺了论文所说的相机拟合解码步骤(§6.4);③ 训练代码未发布,训练侧所有数字只能信论文。</p>
+
+<h3>15.2 演进定位</h3>
+
+<div class="mermaid">
+flowchart LR
+    A["2023-2024<br/>检测-裁剪-回归<br/>HaMeR / WiLoR"] --> B["2024-2025<br/>窗口时序 + SLAM<br/>OmniHands / HaWoR"]
+    B --> C["2026 初<br/>VDM 当渲染器<br/>ViDiHand(12-25 步采样)"]
+    C --> D["2026-08<br/>VDM 当确定性编码器<br/>ACE-Ego-Hand(单次前向)"]
+    D -.-> E["下一步?<br/>流式蒸馏 / OOS 放置约束<br/>全身人体推广"]
+    style D fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style E fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<p>在更大的图景里(对照库内《<a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>》):2024 年视频扩散解决「能不能生成一致多视角」,2025 年解决「条件工程」,2026 年开始出现<b>非生成式复用</b>——DreamHand(本文)证明手部轨迹可行,且代价只是读取方式从「采样」换成「单次前向」。该综述同时指出这条路尚未在<b>全身人体</b>(含衣物、自遮挡)上验证,是可能的轻量级跟进方向。</p>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>16.1 团队</h3>
+
+<table>
+<tr><th>作者</th><th>机构</th><th>备注</th></tr>
+<tr><td><b>Yufei Liu</b></td><td>上海交通大学 · ACE Robotics</td><td>第一作者;arXiv HTML 作者区带「† Project leader. ✉ Corresponding author」脚注</td></tr>
+<tr><td>Xixi Wang</td><td>Nanyang Technological University</td><td>同时是前作 ViDiHand 一作(论文中 "Wang et al. [37]")<span class="uncertain">⚠️【推测】按姓氏与机构重合推断</span></td></tr>
+<tr><td>Hao Li · Ganlong Zhao</td><td>香港中文大学 · ACE Robotics</td><td>—</td></tr>
+<tr><td>Kaitong Cai · Chunxiao Liu · Jianbo Liu · Siyuan Huang</td><td>ACE Robotics</td><td>—</td></tr>
+<tr><td>Chengkai Jin · Xingang Pan</td><td>Nanyang Technological University(兼 ACE Robotics)</td><td>Xingang Pan 为 NTU 助理教授</td></tr>
+<tr><td>Hongsheng Li</td><td>香港中文大学</td><td>通讯教授(MMLab)</td></tr>
+</table>
+
+<p class="note">脚注归属说明:arXiv HTML 版把「† Project leader. ✉ Corresponding author.」渲染在每个 ACE Robotics 机构之后,无法逐作者精确归属;按通常惯例第一作者 Yufei Liu 为 project leader,<span class="uncertain">⚠️【待核实】</span>。</p>
+
+<h3>16.2 资源链接</h3>
+
+<div class="refs">
+<ul>
+  <li>📄 arXiv:<a href="https://arxiv.org/abs/2608.20308" target="_blank">2608.20308</a>(v3,2026-09-01;v1 2026-08-20 题名 DreamHand)· <a href="https://arxiv.org/html/2608.20308v3" target="_blank">HTML 全文</a></li>
+  <li>🏠 项目页:<a href="https://ggxxii.github.io/ace-ego-hand" target="_blank">ggxxii.github.io/ace-ego-hand</a>(含演示视频与真机 replay)</li>
+  <li>💻 代码:<a href="https://github.com/ggxxii/ACE-Ego-Hand" target="_blank">github.com/ggxxii/ACE-Ego-Hand</a>(MIT;<b>仅推理</b>,2026-09-10 发布;训练/评测代码在 TODO)</li>
+  <li>🤗 权重:<a href="https://huggingface.co/acerobotics2025/ACE-Ego-Hand" target="_blank">acerobotics2025/ACE-Ego-Hand</a>(ace_ego_hand_k.pt / ace_ego_hand_kfree.pt)</li>
+  <li>🦴 骨干:Wan2.2-Fun-5B-Control(经 <a href="https://github.com/aigc-apps/VideoX-Fun" target="_blank">VideoX-Fun</a> 分发)</li>
+  <li>📚 库内兄弟笔记:<a href="VideoGen-20260929-视频生成驱动动态人体重建调研.html">视频生成驱动动态人体重建调研</a>(路线 E 唯一代表)· <a href="3D-20260514-VGGT-Omega.html">VGGT-Omega</a>(解码器交替注意力来源)· <a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a>(骨干模型族)</li>
+</ul>
+</div>
+
+<h3>16.3 附录图集(补充材料)</h3>
+
+<div class="figure">
+  <img src="images/2608.20308/visual_0.png" loading="lazy" alt="ARCTIC/HOT3D 扩展定性对比">
+  <div class="caption"><b>图9</b>(论文 Figure S3)<b>ARCTIC/HOT3D 扩展定性对比。</b>列:GT、ACE-Ego-Hand 与六个基线;每块上行为相机空间叠加、下行为 3D 重建。单帧基线在手出画后整只丢失并以不同姿态重新捕获;世界系基线持续输出但轨迹漂移;ACE-Ego-Hand 把手「带过」出画间隙并在重现时对齐回视觉证据。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/visual_1.png" loading="lazy" alt="H2O/OakInk2 与野外视频对比">
+  <div class="caption"><b>图10</b>(论文 Figure S4)<b>H2O、OakInk2 与野外 HoloAssist / Xperience-10M 的扩展对比。</b>后两者无任何标注、未进训练混合,纯展示零调参表现。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.20308/visual_2.png" loading="lazy" alt="无 GT 野外视频结果">
+  <div class="caption"><b>图11</b>(论文 Figure S5)<b>无 GT 野外视频上的定性结果。</b>列:源 RGB、相机空间叠加、第三人称固定视角与头显视角渲染。可检验的性质:双手度量分离、头部转动时尺度一致、出画期间轨迹合理延续。</div>
+</div>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>ACE-Ego-Hand(原 DreamHand)深度调研笔记 · 知识库 media_paper · 生成于 2026-09-30</p>
+  <p>内容来源:arXiv:2608.20308v3 全文(HTML)+ ggxxii/ACE-Ego-Hand 推理代码(commit 9757868, 2026-09-10)· 所有数字均可回原文表格核对</p>
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>

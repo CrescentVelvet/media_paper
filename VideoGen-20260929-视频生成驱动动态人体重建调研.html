@@ -513,7 +513,7 @@ flowchart LR
 <h2><span class="num">7</span>路线 E：VDM 当确定性几何编码器（非生成式复用）</h2>
 
 <div class="card">
-<h4>DreamHand: Repurposing Video Diffusion Models for Occlusion-Robust Egocentric 3D Hand Motion Recovery（2026-08）</h4>
+<h4>DreamHand: Repurposing Video Diffusion Models for Occlusion-Robust Egocentric 3D Hand Motion Recovery（2026-08；v3 更名 ACE-Ego-Hand，精读见 <a href="3D-20260820-ACE-Ego-Hand.html">库内笔记</a>）</h4>
 <p><b>arXiv 2608.20308</b>｜SJTU / NTU / CUHK / ACE Robotics｜代码 <code>github.com/ggxxii/dreamhand</code></p>
 <ul>
 <li><b>问题</b>：第一人称视频里手被物体遮挡、甚至短暂离开画面（out-of-sight）时，单帧回归器无从下手；滑窗模型超出窗口即断；而近期的生成式做法要跑<b>多步随机采样先渲染出 RGB</b>，既有延迟又把生成伪影带进姿态估计。</li>
@@ -588,7 +588,7 @@ flowchart LR
   <td>StudioRecon</td><td>2026-07</td><td>4 路低重叠、未标定同步视频</td><td>背景高斯 + 解耦的人体可变形高斯</td><td>背景用 camera-controlled 视频扩散合成数百视角；人体用跨视角身份关联 + 关键点三角化</td><td>四个真实世界数据集</td><td>—</td><td>—</td><td>—</td><td>四个真实数据集上新视角合成 SOTA</td><td>—</td>
 </tr>
 <tr>
-  <td>DreamHand</td><td>2026-08</td><td>第一人称视频片段（可无内参配置）</td><td>双手 3D 轨迹（度量）</td><td>VDM clean-latent 单次确定性前向 + 双向时空解码</td><td>ARCTIC / HOT3D / HOI4D 等五个基准</td><td>—</td><td><span class="uncertain">⚠️ 离线片段级；论文称比生成式路线快 33×</span></td><td>—</td><td>ARCTIC MPJPE-p <b>-30%</b>；HOT3D <b>-40%</b>；含出画手 <b>-46~61%</b></td><td>✅ github.com/ggxxii/dreamhand</td>
+  <td>DreamHand</td><td>2026-08</td><td>第一人称视频片段（可无内参配置）</td><td>双手 3D 轨迹（度量）</td><td>VDM clean-latent 单次确定性前向 + 双向时空解码</td><td>ARCTIC / HOT3D / HOI4D 等五个基准</td><td>—</td><td><span class="uncertain">⚠️ 离线片段级；论文称比生成式路线快 33×</span></td><td>—</td><td>ARCTIC MPJPE-p <b>-30%</b>；HOT3D <b>-40%</b>；含出画手 <b>-46~61%</b></td><td>✅ github.com/ggxxii/ACE-Ego-Hand</td>
 </tr>
 <tr>
   <td>AvatarDynamizer</td><td>2026-08</td><td>静态 3D avatar（单图/文本/扫描/多视角均可）+ 目标动作</td><td>动态纹理 → 3D Gaussians</td><td>texel 空间条件图生图，复用预训练视频扩散先验</td><td>DynaHuman（58 actors × 100 台 4K 相机，27k 帧/序列）</td><td>—</td><td>—</td><td><span class="uncertain">⚠️ 论文称扩散先验带来较高计算成本</span></td><td>视觉保真度优于同类通用可动画方法（尤其动态数据有限时）</td><td>项目页（代码情况未核实）</td>
@@ -753,7 +753,7 @@ flowchart TD
 <h3>路线 B / E / F</h3>
 <ul>
 <li><b>Latent-to-4D（Beyond Pixels）</b> — <a href="https://arxiv.org/abs/2608.10744" target="_blank">arXiv 2608.10744</a> · <a href="https://hayd-zju.github.io/Beyond-Pixels/" target="_blank">项目页</a> · 库内笔记 <a href="3D-20260811-LatentTo4D.html">3D-20260811-LatentTo4D</a></li>
-<li><b>DreamHand</b> — <a href="https://arxiv.org/abs/2608.20308" target="_blank">arXiv 2608.20308</a> · <a href="https://github.com/ggxxii/dreamhand" target="_blank">GitHub</a></li>
+<li><b>DreamHand（v3 更名 ACE-Ego-Hand）</b> — <a href="https://arxiv.org/abs/2608.20308" target="_blank">arXiv 2608.20308</a> · <a href="https://github.com/ggxxii/ACE-Ego-Hand" target="_blank">GitHub</a> · 库内笔记 <a href="3D-20260820-ACE-Ego-Hand.html">3D-20260820-ACE-Ego-Hand</a></li>
 <li><b>AvatarDynamizer</b> — <a href="https://arxiv.org/abs/2608.19900" target="_blank">arXiv 2608.19900</a> · <a href="https://vcai.mpi-inf.mpg.de/projects/AvatarDynamizer" target="_blank">项目页</a></li>
 </ul>
 
