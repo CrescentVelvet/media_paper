@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocusGS:给高斯 Token 装上显式三维锚点 — 空间锚定的前馈 3DGS</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2608.12825v1 · 2026-08-13 · Query-based 前馈 3DGS · TokenGS 直系改进</span>
+    <h1>LocusGS:给高斯 Token 装上「显式三维锚点」,把注意力魔改成空间感知</h1>
+    <div class="subtitle">LocusGS: Spatially Grounded Tokens for Feed-Forward 3D Gaussian Splatting</div>
+    <div class="authors">Wenyu Li · Sidun Liu · Tongrui Hu · Peng Qiao · Yong Dou</div>
+    <div class="org">National University of Defense Technology(国防科技大学)&nbsp;|&nbsp;cs.CV · abs 页 comments 为空,按规范不加会议 badge</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.12825" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2608.12825v1" target="_blank">🌐 arXiv HTML 全文(v1)</a>
+      <a href="https://arxiv.org/pdf/2608.12825" target="_blank">📥 PDF</a>
+      <a href="https://leo-frank.github.io/LocusGS_viewer" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/leo-frank/LocusGS" target="_blank">💻 GitHub(完整训练/评测代码)</a>
+      <a href="https://drive.google.com/drive/folders/1_MontNvxTtXkwgluIhUUvOxd-UTyRlip?usp=drive_link" target="_blank">📦 预训练权重</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:Anchor State(显式三维锚点)</a></li>
+    <li><a href="#s5">模块二:Anchor-Guided Cross-Attention(几何偏置)</a></li>
+    <li><a href="#s6">模块三:Anchor-Aware Self-Attention</a></li>
+    <li><a href="#s7">模块四:Anchor-Centered 高斯解码</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码验证)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验与机制分析</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>query-based 前馈 3DGS(以 NVIDIA TokenGS 为代表)用 N 个纯 latent 的可学习 token 聚合多视图证据、每个 token 解码 64 个高斯——但 latent token <b>不知道自己在 3D 里的位置和辖区</b>,同一 token 解码出的高斯常散布在相距很远的场景区域。LocusGS 的答案是给每个 token 增加一个<b>显式三维锚点状态(anchor state)</b>:一个 3D 中心 $\boldsymbol{\mu}$ + 一个支撑半径 $r$,在全部 12 层 decoder 中逐层 refine,并贯穿三处机制——① cross-attention 加 <b>anchor-to-ray 几何偏置</b>(锚点到像素 Plücker 光线的距离 → 高斯型 logit bias);② self-attention 注入锚点位置编码;③ 高斯中心改为 <b>anchor-centered 解码</b>($\boldsymbol{\mu}^G=\boldsymbol{\mu}+r\boldsymbol{\delta}$)。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把 Gaussian token 从「纯隐向量」升级为「隐向量 + 显式空间状态 $(\boldsymbol{\mu},r)$」,用几乎可忽略的代价(+8.8% 参数、+19.4% 前向延迟)换同预算下 DL3DV 4 视角 <b>+1.36 dB</b>、token 级高斯散布缩小 <b>约 26×</b>,且 anchor 自发形成覆盖场景几何的「空间脚手架」。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">+1.36 dB</div><div class="l">DL3DV 4-view PSNR 24.80 vs TokenGS 23.44(同 262K 高斯预算,Table 1;2-view +1.32,6-view +1.62)</div></div>
+  <div class="stat"><div class="v">≈26×</div><div class="l">RE10K token 级高斯散布 mean 5.1164 → 0.1978(25.87×,Table 3;DL3DV 为 13.58×)</div></div>
+  <div class="stat"><div class="v">+0.79 dB</div><div class="l">RE10K 2-view PSNR 28.89 vs GS-LRM 28.10(Table 2);对 TokenGS 同预算 +0.48</div></div>
+  <div class="stat"><div class="v">-42.8%</div><div class="l">DL3DV 4-view 高斯数 262K vs DepthSplat 458K,PSNR 仍 +1.68(24.80 vs 23.12)</div></div>
+  <div class="stat"><div class="v">+8.8% / +19.4%</div><div class="l">代价:参数 222.0M→241.5M,纯前向 340.99→407.28 ms(A100 40GB,Table 8)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.12825/global_gs_compare.png" alt="LocusGS vs TokenGS 高斯组织对比" loading="lazy">
+  <div class="caption"><b>图1</b>(对应论文 Figure 1)<b>空间锚定同时改善全局高斯组织与 token 级局部性。</b>橙色点为同一代表性 token 解码出的全部 64 个高斯:相同输入与预算下,TokenGS 的高斯云弥散、单 token 高斯散布在宽阔区域;LocusGS 的高斯更贴合场景几何,学习到的 anchor 形成组织局部高斯生成的粗糙空间脚手架(coarse spatial scaffold)。</div>
+</div>
+
+<h3>三个宣称的贡献(论文 §1)</h3>
+<ol>
+  <li><b>诊断</b>:指出现有 query-based 前馈 3DGS 的 Gaussian query 缺乏空间特化(spatial specialization)——同一 token 解码的高斯散布于远处区域,并将其归因于 query 的纯 latent 表示缺少显式空间状态。</li>
+  <li><b>方法</b>:提出 LocusGS,为每个 Gaussian token 附加显式 3D anchor state(中心 + 支撑半径),跨 decoder 层渐进 refine,并贯穿 token 交互(self-attn)、多视图特征聚合(cross-attn)与高斯生成(anchor-centered decoding)三个环节。</li>
+  <li><b>实验</b>:DL3DV(2/4/6 视角)与 RealEstate10K(2 视角)上,在相同高斯预算下一致超越 query-based 基线 TokenGS;分析显示 anchor 形成连贯空间布局、token 级高斯分布更紧凑。</li>
+</ol>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>前馈 3DGS 的三代范式(论文 Figure 2)</h3>
+<p>论文把前馈 3DGS 分为三种范式,理解这个划分是理解 LocusGS 定位的关键:</p>
+<div class="grid-3">
+  <div class="card"><h4>(a) 稠密视图级预测</h4><p>pixelSplat / MVSplat / DepthSplat 一脉:每像素(或每 patch)沿光线回归深度得到一个高斯。<b>高斯数与输入分辨率×视图数绑定</b>(32 张 512×512 → 超 800 万图元),视图越多冗余越大。</p></div>
+  <div class="card"><h4>(b) 固定预算 query 生成</h4><p>GS-LRM / TokenGS 一脉:N 个可学习 query 经 transformer decoder 聚合多视图特征,每 query 解码一组高斯。<b>高斯预算与输入解耦</b>——这是优点,但 query 的空间角色变成纯隐式的。</p></div>
+  <div class="card"><h4>(c) 空间锚定 query(本文)</h4><p>在 (b) 的每个 query 上挂显式 3D anchor,让「这个 token 负责场景里哪块地方」成为<b>可 refine 的显式状态</b>而非隐式涌现的属性。</p></div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.12825/concept.png" alt="三种前馈3DGS范式概念对比" loading="lazy">
+  <div class="caption"><b>图2</b>(对应论文 Figure 2)<b>三种前馈 3DGS 范式的概念对比。</b>(a) 稠密视图级:per-view head 产出视图相关 splats;(b) 固定预算 query:可学习 query 解码与分辨率/视图数无关的高斯集合;(c) LocusGS:query 进一步带显式空间锚点,支持 anchor-aware 解码与更结构化的高斯生成。</div>
+</div>
+
+<h3>观察到的失败模式(动机的事实基础)</h3>
+<div class="grid-2">
+  <div class="card"><h4>失败模式:token 级空间弥散</h4><p>同一 query 解码出的高斯"often scatter across distant scene regions"(§1),全局看高斯云弥散、浮点多(图1 左)。定量证据(Table 3):RE10K 上 TokenGS 的 token 级散布 $C_{\mathrm{centroid}}$ 均值 5.1164,而 LocusGS 仅 0.1978。</p></div>
+  <div class="card"><h4>作者的归因:latent-only 的空间盲</h4><p>§3.2.1:"Such a representation does not explicitly specify where the query operates in 3D space or how large a region it should cover." latent query 既不指明作用位置、也不指明覆盖范围 → 它聚合的图像证据与解码的高斯都不受局部性约束。</p></div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>让 token「空间特化」的最小充分条件,是给它一个<b>显式、可微、可逐层修正的空间状态</b>。一旦 $(\boldsymbol{\mu},r)$ 成为状态量,它就能反过来约束注意力的证据来源(cross-attn 偏置)、约束 token 间交互的位置感知(self-attn PE)、并约束生成物的空间范围(半径缩放解码)——三处用的是<b>同一个</b>状态,这是设计的一致性所在。
+</div>
+
+<div class="callout warn">
+<b>思想谱系(论文 §3.2.1 自认):</b>概念上近亲是 <b>DAB-DETR</b>(给 object query 挂动态 refine 的 2D anchor box)与 <b>Scaffold-GS</b>(围绕稀疏 3D anchor 组织局部高斯);区别在于 LocusGS 的 anchor 是 <b>query 的状态</b>,在前馈框架内由多视图特征逐层 refine,而非每场景优化出来的固定锚点。这个「DETR query 空间化」的迁移在 2D 检测里已被验证有效,本文相当于回答「同一招在 3DGS token 上怎么落」。
+</div>
+</section>
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入 / 输出定义</h3>
+<ul>
+  <li><b>输入</b>:$V$ 张<b>带位姿</b>的多视图图像 $\mathcal{I}=\{I_v\}_{v=1}^{V}$ 及相机内外参 $\mathcal{P}$(posed inputs,位姿是硬依赖——几何偏置需要由内外参构造像素光线)。RE10K:2 视图、$256\times256$;DL3DV:4 视图训练,2/4/6 视角评测,$448\times256$(finetune 后)。</li>
+  <li><b>输出</b>:全场景高斯集 $\mathcal{G}=\bigcup_{i=1}^{N}\mathcal{G}_i$,$\mathcal{G}_i=\{(\boldsymbol{\mu}_{i,k}^G,\mathbf{s}_{i,k},\mathbf{R}_{i,k},\mathbf{c}_{i,k}^G,\alpha_{i,k})\}_{k=1}^{K}$。$N$=1024(base)/4096(finetune),$K$=64,总高斯 65,536 / 262,144,与输入分辨率、视图数完全解耦。</li>
+</ul>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值(源码核实)</th></tr>
+<tr><td>$V$</td><td>输入视图数</td><td>2(RE10K)/ 4(DL3DV 训练)</td></tr>
+<tr><td>$N$</td><td>Gaussian token(query)数</td><td>1024 base / 4096 finetune(<code>options.py:56</code>)</td></tr>
+<tr><td>$K$</td><td>每 token 解码高斯数</td><td>64(<code>options.py:59</code>)</td></tr>
+<tr><td>$d$</td><td>token 特征维 / 每头维</td><td>1024 / 64(16 头,<code>options.py:48-49</code>)</td></tr>
+<tr><td>$\mathbf{q}_i^l$</td><td>第 $l$ 层第 $i$ 个 token 特征</td><td>$[B,N,1024]$,共 $L$=12 层(<code>options.py:47</code>)</td></tr>
+<tr><td>$\mathbf{a}_i^l=(\boldsymbol{\mu}_i^l,r_i^l)$</td><td><b>anchor state</b>:中心 + 支撑半径</td><td>$\boldsymbol{\mu}\in\mathbb{R}^3$,$r\in\mathbb{R}_+$</td></tr>
+<tr><td>$\rho_i^l$</td><td>半径的原始(无约束)参数</td><td>$r=\mathrm{softplus}(\rho)$,下界 $10^{-3}$(<code>options.py:76</code>)</td></tr>
+<tr><td>$\boldsymbol{\ell}_j=(\mathbf{m}_j,\bar{\mathbf{d}}_j)$</td><td>patch 级 Plücker 光线(矩,方向)</td><td>像素光线图经 patch 大小 avgpool 得到,$[B,VH_pW_p,6]$</td></tr>
+<tr><td>$D(\boldsymbol{\mu},\boldsymbol{\ell})$</td><td>点到光线距离</td><td>$\|\boldsymbol{\mu}\times\bar{\mathbf{d}}-\bar{\mathbf{m}}\|_2$(式 24)</td></tr>
+<tr><td>$\sigma_0$</td><td>几何偏置的固定带宽基数</td><td>0.1(论文 §3.2.4;代码 <code>decoder_blocks.py:415</code> 固定 buffer,不可学)</td></tr>
+<tr><td>$\gamma$</td><td>几何偏置的可学习缩放</td><td>$\gamma=\mathrm{softplus}(\tilde\gamma)$,$\tilde\gamma$ 初值 $-2.25$ → $\gamma_0\approx0.100$(<code>decoder_blocks.py:414,448</code>)</td></tr>
+<tr><td>$\boldsymbol{\delta}_{i,k}$</td><td>第 $k$ 个高斯的局部偏移</td><td>由 token 特征线性头预测,见 §7</td></tr>
+<tr><td>$\mathcal{S}$</td><td>受渲染监督的 decoder 层集合</td><td>默认 $\{6,12\}$(<code>options.py:63</code>)</td></tr>
+</table>
+
+<h3>总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: V 张带位姿图像 + 相机内外参"] --> PLU["Plücker 光线图<br/>逐像素 (m,d),patch 级 avgpool"]
+    INPUT --> PATCH["图像 patch embedding<br/>patch=8(enc_embed_dim=1024)"]
+    PLU --> ADD["光线 embedding 注入图像 patch 特征"]
+    PATCH --> ADD
+    ADD --> ENC["Image Encoder<br/>3 层 ViT block, 16 heads"]
+    ENC --> KV["多视图拼接 K/V<br/>[B, V·H_p·W_p, 1024]"]
+
+    TOK["N 个可学习 Gaussian token<br/>+ N 个可学习 anchor (μ⁰, ρ⁰)"] --> DEC
+    KV --> DEC
+    subgraph DEC["12 层 Anchor Decoder(每层四步)"]
+        direction TB
+        S1["① Anchor-guided Cross-Attn<br/>logit += γ·b(点到光线距离)"] --> S2["② Anchor-aware Self-Attn<br/>token += MLP(PE(μ))"]
+        S2 --> S3["③ FFN"]
+        S3 --> S4["④ Anchor Refine<br/>Δμ, Δρ 残差更新"]
+        S4 -.->|"第 6 / 12 层"| REND["中间层渲染监督"]
+    end
+    DEC --> HEAD["Gaussian Head: Linear 1024→64×14<br/>(共享 ClipActivationHead)"]
+    HEAD --> OUT["N×K 个高斯: μ+r·δ, s, R, c, α<br/>总计 65K / 262K"]
+    OUT --> RASTER["gsplat 光栅化 → 新视角渲染"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style TOK fill:#ede9fe,stroke:#8b5cf6,color:#3b2d6b
+    style OUT fill:#d1fae5,stroke:#10b981,color:#065f46
+    style REND fill:#fef3c7,stroke:#f59e0b,color:#92400e
+</div>
+
+<div class="figure">
+  <img src="images/2608.12825/method_new.png" alt="从隐式token到显式anchor token" loading="lazy">
+  <div class="caption"><b>图3</b>(对应论文 Figure 3)<b>从隐式 Gaussian token 到显式 anchor token。</b>左:标准 query-based 方法,self-/cross-attention 只由特征驱动;右:LocusGS 给每个 decoder token 挂可学习 3D anchor state $(\boldsymbol{\mu},r)$,为 self-attention 提供空间线索、经 anchor-aware cross-attention 引导跨视图聚合,跨层 refine 后用于 anchor-centered 高斯预测。<span class="uncertain">⚠️【待核实】 论文此图把「Spatial-guided Token Interaction」画成带几何连线的形式,易误读为 self-attention 也有几何偏置;源码证实 self-attention 仅注入 anchor 位置编码、无任何几何项,见 §6 与 §10 差异清单。</span></div>
+</div>
+
+<div class="callout tip">
+<b>为什么这个设计「轻」:</b>anchor state 每 token 只多 4 个标量($\boldsymbol{\mu}$ 三维 + $\rho$ 一维),refine 头是两个 1024→1024→3 / 1024→1024→1 的小 MLP(<code>locusgs.py:151-153</code>),几何偏置是无参数的解析计算——241.5M 总参数里 anchor 相关增量主要来自 refine 头与 PE MLP,这解释了 +8.8% 参数的主要来源。
+</div>
+</section>
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:Anchor State —— 显式三维锚点到底是什么</h2>
+
+<p>这是全文回答「<b>显式三维锚点是什么</b>」的核心节:它不是检测器框、不是点云、不是体素,而是<b>挂在每个 Gaussian token 上的一组可学习、可微、逐层修正的 3D 状态量</b> $\mathbf{a}_i^l=(\boldsymbol{\mu}_i^l, r_i^l)$——中心 $\boldsymbol{\mu}\in\mathbb{R}^3$ 声明「这个 token 负责的位置」,半径 $r\in\mathbb{R}_+$ 声明「它的辖区有多大」。</p>
+
+<h3>① 网络结构表</h3>
+<table>
+<tr><th>张量</th><th>形状</th><th>来源 / 变换</th></tr>
+<tr><td>anchor 中心原始参数 $\boldsymbol{\mu}^{0,\mathrm{raw}}$</td><td>$[N,3]$</td><td>可学习参数,初始化 $\mathcal{N}(0,1^2)$ 且 z 向 $+1.0$ 偏置(<code>locusgs.py:136-141</code>),跨场景共享</td></tr>
+<tr><td>激活后中心 $\boldsymbol{\mu}$</td><td>$[B,N,3]$</td><td>$\boldsymbol{\mu}=s_{\mathrm{scene}}\cdot\tanh(\boldsymbol{\mu}^{\mathrm{raw}})$,$s_{\mathrm{scene}}=1$(<code>locusgs.py:252</code>)→ 中心被 tanh 约束在归一化场景空间 $(-1,1)^3$</td></tr>
+<tr><td>半径原始参数 $\rho^0$</td><td>$[N,1]$</td><td>可学习,初值 $\mathrm{softplus}^{-1}(\max(r_{\mathrm{init}},r_{\min}))$,$r_{\mathrm{init}}=1.0$(<code>locusgs.py:143-145</code>, <code>options.py:75</code>)</td></tr>
+<tr><td>激活半径 $r$</td><td>$[B,N,1]$</td><td>$r=\mathrm{softplus}(\rho)$ 且 clamp 下界 $r_{\min}=10^{-3}$(<code>locusgs.py:261</code>)</td></tr>
+</table>
+
+<h3>② 数学形式化</h3>
+<div class="equation">
+$$r_i^l=\operatorname{softplus}(\rho_i^l)+\epsilon,\qquad \boldsymbol{\mu}_i^l=\underbrace{\boldsymbol{\mu}_i^{l-1}+\Delta\boldsymbol{\mu}_i^{l-1}}_{\text{中心残差}},\qquad \rho_i^l=\underbrace{\rho_i^{l-1}+\Delta\rho_i^{l-1}}_{\text{半径残差(在 raw 空间累加)}}$$
+<span class="tag">(式 1/6/7)</span>
+</div>
+<p>残差由更新后的 token 特征经轻量预测头产出:$\Delta\boldsymbol{\mu}_i^l=f_\mu(\mathbf{q}_i^{l+1})$,$\Delta\rho_i^l=f_\rho(\mathbf{q}_i^{l+1})$。源码里 $f_\mu$ 实为 <code>pos_act(xyz_embed(q))</code>(<code>locusgs.py:357</code>),$f_\rho$ 为 <code>Mlp(1024→1024→1)</code>(<code>locusgs.py:153,360</code>)——论文没写的是:中心更新同样在 <b>raw 空间累加、再经 tanh 激活</b>,因此 anchor 永远不能逃出归一化场景包围盒,这是隐含的几何正则。</p>
+
+<h3>③ 前向流程</h3>
+<ol>
+  <li>初始化:$\boldsymbol{\mu}^0$ 在归一化 3D 场景空间随机初始化($\tanh(\mathcal{N}(0,1)+ẑ)$,近似均匀铺盒内),$r^0\approx1.0$;两者都是<b>与场景无关的可学习参数</b>,推理时从同一初值出发、完全由当前场景的特征驱动 refine。</li>
+  <li>每层 decoder 更新 token 后,立即用新 token 预测 $(\Delta\boldsymbol{\mu},\Delta\rho)$ 并累加——<b>12 层共 refine 12 次</b>,anchor 从随机散布逐步收敛到场景几何上(图1/图5 的脚手架效果)。</li>
+  <li>refine 无显式几何监督(没有 anchor 的 GT),完全靠渲染损失 + visibility 正则反传(见 §8),梯度路径:渲染 → 高斯中心 $\boldsymbol{\mu}+r\boldsymbol{\delta}$ → anchor。</li>
+</ol>
+
+<h3>④ 模块内数据流</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph L0["初始化(场景无关)"]
+        A0["μ⁰ ~ tanh(N(0,1)+ẑ)<br/>r⁰ ≈ 1.0"]
+    end
+    subgraph L1["第 l 层 refine 循环(×12)"]
+        Q["更新后 token q_i^{l+1}"] --> FM["f_μ: MLP+pos_act<br/>(expm1 逆对数)"] --> DU["Δμ_i^l"]
+        Q --> FR["f_ρ: MLP(1024→1024→1)"] --> DR["Δρ_i^l"]
+        DU --> ADD1["μ_raw += Δμ<br/>μ = tanh(μ_raw)"]
+        DR --> ADD2["ρ += Δρ<br/>r = softplus(ρ)"]
+    end
+    A0 --> L1
+    ADD1 --> USE["消费方:<br/>Cross-Attn 偏置 / Self-Attn PE / 高斯解码"]
+    ADD2 --> USE
+    style A0 fill:#ede9fe,stroke:#8b5cf6,color:#3b2d6b
+    style USE fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+
+<h3>⑤ 监督信号</h3>
+<p>无独立 anchor 回归损失(无 GT)。两条间接监督:① <b>多层渲染损失</b>经 anchor-centered 解码反传到 $(\boldsymbol{\mu},r)$;② <b>anchor visibility 正则</b>(权重 $\lambda_A=0.1$)把 anchor 中心投影到监督视图、惩罚落在所有视图视锥外的 anchor——这是 TokenGS 原有高斯可见性正则的扩展,论文明确「同时施加于解码高斯中心和 anchor 中心」。</p>
+
+<div class="callout warn">
+<b>设计细节值得注意的三点(源码复核):</b>① 半径初始值 $r_{\mathrm{init}}=1.0$ 是相对归一化场景对角线(~$\sqrt{12}$)而言相当大的支撑,说明初始假设是「每个 token 先对全场景弱负责,再收缩」;② 每层独立 refine 头(<b>不共享</b>,12 层各一对 $f_\mu,f_\rho$);③ <code>activation_head</code> 的全部参数被标记 <code>_no_weight_decay</code>(<code>activations.py:116-117</code>),refine 头不在其列、正常衰减。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:Anchor-Guided Cross-Attention —— 「魔改注意力」的主战场</h2>
+
+<p>这是全文回答「<b>如何魔改高斯注意力</b>」的第一处、也是消融中贡献最大的一处:给 token→图像的 cross-attention 的 logits 加一项<b>解析几何偏置</b>——锚点到每个图像 patch 对应的 Plücker 光线的 3D 距离,经半径自适应带宽变成高斯型惩罚,<b>加在 softmax 之前</b>(不是 mask、不是门控,是 additive logit bias)。</p>
+
+<h3>① 网络结构表(数据流与张量形状)</h3>
+<table>
+<tr><th>步骤</th><th>输入 → 输出</th><th>说明</th></tr>
+<tr><td>像素光线构造</td><td>内外参 → $[B,V,6,H,W]$</td><td>Plücker $\boldsymbol{\ell}=(\mathbf{m},\mathbf{d})$,$\mathbf{m}=\mathbf{o}\times\mathbf{d}$,$\mathbf{o}$ 为相机中心</td></tr>
+<tr><td>patch 级池化</td><td>$[B,V,6,H,W]$ → $[B,VH_pW_p,6]$</td><td>与图像 patch(=8)同 kernel/stride 的 avgpool(论文式 21;<code>locusgs.py:53-64</code>)</td></tr>
+<tr><td>光线归一化</td><td>$(\mathbf{m},\mathbf{d})$ → $(\bar{\mathbf{m}},\bar{\mathbf{d}})$</td><td>同除 $\|\mathbf{d}\|_2$(<code>geometry.py:25-27</code>)</td></tr>
+<tr><td>距离计算</td><td>$\boldsymbol{\mu}$ $[B,N,3]$ × $\boldsymbol{\ell}$ $[B,M,6]$ → $D$ $[B,N,M]$</td><td>$M=VH_pW_p$ 为图像 token 数</td></tr>
+<tr><td>偏置合成</td><td>$D,r$ → $b$ $[B,N,M]$</td><td>高斯型,clamp 到 $[-20,0]$(<code>geometry.py:44</code>)</td></tr>
+<tr><td>注入</td><td>content logits $[B,H_h,N,M]$ + $\gamma b$ $[B,1,N,M]$</td><td>跨 16 头广播(<code>decoder_blocks.py:539</code>),进 SDPA</td></tr>
+</table>
+
+<h3>② 数学形式化</h3>
+<div class="equation">
+$$D(\boldsymbol{\mu}_i^l,\boldsymbol{\ell}_j)=\big\|\boldsymbol{\mu}_i^l\times\bar{\mathbf{d}}_j-\bar{\mathbf{m}}_j\big\|_2$$
+<span class="tag">(式 24,点到光线距离)</span>
+</div>
+<div class="equation">
+$$b_{ij}^{\,l}=-\frac{1}{2}\Big(\frac{D(\boldsymbol{\mu}_i^l,\boldsymbol{\ell}_j)}{\sigma_0\, r_i^l}\Big)^{2},\qquad \sigma_i^l=\sigma_0\,r_i^l\ (\text{半径自适应带宽}),\qquad \sigma_0=0.1$$
+<span class="tag">(式 3/17,几何偏置)</span>
+</div>
+<div class="equation">
+$$\alpha_{ij}^{\,l}=\operatorname{softmax}_{j}\Big(\frac{(\bar{\mathbf{q}}_i^{\,l})^{\top}\mathbf{k}_j}{\sqrt{d}}+\gamma\, b_{ij}^{\,l}\Big),\qquad \gamma=\operatorname{softplus}(\tilde\gamma)\geq 0$$
+<span class="tag">(式 4,注入方式)</span>
+</div>
+
+<h3>③ 机制解释(为什么这样设计)</h3>
+<div class="grid-2">
+  <div class="card"><h4>为什么是「点到光线距离」</h4><p>patch 图像特征的证据沿<b>整条射线</b>分布,深度未知;把 anchor 投到像素上会丢掉「沿 ray 的容忍度」。点到直线距离天然与深度无关:anchor 只要在这条光线附近(任意深度),该 patch 就是相关证据——这是比 2D 投影匹配更正确的 3D 亲和度。</p></div>
+  <div class="card"><h4>为什么带宽乘半径</h4><p>$\sigma=\sigma_0 r$:半径大(辖区大、或还没收敛)的 token 获得平缓的惩罚,保留广域证据;半径小(已聚焦)的 token 惩罚尖锐,只看紧邻光线。<b>带宽随 refine 自适应收紧</b>,相当于 coarse-to-fine 的证据收拢schedule——而且零额外参数。</p></div>
+  <div class="card"><h4>为什么 $\gamma$ 可学习且 softplus</h4><p>内容项与几何项量级不可比,直接相加会让几何项淹没或被淹没;$\gamma\geq0$ 让网络逐层自学校准几何强度。源码初值 $\tilde\gamma=-2.25$ → $\gamma_0\approx0.100$(<code>decoder_blocks.py:414</code>),即<b>训练初期几何只起轻微引导</b>,靠学习决定最终强度。</p></div>
+  <div class="card"><h4>为什么是加性 bias 而非 hard mask</h4><p>保持证据聚合软可导,避免早期 anchor 不准时硬截断造成梯度断流;clamp 到 $[-20,0]$ 是数值保护(bf16 下 softmax 输入不能过负)。代码还预留了<b>稀疏采样模式</b>($k>0$ 时把 bias 当 proposal 分布做 multinomial/topk 光线采样,<code>decoder_blocks.py:544-557</code>),默认关闭($k=0$,<code>options.py:64</code>)。</p></div>
+</div>
+
+<h3>④ 模块内数据流</h3>
+<div class="mermaid">
+flowchart TD
+    A["anchor 中心 μ_i^l [B,N,3]<br/>半径 r_i^l [B,N,1]"] --> SIGMA["σ_i^l = σ₀ · r_i^l<br/>(σ₀=0.1, σ² 下界 1e-3)"]
+    RAY["patch 级 Plücker 光线<br/>(m̄,d̄) [B,M,6]"] --> DIST["D = || μ × d̄ − m̄ ||₂<br/>[B,N,M]"]
+    SIGMA --> BIAS["b = −D²/(2σ²)<br/>clamp [-20, 0]"]
+    DIST --> BIAS
+    QC["token 特征 → q̄ [B,16,N,64]"] --> CL["content logits<br/>q̄kᵀ/√d"]
+    BIAS --> G["×γ (softplus, 可学习)<br/>[B,1,N,M] 跨头广播"]
+    CL --> SUM["logits = content + γ·b"]
+    G --> SUM
+    SUM --> SM["softmax → α"] --> AGG["Σαv → 更新 token"]
+    style BIAS fill:#fef3c7,stroke:#f59e0b,color:#92400e
+    style AGG fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+
+<h3>⑤ 监督信号</h3>
+<p>偏置本身无参数($\sigma_0$ 固定、几何项解析),唯一可学习量是逐层的 $\gamma$;监督完全来自渲染损失反传。该模块在消融中是<b>第二大贡献源</b>:去掉(content-only cross-attn)DL3DV 4-view PSNR −1.533;退化为不乘半径的 center-only 带宽 −0.514(§12,Table 4)。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:Anchor-Aware Self-Attention —— 只加位置编码,不加几何偏置</h2>
+
+<p>「魔改」的第二处轻得多:token 间 self-attention <b>不加任何几何 bias</b>,只把 anchor 中心的位置编码加进 token 特征,让 token 交互「知道自己和谁在哪」。</p>
+
+<h3>①② 结构与数学</h3>
+<div class="equation">
+$$\mathbf{p}_i^l=\mathrm{MLP}\big(\mathrm{PE}(\boldsymbol{\mu}_i^l)\big),\qquad \tilde{\mathbf{q}}_i^{\,l}=\mathbf{q}_i^{\,l}+\mathbf{p}_i^{\,l}$$
+<span class="tag">(式 2)</span>
+</div>
+<p>源码实现(<code>decoder_blocks.py:966-982, 372-373</code>):$\mathrm{PE}$ 是正弦位置编码——先把 $\boldsymbol{\mu}\in(-1,1)^3$ 线性映射到 $[0,2\pi]$,取 128 维正弦特征(temperature=10000),再经 MLP 升到 1024 维,<b>逐层直接加到 token 上</b>后过标准 self-attention(qk-norm,16 头)。</p>
+
+<h3>③ 前向流程与机制</h3>
+<ol>
+  <li>每层用<b>当前层</b> refine 后的 $\boldsymbol{\mu}^l$ 重新计算 PE 再注入——token 的位置感知随 anchor 收敛同步更新;</li>
+  <li>self-attention logits 仍为纯内容相似度,位置信息通过特征通道间接影响注意力(而非显式几何核);</li>
+  <li>消融证据:去掉该 PE(content-only self-attention)仅 −0.113 dB(Table 4)——<b>三处魔改中贡献最小</b>,但成本也最小;图10 可视化显示 query anchor 只与少数空间相关的 anchor 强交互,说明 PE 足以让交互稀疏化。</li>
+</ol>
+
+<h3>④ 数据流</h3>
+<div class="mermaid">
+flowchart LR
+    MU["μ_i^l (当前层 anchor 中心)"] --> PE["sinusoidal PE<br/>128 维, T=10000"] --> MLP["MLP → 1024 维 p_i^l"]
+    TOK["token q_i^l"] --> ADD["q̃ = q + p"]
+    MLP --> ADD
+    ADD --> SA["标准 Self-Attention<br/>(qk-norm, 16 heads)<br/>⚠ 无几何 bias"]
+    style PE fill:#ede9fe,stroke:#8b5cf6,color:#3b2d6b
+</div>
+
+<h3>⑤ 监督信号</h3>
+<p>无直接监督;PE MLP 随渲染损失端到端学习。<span class="uncertain">⚠️【待核实】 论文 Figure 3 的示意容易让人以为 self-attention 内部有几何连线项;源码证实没有——几何项只存在于 cross-attention。这是读这篇论文最容易误读的一点。</span></p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:Anchor-Centered 高斯解码 —— 半径就是局部坐标尺度</h2>
+
+<h3>①② 结构与数学</h3>
+<p>每个 token 最终经<b>共享</b> ClipActivationHead(单个 <code>Linear(1024 → 64×14=896)</code>,<code>activations.py:107-111</code>)解码 64 个高斯的 14 通道原始参数;关键改动在中心通道的组装方式:</p>
+<div class="equation">
+$$\{\boldsymbol{\delta}_{i,k}\}_{k=1}^{K}=f_\delta(\mathbf{q}_i^L),\qquad \boldsymbol{\mu}_{i,k}^G=\boldsymbol{\mu}_i^{L}+r_i^{L}\,\boldsymbol{\delta}_{i,k}$$
+<span class="tag">(式 8/9)</span>
+</div>
+<p>$\boldsymbol{\delta}$ 是 token 预测的<b>局部偏移</b>,半径 $r$ 充当「每个 token 高斯组的局部坐标尺度」("the radius acts as the local coordinate scale",§3.2.6)。源码细节:$\boldsymbol{\delta}$ 经 <code>pos_act</code> 激活($\mathrm{sign}(x)\cdot\mathrm{expm1}(|x)|$,<code>activations.py:126-133</code>,即逆对数变换——小偏移近似线性、大偏移指数展开,但随后被 $r$ 缩放约束),组装见 <code>locusgs.py:278-282</code>。</p>
+
+<h3>其余 13 通道的激活(全部源码核实,<code>activations.py:135-153</code>)</h3>
+<table>
+<tr><th>属性</th><th>通道</th><th>激活函数</th></tr>
+<tr><td>中心偏移 $\boldsymbol{\delta}$</td><td>3</td><td>$\mathrm{sign}(x)\cdot\mathrm{expm1}(|x|)$,clamp $[-1000,1000]$ → 再 $r\boldsymbol{\delta}+\boldsymbol{\mu}$</td></tr>
+<tr><td>不透明度 $\alpha$</td><td>1</td><td>$\mathrm{sigmoid}(x-2.0)$(整体左偏,初始不透明度低)</td></tr>
+<tr><td>缩放 $\mathbf{s}$</td><td>3</td><td>$\min(\exp(x-\mathrm{shift}),\,0.075)$,$\mathrm{shift}=1-\ln 0.075$(硬帽防巨型高斯)</td></tr>
+<tr><td>旋转 $\mathbf{R}$</td><td>4</td><td>四元数 L2 归一化(eps=$10^{-4}$)</td></tr>
+<tr><td>颜色 $\mathbf{c}^G$</td><td>3</td><td>$0.5\tanh(x)+0.5$ → RGB $\in[0,1]$,<b>SH 仅 0 阶 DC、无视相关颜色</b>(<code>rendering/gs.py:192</code> 导出时把颜色通道当 $f_{\mathrm{dc}}$ 处理)</td></tr>
+</table>
+
+<h3>③④ 前向流程与数据流</h3>
+<ol>
+  <li>第 $l$ 层($l\in\mathcal{S}=\{6,12\}$)取当前 token 与当前 anchor,解码出<b>中间高斯集</b>并渲染监督——anchor-centered 解码在每层都发生,不只是最后一层;</li>
+  <li>最终层输出的高斯集用于评测;</li>
+  <li>消融中把中心改为自由预测($\boldsymbol{\mu}^G=\boldsymbol{\delta}$,free center)是<b>全部组件消融中掉点最多的</b>:−2.205 dB(Table 4),证明「锚定解码」是维持 token-高斯空间关联的关键而非锦上添花。</li>
+</ol>
+
+<div class="mermaid">
+flowchart LR
+    QL["最终 token q_i^L [1024]"] --> HEAD["共享 ClipActivationHead<br/>Linear 1024→896 (64×14)"]
+    HEAD --> SPLIT["split: δ(3) | α(1) | s(3) | R(4) | c(3)"]
+    SPLIT --> D["δ: sign·expm1(|·|)"]
+    ANCHOR["anchor (μ_i^L, r_i^L)"] --> COMPOSE["μ_G = μ + r·δ"]
+    D --> COMPOSE
+    SPLIT --> OTH["α: sigmoid(x−2)<br/>s: min(exp, 0.075)<br/>R: L2 norm<br/>c: 0.5·tanh+0.5"]
+    COMPOSE --> G["64 个高斯/token<br/>→ N×64 全场景"]
+    OTH --> G
+    style COMPOSE fill:#fef3c7,stroke:#f59e0b,color:#92400e
+</div>
+
+<h3>⑤ 监督信号</h3>
+<p>渲染 MSE+SSIM 直接监督全部属性;高斯中心额外受 visibility 正则($\lambda_G=1.0$)约束必须落在至少一个监督视图视锥内。</p>
+</section>
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+
+<p>多层渲染监督:受监督层集合 $\mathcal{S}=\{l_1,\dots,l_M\}$(默认 $\{6,12\}$,最后一层恒包含),每个受监督层用<b>当时的</b> token 与 anchor 解码中间高斯并渲染 $\hat{\mathbf{I}}_t^{l_m}=\mathcal{R}(\mathcal{G}^{l_m},\Pi_t)$,总目标为凸组合(越深的层权重越大):</p>
+<div class="equation">
+$$\mathcal{L}=\sum_{m=1}^{M} w_m\,\mathcal{L}^{l_m},\qquad w_m=\frac{m}{\sum_{n=1}^{M} n}\quad\Rightarrow\quad \{6,12\}\ \text{时}\ w=(\tfrac13,\tfrac23)$$
+<span class="tag">(式 11/30)</span>
+</div>
+
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(真值)</th><th>作用</th></tr>
+<tr><td>重建 MSE</td><td>$\mathcal{L}_{\mathrm{MSE}}^{l_m}=\|\hat{\mathbf{I}}-\mathbf{I}\|_2^2$(<code>losses.py:89</code>)</td><td>1.0</td><td>像素级主监督</td></tr>
+<tr><td>SSIM</td><td>$(1-\mathrm{SSIM})/2$(<code>losses.py:99-105</code>,fused_ssim)</td><td>$\lambda_{\mathrm{SSIM}}=0.2$(<code>options.py:115</code>)</td><td>结构相似性</td></tr>
+<tr><td>高斯可见性正则</td><td>$\phi(\tilde u,\tilde v)=\mathrm{ReLU}(|\tilde u|-1)+\mathrm{ReLU}(|\tilde v|-1)$,$\mathcal{L}_{\mathrm{vis}}=\frac{1}{|\mathcal{X}|}\sum_{\mathbf{x}}\min_{\Pi_t}\phi$(式 27/28;<code>losses.py:108-117</code>)</td><td>$\lambda_G=1.0$(<code>options.py:116</code>)</td><td>惩罚所有监督视图视锥外的高斯中心(TokenGS 遗产,clamp 上界 1.0)</td></tr>
+<tr><td><b>anchor 可见性正则(本文新增)</b></td><td>同上,施加于 anchor 中心 $\{\boldsymbol{\mu}_i^{l_m}\}$(<code>losses.py:30-64</code>)</td><td>$\lambda_A=0.1$(<code>options.py:118</code>)</td><td>防止 anchor 漂出全部视野,直接正则化中间层 refine</td></tr>
+<tr><td>LPIPS</td><td>VGG-LPIPS(<code>locusgs.py:126-128</code>)</td><td><b>$\lambda_{\mathrm{LPIPS}}=0.0$(<code>options.py:113</code>)——评测用 LPIPS 但训练不启用</b></td><td>未启用</td></tr>
+</table>
+
+<div class="callout warn">
+<b>anchor 没有显式几何监督</b>——没有 GT 点云、没有 anchor 回归损失。它的全部学习信号经两条路反传:① 渲染损失 → 高斯中心 $\boldsymbol{\mu}+r\boldsymbol{\delta}$ → anchor;② anchor visibility 正则。这意味着 anchor 的质量完全由「渲染是否有用」定义,而非几何真值——它能形成脚手架(图5)是渲染目标下的涌现结果,不是被监督出来的。
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    D["数据: RE10K(2 视图, gap 45-135)<br/>DL3DV(4 视图)"] --> E["Encoder: patch8 + Plücker emb<br/>3 层 ViT(16 头)"]
+    E --> L1["12 层 Anchor Decoder"]
+    L1 --> R6{"第 6 层?"}
+    R6 -->|是| G6["解码中间高斯 → 渲染<br/>L^{6}, w=1/3"]
+    R6 -->|否| L12["继续"]
+    G6 --> L12
+    L12 --> G12["第 12 层解码 → 渲染<br/>L^{12}, w=2/3"]
+    G12 --> LOSS["L = ⅓L⁶ + ⅔L¹²<br/>(MSE+0.2·SSIM+vis 1.0+anchor-vis 0.1)"]
+    LOSS --> OPT["AdamW fused β(0.9,0.95) wd0.05<br/>OneCycleLR lr 4e-4, clip 1.0, bf16"]
+    OPT --> STAGE{"阶段"}
+    STAGE --> S1["Stage1 base: 1024 tok, 256²<br/>300 epochs, bs 8×8GPU"]
+    STAGE --> S2["Stage2 finetune: 4096 tok<br/>RE10K 256² / DL3DV 448×256<br/>20 epochs, lr 4e-5, bs 2×8GPU"]
+    S2 --> DONE["checkpoint(safetensors)"]
+    style LOSS fill:#fef3c7,stroke:#f59e0b,color:#92400e
+</div>
+
+<h3>推理流程</h3>
+<div class="mermaid">
+flowchart LR
+    IN["V 张带位姿图像<br/>(2/4/6 视图均可)"] --> ENC["Encoder → K/V"]
+    ENC --> DEC["12 层 Decoder<br/>(anchor 12 次 refine)"]
+    DEC --> HEAD["Linear 头 → N×64 高斯"]
+    HEAD --> PRUNE["(可选) opacity ≥ 0.005 剪枝<br/>(rendering/gs.py:195,导出路径)"]
+    PRUNE --> REN["gsplat 光栅化<br/>→ 新视角 RGB + 深度"]
+    style REN fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+<p class="note">推理为单次前向,无任何每场景优化;DL3DV 4 视图 4096 token 配置下纯前向(不含渲染)407.28±62.96 ms/样本(A100 40GB,Table 8)。评测时输入视图数可变(2/4/6),token 数不变——这是 query 范式相对像素对齐范式的结构性优势。</p>
+</section>
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码验证)</h2>
+
+<p>官方仓库 <a href="https://github.com/leo-frank/LocusGS">leo-frank/LocusGS</a>(2026-10-09 浅克隆验证,最后提交 2026-10-08,Apache-2.0,含完整训练/评测代码与配置,预训练权重在 Google Drive)。本仓库是 <b>NVIDIA TokenGS 的直接 fork 改造</b>(<code>activations.py</code> 等文件保留 NVIDIA Apache 头),TokenGS 模型类仍完整保留(<code>models/tokengs.py</code>),便于逐行 diff 两处差异。以下条目全部带 file:line。</p>
+
+<h3>真实超参(代码直读)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>encoder</td><td>3 层 ViT block,1024 维,16 头,mlp_ratio=4,qk-norm,LayerScale init 0.01</td><td><code>options.py:46-50</code>, <code>enc_dec.py:40-56</code></td></tr>
+<tr><td>patch 化</td><td>patch_size=8;图像 patch emb 与 Plücker patch emb 各自独立 Linear 后相加</td><td><code>options.py:45</code>, <code>locusgs.py:204-206</code></td></tr>
+<tr><td>decoder</td><td>12 层 DecoderBlockWithAnchor,块内顺序 <b>Cross → Self → FFN</b>,各带 LayerScale</td><td><code>options.py:47</code>, <code>decoder_blocks.py:291-335</code></td></tr>
+<tr><td>几何偏置</td><td>$\sigma_0$=0.1 固定 buffer;$\gamma$=softplus(geo_scale) 逐层可学习,init $-2.25$($\gamma_0\approx0.100$);bias clamp $[-20,0]$;$\sigma^2$ 下界 $10^{-3}$</td><td><code>decoder_blocks.py:414-415,448,531-539</code>, <code>geometry.py:14,41,44</code></td></tr>
+<tr><td>anchor</td><td>中心 init $\mathcal{N}(0,1)$+z 偏置 1.0,tanh 激活(scene_radius=1);半径 init 1.0,softplus 下界 $10^{-3}$;每层独立 refine 头</td><td><code>locusgs.py:136-153,252,261</code>, <code>options.py:74-76</code></td></tr>
+<tr><td>高斯头</td><td>共享 ClipActivationHead,Linear(1024→896),trunc_normal std=0.002,全部参数免 weight decay</td><td><code>activations.py:107-124</code></td></tr>
+<tr><td>优化器</td><td>AdamW(fused),$\beta=(0.9,0.95)$,wd=0.05(1 维参数不衰减),grad clip 1.0</td><td><code>train.py:143,283-294</code>, <code>options.py:106</code></td></tr>
+<tr><td>LR schedule</td><td><b>OneCycleLR</b>(上升段 pct_start_steps=1000,余弦退火),base lr 4e-4 / finetune 4e-5</td><td><code>train.py:305-309</code>, <code>options.py:103-104</code>, <code>options_dl3dv.py:25</code></td></tr>
+<tr><td>训练规模</td><td>base 300 epochs / finetune 20 epochs;8×GPU(accelerate MULTI_GPU, bf16),base bs=8/GPU(有效 64),finetune bs=2/GPU</td><td><code>options_dl3dv.py:16,23</code>, <code>acc_configs/gpu8.yaml</code>, <code>scripts/dl3dv/locusgs.sh</code></td></tr>
+<tr><td>渲染</td><td>gsplat 光栅化,自实现 DeferredBP 自定义 autograd(前向存深度与 means2d),背景色默认 grey</td><td><code>rendering/gs.py:45-101</code>, <code>options.py:53</code></td></tr>
+<tr><td>鲁棒性</td><td>每层输出做 NaN/Inf 检查并打印非有限值统计</td><td><code>locusgs.py:171-179,517-519</code></td></tr>
+<tr><td>评测</td><td>eval 预设单卡 bs=1;PSNR 在 loss 内同步计算;指标 MSE/SSIM/LPIPS</td><td><code>options_dl3dv.py:53-92</code>, <code>losses.py:123</code></td></tr>
+</table>
+
+<h3>论文叙述 vs 源码实现:9 处出入(本笔记最有价值的部分之一)</h3>
+<table>
+<tr><th>#</th><th>论文说法</th><th>源码实际</th><th>影响评估</th></tr>
+<tr><td>1</td><td>§3.2.4 未给 $\gamma$ 初值,只说"learnable"</td><td>$\tilde\gamma$ 初值 $-2.25$,即 $\gamma_0=\mathrm{softplus}(-2.25)\approx0.100$,几何项初始很弱(<code>decoder_blocks.py:414,448</code>)</td><td>复现关键:几何偏置是「渐进启用」的,直接设 $\gamma_0=1$ 可能改变训练动态</td></tr>
+<tr><td>2</td><td>A.5 说"squared bandwidth is lower-bounded",未给值</td><td>$\sigma^2$ clamp 下界 $1\times10^{-3}$(<code>geometry.py:41</code>)</td><td>补全论文缺省数值</td></tr>
+<tr><td>3</td><td>Table 7:warmup 2000(base)/400(finetune)</td><td>OneCycleLR 的 <code>pct_start_steps</code> 默认 1000(<code>options.py:104</code>),且是 OneCycle 而非纯 cosine</td><td>warmup 与 schedule 表述均有出入【待核实:预设中未见覆盖,但不排除脚本层覆盖】</td></tr>
+<tr><td>4</td><td>式(6)/(7) 把中心更新写成直接残差相加</td><td>残差加在 <b>raw 空间</b>,中心实际值为 $\tanh(\mu^{\mathrm{raw}})\times s_{\mathrm{scene}}$($s_{\mathrm{scene}}=1$)(<code>locusgs.py:252,357</code>)</td><td>anchor 被硬约束在 $(-1,1)^3$;场景需先归一化到该盒子,超出部分不可达</td></tr>
+<tr><td>5</td><td>Figure 3 的「Spatial-guided Token Interaction」易读作 self-attn 有几何偏置</td><td>self-attn 只加 anchor 正弦 PE(128 维→MLP),无任何几何项(<code>decoder_blocks.py:372-373,982</code>)</td><td>读图误导风险;消融选项 <code>no_self_attn_anchor_pos</code> 印证 PE 是唯一改动(<code>options_dl3dv_ablation.py:56</code>)</td></tr>
+<tr><td>6</td><td>论文未提颜色表示</td><td>颜色 3 通道 RGB、SH 仅 0 阶 DC,无视相关外观(<code>rendering/gs.py:192</code>)</td><td>限制视角相关材质表现;TokenGS 遗产</td></tr>
+<tr><td>7</td><td>式(8) 称 $\boldsymbol{\delta}$ 由 head 预测,未提激活</td><td>$\boldsymbol{\delta}$ 经 $\mathrm{sign}\cdot\mathrm{expm1}$ 逆对数激活(非 tanh、非线性)(<code>activations.py:126-133</code>)</td><td>偏移分布长尾,靠 $r$ 缩放兜底</td></tr>
+<tr><td>8</td><td>论文未提 encoder 深度与规模</td><td>encoder 仅 3 层(1024d/16h),decoder 12 层——算力大头在 decoder</td><td>与 dense 方法的大 encoder 形成鲜明对比</td></tr>
+<tr><td>9</td><td>§4 称与 TokenGS「same architecture except anchor designs」</td><td>仓库同时保留了 4 种 cross-attn 变体:geometric_positional(默认)/ learned_positional / content_only / deformable(TokenGS 的多视图可变形注意力)(<code>decoder_blocks.py:447-470</code>)</td><td>消融变体由配置一键切换,工程上是干净的对照设计</td></tr>
+</table>
+
+<h3>资源账与落地坑</h3>
+<ul>
+  <li><b>资源账</b>:参数 241.5M,模型存储 921.31 MiB;A100 40GB 上 DL3DV 4-view 纯前向 407.28±62.96 ms(Table 8)。训练硬件论文与 README 均未注明 GPU 型号(仅知 8 卡 bf16;<span class="uncertain">⚠️【待核实】 具体型号与总训练时长官方未公开</span>)。</li>
+  <li><b>位姿硬依赖</b>:几何偏置需要内外参构造 Plücker 光线 → <b>无法用于 pose-free 输入</b>(作者 B.4 自认),这与 VGGT 系 pose-free 路线(<a href="3D-20250314-VGGT.html">VGGT</a>、<a href="3D-20250717-Pi3.html">π³</a>)是明确分工。</li>
+  <li><b>坐标归一化</b>:anchor tanh 激活要求场景先归一化到 $(-1,1)^3$(尺度约定随数据集而不同,Table 3 注:RE10K 与 DL3DV 归一化约定不同,跨数据集数值不可比)——接入新数据管线时必须复刻其归一化,否则 anchor 空间被压扁。</li>
+  <li><b>checkpoint 节略</b>:README 承认两阶段训练,base 1024 token → finetune 扩到 4096 token;<code>finetune_re10k_2view</code> 从 base checkpoint resume(<code>scripts/re10k/locusgs.sh</code>)。</li>
+  <li><b>评测协议</b>:DL3DV 用 DepthSplat 的评测 index JSON(仓库 <code>assets/</code> 自带),RE10K 用自带 index——复现数字时务必用同一 index 文件。</li>
+</ul>
+</section>
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>主表一:DL3DV(448×256,4 视图训练,2/4/6 视图直接评测)—— 论文 Table 1,逐格核对</h3>
+<table>
+<tr><th>方法</th><th>视图</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>#GS</th></tr>
+<tr><td>MVSplat</td><td rowspan="4">2</td><td>17.54</td><td>0.529</td><td>0.402</td><td>229K</td></tr>
+<tr><td>DepthSplat</td><td>19.31</td><td>0.615</td><td>0.310</td><td>229K</td></tr>
+<tr><td>TokenGS (4096 tok)</td><td>19.58</td><td>0.615</td><td>0.429</td><td>262K</td></tr>
+<tr class="best"><td><b>LocusGS (4096 tok)</b></td><td><b>20.90</b></td><td><b>0.678</b></td><td><b>0.377</b></td><td>262K</td></tr>
+<tr><td>MVSplat</td><td rowspan="4">4</td><td>21.63</td><td>0.721</td><td>0.233</td><td>458K</td></tr>
+<tr><td>DepthSplat</td><td>23.12</td><td>0.780</td><td>0.178</td><td>458K</td></tr>
+<tr><td>TokenGS (4096 tok)</td><td>23.44</td><td>0.757</td><td>0.312</td><td>262K</td></tr>
+<tr class="best"><td><b>LocusGS (4096 tok)</b></td><td><b>24.80</b></td><td><b>0.812</b></td><td><b>0.248</b></td><td>262K</td></tr>
+<tr><td>MVSplat</td><td rowspan="4">6</td><td>22.93</td><td>0.775</td><td>0.193</td><td>688K</td></tr>
+<tr><td>DepthSplat</td><td>24.19</td><td>0.823</td><td>0.147</td><td>688K</td></tr>
+<tr><td>TokenGS (4096 tok)</td><td>24.16</td><td>0.770</td><td>0.296</td><td>262K</td></tr>
+<tr class="best"><td><b>LocusGS (4096 tok)</b></td><td><b>25.78</b></td><td><b>0.836</b></td><td><b>0.225</b></td><td>262K</td></tr>
+</table>
+<ul>
+  <li>对 TokenGS(完全相同预算与骨架):2/4/6 视图分别 <b>+1.32 / +1.36 / +1.62 dB</b>,且 LPIPS 全面更优;</li>
+  <li>对像素对齐的 DepthSplat:4 视图下 PSNR <b>+1.68 dB</b> 而高斯数仅其 57%(262K vs 458K);但 <b>SSIM/LPIPS 仍落后 DepthSplat</b>(0.812 vs 0.780 反超,0.248 vs 0.178 落后)——LocusGS 赢在 PSNR/SSIM,LPIPS 上 DepthSplat 保持优势,论文表述为「improves rendering quality over query-based baselines」,对像素对齐方法的表述是收敛的差距;<span class="uncertain">⚠️【待核实】 LPIPS 未进训练损失($\lambda=0$),却在 LPIPS 上落后 DepthSplat,两者因果值得注意</span>;</li>
+  <li>像素对齐方法的高斯数随视图数线性膨胀(229K→458K→688K),query 方法恒为 262K——视图越多,预算优势越大。</li>
+</ul>
+
+<h3>主表二:RealEstate10K(2 视图,256×256)—— 论文 Table 2,逐格核对</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>#GS</th></tr>
+<tr><td>MVSplat</td><td>26.39</td><td>0.869</td><td>0.128</td><td>131K</td></tr>
+<tr><td>DepthSplat</td><td>27.47</td><td>0.889</td><td>0.114</td><td>131K</td></tr>
+<tr><td>GS-LRM</td><td>28.10</td><td>0.892</td><td>0.114</td><td>131K</td></tr>
+<tr><td>TokenGS (1024 tok)</td><td>28.02</td><td>0.896</td><td>0.147</td><td>66K</td></tr>
+<tr><td><b>LocusGS (1024 tok)</b></td><td>28.50</td><td>0.909</td><td>0.135</td><td>66K</td></tr>
+<tr><td>TokenGS (4096 tok)</td><td>28.41</td><td>0.903</td><td>0.135</td><td>262K</td></tr>
+<tr class="best"><td><b>LocusGS (4096 tok)</b></td><td><b>28.89</b></td><td><b>0.916</b></td><td><b>0.124</b></td><td>262K</td></tr>
+</table>
+<p>1024-token 变体已用 GS-LRM 一半的高斯(66K vs 131K)在 PSNR/SSIM 上反超(+0.40/+0.017);4096-token 变体 PSNR/SSIM 全场最佳,LPIPS 仍不及 DepthSplat/GS-LRM(0.124 vs 0.114)。</p>
+
+<h3>token 级散布定量(论文 Table 3)——「锚点生效」的最直接证据</h3>
+<table>
+<tr><th>数据集</th><th>方法</th><th>Mean↓</th><th>Variance↓</th><th>Median↓</th></tr>
+<tr><td rowspan="2">RE10K</td><td>TokenGS</td><td>5.1164</td><td>34.1712</td><td>2.7911</td></tr>
+<tr class="best"><td><b>LocusGS</b></td><td><b>0.1978</b></td><td><b>0.1371</b></td><td><b>0.1117</b></td></tr>
+<tr><td rowspan="2">DL3DV</td><td>TokenGS</td><td>0.5881</td><td>0.0139</td><td>0.5531</td></tr>
+<tr class="best"><td><b>LocusGS</b></td><td><b>0.0433</b></td><td><b>0.0004</b></td><td><b>0.0383</b></td></tr>
+</table>
+<p>$C_{\mathrm{centroid}}=\frac{1}{NK}\sum_{i,k}\|\boldsymbol{\mu}_{i,k}^G-\bar{\boldsymbol{\mu}}_i^G\|_2$(式 12,token 内高斯到本 token 质心的平均距离):RE10K 均值缩小 <b>25.87×</b>、DL3DV 缩小 <b>13.58×</b>。注意两数据集归一化约定不同,数值只在数据集内部可比(论文原注)。</p>
+
+<div class="figure">
+  <img src="images/2608.12825/anchors_radius_gs.png" alt="anchor支撑半径与高斯组可视化" loading="lazy">
+  <div class="caption"><b>图4</b>(对应论文 Figure 5)<b>anchor 支撑与 token 级紧凑性。</b>前三行为 LocusGS:全部投影 anchor、选定 anchor 的投影半径、对应 token 解码的高斯组(同色同 anchor);末行为 TokenGS。anchor 倾向集中于信息丰富区域、弱约束区域稀疏;半径自适应——弱约束区大半径(宽支撑)、细节区小半径(聚焦),高斯组明显更紧凑。</div>
+</div>
+
+<h3>效率(论文 Table 8,DL3DV 4-view,A100 40GB,纯前向不含渲染)</h3>
+<table>
+<tr><th>模型</th><th>Params</th><th>存储</th><th>前向耗时</th></tr>
+<tr><td>TokenGS</td><td>222.0 M</td><td>846.93 MiB</td><td>340.99 ± 93.57 ms</td></tr>
+<tr class="fail"><td>LocusGS</td><td>241.5 M(+8.8%)</td><td>921.31 MiB(+8.8%)</td><td>407.28 ± 62.96 ms(+19.4%)</td></tr>
+</table>
+<p class="note">延迟增量主要来自逐层的点到光线距离计算($N\times M$ 叉乘,12 层×4096 token×数万 patch 光线)与 refine 头;且 LocusGS 方差更小(62.96 vs 93.57 ms)——几何偏置使注意力模式更稳定。渲染耗时两方法相同(同预算同光栅化器),不含在此表。</p>
+
+<div class="figure">
+  <img src="images/2608.12825/rendered_depth.png" alt="DL3DV新视角合成定性对比" loading="lazy">
+  <div class="caption"><b>图5</b>(对应论文 Figure 4)<b>DL3DV 新视角合成定性对比。</b>LocusGS 渲染更锐利、深度结构更连贯,纹理丰富与杂乱区域优势尤其明显。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.12825/more_3DGS_comparison.png" alt="重建高斯对比" loading="lazy">
+  <div class="caption"><b>图6</b>(对应论文 Figure 6)<b>TokenGS 与 LocusGS 重建高斯分布的定性对比</b>:LocusGS 的高斯云明显更贴合表面、浮点与弥散更少。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.12825/more_results.png" alt="更多DL3DV定性结果" loading="lazy">
+  <div class="caption"><b>图7</b>(对应论文附录 Figure 11)<b>更多 DL3DV 新视角合成结果</b>,与 Figure 4 同设置。</div>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验与机制分析</h2>
+
+<h3>结构组件消融(论文 Table 4,DL3DV 4-view,256² base 模型,逐格核对)</h3>
+<table>
+<tr><th>消融组</th><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>ΔPSNR</th></tr>
+<tr class="best"><td>—</td><td><b>Full model</b></td><td><b>24.284</b></td><td><b>0.7843</b></td><td><b>0.2709</b></td><td>—</td></tr>
+<tr><td>Anchor 表示</td><td>无半径状态(仅 center)</td><td>23.640</td><td>0.7618</td><td>0.3007</td><td>−0.644</td></tr>
+<tr><td>Anchor 表示</td><td>有半径但不 refine</td><td>23.979</td><td>0.7746</td><td>0.2866</td><td>−0.305</td></tr>
+<tr><td>注意力设计</td><td>content-only self-attn(去 anchor PE)</td><td>24.171</td><td>0.7807</td><td>0.2764</td><td>−0.113</td></tr>
+<tr class="fail"><td>注意力设计</td><td>content-only cross-attn(去几何偏置)</td><td>22.751</td><td>0.7220</td><td>0.3500</td><td><b>−1.533</b></td></tr>
+<tr><td>注意力设计</td><td>center-only 偏置(带宽不乘半径)</td><td>23.770</td><td>0.7670</td><td>0.2940</td><td>−0.514</td></tr>
+<tr class="fail"><td>高斯解码</td><td>free center(去锚定解码)</td><td>22.079</td><td>0.6860</td><td>0.3970</td><td><b>−2.205</b></td></tr>
+</table>
+<div class="callout key">
+<b>贡献排序(Δ PSNR):锚定解码(−2.205)> 几何偏置 cross-attn(−1.533)> 半径状态(−0.644)> 半径自适应带宽(−0.514)> 半径 refine(−0.305)> self-attn PE(−0.113)。</b>结论:① 「高斯必须解码在 anchor 附近」是最硬约束,去掉后 anchor 名存实亡;② 「注意力必须看几何」次之;③ 半径不是摆设——删掉半径(−0.644)比删掉半径 refine(−0.305)痛得多,说明「有自适应带宽」比「带宽会动」更本质。
+</div>
+
+<h3>多层监督消融(论文 Table 5)</h3>
+<table>
+<tr><th>监督层 $\mathcal{S}$</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr class="best"><td><b>{6, 12}(默认)</b></td><td><b>24.284</b></td><td><b>0.7843</b></td><td><b>0.2709</b></td></tr>
+<tr class="fail"><td>{12}(只监督最后层)</td><td>23.549</td><td>0.7575</td><td>0.3074</td></tr>
+<tr><td>{3, 6, 9, 12}(更密)</td><td>24.071</td><td>0.7793</td><td>0.2774</td></tr>
+</table>
+<p>只监督最后一层 −0.735 dB:中间层监督是 anchor refine 能收敛的关键(否则前 6 层的 anchor 收不到任何梯度信号);但更密的监督反而略降——中间层过早被渲染目标锁死会限制 anchor 继续移动的自由度。</p>
+
+<h3>机制可视化分析(论文 Figure 7/8/9/10/12/13)</h3>
+<div class="figure">
+  <img src="images/2608.12825/cross_attn.png" alt="cross-attention对比" loading="lazy">
+  <div class="caption"><b>图8</b>(对应论文 Figure 7)<b>cross-attention 定位性对比。</b>同一代表性 token:TokenGS 的注意力分散在多个图像区域;LocusGS 在投影 anchor 与解码高斯中心周围更局部化、且跨视图一致。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.12825/decomposition.png" alt="注意力分解" loading="lazy">
+  <div class="caption"><b>图9</b>(对应论文 Figure 8)<b>anchor-guided cross-attention 的分解。</b>content 分支对外观相似的宽泛/歧义区域响应;geometry 分支在 anchor 位置一致区域提供局部化空间先验;最终注意力 = 内容 × 几何的交集。这解释了为什么偏置是「加性 logit」而非乘性门控——两项在 log 域相加等价于概率域相乘(软 AND)。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.12825/self-attn-visualization.png" alt="self-attention可视化" loading="lazy">
+  <div class="caption"><b>图10</b>(对应论文 Figure 10)<b>anchor-aware self-attention。</b>对选定 query anchor(红色),按注意力权重取 top-k 交互 anchor(粗细/透明度 ∝ 权重):query 主要与少数空间邻近 anchor 交互而非均匀 attend 全场——PE 注入已足以让交互稀疏化,无需显式几何核。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.12825/training_curves.png" alt="训练曲线" loading="lazy">
+  <div class="caption"><b>图11</b>(对应论文 Figure 9)<b>收敛对比(DL3DV/RE10K)。</b>LocusGS 随 epoch 收敛更快、训练 loss 更低、训练/验证 PSNR 全程占优——几何偏置在优化上起「好的初始化」作用,不只是最终精度。</div>
+</div>
+<div class="grid-2">
+  <div class="figure">
+    <img src="images/2608.12825/dl3dv_compactness_score_overlay.png" alt="DL3DV逐场景散布对比" loading="lazy">
+    <div class="caption"><b>图12</b>(对应论文附录 Figure 12)<b>DL3DV 逐场景散布对比</b>:几乎每个场景 LocusGS(成对柱中较低者)的 dispersion 都大幅低于 TokenGS。</div>
+  </div>
+  <div class="figure">
+    <img src="images/2608.12825/re10k_2view_compactness_score_overlay.png" alt="RE10K逐场景散布对比" loading="lazy">
+    <div class="caption"><b>图13</b>(对应论文附录 Figure 13)<b>RE10K 逐场景散布对比</b>,同上结论。</div>
+  </div>
+</div>
+</section>
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>横向对比表(固定维度;数值均出自论文 Table 1/2/8 或原文,缺项写 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练成本</th><th>推理耗时</th><th>关键指标</th><th>开源</th></tr>
+<tr><td>pixelSplat</td><td>2023</td><td>2 视图+位姿</td><td>像素对齐高斯(每像素沿光线回归深度)</td><td>渲染 MSE+LPIPS</td><td>RE10K/ACID</td><td>—</td><td>—</td><td>—(本文未列)</td><td>是</td></tr>
+<tr><td>MVSplat</td><td>2024</td><td>多视图+位姿</td><td>像素对齐高斯(平面扫描代价体)</td><td>渲染损失</td><td>RE10K/DL3DV</td><td>—</td><td>—</td><td>RE10K 26.39 / DL3DV-4v 21.63</td><td>是</td></tr>
+<tr><td>DepthSplat</td><td>2024</td><td>多视图+位姿</td><td>像素对齐高斯 + 单目深度先验融合</td><td>渲染损失+深度</td><td>RE10K/DL3DV</td><td>—</td><td>—</td><td>RE10K 27.47 / DL3DV-4v 23.12</td><td>是</td></tr>
+<tr><td>GS-LRM</td><td>2024</td><td>2-4 视图+位姿</td><td>patch token → per-token 高斯(transformer 直接回归)</td><td>渲染 MSE+LPIPS</td><td>Objaverse+RE10K</td><td>—</td><td>—</td><td>RE10K 28.10(131K GS)</td><td>否</td></tr>
+<tr><td>TokenGS</td><td>2026.04</td><td>任意视图+位姿(容忍位姿噪声)</td><td>N 个 latent token × K 高斯,与分辨率/视图数解耦;支持 TTT</td><td>渲染 MSE+SSIM+可见性</td><td>RE10K/DL3DV/动态场景</td><td>—</td><td>340.99 ms</td><td>RE10K 28.41 / DL3DV-4v 23.44(262K)</td><td>是(nv-tlabs)</td></tr>
+<tr class="best"><td><b>LocusGS</b></td><td>2026.08</td><td>任意视图+位姿</td><td>N 个 <b>anchor token</b> × K 高斯;anchor(μ,r)逐层 refine</td><td>多层渲染 MSE+SSIM+可见性(高斯+anchor)</td><td>RE10K/DL3DV</td><td>8×GPU bf16,300+20 epochs【时长待核实】</td><td>407.28 ms</td><td><b>RE10K 28.89 / DL3DV-4v 24.80(262K)</b></td><td>是(完整训练代码)</td></tr>
+</table>
+
+<h3>对比结论(机制层面的为什么)</h3>
+<ol>
+  <li><b>vs 像素对齐(MVSplat/DepthSplat)</b>:像素对齐的高斯「出生即有空间地址」(像素+光线+深度),不需要学空间分工,但代价是高斯数随视图数膨胀(458K@4v)、且深度回归对低重叠/弱纹理脆弱。LocusGS 用 57% 的高斯在 PSNR/SSIM 上反超 DepthSplat(4v:+1.68/+0.032),证明<b>固定预算 + 显式空间组织可以兼得紧凑与质量</b>;但 LPIPS 仍输(0.248 vs 0.178)——像素对齐方法的高频细节来自逐像素证据直连,query 方法的信息要过 bottleneck,纹理保真有结构性劣势。</li>
+  <li><b>vs GS-LRM</b>:同为 transformer 直接回归,GS-LRM 的 token 绑定图像 patch(空间角色半隐式),LocusGS 的 token 完全自由但用 anchor 显式化空间角色;RE10K 上 LocusGS 以 2× 高斯(262K vs 131K)+0.79 dB——公平地说,这不是同预算对比,LocusGS 的 1024-token(66K)变体对 GS-LRM 只有 +0.40 dB,<b>anchor 的收益在小预算下更明显被预算差距稀释</b>。</li>
+  <li><b>vs TokenGS(直接基线,同骨架同预算)</b>:+1.36 dB(DL3DV-4v)全部来自 anchor 三件套,其中解码锚定与几何偏置贡献约 85% 的消融降幅;TokenGS 的独特优势(TTT 测试时优化、动态场景、位姿噪声鲁棒)本文未继承验证——<b>LocusGS 是否兼容 TTT 是开放问题</b>(anchor 作为显式状态反而可能是更好的 TTT 变量,【推测】)。</li>
+  <li><b>效率定位</b>:+19.4% 前向延迟买 +1.36 dB,在质量-速度 Pareto 上属于「以质量换时间」档;若需要实时,像素对齐方法(如 <a href="3D-20251211-SHARP.html">SHARP</a> 单目 <1s)或 <a href="3D-20251009-ReSplat.html">ReSplat</a> 的迭代精炼路线仍是不同 trade-off 点,见库内 <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">质量-速度 Pareto 全谱调研</a>。</li>
+</ol>
+
+<h3>演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>稠密像素对齐</td><td>pixelSplat → MVSplat → DepthSplat</td><td>高斯沿光线长在像素上,深度可回归</td><td>预算随视图膨胀;深度噪声敏感</td></tr>
+<tr><td>latent query</td><td>GS-LRM → TokenGS</td><td>固定预算可学习 query 聚合全局证据</td><td>query 空间角色隐式,token 级弥散</td></tr>
+<tr><td><b>空间锚定 query(本文)</b></td><td><b>LocusGS</b></td><td>query 携带显式 (μ,r) 状态,几何先验进注意力与解码</td><td>依赖位姿;各向同性半径;延迟 +19%</td></tr>
+<tr><td>(参照系)anchor 组织局部高斯</td><td>Scaffold-GS(每场景优化)</td><td>稀疏锚点 + 神经高斯局部生成</td><td>需每场景迭代优化,非前馈</td></tr>
+</table>
+<p class="note">库内交叉:前馈模型脉络见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述(LRM/GS-LRM 一脉)</a>;多视角重建全景见 <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a>;基础概念见 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a>。</p>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<h3>与我们 pipeline(vggt_human)的适配评估</h3>
+<div class="grid-2">
+  <div class="card"><h4>✅ 可直接借用的思想</h4><p>① <b>「token 挂显式 3D 状态」是通用模式</b>:我们的 head_gs/body_gs/scene_gs 拆分本质也是「每束高斯要有空间辖区」,LocusGS 给出了一种可微、可学习、可消融验证的 formalization;② 点到 Plücker 光线距离的几何偏置<b>与骨干无关</b>,任何「3D 查询点 ↔ 图像特征」注意力都能插;③ 多层渲染监督 {中层, 末层} 的凸组合权重(⅓,⅔)是便宜的收敛改进。</p></div>
+  <div class="card"><h4>⚠️ 不匹配的约束</h4><p>① <b>位姿硬依赖</b>:我们的输入若走 VGGT 等 pose-free 路线,几何偏置需要先把估计位姿当 GT 用——位姿误差会直接污染偏置(论文 B.4 自认);② 场景归一化到 $(-1,1)^3$ 的约定对<b>人体-场景混合尺度</b>需要重新设计(人体细节区需要远小于场景级的归一化粒度);③ 单场景 262K 高斯的预算分配对「人脸需要高密度」的目标不友好——anchor 机制支持非均匀分配,但默认 init 是空间均匀散布。</p></div>
+  <div class="card"><h4>💡 最值得迁移的一点</h4><p><b>半径自适应带宽 $\sigma=\sigma_0 r$</b>:把「查询该看多大范围」与「查询自认为辖区多大」绑定,是一个零参数、可解释的 inductive bias。我们的 3DMM 头部 landmarks 对齐(657 点)如果改成 query-based 特征聚合,同样可以让每束高斯的注意力范围随其尺度自适应——这比固定窗口或 KNN 更优雅。</p></div>
+  <div class="card"><h4>💰 成本评估</h4><p>训练:8×GPU(bf16)×300 epochs(base)+ 20 epochs(finetune),241.5M 参数;推理:407 ms/样本纯前向(A100),<b>不实时</b>但离「可用」不远;作为离线重建预处理可接受,作为交互式组件不够。代码完整度高(训练/评测/配置齐全,Apache-2.0),魔改成本低于平均水平。</p></div>
+</div>
+
+<h3>适用场景清单</h3>
+<ul>
+  <li><b>适合</b>:多视图(≥2)带位姿的静态场景前馈重建;高斯预算受限(移动端/存储敏感)但视图数多的场合(query 范式的结构性优势);需要 token 级语义/空间解耦的下游(每 token 一块辖区,便于编辑、剔除、LOD)。</li>
+  <li><b>不适合</b>:pose-free 输入;单视图(几何偏置仍有意义但证据三角化弱,论文未评测);动态场景(TokenGS 的动态 token 机制本文未继承);LPIPS 敏感的纹理保真场景。</li>
+</ul>
+</section>
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 各向同性标量半径是表达力瓶颈</h4>
+<p><b>问题</b>:anchor 支撑是 $(\boldsymbol{\mu}, r)$ 的球;论文 B.4 自认「isotropic」对细长结构(栏杆、电线、建筑边缘)刻画差——球对称带宽在点到光线距离上无法表达「沿结构方向容忍、垂直方向严格」。<b>佐证</b>:几何偏置 $\sigma=\sigma_0 r$ 只有标量自由度(<code>decoder_blocks.py:529</code>);消融中 center-only(去掉半径)−0.514 dB 说明半径维度本身有价值但仅此一维。<b>改进</b>:把半径升级为 3 维对角协方差(或全协方差),偏置改为马氏距离 $-\frac12(\Delta)^{\top}\Sigma^{-1}(\Delta)$,参数每 token +2~5 个,与现有 refine 头结构兼容。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] pose-free 化是最大应用缺口</h4>
+<p><b>问题</b>:几何偏置以精确内外参构造 Plücker 光线为前提(B.4 自认);而当前前馈重建的主战场已向 pose-free 迁移(VGGT/π³ 一脉)。<b>佐证</b>:<code>locusgs.py:53-64</code> 光线图直接由输入内外参构造,无不确定性建模。<b>改进</b>:与 VGGT 式位姿头联合训练(位姿作为可 refine 状态与 anchor 联合优化),或对位姿加噪训练以学习软化的带宽;论文自己也把「jointly modeling pose uncertainty」列为未来方向。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] LPIPS 落后像素对齐方法,颜色仅 0 阶 SH</h4>
+<p><b>问题</b>:DL3DV-4v LPIPS 0.248 vs DepthSplat 0.178;训练不启用 LPIPS 损失($\lambda_{\mathrm{LPIPS}}=0$,<code>options.py:113</code>),颜色通道为 RGB/DC(<code>rendering/gs.py:192</code>)——高频纹理与视角相关外观双双受限。<b>改进</b>:finetune 阶段开启 LPIPS(代码已内置 VGG-LPIPS,<code>locusgs.py:126-128</code>,一键开权重);颜色升阶到 SH 1-2 阶,通道数 14→23/38,头部线性层等比扩即可。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 几何偏置的计算成本未做稀疏化</h4>
+<p><b>问题</b>:每层对全部 $M=VH_pW_p$ 条光线计算 $N\times M$ 距离与偏置,是 +19.4% 延迟的主因之一;代码已预留稀疏采样路径($k>0$ 时按 bias 分布 multinomial/topk 采样光线,<code>decoder_blocks.py:544-557</code>)但默认关闭且论文未消融。<b>改进</b>:开启并调参 $k$(如 512/1024),预计可砍掉大部分偏置计算;需处理采样的不可导性(代码注释自认 tau_sample 在离散路径上无梯度,<code>decoder_blocks.py:546-549</code>)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] anchor 无显式几何监督,脚手架是「涌现」而非「保证」</h4>
+<p><b>问题</b>:anchor 仅经渲染损失 + visibility 正则间接学习;Table 3 显示方差已很小,但没有机制保证 anchor 覆盖无死角(弱纹理区 anchor 稀疏正是论文图5 展示的现象,被当作 feature 而非 bug)。<b>改进</b>:若有深度/点云先验(如 DUSt3R/VGGT 输出),可对 anchor 中心加蒸馏损失;或加覆盖率正则(惩罚场景中无 anchor 邻域的已重建表面)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级] 与 TokenGS 的 TTT / 动态场景能力未打通</h4>
+<p><b>问题</b>:TokenGS 的两大卖点——测试时 token 优化(TTT)与动态 token(<code>num_dynamic_gs_tokens</code>,代码中保留但默认 0,<code>options.py:60</code>)——本文均未实验。<b>改进</b>:anchor 作为显式低维状态,理论上比 1024 维 latent 更适合 TTT(变量少、有物理意义、可加正则);动态场景下 anchor 轨迹化(每帧 refine)是自然扩展。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>方向</th><th>预期收益</th><th>实现成本</th></tr>
+<tr><td>高</td><td>各向异性 anchor 协方差</td><td>细长结构/边缘质量</td><td>小(改偏置与半径头)</td></tr>
+<tr><td>高</td><td>pose-free 化(联合位姿)</td><td>适用范围数量级扩大</td><td>大(需改数据与训练管线)</td></tr>
+<tr><td>中</td><td>LPIPS 入损失 + SH 升阶</td><td>感知质量短板补齐</td><td>极小(开关+通道数)</td></tr>
+<tr><td>中</td><td>光线稀疏采样</td><td>延迟 −20~40%【推测】</td><td>小(已有代码路径)</td></tr>
+<tr><td>中</td><td>anchor 几何蒸馏监督</td><td>收敛更快、覆盖更全</td><td>中(需先验模型)</td></tr>
+<tr><td>低</td><td>TTT / 动态扩展</td><td>继承 TokenGS 全能力</td><td>中</td></tr>
+</table>
+<p><b>个人认为最关键的三点</b>:① <b>各向异性协方差</b>——以最小改动补上「球对称」这个最显然的表达力缺口,且消融已证明半径维度值钱;② <b>LPIPS+SH</b>——几乎零成本补齐对 DepthSplat 的最后短板,性价比最高;③ <b>pose-free</b>——决定这篇工作是「query 范式的一个改进」还是「下一代前馈重建的通用组件」。</p>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+
+<p><b>LocusGS 做了什么</b>:给 query-based 前馈 3DGS 的每个 token 挂上一个显式三维锚点状态 $(\boldsymbol{\mu},r)$——中心声明位置、半径声明辖区,12 层 decoder 逐层 refine;锚点驱动三处机制:cross-attention 的点到光线高斯偏置(带宽随半径自适应)、self-attention 的锚点位置编码、以及 $\boldsymbol{\mu}+r\boldsymbol{\delta}$ 的锚定解码。</p>
+
+<p><b>证据强度</b>:同骨架同预算对 TokenGS +1.32~1.62 dB(DL3DV),token 级散布缩小 13.6~25.9×,消融链完整(最痛的两个组件恰好是两个「魔改」:锚定解码 −2.205、几何偏置 −1.533),代价 +8.8% 参数 / +19.4% 延迟。数字全部经 arXiv HTML 表格逐格复核;工程细节经官方源码 file:line 级复核,并纠正/补全了 9 处论文与代码的出入(γ 初值、tanh 激活、OneCycleLR、self-attn 无几何项等)。</p>
+
+<p><b>一句话定位</b>:这是 <b>DETR 的「query 空间化」思想在 3DGS 前馈重建里的正确移植</b>——DAB-DETR 证明 object query 需要显式 anchor box,LocusGS 证明 Gaussian token 需要显式 anchor ball;它不是新范式,而是 query 范式补上「空间状态」这块短板后的完成体。后续竞争点在:谁能把 anchor 升级为各向异性/不确定性状态,以及谁能摘掉位姿依赖。</p>
+
+<div class="callout tip">
+<b>对本知识库的沉淀价值</b>:① 「显式空间状态 + 几何偏置注意力」的可复用设计模式(可迁移到人体/场景拆分重建);② 一套完整的「消融贡献排序」范式(解码锚定 > 注意力偏置 > 半径 > refine > PE);③ 论文-代码 9 处出入清单,是「宣称 vs 实现」核验方法的又一实例。
+</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>团队</h3>
+<ul>
+  <li><b>Wenyu Li · Sidun Liu · Tongrui Hu · Peng Qiao · Yong Dou</b> — National University of Defense Technology(国防科技大学),长沙</li>
+  <li>邮箱:{wenyu18, liusidun, tongruihu, pengqiao, yongdou}@nudt.edu.cn</li>
+  <li>致谢:明确致谢 <a href="https://github.com/nv-tlabs/TokenGS">TokenGS</a>(NVIDIA Toronto AI Lab)——本仓库为其 fork 改造,TokenGS 作者 Jiawei Ren, Michal Jan Tyszkiewicz, Jiahui Huang, Zan Gojcic(arXiv 2604.15239,2026-04)</li>
+</ul>
+
+<h3>资源</h3>
+<ul class="refs">
+  <li>📄 arXiv:<a href="https://arxiv.org/abs/2608.12825">https://arxiv.org/abs/2608.12825</a>(v1,2026-08-13;abs 页 comments 为空)</li>
+  <li>🏠 项目页:<a href="https://leo-frank.github.io/LocusGS_viewer">https://leo-frank.github.io/LocusGS_viewer</a></li>
+  <li>💻 GitHub:<a href="https://github.com/leo-frank/LocusGS">https://github.com/leo-frank/LocusGS</a>(Apache-2.0,含训练/评测完整代码,2026-10-08 仍在更新)</li>
+  <li>📦 预训练权重:<a href="https://drive.google.com/drive/folders/1_MontNvxTtXkwgluIhUUvOxd-UTyRlip?usp=drive_link">Google Drive</a>(RE10K/DL3DV 两阶段 checkpoint)</li>
+  <li>📖 库内兄弟笔记:<a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a> · <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a> · <a href="3D-20251009-ReSplat.html">ReSplat</a> · <a href="3D-20251211-SHARP.html">SHARP</a> · <a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a></li>
+</ul>
+</section>
+
+<div class="footer">
+  LocusGS(arXiv 2608.12825)深度调研笔记 · 全文公式/表格经 arXiv HTML v1 逐格核对,工程细节经官方源码(git clone @ 2026-10-09,最后提交 2026-10-08)复核 · 生成于 2026-10-09
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

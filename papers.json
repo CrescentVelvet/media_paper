@@ -3728,6 +3728,70 @@
    ]
   },
   {
+   "title": "LocusGS:给高斯 Token 装上显式三维锚点的前馈 3DGS",
+   "meta": [
+    "📄 arXiv: 2608.12825",
+    "📅 2026-08-13",
+    "🏢 NUDT 国防科技大学",
+    "📑 cs.CV"
+   ],
+   "tags": [
+    "前馈 3DGS",
+    "Gaussian Token",
+    "显式空间锚点",
+    "几何注意力偏置",
+    "Plücker 光线",
+    "稀疏视角",
+    "开源"
+   ],
+   "summary": "query-based 前馈 3DGS 的 token 是纯隐向量,同一 token 解码的高斯散布全场景。LocusGS 给每个 token 挂显式三维锚点(中心+半径),12 层 decoder 逐层 refine,并三处使用:cross-attn 加「点到 Plücker 光线距离」的半径自适应高斯偏置、self-attn 注入锚点位置编码、高斯中心按 μ+rδ 锚定解码。同预算对 TokenGS DL3DV 4 视图 <strong>+1.36 dB</strong>,token 级高斯散布缩 <strong>约 26×</strong>,代价 +8.8% 参数/+19.4% 延迟。源码(file:line 级)复核发现 9 处论文-代码出入。",
+   "links": [
+    {
+     "href": "3D-20260813-LocusGS.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2608.12825",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://leo-frank.github.io/LocusGS_viewer",
+     "text": "🏠 项目页"
+    },
+    {
+     "href": "https://github.com/leo-frank/LocusGS",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260813-LocusGS.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型",
+    "稀疏与少视角重建"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",
