@@ -31,6 +31,7 @@
 - **`papers.json` 的 summary 只允许 `<strong>`**:全库 summary 无 `<a>`、无 LaTeX(`$...$`),新条目保持一致,否则 index 卡片渲染异常。
 - **会话可能跨天,`<current_time>` 注入值会过时**:判断"今天是哪天"以系统时钟为准(本次注入 09-18、实际 09-20)。
 - **会议信息必须回 abs 页 comments 字段核实**,不能从同系列论文推断(上一轮曾把 Lyra 1.0 的 ICLR 2026 误挂到 2.0)。**项目页标注也不能当 badge 依据**:LiON-LoRA(2026-09-22)项目页写 ICCV 2025 且 BibTeX 带 journal 字段,但 arXiv abs 页 comments 为空 → 按 AGENTS 规范**不加 badge**,只在笔记正文标注"项目页标注 ICCV 2025(abs comments 为空)"。
+- **Explore 子代理的提取报告必须令其直接落盘**(2026-10-09 踩坑):reader 报告经 SendMessage 送达后,team 上下文意外丢失(任务列表同时清空、SendMessage 报 "Not in a team"),消息里的报告全文不可恢复,只能 `Agent(resume=agent_id)` 唤醒补写文件。教训:派发提取任务的 prompt 里直接写「把报告写入 .tmp_xxx.md 后回复路径」,不要依赖消息传递;resume 机制在 agent 完成后仍可用。
 
 ## 4. 论文来源核验的固定动作(2026-09-22 定)
 - **判断是否开源必须解 href**:项目页 "Code" 按钮文案可能写着 Code 而 href 指向作者的 `*.github.io` 个人主页(本次 LiON-LoRA 即此),只看文字会误判为已开源。规则:href 为 `#`/`#top` → 未放出;指向个人主页 → 仍未开源;只有 `github.com/<user>/<repo>` 才算开源。
