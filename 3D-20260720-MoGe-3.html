@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoGe-3:把单目几何估计从 2D 图像面抬进 3D 空间,自引导稀疏体素精炼找回细小结构</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure video{max-width:100%;border-radius:10px;border:1px solid var(--border);background:#000}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2607.17967v2 · v1 2026-07-20 / v2 2026-07-21 · 2D 参数化错配 → 自引导稀疏 3D 精炼(SSR)</span>
+    <h1>MoGe-3:把单目几何估计从 2D 图像面抬进 3D 空间,稀疏体素精炼找回栅栏与灯杆</h1>
+    <div class="subtitle">MoGe-3: Fine-Detail Monocular Geometry Estimation with Self-Guided Sparse Volumetric Refinement</div>
+    <div class="authors">Lingyu Kong* · Ruicheng Li* · Ruicheng Wang* · Sicheng Xu · Chengtang Yao · Jianfeng Xiang · Jiaolong Yang(通讯)(*共同一作)</div>
+    <div class="org">Tsinghua University · USTC · Microsoft Research&nbsp;|&nbsp;cs.CV · 项目页标注「Accepted at NeurIPS 2026」,但 abs 页 comments 字段为空,按本库规范<b>不加会议 badge</b>,仅在此注明来源</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2607.17967" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2607.17967v2" target="_blank">🌐 arXiv HTML 全文(v2)</a>
+      <a href="https://arxiv.org/pdf/2607.17967" target="_blank">📥 PDF</a>
+      <a href="https://qft-333.github.io/moge3page/" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/microsoft/MoGe" target="_blank">💻 GitHub(microsoft/MoGe,v3 已并入)</a>
+      <a href="https://huggingface.co/spaces/Ruicheng/MoGe-3" target="_blank">🤗 在线 Demo</a>
+      <a href="https://huggingface.co/Ruicheng/moge-3-vitl" target="_blank">🤗 权重 ViT-L(370M)</a>
+      <a href="https://huggingface.co/Ruicheng/moge-3-vitg" target="_blank">🤗 权重 ViT-G(1.25B)</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:Base Model(MoGe-2 基础模型)</a></li>
+    <li><a href="#s5">模块二:Self-Guided Voxelization(自引导体素化)</a></li>
+    <li><a href="#s6">模块三:Sparse 3D U-Net(稀疏三维 U-Net)</a></li>
+    <li><a href="#s7">模块四:log-depth 残差迭代更新</a></li>
+    <li><a href="#s8">训练方案与损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码验证)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话</b>:MoGe-3 在 MoGe-2 基础模型之上外挂一个<b>自引导稀疏 3D 精炼器(SSR)</b>——把初始点图抬到以 log-depth 量化的稀疏体素壳上,用稀疏 3D 卷积按「真实 3D 邻域」而非「图像面邻近」聚合特征,迭代预测 log-depth 残差,把栅栏、灯杆这类细长结构的扭曲失真修回来,同时保持 metric-scale 输出与接近实时的速度。</p>
+<p><b>问题-方法-结果</b>:现有单目几何模型(2D 卷积解码器 / VAE 解码 / 2D UV query 的 MLP 头)都在 2D 参数化里解码 3D 几何,特征交互由图像面距离主导,深度不连续处的前背景特征被错误混合,细长结构被过度平滑(§1)。MoGe-3 保留强 2D 基础模型做外观理解,把几何建模搬到 3D 空间:每像素恰占一个体素(共 $HW$ 个占用体素,计算量随占用线性),稀疏卷积只在 $|Δζ|≤1/D$ 的 3D 邻域内聚合。结果:9 个 zero-shot benchmark 上全局/局部/边界指标全面 SOTA(Table 1),ViT-L 默认模型局部点图阈值精度 $\delta_{0.01}^{p}$ 从 MoGe-2 的 46.6 提到 55.9,延迟 121 ms@700²(A100 FP16,Table 2)。</p>
+<div class="stat-row">
+  <div class="stat"><div class="v">55.9</div><div class="l">局部点图 δ₀.₀₁ᵖ(Table 1,ViT-L;MoGe-2 为 46.6)</div></div>
+  <div class="stat"><div class="v">92.0</div><div class="l">全局相对点图 δ₁ᵖ(Table 1,ViT-L;MoGe-2 为 90.4)</div></div>
+  <div class="stat"><div class="v">121 ms</div><div class="l">单帧延迟 @700² A100 FP16,K=3(Table 2;MoGe-2 为 39 ms)</div></div>
+  <div class="stat"><div class="v">HW</div><div class="l">l=0 层占用体素数(每像素恰 1 个,§3.2.1 式(3))</div></div>
+  <div class="stat"><div class="v">K=3</div><div class="l">默认精炼迭代数(训练/推理一致,§4.1;测试可外推至 K=7)</div></div>
+</div>
+<div class="callout key"><b>核心贡献(作者声明,§1 末尾)</b>:① 提出 SSR——把单目几何建模从 2D 图像面抬到 3D 空间的自引导稀疏精炼框架;② 投影对齐、尺度不变的体素壳设计,使 3D 卷积感受野与真实几何邻接一致,天然解耦深度不连续两侧的特征;③ 9 个 benchmark 上局部几何细节大幅领先,且保持 metric-scale 输出与实用速度。</div>
+<div class="callout warn"><b>⚠️ 论文 vs 代码差异(本笔记 §10 详解)</b>:论文默认体素分辨率 $D{=}200$(§4.5),但官方仓库 <code>configs/train/v3.json</code> 中 <code>refiner_depth_resolution=256</code>;论文附录 A.2 写 2D heads 峰值学习率 $1×10^{-4}$,配置文件中为 <code>1e-5</code>。两处均以代码为当前实现真值,差异原因<span class="uncertain">【待核实】可能论文成稿后训练配置又调整过</span>。</div>
+<div class="figure"><img src="images/2607.17967/teaser.png" loading="lazy" alt="teaser"><div class="caption"><b>图1</b>(论文 Fig. 1)MoGe-3 从单张图像输出几何无失真、细节保持的 metric-scale 点图。对比先前方法(Depth Pro、MoGe-2、InfiniDepth),细结构与局部几何保真显著更好。换视角渲染是暴露 3D 几何扭曲的关键——这类失真在 2D 深度图可视化里往往不可见。</div></div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 观察到的失败模式(§1)</h3>
+<p>作者对现有 SOTA 单目几何模型的失效描述非常具体,不是泛泛的"效果不好":</p>
+<ul>
+<li><b>扭曲的栅栏、涂抹的灯杆</b>:"while current models produce plausible global layouts, they often struggle to faithfully reconstruct fine-scale geometry, particularly for thin or elongated structures, resulting in severe distortions such as twisted fences or smeared poles"(§1)。</li>
+<li><b>2D 可视化下隐形、换视角才暴露</b>:"such artifacts are often inconspicuous in 2D depth visualizations but become evident under viewpoint changes, exposing underlying 3D geometric distortions"(§1)。这意味着只看深度图指标的评测会系统性低估该问题——作者因此专门构造了 local/boundary 指标(§4.2,本笔记 §11)。</li>
+</ul>
+<h3>2.2 归因:2D 参数化的架构错配(§1,作者假设)</h3>
+<div class="callout key"><b>核心洞察(作者原文假设)</b>:"We hypothesize that this issue is due to a fundamental architectural mismatch: most current monocular reconstruction models decode 3D geometry within a 2D parameterization. ... In all cases, feature interactions are governed by image-plane proximity rather than true 3D geometric relationships. This introduces a local smoothness prior that inadvertently mixes features from geometrically distant surfaces across depth discontinuities and over-smooths geometry."</div>
+<div class="grid-3">
+<div class="card"><h4>2D 卷积解码器</h4><p>前馈模型的主流解码方式(Depth Pro、MoGe-2、UniK3D 等;§1 引 [18,30,4,44,45,13,54,58])。卷积核在图像网格上滑动,一根前景细杆与背后远墙在 2D 上相邻,特征被同一卷积核混合 → 杆被"抹"进墙里。</p></div>
+<div class="card"><h4>VAE 解码(扩散类)</h4><p>扩散式深度模型在 latent 空间生成、VAE 解码回深度图(§1 引 [16,9],如 Pixel-Perfect Depth 路线)。解码器同样是 2D 卷积, latent 中的深度不连续在解码时被平滑先验抹平。</p></div>
+<div class="card"><h4>MLP over 2D UV queries</h4><p>近期方法在 patch latents 或 2D UV 查询上接 MLP 头(§1 引 [51,58],如 InfiniDepth)。逐像素独立回归虽无显式卷积混合,但 query 本身按图像网格组织,缺乏跨像素的 3D 感知交互。</p></div>
+</div>
+<h3>2.3 关键假设的失效条件(本笔记分析)</h3>
+<div class="callout warn"><b>假设何时失效</b>:作者的判断"local structural integrity breaks down when 2D proximity diverges from true 3D relationships"(§1)有两种发散方向:① 图像相邻但 3D 远离(遮挡边界、深度不连续)→ 特征被错误混合,这是本文主攻的;② 图像远离但同属一个 3D 表面(细长结构的两个远端)→ 2D 参数化下无法关联,本文靠 3D 邻域卷积部分缓解。<b>SSR 自身的隐含假设</b>:体素壳的邻接判据 $|ζ_{ij}-ζ_{i'j'}|≤1/D$ 依赖前一步的 log-depth 估计——若初始误差大于 $1/D$,错误的壳会把不同表面连成邻居,误导 3D 卷积感受野(自引导的级联风险,见 §5 与 §15)。</div>
+<p>此外,作者承认回归范式的固有局限(§5 Limitations):"regression-based paradigm inherently struggles to resolve pixel ambiguity along object boundaries... introduces 'fly-points'",即边界像素的深度在原理上二义,完全锐利的深度边无法由回归得到——这是本文<b>没有</b>解决、留待生成式方法(如 Pixel-Perfect Depth [51])融合的方向。</p>
+<h3>2.4 与 MoGe 系列的关系</h3>
+<p>MoGe(CVPR 2025  oral 级别影响力,affine-invariant 点图 + 最优监督)→ MoGe-2(2025-07,metric scale + 数据精炼锐化细节)→ <b>MoGe-3(本文,2026-07,3D 稀疏精炼修细节)</b>。MoGe-3 的 base 直接初始化自 MoGe-2(§1:"initialize the base geometry estimator from MoGe-2"),SSR 是外挂模块,可视为"第三代 = 第二代 + 3D 精炼器 + 联合训练"。库内此前未收录 MoGe 系列笔记,本篇为系列首篇。</p>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<h3>3.1 输入/输出定义</h3>
+<ul>
+<li><b>输入</b>:单张 RGB 图像(任意宽高比,zero-shot,无需相机参数)。</li>
+<li><b>输出</b>(§3.1 + 源码 <code>moge/model/v3.py:208-215</code>):dense per-pixel 3D 点图 $\boldsymbol{P}$(metric scale)、深度图、有效掩码 mask、表面法向 normal、相机内参(由点图恢复 focal/shift)。metric 点图 = 预测的 metric scale $×$ 仿射不变点图 $\boldsymbol{P}$(§3.1);base 的 $\boldsymbol{P}$ 仅在光轴仿射变换 $(X,Y,Z)\mapsto(sX,sY,sZ+t)$ 下被监督(式(1))。</li>
+</ul>
+<div class="equation">$$(X,Y,Z)\;\mapsto\;\big(sX,\;sY,\;sZ+t\big),\qquad s>0,\;t\in\mathbb{R} \text{(式 1)}$$</div>
+<h3>3.2 三阶段划分</h3>
+<p>MoGe-3 = <b>(a) Base model</b>(MoGe-2 初始化,出初始点图与 2D 特征)+ <b>(b) SSR 迭代精炼</b>(K 次循环:体素化 → 稀疏 3D U-Net → 残差更新)。图 2 为论文官方结构图(Fig. 2)。</p>
+<div class="figure"><img src="images/2607.17967/architecture.png" loading="lazy" alt="architecture"><div class="caption"><b>图2</b>(论文 Fig. 2)方法总览。(a) Base model 提供初始点图与 2D 特征;(b) SSR 迭代精炼:当前估计被离散化为稀疏体素壳引导 3D 推理,再更新点图进入下一循环;(c) Sparse 3D U-Net:多尺度稀疏 3D 卷积,在 bottleneck 注入 base 的 2D 特征,输出 log-depth 残差。</div></div>
+<div class="mermaid">
+flowchart TD
+    IMG["输入: 单张 RGB 图像"] --> ENC["DINOv2 ViT-L/G 编码器<br/>(4 层中间特征, dim=1024)"]
+    ENC --> NECK["共享 Neck(5 级金字塔, 1024→32)"]
+    NECK --> HEADS["四个头: points / normal / mask / scale"]
+    HEADS --> P0["初始点图 P⁽⁰⁾<br/>分解表示 q=(u,v,ζ), ζ=log Z"]
+    ENC -.->|"2D 特征 F(1026 维, 含 UV)"| INJ
+    subgraph SSR["SSR 迭代精炼(K 次, 默认 K=3)"]
+        VOX["① 自引导体素化<br/>c=(i,j,⌊D·ζ⌉), 恰 HW 个体素"] --> UNET["② Sparse 3D U-Net(5 级)<br/>bottleneck 注入 2D 特征"]
+        UNET --> RES["③ 预测 log-depth 残差 Δζ<br/>ζ⁽ᵏ⁺¹⁾=ζ⁽ᵏ⁾+Δζ⁽ᵏ⁾"]
+        RES -->|下一步重新体素化| VOX
+    end
+    P0 --> VOX
+    RES --> OUT["最终 metric 点图 = exp(ζᴷ)·(u,v,1) × metric scale"]
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style SSR fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<h3>3.3 符号表(与论文一致)</h3>
+<table>
+<tr><th>符号</th><th>定义</th><th>出处</th></tr>
+<tr><td>$\boldsymbol{P}$ / $\boldsymbol{p}_{ij}=(X_{ij},Y_{ij},Z_{ij})$</td><td>base 输出的 dense 点图 / 像素 $(i,j)$ 的 3D 点</td><td>§3.1, §3.2</td></tr>
+<tr><td>$\boldsymbol{q}_{ij}=(u_{ij},v_{ij},\zeta_{ij})$</td><td>分解表示(factorized coordinates):$u=X/Z,\ v=Y/Z,\ \zeta=\log Z$</td><td>式(2)</td></tr>
+<tr><td>$\boldsymbol{F}$</td><td>DINOv2 encoder 的 dense 特征图,精炼阶段复用(注入 U-Net bottleneck)</td><td>§3, §3.2.2</td></tr>
+<tr><td>$D$</td><td>体素分辨率(log-depth 量化因子);论文默认 $D{=}200$;代码 <code>refiner_depth_resolution=256</code>(差异见 §10)</td><td>§3.2.1, §4.5</td></tr>
+<tr><td>$\mathcal{V}^{(k)},\ \boldsymbol{c}_{ij}^{(k)}$</td><td>第 $k$ 次迭代的稀疏体素壳;体素坐标 $(i,j,\lfloor D\cdot\zeta_{ij}^{(k)}\rceil)$;$l{=}0$ 层恰 $HW$ 个占用体素</td><td>式(3)</td></tr>
+<tr><td>$\mathcal{V}^{(k),l}=\{\lfloor\tfrac{1}{2^{l}}\boldsymbol{c}_{ij}\rfloor\}$</td><td>U-Net 第 $l$ 层的稀疏体素集(动态稀疏下采样)</td><td>§3.2.2</td></tr>
+<tr><td>$\Delta\zeta_{ij}^{(k)}$</td><td>U-Net 输出的标量 log-depth 残差</td><td>§3.2.2, §3.2.3</td></tr>
+<tr><td>$K$</td><td>精炼迭代次数;训练 K=3,推理默认 K=3;消融训练 K=3、评估 K=5;泛化测试 K∈{0,…,7}</td><td>§4.1, §4.5</td></tr>
+<tr><td>$s,\ t_z$(亦作 $t$)</td><td>光轴仿射对齐的尺度与平移(式(1)、式(8))</td><td>式(1), 式(8)</td></tr>
+<tr><td>$w_{ij}\propto 1/\widehat{Z}_{ij}$</td><td>全局损失的深度反比权重</td><td>式(7)</td></tr>
+<tr><td>$\boldsymbol{r}_{ij}^{(k)}$</td><td>局部损失的分区参考点图(0.5 概率取 GT,0.5 取当前对齐预测)</td><td>式(9)</td></tr>
+<tr><td>$\mathcal{G}_{\alpha,g}^{(k)},\ \boldsymbol{\pi}_{\alpha}^{(k)}$</td><td>径向分区得到的 3D 局部区域与分区函数;$\alpha\in\{4,16,64\}$</td><td>式(10), A.1</td></tr>
+<tr><td>$\boldsymbol{t}_{\alpha,g}^{(k)}$</td><td>局部区域的 3-DoF 平移(共享全局尺度 $s^{(k)}$)</td><td>式(11)(12)</td></tr>
+<tr><td>$\mathcal{M}$ / $\boldsymbol{N}$ / $\boldsymbol{M}$</td><td>有效像素掩码 / 法向 / 掩码(预测与 GT)</td><td>式(7)(14)</td></tr>
+<tr><td>$(\lambda_g,\lambda_\ell,\lambda_e,\lambda_m,\lambda_n,\lambda_s)$</td><td>损失权重 = $(1.0,1.0,1.0,0.1,0.1,0.1)$</td><td>A.2</td></tr>
+<tr><td>$r_s(p),\ \hat{\sigma}_s$</td><td>评测侧局部 mask 构建的多尺度 Laplacian 残差与 MAD 鲁棒标准差</td><td>B.1</td></tr>
+<tr><td>$\rho_i=|S_i\cap\mathcal{S}|/|S_i|$</td><td>SAM2 分段的支持密度(局部 mask 扩展保留条件)</td><td>式(16)</td></tr>
+<tr><td>$s^{*},\ t_i$</td><td>局部评测协议的全局尺度与 per-segment 平移</td><td>式(17)(18)</td></tr>
+</table>
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:Base Model(MoGe-2 基础模型)</h2>
+<h3>4.1 网络结构(源码验证:configs/train/v3.json + moge/model/v3.py)</h3>
+<p>Base model 即 MoGe-2 架构(v3.py:17 <code>class MoGeModel(MoGeModelV2)</code>),初始化自 MoGe-2 权重(§1)。论文未给出 base 的结构细节(指向 MoGe-2 [45]),以下全部取自官方配置:</p>
+<table>
+<tr><th>组件</th><th>配置(来源:configs/train/v3.json)</th></tr>
+<tr><td>Encoder</td><td>DINOv2 ViT-L/14(<code>dinov2_vitl14</code>),取中间层 <code>[5,11,17,23]</code>,<code>dim_out=1024</code>(v3.json:4-13);ViT-G 变体同理</td></tr>
+<tr><td>Neck(共享)</td><td>5 级金字塔 <code>dim_res_blocks=[1024,256,128,64,32]</code>,<code>num_res_blocks=[0,2,2,2,0]</code>,重采样 <code>[conv_transpose×3, bilinear]</code>(v3.json:14-45)</td></tr>
+<tr><td>points_head</td><td>同构 5 级,<code>num_res_blocks=[0,1,1,1,0]</code>,输出 3 通道(v3.json:46-83)</td></tr>
+<tr><td>normal_head / mask_head</td><td>同构,分别输出 3 / 1 通道(v3.json:84-159)</td></tr>
+<tr><td>scale_head</td><td>MLP <code>dims=[1024,1024,1024,1]</code>,作用于 cls_token,输出全局 metric scale(v3.json:160-167;v3.py:156)</td></tr>
+<tr><td>num_tokens_range</td><td><code>[1200,3600]</code>(v3.json:168-171)——推理时按 resolution_level 0~9 线性映射(v3.py:271-273),700² 约对应默认档</td></tr>
+<tr><td>参数量</td><td>ViT-L 整模型 <b>370M</b>,ViT-G <b>1.25B</b>(README 模型表)</td></tr>
+</table>
+<h3>4.2 数学形式化</h3>
+<p>点图以<b>分解坐标</b>表示(式(2))——这是 SSR 的前提:把 $(X,Y,Z)$ 分解为射线方向 $(u,v)$ 与 log 深度 $ζ$,精炼只动 $ζ$:</p>
+<div class="equation">$$\boldsymbol{q}_{ij}=(u_{ij},v_{ij},\zeta_{ij})=\left(\frac{X_{ij}}{Z_{ij}},\frac{Y_{ij}}{Z_{ij}},\log Z_{ij}\right) \text{(式 2)}$$</div>
+<p>base 的监督是光轴仿射不变的(式(1)),因此 base 输出本身不带绝对尺度;metric 尺度由 scale_head 单独预测并在最后相乘(§3.1;v3.py:321-323)。</p>
+<h3>4.3 前向流程(v3.py:113-217)</h3>
+<ol>
+<li>按 <code>num_tokens</code> 与宽高比解出 base 网格 $(b_h,b_w)$(v3.py:127-132);</li>
+<li>DINOv2 编码得 4 层中间特征 + cls_token(v3.py:135);每层特征拼接归一化 UV 坐标(aspect-ratio 条件,v3.py:139-145)——最细层拼接后通道数 $1024+2=1026$,即 refiner 的 <code>encoder_channels</code>;</li>
+<li>共享 neck 融合,points/normal/mask 三个 2D 头解码,scale_head 从 cls_token 出 metric scale(v3.py:148-156);</li>
+<li>points_head 原始输出 <code>raw_coord</code> 形状 $[B,3,H,W]$,通道序 $(x/z,\ y/z,\ \log z)$(v3.py:163-164),经 <code>remap_output='exp'</code>(v3.py:38)映射回点图;</li>
+<li>推理后处理(<code>infer</code>,v3.py:219-381):逐步恢复 (focal, shift)(v3.py:304-312)、<code>force_projection</code> 用内参重投影点图(v3.py:318-319)、乘 metric scale(v3.py:321-323)、mask 过滤无效点(置 inf,v3.py:350-356)。</li>
+</ol>
+<h3>4.4 监督信号</h3>
+<p>base 参与全部几何损失(式(6)中 $k{=}0$ 项)与三个辅助损失(mask BCE、法向、metric scale,式(14)),详见 §8 损失总表。训练数据上,base 用<b>合成+真实全混合</b>,refiner 只收合成样本的梯度(§3.3,原因见 §8.3)。</p>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:Self-Guided Voxelization(自引导体素化)</h2>
+<p>体素化是 SSR 的"地基":它决定了 3D 卷积把哪些点当邻居。设计要点是让壳同时满足<b>投影对齐、尺度不变、几何相干</b>三条性质(§3.2.1)。</p>
+<h3>5.1 数学形式化</h3>
+<div class="equation">$$\mathcal{V}^{(k)}=\left\{\boldsymbol{c}_{ij}^{(k)}\right\},\qquad \boldsymbol{c}_{ij}^{(k)}=\left(i,\,j,\,\left\lfloor D\cdot\zeta_{ij}^{(k)}\right\rceil\right) \text{(式 3)}$$</div>
+<p>图像轴 $(i,j)$ 天然离散;深度轴把 log-depth $ζ$ 乘以分辨率 $D$ 后四舍五入量化。每个像素恰好映射到一个体素 → $l{=}0$ 层形成"恰有 $HW$ 个占用体素的薄流形壳"(§3.2.1),计算量对占用体素数线性。</p>
+<h3>5.2 三条设计性质与机制解释</h3>
+<div class="grid-3">
+<div class="card"><h4>① Projection-aligned</h4><p>体素网格的 $(i,j)$ 两轴与图像像素网格完全对齐 → 无需学习的投影/反投影,2D 特征可按 $(i,j)$ 直接 gather(见 §6.3),且壳分辨率随输入分辨率自适应。</p></div>
+<div class="card"><h4>② Scale-invariant</h4><p>量化作用在 $\log Z$ 上:乘性深度误差(全局尺度 $s$)在 log 域变成加性常数,被 per-batch 的 z-offset 吸收(源码 v3.py:88-89)→ "shell density and connectivity remain invariant to metric scale transformations"(§3.2.1)。这正好匹配 base 的仿射不变监督。</p></div>
+<div class="card"><h4>③ Geometry-coherent 感受野</h4><p>3×3×3 稀疏卷积的邻居 ⟺ 图像相邻且 $|ζ_{ij}-ζ_{i'j'}|≤1/D$——深度差超过一个量化格的两个表面在 3D 网格上不相邻,特征自然解耦,"preventing the 'bleeding' and 'twisted' artifacts inherent in 2D-based feature mixing"(§3.2.1)。</p></div>
+</div>
+<h3>5.3 源码实现(v3.py:60-99)</h3>
+<table>
+<tr><th>步骤</th><th>张量操作(形状)</th><th>代码</th></tr>
+<tr><td>输入</td><td><code>point_coord</code>: $[B,H,W,3]$,通道 $(x/z,y/z,\log z)$</td><td>v3.py:60-67</td></tr>
+<tr><td>量化</td><td><code>zq = round(logz * refiner_depth_resolution)</code> → int64</td><td>v3.py:86-87</td></tr>
+<tr><td>平移</td><td>per-batch z-offset:$z_{idx}=z_q-\min(z_q)$;$z_{extent}=\max(z_{idx})+1$(动态深度范围)</td><td>v3.py:88-90</td></tr>
+<tr><td>坐标组装</td><td><code>coords</code>: $(M,4)$ int32,列 (batch, i, j, z_bin),$M=B\cdot H\cdot W$</td><td>v3.py:92-95</td></tr>
+<tr><td>特征</td><td><code>feats</code>: $(M,3)$ fp32(即分解坐标本身作为输入特征)</td><td>v3.py:97</td></tr>
+<tr><td>输出形状</td><td><code>shape</code>: $[B,H,W,z_{extent},3]$(稀疏张量的稠密形状描述)</td><td>v3.py:98</td></tr>
+</table>
+<div class="callout tip"><b>工程细节:为什么强制 fp32</b>(v3.py:75-77 注释):"the z binning is quantized at 1/refiner_depth_resolution, which is finer than fp16 resolution over the usual logz range, so binning in fp16 would collapse/jitter voxels"——量化步长(1/256≈0.0039 log 单位)小于 fp16 在该数值范围的分辨率,半精度下相邻深度会塌进同一格或抖动,因此体素化全程 fp32,只有 U-Net 主体跑混合精度。</div>
+<div class="callout warn"><b>⚠️ D 的取值:论文 200 vs 代码 256</b>。论文 §3.2.1 与 §4.5 消融均以 $D{=}200$ 为默认(Table 3 的 ⋆ 行);而官方仓库 <code>configs/train/v3.json:194</code> 为 <code>"refiner_depth_resolution": 256</code>。两者方向一致(论文消融显示 D=200 与 D=300 之间是平台期),但数值不等,<span class="uncertain">【待核实】发布配置可能在论文投稿后重新调过</span>。复现时以代码为准。</div>
+<h3>5.4 该模块的监督</h3>
+<p>体素化本身无参数、无监督(纯离散化操作);梯度通过"残差加回 $ζ$"的路径回流(见 §7),体素坐标不可微也不需要可微——每步重新体素化是<b>带停梯度的硬重离散化</b>(v3.py:173 <code>current_coord.detach()</code>)。</p>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:Sparse 3D U-Net(稀疏三维 U-Net)</h2>
+<p>论文正文未给出 U-Net 的层数/通道数(仅 Fig. 2(c) 示意),以下结构全部来自源码 <code>moge/model/modules/sparse_unet.py</code> 与 <code>configs/train/v3.json:172-194</code>,是本笔记相对论文的增量信息。</p>
+<h3>6.1 网络结构表(源码:configs/train/v3.json:172-193)</h3>
+<table>
+<tr><th>层级</th><th>操作</th><th>输入形状 → 输出形状</th><th>说明</th></tr>
+<tr><td>input_proj</td><td>Linear 3→32</td><td>$(M,3)\to(M,32)$</td><td>分解坐标 $(u,v,ζ)$ 直接作输入特征(sparse_unet.py:74)</td></tr>
+<tr><td>down_stages[0]</td><td>SparseResBlock3d ×1 @32ch</td><td>$(M,32)$</td><td rowspan="4">每级 1 个残差块(<code>encoder_blocks_per_level=1</code>);块 = LayerNorm(ε=1e-6)+SiLU+3×3×3 子流形稀疏卷积 ×2,conv2 零初始化(flex_sparse_blocks.py:49-74)</td></tr>
+<tr><td>PoolDown ×2</td><td>mean pool + Linear 32→64</td><td>体素数 $\lceil\cdot/2\rceil^3$ 聚合,$(M',64)$</td></tr>
+<tr><td>down_stages[1..3] + PoolDown</td><td>64→128→256</td><td>逐级减半</td></tr>
+<tr><td>down_stages[4]</td><td>SparseResBlock3d ×1 @512ch</td><td>$(M^{(4)},512)$</td></tr>
+<tr><td><b>2D 特征注入</b></td><td>gather + Linear 1026→512 + concat + MLP</td><td>$(M^{(4)},512)\oplus(M^{(4)},512)\to(M^{(4)},512)$</td><td>见 §6.3</td></tr>
+<tr><td>bottleneck_stage</td><td>SparseResBlock3d ×1 @512ch</td><td>$(M^{(4)},512)$</td><td><code>bottleneck_blocks=1</code></td></tr>
+<tr><td>NearestUp ×2 + up_stages</td><td>最近邻上采样 + Linear,加性 skip</td><td>512→256→128→64→32</td><td>每级 1 块(<code>decoder_blocks_per_level=1</code>);skip 为相加非拼接(sparse_unet.py:234)</td></tr>
+<tr><td>out_proj</td><td>Linear 32→1,<b>零初始化</b></td><td>$(M,32)\to(M,1)$</td><td>输出 log-depth 残差;零初始化使初始为恒等映射(sparse_unet.py:114, 120-122)</td></tr>
+</table>
+<p>配置原值:<code>model_channels=[32,64,128,256,512]</code>,<code>downsample_factors=[2,2,2,2]</code>,<code>encoder_downsample=16</code>(代码断言 $16=\prod$ downsample_factors,sparse_unet.py:64-65),<code>in_channels=3, out_channels=1, encoder_channels=1026</code>。</p>
+<h3>6.2 稀疏卷积与动态稀疏性</h3>
+<ul>
+<li><b>子流形稀疏卷积(SubmanifoldConv3d)</b>:来自 <code>flex_gemm</code>(JeffreyXiang/FlexGEMM,钉在 commit <code>b2fadb29</code>,pyproject.toml:28)——即"输出体素集 = 输入体素集"的稀疏卷积,不在空处生发新体素,保证壳拓扑不被卷积撑爆。通道数 ≥128 时用 <code>masked_implicit_gemm</code>,否则 <code>implicit_gemm</code>(flex_sparse_blocks.py:15-23)。</li>
+<li><b>动态稀疏下采样</b>(§3.2.2):第 $l$ 层体素集 $\mathcal{V}^{(k),l}=\{\lfloor\tfrac{1}{2^{l}}\boldsymbol{c}_{ij}\rfloor\}$——图像轴被池化压缩,但"structures that collapse to the same image-space location can still remain separated along the depth dimension, leading to multiple occupied voxels around depth discontinuities":不同深度的体素在 2×2×2 池化后仍是不同体素,前背景在多尺度处理中保持分离。这正是 2D U-Net 做不到的(§12 消融对照)。</li>
+<li><b>NeighborCache 复用</b>(sparse_unet.py:184-204 注释):同层下采样与对称上采样坐标一致,邻居索引缓存(level_conv_caches / level_down_caches)在 down/bottleneck/up 三段复用,省掉重复建图——这是 K 次迭代下延迟仍可控的关键工程手段之一。</li>
+</ul>
+<h3>6.3 2D 特征注入(源码细节:只在 bottleneck,按 (i,j) gather,z 轴共享)</h3>
+<p>论文说"at the lowest resolution level, the encoded voxels are concatenated with 2D features F"(§3.2.2)。源码给出精确机制:</p>
+<ol>
+<li>下采样路径结束后,对 bottleneck 层每个体素取其坐标 $(b,i,j,z)$ 的前三个分量,直接在稠密 2D 特征图 <code>encoder_feature</code>(形状 $[B,1026,H/16,W/16]$,即 DINO 最粗层 + UV)上<b>按 $(b,:,i,j)$ 索引取值</b>(sparse_unet.py:154-168 <code>_sample_encoder_feature</code>)——注意 <b>$z$ 轴被忽略</b>:同一射线上不同深度的体素拿到同一份 2D 特征(论文:"Voxels sharing an image location but differing in depth duplicate the same 2D feature",§3.2.2);</li>
+<li>Linear 1026→512(<code>encoder_fuse</code>,sparse_unet.py:75),与体素特征 concat 后经 <code>fuse_proj</code>(Linear→SiLU→Linear,sparse_unet.py:77-81)融合回 512 维;</li>
+<li>注入只发生在 bottleneck 一处,不是多级注入。</li>
+</ol>
+<div class="callout key"><b>机制解释(为什么瓶颈注入就够)</b>:bottleneck 层的体素感受野已通过 4 次 3×3×3 卷积 + 3 次池化覆盖大 3D 邻域,此处注入语义特征可以让" appearance 证据"沿 decoder 路径回流到每个输出体素;若在高层注入,2D 特征没有 3D 上下文支撑,反而容易把图像面邻近平滑回去。RGB 替代注入的消融(Table 3)证明语义特征不可替代——RGB Input 变体 $\delta_{0.01}^{p}$ 只有 49.7,远低于 DINO 注入的 55.1。</div>
+<h3>6.4 前向流程(sparse_unet.py:170-242)</h3>
+<ol>
+<li>input_proj 把 $(M,3)$ 映射到 32 维;</li>
+<li>5 级 down:每级残差块 → 缓存 skip → PoolDown 建邻居缓存;</li>
+<li>最深层 gather 2D 特征、融合、过 bottleneck 块;</li>
+<li>4 级 up:NearestUp(用上采样转置缓存 <code>.T</code>)→ 加性 skip → 残差块;</li>
+<li>out_proj 输出 $(M,1)$ log-depth 残差。</li>
+</ol>
+<h3>6.5 该模块的监督</h3>
+<p>无独立监督;通过残差更新后的点图参与 $\mathcal{L}_{geo}^{(k)}$($k≥1$,式(6)(7)(11)(13))。训练前两阶段梯度隔离见 §8.3(<code>refiner_detach_backbone_until=5001</code>)。</p>
+<div class="mermaid">
+flowchart TD
+    IN["feats (M,3): (u,v,ζ)"] --> IP["input_proj Linear 3→32"]
+    IP --> D0["ResBlock @32"] --> P0["PoolDown ×2 →64"] --> D1["ResBlock @64"] --> P1["PoolDown ×2 →128"] --> D2["ResBlock @128"] --> P2["PoolDown ×2 →256"] --> D3["ResBlock @256"] --> P3["PoolDown ×2 →512"] --> D4["ResBlock @512"]
+    ENC2D["2D 特征 F[B,1026,H/16,W/16]"] -.->|gather (b,i,j), z 轴共享| FUSE
+    D4 --> FUSE["encoder_fuse 1026→512<br/>concat + fuse_proj MLP"]
+    FUSE --> BN["bottleneck ResBlock @512"]
+    BN --> U3["NearestUp ×2 →256"] --> S3["+ skip → ResBlock @256"]
+    S3 --> U2["NearestUp ×2 →128"] --> S2["+ skip → ResBlock @128"]
+    S2 --> U1["NearestUp ×2 →64"] --> S1["+ skip → ResBlock @64"]
+    S1 --> U0["NearestUp ×2 →32"] --> S0["+ skip → ResBlock @32"]
+    S0 --> OUTP["out_proj Linear 32→1(零初始化)"]
+    OUTP --> RES["Δζ (M,1)"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style FUSE fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style RES fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:log-depth 残差迭代更新</h2>
+<h3>7.1 数学形式化</h3>
+<div class="equation">$$\boldsymbol{q}^{(k+1)}_{ij}=\left(u_{ij},\,v_{ij},\,\zeta_{ij}^{(k)}+\Delta\zeta_{ij}^{(k)}\right) \text{(式 4)}$$</div>
+<div class="equation">$$\boldsymbol{p}^{(K)}_{ij}=e^{\zeta^{(K)}_{ij}}\cdot\left(u_{ij},\,v_{ij},\,1\right) \text{(式 5)}$$</div>
+<p>三个要点:</p>
+<ul>
+<li><b>只更新 $ζ$</b>:$(u,v)$ 全程固定(§3.2:"the refiner only predicts log-depth residuals")——refiner 只能沿射线推拉点,不能横向移动。这是刻意的设计收缩:横向误差由 base 负责,refiner 专注于深度维的细节修复(设计边界见 §15)。</li>
+<li><b>每步重新体素化(自引导)</b>:更新后的 $\zeta^{(k+1)}$ 重新离散化为下一步的壳(§3.2.3),壳结构随估计改进而自我修正——故名 Self-Guided。源码:v3.py:171-176 循环内每次调用 <code>_refine_logz</code> → <code>_voxelize</code> 重建 coords。</li>
+<li><b>残差恒等初始化</b>:out_proj 零初始化(sparse_unet.py:120-122)→ 训练起步时 $\Deltaζ=0$,$ζ^{(1)}=ζ^{(0)}$,精炼器从"什么都不做"开始学修正(§3.2.2:"allowing identity mapping"),配合两阶段训练稳定早期优化(§8.3)。</li>
+</ul>
+<h3>7.2 K 的设置与泛化(§4.1, §4.5, Fig. 4)</h3>
+<ul>
+<li>训练 K=3,推理默认 K=3(§4.1);消融实验统一训练 K=3、<b>评估 K=5</b>(§4.5,Table 3 表注);</li>
+<li>Fig. 4 测试 $K\in\{0,1,\dots,5,7\}$:"local metrics improve substantially after the first step and continue to improve gradually before saturating around K=5, while global metrics remain nearly unchanged";"Running up to K=7 yields slightly improved or stable metrics"——每步学的是<b>收敛性修正</b>而非过拟合固定步数(§4.5);</li>
+<li>K=0 时模型与 MoGe-2 延迟完全相同(共享 base 架构,§4.3)。</li>
+</ul>
+<div class="figure"><img src="images/2607.17967/ablation_refine_steps.png" loading="lazy" alt="refine steps"><div class="caption"><b>图3</b>(论文 Fig. 4)精炼迭代数的影响。左:点图可视化随迭代逐步锐化细结构;右:全局 $\delta_1^p$、局部 $\delta_{0.01}^p$、边界 F1 随迭代稳定或提升。六边形标记(K=0)为 base 模型 MoGe-2 的性能。</div></div>
+<h3>7.3 梯度流(源码:v3.py:168-176 + train_moge3.py)</h3>
+<table>
+<tr><th>路径</th><th>可导性</th><th>代码</th></tr>
+<tr><td>图像 → base → $\boldsymbol{q}^{(0)}$</td><td>可导(base 正常训练)</td><td>v3.py:151-164</td></tr>
+<tr><td>$ζ^{(k)}$ → 体素坐标</td><td><b>停梯度</b>(<code>current_coord.detach()</code>),量化本身不可导</td><td>v3.py:173</td></tr>
+<tr><td>2D 特征 $\boldsymbol{F}$ → refiner</td><td>由 <code>refiner_detach_backbone</code> 开关:前 5000 步 detach(隔离),之后随联合训练导通</td><td>v3.py:172;train_moge3.py:329-335;<code>refiner_detach_backbone_until=5001</code>(v3.json:267)</td></tr>
+<tr><td>$\Deltaζ^{(k)}$ → $ζ^{(k+1)}$ → 损失</td><td>可导(残差加法)</td><td>v3.py:110, 174</td></tr>
+</table>
+<div class="callout tip"><b>工程细节:refine 步的损失权重再分配</b>(train_moge3.py:375-381):detach 阶段,step-0(base)损失保持全权重,refine 步($k≥1$)权重 $=w/K$;联合阶段按 <code>apply_steps</code> 数量均摊。另外 <code>affine_invariant_global_loss</code> 在 refine 步<b>复用 step-0 解出的尺度 $s$</b>,只对齐 z-shift(train_moge3.py:383-385 注释:"the alignment only solves the z-shift and the loss stays scale-sensitive")——防止每步重新解尺度导致监督信号漂移。</div>
+<h3>7.4 推理时的逐精炼步后处理(源码:v3.py:292-341)</h3>
+<p>推理若 <code>return_per_step=True</code>,每一步的点图都独立恢复 (focal, shift)(v3.py:304-312,注释:"refinement modifies logz which changes the 3D shape, so focal recovered from each step's point map differs slightly"),逐步 mask 自洽($d>0$ 过滤,v3.py:336)。最终输出的内参对应最后一步。</p>
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>训练方案与损失函数总表</h2>
+<h3>8.1 总目标(式 6)</h3>
+<div class="equation">$$\mathcal{L}=\sum_{k=0}^{K}\mathcal{L}_{\mathrm{geo}}^{(k)}+\lambda_{\mathrm{m}}\mathcal{L}_{\mathrm{mask}}+\lambda_{\mathrm{n}}\mathcal{L}_{\mathrm{nml}}+\lambda_{\mathrm{s}}\mathcal{L}_{\mathrm{scale}} \text{(式 6)}$$</div>
+<p>其中 $\mathcal{L}_{geo}^{(k)}=\mathcal{L}_{global}^{(k)}+\mathcal{L}_{local}^{(k)}+\mathcal{L}_{edge}^{(k)}$。注意求和从 $k{=}0$ 起:<b>base 初始预测也被同一套几何损失监督</b>(§3.3)。</p>
+<h3>8.2 损失函数总表(权重为论文 A.2 真值,已用 configs/train/v3.json 交叉验证一致)</h3>
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重</th><th>作用</th><th>出处</th></tr>
+<tr><td>$\mathcal{L}_{global}^{(k)}$</td><td>$\langle w_{ij}\|s^{(k)}\boldsymbol{p}^{(k)}_{ij}+t_z^{(k)}\boldsymbol{e}_z-\hat{\boldsymbol{p}}_{ij}\|_1\rangle_{(i,j)\in\mathcal{M}}$,$w_{ij}\propto 1/\hat{Z}_{ij}$;$(s,t_z)$ 为闭式 weighted-median 解(式(8)),在低分辨率副本(<code>align_resolution=48</code>)上求解</td><td>1.0</td><td>全局光轴仿射对齐监督,每个精炼步都施加</td><td>式(7)(8);v3.json:271-281</td></tr>
+<tr><td>$\mathcal{L}_{local}^{(k)}$</td><td>$\sum_{\alpha\in\{4,16,64\}}\langle w_{ij}\|s^{(k)}\boldsymbol{p}^{(k)}_{ij}+\boldsymbol{t}_{\alpha,g}^{(k)}-\hat{\boldsymbol{p}}_{ij}\|_1\rangle_{\mathcal{M}}$;径向分区 $\boldsymbol{\pi}_{\alpha}$ 量化投影方向与 log 距离(式(10)),每区域解 3-DoF 平移(式(12)),共享全局 $s^{(k)}$;参考图 0.5/0.5 随机取 GT 或当前预测(式(9)),分区前加随机旋转缩放扰动</td><td>1.0(每个 α 等权)</td><td>惩罚全局对齐遗漏的局部失真,"reducing over-smoothing across local depth discontinuities"</td><td>式(9)-(12);v3.json:282-317</td></tr>
+<tr><td>$\mathcal{L}_{edge}^{(k)}$</td><td>$\frac{1}{\min(H,W)\cdot|\mathcal{D}_d|}\sum_{(i,j)\in\mathcal{D}_d}\big(\angle(\partial_x\boldsymbol{p}_{ij},\partial_x\hat{\boldsymbol{p}}_{ij})+\angle(\partial_y\boldsymbol{p}_{ij},\partial_y\hat{\boldsymbol{p}}_{ij})\big)$</td><td>1.0</td><td>边缘角度监督(表面切向一致)</td><td>式(13);v3.json:318-324</td></tr>
+<tr><td>$\mathcal{L}_{mask}$</td><td>$\mathrm{BCE}(\boldsymbol{M},\hat{\boldsymbol{M}})$</td><td>0.1</td><td>有效像素掩码辅助监督</td><td>式(14);v3.json:338-343</td></tr>
+<tr><td>$\mathcal{L}_{nml}$</td><td>$\langle\angle(\boldsymbol{N},\hat{\boldsymbol{N}})^2\rangle$</td><td>0.1</td><td>法向辅助监督</td><td>式(14);v3.json:332-337</td></tr>
+<tr><td>$\mathcal{L}_{scale}$</td><td>$\mathbb{1}(\hat{s}>0)\cdot(\log s-\log\hat{s})^2$</td><td>0.1</td><td>全局 metric scale 辅助监督(仅 metric 数据)</td><td>式(14);v3.json:326-331</td></tr>
+</table>
+<div class="callout tip"><b>源码补充:损失按数据标签类型分组(v3.json:269-535)</b>。配置把数据分 A/B/C/D 四组损失套餐:label_type A(径向局部 α∈{4,16,64} 全配)、B(α∈{4,16})、C(仅 α=4)只作用于 step 0;D(合成数据,refine 用)在 <code>apply_steps=[0,1,2,3]</code> 全部迭代步施加完整几何损失。这解释了"refiner 的梯度只来自合成数据"的实现方式——合成样本走 refine pipeline 跑 K 步,真实样本走 norefine pipeline 只跑 base(<code>refine_steps=0</code>)。</div>
+<h3>8.3 训练策略:两阶段 + 双数据流(§3.3 + 源码验证)</h3>
+<ul>
+<li><b>Stage 1(warm-up,前 5000 步)</b>:"detaches gradients from the base model features to the refiner"(§3.3);源码 <code>refiner_detach_backbone_until=5001</code> + out_proj 零初始化 → refiner 从恒等映射起步,"learn residual corrections starting from a known-good initialization"。</li>
+<li><b>Stage 2(联合微调)</b>:5000 步后全梯度导通端到端联合训练,"prevents large early-stage gradients of refiner from corrupting the representation of well-pretrained base model"(§3.3)。K=0(联合训练的 base)已优于 MoGe-2(§4.5)——联合训练本身就有收益。</li>
+<li><b>双数据流(refine_ratio=0.5)</b>:源码 <code>get_refine_accumulation_schedule</code>(train_moge3.py:72-84)在梯度累积微批内按配额调度——50% 微批走合成数据(refine_steps=3),50% 走真实数据(refine_steps=0)。"the refiner receives gradients only from synthetic samples, whose pixel-accurate ground truth is essential for learning sharp and geometrically correct residual corrections, while the base model is supervised on the full mixture"(§3.3)。</li>
+</ul>
+<h3>8.4 训练数据(A.3,与 v3.json 数据清单逐项核对一致)</h3>
+<div class="grid-2">
+<div class="card"><h4>合成(17 个,pixel-perfect GT;label_type D,驱动 refine)</h4><p>3D Ken Burns, ApolloSynthetic, EDEN, GTA-SfM, Hypersim, IRS, MatrixCity, MidAir, MVS-Synth, Objaverse, OmniWorld, Structured3D, Synscapes, Synthia, TartanAir, UnrealStereo4K, UrbanSyn。<br><span class="uncertain">注:论文列 17 个,代码 refine_data 有 18 条(TartanAir 与 TartanAirV2 并列),计数口径差异,非数据冲突。</span></p></div>
+<div class="card"><h4>真实/传感器(8 个;label_type A/B/C,只驱动 base)</h4><p>A2D2, ARKitScenes, Argoverse2, BlendedMVS, MegaDepth, ScanNet++, Taskonomy, Waymo。真实深度有噪声/空洞,故不用于训练"锐利修正"的 refiner。</p></div>
+</div>
+<h3>8.5 优化超参(论文 A.2;⚠️ 一处与代码冲突)</h3>
+<table>
+<tr><th>超参</th><th>论文 A.2</th><th>代码 configs/train/v3.json</th><th>一致性</th></tr>
+<tr><td>优化器</td><td>AdamW($\beta_1{=}0.9,\beta_2{=}0.999$,wd $10^{-2}$),梯度裁剪 $\|g\|_2≤1.0$</td><td>AdamW 三参数组(v3.json:196-233)</td><td>✓</td></tr>
+<tr><td>峰值学习率</td><td>refiner $2×10^{-4}$;2D heads $1×10^{-4}$;DINO backbone $5×10^{-6}$</td><td>refiner <code>2e-4</code>(v3.json:220);head <code>1e-5</code>(v3.json:210);backbone <code>5e-6</code>(v3.json:230)</td><td>refiner/backbone ✓;<b>heads 论文 $10^{-4}$ vs 代码 $10^{-5}$,差 10×</b> <span class="uncertain">【待核实】</span></td></tr>
+<tr><td>LR schedule</td><td>backbone 前 1000 步冻结,线性 warmup 至 2000 步;backbone 与 2D heads 每 25000 步衰减,refiner 每 10000 步衰减</td><td><code>max(0,min(1,(epoch-1000)/1000))</code> warmup ✓;<code>0.5**floor(epoch/25000)</code>(head/backbone)✓;refiner 衰减含 <code>/10000</code> 项 ✓(v3.json:234-263)</td><td>✓</td></tr>
+<tr><td>batch / 硬件</td><td>global batch 96,16×A100,混合精度(DINO encoder bf16,其余 fp32)</td><td>训练脚本支持 gradient accumulation 配额调度;仓库未含集群启动脚本</td><td>✓(论文值)</td></tr>
+<tr><td>refiner 隔离</td><td>前 5000 步 detach,之后全梯度联合优化</td><td><code>refiner_detach_backbone_until=5001</code>(v3.json:267)✓</td><td>✓</td></tr>
+<tr><td>训练总步数/时长/训练分辨率</td><td>未披露</td><td>配置无 <code>num_iterations</code>(CLI 传入)</td><td>—(双方均无)</td></tr>
+</table>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(训练 / 推理)</h2>
+<div class="grid-2">
+<div>
+<h3>9.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph DATA["双数据流(train_moge3.py:297-303)"]
+        SYN["合成数据 50%(label D)"] --> P1["refine pipeline<br/>refine_steps=3"]
+        REAL["真实数据 50%(label A/B/C)"] --> P2["norefine pipeline<br/>refine_steps=0"]
+    end
+    P1 --> FWD["forward(return_per_step=True)"]
+    P2 --> FWD
+    FWD --> LOSS1["step 0: 全套 L_geo+辅助(全权重)"]
+    FWD --> LOSS2["step 1..3(仅合成): L_geo,权重 w/3<br/>global loss 复用 step-0 的尺度 s"]
+    LOSS1 --> BWD["反向传播"]
+    LOSS2 --> BWD
+    BWD --> SCHED{"i_step < 5001 ?"}
+    SCHED -->|是| DET["refiner_detach_backbone=True<br/>(Stage 1 隔离)"]
+    SCHED -->|否| JOINT["全梯度联合(Stage 2)"]
+    DET --> OPT["AdamW 三参数组更新<br/>refiner 2e-4 / head 1e-5(代码) / backbone 5e-6"]
+    JOINT --> OPT
+    OPT --> EMA["EMA 更新 + LR decay<br/>(25000/10000 步间隔)"]
+    style SYN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style REAL fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+</div>
+<div>
+<h3>9.2 推理流程</h3>
+<div class="mermaid">
+flowchart TD
+    IMG["单张 RGB"] --> RS["按 resolution_level 0~9<br/>映射 num_tokens∈[1200,3600]"]
+    RS --> BASE["base 前向: 点图+normal+mask+scale<br/>+ 2D 特征 F"]
+    BASE --> LOOP{"k < K(默认3)?"}
+    LOOP -->|是| VOX["体素化当前 q⁽ᵏ⁾<br/>(fp32, 量化 1/256 log 单位)"]
+    VOX --> UNET["Sparse3DUNet<br/>+ bottleneck 注入 F"]
+    UNET --> UPD["ζ⁽ᵏ⁺¹⁾ = ζ⁽ᵏ⁾ + Δζ⁽ᵏ⁾"]
+    UPD --> LOOP
+    LOOP -->|否| POST["逐步恢复 focal/shift<br/>(v3.py:304-312)"]
+    POST --> PROJ["force_projection:<br/>depth×内参重投影点图"]
+    PROJ --> SCALE["× metric_scale"]
+    SCALE --> OUT["输出: points/depth/intrinsics<br/>/mask/normal"]
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</div>
+</div>
+<p class="note">训练时 <code>num_tokens</code> 在每个微批随机采样(train_moge3.py:327),推理时由 resolution_level 决定;CLI 入口 <code>moge infer --version v3 --pretrained CKPT --refine_steps 3</code>(README:242)。</p>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码验证)</h2>
+<p>本节全部基于 <code>microsoft/MoGe</code> 仓库 depth-1 克隆(2026-10-09,默认分支含 v3)直读,引用格式 <code>file:line</code>。克隆目录已删除,关键行已抄录于此。</p>
+<h3>10.1 仓库形态与依赖</h3>
+<ul>
+<li>MoGe-3 <b>不是独立仓库</b>,以 <code>moge/model/v3.py</code> + <code>configs/train/v3.json</code> + <code>moge/train/train_moge3.py</code> 并入主仓库;<code>model_version="v3"</code>(v3.json:2)。</li>
+<li><b>关键依赖</b>(pyproject.toml:24-28):<code>torch>=2.4</code>、<code>torchvision>=0.19</code>、<code>flex-gemm @ git+https://github.com/JeffreyXiang/FlexGEMM.git@b2fadb29</code>——FlexGEMM 是 Jianfeng Xiang(本文作者之一)的 Triton 稀疏 GEMM 库,提供 SubmanifoldConv3d/SparsePool3d/SparseUpsample3d 与 NeighborCache。<b>README 明确 macOS 不支持</b>(Triton 无 macOS wheels,README:55)。</li>
+<li>权重:HuggingFace <code>Ruicheng/moge-3-vitl</code>(370M)、<code>Ruicheng/moge-3-vitg</code>(1.25B)(README 模型表)。</li>
+</ul>
+<h3>10.2 论文宣称 vs 代码实现(差异核对表)</h3>
+<table>
+<tr><th>项目</th><th>论文</th><th>代码</th><th>结论</th></tr>
+<tr><td>体素分辨率 D</td><td>默认 $D{=}200$(§3.2.1, Table 3 ⋆)</td><td><code>refiner_depth_resolution: 256</code>(v3.json:194)</td><td><b>不一致</b>;<span class="uncertain">【待核实】发布配置或重新调过</span>,复现以代码为准</td></tr>
+<tr><td>2D heads 峰值 LR</td><td>$1×10^{-4}$(A.2)</td><td><code>lr: 1e-05</code>(v3.json:210)</td><td><b>不一致,差 10×</b>;<span class="uncertain">【待核实】</span></td></tr>
+<tr><td>refiner / backbone 峰值 LR</td><td>$2×10^{-4}$ / $5×10^{-6}$(A.2)</td><td><code>2e-4</code> / <code>5e-6</code>(v3.json:220,230)</td><td>一致 ✓</td></tr>
+<tr><td>refiner 隔离步数</td><td>前 5000 步 detach(A.2)</td><td><code>refiner_detach_backbone_until: 5001</code>(v3.json:267)</td><td>一致 ✓(off-by-one 为区间边界写法)</td></tr>
+<tr><td>默认精炼步数</td><td>K=3 训练/推理(§4.1)</td><td><code>refine_steps: 3</code>(v3.json:265);<code>infer(refine_steps=3)</code>(v3.py:228)</td><td>一致 ✓</td></tr>
+<tr><td>损失权重</td><td>$(1,1,1,0.1,0.1,0.1)$(A.2)</td><td>v3.json:271-343 逐项一致 ✓</td><td>一致 ✓</td></tr>
+<tr><td>合成数据计数</td><td>17 个(A.3)</td><td>refine_data 18 条(TartanAir/V2 并列)</td><td>口径差异,非冲突</td></tr>
+<tr><td>U-Net 层数/通道</td><td>未披露</td><td>5 级 [32,64,128,256,512],每级 1 块(v3.json:172-193)</td><td>代码为唯一来源</td></tr>
+</table>
+<h3>10.3 资源账</h3>
+<table>
+<tr><th>项目</th><th>数值</th><th>来源</th></tr>
+<tr><td>推理延迟(ViT-L, K=3, A100 FP16)</td><td>89 ms @484²;121 ms @700²;154 ms @840²</td><td>论文 Table C.4</td></tr>
+<tr><td>推理延迟(ViT-G, K=3, A100 FP16)</td><td>115 ms @484²;177 ms @700²;234 ms @840²</td><td>论文 Table C.4</td></tr>
+<tr><td>SSR 相对 base 的开销(ViT-L FP16)</td><td>MoGe-2 700²=39 ms → MoGe-3 700²=121 ms,refiner 约 +82 ms/3 步 ≈ 27 ms/步</td><td>Table C.4 推算</td></tr>
+<tr><td>训练硬件</td><td>16×A100,global batch 96,混合精度(DINO bf16,其余 fp32)</td><td>论文 A.2</td></tr>
+<tr><td>训练总时长/步数</td><td>未披露</td><td>—</td></tr>
+<tr><td>参数量</td><td>ViT-L 370M / ViT-G 1.25B(含 base+refiner)</td><td>README 模型表</td></tr>
+<tr><td>显存</td><td>论文/README 均未报告 <span class="uncertain">【待核实】</span>;3090 24GB 跑 ViT-L FP16 推理可行性分析见 §14</td><td>—</td></tr>
+</table>
+<h3>10.4 落地坑(源码级)</h3>
+<ul>
+<li><b>体素化必须 fp32</b>(v3.py:75-77):量化步长 1/256 细于 fp16 分辨率,半精度下体素会塌缩/抖动——混合精度部署时这段不能 autocast。</li>
+<li><b>z_extent 动态变化</b>(v3.py:88-90):深度轴格数 = 当前 batch 的 logz 动态范围 ×256,无固定上限;极端深度范围(近景 0.1m + 远景 1km,$\log$ 域跨度 ~9.2 → 约 2360 格)会显著增加邻居建图开销。</li>
+<li><b>eval 分辨率按数据集固定</b>(configs/eval/moge3.json):NYUv2 640×480、KITTI 750×375、ETH3D 2048×1365、iBims-1 640×480、Sintel 872×436、DIODE 1024×768、Spring 1920×1080、Synth4K 3840×2160、HAMMER 1664×832——Table C.4 的 700² 是统一报告档,实际评测按原生分辨率。</li>
+<li><b>CLI 必须显式给权重</b>(README:241-242):<code>moge infer --version v3 --pretrained PATH --refine_steps 3</code>,v3 不像 v1/v2 有默认权重路径。</li>
+<li><b>梯度检查点</b>:<code>enable_gradient_checkpointing</code> 会包装全部残差块(sparse_unet.py:144-147),训练大分辨率时省显存。</li>
+</ul>
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+<h3>11.1 评测协议(§4.2 + Appendix B)</h3>
+<ul>
+<li><b>9 个 zero-shot benchmark</b>:Synth4K、Spring(合成,局部指标用);NYUv2、KITTI、ETH3D、DIODE、Sintel、iBims-1、HAMMER(真实,覆盖室内/室外、dense/稀疏 GT)。训练/评测数据集零重叠。</li>
+<li><b>Global 指标</b>(9 数据集平均):Relative Point、Relative Depth、Metric Depth 三种设置,各报 Rel↓ 与 δ↑(点阈值 0.25、深度阈值 1.25)。</li>
+<li><b>Local(fine-detail)指标</b>(Spring+Synth4K 平均):自动提取含细结构的小区域 mask(B.1:多尺度 Laplacian 残差检测 $s\in\{8,16,32\}$,阈值 $3\hat{\sigma}_s$,MAD 鲁棒标准差;形态学 top/bottom-hat,结构元 $k\in\{3,5,9,17\}$;并集后经 SAM2 分段扩展,保留条件 $\rho_i≥0.3\land|S_i\cap\mathcal{S}|≥5\land|S_i|≤0.05HW$,式(16)),per-segment 对齐(全局尺度 $s^*$ 加权最小二乘 式(17),per-segment 平移 $t_i$ 式(18))后报 Rel 与更严的 $\delta_{0.01}$。</li>
+<li><b>Boundary F1</b>(radius=1;Spring、iBims-1、Sintel、HAMMER 平均)。</li>
+<li><b>Baseline 公平性</b>:PPD 与 InfiniDepth 不预测内参,其点图用 MoGe-2 预测的内参重建,metric 深度记 "-"(§4.2);PPD/InfiniDepth 只计 relative-depth 分支的耗时(C 节)。</li>
+</ul>
+<h3>11.2 Table 1:zero-shot 主结果(9 benchmark 平均;逐格照抄)</h3>
+<table>
+<tr><th>方法</th><th>Rel_d↓<br>(局部深度)</th><th>δ₀.₀₁_d↑</th><th>Rel_p↓<br>(局部点)</th><th>δ₀.₀₁_p↑</th><th>边界<br>F1↑</th><th>Rel_d↓<br>(相对深度)</th><th>δ₁_d↑</th><th>Rel_p↓<br>(相对点)</th><th>δ₁_p↑</th><th>Rel_d↓<br>(metric深度)</th><th>δ₁_d↑</th></tr>
+<tr><td>Depth Pro</td><td>4.15</td><td>46.9</td><td>3.01</td><td>45.2</td><td>16.3</td><td>8.10</td><td>91.3</td><td>11.1</td><td>87.6</td><td>29.0</td><td>54.0</td></tr>
+<tr><td>UniDepth V2</td><td>5.60</td><td>45.3</td><td>4.60</td><td>42.6</td><td>14.5</td><td>6.98</td><td>92.8</td><td>10.2</td><td>88.6</td><td>23.7</td><td>71.2</td></tr>
+<tr><td>Depth Anything 3</td><td>10.5</td><td>41.8</td><td>7.39</td><td>44.7</td><td>6.61</td><td>7.89</td><td>91.4</td><td>10.6</td><td>87.5</td><td>17.4</td><td>70.1</td></tr>
+<tr><td>UniK3D</td><td>5.52</td><td>46.2</td><td>4.37</td><td>45.0</td><td>15.1</td><td>6.95</td><td>92.8</td><td>9.63</td><td>89.6</td><td>17.9</td><td>77.8</td></tr>
+<tr><td>Pixel-Perfect Depth</td><td>5.24</td><td>39.8</td><td>4.39</td><td>39.1</td><td>12.7</td><td>7.17</td><td>92.5</td><td>20.3</td><td>69.8</td><td>-</td><td>-</td></tr>
+<tr><td>InfiniDepth</td><td>5.82</td><td>43.2</td><td>4.29</td><td>43.7</td><td><b>19.3</b></td><td>8.15</td><td>91.1</td><td>11.6</td><td>87.6</td><td>-</td><td>-</td></tr>
+<tr><td>MoGe-2</td><td>3.81</td><td>47.1</td><td>3.19</td><td>46.6</td><td>15.6</td><td>5.98</td><td>94.1</td><td>8.73</td><td>90.4</td><td>15.6</td><td>77.3</td></tr>
+<tr class="best"><td><b>Ours (ViT-L)</b></td><td>3.76</td><td>52.5</td><td><b>2.79</b></td><td>55.9</td><td>16.0</td><td><b>5.52</b></td><td>94.7</td><td><b>7.91</b></td><td><b>92.0</b></td><td><b>15.0</b></td><td><b>82.7</b></td></tr>
+<tr class="best"><td><b>Ours (ViT-G)</b></td><td><b>3.66</b></td><td><b>54.1</b></td><td>2.80</td><td><b>56.8</b></td><td>17.3</td><td>4.80</td><td><b>95.6</b></td><td>7.43</td><td>92.4</td><td>15.8</td><td><b>82.7</b></td></tr>
+</table>
+<p>读法(作者结论 §4.3,已逐项复核):局部 $\delta_{0.01}^{p}$ 55.9 vs 次优 MoGe-2 46.6(+9.3 个点);"achieves the best global performance across all three evaluation settings"——ViT-L 在相对深度(5.52/94.7)、相对点(7.91/92.0)、metric 深度(15.0/82.7)六格全胜成立;边界 F1 第一为 InfiniDepth 19.3,MoGe-3 第三(16.0),作者原文承认并注明 Depth Pro 跑在 1536²(约为 840² 的 3.4× 像素)。<b>ViT-G 相对 ViT-L 在多数指标提升,例外两格:局部 Rel_p(2.80 vs 2.79)与 metric Rel_d(15.8 vs 15.0)</b>——与 §4.3 "across most metric categories" 的措辞一致。</p>
+<h3>11.3 Table 2:推理延迟(单张 A100,FP16)</h3>
+<table>
+<tr><th>方法</th><th>分辨率</th><th>延迟 (ms)</th></tr>
+<tr><td>MoGe-2 (ViT-L)</td><td>700²</td><td>39</td></tr>
+<tr><td>Depth Anything 3</td><td>630×840</td><td>213</td></tr>
+<tr><td>Depth Pro</td><td>1536²</td><td>142</td></tr>
+<tr><td>InfiniDepth</td><td>512×672</td><td>133</td></tr>
+<tr><td>Pixel-Perfect Depth</td><td>512×672</td><td>275</td></tr>
+<tr class="best"><td>Ours (ViT-L, 3-step)</td><td>700²</td><td>121</td></tr>
+<tr><td>Ours (ViT-G, 3-step)</td><td>700²</td><td>177</td></tr>
+</table>
+<p>K=0 时与 MoGe-2 延迟完全相同(§4.3)。附录 Table C.4 另有三档分辨率(484²/700²/840²)与 FP32 对照,如 Ours ViT-L 840² FP16=154 ms、FP32=370 ms;PPD 768×1024 FP32 高达 3123 ms。</p>
+<h3>11.4 附录 C 分数据集精选(Table C.1,Affine-invariant 深度,Avg/Rank)</h3>
+<table>
+<tr><th>方法</th><th>Avg Rel↓</th><th>Avg δ₁↑</th><th>Avg Rank↓</th></tr>
+<tr><td>UniK3D</td><td>6.95</td><td>92.8</td><td>5.00</td></tr>
+<tr><td>MoGe-2</td><td>5.98</td><td>94.1</td><td>3.56</td></tr>
+<tr><td>Ours ViT-L Step 0(联合训练 base)</td><td>5.56</td><td>94.7</td><td>3.44</td></tr>
+<tr class="best"><td>Ours ViT-L Step 3</td><td>5.52</td><td>94.7</td><td>2.78</td></tr>
+<tr class="best"><td>Ours ViT-G Step 3</td><td>4.80</td><td>95.6</td><td>1.00</td></tr>
+</table>
+<p>Table C.2(局部,Spring/Synth4K)与 C.3(Boundary F1)完整数字见 §12 前的图与原始论文;关键一点:Table 1 的 "Ours (ViT-L)" 即附录的 "Step 3" 行(Avg 完全一致),确认主表默认 K=3。<b>Step 0(联合训练 base)已优于 MoGe-2</b>(5.56 vs 5.98),证明两阶段联合训练本身有效,SSR 在其上再进一步(5.52,Rank 3.44→2.78)。</p>
+<h3>11.5 定性结果</h3>
+<div class="figure"><img src="images/2607.17967/qualitative_comparison.png" loading="lazy" alt="qualitative"><div class="caption"><b>图4</b>(论文 Fig. 3)未见测试图像上的点图与视差图定性对比。PPD 与 InfiniDepth 不预测内参,其点图用 MoGe-2 的内参 lifting 得到(§4.2 的公平性处理)。MoGe-3 在复杂区域与细结构上畸变明显更少。更多见附录 D。</div></div>
+<div class="figure"><img src="images/2607.17967/samples1.png" loading="lazy" alt="samples1"><div class="caption"><b>图5</b>(论文 Fig. D.1)更多定性对比:跨多样场景保持细结构与锐利边界。</div></div>
+<div class="figure"><img src="images/2607.17967/samples2.png" loading="lazy" alt="samples2"><div class="caption"><b>图6</b>(论文 Fig. D.2)高保真几何重建与困难区域鲁棒性的更多样例。</div></div>
+<div class="figure"><img src="images/2607.17967/Synth4k_samples_grid.png" loading="lazy" alt="synth4k masks"><div class="caption"><b>图7</b>(论文 Fig. E.3)局部细粒度评测 mask 示例:左为输入图像,右为红色叠加的局部细结构 mask(薄结构/高频区域),即 §11.1 局部指标的计算区域。</div></div>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+<p>设置(§4.5):refiner-only 设定,<b>base 冻结(frozen MoGe-2 ViT-L),只训练 SSR</b>;所有变体训练 K=3、<b>评估 K=5</b>;指标为 9 数据集平均(列含义同 Table 1)。</p>
+<h3>12.1 Table 3:体素分辨率 D / 特征注入 / 2D 卷积变体(逐格照抄,⋆=默认)</h3>
+<table>
+<tr><th>变体</th><th>Rel_d↓<br>(局部深度)</th><th>δ₀.₀₁_d↑</th><th>Rel_p↓<br>(局部点)</th><th>δ₀.₀₁_p↑</th><th>F1↑</th><th>Rel_d↓<br>(相对深度)</th><th>δ₁_d↑</th><th>Rel_p↓<br>(相对点)</th><th>δ₁_p↑</th><th>Rel_d↓<br>(metric)</th><th>δ₁_d↑</th></tr>
+<tr><td>Base model(不精炼)</td><td>3.81</td><td>47.1</td><td>3.19</td><td>46.6</td><td>15.6</td><td>5.98</td><td>94.1</td><td>8.73</td><td>90.4</td><td>15.6</td><td>77.3</td></tr>
+<tr class="fail"><td>2D Conv.(参数对齐的 2D U-Net)</td><td>4.09</td><td>45.0</td><td>3.19</td><td>47.0</td><td>14.8</td><td>6.15</td><td>93.8</td><td>8.54</td><td>91.1</td><td>16.4</td><td>76.2</td></tr>
+<tr><td>RGB Input(注入 RGB 替代 DINO 特征)</td><td>3.90</td><td>48.1</td><td>3.13</td><td>49.7</td><td>14.9</td><td>6.01</td><td>93.9</td><td>8.58</td><td>90.7</td><td>16.3</td><td>76.2</td></tr>
+<tr><td>D=100</td><td>3.86</td><td>49.8</td><td>2.86</td><td>53.2</td><td>15.7</td><td>5.99</td><td>94.1</td><td>8.29</td><td>91.4</td><td>16.0</td><td>77.1</td></tr>
+<tr class="best"><td><b>D=200 ⋆</b></td><td>3.70</td><td>51.4</td><td><b>2.76</b></td><td><b>55.1</b></td><td>15.6</td><td><b>5.88</b></td><td><b>94.2</b></td><td>8.34</td><td>91.2</td><td>16.4</td><td>76.2</td></tr>
+<tr><td>D=300</td><td><b>3.64</b></td><td>48.8</td><td>2.92</td><td>52.0</td><td>15.1</td><td>6.11</td><td>93.9</td><td><b>8.36</b></td><td>91.4</td><td><b>15.8</b></td><td><b>77.7</b></td></tr>
+<tr class="fail"><td>D=400</td><td>4.26</td><td>48.8</td><td>3.11</td><td>50.4</td><td>14.3</td><td>7.12</td><td>91.4</td><td>9.65</td><td>88.3</td><td>16.5</td><td>76.3</td></tr>
+</table>
+<h3>12.2 消融结论(§4.5 原文要点 + 本笔记解读)</h3>
+<ol>
+<li><b>D 的甜区在 200–300</b>:"Increasing the voxel resolution from D=100 to moderate resolutions (D=200–300) substantially improves local metrics while preserving global accuracy";D=400 时"increasingly sparse occupancy... limits the effectiveness of the 3D sparse convolutions",全局局部双降。作者选 D=200 作精度-占用-效率折中(<span class="uncertain">代码最终取 256,见 §10.2</span>)。从表格看 D=300 在全局三格反而略优于 D=200,作者的选择明显偏向局部指标($\delta_{0.01}^p$ 55.1 vs 52.0)。</li>
+<li><b>2D 卷积变体失败</b>:参数对齐的 2D U-Net"simply increasing model capacity in 2D does not provide the gains achieved by 3D refinement"——局部 $\delta_{0.01}^d$ 45.0 甚至比 base 的 47.1 更差。这是全文最关键的消融:<b>提升来自 3D 参数化本身,不是来自"加了个更大的网络"</b>。</li>
+<li><b>DINO 语义特征不可替代</b>:RGB Input 变体 $\delta_{0.01}^p$ 49.7,高于 base(46.6)但远低于 DINO 注入(55.1)——"semantic and contextual information provided by visual features is crucial for resolving fine structures and disambiguating local 3D geometry"(§4.5)。</li>
+<li><b>K 的泛化(Fig. 4)</b>:训练 K=3,测试 K 增至 7 不退化:"each refinement step learns a stable, convergent correction rather than overfitting to a fixed number of iterations"(§4.5)。局部指标约 K=5 饱和,边界 F1 第 1 步即获大部分收益。</li>
+<li><b>联合训练的独立收益</b>:K=0(联合训练 base)已超过 MoGe-2 baseline(§4.5)——SSR 训练信号反哺了 base。</li>
+</ol>
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+<h3>13.1 横向对比表(固定维度;指标为论文 Table 1/2 值,"—"为不适用/未披露)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>几何解码参数化</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标(局部 δ₀.₀₁ᵖ / 全局 δ₁ᵖ)</th><th>开源</th></tr>
+<tr><td>Depth Pro</td><td>2024</td><td>单目 RGB</td><td>2D 卷积解码器(多尺度 ViT)</td><td>合成 GT(边缘锐利化损失)</td><td>合成+真实混合</td><td>—</td><td>142 ms @1536²</td><td>—</td><td>45.2 / 87.6</td><td>✓(Apple,权重+推理)</td></tr>
+<tr><td>MoGe-2</td><td>2025</td><td>单目 RGB</td><td>2D 卷积解码器(分解坐标回归)</td><td>光轴仿射不变几何损失 + metric scale 头;合成精炼标签锐化</td><td>合成+真实(数据精炼管线)</td><td>—</td><td>39 ms @700²</td><td>—</td><td>46.6 / 90.4</td><td>✓(microsoft/MoGe,含训练代码)</td></tr>
+<tr><td>Depth Anything 3</td><td>2025/26</td><td>单目 RGB</td><td>MLP over patch latents</td><td>大规模混合监督</td><td>大规模混合</td><td>—</td><td>213 ms @630×840</td><td>—</td><td>44.7 / 87.5</td><td>✓</td></tr>
+<tr><td>UniK3D</td><td>2025</td><td>单目 RGB(任意相机模型)</td><td>2D 解码 + 3D 射线参数化输出</td><td>—</td><td>—</td><td>—</td><td>—(Table 2 未列)</td><td>—</td><td>45.0 / 89.6</td><td>✓</td></tr>
+<tr><td>Pixel-Perfect Depth</td><td>2025/26</td><td>单目 RGB</td><td>扩散 VAE 解码(像素空间扩散)</td><td>生成式扩散目标</td><td>合成+真实</td><td>—</td><td>275 ms @512×672(仅相对深度分支)</td><td>—</td><td>39.1 / 69.8</td><td>✓</td></tr>
+<tr><td>InfiniDepth</td><td>2025/26</td><td>单目 RGB</td><td>MLP over 2D UV queries(连续分辨率)</td><td>合成 GT</td><td>—</td><td>—</td><td>133 ms @512×672</td><td>—</td><td>43.7 / 87.6</td><td>✓</td></tr>
+<tr class="best"><td><b>MoGe-3(本文)</b></td><td>2026</td><td>单目 RGB</td><td><b>2D base + 3D 稀疏体素壳精炼(SSR)</b></td><td>光轴仿射不变全局/局部/边缘损失 ×(K+1) 步 + 辅助头</td><td>17 合成(refine 专用)+8 真实(base)</td><td>16×A100,总时长未披露</td><td>121 ms @700²(K=3);K=0 时 39 ms</td><td>未披露</td><td><b>55.9 / 92.0</b>(ViT-L)</td><td>✓(代码+权重+训练/评测脚本)</td></tr>
+</table>
+<h3>13.2 对比结论(机制层面,逐条"为什么")</h3>
+<ol>
+<li><b>对 Depth Pro</b>:Depth Pro 用 1536² 原生分辨率堆细节,F1(16.3)与 MoGe-3(16.0)相当,但局部 $\delta_{0.01}^p$ 差 10.7 个点(45.2 vs 55.9)——分辨率堆不出 3D 邻接关系,且延迟反而更高(142 vs 121 ms @ 3.4× 像素)。</li>
+<li><b>对 MoGe-2(自家前代)</b>:同一 base 冻结后仅加 SSR(Table 3)局部 $\delta_{0.01}^p$ +8.5(46.6→55.1);全局指标基本不动甚至微降(metric Rel 15.6→16.4)——SSR 是<b>局部细节专用工具</b>,全局布局仍由 base 决定。这解释了为什么作者坚持"精炼"而非"重训全局"。</li>
+<li><b>对 DA3 / UniK3D</b>:二者全局 δ₁ 与 MoGe-2 相当(91.4/92.8 vs 94.1),但局部与边界大幅落后(DA3 F1 仅 6.61)——大规模数据提升了泛化,但 2D 解码的平滑先验在细结构上无能为力。</li>
+<li><b>对 PPD / InfiniDepth(细节特化方法)</b>:这两个恰是"2D 深度图好看"的代表——PPD 的像素空间扩散、InfiniDepth 的连续 UV 查询都在 2D 参数化内;它们的边界 F1 不差(12.7/19.3,InfiniDepth 甚至是第一),但点图指标(局部 δ₀.₀₁ᵖ 39.1/43.7、全局 69.8/87.6)明显弱,印证了"2D 锐 ≠ 3D 准"——换视角才暴露的失真正是本文的靶子。</li>
+<li><b>对生成式路线的定位</b>:作者自己指出(§5)回归范式在边界像素上的二义性是固有的,fly-points 要靠 PPD 式生成式表述解决——MoGe-3 与 PPD 在路线图上不是替代关系而是潜在的互补(base 换扩散或 refiner 输出换概率建模)。</li>
+</ol>
+<h3>13.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>2D 深度回归</td><td>MiDaS → Depth Anything 系列</td><td>图像面平移等变(2D 卷积)</td><td>深度不连续处特征混合;只出 2.5D</td></tr>
+<tr><td>点图回归(3D 输出、2D 解码)</td><td>DUSt3R 系、MoGe-1/2、VGGT 系</td><td>每像素直接回归 3D 坐标,仿射/尺度不变监督</td><td>解码仍在 2D 网格,细结构被平滑</td></tr>
+<tr><td>扩散式深度</td><td>Marigold、Pixel-Perfect Depth、InfiniDepth</td><td>生成先验,锐利边缘分布建模</td><td>慢;3D 一致性无保障(点图指标弱)</td></tr>
+<tr><td><b>3D 空间精炼(本文)</b></td><td><b>MoGe-3</b></td><td>几何相干感受野:特征交互按真实 3D 邻域</td><td>依赖 base 初值(自引导级联风险);只修 log-depth,不修横向</td></tr>
+</table>
+<p>库内兄弟笔记:与 <a href="3D-20250314-VGGT.html">VGGT</a>(多视图前馈重建,同样输出点图)相比,MoGe-3 解决的是<b>单图</b>细节;与 <a href="3D-20250717-Pi3.html">Pi3</a> 相比同为前馈但任务不同;与 <a href="3D-20251211-SHARP.html">SHARP</a>(单图直接出 3DGS)相比,MoGe-3 的输出是点图/深度,可作为 SHARP 类管线的几何前端;多视图在线重建的对照见姊妹篇 <a href="3D-20251016-SaLon3R.html">SaLon3R</a>(同批调研,长序列前馈 3DGS)。另参见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a> 与 <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">三维重建质量速度 Pareto 全谱调研</a>。</p>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+<h3>14.1 能否进我们的 pipeline(vggt_human 视角)</h3>
+<div class="grid-3">
+<div class="card"><h4>✅ 直接可用:单图几何前端</h4><p>输出 metric 点图 + 内参 + mask + 法向,121 ms@700²(A100)可接受。对单目输入场景(无多视角/无标定),可直接替代 COLMAP 弱纹理区的几何初值,或作为 3DGS 初始化的稠密点云来源。ViT-L 权重 370M,HuggingFace 一行 <code>from_pretrained</code> 加载。</p></div>
+<div class="card"><h4>⚠️ 需要验证:细结构收益是否迁移到人体</h4><p>论文的局部指标面向栅栏/灯杆类"细长刚体结构",人体头发丝、手指、衣褶是否同等受益,<span class="uncertain">【待核实】需在人体数据上实测</span>。refiner 只在合成数据上训练(A/B/C/D 损失分组),合成人体数据的分布覆盖情况未知。</p></div>
+<div class="card"><h4>⚠️ 工程门槛:FlexGEMM/Triton</h4><p>依赖 Triton(Linux/Windows CUDA OK,macOS 不支持,README:55)。WSL2 + 3090 环境理论可行,<span class="uncertain">【待核实】FlexGEMM 在 3090(sm_86)上的构建与数值行为未实测</span>。推理显存官方未报告;ViT-L base 370M 参数 FP16 + K=3 稀疏 U-Net(通道峰值 512、体素数=HW),预估 24GB 充裕,但 840² 以上需实测。</p></div>
+</div>
+<h3>14.2 资源/数据成本清单</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>备注</th></tr>
+<tr><td>推理(开箱)</td><td>低</td><td><code>pip install</code> + HF 权重;121 ms@700² A100;K 可调(K=1 已获大部分局部收益,Fig. 4)</td></tr>
+<tr><td>微调 base+refiner</td><td>极高</td><td>16×A100、batch 96(论文 A.2);25 个数据集的准备是更大门槛(配置里路径全需自备)</td></tr>
+<tr><td>只训 refiner(冻结 base)</td><td>中</td><td>消融即此设定(§4.5),合成数据 + pixel-perfect GT 即可;自定义领域(如人体扫描)若能渲染合成数据,可低成本适配</td></tr>
+<tr><td>复现完整训练</td><td>不现实</td><td>训练总步数未披露;25 数据集混合权重(v3.json)虽公开但数据本身需逐一申请</td></tr>
+</table>
+<h3>14.3 与姊妹篇 SaLon3R 的互补</h3>
+<p>两者同为"把几何推理抬进 3D 空间"的思路(MoGe-3:稀疏体素壳 + 稀疏卷积;SaLon3R:anchor + Point Transformer),但任务正交:<b>MoGe-3 修单图几何细节</b>,<b>SaLon3R 压多视图高斯冗余</b>。若 pipeline 是"单目初始化 → 多视图在线重建",两者可串联:MoGe-3 出高质量几何先验,SaLon3R 类方法负责长序列一致化。详见 <a href="3D-20251016-SaLon3R.html">SaLon3R 笔记</a>。</p>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<p>按规范从方法、数据与评估、工程实用性三维度给出,每条带证据(论文章节或代码行)与改进建议。</p>
+<div class="card" style="border-left:3px solid var(--red)"><h4>① [高优先级] 自引导壳的级联失效风险(method)</h4><p><b>问题</b>:体素壳的邻接关系由前一步 $ζ^{(k)}$ 决定(式(3)),若 base 在某区域误差 $>1/D$(log 域约 0.005,即深度差 0.5%),错误壳会把异表面连成邻居,3D 卷积在错误邻域上聚合,误差被逐步固化——论文未分析该失效模式,Fig. 4 只展示了 K 增加"不退化"的良好情形。<b>证据</b>:v3.py:171-176 每步用 <code>current_coord.detach()</code> 重新体素化,无置信度门控。<b>建议</b>:给每个体素附带不确定度通道(base 可用多步采样方差估计),或在体素化时对 $|Δζ|$ 超阈值的邻接做显式断开。</p></div>
+<div class="card" style="border-left:3px solid var(--red)"><h4>② [高优先级] 只修 log-depth,横向几何误差不可修(method)</h4><p><b>问题</b>:更新式(4)固定 $(u,v)$,refiner 只能沿射线推拉点;若 base 的误差在横向(边缘错位、FOV 不准),SSR 原理上无法纠正。论文边界 F1 第三(16.0,输给 InfiniDepth 19.3)与此一致——边界错位是横向误差。<b>证据</b>:式(4);v3.py:174 <code>torch.cat([current_coord[..., :2], refined_logz.unsqueeze(-1)], dim=-1)</code> 只替换第三通道。<b>建议</b>:让 U-Net 输出 3 维残差(Δu, Δv, Δζ),小范围横向修正;消融成本可控。</p></div>
+<div class="card" style="border-left:3px solid var(--orange)"><h4>③ [中优先级] 论文与代码两处数值不一致(文档质量)</h4><p><b>问题</b>:$D$ 论文 200 vs 代码 256;2D heads 峰值 LR 论文 $10^{-4}$ vs 代码 $10^{-5}$(§10.2)。虽然方向不影响结论(消融显示 D∈[200,300] 是平台),但说明发布配置与论文配置不是同一份,复现者无法从论文得到真实训练配方。<b>建议</b>:引用超参时以 <code>configs/train/v3.json</code> 为准;已向论文 v3 版反馈的价值——这也是本库坚持源码验证的典型案例。</p></div>
+<div class="card" style="border-left:3px solid var(--orange)"><h4>④ [中优先级] refiner 只见合成数据的域差(data)</h4><p><b>问题</b>:refiner 梯度只来自 17 个合成数据集(§3.3),真实传感器噪声下的残差分布从未见过;论文 zero-shot 数字漂亮,但真实数据(如手机拍摄的运动模糊/噪声)上 refiner 是否会"修错方向"缺乏分析。<b>建议</b>:引入真实数据的自监督变体(如多帧一致性),或在真实数据上以更小 LR 微调 refiner 并监控局部指标。</p></div>
+<div class="card" style="border-left:3px solid var(--orange)"><h4>⑤ [中优先级] 回归范式的边界二义性未解(作者自认)</h4><p><b>问题</b>:§5 Limitations:"regression-based paradigm inherently struggles to resolve pixel ambiguity along object boundaries... introduces 'fly-points'"。fly-points(漂浮点)在下游 3DGS 初始化里是脏数据。<b>建议</b>:作者建议融合 PPD 式生成式表述;工程上可用 mask 边界的深度梯度检测 + 形态学清理先滤掉 fly-points 再进重建管线。</p></div>
+<div class="card" style="border-left:3px solid var(--yellow)"><h4>⑥ [低优先级] 评测协议依赖 SAM2 且局部 mask 只覆盖两个合成集(evaluation)</h4><p><b>问题</b>:局部指标仅在 Spring + Synth4K 上计算(§4.3,因需要 dense fine-detail GT),真实数据集上的细结构收益靠定性图支撑;mask 构建引入 SAM2(B.1),评测链路的复现门槛提高。<b>建议</b>:后续工作可在 HAMMER(已有锐利边界标注)上补局部指标;复现评测时注意 SAM2 版本。</p></div>
+<h3>优先级总览与"最关键三点"</h3>
+<table><tr><th>优先级</th><th>条目</th></tr>
+<tr><td>[高]</td><td>① 自引导级联失效;② 横向误差不可修</td></tr>
+<tr><td>[中]</td><td>③ 论文/代码不一致;④ 合成域差;⑤ fly-points</td></tr>
+<tr><td>[低]</td><td>⑥ 局部评测覆盖面</td></tr></table>
+<p><b>个人认为最关键的三点</b>:①(决定方法在恶劣初值下的可信度,也是工程落地的最大不确定性)→ ⑤(fly-points 直接污染下游重建)→ ③(影响复现与引用可信度)。</p>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+<h3>16.1 总结</h3>
+<p>MoGe-3 的价值不在"又一个单目深度 SOTA",而在它给出一个有说服力的<b>诊断-处方对</b>:</p>
+<ul>
+<li><b>诊断</b>:2D 参数化解码是细结构失真的架构级根因——特征交互被图像面邻近性主导,深度不连续处前背景互相污染(§1)。参数对齐的 2D U-Net 对照(Table 3)证明这不是容量问题。</li>
+<li><b>处方</b>:自引导稀疏体素壳 + 子流形稀疏 3D 卷积,把特征聚合的邻域定义权交还给 3D 几何;$HW$ 占用体素使开销可控(121 ms@700²),log-depth 量化使壳尺度不变,K 步残差可测试时外推(K=7 不退化)。</li>
+</ul>
+<p>从工程视角,MoGe-3 是少见的"论文-代码同日对齐"的微软系工作:训练/推理/评测全量开源、配置可读、权重可下;两处论文-代码数值差异(D、heads LR)属于文档同步问题而非方法问题。</p>
+<h3>16.2 演进定位</h3>
+<p>在 MoGe 系列内部:v1 确立"仿射不变点图 + 最优监督"的表示层创新;v2 补 metric scale 与数据侧锐化;<b>v3 把解码侧从 2D 抬到 3D</b>——三代分别对应"监督→数据→架构"三个改进维度。放到领域脉络里(§13.3),MoGe-3 是"点图回归"范式第一次系统引入 3D 空间归纳偏置的工作,其 SSR 模块原则上可插到任何点图回归器(VGGT 系、DUSt3R 系)之后——只依赖分解坐标 $(u,v,ζ)$ 的接口设计(v3.py 的 <code>_voxelize</code> 输入契约)使这种迁移没有架构障碍,这是比单一模型更有生命力的遗产。</p>
+<h3>16.3 待跟进</h3>
+<ul>
+<li>NeurIPS 2026 正式版是否修正 D/LR 不一致(当前 abs comments 为空,项目页标注录用);</li>
+<li>FlexGEMM 生态成熟度(目前为个人仓库 pin 版);</li>
+<li>"生成式 × SSR"的融合(作者明示的 future work)。</li>
+</ul>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>17.1 团队</h3>
+<table>
+<tr><th>作者</th><th>机构</th><th>角色/背景</th></tr>
+<tr><td>Lingyu Kong*</td><td>清华大学(微软研究院实习)</td><td>共同一作;项目页挂名第一作者</td></tr>
+<tr><td>Ruicheng Li*</td><td>清华大学</td><td>共同一作(arXiv 投稿人;项目页 qft-333 作者)</td></tr>
+<tr><td>Ruicheng Wang*</td><td>USTC</td><td>共同一作;MoGe-1/2 的一作(wangrc.site)</td></tr>
+<tr><td>Sicheng Xu</td><td>Microsoft Research</td><td>MoGe 系列核心成员</td></tr>
+<tr><td>Chengtang Yao</td><td>Microsoft Research</td><td>几何估计方向</td></tr>
+<tr><td>Jianfeng Xiang</td><td>清华大学 / Microsoft Research</td><td>FlexGEMM(Triton 稀疏 GEMM 库)作者——SSR 的底层算子依赖</td></tr>
+<tr><td>Jiaolong Yang</td><td>Microsoft Research</td><td>通讯作者;MSRA 视觉计算组</td></tr>
+</table>
+<p class="note">团队判读:MoGe 原班(Ruicheng Wang / Sicheng Xu / Jiaolong Yang)+ 清华两位共同一作 + FlexGEMM 作者。稀疏卷积基础设施自研(FlexGEMM)而非用成熟库(SpConv/MinkowskiEngine),既解释了工程自由度(NeighborCache 复用、masked implicit GEMM 按通道宽选算法),也是复现的主要外部依赖风险(§15.⑤ 见库内类似讨论)。</p>
+<h3>17.2 资源链接</h3>
+<ul class="refs">
+<li>📄 arXiv abs:<a href="https://arxiv.org/abs/2607.17967" target="_blank">https://arxiv.org/abs/2607.17967</a>(v2,2026-07-21)</li>
+<li>🌐 HTML 全文:<a href="https://arxiv.org/html/2607.17967v2" target="_blank">https://arxiv.org/html/2607.17967v2</a></li>
+<li>🏠 项目页:<a href="https://qft-333.github.io/moge3page/" target="_blank">https://qft-333.github.io/moge3page/</a>(标注 Accepted at NeurIPS 2026)</li>
+<li>💻 代码:<a href="https://github.com/microsoft/MoGe" target="_blank">github.com/microsoft/MoGe</a>(v3 已并入:<code>moge/model/v3.py</code>、<code>configs/train/v3.json</code>、<code>moge/train/train_moge3.py</code>)</li>
+<li>🤗 权重:<a href="https://huggingface.co/Ruicheng/moge-3-vitl" target="_blank">moge-3-vitl(370M)</a> · <a href="https://huggingface.co/Ruicheng/moge-3-vitg" target="_blank">moge-3-vitg(1.25B)</a></li>
+<li>🤗 在线 Demo:<a href="https://huggingface.co/spaces/Ruicheng/MoGe-3" target="_blank">huggingface.co/spaces/Ruicheng/MoGe-3</a></li>
+<li>🧩 稀疏算子库:<a href="https://github.com/JeffreyXiang/FlexGEMM" target="_blank">JeffreyXiang/FlexGEMM</a>(pinned @b2fadb29)</li>
+</ul>
+<h3>17.3 库内交叉引用</h3>
+<ul class="refs">
+<li><a href="3D-20251016-SaLon3R.html">SaLon3R(姊妹篇,同批调研)</a>——长序列前馈 3DGS,anchor + Point Transformer 的 3D 结构先验,与本文 SSR 思路互为镜像</li>
+<li><a href="3D-20250314-VGGT.html">VGGT</a>——前馈多视图几何基础模型,点图输出范式</li>
+<li><a href="3D-20250717-Pi3.html">Pi3</a>——前馈 3D 重建</li>
+<li><a href="3D-20251211-SHARP.html">SHARP</a>——单图前馈 3DGS,MoGe-3 可作其几何前端的对照</li>
+<li><a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a>、<a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">三维重建质量速度 Pareto 全谱调研</a></li>
+</ul>
+</section>
+
+<div class="footer">
+  <p>MoGe-3 深度调研笔记 · arXiv:2607.17967v2 · 生成于 2026-10-09</p>
+  <p>media_paper 知识库 · 方法密集型高端格式 · 源码验证基于 microsoft/MoGe(depth-1 clone, 2026-10-09)</p>
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

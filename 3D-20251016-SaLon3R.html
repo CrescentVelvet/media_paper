@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaLon3R:结构感知的长序列可泛化 3D 重建,anchor 量化 + Point Transformer 把 50+ 视角前馈重建推到 10 FPS</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure video{max-width:100%;border-radius:10px;border:1px solid var(--border);background:#000}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2510.15072v1 · 2025-10-16 · IJCV 2026(abs 页 Journal reference + Springer DOI 佐证) · 长序列前馈 3DGS</span>
+    <h1>SaLon3R:结构感知的长序列可泛化重建,anchor 量化 + Point Transformer 让 50+ 视角前馈重建跑过 10 FPS</h1>
+    <div class="subtitle">SaLon3R: Structure-aware Long-term Generalizable 3D Reconstruction from Unposed Images</div>
+    <div class="authors">Jiaxin Guo · Tongfan Guan · Wenzhen Dong · Wenzhao Zheng · Wenting Wang · Yue Wang · Yeung Yam · Yun-Hui Liu(通讯)</div>
+    <div class="org">The Chinese University of Hong Kong · Hong Kong Center for Logistics Robotics · UC Berkeley · Zhejiang University&nbsp;|&nbsp;cs.CV · IJCV 2026(依据 abs 页 Journal reference 字段「International Journal of Computer Vision, 2026」与 DOI 10.1007/s11263-026-02965-2)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2510.15072" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2510.15072v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2510.15072" target="_blank">📥 PDF</a>
+      <a href="https://wrld.github.io/SaLon3R/" target="_blank">🏠 项目页</a>
+      <a href="https://github.com/wrld/SaLon3R" target="_blank">💻 GitHub(仅项目页,无源码)</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:CUT3R 增量重建 Backbone</a></li>
+    <li><a href="#s5">模块二:Saliency-aware Gaussian Quantization</a></li>
+    <li><a href="#s6">模块三:3D Point Transformer(结构感知细化)</a></li>
+    <li><a href="#s7">模块四:Adaptive Gaussian Decoding</a></li>
+    <li><a href="#s8">训练方案与损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(在线推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(无源码声明)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话</b>:SaLon3R 在无位姿无标定的图像流上做<b>在线、前馈</b>的 3DGS 重建——CUT3R backbone 逐帧预测 pointmap 与像素级高斯,用<b>显著性感知的体素量化</b>把冗余像素高斯压缩成紧凑 anchor,再用 <b>Point Transformer V3</b> 在 3D 空间里学习结构先验细化 anchor,最后按细化后的显著性<b>自适应解码回高斯</b>,单帧约 10 FPS、支持 50+ 视角、去除 50%–90% 冗余。</p>
+<p><b>问题-方法-结果</b>:现有 generalizable GS 方法(pixelSplat/FreeSplat 系)把每帧的 per-pixel 高斯直接拼接,长序列下高斯数爆炸(显存 OOM)且跨帧几何/光度不一致(§1)。SaLon3R 把「压缩冗余」和「修复伪影」都搬到 3D 空间做(而非 FreeSplat 式的 2D 特征融合),ScanNet 50 视角下 10.15 FPS、3042K 高斯(对比 NoPoSplat 6422K、FLARE 同量,Table 2);深度 AbsRel 0.030@10v 显著优于全部 pose-required 方法(FreeSplat 0.102)。</p>
+<div class="stat-row">
+  <div class="stat"><div class="v">10.15</div><div class="l">FPS @50 views(Table 2,ScanNet;10v 为 10.16)</div></div>
+  <div class="stat"><div class="v">≈90%</div><div class="l">冗余去除极值(Fig. 1:9830K→1043K;50v 对 NoPoSplat 为 52.6%)</div></div>
+  <div class="stat"><div class="v">0.030</div><div class="l">深度 AbsRel↓ @10v(Table 2;最佳 pose-required FreeSplat 为 0.102)</div></div>
+  <div class="stat"><div class="v">M=4</div><div class="l">每 anchor 生长的高斯数(§4.1)</div></div>
+  <div class="stat"><div class="v">200</div><div class="l">消融验证的最大 context 视角数(Table 4,FPS 仍 9.53)</div></div>
+</div>
+<div class="callout key"><b>核心贡献(作者声明,§1 贡献列表)</b>:① 提出 SaLon3R,pose-free 长序列可泛化重建,自称"the first online generalizable GS method capable of reconstructing over 50 views at a speed exceeding 10 FPS";② saliency-aware 高斯量化机制把密集像素高斯增量编码为稀疏 anchor,配轻量 Point Transformer 学 3D 结构先验修复伪影、支持 OOD 视角外推;③ 50%–90% 冗余去除,深度估计显著超过 pose-required 方法,NVS 达 SOTA。</div>
+<div class="callout warn"><b>⚠️ 声明边界的复核(本笔记 §11.6 详解)</b>:"over 10 FPS"在 50 views 档严格成立(10.15),但 Table 4 显示 100/200 views 时 FPS 为 9.72/9.53(<10)——摘要"over 50 views in over 10 FPS"的严格成立范围是 50 视角档。另外 Fig. 1 的"9830K→1043K"只在 teaser 图注出现,正文无对应实验条件。<b>代码未开源</b>(github.com/wrld/SaLon3R 仅项目页分支,2026-10-09 核实),复现需自行实现。</div>
+<div class="figure"><img src="images/2510.15072/teaser.png" loading="lazy" alt="teaser"><div class="caption"><b>图1</b>(论文 Fig. 1)与 FreeSplat 的对比 teaser:无位姿图像序列输入,SaLon3R 在线完成可泛化高斯重建,速度超 10 FPS,高斯数从 9830K 压到 1043K(≈89.4% 冗余去除),同时保持高质量渲染与准确深度。<span class="uncertain">注:9830K/1043K 为该图注口径,正文无对应实验设置说明。</span></div></div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 现有方法的失败模式(§1,两条具体后果)</h3>
+<div class="grid-2">
+<div class="card"><h4>失败模式一:高斯数爆炸 → OOM</h4><p>主流 generalizable GS 方法(pixelSplat、MVSplat、PixelGaussian 等)"predict per-pixel Gaussian attributes and combine Gaussians from all views as the scene representation"(§1)——每帧每像素一个高斯,视角线性累积。后果:"fail due to large GPU memory consumption by a large number of redundant Gaussians"。实测佐证(Table 1/2):PixelSplat/MVSplat/PixelGaussian 在 30/50 视角档直接<b>无法报告结果</b>(作者注:"Due to the out-of-memory problem from large 3DGS occupation")。</p></div>
+<div class="card"><h4>失败模式二:跨帧不一致 → 渲染退化</h4><p>"a degradation in rendering quality due to photometric inconsistency and 3D misalignment arising from reconstruction inaccuracies when addressing long-duration video images"(§1)。backbone(如 CUT3R)在长序列上的位姿/点图漂移,直接拼接会把误差叠加成漂浮点与重影。NoPoSplat/FLARE 在 50v 时 AbsRel 恶化到 1.716/1.814(10v 时 0.390/0.487,Table 2)即为量化证据。</p></div>
+</div>
+<h3>2.2 已有缓解路线的局限:2D 融合 ≠ 3D 理解(§1/§2)</h3>
+<p>FreeSplat(cross-view feature aggregation + pixel-wise triplet fusion)、PixelGaussian(动态调整分布与数量)、Long-LRM(token 融合 + 剪枝)都在<b>重叠区域的 2D 特征层面</b>做融合。作者的判断:"they mainly utilize 2D features for aggregating the overlapped regions, and lack a holistic structure-aware 3D understanding of the scene to control the adaptive distribution of the 3D Gaussians"(§1);且"only prune in overlapping regions, limiting structure-aware refinement and generalization to extrapolated views"(§4.2)——只处理重叠区,外推视角照样崩。</p>
+<div class="callout key"><b>核心洞察</b>:冗余与伪影都是<b>3D 空间现象</b>,2D 融合只是在症状层面打补丁。正确位置是在 3D 空间里做两件事:① 用体素量化把空间上冗余的像素高斯聚成 anchor(压缩);② 用点云 Transformer 学"好结构长什么样"的先验来修正 anchor 属性(修复)。这与 MoGe-3"2D 参数化错配"的诊断形成镜像——一个治多视图融合,一个治单图解码,都把特征交互从 2D 网格搬进 3D 邻域。</div>
+<h3>2.3 关键假设及其失效条件(本笔记分析)</h3>
+<ul>
+<li><b>假设 1:像素高斯冗余可用 anchor 表示</b>。失效条件:体素尺寸 γ 内的细节方差大(高频纹理贴着同一面墙)时,量化会平均掉细节——Table 6 显示 γ=0.02 时 PSNR/LPIPS/深度全面退化,作者因此选 0.005(ScanNet)/0.01(Replica)。</li>
+<li><b>假设 2:3D 结构先验可从数据学到并泛化</b>(Point Transformer 在 ScanNet 训练)。失效条件:域外场景的几何分布差异(如室外大尺度 vs 室内)——论文只在室内(ScanNet/Replica/ScanNet++)验证,<span class="uncertain">【推测】室外场景量化分辨率与先验都需重调</span>。</li>
+<li><b>假设 3:saliency 可被渲染损失隐式监督</b>("only trained with rendering loss without any ground truth",§3.3)。失效条件:渲染损失对"几何重要但光度平坦"的区域(白墙转角)信号弱,saliency 可能低估其几何价值。</li>
+<li><b>假设 4(backbone 继承):CUT3R 长序列不漂移</b>。作者自己承认不成立(A.4):"due to the lack of global alignment, CUT3R is prone to drift in estimated camera poses and reconstructed pointmaps, leading to view misalignment and floating points"——这是全系统误差的上限来源(§15)。</li>
+</ul>
+<h3>2.4 相关工作脉络(§2 压缩)</h3>
+<p>三条线:① generalizable NVS(NeRF/3DGS 前馈化,pixelSplat/MVSplat);② pose-free 重建(DUSt3R/MASt3R/CUT3R/VGGT 系,NoPoSplat/FLARE 把高斯挂上去);③ 冗余消除(FreeSplat/PixelGaussian/Long-LRM 的 2D 融合)。SaLon3R 位于 ②③ 的交叉:用 ② 的 backbone(CUT3R/VGGT 皆可)拿 pose-free 几何,用 ③ 的目标(去冗余)但换成 3D 结构感知的做法。</p>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<h3>3.1 问题形式化(§3.1)</h3>
+<p>输入:无位姿无标定图像流 $\{\mathbf{I}_{t}\}_{t=1}^{N}$;输出:在线更新的全局 3DGS $\mathcal{G}_{t}$(mean $\bm{\mu}$、协方差 $\mathbf{\Sigma}$、不透明度 $\bm{\alpha}$、球谐 $\mathbb{sh}$)与每帧相机内参 $\mathbf{K}_{t}$、外参 $\mathbf{P}_{t}$:</p>
+<div class="equation">$$\mathcal{G}_{t},\{\mathbf{K}_{t},\mathbf{P}_{t}\}_{t=1}^{N}=\mathrm{SaLon3R}(\mathbf{I}_{t},\mathcal{G}_{t-1}) \text{(式 1)}$$</div>
+<p>在线性的关键(§3.1):"during inference, only part of the global Gaussian $\mathcal{G}_{t-1}$ that are near the frustum of the current view are extracted to be merged with the current pixel-wise Gaussian latents as input for quantization and refinement"——每帧只取当前视锥附近的历史高斯参与本轮量化与细化,计算量不随序列长度增长。</p>
+<h3>3.2 四阶段数据流(论文 Fig. 2)</h3>
+<div class="figure"><img src="images/2510.15072/salon3r.png" loading="lazy" alt="pipeline"><div class="caption"><b>图2</b>(论文 Fig. 2)SaLon3R 总览。每张无位姿图像经增量重建网络预测相机参数 $\mathbf{K}_t,\mathbf{P}_t$、pointmap $\hat{\mathbf{X}}_t$ 与像素级高斯 latents $\hat{\mathbf{G}}_t$;saliency-aware 量化把密集高斯编码为紧凑 anchor;Point Transformer 捕获空间关系做结构感知细化;最后自适应解码回高斯并增量合并进全局模型。</div></div>
+<div class="mermaid">
+flowchart TD
+    IMG["第 t 帧图像 I_t(无位姿无标定)"] --> CUT["① CUT3R backbone(冻结)<br/>state-update / state-readout"]
+    CUT --> OUTS["K_t, P_t(相机)+ X̂_t(世界系 pointmap)<br/>+ Ĝ_t(高斯 latents)+ S_t(saliency)"]
+    OUTS --> QUANT["② Saliency-aware 量化<br/>体素 γ 聚合 → anchor(μᵃ,fᵃ,sᵃ)"]
+    HIST["历史高斯 G_{t-1}<br/>(仅当前视锥附近部分)"] -.-> QUANT
+    QUANT --> PT["③ Point Transformer V3(5 级 U-Net)<br/>序列化(z-order/Hilbert)+ patch attention"]
+    PT --> GROW["④ Adaptive Growing<br/>MLP_grow 每 anchor 出 M=4 个残差高斯"]
+    GROW --> PRUNE["saliency 调制 opacity<br/>αʳ>β 剪枝"]
+    PRUNE --> MERGE["合并更新全局 G_t"]
+    MERGE -.->|下一帧| HIST
+    MERGE --> RENDER["渲染新视角(含外推)"]
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style PT fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style MERGE fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<h3>3.3 符号表(与论文一致)</h3>
+<table>
+<tr><th>符号</th><th>定义</th><th>出处</th></tr>
+<tr><td>$\mathbf{I}_{t},\ N$</td><td>第 $t$ 帧无位姿图像;序列长度</td><td>§3.1</td></tr>
+<tr><td>$\mathcal{G}=\{\bm{\mu},\mathbf{\Sigma},\bm{\alpha},\mathbb{sh}\}$</td><td>3DGS 场景表示(mean/covariance/opacity/SH)</td><td>§3.1</td></tr>
+<tr><td>$\mathbf{K}_{t},\ \mathbf{P}_{t}$($\hat{\mathbf{P}}_{t}$)</td><td>估计的相机内参 / 外参</td><td>式(1)(3)</td></tr>
+<tr><td>$\mathbf{F}_{t},\ \mathbf{z}_{t}$</td><td>ViT 图像 tokens;pose token(学运动信息)</td><td>§3.2</td></tr>
+<tr><td>$\mathbf{s}_{t-1}\to\mathbf{s}_{t}$</td><td>CUT3R 持久状态(state-update 更新)</td><td>式(2)</td></tr>
+<tr><td>$\hat{\mathbf{X}}_{t}^{\text{self}},\ \hat{\mathbf{X}}_{t}\in\mathbb{R}^{H×W×3}$</td><td>局部 / 世界坐标 pointmap(高斯中心来源)</td><td>式(3),§3.2</td></tr>
+<tr><td>$\hat{\mathbf{G}}_{t}\in\mathbb{R}^{H×W×C}$</td><td>像素级高斯 latents(DPT-like head 输出)</td><td>§3.2</td></tr>
+<tr><td>$\mathbf{S}_{t},\ s_i$</td><td>saliency map / 每点全局显著性分(外观+几何复杂度)</td><td>§3.2, §3.3</td></tr>
+<tr><td>$\gamma$</td><td>量化体素尺寸(ScanNet 0.005,Replica 0.01)</td><td>§3.3, A.2</td></tr>
+<tr><td>$\mathbf{v}_{i}=\lfloor\mathbf{x}_{i}/\gamma\rfloor\cdot\gamma$</td><td>点所属体素中心(floor 量化)</td><td>§3.3</td></tr>
+<tr><td>$\mathbf{s}^{a}_{k},\ \bm{\mu}^{a}_{k},\ \mathbf{f}^{a}_{k}$</td><td>anchor 的聚合 saliency / 加权中心 / 融合 latent</td><td>式(4)</td></tr>
+<tr><td>$\mathrm{MLP}_{\mathrm{GS}}$</td><td>anchor latent → anchor 高斯属性 $(\mathbf{\Sigma}^{a},\bm{\alpha}^{a},\mathbb{sh}^{a})$</td><td>§3.3</td></tr>
+<tr><td>$\mathbf{h}_{k}^{a}$</td><td>Point Transformer 输出的细化 anchor latent</td><td>式(5)</td></tr>
+<tr><td>$M$(=4)</td><td>每 anchor 生长的高斯数</td><td>式(6),§4.1</td></tr>
+<tr><td>$\Delta\bm{\mu},\Delta\mathbf{\Sigma},\Delta\bm{\alpha},\Delta\mathbb{sh},\Delta\mathbf{s}$</td><td>$\mathrm{MLP}_{\mathrm{grow}}$ 输出的残差属性</td><td>式(6)</td></tr>
+<tr><td>$\bm{\alpha}^{r}_{k,i},\ \beta,\ \mathbf{M}^{r}_{k,i}$</td><td>saliency 调制后的 opacity / 剪枝阈值 / 保留 mask</td><td>式(7)</td></tr>
+<tr><td>$\mathcal{G}^{r},\ K$</td><td>最终细化高斯集 / anchor 总数</td><td>式(8)</td></tr>
+<tr><td>$\lambda_1,\lambda_2,\lambda_3$</td><td>损失权重 = 1.0 / 0.05 / 0.0005</td><td>式(9)</td></tr>
+</table>
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:CUT3R 增量重建 Backbone</h2>
+<p>CUT3R(Wang et al., 2025b)是连续在线重建 transformer,SaLon3R 把它当"几何发动机"并<b>冻结其重建模块权重</b>(§3.4:"We fix the pretrained weights of the reconstruction network (except for Gaussian/saliency prediction) and train other modules";§4.1 重申)。</p>
+<h3>4.1 结构与前向(式 2、式 3)</h3>
+<div class="equation">$$[\mathbf{z}^{\prime}_{t},\mathbf{F}^{\prime}_{t}],\mathbf{s}_{t}=\mathrm{Decoders}([\mathbf{z}_{t},\mathbf{F}_{t}],\mathbf{s}_{t-1}) \text{(式 2)}$$</div>
+<div class="equation">$$\hat{\mathbf{X}}_{t}^{\mathrm{self}}=\mathrm{Head}_{\mathrm{pts}}(\mathbf{F}^{\prime}_{t}),\quad \hat{\mathbf{G}}_{t}=\mathrm{Head}_{\mathrm{GS}}(\mathbf{F}^{\prime}_{t}),\quad \hat{\mathbf{P}}_{t}=\mathrm{Head}_{\mathrm{pose}}(\mathbf{z}^{\prime}_{t}) \text{(式 3)}$$</div>
+<table>
+<tr><th>组件</th><th>配置(论文 §3.2)</th><th>输入 → 输出</th></tr>
+<tr><td>ViT encoder</td><td>CUT3R 自带,逐帧编码</td><td>$\mathbf{I}_t \to \mathbf{F}_t$(图像 tokens)</td></tr>
+<tr><td>双互连 decoder</td><td>state-update($\mathbf{s}_{t-1}\to\mathbf{s}_{t}$,状态初始化为 learnable tokens)+ state-readout(读历史空间上下文)</td><td>$[\mathbf{z}_t,\mathbf{F}_t],\mathbf{s}_{t-1}\to[\mathbf{z}'_t,\mathbf{F}'_t],\mathbf{s}_t$</td></tr>
+<tr><td>Head_pts</td><td>pointmap 头</td><td>$\mathbf{F}'_t\to\hat{\mathbf{X}}^{\mathrm{self}}_t$(局部系),再经 $\hat{\mathbf{P}}_t$ 转世界系 $\hat{\mathbf{X}}_t\in\mathbb{R}^{H×W×3}$ 作为高斯中心</td></tr>
+<tr><td>Head_GS</td><td><b>DPT-like 架构</b>(Ranftl et al., 2021),SaLon3R 新增、可训练</td><td>$\mathbf{F}'_t\to\hat{\mathbf{G}}_t\in\mathbb{R}^{H×W×C}$(高斯 latents)+ $\mathbf{S}_t$(saliency map)</td></tr>
+<tr><td>Head_pose + 内参</td><td>pose token 出外参;焦距用 <b>Weiszfeld algorithm</b>(Plastiri, 2011)估计</td><td>$\mathbf{z}'_t\to\hat{\mathbf{P}}_t$;内参 $\mathbf{K}_t$</td></tr>
+</table>
+<h3>4.2 为什么选 CUT3R(机制解释)</h3>
+<ul>
+<li><b>在线性</b>:CUT3R 的持久状态 $\mathbf{s}_t$ 本身就是流式设计,逐帧 $\mathcal{O}(1)$ 更新,与 SaLon3R 的在线目标天然契合——这是它区别于 VGGT(离线、全帧注意力)的关键。论文同时提供 VGGT 版 backbone 变体("Ours w/ VGGT"),证明框架对 backbone 可插拔(§4.3)。</li>
+<li><b>pose-free</b>:相机参数作为预测量输出,无需 SfM 预处理。</li>
+<li><b>代价(作者自认)</b>:CUT3R 无全局对齐,长序列漂移(A.4)——SaLon3R 的量化+细化只能缓解症状,治不了根(§15.①)。</li>
+</ul>
+<h3>4.3 该模块的监督</h3>
+<p>backbone 冻结 → 无监督;新增 Head_GS 与 saliency 头仅由下游渲染损失(式(9))训练。评测时的用法(A.2):"we take all the images (target and context) as input to CUT3R, using the estimated poses and intrinsic parameters to render the target view with the Gaussians built from context views"。</p>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:Saliency-aware Gaussian Quantization</h2>
+<p>这是去冗余的核心。思想:同一空间位置被多帧反复"投票"产生大量近似重复的高斯,把它们按体素聚成 anchor,并用 saliency 决定谁在聚合中占主导。</p>
+<h3>5.1 数学形式化(式 4)</h3>
+<p>体素化:$\mathbf{v}_{i}=\lfloor\mathbf{x}_{i}/\gamma\rfloor\cdot\gamma$。对落入同一体素的 $L$ 个点(saliency $s_i$、latent $\mathbf{f}_i$):</p>
+<div class="equation">$$\mathbf{s}^{a}_{k}=\sum_{i=1}^{L}s_{i},\qquad \bm{\mu}^{a}_{k}=\frac{\sum_{i=1}^{L}s_{i}\mathbf{v}_{i}}{\mathbf{s}^{a}_{k}},\qquad \mathbf{f}^{a}_{k}=\frac{\sum_{i=1}^{L}s_{i}\mathbf{f}_{i}}{\mathbf{s}^{a}_{k}} \text{(式 4)}$$</div>
+<p>再经 $\mathrm{MLP}_{\mathrm{GS}}$ 解出 anchor 高斯属性 $\{\mathbf{\Sigma}^{a}_{k},\bm{\alpha}^{a}_{k},\mathbb{sh}^{a}_{k}\}=\mathrm{MLP}_{\mathrm{GS}}(\mathbf{f}^{a}_{k})$。</p>
+<h3>5.2 机制解释</h3>
+<div class="grid-3">
+<div class="card"><h4>为什么 saliency 加权</h4><p>朴素体素平均(论文 Baseline "+ Quant.",Table 5)会让重要结构被多数平庸点稀释;saliency 加权使"more salient points contribute more significantly to the fused representation"(§3.3)。消融:+Quant. PSNR 从 20.78 掉到 16.95(信息损失),+Sal. Quant. 回到 18.06,显著性找回 1.1 dB。</p></div>
+<div class="card"><h4>saliency 从哪来</h4><p>由 backbone 的 saliency map 头预测,"captures the geometric and photometric complexity of different regions spatially"(§3.2);"learnable and only trained with rendering loss without any ground truth"(§3.3)——无显式监督,是渲染梯度反传塑造的注意力地图。渲染可视化见论文 Fig. 6(本笔记图6)。</p></div>
+<div class="card"><h4>增量合并(在线性)</h4><p>每帧只对"当前视锥附近"的历史高斯做量化合并(§3.1),远离当前视场的部分原样保留——避免每帧重处理全部历史,使 FPS 不随帧数崩塌(Table 4:200 视角仍 9.53 FPS)。</p></div>
+</div>
+<h3>5.3 γ 的取值与影响</h3>
+<p>ScanNet γ=0.005、Replica γ=0.01(A.2)。Table 6 消融(Replica office02,30 views):γ=0(不量化)5629K 高斯 / 7.56 FPS;γ=0.01 → 2005K / 9.85 FPS 且 PSNR 反而最高(25.04);γ 到 0.02 时量化损失显现(506K 但 PSNR 24.53、LPIPS 0.470)。<b>量化不只是压缩,适度量化本身有去噪/正则效应</b>(0.005/0.01 档 PSNR 高于不量化)——这与 MoGe-3 的邻域聚合平滑直觉一致,详见 §12。</p>
+<h3>5.4 该模块的监督</h3>
+<p>量化本身无参数;$\mathrm{MLP}_{\mathrm{GS}}$ 与 saliency 头由渲染损失端到端训练。体素分配是硬 floor 操作,梯度不经坐标路径(与 MoGe-3 的体素化同理)。</p>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:3D Point Transformer(结构感知细化)</h2>
+<p>量化解决了"冗余",但聚合本身会引入模糊与错位(消融:+Quant. 后 PSNR 暴跌 3.8 dB)。Point Transformer 的职责是<b>在 3D 空间里学习结构先验,修复 anchor 的属性与 saliency</b>——这是论文标题 "Structure-aware" 的落点。</p>
+<h3>6.1 结构与数学形式化(式 5)</h3>
+<div class="equation">$$\mathbf{h}_{k}^{a}=\mathrm{PointTransformer}\big(\{\bm{\mu}^{a}_{k},\mathbf{\Sigma}^{a}_{k},\bm{\alpha}^{a}_{k},\mathbb{sh}^{a}_{k},\mathbf{s}^{a}_{k}\}\big) \text{(式 5)}$$</div>
+<table>
+<tr><th>组件</th><th>配置(论文 §3.4)</th><th>说明</th></tr>
+<tr><td>骨干</td><td>Point Transformer V3(Wu et al., 2024;Chen et al., 2024)</td><td>直接采用,非自研</td></tr>
+<tr><td>序列化</td><td>z-order curve 与 Hilbert curve 把点位置映射为整数序</td><td>空间填充曲线保局部性,使后续 patch 划分近似 3D 邻域划分</td></tr>
+<tr><td>U-Net</td><td><b>五级 encoder(每级 grid pooling 下采样 + attention blocks)+ 对称 decoder(上采样 + attention)</b></td><td>多尺度捕获局部与全局结构</td></tr>
+<tr><td>注意力</td><td>patch attention:点分组为 non-overlapping patches,patch 内做注意力(局部注意力)</td><td>复杂度随点数近线性,支撑在线速度</td></tr>
+<tr><td>输入特征</td><td>anchor 高斯属性 + anchor saliency 拼接</td><td>几何(Σ,μ)+ 光度(sh)+ 显著性(s)全量输入</td></tr>
+<tr><td>输出</td><td>细化 anchor latent $\mathbf{h}^{a}_{k}$(供 MLP_grow 解码)</td><td>同时细化属性与 saliency(§1:"refine anchor attributes and saliency")</td></tr>
+</table>
+<h3>6.2 机制解释(为什么它能修伪影)</h3>
+<ul>
+<li><b>跨视角不一致 ⇔ anchor 属性在空间上"不光滑"</b>:同一物理表面被不同帧赋予了略不同的位置/颜色,PT 的局部注意力让邻居 anchor 互相参照,把离群值拉回流形——类似 3D 版的"联合双边滤波",但权重是学出来的。</li>
+<li><b>OOD 外推能力的来源</b>:训练时"randomly sample context views ... the rest as target views to train our model for handling extrapolation views"(§3.4),细化器见惯了"context 没盖好、target 在外侧"的样本,推理时对外推视角更稳(论文 Fig. 4/8 的床、桌子外推对比)。</li>
+<li><b>与 MoGe-3 的镜像关系</b>:MoGe-3 的稀疏 U-Net 在体素壳上修 log-depth,PTV3 在 anchor 点云上修高斯属性——都是"3D 空间里的局部注意力/卷积修复 2D 预测的系统误差",差别在表示(壳 vs 点)与载体(深度残差 vs 高斯属性残差)。</li>
+</ul>
+<h3>6.3 该模块的监督</h3>
+<p>无独立监督;仅渲染损失(式 9)经解码器回传(§3.4)。saliency 同样无 GT(§3.3)。渲染的 saliency 可视化见论文 Fig. 6(本笔记图6):高 saliency 集中在高频纹理与大深度梯度区。</p>
+<div class="figure"><img src="images/2510.15072/abl_sal.png" loading="lazy" alt="saliency"><div class="caption"><b>图6</b>(论文 Fig. 6)渲染的 3D Saliency 可视化。亮部(高显著性)集中在纹理丰富与几何复杂区域——量化阶段这些区域的点在 anchor 聚合中占主导,growing 阶段也获得更多高斯配额。</div></div>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:Adaptive Gaussian Decoding</h2>
+<p>细化后的 anchor 仍是"压缩态",渲染前需要按区域复杂度<b>自适应地长回</b>不同数量的高斯——这是质量控制与数量控制的最后一道闸。</p>
+<h3>7.1 数学形式化(式 6–8)</h3>
+<div class="equation">$$\{\Delta\bm{\mu}_{k,i},\Delta\mathbf{\Sigma}_{k,i},\Delta\bm{\alpha}_{k,i},\Delta\mathbb{sh}_{k,i},\Delta\mathbf{s}_{k,i}\}_{i=1}^{M}=\mathrm{MLP}_{\mathrm{grow}}(\mathbf{h}_{k}^{a}) \text{(式 6)}$$</div>
+<div class="equation">$$\bm{\alpha}_{k,i}^{r}=(\bm{\alpha}_{k,i}^{a}+\Delta\bm{\alpha}_{k,i})\cdot\big(1+\tanh(\mathbf{s}_{k,i}^{a}+\Delta\mathbf{s}_{k,i})\big),\qquad \mathbf{M}^{r}_{k,i}=\bm{\alpha}_{k,i}^{r}>\beta \text{(式 7)}$$</div>
+<div class="equation">$$\mathcal{G}^{r}=\bigcup_{k=1}^{K}\big\{(\bm{\mu}_{k}^{a}+\Delta\bm{\mu}_{k,i},\ \mathbf{\Sigma}_{k}^{a}+\Delta\mathbf{\Sigma}_{k,i},\ \bm{\alpha}_{k,i}^{r},\ \mathbf{sh}_{k}^{a}+\Delta\mathbf{sh}_{k,i})\ \big|\ \mathbf{M}^{r}_{k,i}=1,\ i=1,\dots,M\big\} \text{(式 8)}$$</div>
+<h3>7.2 机制解释</h3>
+<ul>
+<li><b>M=4 的统一配额 + β 的差异化筛选</b>:每个 anchor 先等配额长 4 个,再用 saliency 调制的 opacity 阈值 β 筛选——高复杂区的 4 个全留(甚至更"实"),低复杂区的 opacity 被压到 β 以下被剪。"prune redundant Gaussians in regions with sparse textures and low geometric complexity, while allocating more Gaussians to recover high-frequency details and regions with large depth gradients"(§3.4)。</li>
+<li><b>β 的双面作用(Fig. 5)</b>:β=0→0.5 "removes most redundant Gaussians and significantly improves the performance"(去噪效应,漂浮背景被消掉,PSNR 与 AbsRel 同时改善);β=0.8 进一步压缩且"little degradation"(PSNR 略降)。β 是<b>部署旋钮</b>:要画质调小、要体积调大。</li>
+<li><b>残差式解码</b>:生长的高斯属性 = anchor 属性 + MLP 残差(式 8),与 MoGe-3 的残差精炼同一设计哲学——零初始化友好、不破坏已对齐的全局结构。</li>
+</ul>
+<div class="figure"><img src="images/2510.15072/abl.png" loading="lazy" alt="beta ablation"><div class="caption"><b>图7</b>(论文 Fig. 5)Adaptive Gaussian Growing 的 β 实验。β 从 0 到 0.5 去除大部分冗余高斯且性能显著提升;β=0.8 进一步去除冗余、性能几乎不降。注意背景区域的噪点高斯随 β 增大被清除。</div></div>
+<h3>7.3 该模块的监督</h3>
+<p>仅渲染损失(式 9)。剪枝 mask $\mathbf{M}^r$ 是硬阈值(不可导),但 opacity 本身可导,训练时梯度经 $\bm{\alpha}^r$ 路径流动(阈值行为类似 detach 的 gate,论文未特殊说明)。</p>
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>训练方案与损失函数总表</h2>
+<h3>8.1 训练目标(式 9,§3.4)</h3>
+<div class="equation">$$\mathcal{L}_{total}=\lambda_{1}\mathcal{L}_{1}+\lambda_{2}\mathcal{L}_{\mathrm{LPIPS}}+\lambda_{3}\mathcal{L}_{\mathrm{smooth}} \text{(式 9)}$$</div>
+<table>
+<tr><th>损失项</th><th>说明</th><th>权重</th><th>作用</th><th>出处</th></tr>
+<tr><td>$\mathcal{L}_{1}$</td><td>L1 光度损失(渲染 target 图 vs GT)</td><td>1.0</td><td>主光度监督</td><td>式(9)</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{LPIPS}}$</td><td>感知损失(follow pixelSplat, Charatan et al., 2024)</td><td>0.05</td><td>感知质量</td><td>式(9)</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{smooth}}$</td><td>edge-aware 深度正则(作用于渲染深度)</td><td>0.0005</td><td>约束表面平滑;消融 +0.09 PSNR、AbsRel 0.078→0.030(Table 5)</td><td>式(9),Table 5</td></tr>
+</table>
+<p class="note">saliency 无独立监督("only trained with rendering loss without any ground truth",§3.3)——它是渲染梯度的"副产品",类似 NeRF 中密度场的涌现。训练采样:随机采 context views、其余作 target views,显式训练外推能力(§3.4)。</p>
+<h3>8.2 训练配置(A.1/A.2/§4.1;⚠️ 无源码可验,见 §10 声明)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>训练数据</td><td>ScanNet 100 scenes 训练 / 8 scenes 测试(follow FreeSplat 划分);context 重叠度压到 <b>15%–50%</b>(更难设定);跨数据集 zero-shot:Replica、ScanNet++</td><td>§4.1</td></tr>
+<tr><td>公平性协议</td><td><b>所有对比方法在同一 ScanNet 数据上基于其预训练权重重训</b>,同一验证设定("we retrain all the methods on ScanNet based on their pretrained weights")</td><td>§4.1</td></tr>
+<tr><td>分辨率</td><td>512×384(ScanNet/ScanNet++,follow Wang et al., 2024c)</td><td>A.2</td></tr>
+<tr><td>batch size</td><td>1</td><td>A.2</td></tr>
+<tr><td>view 配置</td><td>N=8 帧/样本,随机 2–6 帧为 context、其余为 target</td><td>A.2</td></tr>
+<tr><td>优化器</td><td>Adam,初始 lr $1×10^{-5}$,linear warmup + cosine decay</td><td>A.2</td></tr>
+<tr><td>可训练模块</td><td>Point Transformer + Head_GS + MLP_GS + MLP_grow;<b>CUT3R 场景重建模块冻结</b>(VGGT 版同样固定预训练权重)</td><td>§3.4, §4.1, A.2</td></tr>
+<tr><td>量化分辨率 γ</td><td>ScanNet 0.005;Replica 0.01</td><td>A.2</td></tr>
+<tr><td>硬件/环境</td><td>NVIDIA RTX A100;PyTorch 2.5.1;CUDA 12.6</td><td>A.1</td></tr>
+<tr><td>训练时长/总迭代</td><td><b>原文未报告</b></td><td>—</td></tr>
+</table>
+<h3>8.3 与 MoGe-3 训练策略的对照(本笔记观点)</h3>
+<p>两篇同批调研的论文在"如何保护预训练 backbone"上给出相反答案:MoGe-3 选择<b>联合微调</b>(前 5000 步隔离、后导通),并证明联合训练本身有收益;SaLon3R 选择<b>彻底冻结</b> CUT3R,只训练外挂模块。原因可追溯到误差结构:MoGe-3 的 base 本身仍在被同域数据持续监督(双数据流),而 SaLon3R 的 CUT3R 若放开,ScanNet 单域 100 scene 很可能破坏其跨域几何能力——<span class="uncertain">【推测】冻结也是小训练集下的防御性选择</span>。对下游使用者的含义:SaLon3R 的可训练部分参数量小,复现成本主要在数据管线与 PTV3 实现,而非算力。</p>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(在线推理)</h2>
+<h3>9.1 在线推理流程(逐帧)</h3>
+<div class="mermaid">
+flowchart TD
+    START["新帧 I_t 到达"] --> ENC["CUT3R(冻结):<br/>ViT + state-update/readout"]
+    ENC --> PRED["K_t, P_t + pointmap X̂_t<br/>+ 高斯 latents Ĝ_t + saliency S_t"]
+    PRED --> NEAR{"从历史 G_{t-1} 取<br/>当前视锥附近的高斯"}
+    NEAR --> QUANT["体素量化(γ):<br/>saliency 加权聚合 → anchors"]
+    QUANT --> PTV3["PTV3 细化(5 级 U-Net,<br/>序列化 + patch attention)"]
+    PTV3 --> GROW["MLP_grow: 每 anchor 长 M=4 个<br/>saliency 调制 opacity, β 剪枝"]
+    GROW --> UPDATE["合并回全局 G_t<br/>(非视锥区原样保留)"]
+    UPDATE --> NEXT{"还有帧?"}
+    NEXT -->|是| START
+    NEXT -->|否| RENDER["任意视角渲染<br/>(含外推)"]
+    style START fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style UPDATE fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<h3>9.2 训练流程要点</h3>
+<div class="mermaid">
+flowchart LR
+    SEQ["ScanNet 序列(N=8 帧)"] --> SAMPLE["随机采 2-6 帧 context<br/>其余 target(练外推)"]
+    SAMPLE --> FWD["冻结 CUT3R 前向<br/>→ latents + saliency"]
+    FWD --> PIPE["量化 → PTV3 → growing(可训练)"]
+    PIPE --> REND["渲染 target 视角(RGB + 深度)"]
+    REND --> LOSS["L = L1 + 0.05·LPIPS + 0.0005·L_smooth"]
+    LOSS --> BWD["反传: 仅 PT/Head_GS/MLP_GS/MLP_grow<br/>CUT3R 无梯度"]
+    BWD --> OPT["Adam 1e-5, warmup+cosine"]
+    style SEQ fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<p class="note">注意训练与推理的 view 数不对齐:训练 N=8(2-6 context),推理可至 200 context(Table 4)——长序列能力来自逐帧增量设计而非训练时见过长序列,这是"online generalizable"声明的实质。</p>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(无源码声明)</h2>
+<div class="callout red"><b>⚠️ 可信度声明(本库规范:无源码不猜)</b>:官方仓库 <a href="https://github.com/wrld/SaLon3R">github.com/wrld/SaLon3R</a> 经 2026-10-09 实际克隆核实——<b>仅有 <code>page</code> 分支(项目主页静态文件),无任何训练/推理代码,README 仅一行「# SaLon3R project page」</b>;项目页 "Code" 按钮 href 指向该仓库但页面标注 disabled。因此本节所有工程数值<b>只能来自论文原文(A.1/A.2/§4.1)</b>,无法像 MoGe-3 笔记那样做"宣称 vs 实现"核对;凡论文未披露项一律如实标注,本节可信度等级低于有源码验证的笔记。论文亦未承诺开源时间。</div>
+<h3>10.1 论文已披露的工程参数(出处 A.1/A.2)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>硬件</td><td>NVIDIA RTX A100(单卡)</td><td>A.1</td></tr>
+<tr><td>框架</td><td>PyTorch 2.5.1 + CUDA 12.6</td><td>A.1</td></tr>
+<tr><td>训练输入</td><td>512×384,batch 1,N=8(2-6 context)</td><td>A.2</td></tr>
+<tr><td>优化</td><td>Adam,lr 1e-5,linear warmup + cosine decay</td><td>A.2</td></tr>
+<tr><td>量化 γ</td><td>ScanNet 0.005 / Replica 0.01(世界坐标单位,随场景尺度)</td><td>A.2</td></tr>
+<tr><td>生长数 M</td><td>4</td><td>§4.1</td></tr>
+<tr><td>剪枝阈值 β</td><td>Fig. 5 消融 0 / 0.5 / 0.8;<b>默认值原文未明确写出</b> <span class="uncertain">【待核实】(从 Fig. 5 措辞"β=0.5 显著提升"推断默认在 0.5 附近)</span></td><td>§4.3</td></tr>
+<tr><td>训练时长 / 总迭代数 / 显存</td><td><b>均未披露</b></td><td>—</td></tr>
+</table>
+<h3>10.2 资源账(论文实测值 + 推算)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处/口径</th></tr>
+<tr><td>推理速度(50v)</td><td>10.15 FPS(≈98.5 ms/帧含渲染?论文未说明 FPS 口径是逐帧重建还是含渲染) <span class="uncertain">【待核实】</span></td><td>Table 2</td></tr>
+<tr><td>推理速度(200v)</td><td>9.53 FPS——长序列下速度衰减很小(50v→200v 仅 -6.1%)</td><td>Table 4</td></tr>
+<tr><td>高斯数(50v)</td><td>3042K(Ours)/ 2897K(w/ VGGT);NoPoSplat 6422K、FLARE 6422K、FreeSplat 4981K</td><td>Table 2,单位 K(§4.1 表注)</td></tr>
+<tr><td>压缩率</td><td>50v 对 NoPoSplat ≈52.6% 去除;teaser 口径 9830K→1043K ≈ 89.4%;摘要"50%–90%"区间与两端一致</td><td>Table 2 / Fig. 1,本笔记 §11.6 复核</td></tr>
+<tr><td>可训练参数量</td><td>未披露(PTV3 + 三个头/MLP;<span class="uncertain">【推测】千万级以下,因 PT 被称 lightweight</span>)</td><td>—</td></tr>
+</table>
+<h3>10.3 落地坑(论文内证据)</h3>
+<ul>
+<li><b>backbone 漂移传导</b>(A.4):长序列 CUT3R 位姿/点图漂移 → 量化把漂移点聚进同一 anchor,错误被固化。作者建议:关键帧选择 / 隔帧处理 / 引入 BA 全局对齐(future work)。</li>
+<li><b>静态场景假设</b>(§5):"designed for static reconstruction and may get degraded in a dynamic scene"——动态物体会被量化当冗余抹掉或被 PT 当伪影"修掉"。</li>
+<li><b>γ 依赖场景尺度</b>:γ=0.005/0.01 是按室内数据集调的绝对尺寸,换场景(室外、微距)必须重调,否则要么压不动要么全被量化掉(Table 6 的敏感度)。</li>
+<li><b>复现门槛</b>:无代码。复现需自备:CUT3R(开源)、PTV3(开源)、DPT-like GS 头、saliency 头、量化/生长/剪枝实现、ScanNet 数据管线——工作量集中在数据管线与渲染对接,<span class="uncertain">【推测】核心模块复现约需 2-4 周</span>。</li>
+</ul>
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+<h3>11.1 评测协议(§4.1/A.2)</h3>
+<ul>
+<li>数据:ScanNet(训练域内,100 train/8 test,context 重叠仅 15%–50%);zero-shot:Replica、ScanNet++。分辨率 512×384。</li>
+<li>对比方法两组:pose-required(PixelSplat、MVSplat、PixelGaussian、FreeSplat,输入含 GT 位姿)与 pose-free(NoPoSplat、FLARE);<b>全部在同一 ScanNet 上基于各自预训练权重重训</b>,同验证协议(§4.1)。PF 列 = Pose-free。</li>
+<li>指标:NVS(PSNR/SSIM/LPIPS)、深度(Abs Rel/Sq Rel/RMSE/RMSE log/δ₁)、效率(FPS、GS 数量,单位 K)。</li>
+</ul>
+<h3>11.2 Table 1:ScanNet NVS(10/30/50 views)</h3>
+<table>
+<tr><th>PF</th><th>方法</th><th>PSNR↑<br>10v</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑<br>30v</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑<br>50v</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>✗</td><td>PixelSplat</td><td>17.77</td><td>0.572</td><td>0.505</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>✗</td><td>MVSplat</td><td>17.74</td><td>0.643</td><td>0.411</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>✗</td><td>FreeSplat</td><td><b>23.24</b></td><td><b>0.785</b></td><td><b>0.266</b></td><td><b>21.16</b></td><td><b>0.704</b></td><td><b>0.342</b></td><td>19.90</td><td><b>0.702</b></td><td><b>0.365</b></td></tr>
+<tr><td>✗</td><td>PixelGaussian</td><td>17.41</td><td>0.601</td><td>0.429</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>✓</td><td>NoPoSplat</td><td>18.46</td><td>0.652</td><td>0.396</td><td>17.03</td><td>0.637</td><td>0.506</td><td>15.71</td><td>0.574</td><td>0.515</td></tr>
+<tr><td>✓</td><td>FLARE</td><td>18.24</td><td>0.691</td><td>0.403</td><td>16.21</td><td>0.602</td><td>0.434</td><td>15.92</td><td>0.566</td><td>0.577</td></tr>
+<tr><td>✓</td><td>Ours(CUT3R)</td><td>22.54</td><td>0.750</td><td>0.337</td><td>20.47</td><td>0.679</td><td>0.384</td><td>19.78</td><td>0.682</td><td>0.392</td></tr>
+<tr class="best"><td>✓</td><td><b>Ours w/ VGGT</b></td><td><b>23.26</b></td><td><b>0.805</b></td><td><b>0.289</b></td><td><b>21.25</b></td><td><b>0.728</b></td><td><b>0.384</b></td><td><b>20.26</b></td><td><b>0.720</b></td><td>0.377</td></tr>
+</table>
+<p class="note">"—" = OOM(§4.1 原文):PixelSplat/MVSplat/PixelGaussian 在 30/50 视角因高斯数爆炸无法评测。读法:pose-free 组内 SaLon3R 大幅领先(NoPoSplat 50v PSNR 15.71 vs Ours 19.78);与 pose-required 的 FreeSplat 比,10v 略低(22.54 vs 23.24)、VGGT 版反超(23.26),50v 反超(19.78/20.26 vs 19.90)——<b>长序列下 pose-free 反超 pose-required</b>,这是本文最有分量的现象。</p>
+<h3>11.3 Table 2:ScanNet 深度 + 效率(本文核心表)</h3>
+<table>
+<tr><th>PF</th><th>方法</th><th>AbsRel↓<br>10v</th><th>δ₁↑</th><th>FPS↑</th><th>GS(K)↓</th><th>AbsRel↓<br>30v</th><th>δ₁↑</th><th>FPS↑</th><th>GS(K)↓</th><th>AbsRel↓<br>50v</th><th>δ₁↑</th><th>FPS↑</th><th>GS(K)↓</th></tr>
+<tr><td>✗</td><td>PixelSplat</td><td>0.680</td><td>0.715</td><td>1.15</td><td>5898</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>✗</td><td>MVSplat</td><td>0.331</td><td>0.811</td><td>2.11</td><td>1966</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>✗</td><td>FreeSplat</td><td>0.102</td><td>0.973</td><td>3.66</td><td>1082</td><td>0.411</td><td>0.894</td><td>2.87</td><td>2934</td><td>0.346</td><td>0.904</td><td>2.36</td><td>4981</td></tr>
+<tr><td>✗</td><td>PixelGaussian</td><td>0.392</td><td>0.766</td><td>3.05</td><td>2952</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>✓</td><td>NoPoSplat</td><td>0.390</td><td>0.794</td><td>3.59</td><td>1180</td><td>1.185</td><td>0.559</td><td>1.24</td><td>3801</td><td>1.716</td><td>0.463</td><td>0.91</td><td>6422</td></tr>
+<tr><td>✓</td><td>FLARE</td><td>0.487</td><td>0.802</td><td>3.32</td><td>1180</td><td>1.212</td><td>0.543</td><td>1.13</td><td>3801</td><td>1.814</td><td>0.489</td><td>0.85</td><td>6422</td></tr>
+<tr class="best"><td>✓</td><td><b>Ours</b></td><td><b>0.030</b></td><td><b>0.977</b></td><td>10.16</td><td>866</td><td><b>0.060</b></td><td><b>0.953</b></td><td>10.10</td><td>2073</td><td><b>0.068</b></td><td>0.972</td><td>10.15</td><td>3042</td></tr>
+<tr class="best"><td>✓</td><td><b>Ours w/ VGGT</b></td><td><b>0.030</b></td><td><b>0.978</b></td><td><b>10.53</b></td><td><b>853</b></td><td>0.051</td><td><b>0.960</b></td><td><b>10.72</b></td><td><b>1972</b></td><td>0.062</td><td><b>0.974</b></td><td><b>10.66</b></td><td><b>2897</b></td></tr>
+</table>
+<p>三个关键现象:① <b>深度优势数量级级</b>——10v AbsRel 0.030 vs 最佳 pose-required(FreeSplat)0.102,约 3.4×;且 NoPoSplat/FLARE 在 50v 崩到 1.7/1.8 时 SaLon3R 反而稳定在 0.068(长序列一致性是 PT 细化的直接收益)。② <b>速度不随视角塌</b>:10.16→10.15 FPS(10v→50v),对手全部 ≤3.7 FPS 且随视角恶化。③ <b>高斯数亚线性增长</b>:866K→3042K(10v→50v,视角 5× 而高斯仅 3.5×),NoPoSplat 是 1180K→6422K(5.4×)。</p>
+<h3>11.4 Table 3:Zero-shot(Replica / ScanNet++,10 views)</h3>
+<table>
+<tr><th>PF</th><th>方法</th><th>Rep PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AbsRel↓</th><th>δ₁↑</th><th>SN++ PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AbsRel↓</th><th>δ₁↑</th></tr>
+<tr><td>✗</td><td>PixelSplat</td><td>16.61</td><td>0.587</td><td>0.607</td><td>4.248</td><td>0.343</td><td>17.54</td><td>0.625</td><td>0.523</td><td>0.766</td><td>0.530</td></tr>
+<tr><td>✗</td><td>MVSplat</td><td>16.85</td><td>0.642</td><td>0.436</td><td>2.119</td><td>0.610</td><td>17.01</td><td>0.606</td><td>0.446</td><td>0.875</td><td>0.577</td></tr>
+<tr><td>✗</td><td>PixelGaussian</td><td>16.12</td><td>0.593</td><td>0.668</td><td>2.865</td><td>0.591</td><td>17.46</td><td>0.608</td><td>0.491</td><td>1.182</td><td>0.574</td></tr>
+<tr><td>✗</td><td>FreeSplat</td><td>18.92</td><td><b>0.719</b></td><td>0.369</td><td>1.485</td><td>0.790</td><td><b>22.56</b></td><td><b>0.769</b></td><td><b>0.258</b></td><td>0.350</td><td>0.828</td></tr>
+<tr><td>✓</td><td>NoPoSplat</td><td>16.72</td><td>0.674</td><td>0.446</td><td>1.723</td><td>0.792</td><td>17.02</td><td>0.667</td><td>0.546</td><td>0.658</td><td>0.647</td></tr>
+<tr><td>✓</td><td>FLARE</td><td>16.75</td><td>0.667</td><td>0.431</td><td>1.497</td><td>0.710</td><td>16.91</td><td>0.659</td><td>0.471</td><td>0.696</td><td>0.609</td></tr>
+<tr class="best"><td>✓</td><td><b>Ours</b></td><td>20.79</td><td>0.683</td><td>0.312</td><td>0.712</td><td>0.917</td><td>22.08</td><td>0.694</td><td>0.372</td><td>0.104</td><td>0.921</td></tr>
+<tr class="best"><td>✓</td><td><b>Ours w/ VGGT</b></td><td><b>21.05</b></td><td><b>0.728</b></td><td><b>0.301</b></td><td><b>0.704</b></td><td><b>0.925</b></td><td>22.40</td><td>0.743</td><td>0.346</td><td><b>0.095</b></td><td><b>0.931</b></td></tr>
+</table>
+<p>Zero-shot 下 PSNR 超全部 pose-free 对手 4 dB 以上,深度 AbsRel(Replica 0.712、ScanNet++ 0.104)同样大幅领先;RGB 指标上 FreeSplat 在 ScanNet++ 的 SSIM/LPIPS 仍最佳(pose-required 的信息优势),但深度被 SaLon3R 碾压(0.350→0.104)。</p>
+<h3>11.5 深度完整指标(附录 Table 7-9 精选)</h3>
+<table>
+<tr><th>方法</th><th>30v AbsRel↓</th><th>SqRel↓</th><th>RMSE↓</th><th>RMSElog↓</th><th>δ₁↑</th><th>50v AbsRel↓</th><th>SqRel↓</th><th>RMSE↓</th><th>δ₁↑</th></tr>
+<tr><td>FreeSplat(pose-required)</td><td>0.411</td><td>0.760</td><td>0.929</td><td>0.436</td><td>0.894</td><td>0.346</td><td>0.443</td><td>0.821</td><td>0.904</td></tr>
+<tr><td>NoPoSplat</td><td>1.185</td><td>0.935</td><td>1.205</td><td>0.803</td><td>0.559</td><td>1.716</td><td>4.801</td><td>1.359</td><td>0.463</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>0.060</b></td><td><b>0.017</b></td><td><b>0.171</b></td><td><b>0.135</b></td><td><b>0.953</b></td><td><b>0.068</b></td><td><b>0.045</b></td><td><b>0.232</b></td><td><b>0.972</b></td></tr>
+</table>
+<p>Table 8(10v ScanNet 完整深度):Ours AbsRel 0.030 / SqRel 0.017 / RMSE 0.149 / RMSElog 0.084 / δ₁ 0.977,五项全胜。Table 9(Replica/ScanNet++ 深度):Ours Replica RMSElog 0.159(FreeSplat 0.373)、ScanNet++ AbsRel 0.104(FreeSplat 0.350)。</p>
+<h3>11.6 提炼句复核(本库特色:声明 → 表格 → 原始值)</h3>
+<table>
+<tr><th>论文声明</th><th>支撑数据复核</th><th>结论</th></tr>
+<tr><td>"first online generalizable GS method capable of reconstructing over 50 views in over 10 FPS"(摘要)</td><td>Table 2:50v FPS=10.15 ✓;但 Table 4:100v=9.72、200v=9.53(<10)</td><td><b>50 视角档严格成立</b>;"over 50 views"读作"50 以上任意视角仍 ≥10"则不成立<span class="uncertain">【待核实】措辞争议</span></td></tr>
+<tr><td>"50% to 90% redundancy removal"(摘要)</td><td>50v 对 NoPoSplat:1-3042/6422≈52.6%;10v 对 PixelSplat:1-866/5898≈85.3%;Fig. 1:1-1043/9830≈89.4%</td><td>区间两端均有出处 ✓(90% 端为 teaser 口径)</td></tr>
+<tr><td>"reducing GS from 9830K to 1043K with nearly 90%"(Fig. 1)</td><td>正文无任何表格对应 9830K;1043K 接近 Table 5 量化变体的量级(616K-866K)但不等</td><td>仅图注口径,<b>实验条件未说明</b><span class="uncertain">【待核实】</span></td></tr>
+<tr><td>"significantly outperforms pose-required methods in depth estimation"(§1)</td><td>10v AbsRel 0.030 vs FreeSplat 0.102(3.4×);50v 0.068 vs 0.346(5.1×)</td><td>成立 ✓</td></tr>
+<tr><td>"achieves state-of-the-art results in novel view synthesis"(§1)</td><td>10v PSNR Ours 22.54 < FreeSplat 23.24(pose-required);w/ VGGT 23.26 反超 0.02</td><td>CUT3R 版对 FreeSplat 未全胜,<b>"SOTA" 依赖 VGGT backbone</b><span class="uncertain">【待核实】措辞偏强</span></td></tr>
+<tr><td>"maintains stable processing speed and Gaussian count even with more context views"(§4.3)</td><td>Table 4:FPS 10.23→9.53(稳),GS 939K→3397K(10v→200v,3.6× 增长,"stable" 是相对于线性累积的 20× 而言)</td><td>速度成立;高斯数"stable"是修辞,实为亚线性 ✓</td></tr>
+</table>
+<h3>11.7 定性结果</h3>
+<div class="figure"><img src="images/2510.15072/qual.png" loading="lazy" alt="qual"><div class="caption"><b>图3</b>(论文 Fig. 3)ScanNet 定性对比(10 context views):渲染 RGB 与深度。SaLon3R 结构更完整、伪影更少。</div></div>
+<div class="figure"><img src="images/2510.15072/extra_view.png" loading="lazy" alt="extrapolation"><div class="caption"><b>图4</b>(论文 Fig. 4)全局高斯溅射与外推视角可视化(床、桌子放大):结构一致性优于 FreeSplat(w/ GT pose),外推区域退化更轻。</div></div>
+<div class="figure"><img src="images/2510.15072/add_qual.png" loading="lazy" alt="add_qual"><div class="caption"><b>图5</b>(论文 Fig. 7)更多 NVS 定性结果(RGB + 渲染深度)。</div></div>
+<div class="figure"><img src="images/2510.15072/addqual_gs.png" loading="lazy" alt="addqual_gs"><div class="caption"><b>图8</b>(论文 Fig. 8)更多全局高斯与外推视角对比(FreeSplat w/ GT pose)。</div></div>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+<h3>12.1 Table 5:组件消融(ScanNet,逐步加组件)</h3>
+<table>
+<tr><th>配置</th><th>PSNR↑</th><th>LPIPS↓</th><th>Abs Rel↓</th><th>GS(K)↓</th><th>Δ 解读</th></tr>
+<tr><td>Baseline(CUT3R + Gaussian head,无量化)</td><td>20.78</td><td>0.429</td><td>0.103</td><td>1966</td><td>—</td></tr>
+<tr class="fail"><td>+ Quant.(朴素体素量化)</td><td>16.95</td><td>0.459</td><td>0.073</td><td>616</td><td>PSNR <b>-3.83</b>——量化信息损失巨大,但 AbsRel 反升(0.073):平均化去噪</td></tr>
+<tr><td>+ Sal. Quant.(saliency 加权)</td><td>18.06</td><td>0.436</td><td>0.065</td><td>616</td><td>+1.11 dB:saliency 保住重要区域</td></tr>
+<tr><td>+ GS Refiner(PTV3 细化)</td><td>21.65</td><td>0.358</td><td>0.054</td><td>616</td><td><b>+3.59 dB</b>——结构先验是质量主力,补回并反超 baseline</td></tr>
+<tr><td>+ Adapt. Grow(M=4 生长)</td><td>22.45</td><td>0.347</td><td>0.078</td><td>866</td><td>+0.80 dB,GS +250K(细节配额);AbsRel 略回退(0.078 vs 0.054,生长的噪点)</td></tr>
+<tr class="best"><td>+ L_smooth(完整 Ours)</td><td><b>22.54</b></td><td><b>0.337</b></td><td><b>0.030</b></td><td>866</td><td>+0.09 dB,深度大幅改善(0.078→0.030)——平滑正则主要买深度质量</td></tr>
+</table>
+<p>读法:量化链路的每一步都有明确分工——压缩(Quant)→ 保重要(Sal)→ 修结构(PT)→ 补细节(Grow)→ 平表面(Smooth)。最反直觉的是 +Quant. 行:<b>PSNR 暴跌的同时 AbsRel 改善</b>,说明朴素平均对"颜色"是破坏、对"几何"是滤波——这也解释了为什么后续组件主要围绕找回外观细节设计。</p>
+<h3>12.2 Table 6:量化分辨率 γ(Replica office02,30 views)</h3>
+<table>
+<tr><th>γ</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>Abs Rel↓</th><th>δ₁↑</th><th>FPS↑</th><th>GS(K)↓</th></tr>
+<tr><td>0(不量化)</td><td>24.43</td><td>0.829</td><td>0.270</td><td>0.048</td><td>0.990</td><td>7.56</td><td>5629</td></tr>
+<tr><td>0.005</td><td>24.48</td><td><b>0.832</b></td><td><b>0.264</b></td><td><b>0.049</b></td><td><b>0.990</b></td><td>8.95</td><td>4169</td></tr>
+<tr class="best"><td><b>0.01(选用)</b></td><td><b>25.04</b></td><td>0.825</td><td>0.331</td><td>0.050</td><td>0.988</td><td>9.85</td><td>2005</td></tr>
+<tr><td>0.015</td><td>24.84</td><td>0.772</td><td>0.436</td><td>0.064</td><td>0.972</td><td>10.03</td><td>942</td></tr>
+<tr><td>0.02</td><td>24.53</td><td>0.758</td><td>0.470</td><td>0.092</td><td>0.953</td><td><b>10.15</b></td><td><b>506</b></td></tr>
+</table>
+<p>两个发现:① <b>适度量化反而提质</b>(γ=0.01 的 PSNR 25.04 > 不量化的 24.43)——量化+细化链路有去噪/正则效应,不只是压缩;② 拐点在 0.015 之后(A.3:"resolution 超过 0.015 时因量化信息损失,RGB 与深度受损"),γ=0.02 时质量全面退化。作者选 0.01 是效率-质量折中。</p>
+<h3>12.3 Table 4:长序列扩展性(Replica office02,context 10→200)</h3>
+<table>
+<tr><th>Context views</th><th>PSNR↑</th><th>LPIPS↓</th><th>Abs Rel↓</th><th>FPS↑</th><th>GS(K)↓</th></tr>
+<tr><td>10</td><td><b>25.13</b></td><td>0.429</td><td>0.069</td><td><b>10.23</b></td><td><b>939</b></td></tr>
+<tr><td>30</td><td>24.63</td><td><b>0.317</b></td><td><b>0.057</b></td><td>9.85</td><td>2138</td></tr>
+<tr><td>50</td><td>23.70</td><td><b>0.305</b></td><td>0.061</td><td>9.76</td><td>2905</td></tr>
+<tr><td>100</td><td>23.05</td><td>0.321</td><td>0.069</td><td>9.72</td><td>3286</td></tr>
+<tr><td>200</td><td>23.24</td><td>0.318</td><td>0.066</td><td>9.53</td><td>3397</td></tr>
+</table>
+<p>读法:PSNR 随视角增加<b>缓降</b>(25.13→23.24,作者归因 "photometric inconsistencies" 累积);LPIPS 与深度在 30v 后基本饱和;FPS 从 10.23 缓降到 9.53——<b>速度随序列长度近似常数</b>是"online"声明最硬的证据(视锥局部处理生效);GS 增长亚线性(20× 视角 → 3.6× 高斯)。注意 PSNR 下降方向与"越长越好"的直觉相反,这是 pose-free 长序列的诚实代价。</p>
+<h3>12.4 β 与 backbone 消融</h3>
+<ul>
+<li><b>β(Fig. 5,§4.3)</b>:0→0.5 去除大部分冗余且性能显著提升(背景噪点被消,"the PSNR and Abs rel are improved by eliminating the noise using β");0.8 继续压缩但 PSNR 略降。β 是部署期的体积-画质旋钮。</li>
+<li><b>Backbone(CUT3R vs VGGT,§4.3)</b>:换 VGGT(离线全帧推理、几何与位姿更准)后全面小幅提升(Table 1-3 "Ours w/ VGGT" 行:50v PSNR 20.26 vs 19.78,GS 2897K vs 3042K),证明框架 backbone 可插拔;代价是失去严格在线性(VGGT 需一次看全部帧)——论文未明示此 trade-off,<span class="uncertain">【推测】"w/ VGGT" 行不应计入 "online" 声明</span>。</li>
+</ul>
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+<h3>13.1 横向对比表(固定维度;指标取论文 Table 1/2 的 ScanNet 值,"—"为不适用/未报告)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>几何表示</th><th>结构先验位置</th><th>50v PSNR↑</th><th>50v AbsRel↓</th><th>FPS↑(50v)</th><th>GS(K)↓(50v)</th><th>开源</th></tr>
+<tr><td>PixelSplat</td><td>2023/12</td><td>2 视角 + 已知位姿</td><td>逐像素高斯</td><td>2D 极线 Transformer(采样深度候选)</td><td>—(OOM)</td><td>—(OOM)</td><td>1.15(10v)</td><td>5898(10v)</td><td>✓(官方)</td></tr>
+<tr><td>MVSplat</td><td>2024/03</td><td>稀疏视角 + 已知位姿</td><td>逐像素高斯</td><td><b>cost volume</b>(平面扫描显式多视图匹配)</td><td>—(OOM)</td><td>—(OOM)</td><td>2.11(10v)</td><td>1966(10v)</td><td>✓(官方)</td></tr>
+<tr><td>PixelGaussian</td><td>2024</td><td>稀疏视角 + 已知位姿</td><td>逐像素高斯 + 动态数量调整</td><td>2D 解码器</td><td>—(OOM)</td><td>—(OOM)</td><td>3.05(10v)</td><td>2952(10v)</td><td>✓(官方)</td></tr>
+<tr><td>FreeSplat</td><td>2024/05</td><td>长序列 + 已知位姿</td><td>逐像素高斯(pixel-wise triplets)</td><td>2D 跨视图特征融合 + 逐视角对齐合并</td><td>19.90</td><td>0.346</td><td>2.36</td><td>4981</td><td>✓(官方)</td></tr>
+<tr><td>NoPoSplat</td><td>2024/10</td><td>无位姿(前馈回归)</td><td>逐像素高斯(canonical 坐标)</td><td>光度监督隐式学位姿(无显式结构先验)</td><td>15.71</td><td>1.716</td><td>0.91</td><td>6422</td><td>✓(官方)</td></tr>
+<tr><td>FLARE</td><td>2024/12</td><td>无位姿(位姿回归)</td><td>逐像素高斯</td><td>显式相机位姿回归头 + 点图</td><td>15.92</td><td>1.814</td><td>0.85</td><td>6422</td><td>✓(官方)</td></tr>
+<tr class="best"><td><b>SaLon3R(本文)</b></td><td>2025/10</td><td><b>无位姿 + 在线长序列</b></td><td><b>anchor 化高斯(saliency 量化 + 每 anchor 长 M=4)</b></td><td><b>体素量化 → Point Transformer V3(3D 空间结构先验)</b></td><td><b>19.78</b></td><td><b>0.068</b></td><td><b>10.15</b></td><td><b>3042</b></td><td><b>✗(仅项目页)</b></td></tr>
+</table>
+<p class="note">说明:PixelSplat/MVSplat/PixelGaussian 在 30v/50v 因显存爆掉无法报告(论文 Sec. 4.1 原文:"Due to the out-of-memory problem from large 3DGS occupation..."),故其速度/GS 取 10v 档;NoPoSplat/FLARE 的 50v Abs Rel(1.716/1.814)已超过 1,说明二者在长序列下几何基本崩坏,PSNR 还维持在 ~16 靠的是记忆化渲染而非几何正确。</p>
+<h3>13.2 对比结论(机制层面,逐条"为什么")</h3>
+<ol>
+<li><b>对逐像素高斯系(PixelSplat/MVSplat/PixelGaussian)</b>:逐像素表示的高斯数与像素数严格线性(1966K@10v 起步),30v 即 OOM——<b>表示本身没有"合并同类项"的能力</b>。SaLon3R 的体素量化把"同一空间位置的重复观测"合并为一个 anchor,20× 视角只换来 3.6× 高斯(Table 4),这是 anchor 化表示对逐像素表示的结构性胜利,与 backbone 强弱无关。</li>
+<li><b>对 FreeSplat(最强的 pose-required 基线)</b>:PSNR 在 10v 上 SaLon3R 还输 0.7dB(22.54 vs 23.24),但 Abs Rel 差 3.4 倍(0.030 vs 0.102)、FPS 差 2.8 倍、且 FreeSplat 需要 GT 位姿。<b>深度优势来自 CUT3R backbone 的在线点图</b>——位姿和深度在同一个前馈过程中互相一致,而 FreeSplat 的逐视角合并必然累积对齐误差。换 VGGT backbone 后 PSNR 也反超(23.26 vs 23.24),证明差距在 backbone 而非本方法的结构设计。</li>
+<li><b>对 NoPoSplat/FLARE(同为 pose-free)</b>:全面碾压(FPS 11 倍、Abs Rel 25 倍、GS 减半)。根因不是后处理模块,而是<b>backbone 代差</b>:NoPoSplat 用光度监督隐式学位姿,FLARE 显式回归位姿,二者的几何在 50v 长序列上直接崩坏(Abs Rel&gt;1);CUT3R 的循环状态更新天然为流式输入设计。本文的工程贡献(量化 + PTv3 + Growing)是在这个强 backbone 之上解决"冗余"与"细化"问题——消融(Table 5)证明没有这两步,裸 backbone 的高斯头只有 20.78 PSNR 且冗余依旧。</li>
+<li><b>"SOTA"声明的边界</b>:NVS 质量上 10v/50v 仍以 FreeSplat 为最强对照(22.54 vs 23.24 / 19.78 vs 19.90),"state-of-the-art"严格成立的口径是 <b>pose-free 类内部 + 深度指标 + 效率</b>;w/ VGGT 行才在 NVS 上全档反超,但 VGGT 版不是严格在线方法(§12.4)。引用本文结论时应写清这个口径。</li>
+</ol>
+<h3>13.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限(被谁解决)</th></tr>
+<tr><td>逐像素前馈 3DGS</td><td>PixelSplat → MVSplat → PixelGaussian</td><td>极线/cost volume 的 2D 匹配先验</td><td>GS 数随像素线性涨,长序列 OOM(→ FreeSplat/SaLon3R)</td></tr>
+<tr><td>长序列逐像素融合</td><td>FreeSplat</td><td>跨视图 2D 融合 + 逐视角对齐</td><td>需 GT 位姿;对齐误差累积(→ pose-free 系)</td></tr>
+<tr><td>位姿自由前馈</td><td>NoPoSplat → FLARE</td><td>光度一致性/位姿回归</td><td>长序列几何崩坏(Abs Rel&gt;1@50v);冗余未处理(→ 本文)</td></tr>
+<tr><td>在线点图 backbone</td><td>CUT3R(被本文依赖)、<a href="3D-20250314-VGGT.html">VGGT</a>(本文可插拔对照)</td><td>流式状态更新 / 全局注意力</td><td>直接出高斯头冗余巨大、无结构细化(→ 本文补上)</td></tr>
+<tr><td><b>anchor 化结构精炼(本文)</b></td><td><b>SaLon3R</b></td><td>saliency 引导体素量化 + PTv3 序列化注意力</td><td>backbone 漂移不可控;无源码;静态假设(→ §15)</td></tr>
+</table>
+<p>库内交叉链接:backbone 对照见 <a href="3D-20250314-VGGT.html">VGGT 精读笔记</a>;逐像素前馈 3DGS 谱系见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a>;3DGS 表示本身的压缩/改进脉络见 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a>;姊妹篇(同批调研)<a href="3D-20260720-MoGe-3.html">MoGe-3</a> 与本文共享"把几何推理从 2D 抬进 3D 空间"的核心思路——MoGe-3 用稀疏体素壳精炼单图深度,本文用 anchor + PTv3 精炼多视图高斯,可对照阅读两者对"为什么 2D 参数化不够"的论证。</p>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+<h3>14.1 能否进我们的 pipeline(vggt_human 视角)</h3>
+<div class="grid-3">
+<div class="card"><h4>❌ 不可直接采用:无源码</h4><p>官方仓库(<code>github.com/wrld/SaLon3R</code>)截至 2026-10-09 仅有 <code>page</code> 分支(项目页静态文件),无训练/推理代码、无权重。论文也未给出复现级超参全集(PTv3 的配置沿用了 Point Transformer V3 默认值,但 anchor 特征维数、MLP_grow 结构等关键细节只在正文一笔带过)。<b>想要可运行系统,只能等开源或自行复现</b>——自行复现成本评估见 14.2。</p></div>
+<div class="card"><h4>✅ 可借鉴:saliency 量化思想迁移到 vggt_human</h4><p>我们 pipeline 的 head_gs/body_gs/scene_gs 拆分同样面临"高斯数随帧数线性涨"的问题。SaLon3R 的式(4)(saliency 加权体素量化,γ=0.005~0.01)提供了一种<b>即插即用的合并策略</b>:对 scene_gs 这类静态背景,可直接在已有 3DGS checkpoint 上做 saliency(梯度范数代理)加权量化合并,预计压缩率参考 Table 2(50% 量级)——不需要 PTv3 主干也能拿到量化这一步的收益(消融链中 +Quant. 单独即把 1966K→616K)。</p></div>
+<div class="card"><h4>⚠️ 需要验证:backbone 漂移对长视频的影响</h4><p>作者自认(A.4)CUT3R 在长序列上位姿/点图漂移导致 view misalignment 与 floating points。vggt_human 输入若为多机位长视频,直接套在线 backbone 风险高;我们已有 COLMAP 位姿,反而落在 FreeSplat 类"pose-required"的设定里——<b>SaLon3R 对我们的价值在表示层(anchor 化)而非 backbone 层</b>。</p></div>
+</div>
+<h3>14.2 资源/数据成本清单(论文披露口径;无代码,全部为论文值)</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>备注</th></tr>
+<tr><td>推理(若有代码)</td><td>低</td><td>~10 FPS(Table 2/4,硬件型号论文未披露,<span class="uncertain">【待核实】</span>);50v 时 3042K 高斯,单卡 24GB 应充裕</td></tr>
+<tr><td>训练算力</td><td>中</td><td>backbone 冻结(CUT3R/VGGT),只训 Gaussian Head + Refinement 网络;8×A100、3 天(论文 §4.1)</td></tr>
+<tr><td>训练数据</td><td>中高</td><td>ScanNet 等室内数据集(与 CUT3R/FLARE 训练集同源);需逐帧 RGB,无需位姿标注(backbone 自己出)</td></tr>
+<tr><td>自行复现</td><td>高</td><td>缺 MLP_grow 结构、PTv3 接入细节、saliency 计算口径(梯度范数的具体定义)等;PTv3 本身开源(Pointcept),量化与 Growing 逻辑论文描述足够,估计 1-2 周复现核心管线,<span class="uncertain">【推测】</span></td></tr>
+</table>
+<h3>14.3 与姊妹篇 MoGe-3 的互补</h3>
+<p>两者同为"把几何推理抬进 3D 空间"(MoGe-3:稀疏体素壳 + 子流形稀疏卷积;SaLon3R:anchor 量化 + PTv3),但任务正交:<b>MoGe-3 修单图几何细节</b>(输出深度/点图),<b>SaLon3R 压多视图高斯冗余并在线细化</b>(输出 3DGS)。若 pipeline 是"单目初始化 → 多视图在线重建",两者可串联:MoGe-3 出高质量几何先验供初始化,SaLon3R 类方法负责长序列一致化与压缩。详见 <a href="3D-20260720-MoGe-3.html">MoGe-3 笔记</a>。</p>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<p>按规范从方法、数据与评估、工程实用性三维度给出,每条带证据(论文章节)与改进建议。</p>
+<div class="card" style="border-left:3px solid var(--red)"><h4>① [高优先级] backbone 长序列漂移不可控,且本文模块对其无能为力(method)</h4><p><b>问题</b>:作者自认(A.4):"CUT3R is prone to drift in estimated camera poses and reconstructed pointmaps, leading to view misalignment and floating points"。量化只能合并"已经重合"的观测,对漂移造成的"同一面墙被建成两面"无法修复——体素壳恰好把两个漂移副本当成不同 anchor 都保留下来。Table 4 的 PSNR 缓降(25.13→23.24)即漂移累积的量化证据。<b>建议</b>:作者给出的方向(keyframe selection + bundle adjustment 全局对齐)是正道;更激进的方案是在 anchor 空间做回环检测(PTv3 特征本身可做 place recognition),漂移段整体刚体校正后再量化。</p></div>
+<div class="card" style="border-left:3px solid var(--red)"><h4>② [高优先级] 无源码、无权重,声明的关键数字无法复核(工程/社区)</h4><p><b>问题</b>:仓库仅 page 分支(§10)。本笔记 §11.6 复核发现摘要 ">10 FPS" 与 Table 4(100v/200v 为 9.72/9.53)存在口径张力,"9830K→1043K" 仅见 teaser 图注——这类张力在有代码时本可通过跑一遍澄清,现在只能停留在文本层面。<b>建议</b>:关注 IJCV 2026 正式版与相机就绪版是否附带开源;引用本文效率数字时务必注明档位与出处(§11.6 三列表可直接引用)。</p></div>
+<div class="card" style="border-left:3px solid var(--orange)"><h4>③ [中优先级] 静态场景假设,动态场景无机制(method)</h4><p><b>问题</b>:作者自认(结论 §5 / A.4):"designed for static reconstruction and may get degraded in a dynamic scene"。在线设定本来最吸引人的就是实时视频流,但动态物体会被量化模块错误地合并进静态 anchor 或直接长成 ghost 高斯。<b>建议</b>:作者 future work(动态 4D:动静态区域分流、时序更新动态区域、temporal appearance residuals)方向合理;短期工程上可先用现成视频分割(如 SAM 系)mask 掉动态区域再进管线。</p></div>
+<div class="card" style="border-left:3px solid var(--orange)"><h4>④ [中优先级] saliency 无真值监督,保留区域未必对齐感知重要性(method)</h4><p><b>问题</b>:式(4)的 saliency 由 backbone 特征梯度范数计算,是重建损失的间接代理;理论上存在"梯度大但感知不重要"(如高频纹理噪点)与"梯度小但语义关键"(如人脸)的错位。论文未做 saliency 图的人工对齐验证(仅 Fig. 定性展示)。<b>建议</b>:引入感知加权的 saliency(LPIPS 网络特征响应),或学习式 saliency 头用渲染损失直接监督;消融层面补一组"saliency 随机打乱"的对照可量化其真实贡献。</p></div>
+<div class="card" style="border-left:3px solid var(--orange)"><h4>⑤ [中优先级] anchor 配额 M=4 固定,β 需手动调(method/eng)</h4><p><b>问题</b>:每个 anchor 固定长 M=4 个高斯(§3.4),平面区域浪费配额、复杂区域可能不够;β 剪枝虽有效(Fig. 5)但最优值依场景(0.5/0.8 之间 PSNR 有可见差异),部署期需逐场景调。<b>建议</b>:把 M 改为按 anchor 的 PTv3 特征动态预测(如 categorical 头输出 1/2/4/8);β 可与目标 GS 总量挂钩做闭环控制(每 N 帧按预算自适应调整),这对在线系统的"显存恒定"承诺是刚需。</p></div>
+<div class="card" style="border-left:3px solid var(--yellow)"><h4>⑥ [低优先级] 评测协议与对比公平性(evaluation)</h4><p><b>问题</b>:PixelSplat 等因 OOM 缺 30v/50v 档,长序列档的"胜出"部分建立在对手无法参赛之上;FPS 硬件型号未披露,跨方法速度比(10.15 vs 2.36)只有在同卡假设下成立。<b>建议</b>:引用时注明;后续工作可补分块渲染(memory-capped)协议让所有方法跑满全档位。</p></div>
+<h3>优先级总览与"最关键三点"</h3>
+<table><tr><th>优先级</th><th>条目</th></tr>
+<tr><td>[高]</td><td>① backbone 漂移;② 无源码不可复核</td></tr>
+<tr><td>[中]</td><td>③ 静态假设;④ saliency 无监督;⑤ 固定配额 M/手动 β</td></tr>
+<tr><td>[低]</td><td>⑥ 评测协议</td></tr></table>
+<p><b>个人认为最关键的三点</b>:②(决定该工作当前对社区的实际可用性)→ ①(决定方法宣称的"long-term"能走多远,也是 Table 4 PSNR 缓降的根因)→ ③(决定"online"卖点的真实应用场景边界)。</p>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+<h3>16.1 总结</h3>
+<p>SaLon3R 的贡献不是"又一个前馈 3DGS",而是精准命中了前馈重建走向长序列的<b>表示层瓶颈</b>:</p>
+<ul>
+<li><b>诊断</b>:逐像素高斯表示下,高斯数与输入像素数严格线性(PixelSplat 系 30v 即 OOM;NoPoSplat/FLARE 50v 达 6422K),且 pose-free backbone 的原始输出冗余巨大(teaser:9830K 中约 90% 是冗余)。问题不在网络能力,在<b>表示没有"合并同类项"的机制</b>。</li>
+<li><b>处方</b>:三步走且每步都被消融证明必要(Table 5 链:20.78→16.95→18.06→21.65→22.45→22.54)——saliency 加权体素量化把重复观测压成 anchor(3042K@50v,速度近似常数 ~10 FPS);PTv3 在 anchor 空间用 z-order/Hilbert 序列化 + patch attention 注入 3D 结构先验做精炼;MLP_grow 自适应长出 M=4 个高斯并用 tanh(saliency) 调制 opacity + β 剪枝控制分布。</li>
+</ul>
+<p>从证据质量看,本文的<b>深度指标优势(Abs Rel 0.030@10v,比最佳 pose-required 基线好 3.4 倍)是硬结论</b>;NVS 的 "SOTA" 措辞需要加口径(pose-free 类内部;全档反超需 VGGT backbone 版);效率声明 ">10 FPS" 严格成立于 50v 档(§11.6)。工程上最大的现实障碍是<b>代码未开源</b>,IJCV 2026 刊出后是否释放代码值得跟进。</p>
+<h3>16.2 演进定位</h3>
+<p>在前馈 3DGS 的脉络里(§13.3):PixelSplat 系确立"逐像素回归高斯"的表示;MVSplat 把 cost volume 的显式匹配先验带进来;FreeSplat 把它推到长序列但仍要位姿;NoPoSplat/FLARE 甩掉位姿却在长序列上几何崩坏;CUT3R/VGGT 这一代在线点图 backbone 解决了几何来源问题——<b>SaLon3R 是在这条线上第一次把"3D 结构化精炼"作为独立模块立起来的工作</b>。它与姊妹篇 <a href="3D-20260720-MoGe-3.html">MoGe-3</a> 形成有趣的对照:两者同年提出、同样用"体素化 + 3D 稀疏/序列化注意力"给 2D 前馈网络补 3D 归纳偏置,一个在单目深度的输出端精炼,一个在多视图 3DGS 的表示端精炼——"3D 空间精炼模块"正在成为前馈重建的通用配件范式,这是比单个模型更有生命力的信号。</p>
+<h3>16.3 待跟进</h3>
+<ul>
+<li>IJCV 2026 相机就绪版是否附开源(当前仓库仅 page 分支,2026-10-09 核实);</li>
+<li>作者 future work 中的动态 4D 扩展(bundle alignment + 动静态分流)是否有后续论文;</li>
+<li>PTv3 系 3D 骨干在前馈重建中的采用率(若 MoGe-3/SaLon3R 路线被跟进,"3D 精炼头"可能标准化)。</li>
+</ul>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>17.1 团队</h3>
+<table>
+<tr><th>作者</th><th>机构</th><th>角色/背景</th></tr>
+<tr><td>Jiaxin Guo</td><td>The Chinese University of Hong Kong(CUHK)</td><td>一作;arXiv 投稿人;项目页仓库所有者(<code>wrld</code>)</td></tr>
+<tr><td>Tongfan Guan</td><td>CUHK</td><td>共同作者</td></tr>
+<tr><td>Wenzhen Dong</td><td>CUHK</td><td>共同作者</td></tr>
+<tr><td>Wenzhao Zheng</td><td>University of California, Berkeley</td><td>共同作者;前馈重建/3D 占用方向高产(SSC、Gaussian 系列)</td></tr>
+<tr><td>Wenting Wang</td><td>Hong Kong Center for Logistics Robotics</td><td>共同作者</td></tr>
+<tr><td>Yue Wang</td><td>Zhejiang University</td><td>共同作者</td></tr>
+<tr><td>Yeung Yam</td><td>CUHK</td><td>共同作者;CUHK MAE 教授</td></tr>
+<tr><td>Yun-Hui Liu</td><td>CUHK</td><td>通讯作者;CUHK 机械与自动化工程系教授,机器人视觉方向</td></tr>
+</table>
+<p class="note">团队判读:CUHK 机器人视觉组(Yun-Hui Liu 组)+ UC Berkeley(Wenzhao Zheng)+ 浙大合作的组合,机构配置与"面向机器人的在线重建"定位一致(Hong Kong Center for Logistics Robotics 参与)。一作 Jiaxin Guo 同时是项目页与 GitHub 账号所有者,代码若开源最可能从 <code>github.com/wrld/SaLon3R</code> 放出。</p>
+<h3>17.2 资源链接(2026-10-09 核实状态)</h3>
+<table>
+<tr><th>资源</th><th>链接</th><th>状态</th></tr>
+<tr><td>arXiv 摘要页</td><td><a href="https://arxiv.org/abs/2510.15072">arxiv.org/abs/2510.15072</a></td><td>v1(2025-10-16);journal-ref: IJCV 2026,DOI 10.1007/s11263-026-02713-4</td></tr>
+<tr><td>arXiv HTML 全文</td><td><a href="https://arxiv.org/html/2510.15072v1">arxiv.org/html/2510.15072v1</a></td><td>✅ 可用(本笔记提取来源)</td></tr>
+<tr><td>项目页</td><td><a href="https://wrld.github.io/SaLon3R/">wrld.github.io/SaLon3R</a></td><td>✅ 在线;含视频与定性结果;论文唯一给出的资源链接</td></tr>
+<tr><td>代码仓库</td><td><a href="https://github.com/wrld/SaLon3R">github.com/wrld/SaLon3R</a></td><td>⚠️ <b>仅 <code>page</code> 分支(项目页静态文件),无源码/权重</b>;<code>git ls-remote</code> 核实(2026-10-09)</td></tr>
+<tr><td>依赖组件:CUT3R</td><td><a href="https://github.com/CUT3R/CUT3R">github.com/CUT3R/CUT3R</a></td><td>✅ 开源(backbone 冻结权重来源)</td></tr>
+<tr><td>依赖组件:Point Transformer V3</td><td><a href="https://github.com/Pointcept/Pointcept">github.com/Pointcept/Pointcept</a></td><td>✅ 开源(Pointcept 框架;本文 3D 精炼骨干)</td></tr>
+</table>
+<p class="note">两个核心依赖(CUT3R、PTv3)均开源,意味着自行复现的主要缺口在"量化 + Growing 头 + 训练管线"的胶水层,而非基础设施(§14.2 复现成本评估)。</p>
+</section>
+
+<div class="footer">
+  <p>SaLon3R 深度调研笔记 · arXiv:2510.15072v1 · IJCV 2026 · 生成于 2026-10-09</p>
+  <p>media_paper 知识库 · 方法密集型高端格式 · 官方仓库无源码(2026-10-09 核实),工程细节章节可信度见 §10 声明</p>
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

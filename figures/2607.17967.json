@@ -1,0 +1,86 @@
+[
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/teaser.png"
+  ],
+  "caption": "Figure 1 : Our method produces geometrically undistorted and detail-preserving metric scale point maps from a single image. Compared to prior approaches  [ 45 , 22 , 58 ] , it better preserves fine structures and recovers more accurate local geometry, leading to improved 3D fidelity in challenging cases."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/architecture.png"
+  ],
+  "caption": "Figure 2 : Method overview. (a) The Base model provides an initial point map and 2D features. (b) The SSR module iteratively refines this geometry: current estimates are discretized into sparse voxel shells that guide 3D inference, which then updates the point map for the subsequent cycle. (c) The Sparse 3D U-Net employs multi-scale sparse 3D convolutions, injecting 2D features from base model, and predicts log-depth residuals."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 1 : Zero-shot evaluation and comparison with state-of-the-art methods. Metrics are averaged over multiple benchmarks (see text for details). Results are visualized using a color gradient from green (best) to red (worst); - indicates non-applicable. Unless otherwise specified, our method uses the default ViT-L backbone; the ViT-G rows report our scaled-up SSR model.See Appendix  C for per-dataset results."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 2 : Runtime comparison on a single A100 GPU with FP16."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/qualitative_comparison.png"
+  ],
+  "caption": "Figure 3 : Qualitative comparison of point maps and disparity maps on unseen test images. Since Pixel-Perfect Depth (PPD)  [ 51 ] and InfiniDepth  [ 58 ] \ndo not predict camera intrinsics, we use the intrinsics predicted by MoGe-2  [ 45 ] \nto lift their depth predictions into 3D. Our method produces noticeably higher-fidelity 3D geometry with reduced distortions, particularly in complex regions and thin structures. More visual comparisons can be found in Appendix  D ."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 3 : Ablation on voxel resolution D D , visual feature injection, and the 2D convolution variant for refinement. Results are averaged across evaluation datasets. In this ablation experiment, all variants are built upon a frozen MoGe-2 (ViT-L) base model and are evaluated with 5 refinement iterations. ⋆ \\star  indicates our default setting."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/ablation_refine_steps.png"
+  ],
+  "caption": "Figure 4 : Effect of refinement iterations. Left: point map visualizations demonstrate progressively sharper reconstruction of thin structures. Right: quantitative metrics including global δ 1 p \\delta_{1}^{p} , local δ 0.01 p \\delta_{0.01}^{p} , and boundary F1 remain stable or improve with increasing refinement iterations. The model is trained with K = 3 K{=}3 . Larger K K values evaluate generalization beyond the training setting. The hexagon marker at K = 0 K{=}0 denotes the performance of the base model MoGe-2."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table C.1 : Comparison on global metrics across datasets and metric groups. DA3 refers to Depth Anything 3, and PPD refers to Pixel-Perfect Depth."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table C.2 : Comparison on local metrics across datasets and metric groups."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table C.3: Boundary F1 score (radius=1) on iBims-1, HAMMER, Sintel, and Spring."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table C.4: Runtime statistics measured on a single NVIDIA A100 GPU for single-frame inference. MoGe-2 (ViT-G) is our scaled-up MoGe-2-style base model trained following the MoGe-2 configuration."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/samples1.png"
+  ],
+  "caption": "Figure D.1 : Additional qualitative results and comparisons. Our method preserves fine structures and sharp boundaries across diverse scenes."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/samples2.png"
+  ],
+  "caption": "Figure D.2 : Additional qualitative results. More examples demonstrating high-fidelity geometric reconstruction and robustness to challenging regions."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2607.17967v2/Synth4k_samples_grid.png"
+  ],
+  "caption": "Figure E.3 : Local fine-grained masks. For each example, we show the input image (left) and the corresponding\nlocal fine-grained mask overlaid in red (right). These masks highlight\nthin structures and high-frequency regions used for evaluation."
+ }
+]

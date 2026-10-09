@@ -3792,6 +3792,131 @@
    ]
   },
   {
+   "title": "MoGe-3: 自引导稀疏体素精炼的单目几何估计",
+   "meta": [
+    "📄 arXiv: 2607.17967",
+    "📅 2026-07-20",
+    "🏢 清华大学 / USTC / MSRA",
+    "✅ 开源"
+   ],
+   "tags": [
+    "Monocular Geometry",
+    "Sparse Voxel Refinement",
+    "Sparse 3D U-Net",
+    "Point Map",
+    "Metric Depth"
+   ],
+   "summary": "MoGe-2 基础上把几何解码从 2D 图像面抬进 3D 空间:自引导稀疏体素精炼(SSR)按分解坐标把点图量化成 HW 个占用体素,5 级子流形稀疏 3D U-Net 在真实 3D 邻域聚合特征,迭代 K=3 步只预测 log-depth 残差。局部 δ0.01ᵖ 从 46.6 提升到 <strong>55.9</strong>(ViT-L),推理 121 ms@700²。训练/推理/评测全量开源;笔记含源码级验证(file:line),并记录两处论文-代码数值差异(体素分辨率 D、2D heads 学习率)。",
+   "links": [
+    {
+     "href": "3D-20260720-MoGe-3.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2607.17967",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://qft-333.github.io/moge3page/",
+     "text": "🌐 项目主页"
+    },
+    {
+     "href": "https://github.com/microsoft/MoGe",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260720-MoGe-3.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型",
+    "表面与几何重建"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
+   "title": "SaLon3R: 结构感知的长序列在线可泛化 3D 重建",
+   "meta": [
+    "📄 arXiv: 2510.15072",
+    "📅 2025-10-16",
+    "🏢 CUHK / UC Berkeley / 浙江大学",
+    "🏆 IJCV 2026",
+    "⚠️ 未开源"
+   ],
+   "tags": [
+    "Feed-Forward 3DGS",
+    "Pose-Free",
+    "Online Reconstruction",
+    "Anchor Quantization",
+    "Point Transformer V3"
+   ],
+   "summary": "冻结 CUT3R/VGGT 在线点图 backbone,saliency 加权体素量化把逐像素高斯压成 anchor,Point Transformer V3 注入 3D 结构先验精炼,MLP 每 anchor 自适应长出 M=4 个高斯并以 tanh(saliency) 调制不透明度。ScanNet 50 视角:PSNR 19.78、Abs Rel <strong>0.068</strong>(比最佳 pose-required 基线好约 5 倍)、<strong>10.15 FPS</strong>、3042K 高斯(冗余减少 50%-90%)。官方代码未开源(2026-10 核实,仓库仅项目页分支)。",
+   "links": [
+    {
+     "href": "3D-20251016-SaLon3R.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2510.15072",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://wrld.github.io/SaLon3R/",
+     "text": "🌐 项目主页"
+    },
+    {
+     "href": "https://github.com/wrld/SaLon3R",
+     "text": "💻 GitHub(无源码)"
+    }
+   ],
+   "file": "3D-20251016-SaLon3R.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型",
+    "质量速度权衡与实时"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

@@ -1,0 +1,103 @@
+[
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/teaser.png"
+  ],
+  "caption": "Figure 1: Comparison between FreeSplat  ( Wang et al., 2024c ) and our SaLon3R. Given a sequence of unposed and uncalibrated images as input, our method achieves online generalizable Gaussian reconstruction with over 10 10 FPS speed , allowing high-quality rendering, accurate depth estimation, effectively reducing GS from 9830K to 1043K with nearly 90 % \\% redundancy removal."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/salon3r.png"
+  ],
+  "caption": "Figure 2: Overview of our proposed SaLon3R. Given every unposed and uncalibrated image as input, an incremental reconstruction network initially predicts the camera parameters 𝐊 t , 𝐏 t \\mathbf{K}_{t},\\mathbf{P}_{t} , pointmaps 𝐗 ^ t \\hat{\\mathbf{X}}_{t} , and pixel-wise Gaussian latents 𝐆 ^ t \\hat{\\mathbf{G}}_{t} . A saliency-aware quantization mechanism is designed to encode dense Gaussians into compact Gaussian anchors, reducing redundancy while maintaining geometric fidelity. A lightweight point transformer is adopted to enable structure-aware Gaussian refinement by capturing the spatial r"
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/qual.png"
+  ],
+  "caption": "Figure 3: Qualitative Comparison on ScanNet dataset. Given 10 context views as input, we compare the novel view synthesis results for both rendered color and depth. We also provide more qualitative results in the supplementary material."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 1: Novel View Evaluation results on ScanNet  ( Dai et al., 2017 ) . PF: Pose-free methods."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 2: Novel view depth evaluation on ScanNet ( Dai et al., 2017 ) . PF: Pose-free methods."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/extra_view.png"
+  ],
+  "caption": "Figure 4: Visualization of Global Gaussian Splatting and Extrapolation Views. We zoom in extrapolated views of the bed and desk for better comparison. It demonstrates our method outperforming the FreeSplat with more consistent 3D structure, resulting better rendering performance."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 3: Zero-shot Novel View Synthesis on Replica  ( Straub et al., 2019 ) and ScanNet++  ( Yeshwanth et al., 2023 ) from 10 views."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/abl.png"
+  ],
+  "caption": "Figure 5: Effects of Adaptive Gaussian Growing. Applying β \\beta from 0 0 to 0.5 0.5 removes most redundant Gaussians and significantly improves the performance. A larger β = 0.8 \\beta=0.8 could further remove redundant Gaussians with little degradation."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 4: Ablation study on the Number of Context Views. The context views range from 10 to 200 in the office02 scene on Replica."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 5: Ablation Study for the effects of different components on ScanNet."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 6: Ablation study on the Resolution of Quantization. We control the resolution from 0 (no quantization) to 0.02 from 30 views in the office 02 02 scene on Replica  ( Straub et al., 2019 ) ."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/abl_sal.png"
+  ],
+  "caption": "Figure 6: Visualization of the rendered 3D Saliency."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/add_qual.png"
+  ],
+  "caption": "Figure 7: Additional Qualitative Results of Novel View Synthesis with Rendered RGB and Depth."
+ },
+ {
+  "id": null,
+  "imgs": [
+   "2510.15072v1/addqual_gs.png"
+  ],
+  "caption": "Figure 8: Additional Visualization of Global Gaussian Splatting and Extrapolation Views. We zoom in extrapolated views for better comparison with FreeSplat  ( Wang et al., 2024c ) (w/ GT pose)."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 7: Novel view depth evaluation on ScanNet. PF: Pose-free methods."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 8: Novel view depth evaluation on ScanNet. PF refers to Pose-free methods."
+ },
+ {
+  "id": null,
+  "imgs": [],
+  "caption": "Table 9: Novel view depth evaluation on Replica  ( Straub et al., 2019 ) and Scannet++   ( Yeshwanth et al., 2023 ) . PF: Pose-free methods."
+ }
+]
