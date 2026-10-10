@@ -2785,6 +2785,45 @@
    "anchors": []
   },
   {
+   "title": "Shape of Motion: 4D Reconstruction from a Single Video",
+   "meta": [
+    "📄 arXiv: 2407.13764",
+    "📅 2024-07-18",
+    "🏢 UC Berkeley / Google Research / UC San Diego · ICCV 2025"
+   ],
+   "tags": [
+    "4D Reconstruction",
+    "3D Gaussian Splatting",
+    "SE(3) Motion Bases",
+    "Monocular Video",
+    "Long-range 3D Tracking",
+    "Novel View Synthesis"
+   ],
+   "summary": "单目 casual 视频的 4D 重建：N 个持久 canonical 高斯 + B=10 条全局共享 SE(3) 运动基的 softmax 凸组合表示低维运动，融合 TAPIR 长程 2D tracks 与单目深度等噪声先验，实现世界系全程 3D 轨迹输出与 ~140 FPS 新视角合成。相对 Deformable-3DGS 的逐帧变形 MLP，运动基先验带来遮挡推理与大运动稳定性：iPhone 数据集 3D EPE 0.082（D-3DGS 0.151）、2D AJ 34.4（14.0）、mPSNR 16.72（11.92）。",
+   "links": [
+    {
+     "href": "3D-20240718-Shape-of-Motion.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2407.13764",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/vye16/shape-of-motion",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20240718-Shape-of-Motion.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性"
+   ],
+   "anchors": []
+  },
+  {
    "title": "Deformable 3D Gaussians: 高保真单目动态场景重建",
    "meta": [
     "📄 arXiv: 2309.13101",
@@ -3914,6 +3953,75 @@
     "s15",
     "s16",
     "s17"
+   ]
+  },
+  {
+   "title": "GaVS:3D Grounded 视频稳像 —— 时序一致的局部重建与渲染",
+   "meta": [
+    "📄 arXiv: 2506.23957",
+    "📅 2025-06-30",
+    "🏢 ETH Zürich / Huawei Research Zürich",
+    "🏆 SIGGRAPH 2025"
+   ],
+   "tags": [
+    "视频稳像",
+    "3DGS",
+    "前馈局部重建",
+    "测试时优化",
+    "动态补偿",
+    "时序一致性",
+    "全画幅免裁剪"
+   ],
+   "summary": "把视频稳像重构为「逐帧前馈局部 3DGS 重建 + 平滑位姿渲染」:Flash3D/UniDepth 骨干,测试时仅 3 epoch 微调解码器(多视角光度监督 + RAFT 物体运动流动态补偿 + 空洞跨帧基元正则),ProPainter 外推实现全画幅免裁剪(CR=1.0)。核心洞察:稳像是小基线问题,全局 4D 重建是过度构建 —— 对比 Shape of Motion 预处理 13min vs >10h、优化几分钟 vs 1h(正文/附录加速比口径矛盾,笔记已三列复核);动态不显式建模,由逐帧重建隐式吸收,与 D-3DGS 的规范空间+变形场、SoM 的 SE(3) 运动基形成范式对照。改造 DeepFused 数据并提出 GC-S/GC-D 几何一致性指标。",
+   "links": [
+    {
+     "href": "3D-20250630-GaVS.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2506.23957",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://arxiv.org/html/2506.23957v2",
+     "text": "🌐 HTML 全文"
+    },
+    {
+     "href": "https://github.com/sinoyou/GaVS",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://sinoyou.github.io/gavs",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20250630-GaVS.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性",
+    "前馈式大重建模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17",
+    "s18"
    ]
   },
   {

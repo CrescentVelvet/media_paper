@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shape of Motion: 单目视频 4D 重建 —— SE(3) 运动基驱动的高斯动态场景</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);padding:60px 40px 50px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%)}
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{display:inline-block;background:rgba(96,165,250,0.15);color:var(--accent);border:1px solid rgba(96,165,250,0.3);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:18px;letter-spacing:.5px;margin-right:6px}
+  .hero h1{font-size:34px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:860px}
+  .hero .authors{color:#cbd5e1;font-size:14px;margin-top:16px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{color:var(--accent);text-decoration:none;font-size:13px;border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent)}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{font-size:26px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .num{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent2)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{background:var(--code-bg);padding:2px 7px;border-radius:4px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:14px 0;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:#e2e8f0;line-height:1.6}
+  .callout{background:var(--panel);border-left:4px solid var(--accent);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2);background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 24px}
+  .card h4{margin-top:0}
+  .card .num-big{font-size:30px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--border)}
+  th{background:var(--panel2);color:var(--accent);font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green);font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{background:#fafafa;border-radius:10px;padding:20px;margin:18px 0;text-align:center}
+  .equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:18px 24px;margin:16px 0;overflow-x:auto}
+  .equation .label{float:right;color:var(--muted);font-size:13px}
+  .stage-tag{display:inline-block;padding:3px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:8px}
+  .stage-1{background:rgba(96,165,250,0.15);color:var(--accent);border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15);color:var(--accent2);border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+  .figure video{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+  .figure .caption{font-size:13px;color:var(--muted);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+  .figure .caption b{color:var(--accent)}
+  .figrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .figrow .cell{flex:1 1 0;min-width:120px}
+  .figrow .cell img{width:100%;border-radius:8px;border:1px solid var(--border)}
+  .figrow .cell .cap{font-size:11.5px;color:var(--muted);text-align:center;margin-top:4px}
+  .uncertain{display:inline-block;background:rgba(251,146,60,.12);border-left:3px solid var(--orange);color:#fdba74;padding:2px 8px;border-radius:4px;font-size:13.5px}
+  ul,ol{margin-left:24px;margin-bottom:14px}
+  li{margin-bottom:6px;color:#cbd5e1}
+  .footer{text-align:center;padding:30px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}
+  .quote{border-left:3px solid var(--accent2);padding-left:16px;margin:16px 0;color:var(--muted);font-style:italic}
+  hr{border:none;border-top:1px solid var(--border);margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2407.13764 · 2024 · ICCV 2025</span><span class="badge">📊 deep</span>
+    <h1>Shape of Motion: 单目视频的 4D 重建</h1>
+    <p class="subtitle">从随手拍摄的单目视频重建通用动态场景:以一组紧凑的全局 SE(3) 运动基 + 每高斯软系数表示低维运动,融合单目深度与长程 2D 轨迹等噪声先验,得到世界坐标系下全程持久的 3D 轨迹与实时新视角合成。</p>
+    <p class="authors">Qianqian Wang* · Vickie Ye* · Hang Gao · Weijia Zeng · Jake Austin · Zhengqi Li · Angjoo Kanazawa (*共同一作)<br>
+    <span style="color:var(--muted);font-size:13px">UC Berkeley · Google Research · UC San Diego</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2407.13764" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2407.13764v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2407.13764" target="_blank">📥 PDF</a>
+      <a href="https://github.com/vye16/shape-of-motion" target="_blank">💻 GitHub</a>
+      <a href="https://shape-of-motion.github.io/" target="_blank">🌐 项目主页</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">论文摘要</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">算法总体框架</a></li>
+    <li><a href="#repr">模块一:持久化高斯 + SE(3) 运动基</a></li>
+    <li><a href="#track">模块二:轨迹光栅化(3D Tracking)</a></li>
+    <li><a href="#init">模块三:运动基初始化(聚类 + Procrustes)</a></li>
+    <li><a href="#loss">损失函数总表</a></li>
+    <li><a href="#flowchart">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#impl">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#compare">🔄 同类方法对比分析(重点 vs Deformable-3DGS)</a></li>
+    <li><a href="#landing">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#conclusion">总结与演进定位</a></li>
+    <li><a href="#team">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1 ABSTRACT ==================== -->
+<section id="abstract">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">单目动态重建是一个长期存在的病态问题:每个时刻运动物体只被单一视角观测。已有方法要么依赖模板,要么只对近似静态场景有效,要么<strong>不显式建模 3D 运动</strong>。本文从随手拍摄的单目视频出发,重建出具有<strong>显式、全程持久(world-frame persistent)3D 运动轨迹</strong>的通用动态场景表示,同时支持实时新视角合成与全程 3D 点跟踪。</p>
+<div class="callout key">
+<p>两个关键洞察(摘要原文):</p>
+<ol>
+<li><strong>运动的低维结构</strong>:"we exploit the low-dimensional structure of 3D motion by representing scene motion with a compact set of $\mathbb{SE}(3)$ motion bases" —— 用少量全局共享的 SE(3) 运动基表示场景运动,每个点的运动是这些基的线性组合,自然形成场景的<strong>刚体运动软分组</strong>;</li>
+<li><strong>噪声先验的整合</strong>:"consolidate these noisy supervisory signals" —— 把单目深度、长程 2D tracks 等现成数据驱动先验融合进一个全局一致的 4D 表示,用结构先验互相纠噪。</li>
+</ol>
+</div>
+<p>实验在 iPhone(真实 handheld)、Kubric(合成)、NVIDIA 三个数据集上验证了长程 3D/2D 跟踪与新视角合成三类任务,<strong>3D tracking EPE 0.082(次优 0.114)、2D AJ 34.4(次优 27.8)、mPSNR 16.72(次优 16.54)</strong>,三项任务同时达到 SOTA(Table 1)。<strong>一句话核心贡献:把"逐高斯变形场"换成"全局低维 SE(3) 运动基的软组合",让单目 4D 重建从逐帧光度拟合变成受运动学约束的全局轨迹估计。</strong></p>
+<p style="font-size:13px;color:var(--muted)">注:本文库内已有 <a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS 笔记</a>,与本文的专项对比见 <a href="#compare">§12</a>。</p>
+</section>
+
+<!-- ==================== 2 MOTIVATION ==================== -->
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>2.1 现有方法的具体失败模式</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--orange)">形变场系(D-3DGS / HyperNeRF / Nerfies)</h4>
+    <ul>
+      <li>canonical 空间 + <strong>逐帧变形场/MLP</strong>,把 canonical 点映射到各时刻(§1:[76,77,122])</li>
+      <li>形变是<strong>逐帧独立估计</strong>的,不产生跨帧持久的点对应:"failing to capture 3D motion trajectories persistent over a video"(§1)</li>
+      <li>大运动时结构崩坏:"fail to capture the significant scene motion in paper-windmill and spin, resulting in structure degradation and blurry rendering"(§4.3)</li>
+      <li>相机静止拍摄时退化为病态:论文将 [122] 归入 "camera teleportation"(即近似多视角)场景才有效(§2)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">场景流系(DynIBaR 等)</h4>
+    <ul>
+      <li>只估计<strong>相邻帧之间</strong>的 3D 对应(scene flow),链式成长程轨迹会累积漂移(§1:[59,60,24])</li>
+      <li>无持久身份:同一物理点在不同时刻被当作不同点</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">2D tracker + 深度(可直接用 but 2.5D)</h4>
+    <ul>
+      <li>TAPIR/CoTracker 给 2D tracks,Depth Anything 给深度,lift 到 3D 即可用</li>
+      <li>但 <strong>2.5D 表示无法建模遮挡点</strong>:"can only produce 3D tracks for visible regions, as the depth values for occluded points are unknown"(§4.2)</li>
+      <li>DELTA/SpatialTracker 等 frame-space 3D tracker 的轨迹<strong>纠缠相机与物体运动</strong>,不在世界系(§2)</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 核心洞察(Why it works)</h3>
+<div class="callout tip">
+<h4>关键假设</h4>
+<p>① 真实场景的 3D 运动是<strong>低维</strong>的 —— 大量点共享少数几种刚体运动模式(一个人、一辆车、一片被风吹的布各自近似刚体/低自由度),因此 $B\ll N$ 条 SE(3) 基轨迹的凸组合足以表达全场景运动;② 现成先验(单目深度、2D tracks)单独看都是噪声,但它们的<strong>误差模式不同</strong>,在一个共享的全局 4D 表示下联合优化可以互相纠偏。</p>
+</div>
+<div class="callout warn">
+<h4>假设失效条件</h4>
+<ul>
+<li><strong>高度非刚性、拓扑变化</strong>(烟火、流体、严重撕裂):$B{=}10$ 条刚体基的线性组合表达力不足;</li>
+<li><strong>快速运动 + 遮挡</strong>(项目页 Failure Cases 自述):"Fast motion and occlusions are challenging";此时 TAPIR tracks 本身断裂,初始化与监督同时退化;</li>
+<li><strong>先验失效</strong>:单目深度在无纹理区域出错("may degrade in textureless regions",§5)、近似静止相机时 COLMAP 灾难性失败(附录 A)——整个方法建立在先验质量之上。</li>
+</ul>
+</div>
+
+<h3>2.3 为什么是"点"(高斯)而不是 NeRF 场</h3>
+<p>§3 原文给出两点理由:相比 dynamic NeRF 在固定 3D 位置隐式表示运动,canonical 高斯集合 "<strong>(1) 高保真实时渲染,(2) 任意时刻任意表面点的全程 3D 跟踪</strong>" 可以同时满足 —— 点是显式的、有持久身份的,运动轨迹就是点位置的时间序列,不需要像 NeRF 那样再做 root-finding 反解对应关系。</p>
+</section>
+<!-- ==================== 3 OVERVIEW ==================== -->
+<section id="overview">
+<h2><span class="num">3</span>算法总体框架</h2>
+
+<h3>3.1 输入 / 输出</h3>
+<div class="grid grid-2">
+  <div class="card" style="border-top:3px solid var(--accent)">
+    <h4>输入</h4>
+    <ul>
+      <li>$T$ 帧单目 RGB 视频 $\{I_t\in\mathbb{R}^{H\times W\times 3}\}$(§3)</li>
+      <li>相机内参 $\mathbf{K}_t$、外参 $\mathbf{E}_t\in\mathbb{SE}(3)$(in-the-wild 用 MegaSaM 估计并在训练中继续精化;benchmark 用数据集标注 / COLMAP 精化,§3.3、附录 C)</li>
+      <li>运动物体 mask $\{\mathbf{M}_t\}$(Track-Anything,数次点击,§3.3)</li>
+      <li>单目深度 $\{\mathbf{D}_t\}$(Depth Anything,逐帧 scale+shift 对齐到度量深度,§3.3)</li>
+      <li>前景长程 2D tracks $\{\mathbf{U}_{t\rightarrow t'}\}$(TAPIR,每 4 像素网格 query,附录 A)</li>
+    </ul>
+  </div>
+  <div class="card" style="border-top:3px solid var(--green)">
+    <h4>输出</h4>
+    <ul>
+      <li>$N$ 个 <strong>canonical 持久 3D 高斯</strong>(动态 fg + 静态 bg),支持 ~140 FPS 新视角合成(§3.3)</li>
+      <li>每个高斯在世界坐标系下的<strong>全程 3D 轨迹</strong> $\{\boldsymbol{\mu}_t\}_{t=0}^{T-1}$,即 long-range 3D tracking</li>
+      <li>轨迹投影回任意时刻图像得到 2D tracks(式 5-6)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <div class="cell"><video controls muted loop preload="metadata" src="images/2407.13764/bear_input.mp4"></video><div class="cap">输入单目视频</div></div>
+    <div class="cell"><video controls muted loop preload="metadata" src="images/2407.13764/bear-tracks.mp4"></video><div class="cap">输出的全程 3D 轨迹(投影叠加)</div></div>
+  </div>
+  <div class="caption"><b>图 1(官方 teaser)</b> 论文 Figure 1 为视频拼版,arXiv HTML 未导出位图,此处用项目页官方演示视频补位。左:输入;右:方法输出的持久 3D tracks —— 固定视角下轨迹呈现独特的几何图案,正是 "Shape of Motion" 命名的由来。</div>
+</div>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+<tr><td>$N$</td><td>canonical 高斯总数(fg 动态 + bg 静态)</td><td>init: fg 40k + bg 100k(<code>run_training.py:69-70</code>)</td></tr>
+<tr><td>$B$</td><td>SE(3) 运动基数量</td><td>$B{=}10\ll N$(§3.3)</td></tr>
+<tr><td>$T$</td><td>视频帧数</td><td>iPhone: 200–500 帧(§4.3)</td></tr>
+<tr><td>$\vec{g}_0=(\boldsymbol{\mu}_0,\mathbf{R}_0,\mathbf{s},o,\mathbf{c})$</td><td>canonical 帧高斯参数</td><td>$\mathbb{R}^3, SO(3), \mathbb{R}^3, \mathbb{R}, \mathbb{R}^3$(§3.1,颜色为 RGB 无 SH)</td></tr>
+<tr><td>$\mathbf{T}_{0\rightarrow t}^{(b)}$</td><td>第 $b$ 条运动基在时刻 $t$ 的刚体变换</td><td>$\mathbb{SE}(3)$,实现为 6D 旋转 + 3D 平移(§3.2)</td></tr>
+<tr><td>$\mathbf{w}^{(b)}$</td><td>某高斯对第 $b$ 条基的运动系数</td><td>每高斯 $B$ 个,softmax 归一(代码 <code>params.py:136</code>)</td></tr>
+<tr><td>$t_0$</td><td>canonical 帧</td><td>可见 track 最多的帧(<code>run_training.py:239</code>)</td></tr>
+<tr><td>$\mathbf{K}_t,\mathbf{E}_t$</td><td>时刻 $t$ 相机内参 / world-to-camera 外参</td><td>$\mathbb{R}^{3\times3},\mathbb{SE}(3)$</td></tr>
+<tr><td>${}^{\mathrm{w}}\hat{\mathbf{X}}_{t\rightarrow t'}$</td><td>query 帧 $t$ 各像素对应表面点在 $t'$ 的世界坐标图</td><td>$\mathbb{R}^{H\times W\times 3}$(式 5)</td></tr>
+</table>
+
+<h3>3.3 三阶段划分</h3>
+<div class="grid grid-3">
+  <div class="card" style="border-top:3px solid var(--accent)">
+    <span class="stage-tag stage-1">STAGE 1</span>
+    <h4>离线先验提取(预处理)</h4>
+    <p style="font-size:14px">MegaSaM/COLMAP 相机、Depth Anything 深度(disparity 逐帧 scale+shift 对齐)、Track-Anything mask、TAPIR 长程 2D tracks(4px 网格)。2D tracks 用对齐深度 lift 成带噪 3D track 观测 $\{\mathbf{X}_t\}$。</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--green)">
+    <span class="stage-tag stage-2">STAGE 2</span>
+    <h4>初始化 + 运动基拟合</h4>
+    <p style="font-size:14px">3D track 速度方向 k-means 聚类($B{=}10$ 类)→ 逐类逐帧加权 Procrustes 解出初始 SE(3) 基;系数按到类中心距离指数衰减初始化;再做 1000 步联合拟合(§3.3、附录 B.1)。</p>
+  </div>
+  <div class="card" style="border-top:3px solid var(--accent2)">
+    <span class="stage-tag stage-3">STAGE 3</span>
+    <h4>联合优化(500 epochs)</h4>
+    <p style="font-size:14px">渲染 RGB/深度/mask/3D track,以光度 + 深度 + 2D track + 平滑/正则联合优化高斯属性、运动基、系数与相机(gsplat CUDA,自适应密度控制同 3DGS)。</p>
+  </div>
+</div>
+
+<h3>3.4 总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    V["输入: 单目 RGB 视频 T 帧"] --> PRE
+    subgraph PRE["STAGE 1 离线先验(预处理)"]
+        P1["MegaSaM / COLMAP<br/>相机 K, E(可精化)"]
+        P2["Depth Anything<br/>单目深度(逐帧 scale+shift 对齐)"]
+        P3["TAPIR<br/>长程 2D tracks(4px 网格)"]
+        P4["Track-Anything<br/>前景 mask"]
+        P2 --> LIFT["2D tracks + 对齐深度<br/>lift 成带噪 3D track 观测 X_t"]
+        P3 --> LIFT
+    end
+    PRE --> INIT
+    subgraph INIT["STAGE 2 初始化"]
+        I1["速度方向 k-means(B=10 类)"] --> I2["逐类逐帧加权 Procrustes<br/>解初始 SE(3) 基"]
+        I2 --> I3["系数初始化 w=10·exp(-d)<br/>+ 1000 步联合拟合"]
+    end
+    INIT --> OPT
+    subgraph OPT["STAGE 3 联合优化(500 epochs, Adam)"]
+        O1["canonical 高斯 μ0,R0,s,o,c"] --> O2["SE(3) 基加权组合<br/>warp 到各时刻"]
+        O2 --> O3["gsplat 光栅化<br/>RGB / 深度 / mask / 3D tracks"]
+        O3 --> O4["光度+深度+2D track+平滑正则"]
+        O4 -.->|梯度回传| O1
+    end
+    OPT --> OUT1["输出1: 实时新视角合成 ~140 FPS"]
+    OPT --> OUT2["输出2: 世界系全程 3D 轨迹"]
+    style V fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT1 fill:#d1fae5,stroke:#10b981,color:#065f46
+    style OUT2 fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+
+<div class="figure">
+  <img src="images/2407.13764/figures/som.png" alt="System Overview" loading="lazy">
+  <div class="caption"><b>图 2(论文 Figure 2)</b> System Overview。给定单目 RGB 视频、相机位姿与 off-the-shelf 单目深度/2D tracks,方法优化一组随时间平移旋转的持久 3D 高斯;运动由全局共享的紧凑 SE(3) 运动基与每高斯运动系数表示,渲染的 RGB/深度/2D tracks 与输入监督对比回传梯度。</div>
+</div>
+</section>
+<!-- ==================== 4 MODULE 1 ==================== -->
+<section id="repr">
+<h2><span class="num">4</span>模块一:持久化高斯 + SE(3) 运动基</h2>
+
+<h3>4.1 Canonical 高斯与逐帧刚体 warp(式 3)</h3>
+<p>每个高斯的属性定义在 canonical 帧 $t_0$ 且<strong>跨时间共享</strong>:位置 $\boldsymbol{\mu}_0$、朝向 $\mathbf{R}_0$、尺度 $\mathbf{s}$、不透明度 $o$、颜色 $\mathbf{c}\in\mathbb{R}^3$。任意时刻 $t$,高斯位姿由<strong>逐高斯刚体变换</strong> $\mathbf{T}_{0\rightarrow t}$ 从 canonical warp 得到:</p>
+<div class="equation">
+$$\boldsymbol{\mu}_{t}={\mathbf{R}}_{0\rightarrow t}\,\boldsymbol{\mu}_{0}+{\mathbf{t}}_{0\rightarrow t},\qquad \mathbf{R}_{t}={\mathbf{R}}_{0\rightarrow t}\,\mathbf{R}_{0} \quad \text{(式 3)}$$
+</div>
+<p>尺度、不透明度、颜色不随时间变化 —— 这是"持久身份"的代数体现:第 $i$ 个高斯在所有时刻都是同一个物理点,其轨迹即 $\{\boldsymbol{\mu}_{i,t}\}$。注意 warp 只作用在<strong>动态前景</strong>高斯上;静态背景高斯不携带运动系数,直接共享全部帧(<code>scene_model.py:60-67, 110-122</code>)。</p>
+
+<h3>4.2 SE(3) 运动基(本文核心,式 4)</h3>
+<p>不为每个高斯独立估计轨迹,而是学习 $B\ll N$ 条<strong>全局共享的基轨迹</strong> $\{\mathbf{T}_{0\rightarrow t}^{(b)}\}_{b=1}^{B}$,每个高斯的变换是基的加权组合(思想源自 DynMF [53]):</p>
+<div class="equation">
+$$\mathbf{T}_{0\rightarrow t}=\sum_{b}\mathbf{w}^{(b)}\ \mathbf{T}_{0\rightarrow t}^{(b)},\qquad \textstyle\sum_b \mathbf{w}^{(b)}=1 \quad \text{(式 4)}$$
+</div>
+<p>实现上每条基是<strong>逐帧参数表</strong>:每帧一个 6D 连续旋转表示 + 3D 平移(<code>params.py:212-243</code>),<strong>不用 MLP</strong>;旋转与平移以同一组权重 $\mathbf{w}^{(b)}$ 分别线性组合。系数经 softmax 归一(<code>params.py:136</code>),因此组合是凸组合,自然形成"软刚体分组":运动相似的高斯获得相似的系数(§3.2)。</p>
+<div class="callout">
+<h4>机制解释:为什么低维基比逐高斯自由形变更强</h4>
+<p>① <strong>参数效率与可观测性</strong>:逐高斯轨迹自由度是 $O(N\cdot T)$,单目监督远远不够;基表示把它压到 $O(B\cdot T + N\cdot B)$($B{=}10$),监督/自由度比提高 2-3 个数量级。② <strong>遮挡推理</strong>:被遮挡点借同组可见点的基继续运动("allows inferring occluded motion via nearby visible regions",§4.3),这是 2.5D tracker 做不到的。③ <strong>刚体约束是正确归纳偏置</strong>:SE(3) 组合保距,运动学上禁掉了"点云自由蠕动"这类光度可解释但物理错误的解(消融 §11 验证:去掉基的 per-Gaussian SE(3) 在 $\delta_{3D}^{.10}$ 上掉 3.1 pt 且出现 popping/jitter)。</p>
+</div>
+<div class="callout warn">
+<h4>论文 vs 代码:式 4 的两处细节</h4>
+<p>① 论文式 4 约束写作 $\|\mathbf{w}^{(b)}\|=1$,语义上应为系数归一($\sum_b w^{(b)}=1$),<span class="uncertain">【待核实】原文符号疑似笔误</span>;论文未显式写 softmax,代码中明确是 softmax(<code>params.py:136</code>)。② <strong>旋转是在 6D 空间先做线性组合再 Gram-Schmidt 正交化</strong>(<code>params.py:232-243</code> <code>compute_transforms</code>),并非 SE(3) 流形上的测地插值 —— 各基分歧大时可能产生非物理中间态(见 §14 改进方向)。</p>
+</div>
+
+<h3>4.3 网络结构表(张量维度级)</h3>
+<table>
+<tr><th>张量</th><th>形状</th><th>说明</th></tr>
+<tr><td>fg means $\boldsymbol{\mu}_0$</td><td><code>[G, 3]</code></td><td>canonical 位置,G≈40k 起步、密度控制后增长</td></tr>
+<tr><td>fg quats / scales / colors / opacities</td><td><code>[G,4] / [G,3] / [G,3] / [G]</code></td><td>激活:normalize / exp / sigmoid / sigmoid(<code>params.py:132-136</code>)</td></tr>
+<tr><td>motion_coefs</td><td><code>[G, B]</code>,B=10</td><td>softmax over bases(<code>params.py:136</code>)</td></tr>
+<tr><td>motion bases rots</td><td><code>[B, T, 6]</code></td><td>6D 连续旋转(<code>params.py:239</code>)</td></tr>
+<tr><td>motion bases transls</td><td><code>[B, T, 3]</code></td><td>逐帧平移</td></tr>
+<tr><td>合成变换</td><td><code>[G, B_t, 3, 4]</code></td><td><code>einsum('pk,kni-&gt;pni')</code> 加权(<code>params.py:240-241</code>)</td></tr>
+<tr><td>warp 后 means/quats</td><td><code>[G, B_t, 3] / [G, B_t, 4]</code></td><td>齐次变换 + 四元数左乘(<code>scene_model.py:91-104</code>)</td></tr>
+</table>
+
+<h3>4.4 前向流程(逐步)</h3>
+<ol>
+<li>取 query 帧 $t$(训练时 batch=8 帧):$\text{coefs}=\mathrm{softmax}(\mathbf{w})$,<code>[G,B]</code>;</li>
+<li>取全部基在 $t$ 的 rots/transls,<code>[B,1,6/3]</code>,与系数 einsum 加权 → 6D 旋转 → <code>cont_6d_to_rmat</code> 正交化为旋转矩阵;</li>
+<li>canonical means 齐次化后按式 3 变换到时刻 $t$;四元数经 roma 做旋转矩阵左乘;</li>
+<li>与静态背景高斯拼接,连同 scales/opacities/colors 送 gsplat 光栅化;</li>
+<li>整条链全程可导 —— 梯度同时流向高斯属性、运动基、系数与(可选的)相机位姿。</li>
+</ol>
+
+<h3>4.5 模块内部结构图</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph P["可学习参数"]
+        A1["motion_bases.rots<br/>[B=10, T, 6]"]
+        A2["motion_bases.transls<br/>[B=10, T, 3]"]
+        A3["fg.motion_coefs<br/>[G, 10] →softmax"]
+        A4["fg.means / quats<br/>canonical [G,3] [G,4]"]
+    end
+    A1 --> C["加权组合<br/>einsum 6D 空间"]
+    A2 --> C
+    A3 --> C
+    C --> D["cont_6d_to_rmat<br/>Gram-Schmidt 正交化"]
+    D --> E["逐高斯 SE(3)<br/>T_0→t [G,3,4]"]
+    A4 --> E
+    E --> F["warp 后高斯<br/>μ_t, R_t"]
+    F --> G["gsplat rasterization<br/>RGB+ED+mask+tracks_3d"]
+    style C fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style E fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+
+<h3>4.6 监督信号</h3>
+<p>该模块无独立损失;其参数由 §7 全部损失联合监督(光度、深度、2D track、运动平滑)。初始化阶段另有 3D track 拟合损失(见 §6)。</p>
+</section>
+
+<!-- ==================== 5 MODULE 2 ==================== -->
+<section id="track">
+<h2><span class="num">5</span>模块二:轨迹光栅化 —— 渲染即跟踪(式 5-6)</h2>
+
+<p>动态高斯的另一重身份是"可微跟踪器"。对 query 帧 $t$ 的每个像素,把<strong>目标时刻 $t'$ 的 3D 位置当作颜色属性</strong>,沿同一视线做 α-混合光栅化(借鉴 [104]),得到该像素对应表面点在 $t'$ 的世界坐标期望图:</p>
+<div class="equation">
+$${}^{\mathrm{w}}{\hat{\mathbf{X}}}_{t\rightarrow t'}(\mathbf{p})=\sum_{i\in H(\mathbf{p})}T_{i}\alpha_{i}\,\boldsymbol{\mu}_{i,t'} \quad \text{(式 5)}$$
+</div>
+<div class="equation">
+$$\hat{\mathbf{U}}_{t\rightarrow t'}(\mathbf{p})=\Pi\big(\mathbf{K}_{t'}\,{}^{\mathrm{c}}\hat{\mathbf{X}}_{t\rightarrow t'}(\mathbf{p})\big),\qquad \hat{\mathbf{D}}_{t\rightarrow t'}(\mathbf{p})=\big({}^{\mathrm{c}}\hat{\mathbf{X}}_{t\rightarrow t'}(\mathbf{p})\big)_{[3]} \quad \text{(式 6)}$$
+</div>
+<p>其中 ${}^{\mathrm{c}}\hat{\mathbf{X}}=\mathbf{E}_{t'}\,{}^{\mathrm{w}}\hat{\mathbf{X}}$。实现上把 <code>target_ts</code>(每 query 帧采 4 个目标帧,<code>iphone_dataset.py:51</code>)下所有高斯的 3D 位置拼进渲染颜色通道(<code>scene_model.py:247-265</code> <code>track_3d_vals</code>),一次光栅化同时产出 RGB、深度、mask 与 $B_t{\times}3$ 维轨迹图 —— <strong>跟踪结果是"渲染"出来的,无需额外的对应网络</strong>。投影关系在代码中用 $\mathbf{K}$ 直接乘齐次坐标再除深度(<code>trainer.py:369-375</code>)。</p>
+
+<h3>5.1 前向流程与维度</h3>
+<ol>
+<li>对 batch 中每个 query 帧 $t$:计算 $t$ 与 4 个目标帧 $t'$ 下全部高斯位置 <code>[G, 5, 3]</code>;</li>
+<li>目标帧位置经 $\mathbf{E}_{t'}$ 变换到目标相机系,展平成 <code>[G, 4×3]</code> 附加颜色通道;</li>
+<li>光栅化输出 <code>[C, H, W, 4, 3]</code> 的 tracks_3d 图;</li>
+<li>投影得 2D tracks <code>[C·4, H·W, 2]</code>,与 TAPIR 观测在可见且置信的网格点上计算加权 L1(§7)。</li>
+</ol>
+<div class="callout tip">
+<h4>为什么这解决了遮挡跟踪</h4>
+<p>像素在 $t'$ 被遮挡时,其期望 3D 位置仍然由持久高斯给出 —— 只要该高斯在 query 帧可见。低维运动基进一步保证:即使某高斯在 query 帧之后全程不可见,同组高斯的基仍驱动它沿合理轨迹运动。这就是 "globally consistent representation ... through occlusions"(§4.2)的机制。</p>
+</div>
+<h3>5.2 监督信号</h3>
+<p>$L_{\text{track-2d}}$(式 8,权重 2.0)+ $L_{\text{track-depth}}$(式 9,权重 0.1),均以 TAPIR 置信度与时间间隔指数衰减加权,详见 §7。</p>
+</section>
+<!-- ==================== 6 MODULE 3 ==================== -->
+<section id="init">
+<h2><span class="num">6</span>模块三:运动基初始化(聚类 + 加权 Procrustes)</h2>
+
+<p>运动基和系数的初始化质量直接决定成败(消融 "No SE(3) Init." EPE 0.082→0.111,§11)。初始化完全由带噪 3D track 观测 $\{\mathbf{X}_t\}$(2D tracks × 对齐深度 lift)驱动,分四步(§3.3、附录 B.1,代码 <code>init_utils.py:115-268</code>):</p>
+
+<h3>6.1 流程(张量维度级)</h3>
+<ol>
+<li><strong>选 canonical 帧</strong>:$t_0=\arg\max_t \sum_i \mathrm{vis}_i(t)$,即最多 track 可见的帧(<code>run_training.py:239</code>);</li>
+<li><strong>清洗</strong>:剔除距场景中位数过远(95% 分位外)及全程不可见的 track(<code>init_utils.py:130-141</code>);</li>
+<li><strong>速度聚类</strong>:对插值补齐后的 3D tracks 求逐帧速度方向(归一化),cuml KMeans 聚成 $B{=}10$ 类(可选 HDBSCAN);丢弃成员 ≤100 的类(<code>init_utils.py:157-166, 532-589</code>);</li>
+<li><strong>逐类逐帧 Procrustes</strong>:对类 $b$ 的轨迹点集,以 TAPIR 置信度 × 可见性 × 类内紧凑度(指数核)加权,从 $t_0$ 向两端逐帧求解带各向同性尺度的 SE(3) 对齐(<code>solve_procrustes</code>,<code>enforce_se3=True</code>),得到初始基 $\{\mathbf{T}_{0\rightarrow\tau}^{(b)}\}$;权不足的帧沿用上一帧(<code>init_utils.py:200-241</code>);</li>
+<li><strong>系数初始化</strong>:$\mathbf{w}^{(b)}=10\cdot\exp(-\|\boldsymbol{\mu}_0-\bar{\mathbf{x}}_b\|)$,即到类中心距离的指数衰减(<code>init_utils.py:169-170</code>,与附录 B.1 描述一致);</li>
+<li><strong>高斯属性初始化</strong>:fg means = canonical 帧 track 位置;scales = 3-NN 均距(5%/95% 截断取 log);opacity=logit(0.7);颜色=logit(track 颜色);朝向随机(<code>init_utils.py:40-66</code>);bg 用静态点云,朝向按法线初始化(<code>init_utils.py:69-112</code>)。</li>
+</ol>
+
+<h3>6.2 初始化阶段联合拟合(1000 步)</h3>
+<p>随后对 $\boldsymbol{\mu}_0$、$\mathbf{w}^{(b)}$、$\{\mathbf{T}^{(b)}\}$ 做 1000 步 Adam 联合拟合(<code>run_initial_optim</code>,<code>init_utils.py:271-400</code>),损失为:</p>
+<table>
+<tr><th>损失</th><th>权重</th><th>出处</th></tr>
+<tr><td>3D track L1(可见 × 置信加权)</td><td>1.0</td><td><code>init_utils.py:328-333</code></td></tr>
+<tr><td>遮挡帧 2D 重投影 L1(q=0.95)</td><td>0.5(再除焦距)</td><td><code>init_utils.py:341-350</code></td></tr>
+<tr><td>系数稀疏正则 $1-\sum_b (w^{(b)})^2$</td><td>0.01</td><td><code>init_utils.py:367-368</code></td></tr>
+<tr><td>基平滑(rot+transl 加速度)</td><td>0.01→0.1(400 步后线性升)</td><td><code>init_utils.py:371-375</code></td></tr>
+<tr><td>轨迹加速度</td><td>0.5×上述平滑权重</td><td><code>init_utils.py:377-378</code></td></tr>
+<tr><td>视线方向运动惩罚(见 §9 差异表)</td><td>0.1</td><td><code>init_utils.py:385-386</code></td></tr>
+</table>
+<p>学习率:rots $10^{-2}$、transls $3\times10^{-2}$、系数 $10^{-2}$、means $10^{-3}$,ExponentialLR 全程衰减到 1/10(<code>init_utils.py:286-296</code>)。<span class="uncertain">【待核实】论文附录 B.1 写"2k steps"且基的学习率统一 $10^{-2}$;代码为 1000 步、transls $3\times10^{-2}$,两处不一致以代码为准</span>。</p>
+
+<h3>6.3 初始化流程图</h3>
+<div class="mermaid">
+flowchart TD
+    T0["带噪 3D track 观测 X_t<br/>[G, T, 3] + 可见性 + 置信度"] --> S1["选 canonical 帧 t0<br/>(可见 track 最多)"]
+    S1 --> S2["清洗: 距离截断 95% 分位<br/>剔除全程不可见"]
+    S2 --> S3["速度方向 k-means<br/>B=10 类(cuml KMeans)"]
+    S3 --> S4["逐类逐帧加权 Procrustes<br/>解 SE(3) 基初值"]
+    S4 --> S5["系数 w=10·exp(-d)<br/>高斯属性初始化"]
+    S5 --> S6["1000 步联合拟合<br/>μ0 + w + bases"]
+    S6 --> OUT["初始化完成<br/>进入 500 epochs 主训练"]
+    style T0 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+</section>
+
+<!-- ==================== 7 LOSSES ==================== -->
+<section id="loss">
+<h2><span class="num">7</span>损失函数总表</h2>
+<p>训练期损失(<code>trainer.py:201-527</code> <code>compute_losses</code>)逐项如下。论文编号公式为式 7-10;权重<strong>真值以源码 <code>configs.py:47-57</code> 为准</strong>,与论文附录 B.2 一致处不再另标。</p>
+<table>
+<tr><th>损失项</th><th>公式 / 实现</th><th>权重</th><th>作用</th></tr>
+<tr><td>光度 $L_{\text{recon}}$(式 7)</td><td>$0.8\,|\hat I - I|_1 + 0.2\,(1-\mathrm{SSIM})$(<code>trainer.py:347-350</code>;论文只写 L1)</td><td>1.0</td><td>外观重建</td></tr>
+<tr><td>深度正则</td><td>disparity(1/d)空间 masked L1,q=0.98 截尾(<code>trainer.py:406-415</code>)</td><td>0.5($\lambda_{\text{depth}}$,B.2)</td><td>几何贴合先验深度</td></tr>
+<tr><td>Mask</td><td>有 bg 时 MSE(acc,1) + masked L1(fg mask,q=0.98)(<code>trainer.py:352-363</code>)</td><td>1.0($\lambda_{\text{mask}}$,B.2)</td><td>前/背景分解</td></tr>
+<tr><td>2D track(式 8)</td><td>渲染 2D track vs TAPIR,masked L1(q=0.98),除以 max(H,W) 归一;权重 = 置信度 × $e^{-2\Delta t/T}$(<code>trainer.py:378-400</code>)</td><td>2.0</td><td>运动监督主信号</td></tr>
+<tr><td>Track 深度(式 9)</td><td>track 处渲染深度 vs 对齐深度,倒数空间 masked L1(<code>trainer.py:419-426</code>)</td><td>0.1</td><td>深度一致性</td></tr>
+<tr><td>深度梯度</td><td>disparity 空间梯度 L1,q=0.95(<code>trainer.py:429-435</code>,B.2 权重 1.0)</td><td>1.0</td><td>表面几何细节</td></tr>
+<tr><td>基平滑</td><td>SE(3) 基 rots/transls 中心差分加速度,内权重 rot:transl = 1:2(<code>loss_utils.py:175-194</code>)</td><td>0.1</td><td>运动时间平滑</td></tr>
+<tr><td>轨迹平滑</td><td>fg 高斯 $t{-}1,t,t{+}1$ 位置二阶差分 ×0.5(<code>trainer.py:456-462</code>)</td><td>2.0</td><td>轨迹时间平滑</td></tr>
+<tr><td>尺度各向同性</td><td>$\mathrm{var}(e^{\mathbf{s}})$ 沿三轴方差均值,fg+bg(<code>trainer.py:467-475</code>;论文未给权重)</td><td>0.01</td><td>抑制过扁高斯</td></tr>
+<tr><td>视线方向运动惩罚</td><td>"z-accel":见 §9 差异表(<code>loss_utils.py:155-172</code>)</td><td>1.0</td><td>抑制沿视线抖动</td></tr>
+<tr><td>刚性损失(式 10)</td><td>k-NN 距离保持,SAM part mask 采样,指数核 $\beta{=}2$(附录 B.2)</td><td>0.1</td><td>局部刚性 —— <strong>公开代码中不存在,见 §9 差异表</strong></td></tr>
+<tr><td>(2DGS 变体)法线</td><td>渲染法线与深度导出法线余弦一致性(<code>trainer.py:330-337</code>;论文式 11-12 用 Lotus 单目法线监督)</td><td>0.05</td><td>几何质量(--use_2dgs)</td></tr>
+</table>
+<div class="callout">
+<h4>损失设计的整体逻辑</h4>
+<p>三类信号互补纠噪:光度给<strong>稠密但局部</strong>的约束,深度给<strong>度量几何</strong>但单调有偏(disparity 对齐只校正全局 scale+shift),2D tracks 给<strong>跨时间</strong>的对应但有外点 —— 因此所有 track/深度损失都用 quantile 0.95-0.98 截尾抗外点,用置信度加权,用时间间隔衰减($e^{-2\Delta t/T}$)鼓励近帧优先。平滑项(基 0.1、轨迹 2.0、z 向 1.0)则把未被观测的自由度钉在低维运动流形上。</p>
+</div>
+</section>
+
+<!-- ==================== 8 FLOWCHART ==================== -->
+<section id="flowchart">
+<h2><span class="num">8</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>8.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    D["每 step: 采 batch=8 query 帧<br/>+ 每帧 4 个目标帧"] --> R1["按式 4 组合 SE(3) 基<br/>warp canonical 高斯到各时刻"]
+    R1 --> R2["gsplat 光栅化<br/>RGB / 深度 / mask / tracks_3d"]
+    R2 --> L1["光度 1.0 + mask 1.0"]
+    R2 --> L2["深度 0.5 + 深度梯度 1.0<br/>+ track 深度 0.1"]
+    R2 --> L3["2D track 2.0<br/>(置信度 × 时间衰减加权)"]
+    R1 --> L4["基平滑 0.1 + 轨迹平滑 2.0<br/>+ z 向 1.0 + 尺度方差 0.01"]
+    L1 --> SUM["加权和 backward<br/>Adam(分组学习率)"]
+    L2 --> SUM
+    L3 --> SUM
+    L4 --> SUM
+    SUM --> C{"每 100 步<br/>且 &lt; 4000 步?"}
+    C -->|是| ADC["自适应密度控制<br/>split / dup / cull / reset opacity<br/>(同 3DGS)"]
+    C -->|否| NXT["下一 step"]
+    ADC --> NXT
+    NXT --> E{"500 epochs<br/>(≈5000 steps × batch)"}
+    E -->|结束| OUT["输出 ckpt:<br/>高斯 + 基 + 系数(+精化相机)"]
+    style OUT fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+
+<h3>8.2 推理流程(新视角合成 / 3D 跟踪)</h3>
+<div class="mermaid">
+flowchart LR
+    Q["给定时刻 t<br/>+ 相机 (K, E)"] --> W["式 4 组合基 → warp 高斯到 t"]
+    W --> R["gsplat 光栅化"]
+    R --> O1["新视角 RGB / 深度"]
+    Q2["给定像素 p 在 query 帧 t<br/>+ 任意目标帧 t'"] --> W2["式 5: 光栅化 t' 时刻位置图"]
+    W2 --> O2["世界系 3D 轨迹点<br/>式 6 投影 → 2D track + 深度"]
+    style O1 fill:#d1fae5,stroke:#10b981,color:#065f46
+    style O2 fill:#d1fae5,stroke:#10b981,color:#065f46
+</div>
+<p>渲染约 140 FPS(§3.3);跟踪与渲染同价 —— 只是把"颜色"换成"目标时刻位置"再光栅化一次。</p>
+</section>
+<!-- ==================== 9 ENGINEERING ==================== -->
+<section id="impl">
+<h2><span class="num">9</span>⚙️ 工程实现细节(源码级)</h2>
+<p>以下全部来自官方仓库 <code>vye16/shape-of-motion</code>(2026-10-10 浅克隆)逐文件直读,每条标注 <code>file:line</code>。仓库结构:<code>flow3d/</code>(模型/训练/损失/数据)+ <code>preproc/</code>(先验提取)+ <code>run_training.py</code> / <code>run_rendering.py</code> / <code>run_video.py</code> / <code>scripts/evaluate_iphone.py</code>。</p>
+
+<h3>9.1 真实超参(配置文件直读)</h3>
+<table>
+<tr><th>类别</th><th>参数</th><th>值</th><th>出处</th></tr>
+<tr><td>规模</td><td>fg / bg 初始高斯数</td><td>40,000 / 100,000</td><td><code>run_training.py:69-70</code></td></tr>
+<tr><td>规模</td><td>运动基数 B</td><td>10</td><td><code>run_training.py:71</code></td></tr>
+<tr><td>训练</td><td>epochs / batch / workers</td><td>500 / 8 帧 / 4</td><td><code>run_training.py:72-76</code></td></tr>
+<tr><td>训练</td><td>每 query 帧目标帧数</td><td>4</td><td><code>iphone_dataset.py:51</code></td></tr>
+<tr><td>优化器</td><td>Adam,按参数分组独立优化器</td><td>每组一个 Adam + LambdaLR</td><td><code>trainer.py:731-757</code></td></tr>
+<tr><td>学习率</td><td>fg: μ 1.6e-4, o 1e-2, s 5e-3, R 1e-3, c 1e-2, 系数 1e-2</td><td>同论文 B.2</td><td><code>configs.py:5-11</code></td></tr>
+<tr><td>学习率</td><td>bg: μ 1.6e-4, o 5e-2, s 5e-3, R 1e-3, c 1e-2</td><td>—</td><td><code>configs.py:14-20</code></td></tr>
+<tr><td>学习率</td><td>运动基 rots / transls</td><td>1.6e-4 / 1.6e-4</td><td><code>configs.py:23-26</code></td></tr>
+<tr><td>学习率</td><td>相机位姿(精化时)Rs / ts</td><td>1e-3 / 1e-3</td><td><code>configs.py:32-35</code></td></tr>
+<tr><td>LR schedule</td><td>仅 scales 指数衰减至 0.1×,其余恒定</td><td>—</td><td><code>trainer.py:748-751</code></td></tr>
+<tr><td>密度控制</td><td>warmup 200 步,每 100 步,4000 步停;densify 梯度阈 2e-4、scale 阈 0.01、屏幕阈 0.05;cull 不透明度 &lt;0.1、scale &gt;0.5;每 3000 步 opacity 重置为 logit(0.08)</td><td>同 3DGS 风格</td><td><code>configs.py:66-82</code>, <code>trainer.py:533-553, 718-729</code></td></tr>
+<tr><td>训练步数</td><td><code>max_steps=5000</code>(LR 衰减基准)</td><td>—</td><td><code>configs.py:67</code></td></tr>
+</table>
+
+<h3>9.2 预处理链(5 个外部先验模型)</h3>
+<table>
+<tr><th>先验</th><th>模型</th><th>备注</th><th>出处</th></tr>
+<tr><td>相机(in-the-wild)</td><td>MegaSaM</td><td>README 标注自定义数据均用 MegaSaM 出相机+深度;训练中可继续精化</td><td><code>README.md:13</code>, <code>casual_dataset.py:49</code></td></tr>
+<tr><td>相机(静止相机兜底)</td><td>UniDepth + DROID-SLAM</td><td>前者出 metric depth 与内参,后者出位姿(附录 A)</td><td><code>preproc/README.md:4,7</code></td></tr>
+<tr><td>单目深度</td><td>Depth Anything(v1)</td><td>disparity 逐帧 scale+shift 对齐(附录 A);iPhone 数据用 <code>depth_anything_colmap</code></td><td><code>preproc/README.md:5</code>, <code>iphone_dataset.py:48</code></td></tr>
+<tr><td>前景 mask</td><td>Track-Anything(SAM+XMem)</td><td>Gradio GUI 手动点选,mask 再腐蚀 3-7 px</td><td><code>preproc/mask_app.py</code>, <code>casual_dataset.py:51,74</code></td></tr>
+<tr><td>2D tracks</td><td>TAPIR(BootsTAPIR)</td><td>前景点 4px 网格 query;torch 版默认,jax 版可选</td><td><code>preproc/README.md:8,76</code>, <code>casual_dataset.py:50</code></td></tr>
+<tr><td>渲染框架</td><td>gsplat(nerfstudio)</td><td>3DGS / 2DGS 两种光栅化可选(<code>--use_2dgs</code>)</td><td><code>scene_model.py:286-329</code></td></tr>
+</table>
+<h3>9.3 ⚠️ 论文宣称 vs 代码实现差异(本笔记重点核实)</h3>
+<table>
+<tr><th>#</th><th>项目</th><th>论文</th><th>代码</th><th>影响</th></tr>
+<tr><td>1</td><td>刚性损失(式 10)</td><td>λ=0.1,SAM part mask 采样 4 mask × 32 点 × 16 近邻,指数核 β=2(B.2)</td><td><strong>公开仓库不存在</strong> —— <code>trainer.py:201-527</code> 全损失清单无 rigidity 项,全库 grep <code>rigid</code> 无匹配</td><td>复现缺口:论文的"局部刚性正则"效果无法在开源版复现,发布版更依赖低维基本身提供刚性</td></tr>
+<tr><td>2</td><td>光度损失</td><td>式 7 只写 L1</td><td>0.8·L1 + 0.2·(1−SSIM)(<code>trainer.py:347-349</code>)</td><td>小,属常规工程补全</td></tr>
+<tr><td>3</td><td>深度损失空间</td><td>$\|\hat{\mathbf{D}}-\mathbf{D}\|_1$(式 7)</td><td>disparity(1/d)空间,quantile 0.98 截尾(<code>trainer.py:407-415</code>)</td><td>近处加权更重、抗外点,论文未提</td></tr>
+<tr><td>4</td><td>2D track 权重</td><td>未提</td><td>置信度 × $e^{-2\Delta t/T}$ 时间衰减(<code>trainer.py:378-380</code>)</td><td>远端监督降权,防漂移</td></tr>
+<tr><td>5</td><td>z-accel 损失</td><td>"acceleration along z-axis(camera frame)"(B.2)</td><td>真加速度公式被注释,实际惩罚的是<strong>沿视线方向的速度</strong> $((\mu_{t+1}{-}\mu_t)\cdot\hat r)^2$(<code>loss_utils.py:165-171</code>)</td><td>语义不同:实现更激进,会抑制真实的深度方向运动(见 §14)</td></tr>
+<tr><td>6</td><td>初始化步数</td><td>§3.3 写 1000 步,附录 B.1 写 2k 步</td><td>1000(<code>init_utils.py:277</code>)</td><td>论文内部矛盾,代码同 §3.3</td></tr>
+<tr><td>7</td><td>初始化基学习率</td><td>B.1:统一 1e-2</td><td>rots 1e-2 / <strong>transls 3e-2</strong>(<code>init_utils.py:288-289</code>)</td><td>小</td></tr>
+<tr><td>8</td><td>颜色表示</td><td>$\mathbf{c}\in\mathbb{R}^3$(§3.1)</td><td>确认为 3 维 RGB,<strong>无球谐</strong>(<code>params.py:263-268</code>)</td><td>视角相关效果(高光)无法建模,换来更小参数与更稳优化</td></tr>
+<tr><td>9</td><td>2DGS 法线监督</td><td>式 11-12:Lotus 单目法线 $\tilde N$ 监督渲染法线与深度法线</td><td>渲染法线 vs 深度导出法线的<strong>自洽损失</strong>(cosine,0.05),未读入 Lotus 法线图(<code>trainer.py:330-337</code>)</td><td><span class="uncertain">【待核实】数据集 pipeline 可能已把 Lotus 法线并入,但主训练损失形态与论文描述不同</span></td></tr>
+</table>
+
+<h3>9.4 资源账</h3>
+<div class="grid grid-3">
+  <div class="card"><div class="num-big">~2 h</div><p style="font-size:13px">单序列训练时长(300 帧 × 960×720,A100 单卡,§3.3 原文)</p></div>
+  <div class="card"><div class="num-big">~140 FPS</div><p style="font-size:13px">推理渲染帧率(§3.3 原文)</p></div>
+  <div class="card"><div class="num-big">14 万</div><p style="font-size:13px">初始高斯数(fg 4 万 + bg 10 万,<code>run_training.py:69-70</code>),训练中自适应增删</p></div>
+</div>
+<p>依赖版本:Python 3.10 conda env,PyTorch + cuML(cu12x,聚类用),gsplat 从 GitHub 源码安装(<code>README.md:47-57</code>, <code>requirements.txt</code>);预处理另需 TAPIR(jax 可选)、UniDepth、DROID-SLAM、Track-Anything 等(checkpoint 由 <code>preproc/setup_dependencies.sh</code> 下载)。<span class="uncertain">【待核实】显存占用论文与 README 均未给出</span>。</p>
+
+<h3>9.5 落地坑(源码与文档直读)</h3>
+<ul>
+<li><strong>预处理链重</strong>:5 个外部模型、各自独立环境与 checkpoint;<code>preproc/requirements_extra.txt</code> 与主 <code>requirements.txt</code> 分离,一次配齐成本高。</li>
+<li><strong>mask 需要人工点选</strong> —— Gradio GUI 逐序列操作(<code>preproc/mask_app.py</code>),无法批量自动化(§5 论文亦承认)。</li>
+<li><strong>聚类依赖 cuML</strong>(GPU 版 KMeans/HDBSCAN,<code>init_utils.py:13</code>),无 CUDA 环境无法初始化。</li>
+<li><strong>相机质量是硬前提</strong>:附录 A 明确近似静止相机时 COLMAP 灾难性失败,需切 UniDepth+DROID-SLAM 分支;iPhone 数据的 ARKit 位姿不够准,全部方法统一用 COLMAP 全局 BA 精化后再评(附录 C) —— 数字对相机误差敏感。</li>
+<li><strong>相机精化默认关闭</strong>:<code>CameraScales</code> 类标注 Deprecated(<code>params.py:10-11</code>);benchmark 路径下相机固定,只有自定义数据建议开精化。</li>
+<li><strong>评估协议细节</strong>:iPhone 评测用 covisible mask 内 mPSNR/mSSIM/mLPIPS,2D track 阈值 4/8/16/32/64 px(<code>scripts/evaluate_iphone.py:338-355</code>);NVIDIA 与 DGM 的协议差异(是否 inpaint 不可见区域)导致双方数字不可直接比(附录 F)。</li>
+</ul>
+</section>
+<!-- ==================== 10 EXPERIMENTS ==================== -->
+<section id="experiments">
+<h2><span class="num">10</span>实验结果</h2>
+
+<h3>10.1 评测设置</h3>
+<ul>
+<li><strong>iPhone 数据集</strong>(DyCheck [25]):14 序列、200-500 帧、handheld 移动拍摄,其中 7 序列带双静态相机做 NVS 验证;3D track GT 由 2D 关键点 × LiDAR 深度 lift 得到;弃用 Space-out / Wheel 两序列(相机与 LiDAR 错误);ARKit 位姿经 COLMAP BA 精化后供所有方法使用;用原始全分辨率(§4.3)。</li>
+<li><strong>指标</strong>:3D Tracking —— EPE(终点误差,↓)、$\delta_{3D}^{.05}$/$\delta_{3D}^{.10}$(5/10 cm 内点百分比,↑);2D Tracking —— TAP-Vid 的 AJ / $<\delta_{\text{avg}}$ / OA(↑);NVS —— 共视区域掩码的 mPSNR/mSSIM/mLPIPS(§4.1)。</li>
+<li><strong>Kubric MOVi-F</strong>:30 个合成场景,24 帧,10-20 个抛掷刚体,GT 相机与稠密对应(§4.4)。</li>
+<li><strong>NVIDIA</strong>:7 场景,静态 camera 4 训练、camera 3/5/6 评估,半分辨率,协议对齐 DGM(附录 F)。</li>
+</ul>
+
+<h3>10.2 Table 1:iPhone 数据集(三任务综合)</h3>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="3">3D Tracking</th><th colspan="3">2D Tracking</th><th colspan="3">View Synthesis</th></tr>
+<tr><th>EPE↓</th><th>δ⁰⁵↑</th><th>δ¹⁰↑</th><th>AJ↑</th><th>&lt;δ_avg↑</th><th>OA↑</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>T-NeRF</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>15.60</td><td>0.55</td><td>0.55</td></tr>
+<tr><td>HyperNeRF</td><td>0.182</td><td>28.4</td><td>45.8</td><td>10.1</td><td>19.3</td><td>52.0</td><td>15.99</td><td>0.59</td><td>0.51</td></tr>
+<tr><td>DynIBaR</td><td>0.252</td><td>11.4</td><td>24.6</td><td>5.4</td><td>8.7</td><td>37.7</td><td>13.41</td><td>0.48</td><td>0.55</td></tr>
+<tr><td>Deformable-3D-GS</td><td>0.151</td><td>33.4</td><td>55.3</td><td>14.0</td><td>20.9</td><td>63.9</td><td class="fail">11.92</td><td class="fail">0.49</td><td class="fail">0.66</td></tr>
+<tr><td>DynMF(作者复现)</td><td>0.188</td><td>22.9</td><td>53.8</td><td>5.5</td><td>9.5</td><td>60.5</td><td>16.54</td><td>0.59</td><td>0.49</td></tr>
+<tr><td>CoTracker+DA</td><td>0.202</td><td>34.3</td><td>57.9</td><td>24.1</td><td>33.9</td><td>73.0</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>TAPIR+DA</td><td>0.114</td><td>38.1</td><td>63.2</td><td>27.8</td><td>41.5</td><td>67.4</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>DELTA (world)</td><td>0.159</td><td>32.5</td><td>55.3</td><td>24.7</td><td>34.1</td><td>68.9</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>SpatialTracker (world)</td><td>0.125</td><td>37.7</td><td>63.9</td><td>24.9</td><td>36.9</td><td>73.5</td><td>—</td><td>—</td><td>—</td></tr>
+<tr class="best"><td>Ours</td><td>0.082</td><td>43.0</td><td>73.3</td><td>34.4</td><td>47.0</td><td>86.6</td><td>16.72</td><td>0.63</td><td>0.45</td></tr>
+<tr><td>Ours + 2DGS</td><td>0.097</td><td>47.3</td><td>71.3</td><td>35.8</td><td>47.0</td><td>87.3</td><td>16.75</td><td>0.65</td><td>0.40</td></tr>
+</table>
+<p>复核结论(本笔记按表格原始值手算):3D EPE 较最强 baseline(TAPIR+DA 0.114)降 <strong>28.1%</strong>;较 D-3DGS(0.151)降 <strong>45.7%</strong>。Ours+2DGS 在 EPE 上反而差于 Ours(0.097 vs 0.082)但 LPIPS 最优 —— 2DGS 几何更好但略微牺牲运动精度。</p>
+
+<div class="figure">
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/backpack_ours_89.png" loading="lazy" alt="backpack ours"><div class="cap">Ours</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/backpack_td_89.png" loading="lazy" alt="backpack tapir+da"><div class="cap">TAPIR+DA</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/backpack_d3dgs_89.png" loading="lazy" alt="backpack d3dgs"><div class="cap">D-3DGS</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/backpack_hn_89.png" loading="lazy" alt="backpack hypernerf"><div class="cap">HyperNeRF</div></div>
+  </div>
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/paper-windmill_ours_53.png" loading="lazy" alt="windmill ours"><div class="cap">Ours</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/paper-windmill_td_53.png" loading="lazy" alt="windmill tapir+da"><div class="cap">TAPIR+DA</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/paper-windmill_d3dgs_53.png" loading="lazy" alt="windmill d3dgs"><div class="cap">D-3DGS</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/paper-windmill_hn_53.png" loading="lazy" alt="windmill hypernerf"><div class="cap">HyperNeRF</div></div>
+  </div>
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/spin_ours_258.png" loading="lazy" alt="spin ours"><div class="cap">Ours</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/spin_td_258.png" loading="lazy" alt="spin tapir+da"><div class="cap">TAPIR+DA</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/spin_d3dgs_258.png" loading="lazy" alt="spin d3dgs"><div class="cap">D-3DGS</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/comparisons_iphone_tracks_3d/spin_hn_258.png" loading="lazy" alt="spin hypernerf"><div class="cap">HyperNeRF</div></div>
+  </div>
+  <div class="caption"><b>图 3(论文 Figure 3)</b> iPhone 3D track 可视化(新视角渲染上叠加 50 帧轨迹片段,三行依次为 backpack / paper-windmill / spin)。D-3DGS 与 HyperNeRF 在大运动的 paper-windmill、spin 上轨迹与结构同时崩坏;TAPIR+DA 轨迹噪声大且无法渲染(叠加在本文渲染图上);本文轨迹平滑且结构完整。</div>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/gttrain_paper-windmill_1_00248.png" loading="lazy" alt="train view"><div class="cap">Train View</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/GT_paper-windmill_1_00248.png" loading="lazy" alt="gt"><div class="cap">GT</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/Ours_paper-windmill_1_00248.png" loading="lazy" alt="ours"><div class="cap">Ours</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/HyperNeRF_paper-windmill_1_00248.png" loading="lazy" alt="hypernerf"><div class="cap">HyperNeRF</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/TNeRF_paper-windmill_1_00248.png" loading="lazy" alt="tnerf"><div class="cap">T-NeRF</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/DynIBar_paper-windmill_1_00248.png" loading="lazy" alt="dynibar"><div class="cap">DynIBaR</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/Deformable_3D_Gaussians_paper-windmill_1_00248.png" loading="lazy" alt="d3dgs"><div class="cap">D-3DGS</div></div>
+  </div>
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/gttrain_spin_2_00284.png" loading="lazy" alt="train view"><div class="cap">Train View</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/GT_spin_2_00284.png" loading="lazy" alt="gt"><div class="cap">GT</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/Ours_spin_2_00284.png" loading="lazy" alt="ours"><div class="cap">Ours</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/HyperNeRF_spin_2_00284.png" loading="lazy" alt="hypernerf"><div class="cap">HyperNeRF</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/TNeRF_spin_2_00284.png" loading="lazy" alt="tnerf"><div class="cap">T-NeRF</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/DynIBar_spin_2_00284.png" loading="lazy" alt="dynibar"><div class="cap">DynIBaR</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/Deformable_3D_Gaussians_spin_2_00284.png" loading="lazy" alt="d3dgs"><div class="cap">D-3DGS</div></div>
+  </div>
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/gttrain_teddy_2_00424.png" loading="lazy" alt="train view"><div class="cap">Train View</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/GT_teddy_2_00424.png" loading="lazy" alt="gt"><div class="cap">GT</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/Ours_teddy_2_00424.png" loading="lazy" alt="ours"><div class="cap">Ours</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/HyperNeRF_teddy_2_00424.png" loading="lazy" alt="hypernerf"><div class="cap">HyperNeRF</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/TNeRF_teddy_2_00424.png" loading="lazy" alt="tnerf"><div class="cap">T-NeRF</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/DynIBar_teddy_2_00424.png" loading="lazy" alt="dynibar"><div class="cap">DynIBaR</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/paper-graphics2/Deformable_3D_Gaussians_teddy_2_00424.png" loading="lazy" alt="d3dgs"><div class="cap">D-3DGS</div></div>
+  </div>
+  <div class="caption"><b>图 4(论文 Figure 4)</b> iPhone NVS 定性对比(paper-windmill / spin / teddy)。D-3DGS 在大运动序列上渲染模糊、结构退化;本文细节与结构最完整。</div>
+</div>
+<h3>10.3 Table 2:Kubric 3D Tracking</h3>
+<table>
+<tr><th>方法</th><th>EPE↓</th><th>δ⁰⁵↑</th><th>δ¹⁰↑</th></tr>
+<tr><td>CoTracker+DA</td><td>0.19</td><td>34.4</td><td>56.5</td></tr>
+<tr><td>TAPIR+DA</td><td>0.20</td><td>34.0</td><td>56.2</td></tr>
+<tr class="best"><td>Ours</td><td>0.16</td><td>39.8</td><td>62.2</td></tr>
+</table>
+<p>动态 NVS 方法(HyperNeRF / D-3DGS 等)在 Kubric 的大运动上全部无法产生可用轨迹("none can handle the Kubric scene motion",§4.2),故只与 tracker 系比较。</p>
+
+<h3>10.4 Table 3:NVIDIA 数据集(对比 DGM)</h3>
+<table>
+<tr><th>方法</th><th>Balloon1 P/S/L</th><th>Balloon2 P/S/L</th><th>Jumping P/S/L</th><th>Truck P/S/L</th></tr>
+<tr><td>DGM</td><td>23.83 / 0.81 / 0.066</td><td>23.62 / 0.81 / 0.088</td><td>20.02 / 0.73 / 0.134</td><td>27.31 / 0.86 / 0.055</td></tr>
+<tr><td>Ours</td><td>23.90 / 0.79 / 0.058</td><td>23.91 / 0.83 / 0.074</td><td>20.08 / 0.69 / 0.151</td><td>27.65 / 0.88 / 0.048</td></tr>
+</table>
+<table>
+<tr><th>方法</th><th>Playground P/S/L</th><th>Umbrella P/S/L</th><th>Skating P/S/L</th><th>Mean P/S/L</th></tr>
+<tr><td class="best">DGM</td><td>16.68 / 0.60 / 0.177</td><td class="best">24.99 / 0.70 / 0.083</td><td>27.79 / 0.90 / 0.052</td><td class="best">23.46 / 0.77 / 0.093</td></tr>
+<tr><td>Ours</td><td class="best">16.87 / 0.55 / 0.168</td><td class="fail">23.27 / 0.57 / 0.167</td><td class="best">27.91 / 0.92 / 0.047</td><td>23.37 / 0.75 / 0.102</td></tr>
+</table>
+<p>均值上 DGM 略优(论文自称 "comparable"),Umbrella 场景本文明显落后 —— 说明运动基先验在近似静态/小运动场景没有优势,而 DGM 的"marble"分组自由度更高。注意双方评估协议不同(本文用共视 mask、DGM 用 inpainting,附录 F),数字只作参考。</p>
+
+<div class="figure">
+  <div class="figrow">
+    <div class="cell"><img src="images/2407.13764/figures/qualitative_depth_coefs/00138_rgb.png" loading="lazy" alt="rgb"><div class="cap">Input</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/qualitative_depth_coefs/00138_pca.png" loading="lazy" alt="pca coefs"><div class="cap">PCA Coef.</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/qualitative_depth_coefs/00138_depth.png" loading="lazy" alt="depth"><div class="cap">Pred. Depth</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/qualitative_depth_coefs/00422_rgb.png" loading="lazy" alt="rgb"><div class="cap">Input</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/qualitative_depth_coefs/00422_pca.png" loading="lazy" alt="pca coefs"><div class="cap">PCA Coef.</div></div>
+    <div class="cell"><img src="images/2407.13764/figures/qualitative_depth_coefs/00422_depth.png" loading="lazy" alt="depth"><div class="cap">Pred. Depth</div></div>
+  </div>
+  <div class="caption"><b>图 5(论文 Figure 5)</b> 运动系数 PCA 前 3 分量可视化:系数编码刚体运动分组信息 —— 做刚体运动的方块在 PCA 图上呈恒定颜色,证明"软刚体分组"确实涌现。</div>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <div class="cell" style="max-width:48%"><img src="images/2407.13764/figures/kubric_pca/00013_rgb.png" loading="lazy" alt="kubric rgb"><div class="cap">Input</div></div>
+    <div class="cell" style="max-width:48%"><img src="images/2407.13764/figures/kubric_pca/00013_pca.png" loading="lazy" alt="kubric pca"><div class="cap">PCA Coef.</div></div>
+  </div>
+  <div class="caption"><b>图 6(论文 Figure 6)</b> Kubric 场景优化后的运动系数 PCA:系数按运动物体一致分组,无人工分割监督。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2407.13764/motion_coef.png" alt="motion coefficient visualization" loading="lazy">
+  <div class="caption"><b>图 7(论文 Figure 7)</b> DAVIS school-girl 序列(复杂多物体动态)时刻 0 与 54 的新视角渲染与运动系数 PCA 可视化。</div>
+</div>
+</section>
+
+<!-- ==================== 11 ABLATION ==================== -->
+<section id="ablation">
+<h2><span class="num">11</span>消融实验(iPhone,3D Tracking)</h2>
+<table>
+<tr><th>变体</th><th>SE(3)</th><th>运动基</th><th>2D tracks</th><th>初始化</th><th>EPE↓</th><th>δ⁰⁵↑</th><th>δ¹⁰↑</th></tr>
+<tr class="best"><td>Ours (Full)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>0.082</td><td>43.0</td><td>73.3</td></tr>
+<tr><td>Transl. Bases(只平移基)</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>0.093</td><td>42.3</td><td>69.9</td></tr>
+<tr><td>Per-Gaussian SE(3)(无基)</td><td>✓</td><td>—</td><td>✓</td><td>✓</td><td>0.083</td><td>43.6</td><td>70.2</td></tr>
+<tr><td>Per-Gaussian Transl.(无基纯平移)</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>0.087</td><td>41.2</td><td>69.2</td></tr>
+<tr><td>No SE(3) Init.(跳初始化)</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>0.111</td><td>39.3</td><td>65.7</td></tr>
+<tr><td class="fail">No 2D Tracks(去 track 监督)</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td class="fail">0.141</td><td class="fail">30.4</td><td class="fail">57.8</td></tr>
+</table>
+<div class="callout key">
+<h4>消融读法</h4>
+<ul>
+<li><strong>2D track 监督是最大单一贡献</strong>:去掉后 EPE 恶化 72%(0.082→0.141)—— 运动信息主要来自 TAPIR 而非光度;</li>
+<li><strong>初始化次之</strong>(+35% EPE):聚类 + Procrustes 的物理合理初值把优化拉进正确盆地;</li>
+<li><strong>SE(3) vs 纯平移基</strong>:旋转分量值 0.011 EPE(0.093→0.082)—— 旋转不可省;</li>
+<li><strong>低维基 vs 逐高斯自由运动</strong>:精度接近(0.082 vs 0.083),但自由运动"popping and jitter artifacts"明显更多(§4.6),且 $\delta^{.10}$ 掉 3.1 pt —— 基的正则价值主要在<strong>稳定性与视觉质量</strong>而非纯数值。</li>
+</ul>
+</div>
+</section>
+<!-- ==================== 12 COMPARISON ==================== -->
+<section id="compare">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+
+<h3>12.1 专项:与 Deformable-3DGS(D-3DGS)的对比 —— 相对现有方案改进了什么</h3>
+<p>D-3DGS(库内笔记:<a href="3D-20230922-Deformable-3DGS.html">3D-20230922-Deformable-3DGS</a>)是当前 monocular 动态高斯的主流基线,也是本文改进的直接对象。两者都表示"canonical 高斯 + 逐帧变换",差异全在<strong>变换怎么参数化、靠什么监督</strong>:</p>
+<table>
+<tr><th>维度</th><th>Deformable-3DGS(2023)</th><th>Shape of Motion(2024)</th></tr>
+<tr><td>运动参数化</td><td>每高斯一个<strong>变形 MLP</strong>:(x,t)→Δ位置/旋转/尺度,逐帧独立回归,无跨帧约束</td><td>$B{=}10$ 条<strong>全局 SE(3) 基轨迹</strong> + 每高斯 softmax 系数;变换是基的凸组合</td></tr>
+<tr><td>自由度</td><td>$O(N{\cdot}T)$ 等效(MLP 逐帧任意输出)</td><td>$O(B{\cdot}T+N{\cdot}B)$,压缩 2-3 个数量级</td></tr>
+<tr><td>物理结构</td><td>无 —— 不保证刚体、不保距、不持久</td><td>SE(3) 凸组合 → 软刚体分组;高斯身份全程持久</td></tr>
+<tr><td>遮挡处理</td><td>无法推理遮挡点运动(逐帧光度拟合)</td><td>同组可见点的基驱动遮挡点继续运动</td></tr>
+<tr><td>运动监督</td><td>仅光度(其原始设定多为多视角/合成数据)</td><td>TAPIR 长程 2D tracks(置信加权)+ 对齐深度 + 运动平滑</td></tr>
+<tr><td>输出轨迹</td><td>需事后从变形场反解对应,不持久</td><td>原生输出世界系全程 3D 轨迹(渲染即跟踪,式 5-6)</td></tr>
+<tr><td>大运动场景</td><td class="fail">结构崩坏、渲染模糊(图 3/4,PSNR 11.92)</td><td class="best">轨迹平滑完整(PSNR 16.72)</td></tr>
+</table>
+
+<h4>定量差距(iPhone,Table 1 原始值手算)</h4>
+<table>
+<tr><th>指标</th><th>D-3DGS</th><th>SoM</th><th>变化</th></tr>
+<tr><td>3D EPE↓</td><td>0.151</td><td>0.082</td><td class="best">−45.7%</td></tr>
+<tr><td>δ⁰⁵ (5cm)↑</td><td>33.4</td><td>43.0</td><td class="best">+9.6 pt</td></tr>
+<tr><td>δ¹⁰ (10cm)↑</td><td>55.3</td><td>73.3</td><td class="best">+18.0 pt</td></tr>
+<tr><td>2D AJ↑</td><td>14.0</td><td>34.4</td><td class="best">+20.4 pt(约 2.5×)</td></tr>
+<tr><td>OA(遮挡)↑</td><td>63.9</td><td>86.6</td><td class="best">+22.7 pt</td></tr>
+<tr><td>mPSNR↑</td><td>11.92</td><td>16.72</td><td class="best">+4.80 dB</td></tr>
+<tr><td>mLPIPS↓</td><td>0.66</td><td>0.45</td><td class="best">−31.8%</td></tr>
+</table>
+
+<div class="callout key">
+<h4>机制层面为什么 D-3DGS 在大运动单目场景必败</h4>
+<ol>
+<li><strong>逐帧变形没有"惯性"</strong>:变形 MLP 对每帧独立拟合光度,第 $t$ 帧的错误不会受到第 $t{\pm}1$ 帧牵制;大运动时单视角光度证据不足,优化把高斯拉到屏幕上"看着对"但物理错误的位置,轨迹表现为抖动/崩解(图 3 的 D-3DGS 列)。</li>
+<li><strong>自由度与监督严重失配</strong>:单目每帧只有 $H{\times}W$ 像素证据,却要约束 $N$ 个高斯的独立形变;SoM 把运动自由度压到 $B{\cdot}T$ 后,同一份证据集中约束少量基,等效监督密度提升 $N/B$ 倍。</li>
+<li><strong>无遮挡推理能力</strong>:D-3DGS 的点被遮挡后没有任何信号告诉它"该去哪";SoM 中它与同组可见点共享基,运动被"带着走",OA 因此 63.9→86.6。</li>
+<li><strong>评估场景的差异</strong>:D-3DGS 原文主要在 D-NeRF 合成多视角/teleporting 相机设定验证;到了 DyCheck 式 handheld 连续运动相机,其 quasi-static 假设失效(§2 的 "camera teleportation" 批评)。</li>
+</ol>
+</div>
+<div class="callout warn">
+<h4>公平性备注(避免误读)</h4>
+<p>D-3DGS 的设计目标本来就是<strong>多视角/已知相机的动态 NVS</strong>,不是世界系 3D 跟踪;本文把它 lift 成 tracker 来评本身带有任务倾向性。另外 Table 1 的 NVS 数字建立在本文统一精化的 COLMAP 相机与全分辨率协议上(§4.3),与 D-3DGS 原论文报告值不可直接比。D-3DGS 在其原生设定(多视角、小运动)下仍然是高效方案。</p>
+</div>
+<h3>12.2 横向对比表(固定维度,缺值写 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td>HyperNeRF</td><td>2021</td><td>单目视频+相机</td><td>NeRF + hyperspace 变形</td><td>光度</td><td>逐场景</td><td>~天级</td><td>慢(体渲染)</td><td>—</td><td>iPhone PSNR 15.99 / EPE 0.182</td><td>✓</td></tr>
+<tr><td>DynIBaR</td><td>2023</td><td>单目视频+相机</td><td>动态 NeRF + 帧间 scene flow</td><td>光度+深度+光流</td><td>逐场景</td><td>~2-3 天【待核实】</td><td>慢</td><td>—</td><td>PSNR 13.41 / EPE 0.252</td><td>✓</td></tr>
+<tr><td><a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a></td><td>2023</td><td>多视角为主,可单目</td><td>canonical 3DGS + 变形 MLP</td><td>光度</td><td>逐场景</td><td>~30-60 min【待核实】</td><td>实时</td><td>—</td><td>PSNR 11.92 / EPE 0.151(本文协议)</td><td>✓</td></tr>
+<tr><td>DynMF</td><td>2023</td><td>单目(teleport 相机)</td><td>3DGS + MLP 运动基(10 条)</td><td>光度</td><td>逐场景</td><td>—</td><td>实时</td><td>—</td><td>PSNR 16.54 / EPE 0.188(作者复现)</td><td>✗(本文复现)</td></tr>
+<tr><td>DGM</td><td>2024</td><td>单目视频+深度</td><td>高斯"marble"分组 + 分组 SE(3)</td><td>光度+深度</td><td>逐场景</td><td>—</td><td>实时</td><td>—</td><td>NVIDIA 均值 PSNR 23.46</td><td>✓</td></tr>
+<tr><td>MoSca(并行工作)</td><td>2024</td><td>单目视频</td><td>4D motion scaffold(图)+ 高斯</td><td>光度+track+深度</td><td>逐场景</td><td>—</td><td>实时</td><td>—</td><td>—(论文未互评)</td><td>✓</td></tr>
+<tr><td>TAPIR+DA(组合基线)</td><td>2023</td><td>单目视频</td><td>2D tracks × 单目深度(2.5D)</td><td>—(前馈)</td><td>—</td><td>—</td><td>分钟级</td><td>—</td><td>EPE 0.114(仅可见区)</td><td>✓</td></tr>
+<tr class="best"><td>Shape of Motion</td><td>2024</td><td>单目视频+相机+深度+tracks+mask</td><td>canonical 3DGS + B=10 SE(3) 基凸组合</td><td>光度+深度+2D track+平滑正则</td><td>逐场景</td><td>~2 h(A100,300 帧)</td><td>~140 FPS</td><td>—</td><td>EPE 0.082 / AJ 34.4 / PSNR 16.72</td><td>✓</td></tr>
+</table>
+
+<h3>12.3 对比结论(机制原因)</h3>
+<ul>
+<li><strong>vs HyperNeRF / DynIBaR(NeRF 系)</strong>:体渲染的隐式场没有"点身份",跟踪要靠 root-finding 反解或链式 scene flow,误差累积;且训练慢 1-2 个数量级。SoM 的显式点 + 光栅化天然给出持久轨迹与实时性。</li>
+<li><strong>vs DynMF(思想源头)</strong>:DynMF 用 MLP 基(时间连续)但缺 2D track 监督与 SE(3) 结构,复现版 EPE 0.188 远差于 SoM 0.082 —— 说明<strong>低维基只是必要条件,充分条件是先验整合与初始化</strong>。</li>
+<li><strong>vs DGM</strong>:同为分组思想(marble ≈ 硬分组版基),DGM 在 NVIDIA 近似静态场景以更高自由度略胜;但 DGM 不做轨迹输出,任务覆盖面不同。</li>
+<li><strong>vs TAPIR+DA</strong>:SoM 的直接输入恰好是该组合的输出,整合后 EPE 再降 28% —— 说明全局表示对噪声先验的"纠偏"是真实增益,而非来自更好的外部模型。</li>
+<li><strong>vs MoSca(并行)</strong>:两条技术路线同源(低维运动基/scaffold + 高斯);MoSca 用图结构 scaffold + 对偶四元数混合,本文用逐帧基表 + softmax 凸组合。项目页互相列为并行工作,未见互评,谁优【待核实】。</li>
+</ul>
+
+<h3>12.4 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>逐帧变形场</td><td>Nerfies / HyperNeRF / <a href="3D-20230922-Deformable-3DGS.html">D-3DGS</a></td><td>canonical 空间 + 光滑变形</td><td>无持久对应,大运动崩坏</td></tr>
+<tr><td>帧间场景流</td><td>DynIBaR / RAFT-3D 系</td><td>相邻帧运动光滑</td><td>链式漂移,无法长程</td></tr>
+<tr><td>低维运动基</td><td>DynMF → <strong>Shape of Motion</strong> → MoSca</td><td>运动低秩/刚体分组</td><td>非刚性表达力受 B 限制</td></tr>
+<tr><td>前馈 4D 重建</td><td>前述 [22,114,116](如 <a href="3D-20260820-4DAnyone.html">4DAnyone</a>、<a href="3D-20231110-前馈3D重建模型综述.html">前馈重建综述</a>)</td><td>大规模数据学习先验</td><td>泛化与分辨率仍受限</td></tr>
+</table>
+<p>库内兄弟笔记:<a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a>(本文直接对比对象)、<a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a>(变形场范式全景)、<a href="3D-20260820-4DAnyone.html">4DAnyone</a>(同样从 casual 单目视频出发的人体 4D,前馈化路线)、<a href="3D-20260512-VidSplat.html">VidSplat</a>(视频扩散先验驱动的稀疏视角重建,先验整合的另一形态)。</p>
+</section>
+<!-- ==================== 13 LANDING ==================== -->
+<section id="landing">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+
+<h3>13.1 适用场景</h3>
+<div class="grid grid-3">
+  <div class="card"><h4 style="color:var(--green)">✅ 强项场景</h4><ul><li>单目 casual 视频的世界系长程 3D 跟踪(唯一同时给 NVS+轨迹的方案)</li><li>中低自由度动态(行人、宠物、多刚体物体)</li><li>需要"渲染即跟踪"的下游(视频编辑、AR 内容制作、动态测速/测距)</li></ul></div>
+  <div class="card"><h4 style="color:var(--orange)">⚠️ 受限场景</h4><ul><li>快速运动 + 长遮挡(项目页 Failure Cases)</li><li>烟火流体等强非刚性(B=10 刚体基表达力不足)</li><li>无纹理区域(深度/track 先验同时退化,§5)</li></ul></div>
+  <div class="card"><h4 style="color:var(--red)">❌ 不适用</h4><ul><li>流式/在线重建(逐场景 2h 优化)</li><li>无法容忍人工 mask 点选的全自动管线</li><li>要求绝对度量精度(深度只做了逐帧 scale+shift 对齐)</li></ul></div>
+</div>
+
+<h3>13.2 对 vggt_human 主线的适配评估</h3>
+<p>我们当前 pipeline(COLMAP → 3DGS → HYPIR → SAM3;head_gs / body_gs / scene_gs 拆分)与 SoM 的关系:</p>
+<ul>
+<li><strong>直接可用的资产</strong>:① SE(3) 运动基 + softmax 系数的参数化可直接搬到 body_gs 的时序建模 —— 人体天然是"近似刚体分组"(头/躯干/四肢),$B$ 条基 ≈ 身体部件数,比逐高斯 deformation 更稳;② 轨迹光栅化(式 5-6,<code>scene_model.py:247-265</code>)是与渲染几乎零成本的跟踪导出方式,可用于验证我们 body_gaussian 的时序一致性;③ 损失组合中"置信度 × 时间衰减加权的 track 损失"(<code>trainer.py:378-400</code>)和"disparity 空间截尾深度损失"是即插即用的抗噪技巧。</li>
+<li><strong>不能直接搬的</strong>:SoM 是<strong>单目病态问题</strong>的解;我们是多视角采集,约束本来就足,引入 B=10 全局基反而可能欠参数化(人体 + 面部微表情远超 10 自由度)。可用的形态是<strong>分级基</strong>:body 用少量刚体基、head/face 用更高自由度参数化(如现有 MHR 表情系数),与"基数量随语义分级"的思路一致。</li>
+<li><strong>预处理启发</strong>:其"先验全家桶 + 逐帧 scale+shift 对齐 + 置信度融合"的组织方式(附录 A)与我们 SAM3 mask + ExpTracker landmarks 的多源融合同构;其教训(ARKit/COLMAP 位姿不够必须 BA 精化,附录 C)再次印证相机质量是 4D 重建的第一敏感性。</li>
+<li><strong>成本对照</strong>:SoM 单序列 ~2h(A100);我们 8 阶段 pipeline 多视角数据约束更强,若引入运动基只加 $O(BT{+}NB)$ 参数,训练开销增量可忽略。</li>
+</ul>
+</section>
+
+<!-- ==================== 14 IMPROVEMENTS ==================== -->
+<section id="improvements">
+<h2><span class="num">14</span>可改进方向分析</h2>
+
+<h3>14.1 方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] 旋转在 6D 空间线性混合非测地插值</h4>
+<p>证据:<code>params.py:232-243</code> <code>compute_transforms</code> 先把各基 6D 旋转按系数加权再 Gram-Schmidt 正交化。系数在两条朝向差异大的基之间过渡时,混合结果会穿过"缩短"的中间姿态(等价于矩阵空间而非 SO(3) 流形插值),高速旋转场景可能出现非物理扭曲。改进:改为在对数空间(log-R)混合或按螺旋(screw)插值混合对偶四元数(MoSca 的 DQ 混合即此路线)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 基数量 B=10 全局硬编码</h4>
+<p>证据:<code>run_training.py:71</code> 默认 10;论文 §3.3 "B is set to 10 for all of our experiments"。Kubric 10-20 物体场景尚可,复杂人流场景必然欠拟合;过多又破坏低维先验。代码已留 HDBSCAN 分支(<code>init_utils.py:578</code>)可自适应聚类,但默认走 kmeans。改进:按速度聚类的可分性自适应选 B,或分级基(大刚体组 + 局部细化基)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] z-accel 实现与论文语义不符且可能误伤</h4>
+<p>证据:<code>loss_utils.py:165-171</code> 真正的加速度项被注释,实际惩罚<strong>沿视线方向的速度</strong>(两个相邻速度各自投影到视线的平方和)。这会抑制合法的接近/远离相机运动(如人走向镜头),权重还不低(1.0,<code>configs.py:57</code>)。改进:恢复被注释的真加速度形式,或仅在初始化/早期启用。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 颜色为纯 RGB,无视角相关效果</h4>
+<p>证据:<code>params.py:263-268</code> 强制 colors 为 3 维。对高光/反射材质(玻璃杯、屏幕)新视角合成会偏灰。改进:低阶 SH(1-2 阶)或每基携带视角调制,代价是参数与优化稳定性。</p>
+</div>
+
+<h3>14.2 数据与评估</h3>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 评估协议与 baseline 不完全对齐</h4>
+<p>证据:NVIDIA 上本文用共视 mask、DGM 用 inpainting(附录 F),双方数字不可直接比;iPhone 相机被本文 COLMAP 精化后供"所有方法"使用,但 D-3DGS 原文协议不同。改进:推动统一 covisible mask(作者承诺公开)成为社区标准。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green);margin-bottom:14px">
+<h4>[低优先级] 缺乏长时序(分钟级)与强非刚性基准</h4>
+<p>现有三个数据集最长 500 帧、以刚体/近似刚体为主,无法暴露 B=10 的表达上限。改进:补充人流、布料、流体场景基准。</p>
+</div>
+
+<h3>14.3 工程实用性</h3>
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] 刚性损失"论文有、代码无"</h4>
+<p>证据:式 10(λ=0.1,SAM part mask + kNN)在公开仓库完全缺失(<code>trainer.py:201-527</code>,全库 grep 无 <code>rigid</code>),意味着开源版与论文数字之间存在未说明的差距;而 SAM part mask 的预处理也不在仓库中。改进:补齐该损失与对应预处理,或在 README 明确说明发布配置。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] 预处理链重且含人工环节</h4>
+<p>证据:5 个外部模型 + Gradio 手动 mask(<code>preproc/mask_app.py</code>)。改进:用自动动体分割(§5 论文自指 [27,35])替换 Track-Anything;把 MegaSaM 一体化(其本身出相机+深度)可再砍两个依赖。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green);margin-bottom:14px">
+<h4>[低优先级] 逐场景 2h 优化 → 前馈化</h4>
+<p>论文 §5 自指前馈方法([22,114,116])是出路;本库 <a href="3D-20260820-4DAnyone.html">4DAnyone</a> 正是该方向在人体上的体现。</p>
+</div>
+
+<h3>14.4 优先级总览与个人观点</h3>
+<table>
+<tr><th>方向</th><th>维度</th><th>优先级</th></tr>
+<tr><td>刚性损失代码缺失</td><td>工程实用性</td><td>高</td></tr>
+<tr><td>旋转混合非测地</td><td>方法层面</td><td>高</td></tr>
+<tr><td>B=10 硬编码 / z-accel 语义 / 评估协议</td><td>方法 / 评估</td><td>中</td></tr>
+<tr><td>RGB 颜色 / 长时序基准 / 前馈化</td><td>方法 / 评估 / 工程</td><td>低</td></tr>
+</table>
+<p><strong>个人认为最关键的三点</strong>:① 刚性损失缺失带来的复现差距必须先说清,否则所有"复现 SOTA"的尝试都会系统性偏低;② 6D 线性混合是表示层面最脆弱的一环,升级到 DQ/log-space 混合是低成本高收益;③ 基数量自适应化决定该方法能否走出"单主体 demo"走向复杂场景。</p>
+</section>
+<!-- ==================== 15 CONCLUSION ==================== -->
+<section id="conclusion">
+<h2><span class="num">15</span>总结与演进定位</h2>
+<p class="lead">Shape of Motion 把单目 4D 重建从"逐帧变形场拟合"重新表述为"受低维运动学约束的全局轨迹估计":$N$ 个持久 canonical 高斯提供身份与外观,$B{=}10$ 条 SE(3) 运动基 + 每高斯 softmax 系数提供物理正确的低维运动先验,TAPIR tracks / 单目深度 / 光度三类噪声信号在统一表示下互相纠偏。它在长程 3D 跟踪(EPE 0.082)、2D 跟踪(AJ 34.4)与新视角合成(PSNR 16.72)上同时 SOTA,是"deformation 范式"之后"运动基范式"确立的标志性工作之一(与并行工作 MoSca 同源)。</p>
+<p>相对现在主流的 Deformable-3DGS,改进的本质是<strong>把逐帧无约束变形换成跨时间共享的低维刚体运动流形</strong>,换来三项可验证收益:遮挡推理能力(OA +22.7 pt)、大运动稳定性(δ¹⁰ +18.0 pt、渲染 PSNR +4.8 dB)、以及原生世界系轨迹输出。代价是更强的先验依赖(相机/深度/tracks/mask 四件套)、逐场景 2 小时优化、以及非刚性表达力受基数量限制。</p>
+<div class="callout tip">
+<h4>对后续工作的启示</h4>
+<p>① 低维运动基的思想已被 MoSca(scaffold 图)、DGM(marble 分组)等并行验证,趋势是"结构化运动先验 + 高斯";② 下一个台阶是前馈化(库内 <a href="3D-20260820-4DAnyone.html">4DAnyone</a> 为代表)与基数量/层级的自适应;③ 对工程管线而言,本文最有复用价值的不是整套系统,而是运动基参数化、轨迹光栅化与抗噪损失组合这三件可拆卸零件。</p>
+</div>
+</section>
+
+<!-- ==================== 16 TEAM & LINKS ==================== -->
+<section id="team">
+<h2><span class="num">16</span>👥 研究团队 + 🔗 资源链接</h2>
+<h3>团队</h3>
+<ul>
+<li><strong>Qianqian Wang</strong>(共同一作)— UC Berkeley / Google Research,三维重建与跟踪,此前工作含 MonoLiTh、4D 重建方向;<strong>Vickie Ye</strong>(共同一作)— UC Berkeley(现 Google DeepMind),NeRF 时代代表作 Nerfies,连续创业的 4D 重建核心作者;<strong>Hang Gao</strong>(共同一作)— UC Berkeley,HyperNeRF/DyCheck 一作(iPhone 数据集即出自其工作);<strong>Weijia Zeng</strong> — UC San Diego。</li>
+<li><strong>Jake Austin</strong> — UC Berkeley;<strong>Zhengqi Li</strong> — Google Research,单目深度/视频深度方向资深作者;<strong>Angjoo Kanazawa</strong>(通讯)— UC Berkeley 教授,人体重建与 4D 视觉方向 PI。</li>
+<li>该组合基本是 Berkeley BAIR "Nerfies → HyperNeRF → DyCheck → SoM" 动态重建主线原班人马 —— 本文可视为该线从 NeRF 时代进入高斯时代的收束工作。</li>
+</ul>
+<h3>资源</h3>
+<ul>
+<li>📄 arXiv:<a href="https://arxiv.org/abs/2407.13764" target="_blank">2407.13764</a>(v2,2025-10-16;abs comments 标注 <strong>ICCV 2025</strong>,项目页标注 Highlight)</li>
+<li>🌐 项目主页:<a href="https://shape-of-motion.github.io/" target="_blank">shape-of-motion.github.io</a>(含交互式 demo)</li>
+<li>💻 代码:<a href="https://github.com/vye16/shape-of-motion" target="_blank">vye16/shape-of-motion</a>(PyTorch + gsplat;预处理链含 TAPIR/DepthAnything/Track-Anything/MegaSaM)</li>
+<li>🗂️ 数据:预处理后的 iPhone / NVIDIA / custom 数据集(Google Drive,见仓库 README)</li>
+<li>库内相关笔记:<a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a> · <a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a> · <a href="3D-20260820-4DAnyone.html">4DAnyone</a> · <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a></li>
+</ul>
+</section>
+
+</div>
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-10 · 领域: 3D 重建 / 4D 动态场景</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
