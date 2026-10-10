@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GaVS:3D  Grounded 视频稳像 —— 时序一致的局部重建与渲染</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+  .figure .caption{font-size:13px;color:var(--muted);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+  .uncertain{display:inline-block;background:rgba(251,146,60,.12);border-left:3px solid var(--orange);color:#fdba74;padding:2px 8px;border-radius:4px;font-size:13.5px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2506.23957 · 2025 · 3D 重建/视频稳像 · 🏆 SIGGRAPH 2025 · 📊 deep</span>
+    <h1>GaVS:3D  grounded 视频稳像 —— 时序一致的局部重建与渲染</h1>
+    <p class="subtitle">把视频稳像从「2D warp + 裁剪」重构为「逐帧前馈局部 3DGS 重建 + 平滑位姿渲染」:以 Flash3D/UniDepth 为骨干,测试时 3 epoch 微调 + 动态补偿光度监督 + 空洞跨帧正则,免裁剪全画幅输出;对比全局 4D 重建(Shape of Motion)预处理提速约 12×(附录口径 46×),优化提速约 20×(附录口径 10×)。</p>
+    <p class="authors">Zinuo You · Stamatios Georgoulis · Anpei Chen · Siyu Tang · Dengxin Dai<br>
+    <span style="color:var(--muted);font-size:13px">ETH Zürich · Huawei Research Zürich(第一作者实习期间完成部分工作)</span></p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2506.23957" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2506.23957v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2506.23957" target="_blank">📥 PDF</a>
+      <a href="https://github.com/sinoyou/GaVS" target="_blank">💻 GitHub</a>
+      <a href="https://sinoyou.github.io/gavs" target="_blank">🌐 项目主页</a>
+      <a href="https://huggingface.co/datasets/sinoyou/gavs-data" target="_blank">🤗 HuggingFace 数据</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">模块一:前馈局部重建模型(Flash3D+UniDepth)</a></li>
+    <li><a href="#s5">模块二:场景外推(免裁剪)</a></li>
+    <li><a href="#s6">模块三:多视角动态感知光度监督</a></li>
+    <li><a href="#s7">模块四:空洞跨帧重建正则化</a></li>
+    <li><a href="#s8">模块五:优化与运动平滑</a></li>
+    <li><a href="#s9">损失函数总表</a></li>
+    <li><a href="#s10">逻辑流程图(预处理/微调/推理)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析(vs Shape of Motion / Deformable-3DGS)</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</div>
+
+<!-- ==================== S1 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead">视频稳像(video stabilization)的标准三步是「跟踪相机运动 → 平滑轨迹 → 合成稳定帧」。以往方法在 <strong>2D / 2.5D 域</strong>完成第三步(单应、mesh flow、光流 warp 或多帧融合),缺少显式 3D 建模,导致几何畸变、过度裁剪、开放域泛化差三类顽疾。GaVS 把稳像重构为一个 <strong>3D grounded 的「局部重建 + 渲染」</strong>问题:给定 GLOMAP 估计的 3D 相机位姿,用一个前馈重建模型(Flash3D 骨架 + UniDepth 度量深度)把<strong>每一帧</strong>不稳图像独立地重建成一组逐像素 3DGS 基元,然后在<strong>高斯滤波后的平滑位姿</strong>上渲染出稳定帧。</p>
+<div class="callout key">
+<p>一句话核心贡献:<strong>不做全局 4D 优化、不显式建变形场,用「逐帧前馈局部重建 + 轻量测试时微调」把动态场景稳像的预处理/优化成本从 Shape of Motion 级的「>10h + 1h」压到「13min 关键路径 + 几分钟微调」,同时保持时序一致与全画幅输出。</strong></p>
+<ol>
+<li><strong>局部重建 + 渲染范式</strong>:稳像中不稳定帧与稳定帧位姿差异小,无需全局重建;逐帧前馈重建天然统一静态/动态区域(动态由逐帧重建隐式处理,无需形变模型);</li>
+<li><strong>测试时优化(TTO)</strong>:多视角动态感知光度监督(RAFT 光流解耦出物体运动流做补偿)+ 空洞(dilated)跨帧 GS 基元正则,3 个 epoch、几分钟完成,消除预训练模型的域差;</li>
+<li><strong>场景外推免裁剪</strong>:ProPainter 视频补全先把每帧外扩 96px 再重建,渲染稳定帧时视野无损失;</li>
+<li><strong>3D grounded 评测协议</strong>:改造 DeepFused 数据集(15 个场景:Mild / Intense / Dynamics ×5),并提出 GC-S(稀疏重投影误差)/ GC-D(3DGS 逐视频重建 PSNR)两个几何一致性指标。</li>
+</ol>
+</div>
+<p>结果:对全画幅基线(FuSta / MetaStab / DIFRINT),GaVS 在 Stability 与 GC-S/GC-D 上最优或并列最优,Distortion 相当;对裁剪基线(L1 / Yu / Deep3D)全面领先;28 人用户研究中超过 60% 的偏好率。</p>
+<div class="figure"><img src="images/2506.23957/teaser5.png" loading="lazy" alt="GaVS teaser" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 1(原文 Figure 1)</b> 任务总览。给定不稳定视频与 3D 相机位姿,GaVS 以前馈方式从不稳定位姿重建局部 3D 场景(GS 基元),并在平滑位姿上渲染稳定帧;对多样相机运动与场景动态鲁棒,保证全画幅与跨局部重建的时序一致性。</div></div>
+</section>
+
+<!-- ==================== S2 背景动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>2.1 现有方法的具体失败模式</h3>
+<div class="grid grid-3">
+  <div class="card">
+    <h4 style="color:var(--orange)">2D warp 类(L1 / Yu / FuSta / DIFRINT)</h4>
+    <ul>
+      <li>用仿射/单应/mesh flow/光流表示相机运动,<strong>无显式 3D 场景模型</strong></li>
+      <li>warp 合成帧 → 视差场景出现<strong>几何畸变、剪切(temporal shearing)</strong></li>
+      <li>逐帧变换必然引入<strong>裁剪</strong>,L1 基线裁剪比仅 0.65(丢 35% 内容,论文表 2)</li>
+      <li>插值类 DIFRINT 在开放域「产生致命伪影」(论文表 1 注)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">2.5D / 深度类(Deep3D、gyro-based DeepFused)</h4>
+    <ul>
+      <li>用深度线索或 IMU 辅助,但仍<strong>假设场景静态</strong></li>
+      <li>动态物体表面与动/静边界处仍有畸变</li>
+      <li>DeepFused 依赖陀螺仪硬件,裁剪比 0.83(论文附录表 3)</li>
+      <li>预训练模型在开放域视频上<strong>泛化差</strong>(domain gap)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">全局 4D 重建类(Shape of Motion 等)</h4>
+    <ul>
+      <li>全局优化一个带运动基/变形场的 4D 表示,<strong>优化昂贵</strong>(SoM:300 帧约 2h / A100,预处理 tracks >10h——见 §14)</li>
+      <li>高度依赖<strong>长程 2D 逐像素跟踪</strong>质量;复杂动态(如舞蹈)下 track 崩 → 渲染崩(论文 Fig. 8 实测)</li>
+      <li>对稳像任务而言「大基线 NVS 能力」是过剩的 —— 稳定帧与源帧位姿差很小</li>
+    </ul>
+  </div>
+</div>
+
+<h3>2.2 作者的两个关键观察(核心洞察)</h3>
+<div class="callout tip">
+<p><strong>观察一:稳像不需要全局重建。</strong>不稳定帧与目标稳定帧只差一个小位姿扰动,因此「逐帧局部重建 + 小基线渲染」即可覆盖;全局 4D 优化(尤其动态场景)既贵又脆。前馈逐帧重建把静态与动态部分<strong>天然统一</strong> —— 动态物体不需要专门的形变模型,每帧重建出它当时的位置即可。</p>
+<p><strong>观察二:伪影最小化本质上要求相邻局部重建一致。</strong>单帧前馈重建的尺度/几何会逐帧抖动;但重建被<strong>神经网络参数化</strong> —— 一次梯度更新会同时改进所有相似 patch 的重建,因此用「把每个局部重建渲染到邻近帧上做光度监督 + 跨帧基元正则」的测试时微调,只需几分钟就能把时序一致性「注入」网络权重。</p>
+</div>
+<div class="callout warn">
+<h4>关键假设及其失效条件</h4>
+<ul>
+<li><strong>假设:存在准确的局部 3D 相机位姿。</strong>失效条件:GLOMAP 在欠曝/低画质、自拍(静态线索少)、<strong>纯旋转为主</strong>(SfM 依赖平移视差)场景失效 —— 论文 §5 明确承认。</li>
+<li><strong>假设:不稳定与稳定位姿差异小(小基线)。</strong>失效条件:剧烈晃动下重建内容覆盖不了整帧,外推模块也补不回来 —— 论文 §5 承认开环平滑无 FOV 约束。</li>
+<li><strong>假设:单目深度先验(UniDepth)基本可靠。</strong>失效条件:深度估计失败区域无法被 TTO 救回 —— 论文 §5 明确承认。</li>
+</ul>
+</div>
+</section>
+
+<!-- ==================== S3 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+
+<h3>3.1 输入 / 输出</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>输入</h4>
+    <ul>
+      <li>不稳定视频 $\{I_k^{s}\}_{k=1}^{T}$(手机/运动相机拍摄,先做陀螺仪滚动快门校正)</li>
+      <li>GLOMAP 估计的相机位姿 $\{P_k^{s}\}$ 与内参 $K$(针孔模型)</li>
+      <li>在线计算的 UniDepth 度量深度、RAFT 光流、Grounded-SAM2 动态掩码</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>输出</h4>
+    <ul>
+      <li>等长稳定视频 $\{I_k^{t}\}_{k=1}^{T}$,全画幅(无裁剪,CR=1.0)</li>
+      <li>平滑位姿 $\{P_k^{t}\}$:对平移与旋转分量做高斯滤波(式 8),$\sigma_s$ 可调稳定强度</li>
+      <li>副产品:每帧的局部 3DGS 重建 $\mathcal{G}_k^s$</li>
+    </ul>
+  </div>
+</div>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+<tr><td>$I_k^{s}, I_k^{t}$</td><td>源(不稳定)/ 目标(稳定)第 $k$ 帧</td><td>$[H, W, 3]$,训练 320×576、评估 480×864(源码)</td></tr>
+<tr><td>$P_k^{s}, P_k^{t}$</td><td>不稳定 / 稳定相机位姿(世界系)</td><td>$SE(3)$,$[4,4]$</td></tr>
+<tr><td>$K$</td><td>相机内参(单针孔模型)</td><td>$[3,3]$</td></tr>
+<tr><td>$\mathbf{R}(\cdot)$</td><td>前馈局部重建模型(Flash3D 骨架)</td><td>UniDepth 编码器 + MLP 解码器</td></tr>
+<tr><td>$\mathcal{G}_k^{s}$</td><td>第 $k$ 帧的逐像素 GS 基元集合 $\{(\alpha_j,\mu_j,\Sigma_j,c_j)\}_{j=1}^{G}$</td><td>每像素 2 层高斯,$G=2HW$</td></tr>
+<tr><td>$F_{i\to k}, F_{i\to k}^{\mathrm{cam}}, F_{i\to k}^{\mathrm{obj}}$</td><td>全光流 / 相机运动流 / 物体运动流</td><td>$[H, W, 2]$,RAFT 估计</td></tr>
+<tr><td>$W$ / $S$ / $s$ / $d$</td><td>多视角窗口半径 / 采样视图数 / 正则窗口大小 / 空洞步长</td><td>$W{=}10$, $s{=}5$, $d{=}[0,2,4]$(3 epoch 递增)</td></tr>
+<tr><td>$\sigma_s, w$</td><td>平滑高斯核 std / 平滑窗口</td><td>$\sigma_s\in\{4,8\}$,$w=31$(源码 <code>stability_window</code>)</td></tr>
+</table>
+
+<h3>3.3 两阶段 Pipeline</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph PRE["阶段 0:预处理(每视频一次,关键路径 13 min)"]
+        A0["原始视频 + 陀螺仪日志"] --> A1["滚动快门/OIS 校正<br/>(2D 单应逐行 warp)"]
+        A1 --> A2["GLOMAP 位姿 + 稀疏点云<br/>(动态区域打掩码)"]
+        A1 --> A3["Grounded-SAM2 动态掩码<br/>(prompt: vehicle/human)"]
+        A1 --> A4["ProPainter 外推补全<br/>四边各 pad 96px"]
+        A1 -.在线.-> A5["UniDepth 度量深度<br/>+ RAFT 双向光流"]
+    end
+    subgraph TTO["阶段 1:测试时微调(3 epoch,仅更新解码器)"]
+        B1["逐帧前馈重建<br/>G_k = R(I_k) 两层 GS/像素"] --> B2["多视角光度监督<br/>渲染到邻近帧 + 动态补偿<br/>(式2~4)"]
+        B1 --> B3["空洞跨帧正则<br/>stride 1→3→5(式5~6)"]
+        B2 --> B4["总损失 L(式7)<br/>+ scale/offset 正则"]
+        B3 --> B4
+    end
+    subgraph INF["阶段 2:推理渲染"]
+        C1["高斯滤波平滑位姿<br/>P^t(式8~9, σ_s 可调)"] --> C2["GSplat(G_k, P_k^t⊗inv(P_k^s))<br/>渲染全画幅稳定帧"]
+    end
+    PRE --> TTO --> INF
+    style PRE fill:#e0f2fe,stroke:#3b82f6,color:#1e3a5f
+    style TTO fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style INF fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
+</div>
+<div class="figure"><img src="images/2506.23957/pipeline.png" loading="lazy" alt="GaVS pipeline" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 2(原文 Figure 2)</b> 方法总览。左:测试时微调 —— 预训练重建模型先出深度,深度+图像进解码器得逐像素 GS 基元;只更新解码器。外推帧提供初始重建;多视角光度损失(含动态补偿)+ 空洞窗口正则驱动微调。右:推理 —— 每个外推重建在平滑位姿下渲染出稳定全画幅帧。</div></div>
+<p>核心设计逻辑:<strong>重建是局部的(逐帧)、一致性是借网络参数共享实现的</strong>。这与全局 4D 方法(把整段视频优化成一个规范表示)形成根本分野 —— 也正是本笔记 §14 与 Shape of Motion / Deformable-3DGS 对比的主线。</p>
+</section>
+<!-- ==================== S4 模块一 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>模块一:前馈局部重建模型(Flash3D + UniDepth)</h2>
+<span class="stage-tag stage-1">重建骨干</span>
+
+<h3>4.1 网络结构</h3>
+<table>
+<tr><th>组件</th><th>输入</th><th>结构 / 算子</th><th>输出</th></tr>
+<tr><td>深度编码器</td><td>源帧 $I_k^s$ $[B,3,H,W]$</td><td><strong>UniDepth</strong>(Piccinelli et al. 2024,度量深度,ViT 骨干,微调时冻结)</td><td>深度图 $\mathcal{D}_k^s$ + 特征</td></tr>
+<tr><td>反投影</td><td>$\mathcal{D}_k^s$, $K$</td><td>逐像素反投影到 3D 点云</td><td>点云 $[B,3,H\cdot W]$</td></tr>
+<tr><td>GS 解码器(唯一被微调)</td><td>深度+图像特征</td><td>MLP 解码器,按 <code>[3,1,3,4,3,9]</code> 切分输出(<code>models/decoder/gaussian_decoder.py:51</code>)</td><td>每像素 <strong>2 层</strong> GS 基元:offset(3)、opacity(1)、scaling(3)、rotation 四元数(4)、SH dc(3)、SH rest(9)</td></tr>
+<tr><td>渲染器</td><td>$\mathcal{G}_k^s$, 目标位姿</td><td>带位姿的可微光栅化(thirdparty <code>diff-gaussian-rasterization-w-pose</code>)</td><td>渲染图 $\hat{I}$</td></tr>
+</table>
+<ul>
+<li><strong>两层高斯(<code>gaussians_per_pixel: 2</code>)</strong>:论文 §4.1 说明用两组基元分别建模遮挡前后表面,源码 <code>configs/model/gaussian.yaml</code> 确认。</li>
+<li><strong>位置参数化</strong>:基元位置 = 深度反投影点 + 预测 offset(<code>predict_offset: true</code>),并非自由位置;预训练权重来自 RealEstate10K 上的 Flash3D(<code>re10k_v2_checkpoints</code>)。</li>
+<li><strong>激活</strong>:scaling 用 $\exp$、opacity 用 sigmoid、rotation 归一化(<code>gaussian_decoder.py:45-47</code>);max SH degree = 1。</li>
+</ul>
+
+<h3>4.2 数学形式化</h3>
+<div class="equation">
+$$I_{k}^{t}=\mathrm{GSplat}\big(\mathcal{G}_{k}^{s},\,P_{k}^{t}\otimes\mathrm{inv}(P_{k}^{s})\big)\ \ \text{with}\ \ \mathcal{G}_{k}^{s}=\mathbf{R}(I_{k}^{s})$$
+<span class="label">(式 1)</span>
+</div>
+<p>即:目标稳定帧 = 源帧的局部重建在「稳定位姿相对源位姿」的小变换下渲染。因为 $P_k^t\otimes\mathrm{inv}(P_k^s)$ 是小基线变换,局部重建足以覆盖视锥 —— 这是全方法的立足点。</p>
+
+<h3>4.3 前向流程</h3>
+<ol>
+<li>源帧(已被外推补全,见模块二)过 UniDepth → 度量深度;</li>
+<li>深度反投影为点云,与图像特征一起进 MLP 解码器 → 每像素 2 层 GS 基元($G = 2HW$,320×576 训练分辨率下约 36.9 万基元/帧);</li>
+<li>全部基元在任意指定位姿下可微渲染;微调阶段渲染到邻近源帧位姿做监督,推理阶段渲染到平滑位姿;</li>
+<li>梯度只流入解码器(编码器冻结)→ 「改权重即改所有相似 patch 的重建」,这是 TTO 几分钟即可生效的机制原因。</li>
+</ol>
+
+<h3>4.4 模块内部数据流</h3>
+<div class="mermaid">
+flowchart LR
+    I["源帧 I_k^s<br/>[B,3,H,W]"] --> U["UniDepth 编码器<br/>(冻结)"]
+    U --> D["度量深度 D_k^s<br/>[B,1,H,W]"]
+    D --> BP["反投影<br/>3D 点云"]
+    U --> F["图像特征"]
+    BP --> DEC["MLP 解码器<br/>(唯一微调)"]
+    F --> DEC
+    DEC --> G1["第 1 层 GS 基元<br/>offset/opacity/scale/rot/SH"]
+    DEC --> G2["第 2 层 GS 基元<br/>(遮挡表面)"]
+    G1 --> R["可微光栅化<br/>GSplat(·, P)"]
+    G2 --> R
+    R --> O["渲染帧 I_hat"]
+    style U fill:#e0f2fe,stroke:#3b82f6,color:#1e3a5f
+    style DEC fill:#dcfce7,stroke:#16a34a,color:#14532d
+</div>
+
+<h3>4.5 监督信号</h3>
+<p>本模块无独立监督;预训练权重继承 Flash3D(RealEstate10K 上训练),微调阶段由模块三的多视角光度损失(式 2)+ 模块四的正则(式 5~6)+ 辅助正则(式 10~13)共同驱动。</p>
+</section>
+
+<!-- ==================== S5 模块二 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>模块二:场景外推(免裁剪的关键)</h2>
+<span class="stage-tag stage-2">全画幅保障</span>
+
+<h3>5.1 问题与做法</h3>
+<p>传统稳像裁剪的根源:稳定位姿相对源位姿有偏移,源帧内容覆盖不了目标视锥四角。GaVS 的对策是<strong>先把内容造出来再重建</strong>:用视频补全模型 <strong>ProPainter</strong>(Zhou et al. 2023)把每帧四边各外扩 <strong>96 px</strong>(附录 C.4;评估配置 <code>pad_border_aug: 96</code>,训练配置 64),边界掩码指示待填充区域,光流把邻帧内容传播进来;外推后的「加宽帧」再进重建模型。于是平滑位姿下的渲染总能落在重建范围内,<strong>裁剪比 CR=1.0</strong>。</p>
+
+<h3>5.2 实现参数(附录 C.4 + 源码)</h3>
+<table>
+<tr><th>参数</th><th>取值</th><th>出处</th></tr>
+<tr><td>外扩宽度</td><td>四边各 96 px(论文)/ train 配置 64、eval 配置 96</td><td>附录 C.4;<code>configs/dataset/gavs.yaml</code> vs <code>layered_gavs_eval.yaml</code></td></tr>
+<tr><td>子视频切分</td><td>长度 100 帧、重叠 20 帧</td><td>附录 C.4</td></tr>
+<tr><td>特征域传播</td><td>邻域 stride 15、参考帧 10</td><td>附录 C.4</td></tr>
+<tr><td>耗时</td><td>8 min(dance 455 帧)</td><td>附录表 4</td></tr>
+</table>
+
+<h3>5.3 机制解释</h3>
+<div class="callout tip">
+<p>为什么「先补全再重建」优于「重建后再补」?补全发生在 <strong>2D 图像域</strong>,ProPainter 的跨帧传播天然保证外推区域与相邻帧时序一致;若改为在 3D 侧外推高斯,则要为每个视频发明一套基元生成机制。代价是外推区域的真实性依赖补全模型 —— 定性结果(图 10 原文)中 GaVS 边界偶有轻微模糊,论文也把 MetaStab 的「blurry outpainting」列为主要对比优势点。</p>
+</div>
+<p class="lead" style="font-size:14px;color:var(--muted)">该模块无直接监督(预处理步骤,推理路径外);其效果通过消融验证(§13:去掉外推 → 边界重建退化、视野损失)。</p>
+</section>
+
+<!-- ==================== S6 模块三 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>模块三:多视角动态感知光度监督</h2>
+<span class="stage-tag stage-2">TTO 主损失</span>
+
+<h3>6.1 网络结构 / 数据流</h3>
+<table>
+<tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th></tr>
+<tr><td>邻帧采样</td><td>源帧索引 $k$</td><td>窗口 $[k-W, k+W]$($W=10$)内随机取 $S-1$ 帧 + 自身(<code>gavs_dataset.py:248</code> <code>window_size = 10</code>)</td><td>视图集 $\mathcal{N}_k$ 及位姿 $P_{\mathcal{N}_k}$</td></tr>
+<tr><td>跨视角渲染</td><td>$\mathcal{G}_k^s$, $P_i^s$</td><td>$\hat{I}_i^s = \mathrm{GSplat}(\mathcal{G}_k^s, P_i^s)$</td><td>邻帧位姿下的渲染图</td></tr>
+<tr><td>动态补偿</td><td>$I_i^s$, 光流, 深度, 位姿</td><td>式 3~4:物体运动流 warp 邻帧到「$t=k$ 标准时刻」</td><td>伪 GT $\tilde{I}_i^s$</td></tr>
+<tr><td>光度损失</td><td>$\hat{I}_i^s$, $\tilde{I}_i^s$</td><td>L1 + SSIM(式 2),仅有效区域</td><td>$\mathcal{L}_{RGB}$</td></tr>
+</table>
+
+<h3>6.2 数学形式化</h3>
+<div class="equation">
+$$\mathcal{L}_{RGB}=\frac{1}{|\mathcal{N}_{k}|}\sum_{i\in\mathcal{N}_{k}}\left[\|\hat{I}_{i}^{s}-I_{i}^{s}\|_{1}+\lambda_{ssim}\mathrm{SSIM}(\hat{I}_{i}^{s},I_{i}^{s})\right]$$
+<span class="label">(式 2)</span>
+</div>
+<p>其中 $\lambda_{ssim}=0.85$、L1 权重 1.0(论文未给数值,源码 <code>configs/loss/reconstruction.yaml</code>)。</p>
+<p>动态物体违反极线几何,直接光度监督会把动的东西「抹糊」。补偿机制把 2D 像素运动<strong>解耦为相机运动 + 物体运动</strong>:</p>
+<div class="equation">
+$$F^{\mathrm{obj}}_{i\rightarrow k}=F_{i\rightarrow k}-F^{\mathrm{cam}}_{i\rightarrow k}$$
+<span class="label">(式 3)</span>
+</div>
+<div class="equation">
+$$F^{\mathrm{cam}}_{k\rightarrow i}=\mathrm{Project}_{K,P_{i}^{s}}\big(\mathrm{Un{\text{-}}project}_{K,P_{k}^{s}}(\mathcal{D}_{k}^{s})\big)-\mathrm{Coordinates}_{k}$$
+<span class="label">(式 4)</span>
+</div>
+<p>其中全光流 $F_{i\to k}=\mathrm{RAFT}(I_i^s, I_k^s)$;相机运动流由「源帧深度反投影 → 相对位姿变换 → 重投影」得到(源码 <code>trainer.py:59-88</code> <code>compute_depth_warping_flow</code> 正是这一计算)。式 4 得到的是「反向」流 $F^{\mathrm{cam}}_{k\to i}$,所需的 $F^{\mathrm{cam}}_{i\to k}$ 由<strong>前向溅射(forward splatting)</strong>生成;遮挡与未溅射区域通过双向一致性检查 + 溅射权重屏蔽,只在有效区域监督。</p>
+
+<div class="figure"><img src="images/2506.23957/dyamic-compensation.png" loading="lazy" alt="dynamic compensation" style="max-width:88%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 3(原文 Figure 3)</b> 动态补偿示意。绿色点固定在运动圆柱上:$t=k$ 时位于蓝色位置,投到 $\mathrm{cam}_k$;$t=i$ 时移到红色位置。全光流减相机运动流得物体运动流 $F^{\mathrm{obj}}_{i\to k}$,把 $t=i$ 的圆柱 warp 回 $t=k$ 的「标准位形」,如同物体没动过 —— 极线监督因此仍然成立。</div></div>
+<div class="figure"><img src="images/2506.23957/compensation-demo.png" loading="lazy" alt="compensation demo" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 4(原文 Figure 4)</b> Sintel 场景误差图演示(用 GT 位姿/深度/光流计算)。第一行:源帧与邻帧直接比,误差含相机+物体运动;第二行:源帧重建渲染到邻帧位姿,静态区域对齐、动态区域仍错;第三行:物体流补偿后有效区域误差显著下降。</div></div>
+
+<h3>6.3 前向流程</h3>
+<ol>
+<li>从当前帧 $k$ 采样邻帧 $i \in \mathcal{N}_k$($W=10$ 窗口内随机);</li>
+<li>$\mathcal{G}_k^s$ 渲染到 $P_i^s$ 得 $\hat{I}_i^s$;</li>
+<li>RAFT 算 $F_{i\to k}$;深度+位姿算 $F^{\mathrm{cam}}_{k\to i}$,前向溅射得 $F^{\mathrm{cam}}_{i\to k}$;相减得 $F^{\mathrm{obj}}_{i\to k}$;</li>
+<li>用 $F^{\mathrm{obj}}_{i\to k}$ warp 邻帧 $I_i^s$ → 伪 GT;在双向一致性有效区域内计算 L1+SSIM;</li>
+<li>梯度经光栅化回传到解码器(编码器冻结);一次更新同时改善所有相似 patch —— TTO 效率的根源。</li>
+</ol>
+<div class="callout">
+<p><strong>机制解释(为什么减法可行)</strong>:刚性场景下全光流完全由相机运动+深度决定;动态物体的像素运动是两者叠加。深度来自度量估计(UniDepth),尺度对齐用 GLOMAP 稀疏点做 RANSAC 全局标定(附录 C.2,取逐帧尺度中位数 $\alpha^*=\mathrm{median}(\{\alpha_k\})$),保证相机运动流的尺度正确,减法才有意义。论文承认补偿会引入少量 warp 伪影(尺度变化/估计误差),靠多帧监督与预训练先验鲁棒吸收。</p>
+</div>
+</section>
+<!-- ==================== S7 模块四 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>模块四:空洞跨帧重建正则化</h2>
+<span class="stage-tag stage-2">时序一致性</span>
+
+<h3>7.1 思路</h3>
+<p>光度监督只隐式促一致(每个重建各自变准)。显式做法是直接要求<strong>相邻帧的 GS 基元在对应像素上相等</strong>:用双向光流建立稠密对应,对匹配上的基元属性做 L2 正则,并把窗口以「空洞(dilated)」方式逐 epoch 扩大 —— 一致性从局部向长程扩散,类似膨胀卷积扩大感受野。</p>
+
+<h3>7.2 数学形式化</h3>
+<div class="equation">
+$$\mathcal{L}_{\mathrm{pair}}(i,j)=\mathcal{M}^{i,j}\cdot\big\|\mathcal{G}_{i}^{s}-\mathrm{warp}(\mathcal{G}_{j}^{s},F_{j\rightarrow i})\big\|_{2}$$
+<span class="label">(式 5)</span>
+</div>
+<div class="equation">
+$$\mathcal{L}_{\mathrm{consistent}}=\frac{1}{s}\sum_{j=-\lfloor s/2\rfloor}^{\lfloor s/2\rfloor}\mathcal{L}_{\mathrm{pair}}\big(i,\ i+j\cdot(d+1)\big)$$
+<span class="label">(式 6)</span>
+</div>
+<p>$\mathcal{M}^{i,j}$ 为双向一致性有效掩码;$s=5$,3 个 epoch 分别取 $d=[0,2,4]$,即配对帧间距 $1\to 3\to 5$,覆盖范围 $5\to 15\to 25$ 帧(原文 Fig. 5 以 $s{=}3$ 示意 3→9→27 的累计扩散;该图为矢量示意图无位图,此处用 Mermaid 重述)。</p>
+
+<div class="mermaid">
+flowchart TD
+    subgraph E1["Epoch 1: stride=1(论文 d=0)"]
+        direction LR
+        a1["f-2"] --- a2["f-1"] --- a3["f(中间)"] --- a4["f+1"] --- a5["f+2"]
+    end
+    subgraph E2["Epoch 2: stride=3(论文 d=2)"]
+        direction LR
+        b1["f-6"] --- b2["f-3"] --- b3["f(中间)"] --- b4["f+3"] --- b5["f+6"]
+    end
+    subgraph E3["Epoch 3: stride=5(论文 d=4)"]
+        direction LR
+        c1["f-10"] --- c2["f-5"] --- c3["f(中间)"] --- c4["f+5"] --- c5["f+10"]
+    end
+    E1 --> E2 --> E3
+    style E1 fill:#e0f2fe,stroke:#3b82f6,color:#1e3a5f
+    style E2 fill:#fef9c3,stroke:#ca8a04,color:#713f12
+    style E3 fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
+</div>
+
+<h3>7.3 源码实现(与论文的两处差异)</h3>
+<ul>
+<li><strong>采样器即空洞调度</strong>:<code>datasets/util.py:100</code> <code>WindowSampler(stride_start=1, stride_delta=2, batch_size=5)</code>,每个 epoch 末 <code>improve_window_size()</code>(<code>train.py:157</code>)→ stride 1→3→5,对应论文 $d{+}1$。batch 内 5 帧即论文窗口 $s=5$。</li>
+<li><strong>实现是「全员向中间帧对齐」而非论文的两两配对</strong>:<code>trainer.py:125-144</code> 把 batch 内所有帧的基元 warp 到<strong>中间帧</strong>(中间帧基元 <code>detach</code>),分别对 opacity / scaling / rotation / SH-dc 四个属性做 MSE(子项权重各 1.0,外层 <code>window.weight=0.01</code>)。式 5 的 $\mathcal{L}_{pair}(i,j)$ 在代码里实为 $\mathcal{L}_{pair}(i, \mathrm{mid})$。</li>
+<li><strong>对应关系在线算</strong>:训练循环内对 batch 帧实时跑 RAFT(<code>scale=2, raft_iters=10</code>,<code>trainer.py:108-113</code>),而非读预处理光流 —— 预处理 RAFT 用 20 迭代(附录 C.5),训练在线用 10 迭代。</li>
+</ul>
+
+<h3>7.4 监督信号</h3>
+<p>本模块即监督本身(自监督正则);消融(§13)显示去掉它 → 无纹理区域出现基元尺度/朝向失控的伪影。</p>
+</section>
+
+<!-- ==================== S8 模块五 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>模块五:优化与运动平滑</h2>
+<span class="stage-tag stage-3">稳定化</span>
+
+<h3>8.1 总损失</h3>
+<div class="equation">
+$$\mathcal{L}=\mathcal{L}_{\mathrm{RGB}}+\lambda_{\mathrm{consistent}}\mathcal{L}_{\mathrm{consistent}}+\lambda_{\mathrm{scale}}\mathcal{L}_{\mathrm{scale}}+\lambda_{\mathrm{offset}}\mathcal{L}_{\mathrm{offset}}$$
+<span class="label">(式 7)</span>
+</div>
+<p>两个辅助正则(附录 A):$\mathcal{L}_{scale}$ 惩罚过大的高斯基元(阈值自适应 $\tau_{large}=70w/\mathcal{D}$,式 10~11);$\mathcal{L}_{offset}$ 约束渲染深度贴近先验深度、防止基元漂移(阈值 $\tau_{depth}=0.2\mathcal{D}$,式 12~13)。论文注明 $\mathcal{L}_{scale}$ 多数情况可选、$\mathcal{L}_{offset}$ <strong>只用于前景物体</strong>效果更好(源码 <code>only_fg_regularization: True</code> 印证)—— 前景处极线监督更弱,需要额外锚定。</p>
+
+<h3>8.2 运动平滑</h3>
+<div class="equation">
+$$P_{k}^{t}=\sum_{i=t-w/2}^{t+w/2}g^{*}(i,k)\,P_{i}^{s}\qquad g(i,k)=e^{-\frac{1}{2}\left(\frac{|i-k|}{\sigma_{s}}\right)^{2}}$$
+<span class="label">(式 8~9)</span>
+</div>
+<p>对平移与旋转分量分别做高斯加权平均($g^*$ 为归一化权重),沿用 Deep3D(Lee et al. 2021)的做法。源码 <code>datasets/smooth.py:75</code> <code>smooth_trajectory()</code>:窗口 $w=31$(<code>stability_window: 31</code>),旋转在 <strong>Euler 角空间</strong>加权平均(<code>scipy.signal.windows.gaussian(window, stability)</code>,std 即 $\sigma_s\in\{4,8\}$)。$\sigma_s$ 是暴露给用户的「稳定强度」旋钮:越大越稳、越偏离原始运动意图。</p>
+<div class="callout warn">
+<p><strong>注意(开环设计)</strong>:平滑与重建解耦 —— 平滑轨迹不与 FOV/内容覆盖联合优化。论文 §5 承认:极强运动下重建可能覆盖不了整帧。这是「平滑后渲染」范式的结构性边界,与 2D 方法「带约束的轨迹优化」形成对照。</p>
+</div>
+</section>
+
+<!-- ==================== S9 损失总表 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>损失函数总表</h2>
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(源码真值)</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{RGB}$(L1)</td><td>式 2,$\|\hat{I}-I\|_1$</td><td>1.0(<code>configs/loss/reconstruction.yaml</code>)</td><td>多视角光度主监督,保锐利</td></tr>
+<tr><td>$\mathcal{L}_{RGB}$(SSIM)</td><td>式 2,$\mathrm{SSIM}$</td><td>0.85(同上;论文未给数值)</td><td>结构相似性</td></tr>
+<tr><td>$\mathcal{L}_{consistent}$</td><td>式 5~6,四属性 MSE</td><td>0.01(<code>regularization.yaml</code> window;opacity/scaling/rotation/SH-dc 子项各 ×1.0)</td><td>跨帧基元一致性(空洞窗口)</td></tr>
+<tr><td>$\mathcal{L}_{scale}$</td><td>式 10~11,超阈值大基元惩罚</td><td>0.05(<code>gauss_scale.weight</code>)</td><td>抑制巨型 floaters;论文称多数场景可选</td></tr>
+<tr><td>$\mathcal{L}_{offset}$</td><td>式 12~13,渲染深度贴合先验</td><td>0.01(<code>gauss_offset.weight</code>;阈值比 <code>ratio: 0.2</code> 对应 $\tau_{depth}=0.2\mathcal{D}$)</td><td>防基元漂移;仅前景生效(<code>only_fg_regularization: True</code>)</td></tr>
+<tr><td>depth_reg</td><td>深度正则(配置存在,权重 0.01)</td><td>0.01(<code>depth_reg.weight</code>)</td><td><span class="uncertain">⚠️【待核实】</span> 论文正文未单列此项,疑似与 $\mathcal{L}_{offset}$ 同源或默认未生效,引用时注意</td></tr>
+</table>
+</section>
+
+<!-- ==================== S10 流程图 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>逻辑流程图</h2>
+<h3>10.1 测试时微调(训练)流程</h3>
+<div class="mermaid">
+flowchart TD
+    S["加载 Flash3D 预训练权重<br/>(re10k_v2_checkpoints,冻结编码器)"] --> E["epoch loop ×3<br/>lr=4e-4, CosineAnnealingLR"]
+    E --> B["WindowSampler 取 batch=5 连续帧<br/>(stride 本 epoch 固定)"]
+    B --> F["逐帧前馈重建 G=R(I)"]
+    F --> MV["多视角渲染 + 动态补偿<br/>L_RGB(式2~4)"]
+    F --> RG["在线 RAFT 建对应<br/>基元 warp 到中间帧<br/>L_consistent(式5~6)"]
+    F --> AX["L_scale + L_offset(式10~13)"]
+    MV --> T["总损失(式7)反向<br/>仅更新 MLP 解码器"]
+    RG --> T
+    AX --> T
+    T --> N{"epoch 结束?"}
+    N -- "否,stride += 2" --> E
+    N -- "是" --> O["输出微调后模型"]
+    style S fill:#e0f2fe,stroke:#3b82f6,color:#1e3a5f
+    style T fill:#dcfce7,stroke:#16a34a,color:#14532d
+</div>
+<h3>10.2 推理流程</h3>
+<div class="mermaid">
+flowchart LR
+    A["微调后模型"] --> B["逐帧重建(外推帧)"]
+    P["源位姿序列 P^s"] --> SM["高斯滤波 smooth_trajectory<br/>w=31, σ_s=4/8<br/>(Euler 空间加权)"]
+    SM --> PT["平滑位姿 P^t"]
+    B --> REN["GSplat(G_k, P_k^t⊗inv(P_k^s))"]
+    PT --> REN
+    REN --> OUT["全画幅稳定帧序列"]
+    style SM fill:#f3e8ff,stroke:#9333ea,color:#4c1d95
+</div>
+<p class="lead" style="font-size:14px;color:var(--muted)">评注:微调与推理完全解耦 —— 同一微调结果可用不同 $\sigma_s$ 反复渲染不同稳定强度的版本(README 的 eval-only 命令正是这样用的),这是相对「一次性优化轨迹」的 2D 方法的工程优势。</p>
+</section>
+<!-- ==================== S11 工程实现细节 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节(源码级)</h2>
+<p class="lead">本章节数值均直接读自 <code>github.com/sinoyou/GaVS</code>(2026-10-10 clone,默认分支)。论文未给而源码给出的数值(如 SSIM 权重)以源码为准。</p>
+
+<h3>11.1 微调超参(configs/experiment/layered_gavs_overfit.yaml)</h3>
+<table>
+<tr><th>项</th><th>取值</th><th>出处</th></tr>
+<tr><td>优化器 / 学习率</td><td>Adam,lr = 4e-4,CosineAnnealingLR(T_max = 总步数)</td><td><code>layered_gavs_overfit.yaml</code>;<code>train.py:142</code></td></tr>
+<tr><td>epoch / batch</td><td>3 epoch;batch_size = 5(= 正则窗口 s)</td><td><code>layered_gavs_overfit.yaml</code>(num_epochs: 3)</td></tr>
+<tr><td>可训练参数</td><td>仅 GS 解码器(UniDepth 编码器冻结)</td><td>论文 Fig. 2 + <code>train.load_weights_folder</code></td></tr>
+<tr><td>训练分辨率</td><td>320 × 576(pad 64)</td><td><code>configs/dataset/gavs.yaml</code></td></tr>
+<tr><td>评估分辨率</td><td>480 × 864(pad 96)</td><td><code>configs/experiment/layered_gavs_eval.yaml</code></td></tr>
+<tr><td>多视角窗口</td><td>W = 10(<code>window_size = 10</code>)</td><td><code>datasets/gavs_dataset.py:248</code></td></tr>
+<tr><td>空洞调度</td><td>stride_start=1, delta=2 → 1/3/5(论文 d=0/2/4)</td><td><code>datasets/util.py:10,100</code>;<code>train.py:157</code></td></tr>
+<tr><td>每像素高斯层数</td><td>2(遮挡建模)</td><td><code>configs/model/gaussian.yaml</code> gaussians_per_pixel</td></tr>
+<tr><td>深度截断</td><td>max_depth = 20(实验配置覆盖默认 100)</td><td><code>layered_gavs_overfit.yaml</code></td></tr>
+<tr><td>平滑</td><td>窗口 31,σ_s ∈ {4, 8},Euler 空间高斯加权</td><td><code>gavs.yaml</code> stability_window;<code>datasets/smooth.py:75</code></td></tr>
+<tr><td>环境</td><td>Python 3.10 + CUDA 12.6,自编译 <code>diff-gaussian-rasterization-w-pose</code></td><td><code>README.md:28,48</code></td></tr>
+</table>
+
+<h3>11.2 资源账(附录 C.6 表 4,dance 场景 455 帧,4 CPU + 1× RTX 5000 Ada)</h3>
+<table>
+<tr><th>预处理任务</th><th>耗时</th><th>备注</th></tr>
+<tr><td>滚动快门 + OIS 校正</td><td>1 min</td><td>需陀螺仪日志(附录 C.1 算法 1)</td></tr>
+<tr><td>ProPainter 视频补全</td><td>8 min</td><td>可与位姿估计并行</td></tr>
+<tr><td>Grounded-SAM2 动态掩码</td><td>&lt; 1 min</td><td>prompt: vehicle / human 等常见动态类</td></tr>
+<tr><td>GLOMAP 位姿 + 稀疏重建</td><td>11 min</td><td><strong>关键路径</strong>之一</td></tr>
+<tr><td>UniDepth 稠密深度</td><td>8 min</td><td>可并行</td></tr>
+<tr><td>RAFT 光流(20 邻帧双向,20 迭代)</td><td>10 min</td><td>可并行</td></tr>
+<tr><td><strong>关键路径合计</strong></td><td class="best"><strong>≈ 13 min</strong></td><td>RS → 动态掩码 → 位姿估计</td></tr>
+</table>
+<p>微调时长论文未给精确值,仅描述「few minutes」(§1 脚注:神经参数化使单次梯度更新同时改进所有相似 patch);<span class="uncertain">⚠️【待核实】</span> 由 §4.5「较 SoM 优化提速 20×(SoM 为 1h)」反推约 3 min,与附录 C.6「提速 10×」反推的 6 min 不一致 —— 两处口径冲突,详见 §12.4 的原文矛盾记录。渲染本身为 3DGS 光栅化,接近实时(论文未报 FPS)。</p>
+
+<h3>11.3 落地坑(源码 README + 论文 §5)</h3>
+<ul>
+<li><strong>强依赖位姿质量</strong>:GLOMAP 在欠曝/低画质/自拍场景会挂;纯旋转运动下 SfM 缺视差,方法对位姿误差敏感(论文 §5 明示)。</li>
+<li><strong>依赖陀螺仪日志做 RS 校正</strong>(附录 C.1):DeepFused 数据自带;自家数据若无 gyro,这一步要换视觉 RS 校正方案 —— 预处理清单里的隐性门槛。</li>
+<li><strong>动态类先验写死</strong>:Grounded-SAM2 的 prompt 是「vehicle、human 等常见动态类」(附录 C.3),超出词表的动态物体(如被风吹动的招牌)会漏掩码。</li>
+<li><strong>README 笔误</strong>:两处把 GLOMAP 的链接写成 ProPainter 仓库(<code>README.md:67,168</code>),照抄链接会装错工具。</li>
+<li><strong>分辨率扩展性差</strong>:逐像素基元 G=2HW,论文 §5 承认高分辨率下显存压力大,建议分层重建/剪枝方向。</li>
+<li><strong>评测协议自建</strong>:GC-S/GC-D 是本论文提出的指标(GLOMAP 重投影误差 / 逐视频 3DGS 重建 PSNR),横向引用别家论文数字时口径不可比,需注意。</li>
+</ul>
+</section>
+
+<!-- ==================== S12 实验 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+
+<h3>12.1 设置</h3>
+<ul>
+<li><strong>数据</strong>:改造自 DeepFused(Shi et al. 2022)陀螺仪稳像数据集,15 个场景 = Mild(静态轻晃)×5 + Intense(静态剧烈晃动)×5 + Dynamics(含动态物体)×5;附 GLOMAP 位姿、深度、光流、动态掩码等 3D 标注。</li>
+<li><strong>指标</strong>:CR(裁剪比 ↑)/ D(畸变 ↑)/ S(稳定度 ↑)/ <strong>GC-S</strong>(稀疏几何一致性:GLOMAP 重投影误差 ↓)/ <strong>GC-D</strong>(稠密几何一致性:逐视频 3DGS 重建 PSNR ↑,动态区域掩码,每 8 帧取测试帧)。</li>
+<li><strong>硬件</strong>:单卡 RTX 5000(附录注明 RTX 5000 Ada)。</li>
+</ul>
+
+<h3>12.2 对全画幅基线(论文表 1,Mean 列)</h3>
+<table>
+<tr><th>方法</th><th>类型</th><th>D ↑</th><th>S ↑</th><th>GC-S ↓</th><th>GC-D ↑</th></tr>
+<tr><td>DIFRINT (CVPR'20)</td><td>2D 插值</td><td class="fail">0.52(泛化失败,致命伪影)</td><td>0.80</td><td>1.78</td><td>21.53</td></tr>
+<tr><td>FuSta (CVPR'21)</td><td>2D warp+融合</td><td>0.97</td><td>0.91</td><td>0.90</td><td>27.21</td></tr>
+<tr><td>MetaStab (ECCV'24)</td><td>2D 元学习</td><td><strong>0.99</strong></td><td>0.87</td><td>0.55</td><td>29.79</td></tr>
+<tr class="best"><td>GaVS (σ_s=4)</td><td>3D</td><td>0.98</td><td>0.90</td><td>0.53</td><td>31.27</td></tr>
+<tr class="best"><td>GaVS (σ_s=8)</td><td>3D</td><td>0.97</td><td><strong>0.92</strong></td><td>0.54</td><td>30.99</td></tr>
+</table>
+<p style="font-size:13px;color:var(--muted)">分场景组(Mild/Intense/Dynamics)的 S/GC-S/GC-D 全表见论文表 1;GC-S、GC-D 各组最优均为 GaVS(σ_s=4)。加粗为全表最优。</p>
+
+<h3>12.3 对裁剪基线(论文表 2)与陀螺仪基线(附录表 3)</h3>
+<table>
+<tr><th>方法</th><th>类型</th><th>CR ↑</th><th>D ↑</th><th>S ↑</th><th>GC-S ↓</th><th>GC-D ↑</th></tr>
+<tr><td>L1 (SIGGRAPH'11)</td><td>2D</td><td>0.65</td><td>0.83</td><td>0.91</td><td>1.18</td><td>27.09</td></tr>
+<tr><td>Yu &amp; Ramamoorthi (CVPR'20)</td><td>2D</td><td>0.88</td><td>0.95</td><td>0.91</td><td>0.93</td><td>29.67</td></tr>
+<tr><td>Deep3D (ICCV'21)</td><td>2.5D</td><td>0.91</td><td>0.89</td><td>0.90</td><td>0.72</td><td>22.78</td></tr>
+<tr class="best"><td>GaVS (σ_s=4)</td><td>3D</td><td><strong>1.0</strong></td><td><strong>0.98</strong></td><td>0.90</td><td><strong>0.54</strong></td><td><strong>31.27</strong></tr>
+</table>
+<table>
+<tr><th>方法(仅原测试集,公平对比)</th><th>CR ↑</th><th>D ↑</th><th>S ↑</th><th>GC-S ↓</th><th>GC-D ↑</th></tr>
+<tr><td>DeepFused(陀螺仪,传感器辅助)</td><td>0.83</td><td>0.94</td><td>0.92</td><td>0.47</td><td>30.17</td></tr>
+<tr class="best"><td>GaVS (σ_s=4,无传感器)</td><td><strong>1.0</strong></td><td><strong>0.97</strong></td><td>0.92</td><td>0.48</td><td><strong>31.04</strong></td></tr>
+</table>
+<p>解读:GaVS 对「带额外硬件(陀螺仪)」的 DeepFused 稳定度持平(0.92),但免裁剪(CR 1.0 vs 0.83)、畸变更低。用户研究:28 名被试 × 15 视频,<strong>各场景组偏好率均 >60%</strong>(原文 Fig. 6 为矢量柱状图无位图;问卷示例见图 5)。</p>
+<div class="figure"><img src="images/2506.23957/figures_questionaire-example.png" loading="lazy" alt="user study questionnaire" style="max-width:70%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 5(原文 Figure 11)</b> 用户学问卷示例:同屏并排播放不稳定原视频与四种方法的稳定结果(顺序随机),被试单选最优。</div></div>
+
+<div class="figure"><img src="images/2506.23957/qualitative-full-frame-new.png" loading="lazy" alt="qualitative full frame" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 6(原文 Figure 10)</b> 对全画幅基线的定性对比。橙框 = MetaStab 边界模糊外推;青框 = FuSta 随时间累积的畸变/剪切(temporal jumping)。GaVS 渲染锐利、边界外推质量高。</div></div>
+<div class="figure"><img src="images/2506.23957/qualitative-crop-new.png" loading="lazy" alt="qualitative cropping" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 7(原文 Figure 9)</b> 对裁剪基线。末列不稳定帧上标出 L1(橙)与 Deep3D(蓝)的裁剪窗口;裁剪基线为大运动保稳而重度裁剪且畸变(青框),GaVS 全画幅且畸变更少。</div></div>
+
+<h3>12.4 对全局 4D 重建(§4.5,与 Shape of Motion 的直接对比)</h3>
+<div class="figure"><img src="images/2506.23957/global_cmp.png" loading="lazy" alt="vs global 4D" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 8(原文 Figure 8)</b> 与全局 4D 重建方法 Shape of Motion 在 dance(455 帧)上的对比:GaVS 在预处理与优化两个阶段大幅领先;SoM 因 2D 全局跟踪差、3D 位姿不准而无法重建锐利内容。</div></div>
+<div class="callout warn">
+<h4>⚠️ 原文两处加速比口径互相矛盾(本笔记复核发现)</h4>
+<table>
+<tr><th>出处</th><th>论文表述</th><th>按原始数字复核</th><th>结论</th></tr>
+<tr><td>正文 §4.5</td><td>预处理提速 <strong>12×</strong>、优化提速 <strong>20×</strong></td><td>若 SoM 预处理 >10h、GaVS 13min → 约 46×;优化 1h/20× → GaVS 约 3min</td><td rowspan="2"><span class="uncertain">⚠️【待核实】</span> 附录的 46× 与原始数字自洽(>10h / 13min ≈ 46×);正文 12× 无任何口径能推出,疑似 v2 修订时改了数字但未同步附录;优化侧 20× 与 10× 差一倍(GaVS 微调取 3min 或 6min 均可各自自洽),引用时建议写「约 10~20×(正文/附录口径不一)」</td></tr>
+<tr><td>附录 C.6</td><td>预处理提速 <strong>46×</strong>、优化提速 <strong>10×</strong></td><td>>10h / 13min ≈ 46× ✓;优化 1h/10× → GaVS 约 6min</td></tr>
+</table>
+</div>
+</section>
+
+<!-- ==================== S13 消融 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+<p>论文消融为<strong>纯定性</strong>(§4.6 脚注:稳像指标定义在稀疏特征上,无法反映稠密图像退化),在 dance(Dynamics)、fountain(Dynamics)、roadside(Intense)三个场景上逐组件关闭:</p>
+<table>
+<tr><th>配置</th><th>现象(论文描述)</th><th>机制解释</th></tr>
+<tr><td>w/o 测试时微调</td><td>泛化失败、细节丢失、模糊伪影</td><td>RealEstate10K 预训练与目标视频存在域差;TTO 是弥合域差的核心</td></tr>
+<tr><td>w/o 动态补偿</td><td>重建退化,人脸等动态区域纹理模糊</td><td>动态物体违反极线几何,未补偿的多视角监督把运动「平均掉」</td></tr>
+<tr><td>w/o 空洞正则</td><td>无纹理区域出现基元尺度/朝向失控伪影</td><td>缺显式跨帧约束,逐帧重建自由度太高</td></tr>
+<tr><td>w/o 场景外推</td><td>边界重建退化、视野缩小</td><td>稳定位姿下目标视锥超出源帧内容</td></tr>
+</table>
+<div class="figure"><img src="images/2506.23957/ablation-qualitative.png" loading="lazy" alt="ablation" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 9(原文 Figure 7)</b> 消融定性结果,自上而下依次关闭:测试时微调 / 动态补偿 / 空洞正则 / 场景外推,每个组件对视觉质量都有显著影响。</div></div>
+<div class="callout warn">
+<p><strong>评估缺口</strong>:消融没有量化表,也没有「微调 epoch 数」「窗口 W/s 大小」「σ_s 扫描」的敏感性分析。复现时这些旋钮的鲁棒性需要自行验证(README 给了四个消融开关命令,见 <code>README.md:121-164</code>)。</p>
+</div>
+</section>
+<!-- ==================== S14 同类对比(核心章节) ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析:vs Shape of Motion / Deformable-3DGS</h2>
+<p class="lead">这是本笔记的核心章节。GaVS 与 <strong>Shape of Motion</strong>(SoM, SIGGRAPH 2024)、<strong>Deformable-3DGS</strong>(D-3DGS, SIGGRAPH Asia 2023;库内笔记 <a href="3D-20230922-Deformable-3DGS.html">3D-20230922-Deformable-3DGS</a>)的关系是「<strong>同一表示(3DGS)、相反的组织方式</strong>」:后两者把整段视频<strong>全局优化</strong>成一个 4D 表示;GaVS 则断言稳像任务根本不需要全局表示,逐帧<strong>前馈局部重建 + 轻量测试时微调</strong>就够。论文 §4.5 只与 SoM 做了直接对比(D-3DGS 全文未被引用);与 D-3DGS 的对比为本笔记基于两边原文的机制性推断,相应处已标注。</p>
+
+<h3>14.1 三方法机制对照</h3>
+<table>
+<tr><th>维度</th><th>GaVS(本文)</th><th>Shape of Motion</th><th>Deformable-3DGS</th></tr>
+<tr><td>任务目标</td><td>视频稳像(小基线重渲染)</td><td>单目动态场景 4D 重建 + 3D 跟踪 + NVS</td><td>动态场景 NVS(合成/受控真实数据)</td></tr>
+<tr><td>场景组织</td><td><strong>逐帧局部</strong>重建,$T$ 组独立 GS</td><td><strong>全局</strong>:静态 GS + 动态 GS,运动用 <strong>SE(3) 运动基低秩组合</strong>表示</td><td><strong>全局</strong>:规范空间(canonical)GS + <strong>变形场 MLP</strong>(8×256)映射到各时刻</td></tr>
+<tr><td>动态建模</td><td><strong>不显式建模</strong> —— 每帧重建成物体当时的位置,动态由逐帧独立性隐式吸收</td><td>运动基线性组合,软解耦为若干近似刚体组</td><td>全局 MLP $(x,t)\to(\Delta x,\Delta q)$(旋转+平移)</td></tr>
+<tr><td>优化方式</td><td>预训练 + 测试时微调 3 epoch(仅解码器),<strong>几分钟</strong></td><td>逐视频全局优化,300 帧约 <strong>2h / A100</strong></td><td>逐场景优化(canonical + 变形场联合),退火平滑训练</td></tr>
+<tr><td>外部依赖</td><td>GLOMAP 位姿、UniDepth 深度、RAFT 光流、SAM2 掩码、ProPainter 补全、<strong>陀螺仪(RS 校正)</strong></td><td>单目深度 + <strong>长程 2D tracks(TAPIR/CoTracker 类)</strong>,预处理 >10h(GaVS 附录口径)</td><td>COLMAP 位姿(D-NeRF 数据直接给定位姿)</td></tr>
+<tr><td>新视角能力</td><td>仅小基线(稳像位姿扰动范围)</td><td>大基线 NVS + 长程 3D/2D 跟踪</td><td>时间维自由插值,NVS 限于训练视角分布</td></tr>
+<tr><td>渲染速度</td><td>3DGS 光栅化,近实时(论文未报 FPS)</td><td>约 140 FPS(原文)</td><td>实时(原文宣称)</td></tr>
+<tr><td>开源</td><td>✅ 代码+数据+权重(sinoyou/GaVS)</td><td>✅(shape-of-motion)</td><td>✅(ingra14m/Deformable-3D-Gaussians)</td></tr>
+</table>
+
+<h3>14.2 论文给出的直接证据(vs SoM,dance 455 帧)</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="num-big">13 min vs &gt;10 h</div>
+    <p><strong>预处理</strong>:GaVS 关键路径(RS 校正 → 动态掩码 → GLOMAP)13 min;SoM 需要长程 2D 跟踪等预处理 >10h。附录口径提速 46×,正文口径 12×(矛盾见 §12.4)。</p>
+  </div>
+  <div class="card">
+    <div class="num-big">几分钟 vs 1 h</div>
+    <p><strong>优化</strong>:GaVS 测试时微调 3 epoch 几分钟;SoM 全局优化约 1h。附录口径提速 10×、正文口径 20×。</p>
+  </div>
+</div>
+<ul>
+<li><strong>质量侧</strong>(原文 Fig. 8,图 8):SoM 在舞蹈场景「无法重建锐利内容」,根因是 <strong>2D 全局跟踪差 + 3D 位姿不准</strong>;全局 4D 方法对逐像素跟踪精度高度敏感,复杂动态(人体舞蹈)下容易整体崩坏。</li>
+<li><strong>论文自己的公允评价</strong>(§4.5 末段):全局方法的变形场在大基线渲染上有优势,但单目条件下学习变形场「低效且不稳定」;稳像的小基线场景里,免变形的前馈局部重建「更高效、更鲁棒」。</li>
+</ul>
+
+<h3>14.3 改进的本质:三方法各自回答「动态从哪来」</h3>
+<div class="callout key">
+<p><strong>D-3DGS</strong>:动态 = 一个可学习的<strong>连续变形函数</strong>(全局 MLP),把所有时刻压进同一规范空间。代价:复杂铰接运动下单一 MLP 欠拟合(库内 D-3DGS 笔记 §局限亦有记录);好处:时间维连续,可插值。</p>
+<p><strong>SoM</strong>:动态 = <strong>低秩运动基</strong>(场景运动是少量 SE(3) 基的逐点线性组合),靠长程 2D tracks 提供监督。代价:tracks 质量即上限,预处理昂贵;好处:直接产出长程 3D 轨迹这一额外资产。</p>
+<p><strong>GaVS</strong>:动态 = <strong>不存在</strong> —— 每帧独立重建,时间维被「逐帧快照 + 跨帧一致性正则」取代。代价:没有时间维连续模型,不能插值、不能大基线 NVS;好处:动态复杂度不再进入优化难题,舞蹈、车辆、流体一并对付(论文 §1:「unifies the reconstruction of static and dynamic scene parts」)。</p>
+</div>
+<p><strong>结论</strong>:GaVS 的「改进」不是重建质量的全面超越,而是<strong>任务重定义带来的成本-鲁棒性革命</strong> —— 当目标只是「在邻近位姿渲染一帧稳定画面」时,全局 4D 表示是过度构建(over-engineering),它的两大难点(变形场收敛、长程跟踪质量)恰恰在复杂动态场景最致命。GaVS 用「放弃全局一致性、放弃时间维模型」换来 1~2 个数量级的速度提升和对复杂动态的免疫。<span class="uncertain">⚠️【推测】</span> 反过来,在需要大基线 NVS、3D 跟踪输出或时间插值的任务上,GaVS 的逐帧局部重建不具备替代 SoM/D-3DGS 的能力 —— 三者是「同表示、不同任务切片」的关系。</p>
+
+<h3>14.4 固定维度横向对比表(含稳像基线)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td><strong>GaVS</strong></td><td>2025</td><td>单目视频+GLOMAP 位姿(+gyro 做 RS 校正)</td><td>逐帧局部 3DGS(前馈)</td><td>多视角光度(动态补偿)+ 跨帧基元正则</td><td>骨干预训练于 RealEstate10K</td><td>TTO 3 epoch,几分钟/视频</td><td>光栅化近实时</td><td>单卡 RTX 5000 Ada;高分辨率扩展性差(论文 §5)</td><td>GC-D 31.27 / GC-S 0.53 / CR 1.0(表 1~2)</td><td>✅</td></tr>
+<tr><td><strong>Shape of Motion</strong></td><td>2024</td><td>单目视频 + 单目深度 + 长程 2D tracks</td><td>全局静态 GS + 动态 GS(SE(3) 运动基)</td><td>tracks 重投影 + 深度先验等</td><td>无预训练,逐视频优化</td><td>约 2h / 300 帧 / A100</td><td>约 140 FPS</td><td>—(原文未列)</td><td>复杂动态下渲染崩坏(GaVS Fig. 8)</td><td>✅</td></tr>
+<tr><td><strong>Deformable-3DGS</strong></td><td>2023</td><td>已知位姿(COLMAP/GT)的动态多帧</td><td>规范空间 GS + 变形场 MLP</td><td>逐时刻光度(退火平滑)</td><td>无预训练,逐场景优化</td><td>逐场景数十分钟级(见库内笔记)</td><td>实时渲染</td><td>—(原文未列)</td><td>D-NeRF 合成集 PSNR 较隐式基线 +3~5 dB(库内笔记)</td><td>✅</td></tr>
+<tr><td>FuSta</td><td>2021</td><td>单目视频</td><td>2D warp + 多帧融合(无 3D)</td><td>—(预训练模型)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>S 0.91 / GC-S 0.90(时序剪切伪影)</td><td>✅</td></tr>
+<tr><td>MetaStab</td><td>2024</td><td>单目视频</td><td>2D 插值(元学习)</td><td>—(预训练模型)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>D 0.99 但剧烈动态下失稳(S 0.87)</td><td>✅</td></tr>
+<tr><td>Deep3D</td><td>2021</td><td>单目视频(+深度线索)</td><td>2.5D(深度辅助 warp)</td><td>—(预训练模型)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>CR 0.91 仍有裁剪,GC-D 22.78 垫底</td><td>✅</td></tr>
+</table>
+<p style="font-size:13px;color:var(--muted)">「—」= 原文未披露,不填估计值。SoM 训练时长为原文「300 帧 960×720 约 2h / A100」;GaVS 微调时长为论文定性描述「few minutes」(精确值两口径矛盾,见 §12.4)。</p>
+
+<h3>14.5 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>2D 轨迹/warp 稳像</td><td>L1 → Yu → FuSta / DIFRINT / MetaStab</td><td>相机运动可用 2D 变换/流参数化</td><td>无 3D → 视差畸变;逐帧变换 → 裁剪;泛化差</td></tr>
+<tr><td>2.5D / 传感器辅助稳像</td><td>Deep3D、DeepFused(gyro)</td><td>深度线索或 IMU 可近似 3D</td><td>静态场景假设;依赖额外硬件;仍有裁剪</td></tr>
+<tr><td>全局 4D 重建(规范空间/运动基)</td><td>D-3DGS → SoM(及 LocalRF/Easi3R 等)</td><td>动态 = 变形场或低秩运动基</td><td>优化昂贵;依赖 tracks/位姿质量;复杂动态下收敛难</td></tr>
+<tr class="best"><td>前馈局部重建 + 测试时一致化(本文)</td><td><strong>GaVS</strong>(骨干 Flash3D;谱系见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a>)</td><td>稳像是小基线问题;动态无需显式模型;一致性可由网络参数共享获得</td><td>依赖外部位姿/深度;开环平滑;只服务小基线渲染</td></tr>
+</table>
+<p>库内交叉:与 <a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS 笔记</a> 的「规范空间 + 变形场」路线对照阅读;<a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a> 给出全局动态重建路线全景;<a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建综述</a> 是 GaVS 骨干(Flash3D 一支)的技术背景。</p>
+</section>
+<!-- ==================== S15 落地适配 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性</h2>
+
+<h3>15.1 能否进我们的 pipeline(vggt_human 视角)</h3>
+<div class="grid grid-2">
+  <div class="card">
+    <h4>可直接借用的资产</h4>
+    <ul>
+      <li><strong>「前馈重建 + 测试时微调」的域差弥合范式</strong>:任何预训练前馈重建模型(VGGT/Flash3D 系)落地到具体视频时,TTO 三件套(多视角光度 + 动态补偿 + 空洞正则)是即插即用的适配器,与人体场景天然兼容 —— 人体正是「动态物体违反极线几何」的重灾区,式 3~4 的相机/物体流解耦直接可用。</li>
+      <li><strong>GC-S / GC-D 评测协议</strong>:用 GLOMAP 重投影误差 + 逐视频 3DGS 重建 PSNR 度量「时序几何一致性」,可平移到人体重建的时序抖动评估。</li>
+      <li><strong>工程链路</strong>:GLOMAP(动态区域打掩码)→ RANSAC 深度尺度对齐(附录 C.2 算法 2)→ 平滑轨迹渲染,代码完整可跑。</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>不适配/需改造的部分</h4>
+    <ul>
+      <li>目标是稳像(小基线),<strong>不产出全局一致的 4D 人体模型</strong>;若目标是人体 avatar 或自由视角,仍需 SoM/D-3DGS 类全局表示或显式人体先验(MHR/SMPL)。</li>
+      <li>动态分割靠 Grounded-SAM2 的<strong>固定词表 prompt</strong>(vehicle/human),与我们 SAM3 person mask 的 ID 映射链路是两套体系,合流时需要统一掩码来源。</li>
+      <li>RS 校正依赖陀螺仪日志(附录 C.1),无 gyro 的拍摄源需换方案。</li>
+      <li>单卡 3090 可行(论文用 RTX 5000 Ada,量级相当);但逐像素基元 G=2HW,480×864 评估分辨率下显存占用需实测<span class="uncertain">⚠️【待核实】</span>。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>15.2 数据与成本</h3>
+<ul>
+<li><strong>输入门槛</strong>:仅需单目视频 + (最好有)陀螺仪;位姿/深度/光流/掩码全部离线自动产出,关键路径 13 min / 455 帧。</li>
+<li><strong>每视频成本</strong>:预处理并行后约 13 min + 微调几分钟 + 渲染近实时 → 单视频总耗时压在 30 min 量级内,比 SoM 类(>11h)低约两个数量级。</li>
+<li><strong>输出形态</strong>:稳定视频为主产品;逐帧局部重建是副产品,不能拼成全局场景(无跨帧统一坐标系优化)。</li>
+</ul>
+</section>
+
+<!-- ==================== S16 可改进方向 ==================== -->
+<section id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<h3>16.1 方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 位姿依赖是全链路的单点故障</h4>
+<p><strong>问题</strong>:式 4 的相机运动流、式 1 的渲染位姿、GC-S 评测全部建立在 GLOMAP 位姿正确的前提上;论文 §5 自承认纯旋转/低画质场景失效。<strong>代码佐证</strong>:尺度对齐(RANSAC,附录 C.2)只估计一个全局标量 <code>alpha</code>(<code>datasets/gavs_dataset.py:195</code> <code>get_depth_scale</code>),无法吸收逐帧位姿漂移。<strong>改进</strong>:把位姿作为可微变量纳入 TTO(渲染器已是带位姿可微的 <code>diff-gaussian-rasterization-w-pose</code>),或用 VGGT/Pi3 类前馈位姿替换 GLOMAP 以增强鲁棒性。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 「全员向中间帧对齐」的正则实现与论文不符,长程一致性存疑</h4>
+<p><strong>问题</strong>:论文式 5~6 描述窗口内两两配对正则;代码实为 batch 内 5 帧全部 warp 到<strong>中间帧</strong>做 MSE(<code>trainer.py:125-144</code>),中间帧基元 detach。这意味着一致性信号是「星型」而非「链式」,跨 batch 的长程一致性完全依赖同一解码器权重的间接传递。<strong>改进</strong>:中间帧不 detach 改为 EMA teacher,或显式加链式相邻对损失。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 动态分割是开放词表外的盲区</h4>
+<p><strong>问题</strong>:动态补偿依赖「全光流 - 相机流」残差,但动态掩码(预处理)与词表绑定(vehicle/human,附录 C.3);未入词表的动态物体只能靠残差裸扛,而残差质量又依赖深度与位姿。<strong>改进</strong>:用词表-free 的运动分割(如按光流残差幅度自举动态区域)替代固定 prompt。</p>
+</div>
+
+<h3>16.2 数据与评估</h3>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 评测集仅 15 场景且源自单一数据集</h4>
+<p><strong>问题</strong>:15 个场景全部改造自 DeepFused(手机+陀螺仪拍摄分布),对运动相机/无人机/低光等域的覆盖未知;消融只有定性没有量化(§4.6 脚注自承认),也缺超参敏感性分析(W、s、epoch 数、σ_s)。<strong>改进</strong>:补跨域评测(如自采 3090 实拍)+ 量化消融。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级] 关键加速比数字正文/附录矛盾</h4>
+<p><strong>问题</strong>:对 SoM 的提速,正文 12×/20× 与附录 46×/10× 不一致(§12.4 已列三列复核)。<strong>改进</strong>:引用时注明口径;给作者提 issue 修正。</p>
+</div>
+
+<h3>16.3 工程实用性</h3>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 分辨率-显存扩展性</h4>
+<p><strong>问题</strong>:G = 2HW 逐像素基元,论文 §5 承认高分辨率下显存压力大;评估仅到 480×864。<strong>代码佐证</strong>:`configs/model/gaussian.yaml` `gaussians_per_pixel: 2` 写死,无剪枝/分层机制。<strong>改进</strong>:低显著度区域降采样基元数,或引入 anchor-based 表示(如 Scaffold-GS 思路)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>[低优先级] 预处理链条长、外部工具多</h4>
+<p><strong>问题</strong>:GLOMAP / ProPainter / Grounded-SAM2 / UniDepth / RAFT 五个外部工具,任一版本漂移都会坏链;README 的 GLOMAP 链接还错指向 ProPainter(<code>README.md:67</code>)。<strong>改进</strong>:容器化锁定版本;预处理产出做成标准中间格式。</p>
+</div>
+
+<h3>16.4 优先级总览与个人判断</h3>
+<table>
+<tr><th>改进点</th><th>优先级</th><th>预期收益</th></tr>
+<tr><td>位姿纳入 TTO 可微优化</td><td>高</td><td>去掉最大单点故障,扩展到低质素材</td></tr>
+<tr><td>正则改为链式/EMA-teacher</td><td>中</td><td>长程时序一致性</td></tr>
+<tr><td>词表-free 动态分割</td><td>中</td><td>开放域鲁棒性</td></tr>
+<tr><td>跨域量化评测 + 消融量化</td><td>中</td><td>结论可信度</td></tr>
+<tr><td>基元剪枝/分层</td><td>中</td><td>高分辨率落地</td></tr>
+<tr><td>链条容器化</td><td>低</td><td>复现效率</td></tr>
+</table>
+<p><strong>个人认为最关键的三点</strong>:① 位姿可微化(决定方法能不能走出「干净数据集」);② 动态分割去词表化(决定开放域上限);③ 正则的星型→链式修正(决定长视频一致性,且改动成本最低)。</p>
+</section>
+<!-- ==================== S17 总结 ==================== -->
+<section id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+<p class="lead">GaVS 的价值不在稳像榜单本身,而在于示范了一个可迁移的判断:<strong>当任务只需要小基线重渲染时,「全局 4D 重建」是过度构建;逐帧前馈重建 + 网络参数化带来的隐式一致性,可以用两个数量级的成本换取对复杂动态的鲁棒性。</strong>它与 Shape of Motion / Deformable-3DGS 的关系不是替代而是任务切片互补 —— 需要大基线 NVS、3D 跟踪、时间插值时仍要回到全局表示;需要便宜、稳、免裁剪地把抖动视频变平时,GaVS 范式是目前的最优解。</p>
+<div class="grid grid-3">
+  <div class="card"><div class="num-big">13 min</div><p>预处理关键路径(455 帧),vs SoM &gt;10h</p></div>
+  <div class="card"><div class="num-big">CR 1.0</div><p>全画幅免裁剪;最优 2.5D 基线 Deep3D 仅 0.91</p></div>
+  <div class="card"><div class="num-big">31.27</div><p>GC-D(逐视频 3DGS 重建 PSNR),最佳全画幅基线 MetaStab 29.79</p></div>
+</div>
+<p>局限同样清晰(论文 §5 自列四条):位姿依赖、开环平滑无 FOV 约束、深度先验失败不可救、分辨率扩展性差。方法论启示:<strong>「显式建模什么、隐式吸收什么」是 3D/4D 方法设计的第一决策</strong> —— GaVS 选择把时间维整个隐式化,是读懂它所有后续设计(动态补偿、空洞正则、外推)的钥匙。</p>
+</section>
+
+<!-- ==================== S18 团队与资源 ==================== -->
+<section id="s18">
+<h2><span class="num">18</span>👥 研究团队 + 🔗 资源链接</h2>
+<h3>18.1 团队</h3>
+<table>
+<tr><th>作者</th><th>机构</th><th>背景</th></tr>
+<tr><td>Zinuo You(一作)</td><td>ETH Zürich</td><td>部分工作在华为苏黎世研究院实习期间完成(论文脚注);一作此前有 NeLF-Pro(CVPR 2024,多尺度光场探针 NVS,本文参考文献 bib53)</td></tr>
+<tr><td>Stamatios Georgoulis</td><td>Huawei Research Zürich</td><td>计算机视觉研究</td></tr>
+<tr><td>Anpei Chen</td><td>ETH Zürich</td><td>NeRF/3DGS 加速方向(TensoRF 一作)</td></tr>
+<tr><td>Siyu Tang</td><td>ETH Zürich</td><td>人体建模与视觉教授</td></tr>
+<tr><td>Dengxin Dai</td><td>Huawei Research Zürich</td><td>自动驾驶/三维视觉方向</td></tr>
+</table>
+<h3>18.2 资源链接</h3>
+<ul>
+<li>📄 <a href="https://arxiv.org/abs/2506.23957" target="_blank">arXiv abs(2506.23957v2,2025-07-18)</a> · <a href="https://arxiv.org/html/2506.23957v2" target="_blank">HTML 全文</a> · <a href="https://arxiv.org/pdf/2506.23957" target="_blank">PDF</a></li>
+<li>💻 <a href="https://github.com/sinoyou/GaVS" target="_blank">GitHub: sinoyou/GaVS</a>(含训练/评估代码与配置,本笔记 §11 的出处)</li>
+<li>🌐 <a href="https://sinoyou.github.io/gavs" target="_blank">项目主页</a>(含对比视频;SIGGRAPH 2025 标注经 abs 页 comments 核实)</li>
+<li>🤗 <a href="https://huggingface.co/datasets/sinoyou/gavs-data" target="_blank">HuggingFace: gavs-data</a>(15 场景预处理数据 + 预训练权重 + 各方法结果)</li>
+<li>📖 库内兄弟笔记:<a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a> · <a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a> · <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a></li>
+</ul>
+</section>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-10-10 · 领域: 3D 重建 / 视频稳像 · arXiv:2506.23957v2
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
