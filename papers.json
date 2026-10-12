@@ -2824,6 +2824,37 @@
    "anchors": []
   },
   {
+   "title": "手部微动重建解决方案：分层混合架构（vggt_human 路线设计）",
+   "meta": [
+    "📅 2026-10-12",
+    "📋 方案设计 · vggt_human 主线",
+    "🔧 工程落地导向"
+   ],
+   "tags": [
+    "手部重建",
+    "动态 3DGS",
+    "运动基",
+    "分层混合架构",
+    "Shape of Motion",
+    "ARAP"
+   ],
+   "summary": "针对环绕人物视频重建中<strong>手部跨帧不一致（重影/撕裂/漂浮，确认为主因）</strong>的方案设计：复盘 vggt_human（静态 3DGS）与 deformable_human（逐帧形变 MLP）两条已跑通路径的结构性局限，选定\"场景静态 + 身体 SoM 式低秩 SE(3) 运动基 + 手部局部高自由度子模型（B_hand≈8-16 局部基 + ARAP 局部刚性 + tracks 加密）\"的分层混合架构，含损失设计、四阶段实施路线、3090 24GB 工程约束与验收指标。HaMeR 仅作置信度门控弱监督，不作主干。",
+   "links": [
+    {
+     "href": "3D-20261012-手部微动重建解决方案.html",
+     "text": "📖 阅读方案"
+    }
+   ],
+   "file": "3D-20261012-手部微动重建解决方案.html",
+   "section": "3d",
+   "kind": "pipeline",
+   "depth": "standard",
+   "topics": [
+    "数字人 Pipeline 工程"
+   ],
+   "anchors": []
+  },
+  {
    "title": "Deformable 3D Gaussians: 高保真单目动态场景重建",
    "meta": [
     "📄 arXiv: 2309.13101",
