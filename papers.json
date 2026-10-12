@@ -4025,6 +4025,73 @@
    ]
   },
   {
+   "title": "HaMeR:Transformer 手部网格恢复 —— 数据与模型规模化碾压遮挡难题",
+   "meta": [
+    "📄 arXiv: 2312.05251",
+    "📅 2023-12-08",
+    "🏢 UC Berkeley / Michigan / NYU",
+    "🏆 CVPR 2024(README 标注,abs comments 为空)"
+   ],
+   "tags": [
+    "手部重建",
+    "MANO",
+    "ViT-H",
+    "单目姿态估计",
+    "遮挡鲁棒性",
+    "HInt 数据集"
+   ],
+   "summary": "单帧手部网格恢复的规模化基准线:ViT-H 骨干 + Transformer 解码头回归 MANO(θ48/β10/相机),10 数据集混合 2.7M 样本训练。HInt(40.4K 手,首个带逐关节遮挡标注)上 PCK@0.05 达基线 2-3 倍,遮挡子集 27.2 vs 9.8;消融证明数据×4(+14.4)与大模型(+9.0)独立有效。源码核实:输入 256×192、1M steps、损失权重全表;<strong>无置信度输出、纯单帧无时序、检测级联召回是系统第一瓶颈</strong> —— 对 vggt_human 手部链路只能当带噪观测源,需叠加时序轨迹与代理置信度。",
+   "links": [
+    {
+     "href": "3D-20231208-HaMeR.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2312.05251",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://arxiv.org/html/2312.05251v1",
+     "text": "🌐 HTML 全文"
+    },
+    {
+     "href": "https://github.com/geopavlakos/hamer",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://geopavlakos.github.io/hamer/",
+     "text": "🌐 项目主页"
+    }
+   ],
+   "file": "3D-20231208-HaMeR.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "人体先验与参数化模型",
+    "人脸手部细节与增强"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HaMeR:Transformer 手部网格恢复 —— 用规模化数据与大模型碾压遮挡难题</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:800px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent)}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card h4{margin-top:0}
+  .card .num-big{
+    font-size:30px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  .fail{color:var(--red)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0;text-align:center}
+  .figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+  .figure .caption{font-size:13px;color:var(--muted);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+  .uncertain{display:inline-block;background:rgba(251,146,60,.12);border-left:3px solid var(--orange);color:#fdba74;padding:2px 8px;border-radius:4px;font-size:13.5px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">📄 arXiv 2312.05251 · 2023-12-08 · UC Berkeley / University of Michigan / NYU</span>
+    <h1>HaMeR:用 Transformer 重建 3D 手</h1>
+    <p class="subtitle">Reconstructing Hands in 3D with Transformers —— 单目手部网格恢复的"规模化"答卷:全 Transformer 架构(ViT-H)+ 2.7M 混合标注数据,in-the-wild 遮挡关节 PCK@0.05 达此前方法 2-3 倍</p>
+    <p class="authors">Georgios Pavlakos¹ · Dandan Shan² · Ilija Radosavovic¹ · Angjoo Kanazawa¹ · David Fouhey³ · Jitendra Malik¹<br>¹ UC Berkeley &nbsp; ² University of Michigan &nbsp; ³ New York University<br>⚠️ 会议信息:GitHub README 的 BibTeX 标注 CVPR 2024,但 arXiv abs 页 comments 字段为空,按本库规范不加会议 badge,仅在此注明来源。</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2312.05251">📄 arXiv</a>
+      <a href="https://arxiv.org/html/2312.05251v1">🌐 HTML 全文</a>
+      <a href="https://geopavlakos.github.io/hamer/">🌐 项目主页</a>
+      <a href="https://github.com/geopavlakos/hamer">💻 GitHub(开源)</a>
+      <a href="https://github.com/ddshan/hint">💾 HInt 数据集</a>
+      <a href="https://huggingface.co/spaces/geopavlakos/HaMeR">🤗 在线 Demo</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+<nav class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">模块一:MANO 参数化手模型</a></li>
+    <li><a href="#s5">模块二:ViT-H 骨干网络</a></li>
+    <li><a href="#s6">模块三:Transformer 解码头</a></li>
+    <li><a href="#s7">模块四:完整推理 Pipeline(源码级)</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性(vggt_human 单目环绕)</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</nav>
+<!-- ==================== S1 论文摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要</h2>
+<p class="lead"><strong>问题</strong>:从单目 RGB 图像/视频帧恢复 3D 手部网格。<strong>方法</strong>:HaMeR 采用全 Transformer 设计 —— 大容量 ViT-H 骨干 + Transformer 解码头,直接回归 MANO 手模型的姿态 $\theta\in\mathbb{R}^{48}$、形状 $\beta\in\mathbb{R}^{10}$ 与相机参数 $\pi$;配合 10 个数据集混合而成的 2.7M 训练样本(FrankMocap 训练集的 4 倍),用「数据规模化 + 模型规模化」这一朴素策略换取精度与鲁棒性。<strong>结果</strong>:在 FreiHAND / HO3Dv2 两个受控基准上达到 SOTA;在作者新构建的 in-the-wild 标注集 HInt(40.4K 手,86.7% 处于自然接触状态)上,PCK@0.05 较此前方法提升 <strong>2-3 倍</strong>,其中<strong>被遮挡关节</strong>子集上提升最为悬殊(如 New Days 子集 27.2 vs 最强基线 13.7)。</p>
+<div class="callout key"><h4>💡 一句话核心贡献</h4><p>把手部网格恢复做成了一道"scaling 题":无需精巧结构,只要把训练数据(×4)与模型容量(ResNet50 → ViT-H)同时放大,遮挡、交互、艺术画、手套、机械手等此前让专用方法崩坏的场景被一并扫平 —— 消融实验(Table 5)证明两个因素独立有效且叠加近线性。</p></div>
+<div class="callout warn"><h4>⚠️ 对本 pipeline(vggt_human)最重要的三个事实(详见 §10/§14)</h4><p>① HaMeR 是<strong>纯单帧</strong>方法,无任何时序模块,论文宣称视频上"时序稳定"仅有补充视频定性证据,无量化指标;② HaMeR 网络本体<strong>不输出置信度/不确定性</strong>,源码中唯一的置信度来自前置 ViTPose 的 2D 关键点分数;③ 推理依赖 Detectron2(人检测)+ ViTPose(全身关键点)两级前置,手部 bbox 由手腕关键点生成,任一级失败都会级联。</p></div>
+</section>
+
+<!-- ==================== S2 研究背景与动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<div class="grid grid-3">
+  <div class="card"><h4>❌ 失败模式一:非参数回归对遮挡脆弱</h4><p>METRO、MeshGraphormer、I2L-MeshNet 等非参数方法直接回归 MANO 顶点,论文指出其"align better with the image evidence, but <strong>more prone to failure in cases of occlusions and truncations</strong>"(§2)。遮挡截断恰是手部最常态的观测条件。</p></div>
+  <div class="card"><h4>❌ 失败模式二:受控基准饱和、野外失效</h4><p>FreiHAND/HO3D 等 benchmark 采集于多机位受控环境,模型在其上趋于饱和,但无法反映 in-the-wild 性能。论文实验证实:受控集上各方法差距小,一到 HInt(YouTube/Ego4D/VISOR 真实帧)上基线 PCK@0.05 全部跌到 10-17 分(表 3)。</p></div>
+  <div class="card"><h4>❌ 失败模式三:手部观测天然恶劣</h4><p>手是小目标、高自由度(21 关节)、高频自遮挡(手-物/手-手交互)对象;HInt 标注统计显示其 86.7% 的手处于自然接触状态 —— "无遮挡的手"才是特例。</p></div>
+</div>
+<div class="callout key"><h4>🧠 核心洞察(insight)</h4><p>作者的赌注是:<strong>手部重建的痛点不是缺"巧结构",而是缺"规模"</strong>。证据链来自 HMR2.0(人体 mesh 恢复)在同样"简单结构 + 大模型 + 大数据"配方下的成功(§1)。关键假设:海量多样数据里已经"见过"足够多的遮挡模式,大容量模型能把这些模式内化为先验 —— 因此遮挡关节可以"脑补"。假设失效条件:遇到训练分布之外的手部状态(极端姿态、罕见交互物),此时先验会产出"合理但错误"的重建 —— 项目页自报失败模式(极端姿态、左右手误分)与此一致(图 6)。</p></div>
+<p><strong>专用方法的对照</strong>:论文在 §2 明确将自己定位与 MobRecon(速度)、HandOccNet(遮挡专用结构)、AMVUR(概率化)、BlurHand(运动模糊)等"特性化"工作<strong>正交</strong> —— HaMeR 不做专门设计,而是验证 scaling 本身的收益,并宣称这些特化设计可与其组合。值得注意的是,HandOccNet(遮挡专用)在 HInt 遮挡子集上反而全场最差(7.2-9.8,表 3),为"遮挡鲁棒性来自数据规模而非结构设计"提供了反向证据。</p>
+</section>
+
+<!-- ==================== S3 算法总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+<p><strong>输入</strong>:单张 RGB 图像 $I$(demo 中经检测-裁剪得到手部 crop,尺寸 $256\times192$)。<strong>输出</strong>:MANO 参数 $\Theta=\{\theta,\beta,\pi\}$ —— 姿态 $\theta\in\mathbb{R}^{48}$、形状 $\beta\in\mathbb{R}^{10}$、相机平移 $t\in\mathbb{R}^{3}$;经 MANO 函数 $\mathcal{M}(\theta,\beta)$ 得到手部网格 $M\in\mathbb{R}^{778\times 3}$ 与 21 个 3D 关节 $X\in\mathbb{R}^{21\times 3}$。</p>
+<table>
+  <tr><th>符号</th><th>含义</th><th>维度/取值</th></tr>
+  <tr><td>$I$</td><td>输入手部 crop(Detectron2+ViTPose 前置产出)</td><td>$256\times192\times3$(<code>vit.py:14</code>)</td></tr>
+  <tr><td>$\theta$</td><td>MANO 姿态参数(全局朝向 + 15 关节 × axis-angle)</td><td>$\mathbb{R}^{48}$</td></tr>
+  <tr><td>$\beta$</td><td>MANO 形状参数(PCA 系数)</td><td>$\mathbb{R}^{10}$</td></tr>
+  <tr><td>$\pi,\ t$</td><td>弱透视相机,实际回归平移 $t$</td><td>$\mathbb{R}^{3}$</td></tr>
+  <tr><td>$\mathcal{M}(\theta,\beta)$</td><td>MANO 函数(模板 + 形状/姿态 blendshape + LBS)</td><td>→ $M\in\mathbb{R}^{778\times3}$, $X\in\mathbb{R}^{21\times3}$</td></tr>
+  <tr><td>$x$</td><td>2D 关节投影,$x=\Pi_K(X+t)$</td><td>$\mathbb{R}^{21\times2}$</td></tr>
+  <tr><td>$D_k$</td><td>对抗判别器(形状/姿态/逐关节)</td><td>源码 <code>models/discriminator.py</code></td></tr>
+</table>
+<h3>3.1 阶段划分</h3>
+<ol>
+  <li><strong>前置检测(非本文贡献,源码实现)</strong>:Detectron2 检测人 → ViTPose(whole-body)预测关键点 → 手部 21 关键点 min-max 生成 bbox(置信度阈值过滤)→ ×2.0 外扩;</li>
+  <li><strong>归一化与镜像</strong>:crop resize 到 $256\times192$;<strong>左手水平镜像为右手</strong>,共享同一右手 MANO 模型(因此只需下载 <code>MANO_RIGHT.pkl</code>);</li>
+  <li><strong>特征提取</strong>:ViT-H/16(ViTPose 预训练)处理 patch 序列,输出 tokens;</li>
+  <li><strong>参数回归</strong>:Transformer decoder 以单个 query token cross-attend 全部图像 tokens,输出 $\Theta$;</li>
+  <li><strong>几何还原</strong>:MANO 前向得到网格与关节;相机参数经 <code>cam_crop_to_full</code> 从 crop 坐标系换算回全图;镜像结果按 $(2\cdot right-1)$ 符号翻回。</li>
+</ol>
+<div class="mermaid">
+flowchart TD
+    IMG["原始图像 I"] --> DET["Detectron2 人检测<br/>(ViTDet-H / RegNetY, score>0.5)"]
+    DET --> VP["ViTPose whole-body<br/>关键点(含手部 2×21)"]
+    VP --> BBOX["手部 bbox = 关键点 min/max<br/>conf>0.5 且有效点>3,×2.0 外扩"]
+    BBOX --> CROP["crop → 256×192<br/>左手镜像为右手"]
+    CROP --> VIT["ViT-H/16 骨干<br/>(ViTPose 预训练, depth=32, dim=1280)"]
+    VIT --> DEC["Transformer Decoder Head<br/>(单 query, depth=6, heads=8)"]
+    DEC --> THETA["Θ = θ(48) + β(10) + t(3)"]
+    THETA --> MANO["MANO(θ,β) → 网格 778 顶点<br/>+ 21 关节"]
+    MANO --> PROJ["cam_crop_to_full<br/>+ 镜像翻回 → 全图坐标"]
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style VIT fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style DEC fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style THETA fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style MANO fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+<!-- ==================== S4 模块一 MANO ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>模块一:MANO 参数化手模型(引用的先验,非本文贡献)</h2>
+<table>
+  <tr><th>数据流</th><th>内容</th></tr>
+  <tr><td>输入</td><td>姿态 $\theta\in\mathbb{R}^{48}$(1 全局 + 15 关节 × 3 轴角),形状 $\beta\in\mathbb{R}^{10}$</td></tr>
+  <tr><td>算子</td><td>模板网格 + 形状 blendshape + 姿态 blendshape + LBS 蒙皮</td></tr>
+  <tr><td>输出</td><td>网格 $M\in\mathbb{R}^{778\times3}$,关节 $X\in\mathbb{R}^{21\times3}$(含 4 指尖等,21 = 1 腕 + 5 指 × 4)</td></tr>
+</table>
+<div class="equation">$$M,\ X = \mathcal{M}(\theta,\beta),\quad x = \pi(X) = \Pi_K(X + t)\text{(式 1)}<span class="label">式 1</span></div>
+<ol>
+  <li>形状空间:$\beta$ 沿 PCA 主分量扰动模板 —— 10 维已足够覆盖人群手型差异(与 SMPL 系同构);</li>
+  <li>姿态空间:48 维 axis-angle,LBS 驱动顶点;<strong>手的非刚性成分极少(铰接刚体为主)</strong>,MANO 对真实手形的表达能力上限很高;</li>
+  <li>工程实现:源码 <code>models/mano_wrapper.py</code> 封装,仅加载 <code>MANO_RIGHT.pkl</code>(左手经镜像统一,见 §7);MANO 模型需到官网注册下载(<strong>license 约束,不能随代码分发</strong>)。</li>
+</ol>
+<p><strong>该模块的监督信号</strong>:有 3D GT 时直接回归 $\theta^*,\beta^*$ 与 $X^*$($\mathcal{L}_{3D}$);无 3D 时经投影 $x$ 受 2D 关键点监督($\mathcal{L}_{2D}$)+ 对抗先验($\mathcal{L}_{adv}$)约束参数落在自然手势流形内。</p>
+</section>
+
+<!-- ==================== S5 模块二 ViT-H ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>模块二:ViT-H 骨干网络</h2>
+<table>
+  <tr><th>数据流</th><th>规格(源码真值,<code>models/backbones/vit.py:14-17</code>)</th></tr>
+  <tr><td>输入</td><td>手部 crop,img_size $=(256,192)$ —— <strong>非正方形</strong>,与 demo crop 的宽高比一致</td></tr>
+  <tr><td>Patch 化</td><td>patch_size $=16$ → token 数 $= (256/16)\times(192/16)=16\times12=192$</td></tr>
+  <tr><td>主干</td><td>embed_dim $=1280$,depth $=32$,num_heads $=16$(ViT-H/16 规格)</td></tr>
+  <tr><td>初始化</td><td><strong>ViTPose 预训练权重</strong>(<code>hamer_vit_transformer.yaml</code>: <code>PRETRAINED_WEIGHTS: hamer_training_data/vitpose_backbone.pth</code>),非 ImageNet 初始化</td></tr>
+  <tr><td>输出</td><td>tokens $[B,192,1280]$,交予解码头</td></tr>
+</table>
+<div class="callout key"><h4>🧠 为什么这个选择重要</h4><p>消融(Table 5)显示:仅把 ResNet50 换成 ViT-H(数据不变),HInt All-PCK@0.05 在三个子集上分别 +9.0 / +6.6 / +5.5;仅把数据 ×4(模型不变),提升 +14.4 / +12.4 / +10.8;两者叠加后达到 48.0 / 43.0 / 38.9 —— <strong>数据规模贡献更大,但两者互补</strong>。另外源码揭示一个论文未强调的细节:骨干用 <strong>ViTPose(2D 姿态估计预训练)</strong>初始化,等于把 2D 关键点知识"免费"注入 3D 回归,这很可能也是涨点来源之一【推测:论文未消融 ViTPose 初始化 vs ImageNet 初始化】。</p></div>
+<p><strong>该模块的监督信号</strong>:无独立监督,梯度来自解码头回传的 $\mathcal{L}_{3D}+\mathcal{L}_{2D}+\mathcal{L}_{adv}$。</p>
+</section>
+
+<!-- ==================== S6 模块三 Decoder Head ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>模块三:Transformer 解码头(参数回归)</h2>
+<table>
+  <tr><th>数据流</th><th>规格(源码真值,<code>configs_hydra/experiment/hamer_vit_transformer.yaml</code>)</th></tr>
+  <tr><td>输入</td><td>ViT tokens $[B,192,1280]$(context_dim $=1280$)</td></tr>
+  <tr><td>结构</td><td>Transformer decoder:depth $=6$,heads $=8$,mlp_dim $=1024$,dim_head $=64$;<strong>单个可学习 query token</strong>,cross-attend 全部图像 tokens</td></tr>
+  <tr><td>输出头</td><td>IN_CHANNELS $=2048$ → 回归 $\Theta=\{\theta(48),\beta(10),t(3)\}$,共 61 维</td></tr>
+</table>
+<div class="equation">$$\Theta = \mathrm{Head}\big(\mathrm{CrossAttn}(q,\ \mathrm{ViT}(I))\big) = \{\theta,\beta,\pi\}\text{(式 2)}<span class="label">式 2</span></div>
+<ol>
+  <li>单 query 设计继承 HMR2.0:整只手的全局一致性由一个 token 汇总,避免逐关节独立回归带来的结构不一致;</li>
+  <li>输出全部参数一次回归,无迭代优化(与 SPIN/SMPLify 类优化闭环不同),推理单前向;</li>
+  <li><strong>无不确定性头</strong>:通读 <code>models/hamer.py</code> 与 <code>demo.py</code>,网络不输出任何置信度、方差或假设分布(对比 AMVUR 的概率化设计)—— 这是本 pipeline 适配时必须自行补的缺口(§14)。</li>
+</ol>
+<p><strong>该模块的监督信号</strong>:$\mathcal{L}_{3D}$(参数 + 3D 关节)+ $\mathcal{L}_{2D}$(重投影)+ $\mathcal{L}_{adv}$(对抗)。</p>
+</section>
+
+<!-- ==================== S7 模块四 推理 Pipeline ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>模块四:完整推理 Pipeline(源码级,论文未展开)</h2>
+<p>论文只描述了"网络本体",实际可用系统(<code>demo.py</code>)是<strong>四级级联</strong>,任一环节失败都会吞掉该帧的手:</p>
+<ol>
+  <li><strong>人检测</strong>(<code>demo.py:45-62</code>):Detectron2,默认 ViTDet-H Cascade Mask R-CNN(<code>test_score_thresh=0.25</code>),可选 RegNetY-4GF(更快、更省显存);实例过滤 <code>pred_classes==0 & scores>0.5</code>(<code>demo.py:85</code>);</li>
+  <li><strong>全身关键点</strong>:ViTPose(whole-body,133 点),取手部段 <code>keypoints[-42:-21]</code>(左)/ <code>[-21:]</code>(右)(<code>demo.py:99-100</code>);</li>
+  <li><strong>手部 bbox 生成与过滤</strong>(<code>demo.py:103-113</code>):关键点置信度 <code>keyp[:,2] &gt; 0.5</code> 且<strong>有效点 &gt; 3</strong> 才保留该手,bbox = 有效点 min/max,再 ×2.0 外扩(<code>--rescale_factor</code> 默认 2.0);</li>
+  <li><strong>镜像归一</strong>:左手 crop 水平镜像为右手,HaMeR 输出后按 <code>multiplier=(2*right-1)</code> 翻回(<code>demo.py:140</code>),故仅需右手 MANO;</li>
+  <li><strong>相机还原</strong>:网络回归的是 crop 内弱透视相机,<code>cam_crop_to_full</code>(<code>utils/renderer.py</code>)换算回全图坐标。</li>
+</ol>
+<div class="mermaid">
+flowchart LR
+    subgraph PRE["前置(第三方)"]
+        A["Detectron2<br/>人实例"] --> B["ViTPose<br/>133 关键点"]
+        B --> C["手部 bbox<br/>conf 过滤 + ×2.0"]
+    end
+    subgraph CORE["HaMeR 本体"]
+        C --> D["crop 256×192<br/>左手镜像"]
+        D --> E["ViT-H/16"]
+        E --> F["Decoder Head<br/>Θ"]
+    end
+    subgraph POST["后处理"]
+        F --> G["MANO → mesh"]
+        G --> H["cam 还原 +<br/>镜像翻回"]
+    end
+    style PRE fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style CORE fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style POST fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<div class="callout warn"><h4>⚠️ 级联失败的工程含义</h4><p>手部 bbox 依赖 ViTPose 的手腕/手部关键点;<strong>当手被遮挡或运动模糊时,ViTPose 置信度先崩,bbox 直接不生成 —— 该帧 HaMeR 根本没有运行机会</strong>。也就是说 HaMeR 论文里强悍的遮挡重建能力,只能作用于"被检测到的手";检测召回是系统真正的第一瓶颈(项目页自报失败模式第一条即 spurious hand detections,图 6)。对视频手部重建 pipeline,必须用全视频检测追踪(而非逐帧独立检测)来兜底召回,见 §14。</p></div>
+<p><strong>该模块的监督信号</strong>:推理 pipeline 无监督(纯前向);训练阶段不涉及 Detectron2/ViTPose(训练 crop 来自 GT 标注)。</p>
+</section>
+
+<!-- ==================== S8 损失函数总表 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>损失函数总表(论文公式 + 源码真值权重)</h2>
+<table>
+  <tr><th>损失项</th><th>公式</th><th>源码权重(<code>hamer_vit_transformer.yaml</code>)</th><th>作用</th></tr>
+  <tr><td>$\mathcal{L}_{3D}$</td><td>$\|\theta-\theta^{*}\|_2^2 + \|\beta-\beta^{*}\|_2^2 + \|X-X^{*}\|_1$</td><td>GLOBAL_ORIENT $=10^{-3}$ · HAND_POSE $=10^{-3}$ · BETAS $=5\times10^{-4}$ · KEYPOINTS_3D $=0.05$</td><td>3D GT 数据集上的参数与关节直接监督</td></tr>
+  <tr><td>$\mathcal{L}_{2D}$</td><td>$\|x-x^{*}\|_1$(投影关节 vs 2D 标注)</td><td>KEYPOINTS_2D $=0.01$</td><td>2D 数据集监督;有 3D 时也启用(促进图像空间一致性)</td></tr>
+  <tr><td>$\mathcal{L}_{adv}$</td><td>$\sum_k (D_k(\Theta)-1)^2$</td><td>ADVERSARIAL $=5\times10^{-4}$</td><td>仅有 2D 时防止"重投影正确但不自然"的姿态;判别器分形状/姿态/逐关节三类(<code>models/discriminator.py</code>)</td></tr>
+</table>
+<p>训练超参(<code>hamer_vit_transformer.yaml</code>):总步数 <strong>1M steps</strong>,batch $=8$,LR $=10^{-5}$,weight decay $=10^{-4}$;数据增广含 2D 姿态噪声比 0.01、参数噪声比 0.005。<strong>论文 §3.4 只给了损失形式、未给权重</strong>,上表权重为源码真值 —— 这是"宣称 vs 实现"核对中源码提供增量信息的典型位置。</p>
+</section>
+
+<!-- ==================== S9 逻辑流程图 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+<h3>9.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    D1["3D 标注数据<br/>(FreiHAND/HO3D/DexYCB/<br/>InterHand2.6M/MTC/RHD/H2O3D)"] --> MIX["混合采样<br/>共 2.7M 样本"]
+    D2["2D 标注数据<br/>(COCO-WB/Halpe/MPII-NZSL<br/>≈5%)"] --> MIX
+    MIX --> CROP["手部 crop 256×192<br/>+ 增广(噪声/翻转)"]
+    CROP --> VIT["ViT-H/16<br/>(ViTPose 初始化)"]
+    VIT --> DEC["Decoder Head → Θ"]
+    DEC --> L3["L3D: 参数 + 3D 关节<br/>(有 GT 时)"]
+    DEC --> L2["L2D: 重投影<br/>(恒启用)"]
+    DEC --> DISC["判别器 D_k<br/>→ Ladv(仅 2D 样本)"]
+    L3 --> SUM["加权求和<br/>反向传播"]
+    L2 --> SUM
+    DISC --> SUM
+    SUM --> OPT["AdamW, LR 1e-5<br/>1M steps"]
+    style D1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style D2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style VIT fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+<h3>9.2 推理流程(单帧)</h3>
+<div class="mermaid">
+flowchart TD
+    IMG["图像/视频帧"] --> DET["Detectron2 → 人实例"]
+    DET --> VP["ViTPose → whole-body 关键点"]
+    VP --> HB{"手部关键点<br/>conf>0.5 且 >3 点?"}
+    HB -- 否 --> SKIP["该手跳过<br/>(级联失败点)"]
+    HB -- 是 --> BBOX["bbox min/max ×2.0<br/>crop 256×192"]
+    BBOX --> MIR{"左手?"}
+    MIR -- 是 --> FLIP["水平镜像"]
+    MIR -- 否 --> NET
+    FLIP --> NET["HaMeR 前向 → Θ"]
+    NET --> MANO["MANO(θ,β) → mesh + joints"]
+    MANO --> BACK["cam_crop_to_full<br/>+ 镜像翻回"]
+    BACK --> OUT["全图坐标 3D 手网格"]
+    style SKIP fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style NET fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+</section>
+<!-- ==================== S10 工程实现细节 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码直读)</h2>
+<h3>10.1 环境与依赖</h3>
+<table>
+  <tr><th>项</th><th>值</th><th>出处</th></tr>
+  <tr><td>Python</td><td>3.10(venv/conda 均可)</td><td><code>README.md:28</code></td></tr>
+  <tr><td>CUDA</td><td>11.7(README 示例,可适配)</td><td><code>README.md:38-39</code></td></tr>
+  <tr><td>关键依赖</td><td>Detectron2(检测)+ ViTPose(关键点,需 <code>pip install -v -e third-party/ViTPose</code>)</td><td><code>README.md:41-42</code></td></tr>
+  <tr><td>MANO</td><td>需官网注册下载 <code>MANO_RIGHT.pkl</code> 放 <code>_DATA/data/mano/</code>(license 不可分发)</td><td><code>README.md:50</code></td></tr>
+  <tr><td>checkpoint</td><td><code>bash fetch_demo_data.sh</code> 下载(含 HaMeR 权重与 ViTPose backbone)</td><td><code>README.md:46-48</code></td></tr>
+</table>
+<h3>10.2 网络与训练超参(全部源码真值)</h3>
+<table>
+  <tr><th>项</th><th>论文宣称</th><th>源码真值</th><th>出处</th></tr>
+  <tr><td>骨干</td><td>ViT-H(§3.3)</td><td>ViT-H/16:dim 1280, depth 32, heads 16, patch 16, img (256,192);<strong>ViTPose 预训练初始化</strong></td><td><code>backbones/vit.py:14-17</code>; <code>hamer_vit_transformer.yaml</code></td></tr>
+  <tr><td>输入分辨率</td><td>未写明</td><td>$256\times192$(非方形)</td><td><code>vit.py:14</code>; <code>MODEL.IMAGE_SIZE: 256</code></td></tr>
+  <tr><td>解码头</td><td>transformer decoder(§3.3)</td><td>depth 6, heads 8, mlp_dim 1024, dim_head 64, context_dim 1280</td><td><code>hamer_vit_transformer.yaml</code></td></tr>
+  <tr><td>训练步数/batch</td><td>未写明</td><td>1M steps, batch 8, LR 1e-5, WD 1e-4</td><td><code>hamer_vit_transformer.yaml</code></td></tr>
+  <tr><td>损失权重</td><td>未给</td><td>3D 关节 0.05 / 2D 0.01 / 全局朝向 1e-3 / 姿态 1e-3 / β 5e-4 / 对抗 5e-4</td><td><code>hamer_vit_transformer.yaml</code></td></tr>
+  <tr><td>置信度输出</td><td>未宣称</td><td><strong>无</strong>(网络本体不输出不确定性;demo 中唯一置信度是 ViTPose 关键点分数 <code>keyp[:,2]</code>)</td><td><code>demo.py:103</code> 通读 <code>hamer.py</code> 确认</td></tr>
+</table>
+<h3>10.3 资源账</h3>
+<ul>
+  <li><strong>推理显存/速度</strong>:README 与代码均未给出。<span class="uncertain">⚠️【待核实】 ViT-H/16(约 6.3 亿参数,按标准 ViT-H 配置推算)+ Detectron2 ViTDet-H 前置,单帧显存占用预计 10GB 量级,3090 可跑;regnety 检测器选项"improves runtime and reduces memory"(demo.py:31)。</span></li>
+  <li><strong>训练资源</strong>:致谢提到 StabilityAI compute grant;具体 GPU 型号与时长未披露。<span class="uncertain">⚠️【待核实】</span></li>
+  <li><strong>参数量</strong>:未披露。<span class="uncertain">⚠️【待核实】 可按 ViT-H/16(632M)+ decoder head 估算。</span></li>
+</ul>
+<h3>10.4 落地坑(源码/文档直读)</h3>
+<ol>
+  <li><strong>级联召回</strong>:手部 bbox 由 ViTPose 手部关键点生成(conf&gt;0.5 且有效点 &gt;3,<code>demo.py:103-113</code>)—— 遮挡/模糊严重时手根本进不了网络,逐帧跑视频会大量丢帧;</li>
+  <li><strong>左右手</strong>:系统只有右手 MANO,左手镜像处理;若 ViTPose 左右手腕关键点本身分错(项目页自报失败模式之一),镜像方向会错;</li>
+  <li><strong>bbox 外扩系数</strong> <code>--rescale_factor 2.0</code>(<code>demo.py:30</code>):crop 上下文占比大,极端贴近画面边缘的手可能被截断;</li>
+  <li><strong>相机模型</strong>:弱透视(回归平移 $t$ + 固定内参),crop 内尺度与深度耦合 —— 跨帧的绝对深度一致性无保证,视频应用需自行处理尺度漂移;</li>
+  <li><strong>协议</strong>:MANO 与部分训练数据(HO3D/DexYCB 等)各自有 license,商用需逐个核对。</li>
+</ol>
+</section>
+
+<!-- ==================== S11 实验结果 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+<h3>11.1 FreiHAND(受控环境,表 1 摘录)</h3>
+<table>
+  <tr><th>方法</th><th>PA-MPJPE↓ (mm)</th><th>PA-MPVPE↓ (mm)</th><th>F@5↑</th><th>F@15↑</th></tr>
+  <tr><td>METRO</td><td>6.5</td><td>6.3</td><td>0.731</td><td>0.984</td></tr>
+  <tr><td>Mesh Graphormer</td><td>5.9</td><td>6.0</td><td>0.764</td><td>0.986</td></tr>
+  <tr><td>MobRecon</td><td class="best">5.7</td><td>5.8</td><td>0.784</td><td>0.986</td></tr>
+  <tr class="best"><td>HaMeR (Ours)</td><td>6.0</td><td class="best">5.7</td><td class="best">0.785</td><td class="best">0.990</td></tr>
+</table>
+<p>⚠️ 诚实呈现:FreiHAND 上 HaMeR 的 PA-MPJPE(6.0)并非最低(MobRecon 5.7 更低),优势在 mesh 级指标(F@15 0.990)。这印证论文自己的判断:<strong>受控基准已饱和,野外集才能拉开差距</strong>。</p>
+<h3>11.2 HO3Dv2(受控环境,表 2 摘录)</h3>
+<table>
+  <tr><th>方法</th><th>AUC_J↑</th><th>PA-MPJPE↓</th><th>F@5↑</th><th>F@15↑</th></tr>
+  <tr><td>HandOccNet</td><td>0.819</td><td>9.1</td><td>0.564</td><td>0.963</td></tr>
+  <tr><td>AMVUR</td><td>0.835</td><td>8.3</td><td>0.608</td><td>0.965</td></tr>
+  <tr class="best"><td>HaMeR (Ours)</td><td class="best">0.846</td><td class="best">7.7</td><td class="best">0.635</td><td class="best">0.980</td></tr>
+</table>
+<p>HO3Dv2(手-物交互、遮挡重)上全面领先,PA-MPJPE 较最强基线 AMVUR 降 7.2%(8.3→7.7,按表格原始值复核)。</p>
+<h3>11.3 HInt(in-the-wild,PCK,表 3 摘录)—— 本文最有说服力的证据</h3>
+<table>
+  <tr><th>子集</th><th>方法</th><th>New Days @0.05</th><th>VISOR @0.05</th><th>Ego4D @0.05</th></tr>
+  <tr><td rowspan="3">All Joints</td><td>FrankMocap</td><td>16.1</td><td>16.8</td><td>13.1</td></tr>
+  <tr><td>Mesh Graphormer</td><td>16.8</td><td>19.1</td><td>14.6</td></tr>
+  <tr class="best"><td>HaMeR</td><td class="best">48.0</td><td class="best">43.0</td><td class="best">38.9</td></tr>
+  <tr><td rowspan="3">Visible Joints</td><td>FrankMocap</td><td>20.1</td><td>20.4</td><td>16.3</td></tr>
+  <tr><td>Mesh Graphormer</td><td>22.3</td><td>23.6</td><td>18.4</td></tr>
+  <tr class="best"><td>HaMeR</td><td class="best">60.8</td><td class="best">56.6</td><td class="best">52.0</td></tr>
+  <tr><td rowspan="4">Occluded Joints</td><td>FrankMocap</td><td>9.2</td><td>11.0</td><td>8.4</td></tr>
+  <tr><td>HandOccNet(param)</td><td>7.2</td><td>7.4</td><td>8.0</td></tr>
+  <tr><td>HandOccNet(no param)</td><td>9.8</td><td>9.9</td><td>9.6</td></tr>
+  <tr class="best"><td>HaMeR</td><td class="best">27.2</td><td class="best">25.9</td><td class="best">23.0</td></tr>
+</table>
+<div class="callout key"><h4>🔑 遮挡子集是全场分水岭(对本 pipeline 最重要的一行数字)</h4><p>可见关节上 HaMeR 约为基线 2.7-2.8 倍;<strong>遮挡关节上 HaMeR 27.2/25.9/23.0 vs 最强基线(HandOccNet-no param)9.8/9.9/9.6 —— 2.4-2.8 倍,而专门为遮挡设计的 HandOccNet(param 版)反而全场最低(7.2-8.0)</strong>。机制解释:遮挡关节没有图像证据,只能靠"见过的手势先验"补全;大模型 + 2.7M 数据把这个先验学得足够强,专用结构设计在小数据上学不出这种先验。这正是 §2 核心洞察的实验闭环。注意绝对水平:遮挡关节 PCK@0.05 仅 23-27,即<strong>约 3/4 的被遮关节重建偏差仍大于 5% 手掌长度</strong> —— "远超基线"不等于"已解决",视频应用必须配合时序约束(§14)。</p></div>
+<div class="figure"><img src="images/2312.05251/comparison_row_1b.png" loading="lazy" alt="qualitative comparison" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 1(原文 Figure 3 第 1 行)</b> 与 METRO / Mesh Graphormer / FrankMocap 的定性对比:运动模糊与手-手交互等困难样本上,基线出现关节错位/姿态崩坏,HaMeR 保持合理手势。</div></div>
+<div class="figure"><img src="images/2312.05251/comparison_row_2.png" loading="lazy" alt="qualitative comparison" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 2(原文 Figure 3 第 2 行)</b> 对比(续):遮挡与模糊样本上基线姿态崩坏,HaMeR 保持结构完整。</div></div>
+<div class="figure"><img src="images/2312.05251/comparison_row_3.png" loading="lazy" alt="qualitative comparison" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 3(原文 Figure 3 第 3 行)</b> 对比(续):抓握与遮挡场景,HaMeR 的手指姿态明显更贴合图像证据。</div></div>
+<div class="figure"><img src="images/2312.05251/comparison_row_4.png" loading="lazy" alt="qualitative comparison" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 4(原文 Figure 3 第 4 行)</b> 对比(续):手-物交互与复杂手势。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_1b.png" loading="lazy" alt="HaMeR results" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 5(原文 Figure 4 第 1-2 行)</b> HaMeR 在 HInt(New Days,YouTube 日常活动帧)上的重建:每例给出输入、叠加渲染、侧视与顶视。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_2.png" loading="lazy" alt="HaMeR results newdays" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 6(原文 Figure 4 第 1-2 行,伴侣图)</b> New Days 样本(续)。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_3.png" loading="lazy" alt="HaMeR results visor" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 7(原文 Figure 4 第 3-4 行)</b> VISOR(Epic-Kitchens 烹饪 ego 帧)样本。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_4.png" loading="lazy" alt="HaMeR results visor" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 8(原文 Figure 4 第 3-4 行,伴侣图)</b> VISOR 样本(续)。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_5.png" loading="lazy" alt="HaMeR results ego" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 9(原文 Figure 4 第 5-6 行)</b> Ego4D 第一人称视角样本:重度遮挡与手部交互下依然给出结构完整的重建。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_6.png" loading="lazy" alt="HaMeR results ego" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 10(原文 Figure 4 第 5-6 行,伴侣图)</b> Ego4D 样本(续)。</div></div>
+<div class="figure"><img src="images/2312.05251/result_ours_7.png" loading="lazy" alt="HaMeR results internet" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 11(原文 Figure 4 第 7-8 行)</b> 互联网图像(含艺术画、机械手、手套):分布外泛化能力展示。</div></div>
+</section>
+
+<!-- ==================== S12 消融实验 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+<h3>12.1 数据规模 × 模型规模(表 5,HInt All-Joints PCK@0.05)—— 全文最核心的消融</h3>
+<table>
+  <tr><th>配置</th><th>大数据 ×4</th><th>大模型 ViT-H</th><th>New Days</th><th>VISOR</th><th>Ego4D</th></tr>
+  <tr><td>Base(类 FrankMocap 复现)</td><td>✗</td><td>✗</td><td>16.9</td><td>17.5</td><td>13.9</td></tr>
+  <tr><td>+ 仅大数据</td><td>✓</td><td>✗</td><td>31.3 (+14.4)</td><td>29.9 (+12.4)</td><td>24.7 (+10.8)</td></tr>
+  <tr><td>+ 仅大模型</td><td>✗</td><td>✓</td><td>25.9 (+9.0)</td><td>24.1 (+6.6)</td><td>19.4 (+5.5)</td></tr>
+  <tr class="best"><td>HaMeR(两者)</td><td>✓</td><td>✓</td><td>48.0 (+31.1)</td><td>43.0 (+25.5)</td><td>38.9 (+25.0)</td></tr>
+</table>
+<p>两个因素独立有效、叠加增益近线性(复核:14.4+9.0=23.4 vs 实际 31.1,New Days 上甚至有超线性成分)。<strong>数据规模的单项贡献大于模型规模</strong>。</p>
+<h3>12.2 用 HInt 训练的效果(表 4)</h3>
+<p>Ours*(混入 HInt 训练集)在 VISOR/Ego4D(第一人称)上提升显著(如 VISOR Occluded @0.05:25.9→42.6),New Days(第三人称)提升较小 —— 说明此前训练集里几乎没有 ego 视角手部数据,<strong>视角分布缺口比标注精度更影响泛化</strong>。对 vggt_human 的镜像启示:环绕第三人称素材恰在 HaMeR 训练分布的优势区。</p>
+<h3>12.3 未做的消融(诚实记录)</h3>
+<ul>
+  <li>未消融 ViTPose 初始化 vs ImageNet 初始化(§5 的【推测】无法用论文证据闭合);</li>
+  <li>未消融对抗损失的贡献(<span class="uncertain">⚠️【推测】 2D-only 数据占比小,贡献可能有限</span>);</li>
+  <li>未报告任何时序指标(单帧方法,视频稳定性只有补充视频定性展示)。</li>
+</ul>
+</section>
+<!-- ==================== S13 同类方法对比 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+<h3>13.1 横向对比表(固定维度;HaMeR 之外选取论文基线 + 库外代表性方法)</h3>
+<table>
+  <tr><th>方法</th><th>年份</th><th>输入假设</th><th>表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+  <tr><td>FrankMocap</td><td>2020</td><td>单目 RGB</td><td>MANO 参数回归</td><td>3D+2D</td><td>~675K(论文§3.5 推算)</td><td>—</td><td>快(ResNet50)</td><td>低</td><td>HInt PCK@0.05 ≈13-17</td><td>✅</td></tr>
+  <tr><td>METRO</td><td>2021</td><td>单目 RGB</td><td>顶点直回归(非参数)</td><td>3D+2D</td><td>—</td><td>—</td><td>—</td><td>—</td><td>FreiHAND PA-MPJPE 6.5</td><td>✅</td></tr>
+  <tr><td>Mesh Graphormer</td><td>2021</td><td>单目 RGB</td><td>顶点直回归 + 图卷积</td><td>3D+2D</td><td>—</td><td>—</td><td>—</td><td>—</td><td>FreiHAND 5.9 / HInt 14.6-19.1</td><td>✅</td></tr>
+  <tr><td>MobRecon</td><td>2022</td><td>单目 RGB</td><td>螺旋卷积(非参数)</td><td>3D</td><td>—</td><td>—</td><td>移动端级</td><td>低</td><td>FreiHAND PA-MPJPE 5.7(该单项优于 HaMeR)</td><td>✅</td></tr>
+  <tr><td>HandOccNet</td><td>2022</td><td>单目 RGB,遮挡专用</td><td>参数/非参数两版</td><td>3D</td><td>—</td><td>—</td><td>—</td><td>—</td><td>HInt 遮挡子集 7.2-9.9(全场最低,反例)</td><td>✅</td></tr>
+  <tr><td>AMVUR</td><td>2023</td><td>单目 RGB,概率化</td><td>MANO + 不确定性</td><td>3D</td><td>—</td><td>—</td><td>—</td><td>—</td><td>HO3Dv2 PA-MPJPE 8.3(最强基线)</td><td>✅</td></tr>
+  <tr class="best"><td>HaMeR</td><td>2023</td><td>单目 RGB</td><td>MANO 参数回归</td><td>3D+2D+对抗</td><td>2.7M(×4 FrankMocap)</td><td>1M steps(硬件未披露)</td><td>未披露【待核实】</td><td>未披露【待核实】</td><td>HInt 全/可见/遮挡全面最优,遮挡 2.4-2.8×</td><td>✅(代码+权重+HInt)</td></tr>
+  <tr><td><a href="3D-20260217-SAM-3D-Body.html">SAM 3D Body</a>(Meta)</td><td>2026</td><td>单目 RGB,全身+手</td><td>MHR 参数回归(全身 70 关节)</td><td>多源混合</td><td>大规模多源(含手部专项 Re:InterHand/Goliath)</td><td>—</td><td>—</td><td>—</td><td>全身 SOTA,手部见库内笔记</td><td>✅</td></tr>
+</table>
+<h3>13.2 对比结论(机制层面,不罗列数字)</h3>
+<ol>
+  <li><strong>为什么 HaMeR 野外碾压而受控集只小胜</strong>:受控集(FreiHAND)测试分布与所有方法的训练分布重叠,模型容量冗余;野外集考验的是"手势先验的覆盖度",只有数据规模能直接买到这种覆盖度。</li>
+  <li><strong>为什么遮挡专用的 HandOccNet 反而最差</strong>:遮挡鲁棒性的本质是"缺观测时用先验补全",先验强度由数据×容量决定;HandOccNet 的结构设计(遮挡感知特征)没有改变数据规模,在真正恶劣的 HInt 上先验不足暴露无遗 —— 这是对"结构设计优于 scaling"假设的直接反证。</li>
+  <li><strong>非参数方法(顶点直回归)的两面性</strong>:图像对齐更好(受控集 MobRecon 5.7 胜出),但脱离 MANO 流形约束后,遮挡下无先验兜底 —— HInt 上全面落后,证明"参数化流形约束"本身就是遮挡正则。</li>
+  <li><strong>与 SAM 3D Body 的分工</strong>:后者是全身统一方案(hands+feet 全覆盖,手部解码器用 Re:InterHand/Goliath 专项训练,见 <a href="3D-20260217-SAM-3D-Body.html">库内笔记</a>),与人体姿态估计天然耦合;HaMeR 是手部专用单帧方案,精度标杆更高、生态更成熟(HF Demo/Colab/Ego-Exo4D Challenge 第 2 名)。vggt_human 若已用 SAM3 做人体,手部可以二选一或互为校验(§14)。</li>
+  <li><strong>库内兄弟笔记</strong>:<a href="3D-20260820-ACE-Ego-Hand.html">ACE-Ego-Hand</a> 在 ego 视角手部方向引用了 HaMeR 作为 backbone/基线 —— HaMeR 已成为手部重建领域事实标准组件。</li>
+</ol>
+<h3>13.3 演进定位</h3>
+<table>
+  <tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+  <tr><td>优化拟合(分析合成)</td><td>SMPLify-X 手部</td><td>MANO 流形 + 2D 关键点能量</td><td>慢、依赖好初始化</td></tr>
+  <tr><td>参数回归(小模型)</td><td>HMR→FrankMocap</td><td>MANO 流形</td><td>数据少,野外差</td></tr>
+  <tr><td>非参数回归</td><td>METRO/MeshGraphormer</td><td>图像证据 + 网格结构</td><td>遮挡无先验兜底</td></tr>
+  <tr><td>特性化设计</td><td>HandOccNet/MobRecon/AMVUR</td><td>针对单一痛点</td><td>泛化不平衡(HInt 反例)</td></tr>
+  <tr class="best"><td>Scaling(本文)</td><td>HaMeR</td><td>数据×容量内化的手势先验 + MANO 流形</td><td>单帧、无置信度、无形状多样性上限(β 10 维)</td></tr>
+  <tr><td>全身统一大模型</td><td>SAM 3D Body(2026)</td><td>全身-手部联合先验</td><td>手部精度是否超 HaMeR 待对比</td></tr>
+</table>
+</section>
+
+<!-- ==================== S14 应用适配 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性(vggt_human 单目环绕视频)</h2>
+<div class="callout key"><h4>🎯 结论先行</h4><p>HaMeR 是当前手部姿态观测器的<strong>首选</strong>:第三人称环绕视角正落在其训练分布优势区,遮挡关节重建能力被 HInt 量化验证(2.4-2.8× 于次优)。但它是<strong>单帧、无置信度输出</strong>的方法,直接逐帧跑会得到带抖动和偶发崩溃的姿态序列 —— 它只能当"带噪声的观测源",必须叠加本 pipeline 已确定的三重约束(时序低秩轨迹 + MANO 流形 + 联合优化)才能进 hand_gs 链路。</p></div>
+<h3>14.1 与峰哥场景的逐条对照</h3>
+<table>
+  <tr><th>场景要素</th><th>HaMeR 适配性</th><th>依据</th></tr>
+  <tr><td>单目环绕视频(第三人称)</td><td>✅ 分布内优势区</td><td>HInt New Days(YouTube 第三人称)是其最强子集;12.2 消融反向说明第三人称数据充足</td></tr>
+  <tr><td>摆手动作(中速)</td><td>✅ 可处理;运动模糊是已知强项</td><td>图 1-2 对比中基线在 motion blur 样本崩坏而 HaMeR 保持(§5.4 原文)</td></tr>
+  <tr><td>弹琴动作(手指高速、持续手-物交互)</td><td>⚠️ 最恶劣场景</td><td>遮挡关节 PCK@0.05 仅 23-27(§11.3),即 3/4 被遮关节误差仍大;<strong>不可指望单帧输出直接可用</strong>,必须靠时序轨迹优化与可见帧信息聚合</td></tr>
+  <tr><td>需要逐关节置信度(方案机制①)</td><td class="fail">❌ 网络不输出</td><td>源码通读确认(§10.2);<strong>替代:ViTPose 2D 关键点分数(demo.py:103)+ 多帧重投影一致性 + 检测召回状态</strong>三级代理</td></tr>
+  <tr><td>检测召回(遮挡帧)</td><td>⚠️ 级联瓶颈</td><td>bbox 由 ViTPose 手关键点生成(§7);遮挡严重时丢帧;需视频级检测追踪兜底</td></tr>
+  <tr><td>左右手区分</td><td>⚠️ 已知失败模式</td><td>项目页自报 left/right 误分(图 6);环绕视频中左右手交叉时需在 tracking 层校验</td></tr>
+  <tr><td>时序一致性</td><td>⚠️ 仅定性宣称</td><td>论文称视频上"temporally smooth"(§1),无任何量化;按单帧方法对待</td></tr>
+  <tr><td>硬件(单卡 3090)</td><td>✅ 可行</td><td>ViT-H 约 632M 参数 + 前置检测;<span class="uncertain">【待核实】 实测显存/帧率,regnety 检测器可降载</span></td></tr>
+</table>
+<h3>14.2 推荐的接入方式(对应已定方案四机制)</h3>
+<ol>
+  <li><strong>观测生成(机制①)</strong>:逐帧跑 HaMeR 拿 MANO 初值;<strong>置信度用三级代理</strong> —— (a) ViTPose 手部关键点分数逐关节映射到 MANO 关节;(b) HaMeR 输出关节重投影回图像与 ViTPose 2D 点的残差;(c) 检测召回标记(bbox 是否由追踪补齐)。三者合成逐帧逐关节权重;</li>
+  <li><strong>轨迹优化(机制②)</strong>:姿态序列不做逐帧独立采用,以 HaMeR 输出为观测,在 MANO pose 流形上做低秩/平滑拟合(关节角速度惩罚 + 限位);</li>
+  <li><strong>环绕视角的"准多视角"利用(修正版机制③)</strong>:单目环绕下同一时刻只有单视角,但<strong>姿态缓变段(摆手间歇)相邻环绕帧可近似多视角</strong>,用手腕三角化校验 HaMeR 深度;弹琴高速段此假设失效,退回纯先验平滑;</li>
+  <li><strong>canonical 聚合(机制④)</strong>:hand_gs 绑定 MANO,shape $\beta$ 全序列共享并固定(与脸部固定表情系数同构),姿态走轨迹;遮挡帧的手指由其余帧的可见信息经 canonical 聚合补出 —— HaMeR 的遮挡重建结果只作初始化参考,不进高置信监督。</li>
+</ol>
+<h3>14.3 观测质量审计(动手前的低成本决策点)</h3>
+<p>在真实素材上跑一遍 HaMeR + ViTPose,统计:① 逐帧手部召回率(bbox 生成成功比例);② 21 关节 ViTPose 分数直方图(估算遮挡比例);③ 相邻帧手腕 3D 位移的连续性(抖动量级)。<strong>若召回率 &lt; 80% 或弹琴段低分关节占比 &gt; 40%,先补检测追踪层再谈重建。</strong></p>
+</section>
+
+<!-- ==================== S15 可改进方向 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<div class="grid">
+  <div class="card" style="border-left:4px solid var(--red)"><h4>[高优先级] 无不确定性输出,遮挡重建是"盲信"</h4><p>问题:网络单点回归 $\Theta$,无任何置信度(<code>models/hamer.py</code> 通读确认);遮挡关节占 HInt 的相当比例,其重建本质是"先验脑补",但下游无法区分哪些关节是脑补的。佐证:遮挡子集 PCK@0.05 仅 23-27(表 3),意味着多数脑补有偏。改进:借鉴 AMVUR 的概率化头部(输出分布而非点估计),或训练后用 MC-dropout / ensemble 后验标定;成本最低的是本文 §14.2 的代理置信度。</p></div>
+  <div class="card" style="border-left:4px solid var(--red)"><h4>[高优先级] 纯单帧,时序一致性靠"幸运"</h4><p>问题:论文宣称视频上稳定(§1)但只有定性视频;单帧独立回归在深度($t_z$)与手指细节上必然帧间抖动。改进:接轻量时序模块(相邻帧 token 交互)或推理后轨迹平滑 —— 后者正是 vggt_human 方案机制②要自建的部分;HaMeR 团队 2026/02 后续工作(hand-texture-module)也未解决时序。</p></div>
+  <div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 检测级联是系统第一瓶颈,但被论文叙事掩盖</h4><p>问题:demo 的手部 bbox 依赖 ViTPose 手关键点(conf&gt;0.5 且 &gt;3 点,<code>demo.py:103-113</code>),遮挡严重时 HaMeR 无运行机会;项目页自报失败模式第一条是 spurious detection(图 6)。论文所有 HInt 数字都是在"已被标注/检测到"的手上测的 —— <strong>端到端召回率从未被报告</strong>。改进:视频场景用 tracking-by-detection(IOU/外观关联)补召回;或 bbox 由人体框 + 手腕关键点双源生成。</p></div>
+  <div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 形状空间 $\beta\in\mathbb{R}^{10}$ 表达上限</h4><p>问题:MANO 10 维形状 PCA 对手型个体差异(尤其儿童/极端体型)表达有限;论文未给形状精度分析。改进:对特定主体(vggt_human 的重建对象)用多帧联合优化收紧密 $\beta$ —— 与本方案"全序列共享 β 再固定"的设计天然契合。</p></div>
+  <div class="card" style="border-left:4px solid var(--green)"><h4>[低优先级] 弱透视相机导致跨帧尺度漂移</h4><p>问题:回归的是 crop 内平移 $t$(§3.2),绝对深度与 crop 尺度耦合;视频里同一手的深度会随 bbox 尺度波动。改进:固定相机内参下做全序列尺度一致性优化(手腕骨骼长度恒定约束),或接入度量深度估计辅助。</p></div>
+</div>
+<h3>15.1 优先级总览与"最关键三点"</h3>
+<table><tr><th>改进点</th><th>优先级</th><th>对 vggt_human 的影响</th></tr>
+<tr><td>无置信度输出</td><td>高</td><td>决定机制①必须自建代理置信度</td></tr>
+<tr><td>无时序模块</td><td>高</td><td>决定机制②(轨迹优化)不可省略</td></tr>
+<tr><td>检测级联召回</td><td>中</td><td>决定要不要先做视频级手部追踪</td></tr>
+<tr><td>形状上限</td><td>中</td><td>由共享 β 联合优化覆盖</td></tr>
+<tr><td>尺度漂移</td><td>低</td><td>轨迹优化阶段顺手处理</td></tr></table>
+<p><strong>最关键的三点</strong>:置信度缺失、时序缺失、检测召回 —— 前两个是 HaMeR 本体设计缺口,第三个是其作为系统组件的工程缺口;三者共同决定了"HaMeR 输出只能当初值与弱观测,不能当 GT"。</p>
+</section>
+
+<!-- ==================== S16 总结 ==================== -->
+<section id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+<p><strong>HaMeR 是什么</strong>:手部网格恢复的"规模化基准线" —— 朴素架构(ViT-H + decoder head)+ 大数据(2.7M)+ 参数化流形(MANO),在 in-the-wild、尤其遮挡关节上碾压此前全部专用方法,并附带贡献了首个带逐关节遮挡标注的 HInt 数据集与活跃的开源生态(Ego-Exo4D Challenge 第 2 名、HF/Colab demo、2026 年仍被后续工作当 backbone)。</p>
+<p><strong>它教会我们的事</strong>:① 遮挡鲁棒性本质是<strong>先验覆盖度</strong>问题,数据规模是比结构设计更直接的购买方式(HandOccNet 反例);② 参数化流形(MANO)在遮挡下是免费正则,非参数方法在野外集体失守;③ 受控基准饱和后,<strong>评估集本身才是瓶颈</strong>,HInt 的遮挡分级标注(可见/遮挡分开报 PCK)是该领域评估方法论的进步。</p>
+<p><strong>它在 vggt_human 中的位置</strong>:手部姿态的<strong>观测源/初始化器</strong>,而非答案本身。其输出经代理置信度加权后,进入"低秩姿态轨迹 + MANO 流形 + canonical hand_gs 聚合"的三重约束框架;hand 链路与 head(MHR)同构 —— HaMeR 之于手部,等价于 ExpTracker landmarks 之于脸部,区别仅在于手部观测噪声大一个量级,因此下游约束必须更强。</p>
+</section>
+
+<!-- ==================== S17 团队与资源 ==================== -->
+<section id="s17">
+<h2><span class="num">17</span>👥 研究团队 + 🔗 资源链接</h2>
+<table>
+  <tr><th>作者</th><th>机构</th><th>背景</th></tr>
+  <tr><td>Georgios Pavlakos(一作)</td><td>UC Berkeley(现 UT Austin)</td><td>人体/手部 mesh 恢复方向连续产出(SPIN、HMR 系)</td></tr>
+  <tr><td>Dandan Shan</td><td>University of Michigan</td><td>手部交互数据与理解(HInt 主导,<a href="https://github.com/ddshan/hint">ddshan/hint</a>)</td></tr>
+  <tr><td>Ilija Radosavovic</td><td>UC Berkeley</td><td>表征学习/网络设计</td></tr>
+  <tr><td>Angjoo Kanazawa</td><td>UC Berkeley</td><td>HMR(Human Mesh Recovery)原作者,本系方法源头</td></tr>
+  <tr><td>David Fouhey</td><td>NYU(→Michigan)</td><td>手部交互/第一人称视觉</td></tr>
+  <tr><td>Jitendra Malik</td><td>UC Berkeley</td><td>—</td></tr>
+</table>
+<h3>🔗 资源链接</h3>
+<ul>
+  <li>📄 <a href="https://arxiv.org/abs/2312.05251">arXiv:2312.05251</a>(v1,2023-12-08,仅一版)</li>
+  <li>🌐 <a href="https://geopavlakos.github.io/hamer/">项目主页</a>(含失败模式与 limitation 图)</li>
+  <li>💻 <a href="https://github.com/geopavlakos/hamer">github.com/geopavlakos/hamer</a>(代码+权重,真开源;commit 时间线持续维护至 2026)</li>
+  <li>💾 <a href="https://github.com/ddshan/hint">HInt 数据集</a>(2024/05 释出标注)</li>
+  <li>🤗 <a href="https://huggingface.co/spaces/geopavlakos/HaMeR">HuggingFace Spaces Demo</a> / <a href="https://colab.research.google.com/drive/1rQbQzegFWGVOm1n1d-S6koOWDo7F2ucu">Colab</a></li>
+  <li>🧩 社区衍生:<a href="https://github.com/VincentHu19/Mano2Smpl-X">Mano2Smpl-X</a>(HaMeR 输出转 SMPL-X,README 引用)</li>
+  <li>📈 后续工作:<a href="https://gkarv.github.io/hand-texture-module/">hand-texture-module</a>(2026/02,学习纹理先验增强 HaMeR)</li>
+  <li>📚 库内兄弟笔记:<a href="3D-20260820-ACE-Ego-Hand.html">ACE-Ego-Hand</a>(以 HaMeR 为组件)、<a href="3D-20260217-SAM-3D-Body.html">SAM 3D Body</a>(全身+手统一方案)、<a href="3D-20260316-Fast-SAM-3D-Body.html">Fast SAM 3D Body</a></li>
+</ul>
+</section>
+<div class="figure"><img src="images/2312.05251/result_ours_8.png" loading="lazy" alt="HaMeR results internet" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 12(原文 Figure 4 第 7-8 行,伴侣图)</b> 互联网图像(续)。</div></div>
+<div class="figure"><img src="images/2312.05251/dataset_architecture.png" loading="lazy" alt="dataset and architecture" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 13(原文 Figure 2)</b> (上)HInt 数据集样本与遮挡标注(黑点=被遮挡关节,白点=可见);饼图为三个来源的数据分布。(下)HaMeR 架构:ViT 骨干 + Transformer 解码头回归手部与相机参数。</div></div>
+<div class="figure"><img src="images/2312.05251/proj_failures.jpg" loading="lazy" alt="failure cases" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 14(项目页)</b> 作者自报失败模式:误检(spurious hand detections)、左右手误分类、极端姿态。</div></div>
+<div class="figure"><img src="images/2312.05251/proj_limitation.jpg" loading="lazy" alt="limitation" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图 15(项目页)</b> 项目页 limitation 示例。</div></div>
+<div class="footer">
+  <p>HaMeR: Reconstructing Hands in 3D with Transformers · arXiv:2312.05251 · UC Berkeley / Michigan / NYU</p>
+  <p>笔记整理:小华子 🌿 · 2026-10-12 · 本笔记为论文调研笔记,内容基于论文 v1 与开源代码(2026-10 克隆),公式符号与原文保持一致</p>
+</div>
+</div>
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
