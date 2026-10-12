@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 71</span><span class="chip" data-k="kind" data-v="survey">调研综述 12</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 37</span><span class="chip" data-k="depth" data-v="standard">标准 38</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 72</span><span class="chip" data-k="kind" data-v="survey">调研综述 12</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 3</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 38</span><span class="chip" data-k="depth" data-v="standard">标准 38</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -1977,9 +1977,36 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/cvg/resplat" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card" data-file="3D-20251015-FlashWorld.html" data-kind="note" data-depth="deep"
+              data-topics="3D 生成|视频扩散先验用于 3D|质量速度权衡与实时" data-search="FlashWorld: 秒级高质量 3D 场景生成 — 双模式预训练 + 跨模式蒸馏 3D Scene Generation 3DGS Video Diffusion Prior DMD2 Distillation Dual-Mode Wan2.2-5B Few-step Pixel-aligned Gaussians 厦大+腾讯的 3D 场景生成模型:单图/文本 + 给定相机轨迹,4 步去噪直出 24 视角像素对齐 3DGS(约 405 万高斯),单卡 H20 9s / A800 7s。核心配方:在 Wan2.2-TI2V-5B 视频扩散上同时训练 MV-oriented(高质量但不一致)与 3D-oriented(一致但模糊)双模式,再以 MV 模式为冻结教师、3D 模式为少步学生做跨模式 DMD2 蒸馏(+GAN 与 CMC 跨模式一致性损失治漂浮伪影),并用海量单图 + 随机轨迹做 OOD 共训提升开放域泛化。T3Bench/DL3DV/WorldScore 三子集 Q-Align/CLIP 系指标全面领先 Director3D(7min)/Prometheus(15s),WorldScore 平均分 68.72 第一。推理代码与权重开源。GitHub/OpenReview 标注 ICLR 2026 Oral(arXiv abs comments 未含,按规范不加 badge)。">
+            <h3>65. FlashWorld: 秒级高质量 3D 场景生成 — 双模式预训练 + 跨模式蒸馏</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2510.13678</span>
+                <span>📅 2025-10-15</span>
+                <span>🏢 厦门大学 · 腾讯 · 复旦大学 Yes Lab</span>
+                <span>✅ 开源(推理代码+权重 Apache-2.0,训练代码申请制)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">3D Scene Generation</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">Video Diffusion Prior</span>
+                <span class="tag">DMD2 Distillation</span>
+                <span class="tag">Dual-Mode</span>
+                <span class="tag">Wan2.2-5B</span>
+                <span class="tag">Few-step</span>
+                <span class="tag">Pixel-aligned Gaussians</span>
+            </div>
+            <p>厦大+腾讯的 3D 场景生成模型:单图/文本 + 给定相机轨迹,<strong>4 步去噪直出 24 视角像素对齐 3DGS(约 405 万高斯)</strong>,单卡 H20 9s / A800 7s。核心配方:在 Wan2.2-TI2V-5B 视频扩散上同时训练 MV-oriented(高质量但不一致)与 3D-oriented(一致但模糊)双模式,再以 MV 模式为冻结教师、3D 模式为少步学生做<strong>跨模式 DMD2 蒸馏</strong>(+GAN 与 CMC 跨模式一致性损失治漂浮伪影),并用海量单图 + 随机轨迹做 OOD 共训提升开放域泛化。T3Bench/DL3DV/WorldScore 三子集 Q-Align/CLIP 系指标全面领先 Director3D(7min)/Prometheus(15s),WorldScore 平均分 68.72 第一。推理代码与权重开源。GitHub/OpenReview 标注 ICLR 2026 Oral(arXiv abs comments 未含,按规范不加 badge)。</p>
+            <a href="3D-20251015-FlashWorld.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2510.13678" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/imlixinyang/FlashWorld" target="_blank">💻 GitHub</a>
+        </div>
+
         <div class="note-card" data-file="3D-20260508-TripoSplat.html" data-kind="note" data-depth="standard"
               data-topics="稀疏与少视角重建|前馈式大重建模型" data-search="TripoSplat: Generative 3D Gaussians with Learned Density Control 3D Gaussian Splatting Learned Density Control Generative Model Latent Diffusion Octree Optimal Transport 提出 Density-Sampled Gaussians (DeG)——专为生成式建模设计的 3D 表示，解决一个关键矛盾：3DGS 的密度控制（densification/pruning）是非可微的，无法直接用于生成模型训练。此前所有生成式 3DGS 方法都在回避该问题，改用固定数量/固定结构的高斯，牺牲了 3DGS 最核心的自适应能力。TripoSplat 用 PDF 采样 + 渲染损失贡献梯度把密度控制变成可微操作：高斯中心从可学习概率密度函数采样，密度自动集中在几何复杂区域，单个潜码可解码任意数量的高斯。">
-            <h3>65. TripoSplat: Generative 3D Gaussians with Learned Density Control</h3>
+            <h3>66. TripoSplat: Generative 3D Gaussians with Learned Density Control</h3>
             <div class="meta">
                 <span>📄 arXiv: 2605.16355</span>
                 <span>📅 2026-05-08</span>
@@ -2004,7 +2031,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20251211-SHARP.html" data-kind="note" data-depth="standard"
               data-topics="前馈式大重建模型|稀疏与少视角重建|质量速度权衡与实时" data-search="SHARP: Sharp Monocular View Synthesis in Less Than a Second Feed-Forward 3D Single-Image 3DGS Metric Scale Depth Pro Real-Time Rendering 单张照片 0.9 秒前馈生成 120 万 metric-scale 3D 高斯（Depth Pro 双 ViT 编码 + 双层深度 + base/delta 组合，无球谐），邻近视角 4–22ms 实时渲染。6 个零样本数据集 DISTS/LPIPS 全列 SOTA：LPIPS 相比最强基线 Gen3C 降 25–34%，DISTS 降 21–43%，而推理快 3 个数量级。参数 702M/340M 可训练，对比扩散方法 Gen3C 7.7B/SVC 2.33B/ViewCrafter 3.17B。训练两阶段：700K V-Ray 合成场景 + 2.65M 真实图 SSFT 视角对调。核心可迁移技术：C-VAE 启发的深度调整模块（推理恒等替换）、感知损失计算图手术、属性专属激活。">
-            <h3>66. SHARP: Sharp Monocular View Synthesis in Less Than a Second</h3>
+            <h3>67. SHARP: Sharp Monocular View Synthesis in Less Than a Second</h3>
             <div class="meta">
                 <span>📄 arXiv: 2512.10685</span>
                 <span>📅 2025-12-11 (v2 2026-02-27)</span>
@@ -2028,7 +2055,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20250923-Lyra.html" data-kind="note" data-depth="deep"
               data-topics="3D 生成|前馈式大重建模型|视频扩散先验用于 3D" data-search="Lyra: 视频扩散模型自蒸馏驱动的生成式 3D 场景重建 Generative 3D Reconstruction Self-Distillation Video Diffusion 3DGS Decoder Latent Space Mamba-2 4D Generation 提出 self-distillation 框架:在 GEN3C 相机控制视频扩散模型的 latent 空间并联 3DGS 学生解码器(16 层 1×Transformer+7×Mamba-2,32.75M),以教师 RGB 解码输出监督 3DGS 渲染,零真实多视角数据纯合成训练(354k 段教师生成视频,8×A100×6 天)。单次前馈融合 6 轨迹×121 帧=726 视角 @704×1280(靠 latent 空间操作+联合 attention,像素空间直接 OOM),每 8×8 像素 1 高斯→剪枝 80% 后 2M,渲染 18ms/帧。RE10K/DL3DV/T&amp;T 三基准全指标 SOTA(21.79/20.09/19.24 dB),OOD 越多领先越大(+3.3~3.5dB vs Wonderland);同喂 GEN3C 输出时比 BTimer 静态高 8.6dB。消融关键结论:真实数据与自蒸馏混合训练零收益;多视角联合融合 −7.04dB 是架构命门。扩展到单目视频→动态 3DGS(bullet-time 逐帧高斯+运动反转增广)。代码/权重/数据全开源,场景可导出 Isaac Sim 做物理仿真。">
-            <h3>67. Lyra: 视频扩散模型自蒸馏驱动的生成式 3D 场景重建</h3>
+            <h3>68. Lyra: 视频扩散模型自蒸馏驱动的生成式 3D 场景重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2509.19296</span>
                 <span>📅 2025-09-23</span>
@@ -2054,7 +2081,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260414-Lyra2.html" data-kind="note" data-depth="deep"
               data-topics="3D 生成|视频扩散先验用于 3D|几何与时序一致性|相机控制与位姿条件" data-search="Lyra 2.0: 可探索生成式 3D 世界 Autoregressive Video Generation 3D Cache / Spatial Memory Camera Control Self-Augmentation Long-Horizon Consistency DMD Distillation FramePack 把生成式重建(视频扩散合成 → lift 成 3D)从固定窗口扩展到大规模、可反复探索的场景。核心价值在于把「长时程 3D 一致」这个模糊目标拆成两种机制不同的退化并分别给出对策:① Spatial Forgetting(空间遗忘)——相机移动后先前区域滑出有限时间上下文窗口,回头重访时只能从零幻觉出新结构;对策是维护逐帧 3D 几何(全分辨率深度 + 降采样点云)但仅用于信息路由(可见性评分 → 贪心检索 N_s=5 帧 + 稠密几何对应),外观合成完全交给扩散像素先验。② Temporal Drifting(时间漂移)——自回归误差逐帧复合放大;对策是 self-augmented histories:训练时让模型条件于自己退化的输出,教它纠错而非传播漂移。关键解耦:显式 3D 代理只负责「该看谁、对应关系是什么」,不负责「长什么样」——避免此前全局点云紧耦合造成的「坏几何 → 坏条件」误差放大(消融 SPMem 的全局点云在长时程漂移更明显)。实现上在 Wan 2.1-14B 骨干(配 FramePack 上下文压缩)加入 canonical 坐标 warp 注入 DiT 的 q/k(不改 value),再在自生成数据上微调 Depth Anything v3 把长视频转为 3DGS 与三角网格。832×480 训练/推理,7000 迭代(64×GB200),单段生成 194s→15s(35 步 → DMD 4 步蒸馏,约 13×)。DL3DV/T&amp;amp;T 上 SSIM、LPIPS、FID、相机可控性同时最优,域外 T&amp;amp;T FID 51.33 显著优于 SPMem 60.11。代码/权重/GUI/训练代码开源(权重走 NVIDIA 内部研究许可)。⚠️ abs 页 comments 无会议信息,本笔记不标会议 badge;自增广概率 p=0.7(论文)vs 1.0(代码)、weight decay 0.1(论文)vs 1e-3(代码)两处论文与代码不一致已在笔记标注。">
-            <h3>68. Lyra 2.0: 可探索生成式 3D 世界</h3>
+            <h3>69. Lyra 2.0: 可探索生成式 3D 世界</h3>
             <div class="meta">
                 <span>📄 arXiv: 2604.13036</span>
                 <span>📅 2026-04-14</span>
@@ -2079,7 +2106,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260903-OctWorld.html" data-kind="note" data-depth="deep"
               data-topics="3D 生成|视频扩散先验用于 3D|几何与时序一致性|相机控制与位姿条件" data-search="OctWorld: 八叉树 3D 记忆的长程世界一致视频生成 Octree 3D Mapping TSDF Fusion Long-Range World Consistency Autoregressive Video Generation 3D Memory / Cache Camera Control FramePack 与 Lyra 2.0 解决完全相同的问题(单图沿长相机轨迹自回归生成、重访区域保持一致),答案方向却相反:Lyra 2.0 明确拒绝把历史几何融合成全局表示(逐帧独立存、几何只做信息路由),OctWorld 则正面拥抱全局融合——把生成的 RGB 帧与深度图逐步融合进一个可扩展、空间自适应的全局 3D 记忆 OctMap(动态稀疏八叉树 + TSDF 融合)。动机建立在对 SLAM 假设的质疑上:SLAM 假设度量尺度已知、空间范围有界,而开放域世界生成尺度不确定且可能无界,固定分辨率 TSDF 要么高分辨率不可扩展、要么低分辨率显著丢细节。三条自述贡献:首个为长程世界一致视频生成设计的全局融合 3D 记忆框架;空间自适应八叉树 TSDF 记忆;超越此前方法并证明相对点缓存与朴素 TSDF 体的明确优势(重投影 PSNR 23.47 vs 最优 TSDF 22.08 = +1.39 dB,而 TSDF 0.001 体素已 OOM)。15B OctWorld-1.0(FramePack F1 14B + 新增控制模块),八叉树最大深度 d_max=16,32×H100 训练,评测最长轨迹 505 帧;WorldScore 200 场景总分 50.31 领先 Gen3C 45.48,Re10K 反转轨迹 LPIPS 0.1633/CD 0.0345 优于 Gen3C 与 VMem,用户研究 53.8% 偏好。⚠️ 截至笔记撰写(2026-09-20)官方代码尚未放出(项目页显示 Code (Coming Soon)、无 GitHub 链接),§9 工程细节全部来自论文附录、无源码级验证,可信度与 Lyra 2.0(代码全开源)不同级。">
-            <h3>69. OctWorld: 八叉树 3D 记忆的长程世界一致视频生成</h3>
+            <h3>70. OctWorld: 八叉树 3D 记忆的长程世界一致视频生成</h3>
             <div class="meta">
                 <span>📄 arXiv: 2609.03919</span>
                 <span>📅 2026-09-03</span>
@@ -2105,7 +2132,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260827-R2MBench.html" data-kind="note" data-depth="deep"
               data-topics="几何与时序一致性|视频生成模型谱系" data-search="R2M-Bench: 交互式视频世界模型的重访记忆评测基准 World Model Benchmark Revisit Memory Relative Calibration NMR (Normalized Memory Ratio) Long-Horizon Consistency Interactive Video Generation Human Alignment 首个专门评测交互式视频世界模型「重访记忆」的公共基准:玩家操纵相机走远再折返,场景/物体/状态与离开前是否一致。方法论核心是 same-rollout 相对校准——对每个重访对,从同一 rollout 抽两组对照(gap-matched baseline 测无记忆底色 + short-range pair 测短时一致性上界),MemoryGain = 重访均值 − 基线均值,再除以动态范围得 NMR(式9),模型底色、场景难度、随机种子在分子分母间对消。协议:三轨迹模板(DDDAAA 同视角折返 / WSLRRLL 变视角 / revisit_loop 长程闭环)× 100 场景 = 300 实例,单条 rollout 481 帧/30s。五维度指标族:Appearance(PSNR/SSIM/LPIPS)、Scene Identity(DINOv2/BoQ/MutualVPR)、Object Identity(GroundingDINO+SAM2 重检测管线)、Local Geometry(SuperPoint+LightGlue)、Persistent State(Gemini VLM 结构化评分)。主结果:七模型 Overall NMR 从 0.016(SANA-WM)到 0.706(DreamX-World-Memo)相差 44 倍;Raw 相似度口径下 HY-WorldPlay 第 1、DreamX 第 6,换 NMR 后互换——评分协议选择直接改变模型排名(保守画面冒充记忆被校准揭穿);NMR 与人评 Spearman ρ=0.547,且顺带把运动相关性混杂从 0.207 压到 0.072。源码级验证出三处论文-代码差异:DR 阈值论文 1e-8 vs 代码 1e-5、exclusion radius 论文 ⌊T/20⌋ vs 代码 ⌊T/30⌋、object 权重构造函数 0.7/0.3 vs CLI 0.5/0.5(实际与论文式14一致)。⚠️ 榜首 DreamX-World-Memo 为作者团队自引模型,「0.706 显著领先」待第三方独立复现;方法论本身(NMR 协议)可放心采用。">
-            <h3>70. R2M-Bench: 交互式视频世界模型的重访记忆评测基准</h3>
+            <h3>71. R2M-Bench: 交互式视频世界模型的重访记忆评测基准</h3>
             <div class="meta">
                 <span>📄 arXiv: 2608.27328</span>
                 <span>📅 2026-08-27</span>
@@ -2130,7 +2157,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260601-CovRAG.html" data-kind="note" data-depth="deep"
               data-topics="几何与时序一致性|视频扩散先验用于 3D" data-search="CovRAG: 覆盖最大化检索的一致长视频生成 Memory-Augmented Generation Retrieval Strategy Target-View Coverage Map Residual Coverage Gain Greedy Set Cover VGGT DFoT Long-Horizon Consistency 把记忆增强视频生成的检索机制正交拆成证据轴(用什么 3D 证据)与选择轴(怎么选帧)并分别给出低成本答案。证据:CovRAG 用 VGGT 深度把每个历史帧 warp 到目标视角,得到 0/1 像素级目标视角覆盖图(式2/3)—— 免全局重建(VMem 的成本来源)却自带遮挡推理(FoV 做不到)。选择:残差覆盖增益(式4/5/6)迭代选「覆盖当前缺口最大」的帧,本质是贪婪集合覆盖,天然消除 top-n 独立打分的冗余。扩展性:滑窗 VGGT + 深度缓存,几何成本钉死在窗口 L,40→120 帧检索延迟仅 +21%、峰值显存 +1%。2×2 消融是全文最有警示价值的一格:细粒度覆盖图配独立选择(0.149 MEt3R)反而比 FoV 配独立(0.141)更差—— 证据与选择是乘法关系,升级一个必须同步升级另一个。主结果:RealEstate10K(自建 41 帧回环重排协议)与 DL3DV10K 上,对 WorldMem 的 MEt3R 均降 29%(0.144→0.102 / 0.316→0.224),对 VMem(DL3DV)四项指标降 19~29%,端到端延迟比 VMem 快 5.21×(45.4s→8.7s,与 WorldMem 仅差 3%);n=2 即近饱和。60→120 帧 FVD 恶化 40.2% vs WorldMem 55.0%,长程误差累积更慢。鲁棒性:深度尺度偏差 10% 内稳,但图像退化 L4(blur 31+噪声 0.08)时崩至 0.154 跌破 WorldMem —— 失效边界在几何估计器输入被破坏。⚠️ 无官方代码(截至 2026-09),超参全部来自论文口径未经验证;滑窗大小 L 论文通篇未给具体值。与 Lyra 2.0 同属「显式几何只做信息路由」哲学(差异:warp 注入 q/k vs 纯检索零侵入)。">
-            <h3>71. CovRAG: 覆盖最大化检索的一致长视频生成</h3>
+            <h3>72. CovRAG: 覆盖最大化检索的一致长视频生成</h3>
             <div class="meta">
                 <span>📄 arXiv: 2606.02479</span>
                 <span>📅 2026-06-01</span>
@@ -2155,7 +2182,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260303-PERSIST.html" data-kind="note" data-depth="deep"
               data-topics="几何与时序一致性|视频扩散先验用于 3D" data-search="PERSIST: 以持久 3D 状态模拟交互式时空 Interactive World Model Persistent 3D State World-Frame Voxel Latent Rectified Flow DiT Differentiable Rasterization Depth Peeling Diffusion Forcing Exposure Bias Luanti/Craftium 用持久 3D 状态替代像素历史/关键帧检索的交互式世界模型:状态 s̃=⟨w,c⟩,w 为以 agent 为中心的 48³ 体素 world-frame latent(3D-VAE 压到 12³×48),c 为 10 维相机。三组件训练独立、推理组装:W_θ(rectified flow DiT)在体素 latent 空间预测环境演化,C_θ(1D causal transformer+RoPE)残差预测相机(只出 Δpitch/Δyaw/Δfov),P_θ(learned deferred shader)从投影特征栈画像素;桥接靠无参数可微投影算子 R(三角网格+depth-peeling,max 32 层,逐像素深度有序)。暴露偏置用 Diffusion Forcing(τ_ctx=0.02/0.1)+ 10% flat 噪声增强双层缓解,η=3、20 步、σ_min=1e-5——论文 Table 9 与发布 pipeline.json 逐项吻合(源码印证案例)。数据:Luanti/Craftium,~40M 交互/~100K 轨迹/460h@24Hz。主结果:FVD@200/400/600 = 129/141/148(Oasis 409/687/875,600 帧恶化 +15% vs Oasis +114%);+w0 显式初始化再降到 80/93/104;人评 Overall 2.6-3.0 vs Oasis 1.9;PERSIST-S 2-step 886ms/帧(3× 加速,FVD 仅 +30%)仍全胜基线,但距实时差一个量级。新能力:单图多世界采样(w_0 多样补全)、中途直接改 w 编辑世界、屏外动态持续演化(撞树/洞穴注水后离开再返回仍在);Camera-GT 反例(穿墙)证明一致性来自 w-c 耦合。局限:需引擎 GT 体素监督、48³ 有限区域、未达实时。与 WorldMem(代码内置 worldmem_cam_to_minetest_cam 相机对齐)、CovRAG、R2M-Bench、Lyra 2.0 构成记忆检索/3D 世界模型赛道,Oasis→WorldMem→CovRAG 在检索轴内卷,PERSIST 换载体终结内卷。">
-            <h3>72. PERSIST: 以持久 3D 状态模拟交互式时空</h3>
+            <h3>73. PERSIST: 以持久 3D 状态模拟交互式时空</h3>
             <div class="meta">
                 <span>📄 arXiv: 2603.03482 (ICML 2026)</span>
                 <span>📅 2026-03-03 (v2: 2026-06-03)</span>
@@ -2183,7 +2210,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260626-SHOW.html" data-kind="note" data-depth="deep"
               data-topics="几何与时序一致性|前馈重建与基座模型" data-search="SHOW: 前馈单目视频的人景统一度量重建 Human-Scene Unified Reconstruction VGGT SMPL-X Mask-as-Prompt Feedforward HMR DensePose PromptHMR Metric Scale Alignment HS-CF / HS-V BEDLAM2.0 用掩码提示驱动的 VGGT把 HMR 与前馈场景重建耦合进统一度量空间:单目视频一次前馈同时输出场景(相机/深度/点图)与所有人体的 SMPL-X 网格,人体天然落在场景坐标系、尺度一致。三阶段训练:①人感知几何编码(mask encoder 16 通道 SAM 式降维 + DensePose 辅助头,微调骨干对齐点图尺度分布——消融显示这一步从 38.51 拉到 9.44);②几何感知 SMPL-X 解码(三 token 设计 smpl/scale/register + K 轮自注意-交叉注意迭代,ray encoder 注入焦距;源码 smpl_decoder_phmr.py 逐项印证 Eq.7-11);③联合微调(log 尺度监督 + 0.2 跨帧一致性 + SMPL 引导点图 chamfer 对齐[stop-grad,发布代码未启用,以 10×scale 替代],Eq.13-18)。新指标 HS-CF(人体-点图归一化倒角)/HS-V(x/y 方差 ℓ1)配 5%/10% 百分位截断,首次量化人-景对齐。主结果:3DPW PA 41.0(联合类最优)、EMDB-2 WA 109.1(超 GVHMR)、HS-CF₅ 5.69 / HS-V₅ 0.030(同时做到 Human3R 的对齐与 UniSH 的尺度)。数据 BEDLAM2.0 筛后 4,250 序列 6FPS 5 帧片段;4×B200 100+100+200 epochs。局限:sim-to-real 鸿沟、静相机(RICH)吃不到多视角红利、人体占比极小场景困难。定位:VGGT→人景统一路线首个完整落地,掩码提示与骨干微调同时做到位;HS-CF/HS-V 预计成后续 4D 人-景重建标配基准。">
-            <h3>73. SHOW: 前馈单目视频的人景统一度量重建</h3>
+            <h3>74. SHOW: 前馈单目视频的人景统一度量重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2606.27720</span>
                 <span>📅 2026-06-26 (v1)</span>
@@ -2212,7 +2239,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20250806-4DVD.html" data-kind="note" data-depth="standard"
               data-topics="视频扩散先验用于 3D|3D 生成|几何与时序一致性" data-search="4DVD:级联解耦的稠密视角视频扩散模型 多视角视频扩散 4D 生成 级联解耦 Video Diffusion Prior LoRA 把 4D 生成拆成「低分辨率稠密布局」与「结构感知高清外观」两个子任务:主动用分辨率换视角密度(16 路 vs SV4D 的 8 路),再用 MAP 模块把单目视频外观按布局索引铺到所有视角。收益几乎全部落在一致性维度——FVD-V 从 482.64 降到 314.44(降 34.8%),而 LPIPS 只从 0.136 小胜到 0.133。训练数据 D-Objaverse(17k 动态资产)未释放,无公开代码。">
-            <h3>74. 4DVD:级联解耦的稠密视角视频扩散模型</h3>
+            <h3>75. 4DVD:级联解耦的稠密视角视频扩散模型</h3>
             <div class="meta">
                 <span>📄 arXiv: 2508.04467</span>
                 <span>📅 2025-08-06</span>
@@ -2235,7 +2262,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260611-Flex4DHuman.html" data-kind="note" data-depth="deep"
               data-topics="视频扩散先验用于 3D|相机控制与位姿条件|几何与时序一致性" data-search="Flex4DHuman:只靠相对相机位姿的多视角视频扩散 多视角视频扩散 Camera Pose PRoPE 4D 人体重建 无几何先验 把 Wan 2.1 自注意力的位置编码从三轴扩成五轴(时间 16 + 视角槽 8 + SE(3) 20 维,空间 42+42 不变),删掉骨架/深度/法线等一切显式几何先验,只用相对相机位姿驱动多视角视频生成。DNA-Rendering 25.44 dB,超过依赖 GT 骨架的 Diffuman4D(24.23 dB);1→4 个参考视角时 PSNR 25.21→31.90 dB,同一 checkpoint 无需重训。代价是相机平移被缩放到单位距离、绝对尺度丢失;论文无任何组件消融。">
-            <h3>75. Flex4DHuman:只靠相对相机位姿的多视角视频扩散</h3>
+            <h3>76. Flex4DHuman:只靠相对相机位姿的多视角视频扩散</h3>
             <div class="meta">
                 <span>📄 arXiv: 2606.13655</span>
                 <span>📅 2026-06-11</span>
@@ -2259,7 +2286,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260318-AHOY.html" data-kind="note" data-depth="deep"
               data-topics="微动与非刚性人体重建|人脸手部细节与增强|鲁棒性与干扰过滤" data-search="AHOY!:遮挡下的可动画 3DGS 人体 4D 人体重建 Video Diffusion Prior Gaussian Splatting FLAME 遮挡 扩散反演 把「遮挡」从要避开的前提变成默认输入:用身份微调的视频扩散(Wan 2.2 + LoRA rank 128)为从未观测的区域造稠密监督。核心机制是 map-pose / LBS-pose 解耦——map pose 在序列内共享以强制同一套高斯,逐帧 LBS pose 可优化以吸收扩散生成的多视角不一致。BEHAVE 24.12 / 22.81 dB,YouTube 22.01 / 23.05 dB。工程超参取自项目页补充材料 PDF,无公开代码。">
-            <h3>76. AHOY!:遮挡下的可动画 3DGS 人体</h3>
+            <h3>77. AHOY!:遮挡下的可动画 3DGS 人体</h3>
             <div class="meta">
                 <span>📄 arXiv: 2603.17975</span>
                 <span>📅 2026-03-18</span>
@@ -2284,7 +2311,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260710-StudioRecon.html" data-kind="note" data-depth="deep"
               data-topics="稀疏与少视角重建|数字人 Pipeline 工程|视频扩散先验用于 3D" data-search="StudioRecon:低重叠相机的 4D 人体-场景重建 4D 人体重建 4DGS 稀疏视角 SMPL 多视角一致性 开源 只有 4 台低重叠(最近邻夹角 70°)、未标定相机时重建 4D 人体-场景。核心是「背景与人体受益于不同先验」:背景交给视频扩散稠密化(481 个 GEN3C 新视角),人体交给 SMPL 几何约束。附录用 PCK 直接量化了这个分工的必要性——GEN3C 出的人体 PCK@0.05 仅 55.6%,显式重建为 93.1%。五篇中唯一放出完整源码(非商用许可)。源码与论文的定值差异见笔记 §12。">
-            <h3>77. StudioRecon:低重叠相机的 4D 人体-场景重建</h3>
+            <h3>78. StudioRecon:低重叠相机的 4D 人体-场景重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2607.09125</span>
                 <span>📅 2026-07-10</span>
@@ -2310,7 +2337,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260811-LatentTo4D.html" data-kind="note" data-depth="standard"
               data-topics="视频扩散先验用于 3D|3D 生成|前馈式大重建模型" data-search="Latent-to-4D:绕过 RGB 的潜空间直连 4D 生成 潜空间接口 4D 生成 Video Diffusion Prior LoRA 共享 VAE 问的是接口层面的问题:共享同一 VAE 的多个视频 DiT,其最终去噪 latent 能否作为「一次几何监督、服务多个生成器」的可复用接口?做法是把 latent 绕过 RGB 解码,直接对齐到预训练 4D 解码器的 token 网格(固定三线性重采样 + 可学习 3D 卷积 + 逐帧/全局交替注意力)。约 1K 条重建 clip 训练,单 checkpoint 在三个同 VAE 的 DiT 间不变迁移,DINO-F1 比同 latent 的 Wan+4RC 级联高 2.88–3.45(Text4D-200)与 5.81(I4D-200)。无源码。">
-            <h3>78. Latent-to-4D:绕过 RGB 的潜空间直连 4D 生成</h3>
+            <h3>79. Latent-to-4D:绕过 RGB 的潜空间直连 4D 生成</h3>
             <div class="meta">
                 <span>📄 arXiv: 2608.10744</span>
                 <span>📅 2026-08-11</span>
@@ -2334,7 +2361,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260813-LocusGS.html" data-kind="note" data-depth="deep"
               data-topics="前馈式大重建模型|稀疏与少视角重建" data-search="LocusGS:给高斯 Token 装上显式三维锚点的前馈 3DGS 前馈 3DGS Gaussian Token 显式空间锚点 几何注意力偏置 Plücker 光线 稀疏视角 开源 query-based 前馈 3DGS 的 token 是纯隐向量,同一 token 解码的高斯散布全场景。LocusGS 给每个 token 挂显式三维锚点(中心+半径),12 层 decoder 逐层 refine,并三处使用:cross-attn 加「点到 Plücker 光线距离」的半径自适应高斯偏置、self-attn 注入锚点位置编码、高斯中心按 μ+rδ 锚定解码。同预算对 TokenGS DL3DV 4 视图 +1.36 dB,token 级高斯散布缩 约 26×,代价 +8.8% 参数/+19.4% 延迟。源码(file:line 级)复核发现 9 处论文-代码出入。">
-            <h3>79. LocusGS:给高斯 Token 装上显式三维锚点的前馈 3DGS</h3>
+            <h3>80. LocusGS:给高斯 Token 装上显式三维锚点的前馈 3DGS</h3>
             <div class="meta">
                 <span>📄 arXiv: 2608.12825</span>
                 <span>📅 2026-08-13</span>
@@ -2361,7 +2388,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260720-MoGe-3.html" data-kind="note" data-depth="deep"
               data-topics="前馈式大重建模型|表面与几何重建" data-search="MoGe-3: 自引导稀疏体素精炼的单目几何估计 Monocular Geometry Sparse Voxel Refinement Sparse 3D U-Net Point Map Metric Depth MoGe-2 基础上把几何解码从 2D 图像面抬进 3D 空间:自引导稀疏体素精炼(SSR)按分解坐标把点图量化成 HW 个占用体素,5 级子流形稀疏 3D U-Net 在真实 3D 邻域聚合特征,迭代 K=3 步只预测 log-depth 残差。局部 δ0.01ᵖ 从 46.6 提升到 55.9(ViT-L),推理 121 ms@700²。训练/推理/评测全量开源;笔记含源码级验证(file:line),并记录两处论文-代码数值差异(体素分辨率 D、2D heads 学习率)。">
-            <h3>80. MoGe-3: 自引导稀疏体素精炼的单目几何估计</h3>
+            <h3>81. MoGe-3: 自引导稀疏体素精炼的单目几何估计</h3>
             <div class="meta">
                 <span>📄 arXiv: 2607.17967</span>
                 <span>📅 2026-07-20</span>
@@ -2386,7 +2413,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20251016-SaLon3R.html" data-kind="note" data-depth="deep"
               data-topics="前馈式大重建模型|质量速度权衡与实时" data-search="SaLon3R: 结构感知的长序列在线可泛化 3D 重建 Feed-Forward 3DGS Pose-Free Online Reconstruction Anchor Quantization Point Transformer V3 冻结 CUT3R/VGGT 在线点图 backbone,saliency 加权体素量化把逐像素高斯压成 anchor,Point Transformer V3 注入 3D 结构先验精炼,MLP 每 anchor 自适应长出 M=4 个高斯并以 tanh(saliency) 调制不透明度。ScanNet 50 视角:PSNR 19.78、Abs Rel 0.068(比最佳 pose-required 基线好约 5 倍)、10.15 FPS、3042K 高斯(冗余减少 50%-90%)。官方代码未开源(2026-10 核实,仓库仅项目页分支)。">
-            <h3>81. SaLon3R: 结构感知的长序列在线可泛化 3D 重建</h3>
+            <h3>82. SaLon3R: 结构感知的长序列在线可泛化 3D 重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2510.15072</span>
                 <span>📅 2025-10-16</span>
@@ -2412,7 +2439,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20250630-GaVS.html" data-kind="note" data-depth="deep"
               data-topics="几何与时序一致性|前馈式大重建模型" data-search="GaVS:3D Grounded 视频稳像 —— 时序一致的局部重建与渲染 视频稳像 3DGS 前馈局部重建 测试时优化 动态补偿 时序一致性 全画幅免裁剪 把视频稳像重构为「逐帧前馈局部 3DGS 重建 + 平滑位姿渲染」:Flash3D/UniDepth 骨干,测试时仅 3 epoch 微调解码器(多视角光度监督 + RAFT 物体运动流动态补偿 + 空洞跨帧基元正则),ProPainter 外推实现全画幅免裁剪(CR=1.0)。核心洞察:稳像是小基线问题,全局 4D 重建是过度构建 —— 对比 Shape of Motion 预处理 13min vs &gt;10h、优化几分钟 vs 1h(正文/附录加速比口径矛盾,笔记已三列复核);动态不显式建模,由逐帧重建隐式吸收,与 D-3DGS 的规范空间+变形场、SoM 的 SE(3) 运动基形成范式对照。改造 DeepFused 数据并提出 GC-S/GC-D 几何一致性指标。">
-            <h3>82. GaVS:3D Grounded 视频稳像 —— 时序一致的局部重建与渲染</h3>
+            <h3>83. GaVS:3D Grounded 视频稳像 —— 时序一致的局部重建与渲染</h3>
             <div class="meta">
                 <span>📄 arXiv: 2506.23957</span>
                 <span>📅 2025-06-30</span>
@@ -2440,7 +2467,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20231208-HaMeR.html" data-kind="note" data-depth="deep"
               data-topics="人体先验与参数化模型|人脸手部细节与增强" data-search="HaMeR:Transformer 手部网格恢复 —— 数据与模型规模化碾压遮挡难题 手部重建 MANO ViT-H 单目姿态估计 遮挡鲁棒性 HInt 数据集 单帧手部网格恢复的规模化基准线:ViT-H 骨干 + Transformer 解码头回归 MANO(θ48/β10/相机),10 数据集混合 2.7M 样本训练。HInt(40.4K 手,首个带逐关节遮挡标注)上 PCK@0.05 达基线 2-3 倍,遮挡子集 27.2 vs 9.8;消融证明数据×4(+14.4)与大模型(+9.0)独立有效。源码核实:输入 256×192、1M steps、损失权重全表;无置信度输出、纯单帧无时序、检测级联召回是系统第一瓶颈 —— 对 vggt_human 手部链路只能当带噪观测源,需叠加时序轨迹与代理置信度。">
-            <h3>83. HaMeR:Transformer 手部网格恢复 —— 数据与模型规模化碾压遮挡难题</h3>
+            <h3>84. HaMeR:Transformer 手部网格恢复 —— 数据与模型规模化碾压遮挡难题</h3>
             <div class="meta">
                 <span>📄 arXiv: 2312.05251</span>
                 <span>📅 2023-12-08</span>
@@ -2543,7 +2570,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>84. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>85. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2566,7 +2593,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>85. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>86. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2589,7 +2616,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>86. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>87. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2615,7 +2642,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>87. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>88. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2658,7 +2685,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-10-12 · 涵盖 87 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-10-12 · 涵盖 88 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){

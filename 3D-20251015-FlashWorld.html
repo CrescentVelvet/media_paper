@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashWorld: 秒级高质量 3D 场景生成 — 双模式预训练 + 跨模式蒸馏</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2510.13678 · 2025-10-15 · 厦门大学 + 腾讯 · 双模式扩散 + 跨模式蒸馏</span>
+    <h1>FlashWorld: 秒级高质量 3D 场景生成</h1>
+    <div class="subtitle">FlashWorld: High-quality 3D Scene Generation within Seconds —— 双模式预训练 + 跨模式后训练蒸馏,单图/文本 4 步去噪直出 3DGS</div>
+    <div class="authors">Xinyang Li*(腾讯实习期间完成) · Tengfei Wang · Zixiao Gu · Shengchuan Zhang · Chunchao Guo · Liujuan Cao†(†通讯作者)</div>
+    <div class="org">厦门大学(教育部多媒体可信感知与高效计算重点实验室) · Tencent · 复旦大学 Yes Lab</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2510.13678" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2510.13678v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://imlixinyang.github.io/FlashWorld-Project-Page/" target="_blank">🏠 项目主页</a>
+      <a href="https://github.com/imlixinyang/FlashWorld" target="_blank">💻 GitHub(推理代码+权重)</a>
+      <a href="https://huggingface.co/spaces/imlixinyang/FlashWorld-Demo-Spark" target="_blank">🤗 在线 Demo</a>
+      <a href="3D-20250923-Lyra.html">📖 对照笔记:Lyra</a>
+      <a href="3D-20251211-SHARP.html">📖 SHARP</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:两条路线的失败模式</a></li>
+    <li><a href="#s3">预备知识:Flow Matching 与 DMD2</a></li>
+    <li><a href="#s4">算法总体框架与符号表</a></li>
+    <li><a href="#s5">模块一:双模式多视角扩散主干</a></li>
+    <li><a href="#s6">模块二:像素对齐 3DGS 解码器</a></li>
+    <li><a href="#s7">模块三:双模式预训练</a></li>
+    <li><a href="#s8">模块四:跨模式后训练蒸馏</a></li>
+    <li><a href="#s9">模块五:OOD 数据共训</a></li>
+    <li><a href="#s10">损失函数总表</a></li>
+    <li><a href="#s11">训练与推理流程图</a></li>
+    <li><a href="#s12">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s13">实验结果</a></li>
+    <li><a href="#s14">消融实验</a></li>
+    <li><a href="#s15">🔄 同类方法对比分析</a></li>
+    <li><a href="#s16">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s17">可改进方向分析</a></li>
+    <li><a href="#s18">总结与演进定位</a></li>
+    <li><a href="#s19">👥 研究团队与资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p><b>一句话:</b>FlashWorld 用一个 5B 视频扩散模型(Wan2.2-TI2V-5B)同时学会「多视角图像生成(MV-oriented)」与「直接产 3DGS(3D-oriented)」两种模式,再以 MV 模式当老师、3D 模式当学生做跨模式 DMD2 蒸馏,把 3D 场景生成压缩到 <b>4 步去噪、单卡 4~9 秒</b>,质量反超分钟级两阶段方法。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">9s</div><div class="l">单场景生成耗时(单卡 H20,论文 Tab.1;README:A800 7s / H100 4s)</div></div>
+  <div class="stat"><div class="v">4 步</div><div class="l">推理去噪步数(源码 <code>denoising_steps=[0,250,500,750]</code>)</div></div>
+  <div class="stat"><div class="v">24×480×704</div><div class="l">输出视角数 × 分辨率(480P)</div></div>
+  <div class="stat"><div class="v">≈405 万</div><div class="l">单场景 3D 高斯数(源码推导:24 帧 × 240×352 × 2 点/像素,见 §12)</div></div>
+  <div class="stat"><div class="v">5B</div><div class="l">DiT 主干(Wan2.2-TI2V-5B 初始化)</div></div>
+  <div class="stat"><div class="v">10~100×</div><div class="l">论文宣称加速比(对分钟级方法成立;对最快基线仅 1.1~1.7×,见 §13)</div></div>
+</div>
+
+<p><b>问题:</b>单张图或一段文本 → 完整可漫游的 3D 场景(3DGS 表示)。<b>方法:</b>把传统「先生成多视角图、再重建」的 MV-oriented 范式,转为「去噪过程直接产出 3D 高斯」的 3D-oriented 范式,并用跨模式蒸馏同时拿到前者的高质量与后者的 3D 一致性。<b>结果:</b>文本到 3D 场景在 T3Bench / DL3DV / WorldScore 三个子集的无参考质量指标(Q-Align、CLIP IQA+ 等)上大幅领先 Director3D / Prometheus;WorldScore 基准平均分 68.72 第一;耗时 9 秒 vs 基线 6 分钟~7 分钟。</p>
+
+<div class="callout key"><b>核心贡献(论文 §1 自述三点):</b>
+<ol>
+<li><b>双模式预训练</b>:在视频扩散模型先验上训练一个多视角扩散模型,同时支持 MV-oriented(高质量、不一致)与 3D-oriented(一致、模糊)两种生成模式,共享同一 DiT 主干;</li>
+<li><b>跨模式后训练</b>:以冻结的 MV 模式为 real-score 教师、3D 模式为少步学生做 DMD2 蒸馏——教师补质量、学生保一致,顺带把去噪步数压到 4 步;</li>
+<li><b>OOD 数据共训</b>:后训练阶段引入海量单视角图片 + 文本 + 随机模拟相机轨迹(无需多视角标注),提升开放域泛化。</li>
+</ol>
+</div>
+
+<div class="callout warn"><b>⚠️ 会议信息核实(按本库规范处理):</b>arXiv 仅 v1(2025-10-15),comments 字段只有项目页链接,<b>未含会议信息,故本笔记不加会议 badge</b>。官方 GitHub README(2026-01-27 / 2026-02-06 新闻)与 OpenReview 页面(<a href="https://openreview.net/forum?id=2IftRjRB07" target="_blank" style="color:var(--orange)">forum?id=2IftRjRB07</a>,页面标注 "ICLR 2026 Oral",Published 2026-01-26)均表明该文已被 <b>ICLR 2026 接收为 Oral</b>。两处来源可交叉印证,记录于此供后续维护参考。</div>
+
+<div class="figure">
+  <img src="images/2510.13678/teaser.png" alt="teaser" loading="lazy">
+  <div class="caption"><b>图1</b>(论文 Fig.1)FlashWorld 从单张图片或文本提示在秒级生成多样化 3D 场景,涵盖写实、风格化、室内、室外、物体中心等多类输入。图片下载自 arXiv HTML。</div>
+</div>
+
+<div class="tag-row">
+  <span class="tag">3D Scene Generation</span><span class="tag">3DGS</span><span class="tag">Video Diffusion Prior</span><span class="tag">DMD2 Distillation</span><span class="tag">Dual-Mode</span><span class="tag">Wan2.2-5B</span><span class="tag">Few-step</span><span class="tag">Pixel-aligned Gaussians</span>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:两条路线的失败模式</h2>
+
+<p>3D 场景生成分三条技术线(论文 §1 / Appendix B):① 资产拼装式(LayoutGPT / HoloDeck 等,靠摆已有 3D 资产);② 迭代修补式(Text2Room / LucidDreamer / WonderJourney / WonderWorld 等,逐视角 inpaint + 深度建场,误差累积、语义不一致);③ 数据驱动扩散式——当前主流,又分两种范式。FlashWorld 的出发点正是这两种范式各自的<b>结构性失败模式</b>:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>路线 A:MV-oriented(先生成多视角图 → 再重建)</h4>
+    <p style="font-size:14px">代表:CAT3D、DimensionX、ODIN、GenXD、Bolt3D、Wonderland、Prometheus、SplatFlow。<br><br>
+    <b>失败模式:</b>多视角扩散在生成时<b>没有显式 3D 约束</b>,各视角几何/语义互不一致 → 重建出的场景纹理噪声、重影、结构错位(论文 Fig.2:CAT3D 复杂场景糊、Bolt3D 树枝变形、Wonderland 大视角变化下高斯重复扭曲)。<br><br>
+    <b>效率账:</b>扩散生成多视角(几十步)+ 逐场景优化或前馈重建两阶段 → 单场景几分钟到几小时。<br><br>
+    <b>雪上加霜:</b>直接对 MV 范式做蒸馏加速会<b>放大</b>不一致性(论文 Fig.2 "Ours w/ MV-Dist")。</p>
+  </div>
+  <div class="card">
+    <h4>路线 B:3D-oriented(去噪过程直接产 3D)</h4>
+    <p style="font-size:14px">代表:DMV3D、Dual3D、Director3D、DiffusionGS、Cycle3D。<br><br>
+    <b>失败模式:</b>把可微渲染嵌进去噪环,几何天然一致,但受<b>高质量多视角数据稀缺 + 相机标注不准</b>所限,生成结果<b>模糊、有视觉伪影</b>(论文 Fig.2 "Ours w/ 3D-Diff" 明显发糊)。<br><br>
+    <b>补救的代价:</b>此前做法要再加一个逐场景 refinement 阶段(如 Director3D 的 SDS++),效率优势被吃掉(Director3D 单场景 7 分钟,Tab.1)。</p>
+  </div>
+</div>
+
+<div class="callout tip"><b>核心洞察(insight):</b>两条路线的缺陷是<b>互补</b>的——MV 模式质量高但不一致,3D 模式一致但质量低。而 DMD 蒸馏恰好是"把教师分布搬到学生身上"的工具:<b>让 MV 模式当教师(供质量)、3D 模式当学生(保一致)</b>,一次蒸馏同时解决质量与速度。前提是两种模式必须共享同一个强先验(同一 DiT 主干),否则学生没有足够好的初始分布、训练容易崩(论文 §3 开头挑战一)。这就是"双模式预训练 → 跨模式后训练"的由来。</div>
+
+<div class="callout warn"><b>假设的失效条件(本笔记分析):</b>该洞察成立依赖两点——① 教师(MV 模式)的质量上限决定学生上限,蒸馏不能超越教师;② 教师与学生分布差距不能太大,否则 DMD 的 score 差失效。论文用"同一主干双模式"强行把两分布拉近,这是该方案真正聪明的地方;代价是 MV 模式的质量被 3D 模式的渲染损失"拖累"(共享主干),§14 消融显示 w/ MV-Dist(C)质量明显低于完整模型,间接说明混合训练对 MV 模式有损伤。</div>
+
+<div class="figure">
+  <div class="grid-4">
+    <div><img src="images/2510.13678/input.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">输入图</div></div>
+    <div><img src="images/2510.13678/cat3d.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">CAT3D(MV)</div></div>
+    <div><img src="images/2510.13678/bolt3d.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">Bolt3D(MV)</div></div>
+    <div><img src="images/2510.13678/wonderland.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">Wonderland(MV)</div></div>
+    <div><img src="images/2510.13678/ours_2d_diffusion.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">Ours w/ MV-Diff</div></div>
+    <div><img src="images/2510.13678/ours_2d_distillation.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">Ours w/ MV-Dist</div></div>
+    <div><img src="images/2510.13678/ours_3d_diffusion.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">Ours w/ 3D-Diff</div></div>
+    <div><img src="images/2510.13678/ours.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">Ours(完整)</div></div>
+  </div>
+  <div class="caption"><b>图2</b>(论文 Fig.2)各范式失败模式对照:MV-oriented(CAT3D/Bolt3D/Wonderland/Ours w/ MV-Diff)纹理噪声;MV 蒸馏(w/ MV-Dist)不一致被放大;3D-oriented(w/ 3D-Diff)发糊;跨模式蒸馏(Ours)同时解决两者。各方法底部标注单 GPU 单场景耗时。</div>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>预备知识:Flow Matching 与 DMD2</h2>
+
+<p><b>扩散/流匹配前向过程。</b>从高斯噪声 $p(x_T)\sim\mathcal{N}(\mathbf{0},\mathbf{I})$ 逐步变换到目标分布 $p(x)$。加噪过程:</p>
+<div class="equation">$$x_{t}=F(x,t)=\alpha_{t}x+\sigma_{t}\epsilon,$$<span class="tag">(式 1)</span></div>
+<p>$\alpha_t,\sigma_t$ 控制信噪比。去噪网络以预测干净数据为目标训练:</p>
+<div class="equation">$$\mathcal{L}=\mathbb{E}_{x,t,\epsilon}\left[\left\|x-\hat{x}_{\theta}(x_{t},t)\right\|^{2}\right].$$<span class="tag">(式 2)</span></div>
+<p>FlashWorld 实际采用 <b>v-prediction</b>(预测 $x_0$ 与 $\epsilon$ 的线性组合,沿用 Wan 视频模型配置,Appendix A)与 <b>flow matching schedule</b>(Lipman et al., 2023)。所有预测形式都可换算为 score(对数概率梯度):</p>
+<div class="equation">$$s(x_{t},t)=\nabla_{x_{t}}\log p_{t}(x_{t})=-\frac{x_{t}-\alpha_{t}\mu(x_{t},t)}{\sigma_{t}^{2}}.$$<span class="tag">(式 3)</span></div>
+
+<p><b>DMD(分布匹配蒸馏)。</b>把多步教师蒸馏成少步学生:在随机时间步 $t$ 与噪声 $z$ 上,最小化「平滑后真实分布 $p_{\text{real}}(x_t)$ 与学生生成分布 $p_{\text{fake}}(x_t)$」之间的近似 KL 散度:</p>
+<div class="equation">$$\nabla\mathcal{L}_{\text{DMD}}=-\mathbb{E}_{t}\left(\int\left(s_{\text{real}}(F(G_{\theta}(z),t),t)-s_{\text{fake}}(F(G_{\theta}(z),t),t)\right)\frac{dG_{\theta}(z)}{d\theta}dz\right),$$<span class="tag">(式 4)</span></div>
+<p>其中 $s_{\text{real}}$、$s_{\text{fake}}$ 由两个扩散模型 $\mu_{\text{real}}$(冻结教师)与 $\mu_{\text{fake}}$(在线跟踪学生分布,用式 2 在生成样本上训练)估计。<b>DMD2</b>(Yin et al., 2024a,即本库 <a href="ImageGen-20240523-DMD2.html">DMD2 笔记</a>)在此基础上加 GAN 目标(在 fake score 网络尾部接卷积分类头当判别器)并支持多步学生。FlashWorld 的跨模式后训练正是 DMD2 在「3D 生成」场景的一次特殊实例化:教师不是同一个模型的多步版,而是<b>同一主干的另一种生成模式</b>。</p>
+
+<div class="callout"><b>为什么这里必须用 GAN?</b>DMD 的 score 差只保证分布层面匹配,单样本的高频细节靠 GAN 的判别器补。FlashWorld 对输入视角与新视角两组渲染都施加 DMD + GAN(§3.2),并用估计 R1 正则(Lin et al., 2025a,APT)稳定 GAN 训练。</div>
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>算法总体框架与符号表</h2>
+
+<p><b>输入:</b>单张图片 $I$(或空)+ 文本提示 $y$ + 目标相机轨迹 $\mathcal{C}=\{c_1,\dots,c_{24}\}$(24 个关键帧位姿+内参)。<b>输出:</b>整场景像素对齐 3D 高斯集合 $\mathcal{G}=\{\bm{\mu},\bm{q},\bm{s},\alpha,\bm{c}\}$(≈405 万个高斯,可导出 .ply/.spz,任意轨迹实时渲染)。</p>
+
+<div class="mermaid">
+flowchart TD
+    subgraph P1["阶段一: 双模式预训练(20k 步, 64×H20, ~3 天)"]
+        A1["多视角数据 X(24 帧)+ 相机 C + 条件 y"] --> A2["VAE 编码 E(X) → 加噪 Z_t"]
+        A2 --> A3["DiT 主干(Wan2.2-5B 初始化)<br/>输入: Z_t + Plücker raymap + 条件 latent"]
+        A3 -->|"v 预测"| A4["MV 模式: L_MV(对 Z 的 L2)"]
+        A3 -->|"辅助特征 F(1024 维)"| A5["3DGS 解码器 D_G → 高斯 G → 渲染"]
+        A5 --> A6["3D 模式: L_3D(新视角渲染 L2)"]
+    end
+    subgraph P2["阶段二: 跨模式后训练(10k 步, ~2 天)"]
+        B1["冻结 MV 模式 = 教师 μ_real"] --> B4["DMD: s_real - s_fake"]
+        B2["在线 μ_fake(+ GAN 判别头)"] --> B4
+        B3["3D 模式 = 4 步学生 G_θ,3D<br/>渲染在环, 保 3D 一致"] --> B4
+        B4 --> B5["+ GAN loss(λ=5e-3)+ R1 正则"]
+        B6["低频更新的 MV 学生 G_θ,MV"] --> B7["CMC 跨模式一致性损失(λ=0.1)"]
+        B3 --> B7
+        B8["OOD 数据: 单图/文本 + 随机轨迹(比例 2:1)"] --> B3
+    end
+    subgraph P3["推理(单卡 4~9s)"]
+        C1["噪声 Z ~ N(0,I)"] --> C2["4 步循环: 3D 去噪 → 重加噪<br/>(t = 1000,750,500,250)"]
+        C2 --> C3["末步: DiT → feats → D_G → 4.05M 高斯"]
+        C3 --> C4["导出 .ply/.spz 或实时渲染"]
+    end
+    P1 --> P2 --> P3
+    style P1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P2 fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style P3 fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<div class="figure">
+  <img src="images/2510.13678/method.png" alt="method overview" loading="lazy">
+  <div class="caption"><b>图3</b>(论文 Fig.3)方法总览。左:双模式预训练——同一 DiT 输出 MV 去噪估计与辅助多视角特征 $\mathcal{F}$,$\mathcal{F}$ 经 3DGS 解码器产出像素对齐高斯并渲染监督;右:跨模式后训练——MV 模式冻结为教师,3D 模式为少步学生,DMD2 蒸馏 + 跨模式一致性损失。</div>
+</div>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状/取值(源码核实,§12)</th></tr>
+<tr><td>$\mathcal{X}$</td><td>多视角图像(训练 GT)</td><td>24 帧 × 480×704 × 3</td></tr>
+<tr><td>$\mathcal{C}$</td><td>相机参数(Reference-Point Plücker raymap)</td><td>每帧 6 通道光线图;JSON 接口为四元数+位置+归一化内参 11 维</td></tr>
+<tr><td>$y$</td><td>条件(文本 / 单视角图,图像经 VAE 编码塞进对应帧)</td><td>文本经 UMT5 编码 [512, 4096];推理时强制加前缀 <code>"[Static] "</code></td></tr>
+<tr><td>$\mathcal{Z}=E(\mathcal{X})$</td><td>Wan VAE 潜码</td><td>$[B,48,24,30,44]$(空间 16× 压缩;逐帧编码,时序不压缩)</td></tr>
+<tr><td>$\mathcal{Z}_t$</td><td>加噪潜码</td><td>$\alpha_t\mathcal{Z}+\sigma_t\epsilon$,flow matching</td></tr>
+<tr><td>$\hat{\mathcal{Z}}_{\text{MV}}$ / $\hat{\mathcal{Z}}_{\text{3D}}$</td><td>MV 模式 / 3D 模式的去噪估计</td><td>$\hat{\mathcal{Z}}_{\text{3D}}=E(R(\mathcal{G},\mathcal{C}))$(渲染再编码)</td></tr>
+<tr><td>$\mathcal{F}$</td><td>DiT 辅助多视角特征(proj_out 扩展输出)</td><td>$[B,1024,24,30,44]$</td></tr>
+<tr><td>$D_{\mathcal{G}}$</td><td>3DGS 解码器(Wan VAE decoder 深拷贝改造)</td><td>输入 $\mathcal{F}$+去噪潜码,输出高斯参数</td></tr>
+<tr><td>$\tau,\bm{q},\bm{s},\alpha,\bm{c}$</td><td>深度、旋转四元数、尺度、不透明度、球谐系数</td><td>SH degree=2(27 通道);每像素 2 个高斯,单帧 38×2=76 通道</td></tr>
+<tr><td>$\bm{\mu}=\bm{o}+\tau\bm{d}$</td><td>高斯中心(像素对齐反投影)</td><td>$\bm{o}$ 相机原点、$\bm{d}$ 光线方向,含 2 维 uv 偏移</td></tr>
+<tr><td>$R(\mathcal{G},\mathcal{C})$</td><td>gsplat 可微渲染</td><td>渲染分辨率 480×704</td></tr>
+<tr><td>$\mu_{\text{real}}/\mu_{\text{fake}}/G_{\theta}$</td><td>DMD2 教师 / fake score 网络 / 少步学生</td><td>教师=冻结 MV 模式;学生=3D 模式,4 步</td></tr>
+<tr><td>$N$</td><td>少步学生去噪步数</td><td>4(训练时 schedule {1000,900,750,500})</td></tr>
+</table>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块一:双模式多视角扩散主干(DiT)</h2>
+
+<h3>① 网络结构(源码核实,HuggingFace 官方 config + 仓库改动)</h3>
+<table>
+<tr><th>层/组件</th><th>配置</th><th>说明</th></tr>
+<tr><td>基座</td><td>Wan2.2-TI2V-5B(<code>app.py:150</code>)</td><td>30 层 DiT,hidden 3072(24 头 × 128),FFN 14336,3D RoPE,QK-RMSNorm;原生全量时空自注意力(论文称 "enhanced with 3D attention blocks" 即此)</td></tr>
+<tr><td>patch_embedding(改)</td><td>输入通道 48 → <b>1174</b></td><td>拼接:噪声潜码 48 + Plücker raymap 6 + 条件潜码 48 + 上一步反馈(feat 1024 + 潜码 48);新增权重 zero-pad(<code>app.py:174</code>、<code>app.py:219-221</code>)</td></tr>
+<tr><td>proj_out(改)</td><td>输出通道 48 → <b>1072</b></td><td>前 48 维 = v 预测;后 1024 维 = 辅助多视角特征 $\mathcal{F}$,新增权重 $\mathcal{N}(0,0.02^2)$ 初始化(<code>app.py:177-184</code>)</td></tr>
+<tr><td>token 网格</td><td>$[B, 24×15×22, 3072]$</td><td>潜码 $24×30×44$,patch $1×2×2$ → 7920 token/样本</td></tr>
+<tr><td>条件注入</td><td>cross-attn(UMT5 文本 [512,4096])</td><td>图像条件:目标帧潜码写入 condition_latents 对应帧(<code>app.py:325-337</code>)</td></tr>
+<tr><td>推理精度</td><td>bf16 + FP8 动态量化 Linear</td><td><code>quant.py</code> per-tensor FP8(E4M3),sm≥90 走 <code>torch._scaled_mm</code>,否则反量化回 bf16 GEMM</td></tr>
+</table>
+
+<h3>② 数学形式化</h3>
+<p>DiT 输入是三元组拼接 $[\mathcal{Z}_t,\ \text{raymap}(\mathcal{C}),\ \text{cond}]$(推理时再加反馈项),输出按通道切分:</p>
+<div class="equation">$$(v_{\text{pred}},\ \mathcal{F})=\text{DiT}_{\theta}([\mathcal{Z}_t,\ \text{raymap},\ \text{cond}],\, t,\, y),\qquad \hat{\mathcal{Z}}_{\text{MV}}=\mathcal{Z}_t-\sigma_t\cdot v_{\text{pred}}$$<span class="tag">(式 5)</span></div>
+<p>相机条件用 <b>Reference-Point Plücker</b> 光线图(<code>utils.py: create_raymaps</code>):每像素 6 通道 $[\bm{d},\ \bm{o}-(\bm{o}\cdot\bm{d})\bm{d}]$,第二项是光线上距世界原点最近的点(矩形式),比经典 Plücker $[\bm{d},\bm{o}\times\bm{d}]$ 数值更稳定(仓库注释掉的旧实现正是叉积形式)。</p>
+
+<h3>③ 前向流程</h3>
+<ol>
+<li>文本经 UMT5 编码为 $[512,4096]$(推理时强制前缀 <code>"[Static] "</code>,<code>app.py:320</code>——沿用了 Wan 训练时的静态/动态标签约定,论文未提及);</li>
+<li>若有输入图:center-crop 到 480×704 并同步缩放相机内参 → VAE 逐帧编码 → 写入 condition_latents 第 <code>image_index</code> 帧,mask 置 1;</li>
+<li>噪声 $\mathcal{Z}\sim\mathcal{N}(0,I)$,与 raymap、条件拼接进 DiT;</li>
+<li>输出切分为 $v_{\text{pred}}$(MV 模式用)与 $\mathcal{F}$(3D 模式喂给解码器);</li>
+<li>4 步循环中,上一步的 $\mathcal{F}$ 与 $\hat{\mathcal{Z}}$ 作为<b>反馈</b>拼进下一步输入(<code>app.py:346-357</code>)——<b>该反馈机制论文正文未写,仅存在于代码</b>(见 §12 宣称 vs 实现差异)。</li>
+</ol>
+
+<h3>④ 监督信号</h3>
+<p>预训练:$\mathcal{L}_{\text{MV}}$(式 7,MV 模式)+ 经解码器回传的 $\mathcal{L}_{\text{3D}}$(式 9);后训练:DMD 梯度(式 4)+ GAN + CMC(式 10)。</p>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块二:像素对齐 3DGS 解码器 $D_{\mathcal{G}}$</h2>
+
+<h3>① 网络结构(源码:<code>models/reconstruction_model.py</code>)</h3>
+<table>
+<tr><th>组件</th><th>配置</th><th>出处</th></tr>
+<tr><td>主干</td><td>深拷贝 Wan2.2 VAE decoder(含 post_quant_conv),全量可训练</td><td><code>reconstruction_model.py:49-50</code></td></tr>
+<tr><td>特征注入</td><td><code>extra_conv_in</code>:WanCausalConv3d(1024→1024),<b>零初始化</b>,与 VAE 特征在 conv_in 输出处相加</td><td><code>reconstruction_model.py:52-61, 94</code></td></tr>
+<tr><td>上采样</td><td>3 个 up_block,各 ×2 空间上采样(30×44 → 240×352);<code>conv_out</code> 换为 Identity</td><td><code>reconstruction_model.py:65-71, 103-112</code></td></tr>
+<tr><td>GS head</td><td>单 3×3 Conv2d(256→76),<b>每像素 2 个高斯</b>,每个 38 通道</td><td><code>reconstruction_model.py:82, 179-181</code></td></tr>
+<tr><td>38 通道拆分</td><td>SH(degree=2)27 + uv 偏移 2 + 深度 1 + 不透明度 1 + 尺度 3 + 旋转四元数 4</td><td><code>reconstruction_model.py:177-179</code></td></tr>
+</table>
+
+<h3>② 数学形式化</h3>
+<div class="equation">$$\{\tau,\bm{q},\bm{s},\alpha,\bm{c}\}=D_{\mathcal{G}}(\mathcal{F}),\qquad \bm{\mu}=\bm{o}+\tau\bm{d}$$<span class="tag">(式 6,论文)</span></div>
+<p>源码中的关键细节(论文未写):深度激活用 <b>trunc_exp</b>($e^x$,反向梯度按 $x$ clamp 到 $[-10,10]$,防梯度爆炸,<code>:151-162, 233</code>);尺度先经 sigmoid 压到 $(0,16)$ 再乘<b>像素尺寸</b> $\text{pixel\_size}=\sqrt{f_x^2+f_y^2}\cdot\tau$(<code>:252-253</code>)——即高斯大小随深度自适应,近小远大,这是像素对齐高斯的标准做法;不透明度 sigmoid;<b>每通道独立学习率倍率</b> <code>lrs_mul</code>(SH 高阶 ×0.5、uv 偏移 ×0.01,<code>:182-193</code>);bias 初始化:深度=1、不透明度=0.1、尺度≈1 像素、旋转=单位四元数(<code>:199-211</code>)——训练从高斯「贴在射线上、大小一个像素」的合理初值出发。</p>
+
+<h3>③ 前向流程</h3>
+<ol>
+<li>$\mathcal{F}$ 经 zero-init 的 <code>extra_conv_in</code> 注入 VAE decoder 首层(训练初期等价于纯 VAE 解码,不破坏预训练特征);</li>
+<li>走 VAE decoder 的 mid_block + 3 个上采样块(训练时开 activation checkpointing);</li>
+<li>GS head 单卷积出 76 通道 → 拆 2 组 × 38 通道;</li>
+<li>按相机参数构造光线(含 2 维可学习 uv 偏移),深度指数化后反投影得高斯中心;</li>
+<li>24 帧 × 240×352 × 2 = <b>4,055,040 个高斯</b>(源码推导,论文未给数量),交给 gsplat 渲染。</li>
+</ol>
+
+<h3>④ 模块内数据流</h3>
+<div class="mermaid">
+flowchart LR
+    F["辅助特征 F<br/>[BT,1024,30,44]"] --> EC["extra_conv_in<br/>(zero-init)"]
+    Z["去噪潜码 Z<br/>[BT,48,30,44]"] --> PQ["post_quant_conv"]
+    PQ --> CI["conv_in → +"]
+    EC --> CI
+    CI --> UP["WanDecoder: mid + 3×up_block<br/>→ [BT,256,240,352]"]
+    UP --> HEAD["gs_head: Conv2d 3×3<br/>256 → 76"]
+    HEAD --> SPLIT["拆分: SH27 | uv2 | τ1 | α1 | s3 | q4 (×2 点)"]
+    SPLIT --> GEO["μ = o + e^τ·d(uv)<br/>s = σ(s)·16·pixel_size<br/>α = σ(α)"]
+    GEO --> RENDER["gsplat 渲染 → 480×704"]
+    style F fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style HEAD fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style RENDER fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>⑤ 监督信号</h3>
+<p>预训练:新视角渲染 L2($\mathcal{L}_{\text{3D}}$,式 9)——<b>纯 RGB 监督、无显式深度监督</b>(论文 Appendix D 强调深度是从图像监督里涌现的);后训练:渲染在环参与 DMD/GAN/CMC。⚠️ 论文 §3.1 称解码器"首尾卷积层重新初始化",源码实际是「<code>conv_out</code> 换成 Identity + 新增零初始化 <code>extra_conv_in</code> 与 <code>gs_head</code>」,语义一致但实现路径不同(见 §12)。</p>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块三:双模式预训练</h2>
+
+<h3>① 数据流与目标</h3>
+<p>每个训练迭代采样一个 batch:多视角图 $\mathcal{X}$、相机 $\mathcal{C}$、条件 $y$(文本或单视角图)。$\mathcal{X}$ 编码为 $\mathcal{Z}=E(\mathcal{X})$ 后加噪得 $\mathcal{Z}_t$,与 $\mathcal{C}$(Plücker raymap)、$y$ 一起进 DiT。同一前向同时产出两个模式的监督:</p>
+
+<h4>MV-oriented 模式(高质量来源)</h4>
+<div class="equation">$$\mathcal{L}_{\text{MV}}=\mathbb{E}_{\mathcal{X},t,\epsilon,y,\mathcal{C}}\left[\left\|\mathcal{Z}-\hat{\mathcal{Z}}_{\text{MV}}\right\|^{2}\right]$$<span class="tag">(式 7,论文式 4)</span></div>
+<p>即标准的潜空间去噪损失(v-prediction 形式)。该模式不受渲染约束,质量上限就是 Wan2.2-5B 视频先验的质量。</p>
+
+<h4>3D-oriented 模式(一致性来源)</h4>
+<div class="equation">$$\{\tau,\bm{q},\bm{s},\alpha,\bm{c}\}=D_{\mathcal{G}}(\mathcal{F}),\qquad \mathcal{L}_{\text{3D}}=\mathbb{E}_{\mathcal{X},t,\epsilon,y,\mathcal{C}}\left[\left\|\mathcal{X}_{\text{novel}}-R(\mathcal{G},\mathcal{C}_{\text{novel}})\right\|^{2}\right]$$<span class="tag">(式 8,论文式 5)</span></div>
+<p>辅助特征 $\mathcal{F}$ 解码为高斯后,在<b>训练集未参与去噪的新视角</b> $\mathcal{C}_{\text{novel}}$ 上渲染并与 GT 做 L2。渲染在环迫使同一组高斯解释所有视角 → 几何一致性是<b>结构上</b>保证的(所有视角共享同一份 3D 表示),而非靠模型学出来的统计一致。</p>
+
+<h3>② 推理时的双模式等价性</h3>
+<p>3D 模式的去噪估计由渲染结果回编码得到:$\hat{\mathcal{Z}}_{\text{3D}}=E(R(\mathcal{G},\mathcal{C}))$。预训练后两种模式都能独立做多步采样——这就是消融里 w/ MV-Diff 与 w/ 3D-Diff 两个变体的由来(§14)。</p>
+
+<h3>③ 为什么用视频扩散模型初始化(而非图像扩散)</h3>
+<p>论文 §3.1 给出两点观察:① 视频模型时序先验强,<b>收敛更快</b>;② Wan 的 VAE 压缩率更高(空间 16× vs SDXL 的 8×),同等算力下能支撑<b>更多视角(24)与更高分辨率(480P)</b>。对照:前作 Dual3D/Director3D 都从 SD/SDXL 初始化。<span class="uncertain">【推测】选择 Wan2.2-TI2V-5B 而非更大模型的原因是单模型同时干 T2V/I2V 两件事,天然匹配"文本或图像两种条件"的统一入口。</span></p>
+
+<h3>④ 训练配置(Appendix A)</h3>
+<p>lr $2\times10^{-6}$(transformer 与解码器同),weight decay $10^{-6}$,Adam($\beta_1=0.9,\beta_2=0.95$),warmup 1000 步,10000 步衰减,<b>总计 20,000 步,约 3 天</b>;bf16,batch 64,64×H20,FSDP + activation checkpointing;flow matching schedule。数据:MVImgNet(480×704,物体中心)、RealEstate10K(704×480,室内,帧 stride 5~12)、DL3DV-10K(704×480,通用场景,stride 2~4)。</p>
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>模块四:跨模式后训练蒸馏(核心)</h2>
+
+<h3>① 三角色设定</h3>
+<table>
+<tr><th>角色</th><th>本体</th><th>状态</th><th>职责</th></tr>
+<tr><td>教师 $\mu_{\text{real}}$</td><td>预训练模型的 <b>MV 模式</b></td><td>冻结</td><td>提供 real score(高质量分布方向)</td></tr>
+<tr><td>fake score $\mu_{\text{fake}}$</td><td>模型副本</td><td>在线更新(每生成器步更新 4 次)</td><td>估计学生当前分布的 score;尾部加卷积分类头兼作 GAN 判别器</td></tr>
+<tr><td>学生 $G_{\theta,\text{3D}}$</td><td>预训练模型的 <b>3D 模式</b></td><td>训练</td><td>4 步去噪生成,渲染在环保一致</td></tr>
+</table>
+
+<h3>② 学生的少步采样(渲染在环)</h3>
+<p>定义小步数调度 $\{t_1,\dots,t_N\}$($N=4$,训练用 $\{1000,900,750,500\}$)。从 $\mathcal{Z}_{t_1}=z\sim\mathcal{N}(0,I)$ 出发,交替执行:</p>
+<div class="equation">$$\hat{\mathcal{Z}}_{t_i}=E\big(R\big(G_{\theta,\text{3D}}(\mathcal{Z}_{t_i},t_i,y,\mathcal{C}),\mathcal{C}\big)\big),\qquad \mathcal{Z}_{t_{i+1}}=\alpha_{t_{i+1}}\hat{\mathcal{Z}}_{t_i}+\sigma_{t_{i+1}}\epsilon$$<span class="tag">(式 9)</span></div>
+<p>关键:每一步的"去噪"都要经过 <b>解码 → 渲染 → 重编码</b> 的完整 3D 闭环(借鉴 LCM 的加噪-去噪交替),因此 3D 一致性贯穿整条采样轨迹,而不是只在最后一步约束。末步直接输出高斯 $G_{\theta,\text{3D}}(\mathcal{Z}_{t_N},t_N,y,\mathcal{C})$。</p>
+
+<h3>③ DMD2 目标 + GAN</h3>
+<p>蒸馏梯度即式 4,$s_{\text{real}}$ 来自冻结 MV 教师。GAN 目标(标准 non-saturating)施加在输入视角与新视角两组渲染上,logits 由 fake score 网络尾部的卷积分类头产出;配合估计 R1 正则(Lin et al., 2025a)稳定训练。GAN 损失权重(生成器与判别器双侧)$5\times10^{-3}$。</p>
+
+<h3>④ 跨模式一致性损失(CMC)——治"漂浮物"</h3>
+<p>作者观察到:只用 DMD+GAN,场景会出现<b>不稳定的漂浮伪影</b>,推测源于高斯渲染 + 潜编码回传梯度噪声太大。对策:低频更新一个 MV 学生 $G_{\theta,\text{MV}}$(与 3D 学生共享 DiT 主干),并让两模式输出对齐:</p>
+<div class="equation">$$\mathcal{L}_{\text{CMC}}=\mathbb{E}_{z,t,\epsilon,y,\mathcal{C},i}\left[\left\|E\big(R\big(G_{\theta,\text{3D}}(\mathcal{Z}_{t_i},t_i,y,\mathcal{C}),\mathcal{C}\big)\big)-G_{\theta,\text{MV}}(\mathcal{Z}_{t_i},t_i,y,\mathcal{C})\right\|^{2}\right]$$<span class="tag">(式 10,论文式 6)</span></div>
+<p>权重 $\lambda=0.1$。机制解释:MV 分支不经过渲染,梯度干净稳定,相当于给 3D 分支提供一个"低噪声锚点";3D 分支被拉向 MV 分支的预测,漂浮物被抑制。⚠️ 注意消融显示 w/o CMC 在多数<b>定量</b>指标上反而更高(§14)——CMC 的价值只在定性/伪影层面,这是"指标测不出漂浮物"的典型案例。</p>
+
+<h3>⑤ 数据流图</h3>
+<div class="mermaid">
+flowchart TD
+    Z["z ~ N(0,I)"] --> G3D["学生 G_θ,3D(3D 模式)<br/>4 步: 去噪→渲染→编码→重加噪"]
+    G3D --> R["渲染新视角图像"]
+    R --> T1["教师 μ_real(冻结 MV 模式)<br/>s_real"]
+    R --> T2["μ_fake(在线, +判别头)<br/>s_fake + GAN logits"]
+    T1 --> DMD["DMD 梯度: (s_real − s_fake)·dG/dθ"]
+    T2 --> DMD
+    T2 --> GAN["GAN loss(λ=5e-3)+ R1 正则"]
+    G3D --> CMC["CMC loss(λ=0.1)"]
+    GMV["MV 学生 G_θ,MV(低频更新, 共享主干)"] --> CMC
+    DMD --> UPD["更新学生"]
+    GAN --> UPD
+    CMC --> UPD
+    style G3D fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style T1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GMV fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+
+<h3>⑥ 训练配置(Appendix A)</h3>
+<p>任务采样比例:MV 模式 : 3D 模式输入视角 : 3D 模式新视角 = <b>1:3:1</b>;多视角数据 : OOD 数据 = <b>2:1</b>。生成器 lr $10^{-6}$,判别器 lr $5\times10^{-7}$,weight decay $10^{-6}$;warmup 1000 步,5001 步衰减,<b>总计 10,000 步,约 2 天</b>;fake score 网络每生成器步更新 4 次。</p>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>模块五:OOD 数据共训(泛化策略)</h2>
+
+<p><b>问题:</b>高质量多视角场景数据量小、分布窄(三个训练集都是自然实拍);预训练常用的"图像/视频联合训练"只喂 DiT 主干,<b>3DGS 解码器吃不到</b> → 解码器对 OOD 输入(风格化图、物体中心构图、奇怪轨迹)失效。</p>
+
+<p><b>做法(后训练阶段):</b>把<b>任意单视角图片/文本</b>(无需多视角标注)+ <b>随机相机轨迹</b>组合成训练样本:</p>
+<ul>
+<li>轨迹来源两类:从多视角序列里采,或用预定义轨迹(如环绕、推拉);</li>
+<li>数据源①:私有视频数据集的图文对 + RealEstate10K / WorldScore 轨迹(704×480);</li>
+<li>数据源②:Echo-4O 生成图 + WildRGBD 轨迹(480×704,风格化、物体中心);</li>
+<li>⚠️ <b>此分支关掉 GAN loss</b>——论文原话"防止分布不匹配"(OOD 图文没有真实多视角分布可对齐,GAN 判别器会被带偏);</li>
+<li>与多视角数据按 <b>1:2</b> 混入(OOD : MV)。</li>
+</ul>
+
+<div class="callout tip"><b>机制解释:</b>蒸馏框架下,教师(MV 模式)对任意输入都能给出"高质量但不一致"的样本,学生被迫在这些样本上重建出 3D 一致的场景——等价于用教师给无标注数据"免费打标"。这把数据瓶颈从「多视角标注」降为「单图+轨迹」,是可扩展性的关键一步。消融(§14)显示去掉 OOD 共训后 CLIP Score 全面下降、语义错位(如 "field" 场景)增多。</div>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>损失函数总表</h2>
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(真值)</th><th>作用阶段</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{\text{MV}}$</td><td>$\mathbb{E}\|\mathcal{Z}-\hat{\mathcal{Z}}_{\text{MV}}\|^2$(v-pred)</td><td>1(论文未给加权,单损失项)</td><td>预训练</td><td>MV 模式去噪,保质量上限</td></tr>
+<tr><td>$\mathcal{L}_{\text{3D}}$</td><td>$\mathbb{E}\|\mathcal{X}_{\text{novel}}-R(\mathcal{G},\mathcal{C}_{\text{novel}})\|^2$</td><td>1(同上)</td><td>预训练</td><td>3D 模式新视角渲染监督,保几何一致;无深度监督</td></tr>
+<tr><td>DMD</td><td>式 4(score 差 × 生成器梯度)</td><td>1(主体损失)</td><td>后训练</td><td>把 MV 教师分布搬到 3D 学生</td></tr>
+<tr><td>GAN(non-saturating)</td><td>fake score 网络尾部判别头</td><td><b>$5\times10^{-3}$</b>(生成器与判别器双侧,Appendix A)</td><td>后训练</td><td>补高频细节;OOD 分支关闭</td></tr>
+<tr><td>R1 正则(估计)</td><td>Lin et al. 2025a(APT)</td><td>未披露具体系数</td><td>后训练</td><td>稳定 GAN 训练</td></tr>
+<tr><td>$\mathcal{L}_{\text{CMC}}$</td><td>$\mathbb{E}\|E(R(G_{\theta,\text{3D}}(\cdot),\mathcal{C}))-G_{\theta,\text{MV}}(\cdot)\|^2$</td><td><b>$\lambda=0.1$</b>(论文 §3.2)</td><td>后训练</td><td>跨模式对齐,抑制漂浮/重复伪影</td></tr>
+<tr><td>$\mu_{\text{fake}}$ 训练损失</td><td>式 2(在学生样本上的去噪损失)</td><td>每生成器步 ×4 更新</td><td>后训练</td><td>在线跟踪学生分布</td></tr>
+</table>
+<div class="note">说明:论文未给出 $\mathcal{L}_{\text{MV}}$ 与 $\mathcal{L}_{\text{3D}}$ 的相对权重(按单损失并列处理);R1 权重未披露;<b>训练代码需填 Google 表单申请获取,以上训练侧数值全部出自论文 Appendix A,无法源码复核</b>——推理侧数值均已对照官方仓库核实(§12)。</div>
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>训练与推理流程图</h2>
+
+<h3>训练流程(两阶段)</h3>
+<div class="mermaid">
+flowchart TD
+    D1["多视角数据<br/>MVImgNet / RE10K / DL3DV"] --> S1
+    subgraph S1["预训练 20k 步 · ~3 天 · 64×H20 · bf16"]
+        P1["采样 (X, C, y)"] --> P2["E(X)=Z → 加噪 Z_t"]
+        P2 --> P3["DiT 前向 → v_pred + F"]
+        P3 --> P4["L_MV: Z vs Ẑ_MV"]
+        P3 --> P5["D_G(F) → 高斯 → 渲染新视角"]
+        P5 --> P6["L_3D: 渲染 vs GT"]
+    end
+    S1 --> S2
+    subgraph S2["后训练 10k 步 · ~2 天 · DMD2"]
+        Q1["冻结 MV 模式 → 教师"] --> Q4
+        Q2["3D 模式 → 4 步学生"] --> Q3["渲染在环采样"]
+        Q3 --> Q4["DMD 梯度 + GAN(λ=5e-3)"]
+        Q5["低频 MV 学生"] --> Q6["CMC(λ=0.1)"]
+        Q3 --> Q6
+        Q7["OOD 数据(单图+随机轨迹, 2:1)<br/>该分支关 GAN"] --> Q3
+        Q4 --> Q8["更新学生 / μ_fake ×4"]
+        Q6 --> Q8
+    end
+    S2 --> OUT["FlashWorld 权重<br/>(HF: imlixinyang/FlashWorld model.ckpt)"]
+    style S1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S2 fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+
+<h3>推理流程(源码 <code>app.py: generate</code> 逐步还原)</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: 文本 y(+[Static] 前缀)/ 单图 I<br/>+ 24 帧相机轨迹 C"] --> PRE["预处理: 图像 center-crop 至 480×704<br/>内参同步缩放; 相机以首帧为参考归一化(T_norm)"]
+    PRE --> COND["条件装配: UMT5 文本编码;<br/>图像帧 VAE 编码写入 condition_latents[image_index];<br/>创建 6 通道 Plücker raymap"]
+    COND --> N0["Z = N(0,I), [1,48,24,30,44]"]
+    N0 --> LOOP
+    subgraph LOOP["4 步循环(源码 denoising_steps=[0,250,500,750]<br/>→ t = 1000,750,500,250)"]
+        L1["DiT(拼接 Z+raymap+cond+上步反馈)<br/>→ v_pred + feats(1024)"] --> L2["Ẑ_2D = Z − σ·v_pred"]
+        L2 --> L3["recon_decoder(feats, Ẑ_2D)<br/>→ 4.05M 高斯"]
+        L3 --> L4["渲染 24 输入视角 → VAE 编码<br/>→ Ẑ_3D"]
+        L4 --> L5["scale_noise 重加噪到下一 t"]
+        L5 -.反馈: prev_feats + prev_Ẑ.-> L1
+    end
+    LOOP --> FIN["末步(i=3): 直接解码出最终高斯<br/>(不再重加噪)"]
+    FIN --> EXP["导出 .ply / .spz(透明度阈值 2.5e-4 剪枝)<br/>或沿插值轨迹渲染视频(15fps)"]
+    style LOOP fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style FIN fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<div class="note">视频渲染:24 个关键相机之间按 <code>sample_from_dense_cameras</code> 球面插值出 $(24-1)\times15+1=346$ 帧再逐帧渲染(<code>app.py:311-314</code>),所以网页 Demo 的视频是<b>渲染</b>出来的,不是生成的。</div>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>⚙️ 工程实现细节(源码级)</h2>
+
+<div class="callout tip"><b>核实范围:</b>官方仓库 <code>imlixinyang/FlashWorld</code>(commit 424db44,Apache-2.0)已放出<b>推理代码 + 权重</b>(HF <code>model.ckpt</code>,含 transformer 与 recon_decoder 两组 state_dict);<b>训练代码 2026-01-29 起需填 Google 表单申请</b>,本笔记训练侧数值只能引用论文 Appendix A。以下 file:line 均来自推理仓库实读。</div>
+
+<h3>12.1 资源账(README 实测,单卡 A800)</h3>
+<table>
+<tr><th>配置(flags)</th><th>生成耗时</th><th>显存</th><th>备注</th></tr>
+<tr><td>默认(全量驻留)</td><td>8.5s</td><td>51GB</td><td>论文 Tab.1 为 H20 上 9s;TL;DR:A100/A800 7s,H100/H800 4s</td></tr>
+<tr><td><code>--offload_t5</code></td><td>16.6s</td><td>30GB</td><td>文本编码挪 CPU</td></tr>
+<tr><td><code>--offload_t5 --offload_transformer_during_vae</code></td><td>20s</td><td>24GB</td><td>VAE/解码器工作时 DiT 挪 CPU</td></tr>
+<tr class="fail"><td><code>--offload_t5 --offload_vae</code></td><td>~10min</td><td>9GB</td><td>VAE 挪 CPU,慢两个数量级,官方劝退</td></tr>
+</table>
+<p>对我们硬件的含义:<b>单卡 RTX 3090(24GB)恰好能走 24GB 档(~20s/场景)</b>;且 FP8 量化(<code>quant.py: FluxFp8GeMMProcessor</code>)按 <code>capability &gt;= (9,0)</code> 判断,3090(sm_86)会走反量化回 bf16 的兼容路径——权重仍按 FP8 存储(省显存),但没有 FP8 算力加速(<code>quant.py: fp8_gemm</code> 的 else 分支)。注意力默认 <code>F.scaled_dot_product_attention</code>,装 SageAttention 可再提速(<code>models/transformer_wan.py:118-149</code>)。</p>
+
+<h3>12.2 关键超参对照(论文宣称 vs 源码实现)</h3>
+<table>
+<tr><th>项目</th><th>论文(Appendix A / §3)</th><th>源码</th><th>判定</th></tr>
+<tr><td>基座模型</td><td>WAN2.2-5B-IT2V</td><td><code>Wan-AI/Wan2.2-TI2V-5B-Diffusers</code>(app.py:150)</td><td>✅ 一致</td></tr>
+<tr><td>视角数 / 分辨率</td><td>24 帧、480P</td><td>examples/*.json 均 <code>resolution=[24,480,704]</code></td><td>✅ 一致</td></tr>
+<tr><td>空间压缩率</td><td>16</td><td><code>app.py:142 spatial_downsample_factor=16</code>;VAE config <code>scale_factor_spatial=16</code></td><td>✅ 一致</td></tr>
+<tr><td>辅助特征维度</td><td>1024</td><td><code>app.py:144 feat_dim=1024</code></td><td>✅ 一致</td></tr>
+<tr><td>去噪步数 N</td><td>4(训练 schedule {1000,900,750,500})</td><td><code>app.py:148 denoising_steps=[0,250,500,750]</code> → 索引到 scheduler 时间步 <b>{1000,750,500,250}</b></td><td>⚠️ 步数一致,<b>推理用的时间步与论文训练 schedule 不同</b>(末步 250 vs 500,更彻底的收尾去噪)</td></tr>
+<tr><td>v-prediction / flow matching</td><td>Appendix A 明示</td><td><code>app.py:267 Ẑ=Z−σ·v_pred</code>;scheduler=<code>FlowMatchEulerDiscreteScheduler(shift=3)</code></td><td>✅ 一致</td></tr>
+<tr><td>相机表示</td><td>Reference-Point Plücker</td><td><code>utils.py: create_raymaps</code> = $[\bm d,\ \bm o-(\bm o\cdot\bm d)\bm d]$</td><td>✅ 一致(被注释的旧实现是经典叉积 Plücker)</td></tr>
+<tr><td>解码器初始化</td><td>"首尾卷积层重新初始化"</td><td>实为 conv_out→Identity + 新增 zero-init <code>extra_conv_in</code>/<code>gs_head</code>,VAE decoder 主体深拷贝保留</td><td>⚠️ 语义近似,实现路径不同</td></tr>
+<tr><td>逐步反馈机制</td><td><b>论文未提</b></td><td>patch_embedding 额外 +1072 通道,4 步间回传 prev_feats + prev_latents(<code>app.py:219-221, 346-357</code>)</td><td>⚠️ <b>实现有、论文无</b>:蒸馏后的学生依赖逐步特征反馈,这是论文没写的第三个"隐式模块"</td></tr>
+<tr><td>每像素高斯数</td><td>未给</td><td><code>num_points_per_pixel=2</code>(reconstruction_model.py:82)</td><td>源码独有</td></tr>
+<tr><td>SH 阶数</td><td>未给</td><td><code>sh_degree=2</code>(reconstruction_model.py:168)</td><td>源码独有</td></tr>
+<tr><td>单场景高斯数</td><td>未给</td><td>推导:24 帧 × 240×352(解码器输出分辨率)× 2 = <b>4,055,040</b></td><td>源码推导(见 12.3)</td></tr>
+</table>
+
+<h3>12.3 高斯数量推导(源码链条)</h3>
+<ol>
+<li>输入 480×704 → 潜码 30×44(16× 压缩);</li>
+<li>recon_decoder = Wan VAE decoder(config: <code>base_dim 160 / decoder_base_dim 256, dim_mult [1,2,4,4]</code>),3 个 up_block 各 ×2 → 输出 240×352(conv_out=Identity、patchify 的 unpatchify 被注释,故停在 H/2×W/2);</li>
+<li>gs_head 每像素 2 高斯 → 单帧 240×352×2 = 168,960;</li>
+<li>24 帧合计 <b>4,055,040 个高斯</b>;每高斯 38 维(xyz3+α1+s3+q4+SH27),fp32 场景参数约 617MB;导出时按 opacity≥2.5e-4 剪枝(<code>app.py:482</code>;CLI 不剪枝,<code>cli.py:167</code> 阈值 0.000——这也是 README 说"CLI 效果优于网页版"的原因)。</li>
+</ol>
+
+<h3>12.4 落地坑(实测/阅读代码所得)</h3>
+<ul>
+<li><b>环境:</b><code>torch==2.6.0</code>,gsplat 锁定 commit <code>32f2a54d</code>(1.5.2)、diffusers 锁定 commit <code>447e8322</code>(wan-5Bi2v 分支)、spz 锁定 commit <code>a4fc69e7</code>(requirements.txt);gsplat 需本地编 CUDA(仓库内置了 Spaces 环境的 CUDA 12.4 自动安装脚本)。</li>
+<li><b>输入格式:</b>JSON = {image_prompt(base64 或路径), text_prompt, cameras[24]{quaternion,position,fx,fy,cx,cy}, resolution:[24,480,704], image_index};相机内参按像素值给,代码内归一化(cli.py:155-158)。<b>image_index 决定输入图对齐到哪一帧</b>(examples 里 6/7/9,即轨迹中间帧)。</li>
+<li><b>隐藏约束:</b>文本被强制加 <code>"[Static] "</code> 前缀(app.py:320)——模型只学过静态场景分布,<b>不支持动态场景</b>(论文 Future work 也承认 4D 是下一步)。</li>
+<li><b>相机轨迹需用户给定</b>:模型不做轨迹生成,Web UI 里手摆关键帧;轨迹质量直接决定体验。</li>
+<li><b>导出坐标系:</b>相机以首帧为参考系、按最大平移范数 T_norm 归一化(<code>utils.py: normalize_cameras</code>),导出时再乘回 T_norm 恢复尺度。</li>
+<li><b>Windows:</b>官方脚本默认 Linux(gsplat 编译、<code>os.environ</code> 路径处理),Windows 原生跑需自行适配;<span class="uncertain">【待核实】WSL2 下编译 gsplat 是否顺畅。</span></li>
+</ul>
+
+<h3>12.5 深度是"免费"的副产品</h3>
+<p>3DGS 输出天然可渲染深度(论文 Appendix D,本文图 4)。模型<b>没有任何深度监督</b>,几何全部由 RGB 渲染损失涌现——这对下游(如拿深度做点云/网格化)是额外红利。</p>
+<div class="figure">
+  <img src="images/2510.13678/depth_compressed.png" alt="RGBD rendering" loading="lazy">
+  <div class="caption"><b>图4</b>(论文 Fig.8)RGBD 渲染结果:纯 RGB 监督下涌现出的几何合理的深度图。</div>
+</div>
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>实验结果</h2>
+
+<h3>13.1 图文 → 3D 场景定量(论文 Tab.1,600 条提示采样自 T3Bench / DL3DV / WorldScore,各 200)</h3>
+<div class="callout warn"><b>注意:</b>Tab.1 定量只含 <b>Director3D 与 Prometheus</b> 两个基线(论文原表即如此);§4.2 提到的 SplatFlow / VideoRFSplat 仅出现在定性图 Fig.5 中,未给定量。评估指标均为<b>无参考质量/对齐指标</b>(无 GT 场景可对比 PSNR),这是生成任务的固有局限。耗时为单卡 H20。</div>
+<table>
+<tr><th>方法</th><th>子集</th><th>Q-Align IQA↑</th><th>Q-Align IAA↑</th><th>CLIP IQA+↑</th><th>CLIP Aesthetic↑</th><th>CLIP Score↑</th><th>耗时</th></tr>
+<tr><td>Director3D</td><td rowspan="3">T3Bench-200</td><td>3.24</td><td>1.95</td><td>0.43</td><td>4.70</td><td><b>27.84</b></td><td>7 min</td></tr>
+<tr><td>Prometheus</td><td>2.34</td><td>1.92</td><td>0.34</td><td><b>4.76</b></td><td>24.85</td><td>15 sec</td></tr>
+<tr class="best"><td>FlashWorld</td><td><b>4.12</b></td><td><b>2.26</b></td><td><b>0.54</b></td><td>4.49</td><td>27.68</td><td><b>9 sec</b></td></tr>
+<tr><td>Director3D</td><td rowspan="3">DL3DV-200</td><td>2.51</td><td>1.78</td><td>0.34</td><td>4.55</td><td>26.12</td><td>7 min</td></tr>
+<tr><td>Prometheus</td><td>2.07</td><td>1.99</td><td>0.35</td><td>4.69</td><td>23.49</td><td>15 sec</td></tr>
+<tr class="best"><td>FlashWorld</td><td><b>3.96</b></td><td><b>2.27</b></td><td><b>0.50</b></td><td><b>4.77</b></td><td><b>27.63</b></td><td><b>9 sec</b></td></tr>
+<tr><td>Director3D</td><td rowspan="3">WorldScore-200</td><td>2.55</td><td>2.47</td><td>0.35</td><td>5.32</td><td>29.05</td><td>7 min</td></tr>
+<tr><td>Prometheus</td><td>2.45</td><td><b>2.94</b></td><td>0.37</td><td><b>5.65</b></td><td>28.07</td><td>15 sec</td></tr>
+<tr class="best"><td>FlashWorld</td><td><b>3.76</b></td><td>2.55</td><td><b>0.49</b></td><td>5.08</td><td><b>29.13</b></td><td><b>9 sec</b></td></tr>
+</table>
+<div class="note"><b>逐格复核结论(本笔记按原始值手算):</b>① Q-Align IQA 提升幅度:T3Bench +27.2%、DL3DV +57.8%、WorldScore +47.5%(均对 Director3D);② <b>CLIP Aesthetic 两项落后</b>(T3Bench 4.49&lt;4.70/4.76;WorldScore 5.08&lt;5.32/5.65),论文自认该指标偏好平滑输出,与其细节丰富的结果相左;③ <b>CLIP Score 在 T3Bench 上反而以 27.68&lt;27.84 微输 Director3D</b>,论文只宣称"两个子集最高"(DL3DV/WorldScore)——表述属实;④ "10~100× 加速"对 Director3D(420s/9s≈47×)成立,<b>对 Prometheus 仅 1.67×</b>,宣称的外推范围需注意。</div>
+
+<h3>13.2 Image-to-3D 定性(论文 Fig.4,基线用官方项目页视频 + ViPE 估计位姿)</h3>
+<div class="figure">
+  <div class="grid-3">
+    <div><img src="images/2510.13678/1_ours.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">FlashWorld #1</div></div>
+    <div><img src="images/2510.13678/2_ours.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">FlashWorld #2</div></div>
+    <div><img src="images/2510.13678/3_ours.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">FlashWorld #3</div></div>
+    <div><img src="images/2510.13678/1_baseline.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">基线 #1</div></div>
+    <div><img src="images/2510.13678/2_baseline.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">基线 #2</div></div>
+    <div><img src="images/2510.13678/3_baseline.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">基线 #3</div></div>
+  </div>
+  <div class="caption"><b>图5</b>(论文 Fig.4)Image-to-3D 对比(上:FlashWorld;下:CAT3D/Bolt3D/Wonderland 各一列)。论文评述:CAT3D 复杂场景糊、缺几何细节;Bolt3D 树枝/叶尖几何失真;Wonderland 大位姿变化下高斯重复扭曲。⚠️ 因三家当时均未开源,基线结果取自其项目页视频,相机由 ViPE 估计——<b>该对比存在「视频压缩 + 位姿估计误差」的干扰,严格性弱于同协议复现</b>。</div>
+</div>
+
+<h3>13.3 Text-to-3D 定性(论文 Fig.5)</h3>
+<div class="figure">
+  <div class="grid-4">
+    <div><img src="images/2510.13678/x1.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x2.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x3.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/4_ours.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x4.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x5.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x6.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/4_baseline.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+  </div>
+  <div class="caption"><b>图6</b>(论文 Fig.5)Text-to-3D 对比:Director3D(依赖逐场景 refinement,糊 + 波浪伪影)、Prometheus(MV 不一致,椅腿等结构错误)、SplatFlow / VideoRFSplat(地板、草地等细节糊);FlashWorld 在大相机运动下仍保持结构准确与细节(动物毛发等)。</div>
+</div>
+
+<h3>13.4 WorldScore 基准(论文 Tab.2,静态子集 2000 例)</h3>
+<div class="callout warn"><b>评测协议改动(重要):</b>作者认为原 WorldScore 在<b>锚定帧</b>上评多数指标对 3D 方法不公,改为<b>区间内随机帧重评全部 3D 基线</b>;并因 Camera Control 指标不稳健而整体剔除(README 有专节说明,附原始协议与修订协议两套数字)。下表为修订协议(论文版)。</div>
+<table>
+<tr><th>方法</th><th>3D Consist.</th><th>Photometric</th><th>Obj. Control</th><th>Content Align.</th><th>Style Consist.</th><th>Subj. Quality</th><th>Average</th><th>耗时</th></tr>
+<tr><td>WonderJourney</td><td>80.60</td><td>79.03</td><td>34.81</td><td>38.37</td><td>67.52</td><td>61.49</td><td>60.30</td><td>6 min</td></tr>
+<tr><td>LucidDreamer</td><td><b>90.37</b></td><td><b>90.20</b></td><td>43.48</td><td><b>59.41</b></td><td>66.41</td><td>48.02</td><td>66.32</td><td>6 min</td></tr>
+<tr><td>WonderWorld</td><td>86.91</td><td>85.56</td><td><b>52.09</b></td><td>56.82</td><td>75.92</td><td>41.28</td><td>66.43</td><td>10 sec</td></tr>
+<tr class="best"><td>FlashWorld</td><td>85.87</td><td>86.72</td><td>49.61</td><td>53.96</td><td><b>81.52</b></td><td>54.63</td><td><b>68.72</b></td><td><b>9 sec</b></td></tr>
+</table>
+<div class="note"><b>逐格复核:</b>四个 Average 均与六项均值吻合(68.718→68.72 等 ✓)。论文自述"Style Consistency 第一,Photometric / Object Control / Subjective Quality 第二"——复核属实(分别输 LucidDreamer、WonderWorld、WonderJourney)。<b>3D Consistency(85.87)与 Content Alignment(53.96)落后</b>,论文归因:该指标用单目深度估计评测,与基线训练时的深度先验"同源",而 FlashWorld 纯 RGB 监督;Content Alignment 上基线直接操作锚定帧内容,天然占优。这两个归因<b>方向合理但无法在本笔记中验证</b>。</div>
+
+<div class="figure">
+  <div class="grid-3">
+    <div><img src="images/2510.13678/x7.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x8.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x9.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x10.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x11.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+    <div><img src="images/2510.13678/x12.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"></div>
+  </div>
+  <div class="caption"><b>图7</b>(论文 Fig.6)WorldScore 基准定性对比。论文指出基线常出现不自然过渡、内容断裂与可见空洞——这些问题现有指标反映不足。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2510.13678/more_results_compressed.png" alt="more results" loading="lazy">
+  <div class="caption"><b>图8</b>(论文 Fig.9)更多生成结果:物体中心、室内、室外、写实、风格化场景,全部由生成的 3DGS 渲染。</div>
+</div>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>消融实验(论文 Tab.3 + Fig.7)</h2>
+
+<p>变体定义(原表图注):<b>A</b>=w/ MV-Diff(仅 MV 扩散)、<b>B</b>=w/ 3D-Diff(仅 3D 扩散)、<b>C</b>=w/ MV-Dist(MV 模式蒸馏)、<b>D</b>=w/o CMC、<b>E</b>=w/o OOD、<b>F</b>=完整模型。</p>
+
+<table>
+<tr><th>变体</th><th>子集</th><th>Q-Align IQA</th><th>Q-Align IAA</th><th>CLIP IQA+</th><th>CLIP Aesthetic</th><th>CLIP Score</th></tr>
+<tr class="fail"><td>A(MV-Diff)</td><td rowspan="6">T3Bench-200</td><td>3.11</td><td>2.03</td><td>0.41</td><td>4.36</td><td>25.34</td></tr>
+<tr class="fail"><td>B(3D-Diff)</td><td>2.61</td><td>1.68</td><td>0.37</td><td>4.11</td><td>22.92</td></tr>
+<tr class="fail"><td>C(MV-Dist)</td><td>3.46</td><td>2.12</td><td>0.45</td><td>4.42</td><td>26.95</td></tr>
+<tr><td>D(w/o CMC)</td><td>4.12</td><td><b>2.31</b></td><td>0.52</td><td><b>4.52</b></td><td>27.59</td></tr>
+<tr><td>E(w/o OOD)</td><td>3.98</td><td>2.50</td><td>0.53</td><td>4.58</td><td>27.04</td></tr>
+<tr class="best"><td>F(完整)</td><td><b>4.12</b></td><td>2.26</td><td><b>0.54</b></td><td>4.49</td><td><b>27.68</b></td></tr>
+<tr><td>D(w/o CMC)</td><td rowspan="3">DL3DV-200</td><td><b>4.02</b></td><td><b>2.35</b></td><td><b>0.51</b></td><td><b>4.80</b></td><td><b>27.90</b></td></tr>
+<tr><td>E(w/o OOD)</td><td>3.89</td><td>2.35</td><td>0.50</td><td>4.82</td><td>27.45</td></tr>
+<tr class="best"><td>F(完整)</td><td>3.96</td><td>2.27</td><td>0.50</td><td>4.77</td><td>27.63</td></tr>
+<tr><td>D(w/o CMC)</td><td rowspan="3">WorldScore-200</td><td><b>3.90</b></td><td><b>2.71</b></td><td><b>0.51</b></td><td><b>5.12</b></td><td>29.09</td></tr>
+<tr><td>E(w/o OOD)</td><td>3.66</td><td>2.56</td><td>0.47</td><td>4.95</td><td>28.76</td></tr>
+<tr class="best"><td>F(完整)</td><td>3.76</td><td>2.55</td><td>0.49</td><td>5.08</td><td><b>29.13</b></td></tr>
+</table>
+<p style="font-size:13.5px;color:var(--text-dim)">注:A/B/C 三行仅展示 T3Bench 子集(完整数值见论文 Tab.3,趋势一致);D/E/F 行展示全部子集以便对比。</p>
+
+<div class="grid-3">
+  <div class="card"><h4>跨模式蒸馏 &gt; 任一单模式(A/B/C vs F)</h4><p style="font-size:14px">F 对 A/B/C 全面大幅领先(如 T3Bench IQA 4.12 vs 3.11/2.61/3.46)。其中 <b>C(MV 蒸馏)&lt; A(MV 扩散)</b> 印证了 §2 的判断:对 MV 范式做蒸馏会放大不一致,质量不升反降——跨模式设计的必要性由此坐实。</p></div>
+  <div class="card"><h4>⚠️ CMC:定量反升、定性必需</h4><p style="font-size:14px"><b>w/o CMC(D)在 15 项指标中的 11 项上打平或超过完整模型</b>(本笔记逐项复核),论文亦承认其"在多数定量指标上有竞争力甚至更优";但定性上 D 频出<b>漂浮与重复伪影</b>(Fig.7)。结论:CMC 的价值在视觉稳定性,现有无参考指标测不出这类伪影——读本文的表不能把 D 当更优解。</p></div>
+  <div class="card"><h4>OOD 共训救泛化(E vs F)</h4><p style="font-size:14px">w/o OOD 后 CLIP Score 三子集全降(27.04/27.45/28.76 vs 27.68/27.63/29.13),IQA 同降;定性出现语义错位(如 "field" 场景),在分布外子集(T3Bench/WorldScore)上恶化更明显——证明泛化收益确实来自 OOD 共训而非主干容量。</p></div>
+</div>
+
+<div class="figure">
+  <div class="grid-3">
+    <div><img src="images/2510.13678/1-A.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">A: w/ MV-Diff</div></div>
+    <div><img src="images/2510.13678/1-B.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">B: w/ 3D-Diff</div></div>
+    <div><img src="images/2510.13678/1-C.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">C: w/ MV-Dist</div></div>
+    <div><img src="images/2510.13678/1-D.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">D: w/o CMC(见漂浮/重复伪影)</div></div>
+    <div><img src="images/2510.13678/1-E.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">E: w/o OOD</div></div>
+    <div><img src="images/2510.13678/1-F.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">F: 完整模型</div></div>
+    <div><img src="images/2510.13678/2-A.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">A</div></div>
+    <div><img src="images/2510.13678/2-B.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">B</div></div>
+    <div><img src="images/2510.13678/2-C.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">C</div></div>
+    <div><img src="images/2510.13678/2-D.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">D</div></div>
+    <div><img src="images/2510.13678/2-E.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">E</div></div>
+    <div><img src="images/2510.13678/2-F.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333"><div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:4px">F</div></div>
+  </div>
+  <div class="caption"><b>图9</b>(论文 Fig.7)定性消融,提示词:上 "A vintage clock hanging on a brick wall";下见原文。D(w/o CMC)可见漂浮/重复伪影;E(w/o OOD)语义错位。</div>
+</div>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>🔄 同类方法对比分析</h2>
+
+<h3>15.1 横向对比表(固定维度;— = 无公开数据)</h3>
+<table style="font-size:12.5px">
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr class="best"><td><b>FlashWorld</b></td><td>2025.10</td><td>单图/文本 + 给定轨迹</td><td>像素对齐 3DGS(≈405 万)</td><td>RGB 渲染 L2 + DMD2 蒸馏 + GAN(无深度)</td><td>MVImgNet/RE10K/DL3DV + OOD 单图</td><td>预训练 3 天 + 后训练 2 天(64×H20)</td><td><b>9s(H20)</b>/7s(A800)/4s(H100)</td><td>51GB(24GB@20s 档)</td><td>Tab.1 三子集 IQA 第一;WorldScore avg 68.72</td><td>✅ 推理+权重(Apache-2.0);训练代码申请制</td></tr>
+<tr><td>CAT3D</td><td>2024.05</td><td>单图/文本(少视角)</td><td>逐场景优化 3DGS</td><td>MV 扩散 + 每场景重建损失</td><td>MVImgNet/CO3D/RE10K 等</td><td>—</td><td>数分钟~小时级(论文 Fig.2)</td><td>—</td><td>—</td><td>⚠️ 论文作对比时未开源,用项目页视频<span class="uncertain">【待核实】2025 年官方放出推理代码</span></td></tr>
+<tr><td>Bolt3D</td><td>2025.03</td><td>单图</td><td>逐像素高斯(pointmap 反投影)</td><td>MV 扩散(几何图)+ 前馈 head</td><td>Objaverse 系 + 场景数据</td><td>—</td><td>秒级生成 + 前馈重建<span class="uncertain">【待核实】论文宣称 ~7s</span></td><td>—</td><td>—</td><td><span class="uncertain">【待核实】</span></td></tr>
+<tr><td>Wonderland</td><td>2024.12</td><td>单图</td><td>latent 前馈重建 3DGS(LaLRM)</td><td>视频扩散 + latent 重建</td><td>内部视频/场景数据</td><td>—</td><td>视频生成分钟级 + 重建秒级</td><td>—</td><td>—</td><td><span class="uncertain">【待核实】官方后续放出代码</span></td></tr>
+<tr><td>Director3D</td><td>2024.06</td><td>文本</td><td>像素对齐 3DGS</td><td>GM-DiT 扩散 + <b>SDS++ 逐场景精修</b></td><td>Objaverse/RE10K 等</td><td>—</td><td>7 min(H20)</td><td>—</td><td>Tab.1 基线</td><td>✅(同团队前作)</td></tr>
+<tr><td>Prometheus</td><td>2024.12</td><td>文本</td><td>RGBD 潜空间前馈 3DGS</td><td>RGBD 扩散</td><td>合成+真实场景</td><td>—</td><td>15s(H20)</td><td>—</td><td>Tab.1 基线</td><td><span class="uncertain">【待核实】</span></td></tr>
+<tr><td>SplatFlow</td><td>2024.11</td><td>文本</td><td>前馈 3DGS</td><td>多视角 rectified flow(联合位姿)</td><td>MVImgNet/RE10K 等</td><td>—</td><td>—</td><td>—</td><td>仅定性对比(Fig.5)</td><td>✅</td></tr>
+<tr><td>VideoRFSplat</td><td>2025.03</td><td>文本</td><td>场景级 3DGS</td><td>rectified flow,灵活位姿+多视角联合</td><td>—</td><td>—</td><td>—</td><td>—</td><td>仅定性对比(Fig.5)</td><td>✅</td></tr>
+<tr><td>WonderWorld</td><td>2024.06</td><td>单图</td><td>分层高斯面元(FLAGS)</td><td>迭代 inpaint + 深度</td><td>—(推理期方法,复用 T2I 模型)</td><td>免训练</td><td>10s(论文 Tab.2)</td><td>—</td><td>WorldScore avg 66.43</td><td>✅</td></tr>
+<tr><td>WonderJourney</td><td>2023.12</td><td>单图/文本</td><td>点云逐段扩展</td><td>迭代 inpaint + VLM 校验</td><td>—(推理期方法)</td><td>免训练</td><td>6 min(论文 Tab.2)</td><td>—</td><td>WorldScore avg 60.30</td><td>✅</td></tr>
+<tr><td>LucidDreamer</td><td>2023.11</td><td>文本/单图</td><td>迭代 inpaint → 3DGS</td><td>深度引导 inpaint</td><td>—(推理期方法)</td><td>免训练</td><td>6 min(论文 Tab.2)</td><td>—</td><td>WorldScore avg 66.32</td><td>✅</td></tr>
+<tr><td><a href="3D-20250923-Lyra.html">Lyra</a>(库内)</td><td>2025.09</td><td>单图/视频(重建任务)</td><td>3DGS(剪枝后 ~200 万)</td><td>视频扩散自蒸馏(零真实数据)</td><td>354k 段教师合成视频</td><td>8×A100×6 天</td><td>单次前馈秒级,渲染 18ms/帧</td><td>—</td><td>RE10K/DL3DV/T&amp;T 全指标 SOTA(重建任务)</td><td>✅ 代码/权重/数据</td></tr>
+<tr><td><a href="3D-20251211-SHARP.html">SHARP</a>(库内)</td><td>2025.12</td><td>单图(邻近视角合成,非全场景)</td><td>前馈 3DGS(120 万,metric)</td><td>深度先验(Depth Pro)+ 视角对调监督</td><td>700K 合成 + 2.65M 真实</td><td>—</td><td><b>0.9s</b></td><td>—</td><td>LPIPS/DISTS 六数据集 SOTA(近邻视角)</td><td>✅</td></tr>
+</table>
+
+<h3>15.2 对比结论(机制层面)</h3>
+<div class="grid-2">
+<div class="card"><h4>为什么比 MV-oriented(CAT3D/Bolt3D/Wonderland)质量好?</h4><p style="font-size:14px">MV 路线的误差在「生成-重建」接口处产生:生成器不知道重建需要什么,逐视角独立幻觉 → 重建把不一致烘焙成噪声。FlashWorld 让<b>所有视角共享同一份高斯参数</b>,不一致在结构上不可能存在。Wonderland 已经用 latent 重建缓解了接口错配,但视频先验本身不含 3D 约束,大位姿下仍会重复扭曲(§13.2)。</p></div>
+<div class="card"><h4>为什么比自家前代 Director3D 快 47× 还更好?</h4><p style="font-size:14px">Director3D 也是 3D-oriented,但:① 从图像扩散初始化,先验弱 → 必须 SDS++ 逐场景精修(占掉绝大部分耗时);② 无蒸馏,多步采样。FlashWorld 用视频模型先验省掉精修、用 DMD2 压到 4 步。同一条「厦大 3D-oriented」路线(Dual3D→Director3D→FlashWorld)的第三次迭代,每代解决上一代的效率短板。</p></div>
+<div class="card"><h4>为什么比迭代式(WonderJourney/LucidDreamer/WonderWorld)一致性好?</h4><p style="font-size:14px">迭代式每扩一段都要重投影-修补,误差随场景规模累积,且只修补"看得见的洞"。FlashWorld 一次性生成全部 24 视角的联合分布。但注意:WonderWorld 的 10s 与 FlashWorld 的 9s <b>已同量级</b>,"10~100× 更快"的宣称对迭代式中最快者不成立——FlashWorld 的胜出点更多在质量与一致性(avg 68.72 vs 66.43)。</p></div>
+<div class="card"><h4>与 Lyra / SHARP 的关系:任务不同,不可直接比数字</h4><p style="font-size:14px"><a href="3D-20250923-Lyra.html">Lyra</a> 是<b>生成式重建</b>(输入视频/多图,目标是还原真实场景),与 FlashWorld 的开放域生成互补;<a href="3D-20251211-SHARP.html">SHARP</a> 是前馈邻近视角合成,不做场景补全与外推。三者可串成 pipeline:FlashWorld 生成场景 → Lyra 式模型处理真实拍摄 → SHARP 处理单图快速预览。值得注意的是 Lyra 的「教师视频扩散 → 学生 3D 解码」自蒸馏与 FlashWorld 的「MV 教师 → 3D 学生」跨模式蒸馏是<b>同一思想在不同范式上的镜像</b>。</p></div>
+</div>
+
+<h3>15.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>资产拼装</td><td>LayoutGPT、HoloDeck</td><td>已有 3D 资产库 + LLM 布局</td><td>场景受资产库限制,无真实感渲染</td></tr>
+<tr><td>迭代修补</td><td>Text2Room、LucidDreamer、WonderJourney、WonderWorld</td><td>T2I 扩散 + 单目深度</td><td>误差累积、跨段语义断裂、分钟级</td></tr>
+<tr><td>MV-oriented 两阶段</td><td>CAT3D、DimensionX、GenXD、Bolt3D、Wonderland</td><td>多视角/视频扩散先验</td><td>视角间无 3D 约束 → 重建噪声;两阶段慢</td></tr>
+<tr><td>3D-oriented 渲染在环</td><td>DMV3D、Dual3D、Director3D、DiffusionGS、Cycle3D</td><td>可微渲染 = 硬一致性约束</td><td>数据稀缺导致模糊;需逐场景精修</td></tr>
+<tr><td><b>跨模式蒸馏(本文)</b></td><td><b>FlashWorld</b></td><td>视频扩散先验 + MV/3D 双模式互蒸馏</td><td>静态场景;24 视角固定;教师质量即上限</td></tr>
+<tr><td>长程自回归(下一步)</td><td><a href="3D-20260414-Lyra2.html">Lyra 2.0</a>、<a href="3D-20260903-OctWorld.html">OctWorld</a>(库内)</td><td>显式 3D 记忆/缓存</td><td>视频输出为主,非显式场景资产</td></tr>
+</table>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>🎯 应用场景与落地适配性</h2>
+
+<h3>16.1 能直接进我们 pipeline 的点</h3>
+<div class="grid-2">
+<div class="card"><h4>✅ 虚拟场景/背景生成</h4><p style="font-size:14px">数字人合成需要可漫游背景时,FlashWorld 是目前<b>唯一同时满足「秒级 + 3DGS 资产 + 开源权重」</b>的方案:文本/参考图 → 24 视角场景 → .ply/.spz 直接进 gsplat 渲染链,与现有 3DGS 工具栈零阻抗。可作为 vggt_human 的<b>环境侧</b>补充(场景 gs 的快速生成版)。</p></div>
+<div class="card"><h4>✅ 单卡 3090 可跑</h4><p style="font-size:14px">24GB 档(--offload_t5 --offload_transformer_during_vae)实测 20s/场景(README,A800);3090 无 FP8 硬件但代码有 bf16 回退,速度预计介于 20~30s。<b>不需要 A100/H 卡</b>。</p></div>
+<div class="card"><h4>✅ 深度副产品</h4><p style="font-size:14px">生成高斯可渲染深度(§12.5),可做场景网格化/碰撞体的初始几何,或作为单目深度估计的伪标签源。</p></div>
+<div class="card"><h4>✅ 蒸馏方法论的迁移价值</h4><p style="font-size:14px">「同一主干双模式 + 跨模式 DMD2」是通用配方:任何「一致性表示 vs 高质量先验」冲突的生成任务(如人体纹理生成 vs 几何一致)都可借鉴。CMC 治漂浮物的思路(用无渲染分支做低噪锚点)可直接搬到 3DGS 头像训练的伪影抑制上。</p></div>
+</div>
+
+<h3>16.2 不适配/需注意</h3>
+<ul>
+<li><b>静态场景 only</b>:代码强制 <code>"[Static] "</code> 提示词前缀(app.py:320),动态/人体场景不在分布内——<b>不能用来生成人体</b>,与我们的数字人主线是互补而非竞争关系;</li>
+<li><b>轨迹需外部给定</b>:24 个相机位姿要自己摆(Web UI)或程序化生成;没有轨迹规划模块;</li>
+<li><b>场景尺度受数据限制</b>:训练数据是物体中心 + 室内 + DL3DV 级场景,城市级/超大场景会退化(论文 Limitations 自认);</li>
+<li><b>训练侧不可复现</b>:训练代码申请制 + 64×H20 门槛,想 finetune 到垂直领域(如影棚场景)目前只能等官方放行;</li>
+<li><b>与混元世界的关系</b>:致谢明示与腾讯 Hunyuan-World 团队合作完成(README),Tengfei Wang/Chunchao Guo 均为混元世界核心作者——FlashWorld 可视为混元世界路线的"3D-oriented 蒸馏版"。</li>
+</ul>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>可改进方向分析(知识库特色章节)</h2>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] ① 漂浮伪影的根治:CMC 只是折中,且现有指标测不出</h4>
+<p style="font-size:14px"><b>问题:</b>消融 D(w/o CMC)在 15 项指标中 11 项打平或反超完整模型(§14 逐项复核),但定性上漂浮/重复伪影明显——意味着 ① CMC 用"对齐 MV 分支"间接抑制伪影,付出了质量上限的代价(被拖向 MV 分布);② Q-Align/CLIP 系指标对这类 3D 结构伪影系统性失明。<b>代码/论文佐证:</b>Tab.3 D 行 vs F 行;论文 §4.4 "susceptible to floating and duplicated artifacts"。<b>改进建议:</b>在渲染域加显式几何正则(相邻视角深度一致性、高斯不透明度稀疏先验),替代/辅助 CMC;评测侧引入重投影一致性指标(如两视角 warp IoU)补盲区。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px">
+<h4>[高优先级] ② 静态假设:模型被 "[Static]" 锁死,动态场景整片空白</h4>
+<p style="font-size:14px"><b>问题:</b>推理时所有文本被强制加 <code>"[Static] "</code> 前缀(<code>app.py:320</code>),说明训练分布里静态/动态是显式区分的标签,而发布权重只释放了静态分支能力。动态场景(人物、动物、流体)不在支持范围。<b>改进建议:</b>论文 Future work 已点名 4D 生成;工程上可先做"静态场景 + 动态前景图层"的混合管线(场景 FlashWorld 生成,动态物体用 <a href="3D-20230818-4D动态高斯综述.html">4DGS 方法</a>重建后合成)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] ③ 论文未披露的"第三模块":逐步特征反馈</h4>
+<p style="font-size:14px"><b>问题:</b>推理代码里 4 步去噪之间会回传上一步的 feats(1024 维)与预测潜码(<code>app.py:219-221, 346-357</code>,patch_embedding 为此扩到 1174 输入通道),<b>论文正文、方法图、Appendix 均未提及</b>。按论文复现的人会少一块输入、模型维度都对不上。<b>改进建议:</b>论文应在下一版补充该机制(或确认其为发布版后加的工程 trick);引用本文方法时需以代码为准。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] ④ 固定 24 视角 × 480P:无法生成"大世界"</h4>
+<p style="font-size:14px"><b>问题:</b>视角数与分辨率在训练中固定(Appendix A),轨迹跨度被 RealEstate10K/DL3DV 的相机分布限死;长距离漫游、多房间大场景超出窗口。<b>改进建议:</b>论文 Future work 提到 autoregressive 生成——这正是 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a>/<a href="3D-20260903-OctWorld.html">OctWorld</a> 已验证的路线(分块生成 + 显式 3D 记忆),FlashWorld 的秒级单块生成器天然适合做该路线的"块生成引擎"。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] ⑤ 蒸馏质量上限 = MV 教师上限,而教师被共享主干"拖累"</h4>
+<p style="font-size:14px"><b>问题:</b>DMD 蒸馏只能逼近教师分布;而教师(MV 模式)与学生(3D 模式)共享 DiT 主干,预训练时 $\mathcal{L}_{\text{3D}}$ 会拉扯主干偏离纯 MV 最优点(消融 C 质量明显低于 F,间接说明混合训练对 MV 模式的损伤)。<b>改进建议:</b>教师端可考虑外挂一个更强的独立 MV 模型(如更大视频扩散),代价是跨模式分布差距变大、蒸馏难度上升——需要课程式(先小差距后大差距)调度。<span class="uncertain">【推测】该方向尚未见公开工作。</span></p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px">
+<h4>[中优先级] ⑥ 相机轨迹完全外包,易用性短板</h4>
+<p style="font-size:14px"><b>问题:</b>输入需要 24 个完整位姿(examples JSON 里手摆的四元数+内参),普通用户给不出好轨迹;轨迹 OOD 时模型靠 OOD 共训兜底但仍会退化。<b>改进建议:</b>上游接轨迹生成/规划(文本到轨迹,或参照 <a href="VideoGen-20260618-视频生成相机可控性调研.html">相机可控性调研</a> 中的轨迹参数化方法),把"单图 → 可漫游"做成一键。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<h4>[低优先级] ⑦ 评测体系薄弱:无几何指标、基线复现不严格</h4>
+<p style="font-size:14px"><b>问题:</b>全部主指标是无参考 IQA/CLIP 系,无几何精度(深度/Chamfer);image-to-3D 对比用基线项目页视频 + ViPE 估计位姿(§13.2),引入视频压缩与位姿误差。<b>改进建议:</b>在有 GT 的合成场景上补几何评测;基线统一用官方代码重跑(CAT3D 等已陆续开源)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px">
+<h4>[低优先级] ⑧ 训练侧不可复现</h4>
+<p style="font-size:14px"><b>问题:</b>训练代码需填表申请(2026-01-29 起),且预训练+后训练合计 64×H20×5 天,学术复现门槛极高。<b>改进建议:</b>小数据 + 冻结大部分主干的 LoRA 微调路径值得探索(权重已开放,结构改动点明确,见 §12.2)。</p>
+</div>
+
+<h3>优先级总览与"最关键三点"</h3>
+<table>
+<tr><th>#</th><th>改进点</th><th>优先级</th><th>关键佐证</th></tr>
+<tr><td>①</td><td>漂浮伪影根治(几何正则替代 CMC)</td><td>高</td><td>Tab.3 D≥F 与 Fig.7 伪影并存</td></tr>
+<tr><td>②</td><td>静态 → 动态/4D</td><td>高</td><td><code>app.py:320</code> "[Static]" 前缀</td></tr>
+<tr><td>③</td><td>论文补披露逐步反馈机制</td><td>中</td><td><code>app.py:219-221</code> vs 论文全文</td></tr>
+<tr><td>④</td><td>自回归长程扩展</td><td>中</td><td>24 视角硬编码;Lyra2/OctWorld 已验证</td></tr>
+<tr><td>⑤</td><td>更强独立教师</td><td>中</td><td>蒸馏上界定理;消融 C&lt;F</td></tr>
+<tr><td>⑥</td><td>轨迹规划自动化</td><td>中</td><td>examples 手摆位姿</td></tr>
+<tr><td>⑦</td><td>几何评测与严格基线</td><td>低</td><td>§13.2 视频+ViPE 协议</td></tr>
+<tr><td>⑧</td><td>可复现微调路径</td><td>低</td><td>训练代码申请制</td></tr>
+</table>
+<p><b>个人判断最关键的三点:① ③ ④。</b>① 决定生成资产能否直接进生产(伪影是 3DGS 落地最痛的点);③ 决定社区能否正确复现与改进(论文-代码不一致是研究债);④ 决定该方法能否从"单个场景片段"走向真正的"世界生成"(与 Lyra 2.0/OctWorld 汇合后,这套蒸馏配方才完整)。</p>
+</section>
+
+<section class="section" id="s18">
+<h2><span class="num">18</span>总结与演进定位</h2>
+
+<p><b>方法层面:</b>FlashWorld 的贡献不是某个新模块,而是一个<b>训练配方</b>——"双模式预训练 + 跨模式 DMD2 蒸馏 + OOD 共训",把 MV 范式的质量与 3D 范式的一致性装进同一个 4 步生成器。它验证了:在强视频扩散先验(Wan2.2-5B)之上,3D-oriented 路线可以摆脱"模糊 + 逐场景精修"的历史包袱,第一次做到质量反超 MV 方法、速度进入秒级。</p>
+
+<p><b>谱系定位:</b>厦大团队的 3D-oriented 三部曲——Dual3D(2024.05,双模式概念首提,图像扩散底座)→ Director3D(2024.06,像素对齐 3DGS + SDS++,NeurIPS 2024)→ <b>FlashWorld</b>(2025.10,视频扩散底座 + 蒸馏加速,ICLR 2026 Oral)。每一代保留上一代的架构思想、替换底座与训练策略;到 FlashWorld,这条路线在"质量-速度"两个维度同时越过 MV 范式。</p>
+
+<p><b>在领域大图中的位置:</b>① 对生成式场景建模,它把"秒级 3DGS 资产生成"从设想变成开源现实,与闭源的 Marble(World Labs)形成对照;② 对蒸馏方法论,它把 DMD2 从"同模型多步→少步"推广到"跨模式蒸馏",与 <a href="3D-20250923-Lyra.html">Lyra</a> 的自蒸馏(教师视频模型→学生 3D 解码)构成同一思想的两种实现;③ 它的局限(24 视角、静态)恰好就是长程世界模型(<a href="3D-20260414-Lyra2.html">Lyra 2.0</a>/<a href="3D-20260903-OctWorld.html">OctWorld</a>)与 4D 生成的研究空间——FlashWorld 更像这块拼图里"单块场景生成器"的当前最优解。</p>
+
+<div class="callout key"><b>对本知识库主线的价值:</b>短期可作物体/场景级 3DGS 资产的快速生成器与背景来源;方法论上,"渲染在环 + 跨模式蒸馏 + CMC 伪影抑制"三件套对 vggt_human 的高斯训练有直接借鉴意义;长期关注其 autoregressive 与 4D 的后续工作。</div>
+</section>
+
+<section class="section" id="s19">
+<h2><span class="num">19</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>团队</h3>
+<ul>
+<li><b>Xinyang Li(一作)</b>:厦门大学,腾讯实习期间完成本工作;Dual3D / Director3D 同一作,3D-oriented 路线的持续推动者。</li>
+<li><b>Tengfei Wang、Chunchao Guo</b>:腾讯(混元世界团队,README 致谢明示与 Hunyuan-World 团队合作完成)。</li>
+<li><b>Zixiao Gu</b>:复旦大学 Yes Lab。</li>
+<li><b>Shengchuan Zhang、Liujuan Cao(通讯)</b>:厦门大学,教育部多媒体可信感知与高效计算重点实验室。</li>
+</ul>
+
+<h3>资源链接</h3>
+<ul class="refs">
+<li>📄 arXiv:<a href="https://arxiv.org/abs/2510.13678" target="_blank">arxiv.org/abs/2510.13678</a>(v1,2025-10-15)· <a href="https://arxiv.org/html/2510.13678v1" target="_blank">HTML 全文</a></li>
+<li>🏠 项目主页:<a href="https://imlixinyang.github.io/FlashWorld-Project-Page/" target="_blank">imlixinyang.github.io/FlashWorld-Project-Page</a></li>
+<li>💻 代码:<a href="https://github.com/imlixinyang/FlashWorld" target="_blank">github.com/imlixinyang/FlashWorld</a>(Apache-2.0;推理代码+权重已放出,<b>训练代码需填 Google 表单申请</b>,2026-01-29 起)</li>
+<li>🤗 权重:<a href="https://huggingface.co/imlixinyang/FlashWorld" target="_blank">huggingface.co/imlixinyang/FlashWorld</a>(model.ckpt,含 transformer + recon_decoder)</li>
+<li>🎮 在线 Demo:<a href="https://huggingface.co/spaces/imlixinyang/FlashWorld-Demo-Spark" target="_blank">HuggingFace Spaces</a>(免费)</li>
+<li>🏆 OpenReview:<a href="https://openreview.net/forum?id=2IftRjRB07" target="_blank">forum?id=2IftRjRB07</a>(页面标注 ICLR 2026 Oral;arXiv abs comments 未含会议信息,本笔记按规范不加 badge,见 §1)</li>
+<li>📖 库内关联:<a href="3D-20250923-Lyra.html">Lyra</a>(自蒸馏镜像思想) · <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> / <a href="3D-20260903-OctWorld.html">OctWorld</a>(长程扩展方向) · <a href="3D-20251211-SHARP.html">SHARP</a>(前馈邻近视角) · <a href="ImageGen-20240523-DMD2.html">DMD2</a>(蒸馏底座) · <a href="VideoGen-20250728-Wan2.2.html">Wan2.2</a>(模型底座) · <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">质量-速度 Pareto 调研</a></li>
+</ul>
+
+<div class="note">
+<b>本笔记的信息来源与核实范围:</b>论文 arXiv HTML v1 全文(含 Appendix A–E);官方推理仓库 imlixinyang/FlashWorld(commit 424db44)逐文件实读(app.py / cli.py / models/ / utils.py / quant.py,文中 file:line 均可回查);Wan2.2-TI2V-5B 官方 HF config(VAE/Transformer);GitHub README 与 OpenReview 页面(会议信息)。<b>训练代码未公开(申请制),训练侧超参(Appendix A)无法源码复核,已如实标注。</b>标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文/源码直接佐证的推断。文中全部相对提升数字与平均分均按表格原始值手算复核(§13、§14)。
+</div>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p>本笔记为论文调研知识库的一部分 · 由 <a href="index.html" style="color:var(--accent)">index.html</a> 索引</p>
+</footer>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
