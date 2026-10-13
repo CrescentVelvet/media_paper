@@ -4187,6 +4187,50 @@
    ]
   },
   {
+   "title": "4DGS360: 单目视频 360° 动态高斯重建",
+   "meta": [
+    "📄 arXiv: 2603.21618",
+    "📅 2026-03-23",
+    "🏢 Seoul National University(首尔国立大学)",
+    "🏆 ECCV 2026"
+   ],
+   "tags": [
+    "4D Reconstruction",
+    "3D Gaussian Splatting",
+    "Monocular Video",
+    "3D Point Tracking",
+    "Anchor-guided Initialization",
+    "360° Reconstruction",
+    "iPhone360 Dataset"
+   ],
+   "summary": "无扩散的单目视频 360° 动态物体重建:把大视角外推失败的根因定位到「2D track×深度反投影」初始化对遮挡区的几何盲视,提出免训练的 AnchorTAP3D(BootsTAP 高置信 2D 锚点 + TAPIP3D 滑窗 6 次迭代校正),以 3D 原生初始化补齐遮挡几何,表示沿用 HiMoR 层级运动树。自建 iPhone360 基准(训练-测试视角差 70°–135°),六场景平均 CLIP-I <strong>0.8822 vs HiMoR 0.7976 / MoSca 0.7266</strong>(按 Tab.2 逐格计算)。训练约 3h/140 帧(A6000 48GB),AnchorTAP3D 预处理 71min/130 帧。源码复核:论文宣称的 70 节点/15 基实为未被加载的孤儿 yaml,默认 50/10 生效;论文损失 5 项 vs 源码实际 13 项。",
+   "links": [
+    {
+     "href": "3D-20260323-4DGS360.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2603.21618",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://jaewon040.github.io/4dgs360/",
+     "text": "🏠 项目主页"
+    },
+    {
+     "href": "https://github.com/Jaewon040/4DGS360",
+     "text": "💻 GitHub"
+    }
+   ],
+   "file": "3D-20260323-4DGS360.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "几何与时序一致性"
+   ]
+  },
+  {
    "title": "Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向",
    "meta": [
     "📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR",

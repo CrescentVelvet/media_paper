@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4DGS360: 单目视频 360° 动态高斯重建 — AnchorTAP3D 3D 原生初始化</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2603.21618 · 2026-03-23 · ECCV 2026 · 首尔国立大学(SNU) · 单目 360° 动态重建</span>
+    <h1>4DGS360: 单目视频 360° 动态高斯重建</h1>
+    <div class="subtitle">4DGS360: 360° Gaussian Reconstruction of Dynamic Objects from a Single Video —— AnchorTAP3D 锚点引导 3D 跟踪,以 3D 原生初始化破解遮挡区几何歧义</div>
+    <div class="authors">Jae Won Jang · Yeonjin Chang · Wonsik Shin · Juhwan Cho · Nojun Kwak†(†通讯作者)</div>
+    <div class="org">Seoul National University(首尔国立大学)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2603.21618" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2603.21618v2" target="_blank">🌐 arXiv HTML 全文(v2)</a>
+      <a href="https://jaewon040.github.io/4dgs360/" target="_blank">🏠 项目主页</a>
+      <a href="https://github.com/Jaewon040/4DGS360" target="_blank">💻 GitHub(代码+数据已放出)</a>
+      <a href="3D-20240718-Shape-of-Motion.html">📖 对照笔记:Shape of Motion</a>
+      <a href="3D-20230922-Deformable-3DGS.html">📖 Deformable 3DGS</a>
+      <a href="3D-20250630-GaVS.html">📖 GaVS</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:2D 原生初始化的失败模式</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:4D 场景表示(HiMoR 层级运动)</a></li>
+    <li><a href="#s5">模块二:AnchorTAP3D(核心创新)</a></li>
+    <li><a href="#s6">模块三:高斯与运动基初始化</a></li>
+    <li><a href="#s7">模块四:优化策略(ARAP + 渲染监督)</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">训练与推理流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析(SoM / D-3DGS / GaVS)</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- ========== 1 论文摘要 ========== -->
+<div class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+<p><b>问题</b>:从一段随手拍摄的单目视频重建动态物体的 <b>360° 4D 表示</b>。现有方法(Shape-of-Motion、MoSca、HiMoR)用 2D 点跟踪 + 深度反投影初始化高斯轨迹,但深度图只覆盖<b>当前帧可见表面</b>,遮挡点的 3D 位置完全无约束,导致初始几何过拟合可见表面、优化过程无法补救 —— 在偏离训练视角 &gt;90° 的极端新视角下,即使目标区域在视频其他帧里清晰可见,重建也会失败。</p>
+<p><b>方法</b>:4DGS360 是一个<b>无扩散(diffusion-free)</b>框架,核心是用 <b>3D 原生初始化</b>替代 2D 原生初始化:提出 <b>AnchorTAP3D</b>(Anchor-guided Tracking Any Point in 3D),以高置信度 2D 跟踪点作为锚点(anchors)条件化 TAPIP3D 3D 跟踪器,在滑动窗口内迭代地抑制漂移,为遮挡区域也给出几何合理的 3D 轨迹;随后沿用 HiMoR 的层级运动树表示做逐场景优化。同时发布 <b>iPhone360</b> 基准:6 个真实场景、测试相机距训练视角 70°–135°,是首个能在真实采集条件下做 360° 单目动态重建评测的数据集。</p>
+<p><b>结果</b>:在 iPhone360 / iPhone / DAVIS 三个数据集上取得 SOTA(感知指标 CLIP-I/CLIP-T/LPIPS 为主,像素级 PSNR/SSIM 在极端外推设定下绝对值仍低,作者坦承留作未来工作)。</p>
+<div class="callout key"><b>一句话核心贡献</b>:把单目 4D 重建失败的根因定位到「2D 轨迹 × 单帧深度反投影」初始化对遮挡区的几何盲视,并用「高置信 2D 锚点 + 3D 跟踪器迭代校正」的免训练组合补齐这块几何 —— 初始化一换,原有的 HiMoR 表示与 ARAP 正则就能正常工作。</div>
+<div class="stat-row">
+  <div class="stat"><div class="v">0.8822</div><div class="l">iPhone360 六场景平均 CLIP-I(HiMoR 0.7976 / MoSca 0.7266,均值为本笔记按论文 Tab.2 逐格计算)</div></div>
+  <div class="stat"><div class="v">11.34</div><div class="l">iPhone360 像素级 PSNR(HiMoR 10.99,Tab.4;绝对值低反映任务本身难度)</div></div>
+  <div class="stat"><div class="v">0.9015</div><div class="l">iPhone 数据集 Mean CLIP-I(HiMoR 0.8907 / SoM 0.8603,Tab.3)</div></div>
+  <div class="stat"><div class="v">70°–135°</div><div class="l">iPhone360 训练-测试相机最大角度差(iPhone 数据集 &lt;45°)</div></div>
+</div>
+<div class="stat-row">
+  <div class="stat"><div class="v">~3 h</div><div class="l">单场景优化时长(140 张图像,RTX A6000 48GB,论文附录 0.A.3)</div></div>
+  <div class="stat"><div class="v">71 min</div><div class="l">AnchorTAP3D 预处理(130 帧视频,同卡,附录 0.A.1)</div></div>
+  <div class="stat"><div class="v">L=16 · ×6</div><div class="l">AnchorTAP3D 滑窗长度 × 每窗迭代次数(8 帧重叠)</div></div>
+  <div class="stat"><div class="v">τ=0.5</div><div class="l">2D 锚点置信度阈值默认值(附录 0.C.1 有逐场景消融)</div></div>
+</div>
+<div class="figure"><img src="images/2603.21618/0_overview_eccv.png" alt="teaser" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图1</b>(论文 Fig.1)4DGS360 从单目视频重建 360° 动态物体几何,在普通与极端新视角下都比先前方法保真;右下为 iPhone360 数据集的相机布置:蓝色为手持训练相机轨迹,红色为远离训练轨迹的同步测试相机。</div></div>
+<div class="tag-row"><span class="tag">单目动态重建</span><span class="tag">3D 原生初始化</span><span class="tag">点跟踪</span><span class="tag">HiMoR 运动树</span><span class="tag">新基准 iPhone360</span><span class="tag">ECCV 2026</span></div>
+</div>
+
+<!-- ========== 2 研究背景与动机 ========== -->
+<div class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:2D 原生初始化的失败模式</h2>
+<p>单目 4D 重建是高度病态问题:每帧只有一个视角、没有多视立体线索。Shape-of-Motion(库内笔记 <a href="3D-20240718-Shape-of-Motion.html">SoM</a>)开创的范式是「预训练 2D 点跟踪(TAPIR/BootsTAP)+ 单目深度反投影 → 3D 轨迹 → 初始化 canonical 高斯 + 运动基 → 光度优化」,MoSca、HiMoR 沿用同一初始化管线。本文作者指出,这条管线的<b>失败不在优化阶段,而在初始化阶段</b>:</p>
+<div class="grid-3">
+  <div class="card"><h4>① 深度只覆盖可见表面</h4><p>2D tracks 必须经深度图 lift 到 3D;而任何单目深度(即使 LiDAR 校正过)对<b>当前帧被遮挡的点</b>没有读数。遮挡点的 3D 位置在初始化时是「无值」而非「有噪值」。</p></div>
+  <div class="card"><h4>② 初始化过拟合可见表面</h4><p>于是轨迹初始化只包含可见表面点,初始几何在每个时间步都过拟合训练视角可见的那一面。论文原文:「the 3D positions of occluded track points remain ambiguous, causing the initialized geometry to overfit to the visible surfaces at each timestep」。</p></div>
+  <div class="card"><h4>③ 优化无法补救坏初始化</h4><p>缺失的几何在优化中不会被「长」出来;ARAP 这类刚性正则在损坏的初始化几何上反而失效(作者原话:ARAP「previously failed to operate correctly on corrupted initialized geometry in occluded regions」)。附录 0.B.2 记录了具体现象:baseline 高斯穿过遮挡区时速度突变、walk-around 场景人物下半身断裂。</p></div>
+</div>
+<p>为什么不用现成的 3D tracker 直接初始化?论文 §2.3 的权衡是:2D tracker(BootsTAP)在真实噪声下更鲁棒但缺乏空间理解;3D tracker(TAPIP3D、SpatialTrackerV2)有几何理解但对深度与标定误差敏感、误差随时间累积漂移。<b>AnchorTAP3D 的赌注</b>是:用高置信 2D 点作锚点就能把两者的优点拼起来,而且不需要任何额外训练。</p>
+<div class="callout warn"><b>作者关键假设与失效条件</b><br>
+<b>假设</b>:高置信 2D track 点 lift 出的 3D 锚点「relatively unaffected by depth or calibration noise」,足以为 3D tracker 提供稳定的时空约束。<br>
+<b>失效条件</b>(原文 Limitations 与消融):① 整体性能仍依赖预训练 2D/3D tracker 与深度模型能力;② 输入视频中<b>从未可见</b>的背景区域无法合成(本文只补「视频中出现过但被遮挡」的区域);③ 像素级指标(PSNR/SSIM)在 iPhone360 大外推设定下仍然很弱;④ 深度若不做尺度校正(附录 Fig.13 用裸 MoGe-2),重建处于任意尺度、与测试相机 GT 空间不对齐。</div>
+</div>
+
+<!-- ========== 3 算法总体框架 ========== -->
+<div class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<p><b>输入</b>:$T$ 帧单目视频 $\mathcal{I}=\{I_{t}\}_{t=1}^{T}$、逐帧深度图 $\mathcal{D}=\{D_{t}\}_{t=1}^{T}$(数据集传感器或预训练估计器)、相机参数 $\Theta=\{\theta_{t}\}_{t=1}^{T}$;另需前景动态物体 mask(用于过滤)与 BootsTAPIR 2D tracks(预处理产生)。<b>输出</b>:canonical 空间的静态 3D 高斯集合 + 层级运动树(HiMoR 式),可渲染任意时刻、360° 任意视角。</p>
+<p>流水线两大阶段:<b>阶段一(§5)AnchorTAP3D 3D 原生初始化</b> —— 2D 跟踪 + 深度反投影得候选点 → 置信度筛选为锚点 → 锚点条件化 TAPIP3D 滑窗迭代 → 全时段 3D 轨迹(含遮挡区)→ 聚类/Procrustes 得初始运动基与节点;<b>阶段二(§7)逐场景优化</b> —— 在 HiMoR 层级运动表示上,用渲染损失 + ARAP 刚性正则 + 平滑族正则联合优化 canonical 高斯与运动参数。</p>
+<div class="figure"><img src="images/2603.21618/2_method_eccv.png" alt="method overview" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图2</b>(论文 Fig.2)方法总览:(a) AnchorTAP3D 初始化,遮挡点也能获得可靠几何;(b) AnchorTAP3D 架构;(c) 有/无锚点的跟踪对比 —— 锚点抑制漂移;(d) 初始化后的训练;(e) 最终 360° 重建(蓝=训练相机,红=测试相机)。</div></div>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: 单目视频 I_t × T 帧<br/>+ 深度 D_t + 相机 θ_t + 前景 mask"] --> PRE["预处理: BootsTAPIR 2D tracks<br/>(query 网格逐帧跟踪, 输出 x,y,occlusion_logit,uncertainty_logit)"]
+    PRE --> AT["AnchorTAP3D 初始化 (免训练)<br/>2D 高置信点 lift→3D 锚点 (τ=0.5)<br/>TAPIP3D 滑窗 L=16 迭代×6 锚点校正"]
+    AT --> TRACKS["全时段 3D 轨迹<br/>(含遮挡区, track3d_*.npy)"]
+    TRACKS --> INIT["初始化: 采样 N 条轨迹=高斯<br/>k-means 按速度聚类 + Procrustes<br/>得初始 motion bases + 层级节点"]
+    INIT --> OPT["逐场景优化 ~3h<br/>渲染损失 + ARAP + 平滑族<br/>4000 步时运动树加深第二层"]
+    OPT --> OUT["输出: canonical 高斯 + 2 层运动树<br/>支持 360° 任意时刻新视角渲染"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style AT fill:#fde68a,stroke:#f59e0b,color:#78350f
+    style OPT fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style OUT fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状/取值</th></tr>
+<tr><td>$\mathcal{I},\mathcal{D},\Theta$</td><td>输入帧序列、深度图、相机参数</td><td>各含 $T$ 项;$I_t$ 为 $[H,W,3]$</td></tr>
+<tr><td>$G(\boldsymbol{\mu},\boldsymbol{\Sigma},\alpha,\mathbf{c})$</td><td>3D 高斯:均值/协方差/不透明度/SH 颜色系数</td><td>$\boldsymbol{\mu}\in\mathbb{R}^3$,$\boldsymbol{\Sigma}\in\mathbb{R}^{3\times3}$,$\mathbf{c}\in\mathbb{R}^{3(l+1)^2}$</td></tr>
+<tr><td>$\mathbf{T}_t=[\mathbf{R}_t|\mathbf{t}_t]$</td><td>canonical → 帧 $t$ 的 SE(3) 形变</td><td>$\mathrm{SE}(3)$</td></tr>
+<tr><td>$\mathcal{M}_k,\mathbf{M}_t$</td><td>第 $k$ 个叶节点的运动(相对 canonical 的变换)</td><td>$\mathrm{SE}(3)$</td></tr>
+<tr><td>$\mathcal{B}_{m,t}$</td><td>兄弟节点共享的第 $m$ 条运动基</td><td>源码: rots $[K,T,6]$(6D 旋转)+ transls $[K,T,3]$</td></tr>
+<tr><td>$w_k,\ v_m$</td><td>高斯对 KNN 节点的插值权重;节点对运动基的系数</td><td>源码: 节点系数经 softmax 激活</td></tr>
+<tr><td>$\mathbf{p}_t,\ c_{t^{\prime}}$</td><td>2D query 点;2D tracker 在目标帧的置信度</td><td>$c=v\times p$,见式(7)</td></tr>
+<tr><td>$\tau$</td><td>锚点置信度阈值</td><td>默认 0.5(附录 0.C.1 消融)</td></tr>
+<tr><td>$w(t,t^{\prime}),\ L$</td><td>滑动时间窗口及其长度</td><td>$L=16$,相邻窗重叠 8 帧</td></tr>
+<tr><td>$\mathcal{X}^{A}_{w(t,t^{\prime})}$</td><td>窗口内锚点集合(条件化 3D tracker)</td><td>高置信 2D 点的反投影 3D 点集</td></tr>
+<tr><td>$\mathbf{x}^{Anchor}_{t^{\prime}},\ v_{t^{\prime}}$</td><td>AnchorTAP3D 输出的 3D 点与二值可见性</td><td>$\mathbb{R}^3$, $\{0,1\}$</td></tr>
+<tr><td>$\mathcal{N}$</td><td>ARAP 节点对集合</td><td>每节点 5 个跨帧最近节点 + 沿视线速度最相似的 2 个</td></tr>
+</table>
+</div>
+
+<!-- ========== 4 模块一:4D 场景表示 ========== -->
+<div class="section" id="s4">
+<h2><span class="num">4</span>模块一:4D 场景表示(HiMoR 层级运动树)</h2>
+<p>场景用各向异性 3D 高斯 $G(\boldsymbol{\mu},\boldsymbol{\Sigma},\alpha,\mathbf{c})$ 表示。动态通过把 canonical 空间的静态高斯经 $\mathbf{T}_{t}=[\mathbf{R}_{t}|\mathbf{t}_{t}]\in\mathrm{SE}(3)$ 形变到每一帧:</p>
+<div class="equation">$$G_{t}=G(\mathbf{R}_{t}\boldsymbol{\mu}_{0}+\mathbf{t}_{t},\,\mathbf{R}_{t}\boldsymbol{\Sigma}_{0}\mathbf{R}_{t}^{\top},\,\alpha,\,\mathbf{c})$$<span class="tag">式 1</span></div>
+<p>形变场建模<b>直接沿用 HiMoR</b>(论文原文:「We model $\mathbf{T}_{t}$ following the HiMoR」):形变被编码为一棵<b>节点树</b>,每个 canonical 高斯的变换由其 $K$ 个最近叶子节点的运动插值得到:</p>
+<div class="equation">$$\mathbf{T}_{t}=\sum_{k\in\mathcal{N}(G,\mathcal{V})}w_{k}\,\mathcal{M}_{k}$$<span class="tag">式 2</span></div>
+<p>每个节点的运动 $\mathbf{M}_t$ 又相对其父节点层级定义,表示为父节点共享的 $M$ 条运动基的加权和:</p>
+<div class="equation">$$\mathbf{M}_{t}=\sum_{m=1}^{M}v_{m}\,\mathcal{B}_{m,t}$$<span class="tag">式 3</span></div>
+<p>层级结构让高层节点捕获全局平滑运动、深层节点细化局部形变。渲染与标准 3DGS 相同:形变后高斯经相机投影(式 4)成 2D 高斯,再做深度排序 alpha 混合(式 5):</p>
+<div class="equation">$$\boldsymbol{\mu}^{\prime}_{t}=\Pi(\mathbf{R}_{t}\boldsymbol{\mu}_{0}+\mathbf{t}_{t};\boldsymbol{\theta}_{t}),\quad\boldsymbol{\Sigma}^{\prime}_{t}=\Pi(\mathbf{R}_{t}\boldsymbol{\Sigma}_{0}\mathbf{R}_{t}^{\top};\boldsymbol{\theta}_{t})$$<span class="tag">式 4</span></div>
+<div class="equation">$$\begin{split}C_{t}(\mathbf{p})&=\sum_{i=1}^{N}\mathbf{c}_{i}\,\sigma_{i,t}(\mathbf{p})\prod_{j=1}^{i-1}\!\left(1-\sigma_{j,t}(\mathbf{p})\right),\\
+\sigma_{i,t}(\mathbf{p})&=\alpha_{i}\exp\!\left(-\tfrac{1}{2}\,(\mathbf{p}-\boldsymbol{\mu}^{\prime}_{i,t})^{\top}(\boldsymbol{\Sigma}^{\prime}_{i,t})^{-1}(\mathbf{p}-\boldsymbol{\mu}^{\prime}_{i,t})\right)\end{split}$$<span class="tag">式 5</span></div>
+<h3>源码级结构(<code>flow3d/params.py</code>)</h3>
+<table>
+<tr><th>组件</th><th>结构</th><th>出处</th></tr>
+<tr><td>前景高斯</td><td>canonical means/quats/scales/colors/opacities,激活:恒等/L2 归一化/exp/sigmoid/sigmoid;另有不可训练 buffer <code>visibilities</code> $[G,T]$ 记录逐帧可见性</td><td>params.py:42-69</td></tr>
+<tr><td>MotionBasesPerLevel</td><td>rots $[N_{parent},K,T,6]$(6D 旋转)+ transls $[N_{parent},K,T,3]$,每层 $K$ 条 SE(3) 基</td><td>params.py:166-180</td></tr>
+<tr><td>MotionNodesPerLevel</td><td>positions(cano 时刻)+ radius(exp 激活)+ motion_coefs(softmax,对 $K$ 条基的权重)</td><td>params.py:183-206</td></tr>
+<tr><td>节点世界变换</td><td>局部变换 = 基加权和(6D rot 加权转旋转矩阵);世界变换沿父链连乘</td><td>params.py:331-371</td></tr>
+<tr><td>高斯形变</td><td>对 $k{=}3$ KNN 节点做 RBF 加权(含 radius)softmax,再用<b>双四元数混合(DQB)</b>作用于 canonical means/quats</td><td>params.py:374-422, scene_model.py:58-89</td></tr>
+<tr><td>背景高斯</td><td>静态,独立 GaussianParams,带 scene_center/scene_scale 归一化</td><td>init_utils.py:165-205</td></tr>
+<tr><td>树结构(训练默认)</td><td>两层:<code>child_nodes_per_level=[num_init_nodes, num_nodes_second]</code>,<code>motion_bases_per_level=[num_motion_bases, num_motion_bases_second]</code>;初始只有第 0 层,4000 步时加深(见 §7/§10)</td><td>run_training.py:269-273</td></tr>
+</table>
+<div class="mermaid">
+flowchart TD
+    subgraph TREE["HiMoR 两层运动树(训练默认: 第一层 50 节点/10 基, 第二层每父 10 子节点/5 基)"]
+        R["根(全局)"] --> N1["第一层节点 × n1<br/>positions + radius + motion_coefs (softmax over K1 bases)"]
+        N1 --> B1["第一层运动基 K1 条<br/>rots [n1?,K1,T,6] + transls"]
+        N1 --> N2["第二层节点(每父 10 个)<br/>局部变换相对父节点"]
+        N2 --> B2["第二层运动基 K2 条"]
+    end
+    G["canonical 高斯 μ0,Σ0"] --> KNN["k=3 KNN 叶节点<br/>RBF(含 radius) 加权 softmax"]
+    N2 --> KNN
+    KNN --> DQB["双四元数混合 DQB<br/>得逐帧 SE(3) 形变 T_t"]
+    DQB --> RENDER["投影 + alpha 混合渲染(式 4-5)"]
+    style TREE fill:#eff6ff,stroke:#3b82f6,color:#1e3a5f
+    style DQB fill:#fde68a,stroke:#f59e0b,color:#78350f
+</div>
+<p><b>监督信号</b>:表示层本身无直接监督;canonical 高斯属性与运动树参数全部由 §7 的渲染系损失(光度/mask/深度/track)+ ARAP/平滑正则间接训练。</p>
+</div>
+
+<!-- ========== 5 模块二:AnchorTAP3D ========== -->
+<div class="section" id="s5">
+<h2><span class="num">5</span>模块二:AnchorTAP3D(核心创新)</h2>
+<p>AnchorTAP3D(Anchor-guided Tracking Any Point in 3D)是一个<b>免训练</b>的组合式 3D 跟踪器:2D tracker 用 <b>BootsTAP</b>,3D tracker 用 <b>TAPIP3D</b>,用前者的高置信点作锚点校正后者。整体形式化(式 6):给定时刻 $t$ 的 2D query 点 $\mathbf{p}_t$,估计它在目标帧 $t^{\prime}$ 的 3D 位置与可见性:</p>
+<div class="equation">$$(\mathbf{x}^{Anchor}_{t^{\prime}},v_{t^{\prime}})=\mathcal{P}^{Anchor3D}_{t\rightarrow t^{\prime}}(\mathbf{p}_{t},\mathcal{I},\mathcal{D},\Theta)$$<span class="tag">式 6</span></div>
+<h3>5.1 锚点的产生:2D 跟踪 + 置信度筛选 + 反投影</h3>
+<p>2D tracker 预测对应点与置信度(式 7);BootsTAP 输出 occlusion logit $o$ 与 uncertainty logit $u$,换算成概率 $v=1-\sigma(o)$、$p=1-\sigma(u)$,最终置信度 $c=v\times p$:</p>
+<div class="equation">$$(\mathbf{p}_{t^{\prime}},c_{t^{\prime}})=\mathcal{P}^{2D}_{t\rightarrow t^{\prime}}(\mathbf{p}_{t},\mathcal{I})$$<span class="tag">式 7</span></div>
+<p>预测点经目标帧深度与相机参数反投影为候选 3D 点(式 8);低置信(多为遮挡)点没有可靠深度,用阈值掩码剔除(式 9,默认 $\tau=0.5$):</p>
+<div class="equation">$$\mathbf{x}^{2D}_{t^{\prime}}=\Pi^{-1}_{t^{\prime}}(\mathbf{p}_{t^{\prime}},D_{t^{\prime}},\boldsymbol{\theta}_{t^{\prime}})$$<span class="tag">式 8</span></div>
+<div class="equation">$$\mathrm{Mask}_{t^{\prime}}=\begin{cases}1,&c_{t^{\prime}}>\tau,\\0,&\text{otherwise}.\end{cases}$$<span class="tag">式 9</span></div>
+<h3>5.2 锚点条件化的滑窗 3D 推理</h3>
+<p>TAPIP3D 在固定长度 $L=16$ 的滑动窗口内联合处理所有帧(相邻窗口重叠 8 帧)。每次推理时,窗口内所有高置信锚点构成集合(式 10),作为 transformer 的条件输入:</p>
+<div class="equation">$$\mathcal{X}^{A}_{w(t,t^{\prime})}\;=\;\big\{\,\mathbf{x}^{2D}_{s^{\prime}}\;\big|\;s^{\prime}\!\in\!w(t,t^{\prime}),\;\mathrm{Mask}_{s^{\prime}}\!=\!1\,\big\}$$<span class="tag">式 10</span></div>
+<div class="equation">$$(\mathbf{x}^{Anchor}_{t^{\prime}},v_{t^{\prime}})=\mathcal{P}^{3D}_{t\rightarrow t^{\prime}}(\mathbf{p}_{t},\mathcal{I},\mathcal{D},\Theta,\mathcal{X}^{A}_{w(t,t^{\prime})})$$<span class="tag">式 11</span></div>
+<p>每个窗口做 <b>6 次推理迭代</b>:每次迭代后,若存在高置信的 2D 反投影点,就<b>替换</b>对应点成为新锚点,3D tracker 在下次迭代中基于更新后的锚点重新推断窗口内其余点。同时用前景动态物体 mask 剔除落在 mask 外的推断点。与「单 query 逐帧传播」的常规 3D tracker 不同,多锚点提供了跨帧的时空约束,从而抑制误差漂移。</p>
+<div class="figure"><img src="images/2603.21618/3_anchor_eccv.png" alt="anchor tracking comparison" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图3</b>(论文 Fig.3)跟踪对比:裸 TAPIP3D(上)在经历旋转与遮挡后目标时刻的轨迹明显漂移;AnchorTAP3D(下)保持稳定。</div></div>
+<div class="mermaid">
+flowchart LR
+    subgraph WIN["滑动窗口 w(t,t′), L=16 帧, 重叠 8 帧"]
+        Q["2D query 点<br/>(BootsTAP tracks)"] --> CONF["置信度 c=v×p<br/>=[1-σ(o)]·[1-σ(u)]"]
+        CONF -->|c>τ=0.5| ANCH["锚点: 高置信点<br/>深度反投影→3D"]
+        CONF -->|c≤τ| DROP["剔除(多为遮挡点)"]
+        ANCH --> ITER["TAPIP3D 迭代 ×6<br/>每轮: 锚点替换→条件化重推断"]
+        ITER --> MASKF["前景 mask 过滤<br/>+ 深度跳变>2m 过滤"]
+        MASKF --> OUT["窗口内全点 3D 轨迹 + 可见性"]
+    end
+    OUT --> NEXT["滑窗前进 8 帧"]
+    style ANCH fill:#fde68a,stroke:#f59e0b,color:#78350f
+    style ITER fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<h3>5.3 源码级实现要点(<code>preproc/AnchorTAP3D/inference.py</code>)</h3>
+<table>
+<tr><th>项</th><th>实现</th><th>出处</th></tr>
+<tr><td>2D track 输入</td><td>读 <code>flow3d_preprocessed/2d_tracks/{scale}/{q}_{t}.npy</code>,格式 $[P,4]=(x,y,o,u)$;visibility $=(1-\sigma(o))(1-\sigma(u))$,与论文 $c=v\times p$ 一致</td><td>inference.py:145-161, 759-761</td></tr>
+<tr><td>3D tracker</td><td>TAPIP3D,checkpoint <code>tapip3d_final.pth</code>;<code>num_iters=6</code>(与论文「6 次迭代」一致)</td><td>inference.py:232, 617, 918</td></tr>
+<tr><td>关键阈值</td><td><code>vis_threshold=0.9</code>(模型内部可见性);<code>track_vis_threshold=0.5</code>(2D 引导采用阈值,即论文 $\tau$);<code>depth_jump_threshold=2.0m</code>;<code>velocity_threshold=3.0</code></td><td>inference.py:239-260</td></tr>
+<tr><td>query 构造</td><td>每个 query 帧优先用 2D track 点反投影为 3D query;<code>--prune_query 1000</code> 随机保留 1000 个有效深度点</td><td>inference.py:32-93;README 示例</td></tr>
+<tr><td>深度来源优先级</td><td>显式 <code>--depth</code> &gt; DyCheck <code>aligned_{depth_type}</code>(默认 <code>vda_lidar</code>,存逆深度)&gt; MegaSaM(默认 MoGe 模型)</td><td>inference.py:241, 330-346, 526-534</td></tr>
+<tr><td>输出</td><td><code>flow3d_preprocessed/anchortap3d/</code>:<code>track3d_{q}.npy</code> $(T,P,4)$ xyz+vis、深度堆栈、refined_depth(3D track 投影回的稀疏深度,同像素取 max)、内外参</td><td>inference.py:597-604, 955-1000</td></tr>
+<tr><td>推理精度</td><td>bf16 autocast</td><td>inference.py:910-926</td></tr>
+</table>
+<div class="callout tip"><b>机制解释:为什么锚点有效?</b> 3D tracker 的误差来源是深度/标定噪声沿时间累积。锚点本质上是「可信度高的硬约束观测」,每 6 次迭代就把 tracker 的内部状态拉回观测流形一次 —— 相当于在滑窗内做了一个简化的因子图校正,把开环漂移变成闭环约束。代价是锚点本身错的时候会传染(见 §12 阈值消融:$\tau$ 过低反而退化)。</div>
+<p><b>运行开销</b>:130 帧视频在 RTX A6000 48GB 上约 <b>71 分钟</b>(论文附录 0.A.1)。</p>
+</div>
+
+<!-- ========== 6 模块三:初始化 ========== -->
+<div class="section" id="s6">
+<h2><span class="num">6</span>模块三:高斯与运动基初始化</h2>
+<ol>
+<li><b>轨迹采样</b>:从 AnchorTAP3D 在 $T$ 个 query 时刻产出的 3D tracks 中随机采样 $N$ 条,一条 track 对应一个高斯及其时序运动路径;初始颜色取该 track query 时刻的点颜色(附录 0.A.2)。$N$ 的具体数值论文未给;源码默认 <code>num_fg=50000</code>(run_training.py:61-93)。</li>
+<li><b>canonical 帧选择</b>:可见高斯数最多的帧(源码 run_training.py:309-311 与论文一致)。</li>
+<li><b>运动基初始化</b>:按轨迹的<b>时域速度</b>做 $k$-means 聚成 $B$ 组,组内用 Procrustes 对齐估计逐帧刚体变换,存为初始运动基 $\{\mathcal{B}_{i}\}_{i=1}^{B}$;每个高斯的运动再按它到簇中心的空间距离加权。源码:<code>init_motion_params_with_procrustes</code>(run_training.py:291-334),KMeans 依赖 cuML。</li>
+<li><b>遮挡点处理(本文关键差异)</b>:先前方法(SoM/HiMoR)在 motion estimation 时<b>丢弃不可见点</b> —— 因为 2D track + 深度反投影根本给不出遮挡点位置;本文的 AnchorTAP3D 轨迹包含遮挡区推断位置,运动基因而能覆盖完整物体动态。</li>
+<li><b>节点初始化</b>:从 canonical 帧加权随机采样 $n_1$ 个高斯(权重同时考虑运动幅度与空间密度),作为第一层节点;更高层节点相对父节点同法初始化。源码另有可选的速度加权采样 <code>init_velocity_node</code>,默认关闭(init_utils.py:63-155)。</li>
+<li><b>初始联合优化</b>:正式训练前先跑 1000 步初始优化(<code>run_initial_optim</code>, run_training.py:252),Adam 学习率 rots 1e-2 / transls 3e-2 / motion_coefs 1e-2 / means 1e-3,ExponentialLR gamma=$0.1^{1/1000}$(init_utils.py:377-387)。</li>
+</ol>
+<div class="callout warn"><b>与 SoM 初始化的对照</b>:整套「轨迹聚类 → Procrustes → 运动基」流程继承自 Shape-of-Motion(见库内笔记 <a href="3D-20240718-Shape-of-Motion.html">SoM §初始化</a>),差异只在输入轨迹的来源:SoM 用 TAPIR 2D tracks × 对齐深度反投影(遮挡点缺失),本文用 AnchorTAP3D(遮挡点有推断值)。<b>初始化质量、而非表示能力,是本文与 SoM/HiMoR 拉开差距的地方</b> —— 消融(§12)显示同一优化管线下,仅换初始化就带来 iPhone360 上 CLIP-I 0.798→0.882。</div>
+</div>
+
+<!-- ========== 7 模块四:优化 ========== -->
+<div class="section" id="s7">
+<h2><span class="num">7</span>模块四:优化策略(ARAP + 渲染监督)</h2>
+<h3>7.1 刚性正则(ARAP)</h3>
+<p>为在非相邻帧之间保持长期几何一致与局部刚性,采用广义 As-Rigid-As-Possible 正则:对同一局部刚体簇内的节点对 $(i,j)$,约束任意两帧 $t,t^{\prime}$ 间成对距离与相对局部变换一致:</p>
+<div class="equation">$$\mathcal{L}_{\text{arap}}=w_{1}\sum_{(i,j)\in\mathcal{N}}\Big|\|\mathbf{x}_{i}^{t}-\mathbf{x}_{j}^{t}\|_{2}-\|\mathbf{x}_{i}^{t^{\prime}}-\mathbf{x}_{j}^{t^{\prime}}\|_{2}\Big|+w_{2}\sum_{(i,j)\in\mathcal{N}}\Big\|\mathbf{T}_{j}^{t^{-1}}(\mathbf{x}_{i}^{t})-\mathbf{T}_{j}^{t^{\prime-1}}(\mathbf{x}_{i}^{t^{\prime}})\Big\|_{2}$$<span class="tag">式 12</span></div>
+<p>$\mathcal{N}$ 的构造(附录 0.A.3):① 每个节点跨所有帧取 <b>5 个最近节点</b>;② 额外选取<b>沿视线方向速度最相似的 2 个节点</b> —— 保证沿同一光线对齐的节点在表示同一刚体时跨帧距离一致。「nearest node 方法权重 2.0,贯穿全部训练步」。作者在 §1 特别强调:ARAP 在之前方法的损坏初始化上会失效,换上 AnchorTAP3D 初始化后「can now function as intended」—— <b>初始化与正则是一对,单改任何一边都不够</b>。</p>
+<h3>7.2 渲染系损失与总目标</h3>
+<div class="equation">$$\mathcal{L}_{\text{total}}=\lambda_{\text{rgb}}\mathcal{L}_{\text{rgb}}+\lambda_{\text{mask}}\mathcal{L}_{\text{mask}}+\lambda_{\text{depth}}\mathcal{L}_{\text{depth}}+\lambda_{\text{2dtrack}}\mathcal{L}_{\text{2dtrack}}+\lambda_{\text{arap}}\mathcal{L}_{\text{arap}}$$<span class="tag">式 13</span></div>
+<p>论文附录 0.A.3 给出的分项:$\mathcal{L}_{\text{rgb}}$ 内含 RGB 0.8 + D-SSIM 0.2 + LPIPS 0.01;$\mathcal{L}_{\text{mask}}$(MSE)1.0;$\mathcal{L}_{\text{depth}}$ = MSE 0.5 + 梯度平滑 1.0;$\mathcal{L}_{\text{2dtrack}}$ = 2D 坐标对齐 2.0 + 深度一致 0.1。<b>论文未给各 $\lambda$ 外层权重的独立数值</b>。<span class="uncertain">⚠️【待核实】论文式 13 只列 5 项,但源码实际同时跑 13 项损失(含从 SoM 继承的 smooth_bases / smooth_tracks / z_accel / scale_var / radius_reg 等平滑族,见 §8 总表)—— 论文损失章是「简化叙述」,完整图景以源码为准。</span></p>
+<h3>7.3 训练调度(源码)</h3>
+<ul>
+<li>优化器:每组参数一个独立 Adam(trainer.py:1332);scheduler 为 LambdaLR,仅 scales 按指数衰减到 0.1×(以 <code>max_steps=5000</code> 归一化,trainer.py:1310-1313),其余恒定。</li>
+<li>循环结构:<code>num_epochs=600</code> × 每 epoch 遍历 train_loader(batch_size=8)。<span class="uncertain">⚠️【待核实】<code>max_steps=5000</code> 名不副实:只用于 lr 衰减曲线归一化,不是训练步数上限;实际步数 = 600 × 每 epoch 批数。</span></li>
+<li><b>隐式两阶段</b>:step &lt; 4000 为单层运动树;step = 4000 时先剪掉邻域高斯数 &lt;30 的节点,再 <code>_deepen_motion_tree()</code> —— 对每个第 0 层节点的邻域高斯按速度方向 KMeans 聚 5 簇生成第二层运动基、采样 10 个子节点(trainer.py:780-829, params.py:534-628)。</li>
+<li><b>LPIPS 迟启</b>:step ≥ 14000(<code>stop_control_steps</code>)后 RGB 损失才加 0.01×LPIPS(alex, 0.25× 下采样)(trainer.py:444-452)。论文附录把 LPIPS 写成并列项,<b>未提及其迟启</b>。</li>
+<li>密度控制:沿用 3DGS 自适应密度控制(梯度阈值 split/duplicate + opacity/尺度 cull),另加节点级 densify(梯度驱动 + 高斯采样两路)与 opacity 周期性 reset(每 3000 步,重置为 logit(0.08))。细节见 §10。</li>
+</ul>
+</div>
+
+<!-- ========== 8 损失函数总表 ========== -->
+<div class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表(论文叙述 vs 源码真值)</h2>
+<p>论文附录 0.A.3 只列了 5 族损失;源码 <code>trainer.py</code> 实际同时优化 <b>13 项</b>。下表以源码为准,标注论文对应关系:</p>
+<table>
+<tr><th>损失项</th><th>权重(源码默认)</th><th>内容</th><th>论文对应</th><th>出处</th></tr>
+<tr><td>rgb_loss</td><td>w_rgb=1.0(内: 0.8·L1 + 0.2·(1−SSIM))</td><td>光度;step≥14000 后追加 0.01×LPIPS(alex, 0.25×)</td><td>$\mathcal{L}_{\text{rgb}}$(0.8/0.2/0.01)</td><td>trainer.py:346-454</td></tr>
+<tr><td>mask_loss</td><td>w_mask=1.0</td><td>前景 mask 对齐(有 bg 时 MSE(acc→1) + masked L1, q=0.98)</td><td>$\mathcal{L}_{\text{mask}}$</td><td>trainer.py:456-474</td></tr>
+<tr><td>track_2d_loss</td><td>w_track=2.0</td><td>渲染 3D track 投影 vs BootsTAPIR 2D track,masked L1(q=0.98),权重 = confidence × exp(−2·帧间隔/总帧数)</td><td>$\mathcal{L}_{\text{2dtrack}}$ 的 track-2d 分量(2.0);<span class="uncertain">⚠️【待核实】时间衰减因子论文未提</span></td><td>trainer.py:477-516</td></tr>
+<tr><td>depth_loss (depth_reg)</td><td>w_depth_reg=0.5</td><td>渲染深度 vs AnchorTAP3D 深度,视差空间 masked L1(q=0.98)</td><td>$\mathcal{L}_{\text{depth}}$ 的 MSE 分量(0.5)</td><td>trainer.py:518-532</td></tr>
+<tr><td>mapped_depth_loss (depth_const)</td><td>w_depth_const=0.1</td><td>track 3D 点投影深度 vs 目标帧深度采样,视差 masked L1(q=0.95)</td><td>$\mathcal{L}_{\text{2dtrack}}$ 的 track-depth 分量(0.1)</td><td>trainer.py:534-547</td></tr>
+<tr><td>depth_gradient_loss</td><td>w_depth_grad=1.0</td><td>视差图 x/y 梯度 masked L1(q=0.95)</td><td>$\mathcal{L}_{\text{depth}}$ 的 smoothness 分量(1.0)</td><td>trainer.py:549-557</td></tr>
+<tr><td>arap</td><td>w_arap=2.0</td><td>式 12;源码实现 = 1.0·|邻距差| + 0.5·|相对坐标变化|,每层乘 $5^{(L-1-l)}$(浅层权重大)</td><td>$\mathcal{L}_{\text{arap}}$;<span class="uncertain">⚠️【待核实】层级放大因子 $5^{L-1-l}$ 论文未提</span></td><td>trainer.py:589-597, loss_utils.py:198-238</td></tr>
+<tr><td>smooth_bases</td><td>w_smooth_bases=0.1</td><td>运动基 rots/transls 的 SE(3) 二阶加速度(rot×1, transl×2)</td><td>论文未列(继承自 SoM)</td><td>trainer.py:560-566</td></tr>
+<tr><td>smooth_tracks</td><td>w_smooth_tracks=2.0</td><td>高斯中心轨迹二阶加速度 $0.5|2x_t-x_{t-1}-x_{t+1}|$</td><td>论文未列(继承自 SoM)</td><td>trainer.py:568-587</td></tr>
+<tr><td>z_accel</td><td>w_z_accel=1.0</td><td>沿视线方向的相邻帧位移投影平方和</td><td>论文未列(继承自 SoM)</td><td>trainer.py:660-662</td></tr>
+<tr><td>scale_var</td><td>w_scale_var=0.01</td><td>高斯 scales 各向方差;fg 按 visibility 加权(不可见点乘 invisible_weight)</td><td>论文未列(继承自 SoM)</td><td>trainer.py:633-657</td></tr>
+<tr><td>radius_loss</td><td>w_radius_reg=1e-4</td><td>节点 radius 不超过 3-NN 距离(clamp 后平方)</td><td>论文未列</td><td>trainer.py:622-630</td></tr>
+<tr><td>structural_loss</td><td>w_structural=0.0(jelly 场景 0.3)</td><td>前/后节点速度模式匹配,保持跨时间节点距离;默认关闭,仅 jelly 场景开启(start_iter=5000, patch_size=100)</td><td>论文未提</td><td>trainer.py:599-620, train_iphone360.sh:18-22</td></tr>
+</table>
+<p><b>读法</b>:论文式 13 的 5 项是「叙事压缩」—— $\mathcal{L}_{\text{rgb}}$/$\mathcal{L}_{\text{depth}}$/$\mathcal{L}_{\text{2dtrack}}$ 在源码里各拆成 2-3 个子项,另有 6 项 SoM 遗产正则未进论文。复现或与 SoM 对比时需注意:<b>两家的优化器几乎同构,差别集中在初始化与 ARAP/structural 等几何正则的权重</b>。</p>
+</div>
+
+<!-- ========== 9 训练与推理流程图 ========== -->
+<div class="section" id="s9">
+<h2><span class="num">9</span>训练与推理流程图</h2>
+<h3>训练流程(单场景,源码级)</h3>
+<div class="mermaid">
+flowchart TD
+    D0["数据: iphone360 格式<br/>images + masks + anchortap3d tracks/depth<br/>+ COLMAP/refined 或 original 相机"] --> I0["init_model_from_tracks<br/>采样 50k 前景轨迹, cano_t=可见最多帧"]
+    I0 --> I1["Procrustes+KMeans 初始运动基<br/>bg 从深度反投影初始化 100k"]
+    I1 --> I2["run_initial_optim 1000 步<br/>lr: rots 1e-2 / transls 3e-2 / coefs 1e-2 / means 1e-3"]
+    I2 --> LOOP["主循环: 600 epochs × batch 8"]
+    LOOP --> S1{"step < 4000?"}
+    S1 -->|是| L1["单层运动树<br/>13 项损失(LPIPS 未启)"]
+    S1 -->|"step=4000"| DEEPEN["剪节点(邻域高斯<30)<br/>_deepen_motion_tree: 每父节点<br/>KMeans 5 簇→第二层基+10 子节点"]
+    DEEPEN --> L2["两层运动树继续"]
+    S1 -->|否| L2
+    L1 --> CTRL{"每 100 步<br/>且 step<14000"}
+    L2 --> CTRL
+    CTRL --> DEN["densify/cull/opacity reset(每 3000 步)<br/>节点 densify: 梯度[2500,3500]+采样[600,1600]"]
+    DEN --> LPIPS{"step≥14000?"}
+    LPIPS -->|是| LP["RGB 损失追加 0.01×LPIPS"]
+    LPIPS -->|否| NEXT
+    LP --> NEXT["下一 batch"]
+    NEXT --> LOOP
+    style DEEPEN fill:#fde68a,stroke:#f59e0b,color:#78350f
+    style LP fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<h3>推理/渲染流程</h3>
+<div class="mermaid">
+flowchart LR
+    CKPT["checkpoint: canonical 高斯<br/>+ 两层运动树参数"] --> T["指定时刻 t<br/>节点局部变换 = softmax 系数 × 基<br/>沿父链连乘得世界变换"]
+    T --> KNN["每高斯 k=3 KNN 叶节点<br/>RBF 加权 → DQB 混合得 T_t"]
+    KNN --> DEFORM["式 1: 形变 canonical 高斯"]
+    DEFORM --> RAST["式 4-5: 投影 + alpha 混合<br/>gsplat 光栅化"]
+    RAST --> VIEW["任意视角(含 360° 极端测试视角)<br/>任意时刻(含 bullet-time)"]
+    EVAL["评估: 前景 bbox(mask 外扩 1/8 图幅)<br/>CLIP-I / CLIP-T(t 与 t+5) / LPIPS / PSNR / SSIM"] -.-> RAST
+    style KNN fill:#fde68a,stroke:#f59e0b,color:#78350f
+    style VIEW fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+<p class="note">渲染本身与 3DGS 同价(光栅化一次);论文未单独报推理 FPS,<span class="uncertain">⚠️【待核实】参照 SoM 同框架约 140 FPS 的量级(见 SoM 笔记 §3.3),本文未实测验证。</span></p>
+</div>
+
+<!-- ========== 10 工程实现细节 ========== -->
+<div class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码级)</h2>
+<p>仓库 <a href="https://github.com/Jaewon040/4DGS360" target="_blank">Jaewon040/4DGS360</a> 是在 <b>Shape-of-Motion 的 flow3d 代码库</b>上改造(目录结构、trainer、loss_utils 均同源),运动表示换成 HiMoR 式运动树,预处理新增 <code>preproc/AnchorTAP3D</code>。环境:python 3.10 + CUDA 11.8,依赖 gsplat、fused-ssim、pytorch3d、cuml(KMeans)、lpips、nerfview(README.md + requirements.txt)。</p>
+<h3>10.1 关键超参(源码真值)</h3>
+<table>
+<tr><th>类别</th><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>规模</td><td>前景/背景高斯数</td><td>50,000 / 100,000</td><td>run_training.py:61-93</td></tr>
+<tr><td>运动树</td><td>第一层节点 / 第一层基</td><td><b>50 / 10</b>(默认;见 10.3 的孤儿 yaml 问题)</td><td>run_training.py:61-93</td></tr>
+<tr><td>运动树</td><td>第二层(每父)子节点 / 基</td><td>10 / 5,step=4000 时生成</td><td>run_training.py:61-93, trainer.py:780-829</td></tr>
+<tr><td>循环</td><td>num_epochs × batch</td><td>600 × 8</td><td>run_training.py:61-93</td></tr>
+<tr><td>学习率(高斯)</td><td>means/opacities/scales/quats/colors</td><td>1.6e-4 / 1e-2 / 5e-3 / 1e-3 / 1e-2(motion_coefs 1e-2)</td><td>configs.py:5-41</td></tr>
+<tr><td>学习率(运动)</td><td>bases rots/transls;节点 positions/radius/coefs</td><td>1.6e-4;1.6e-5 / 5e-4 / 1e-2</td><td>configs.py:5-41</td></tr>
+<tr><td>密度控制</td><td>阈值族</td><td>densify: xy 梯度 2e-4、scale 0.01、screen 0.05;cull: opacity 0.1、scale 0.5、screen 0.15;opacity reset 每 3000 步至 logit(0.08)</td><td>configs.py:71-97, trainer.py:943-1196</td></tr>
+<tr><td>节点 densify</td><td>两路</td><td>梯度驱动: step∈[2500,3500] 每 400 步,阈值 8.5e-5;高斯采样: step∈[600,1600] 每 200 步,取轨迹上离邻域最远的 10% 高斯 KNN 加权采 20 新节点</td><td>trainer.py:770-773, 891-941, 1088-1182</td></tr>
+<tr><td>AnchorTAP3D</td><td>滑窗/迭代/阈值</td><td>L=16(重叠 8)、迭代 6、track_vis_threshold=0.5、vis_threshold=0.9、深度跳变 2m、bf16</td><td>inference.py:232-260, 910-926</td></tr>
+<tr><td>初始化优化</td><td>步数/学习率</td><td>1000 步;rots 1e-2、transls 3e-2、coefs 1e-2、means 1e-3;ExponentialLR γ=0.1^{1/1000}</td><td>run_training.py:252, init_utils.py:377-387</td></tr>
+</table>
+<h3>10.2 资源账</h3>
+<table>
+<tr><th>项</th><th>值</th><th>来源</th></tr>
+<tr><td>AnchorTAP3D 预处理</td><td>71 分钟 / 130 帧视频</td><td>论文附录 0.A.1(RTX A6000 48GB)</td></tr>
+<tr><td>单场景优化</td><td>约 3 小时 / 140 张图像</td><td>论文附录 0.A.3(同卡)</td></tr>
+<tr><td>显存</td><td>论文与 README 均未报确切占用;环境为 48GB 卡</td><td><span class="uncertain">⚠️【待核实】</span></td></tr>
+<tr><td>渲染 FPS</td><td>论文未报(与 3DGS 光栅化同价)</td><td><span class="uncertain">⚠️【待核实】</span></td></tr>
+<tr><td>深度依赖</td><td>iPhone360 用估计深度(Video Depth Anything / DA-V2)+ <b>LiDAR 尺度/偏移校正</b>;消融显示不做校准则尺度任意(附录 Fig.13)</td><td>论文 §4.1 / 0.C.2</td></tr>
+</table>
+<h3>10.3 论文宣称 vs 源码实现(本节最有价值部分)</h3>
+<div class="grid-2">
+<div class="card"><h4>① 节点数/基数量:论文 70/15,源码默认 50/10</h4><p>论文附录 0.A.3 称「第一层节点 70、第二层 10、运动基 15」。仓库里确有 <code>iphone360_base.yaml</code> 写着 <code>num_init_nodes: 70, num_motion_bases: 15</code>,但<b>全仓库无任何代码加载该文件</b>(run_training.py:105-109 只对 nvidia 数据集加载 nvidia.yaml);iPhone360 训练脚本 train_iphone360.sh 也未传这两个参数 → 实际生效的是默认 <b>50 节点 / 10 基</b>(+第二层 10 子节点 / 5 基)。<b>该 yaml 是孤儿文件。</b>另一种善意解读:「15 基」= 两层 10+5 之和;但「70 节点」无论哪种口径都对不上默认 50。<span class="uncertain">⚠️【待核实】无法排除作者实际训练时手动传参 —— 以仓库脚本为准则复现不出 70/15。</span></p></div>
+<div class="card"><h4>② LPIPS 迟启,论文未提</h4><p>论文附录把 LPIPS 列为 $\mathcal{L}_{\text{rgb}}$ 的并列成分(0.01);源码实际是 <b>step ≥ 14000 之后才加入</b>(trainer.py:444-452),前期只有 0.8·L1+0.2·(1−SSIM)。</p></div>
+<div class="card"><h4>③ w_arap 的注释残留</h4><p>configs.py:56 默认 <code>w_arap=2.0</code>,行内注释 <code>#0.1</code>(Shape-of-Motion 原值);nvidia.yaml 覆盖为 0.01。iPhone360 用默认 2.0 —— 与论文「nearest node 权重 2.0」一致,但说明该值是从 SoM 的 0.1 调上来的,<b>ARAP 强度放大了 20 倍</b>,这与「好初始化让 ARAP 正常工作」的叙事互为表里。</p></div>
+<div class="card"><h4>④ nvidia.yaml 三个键拼写错误被静默忽略</h4><p><code>stop_control_by_screen_steos</code>、<code>stop_contol_steos</code>、<code>start_gard_densify_steps</code> 三个键拼错,因 <code>update_dataclass</code> 用 <code>hasattr</code> 检查(configs.py:106)而<b>静默无效</b> —— 不影响 iPhone360,但暴露配置系统的脆弱性。</p></div>
+<div class="card"><h4>⑤ 论文式 13 损失不全</h4><p>见 §8:论文 5 项 vs 源码 13 项,smooth_bases / smooth_tracks / z_accel / scale_var / radius_reg / structural 均未在论文出现(多为 SoM 遗产)。</p></div>
+<div class="card"><h4>⑥ 评估 bbox 的精确口径</h4><p>CLIP-I/CLIP-T/PSNR/SSIM 都在「前景 mask 外扩 <b>1/8 图幅</b>的 bbox」内计算(validator.py:29-69);CLIP-T 取时间戳<b>恰好差 5 帧</b>的配对(validator.py:417)。跨论文比较指标时务必注意这个口径。</p></div>
+</div>
+<h3>10.4 数据格式与预处理链</h3>
+<ul>
+<li>iPhone360 数据格式:<code>splits/{train,val}.json</code>、<code>images/{f}x/</code>、<code>masks/{f}x/</code>、<code>flow3d_preprocessed/anchortap3d/{tracks,depth,refined_depth,intrinsic,extrinsic}</code>、2D tracks、共视 mask(iphone360_dataset.py:90-507)。相机三选一:<code>refined</code>(COLMAP,默认)/ <code>original</code>(iPhone 传感器,训练脚本实际使用)/ <code>tapip3d</code>。</li>
+<li>自定义数据:按 SoM 预处理(Track-Anything mask + BootsTAPIR tracks + 深度 + 相机),再用 AnchorTAP3D 重排成 iPhone360 结构(README)。</li>
+<li>场景归一化:3D track 点云均值居中,scale=(5%–95% 分位差).max/2,相机平均 up 向量旋转到 +Z(iphone360_dataset.py:894-913)。</li>
+</ul>
+<div class="callout warn"><b>落地坑(复现者视角)</b>:① 深度必须做度量尺度校正,否则测试视角下空间不对齐(附录 Fig.13 实测);② mask 依赖外部分割(Track-Anything 需人工点选,继承自 SoM);③ KMeans 依赖 cuML(Windows 不友好);④ AnchorTAP3D 预处理本身 71 分钟起步,且其质量上限 = BootsTAP × TAPIP3D × 深度模型的能力交集;⑤ jelly 场景单独开了 structural_loss(0.3),说明默认配置在某些场景不够稳。</div>
+</div>
+
+<!-- ========== 11 实验结果 ========== -->
+<div class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+<h3>11.1 评测协议:为什么主打 CLIP 系指标</h3>
+<p>作者沿用 HiMoR 的论证:单目动态重建 + 大视角差异下,<b>像素级指标(PSNR/SSIM)与感知质量系统性不对齐</b> —— 未见区域的「精确位置」本质不可预测,轻微位置偏差就会重罚像素级分数。因此主指标为感知级:LPIPS(AlexNet)、<b>CLIP-I</b>(GT 与渲染的 CLIP 相似度)、<b>CLIP-T</b>(相隔 5 帧渲染图的 CLIP 相似度,衡量时序一致);像素级 PSNR/SSIM 只在 Tab.4 附带报告。所有指标在前景 bbox(mask 外扩 1/8 图幅)内计算,全部实验 1× 分辨率。</p>
+<h3>11.2 iPhone360 基准(Tab.1 数据集对比)</h3>
+<table>
+<tr><th>数据集</th><th>训练相机数</th><th>真实采集</th><th>训练-测试最大角度差</th><th>可评测 360°</th></tr>
+<tr><td>D-NeRF</td><td>~150</td><td>✗</td><td>–</td><td>✗</td></tr>
+<tr><td>HyperNeRF</td><td>2</td><td>✗</td><td>–</td><td>✗</td></tr>
+<tr><td>Nerfies</td><td>2</td><td>✗</td><td>–</td><td>✗</td></tr>
+<tr><td>NSFF</td><td>24</td><td>✗</td><td>–</td><td>✗</td></tr>
+<tr><td>iPhone</td><td>1</td><td>✓</td><td>&lt;45°</td><td>✗</td></tr>
+<tr class="best"><td><b>iPhone360(本文)</b></td><td>1</td><td>✓</td><td><b>70°–135°</b></td><td>✓</td></tr>
+</table>
+<p>6 个场景:block2、goat、jacket、jelly、pull-up、walk-around(覆盖刚体、可变形体、人体运动)。goat/jelly/walk-around 为 1 训练相机 + 2 测试相机,其余为 1+1;goat/jacket/jelly/walk-around 四场景训练-测试相机始终相差 &gt;90°。采集框架与 iPhone 数据集相同(多 iPhone 同步),深度用 LiDAR 做尺度/偏移校正,相机参数取传感器值。</p>
+<h3>11.3 iPhone360 定量(Tab.2,CLIP-I↑ / CLIP-T↑ / LPIPS↓)</h3>
+<table>
+<tr><th>场景</th><th>MoSca</th><th>HiMoR</th><th>Ours</th><th>Ours vs HiMoR(ΔCLIP-I)</th></tr>
+<tr><td>Block2</td><td>0.7499 / 0.9513 / 0.5556</td><td>0.8422 / 0.9549 / 0.3122</td><td class="best"><b>0.9021 / 0.9633 / 0.2569</b></td><td>+0.0599</td></tr>
+<tr><td>Goat</td><td>0.7379 / 0.9522 / 0.6332</td><td>0.8357 / <b>0.9426</b> / 0.3260</td><td class="best"><b>0.8706</b> / 0.9345 / <b>0.2244</b></td><td>+0.0349</td></tr>
+<tr><td>Jacket</td><td>0.7073 / 0.9440 / 0.5280</td><td>0.7041 / <b>0.9526</b> / 0.2942</td><td class="best"><b>0.9147</b> / 0.9445 / <b>0.2747</b></td><td>+0.2106</td></tr>
+<tr><td>Jelly</td><td>0.6239 / 0.9649 / 0.7127</td><td>0.6839 / <b>0.9357</b> / 0.3539</td><td class="best"><b>0.8359</b> / 0.9229 / <b>0.3538</b></td><td>+0.1520</td></tr>
+<tr><td>Pull-up</td><td>0.8081 / 0.9617 / 0.5241</td><td>0.8862 / 0.9786 / 0.2240</td><td class="best"><b>0.8978 / 0.9827 / 0.2163</b></td><td>+0.0116</td></tr>
+<tr><td>Walk-around</td><td>0.7323 / 0.9639 / 0.7439</td><td>0.8333 / 0.9590 / 0.4014</td><td class="best"><b>0.8718 / 0.9627 / 0.3938</b></td><td>+0.0385</td></tr>
+<tr class="best"><td><b>均值(本笔记按原表逐格计算)</b></td><td>0.7266</td><td>0.7976</td><td><b>0.8822</b></td><td><b>+0.0846(相对 +10.6%)</b></td></tr>
+</table>
+<p class="note">逐格核对:Ours 在 Goat/Jacket/Jelly 三场景的 CLIP-T 上<b>略低于 HiMoR</b>(0.9345/0.9445/0.9229 vs 0.9426/0.9526/0.9357),其余各项领先。论文结论「consistently higher scores」对 CLIP-I/LPIPS 成立,CLIP-T 有 3 个场景例外 —— 本笔记按原始数值如实呈现。Δ 列为本笔记计算值。</p>
+<div class="figure"><img src="images/2603.21618/4_iphone360_eccv_bullet.png" alt="iphone360 qualitative" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图4</b>(论文 Fig.4)iPhone360 定性对比:(a) 极端新视角渲染(蓝=训练相机,红=测试相机);(b) 固定时刻的 360° bullet-time 渲染。</div></div>
+<h3>11.4 iPhone 数据集定量(Tab.3,Mean 行)</h3>
+<table>
+<tr><th>方法</th><th>CLIP-I↑</th><th>CLIP-T↑</th><th>LPIPS↓</th></tr>
+<tr><td>T-NeRF</td><td>0.8604</td><td>0.9688</td><td>0.5662</td></tr>
+<tr><td>HyperNeRF</td><td>0.8750</td><td>0.9714</td><td>0.5261</td></tr>
+<tr><td>Deformable 3DGS</td><td>0.7965</td><td>0.9721</td><td>0.7163</td></tr>
+<tr><td>Marbles</td><td>0.8305</td><td>0.9645</td><td>0.6208</td></tr>
+<tr><td>SoM</td><td>0.8603</td><td>0.9712</td><td>0.4827</td></tr>
+<tr><td>HiMoR</td><td>0.8907</td><td>0.9750</td><td>0.4639</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>0.9015</b></td><td><b>0.9754</b></td><td><b>0.3877</b></td></tr>
+</table>
+<p>五个场景(Apple/Block/Paper-windmill/Spin/Teddy)均值。注意 iPhone 数据集视角差异 &lt;45°,baseline 普遍更有竞争力(附录 Fig.11 也承认这点),本文领先的幅度小于 iPhone360 —— <b>视角越大,3D 原生初始化的红利越大</b>。</p>
+<h3>11.5 像素级评估(Tab.4)</h3>
+<table>
+<tr><th>方法</th><th>iPhone PSNR↑</th><th>iPhone SSIM↑</th><th>iPhone360 PSNR↑</th><th>iPhone360 SSIM↑</th></tr>
+<tr><td>HiMoR</td><td>16.2441</td><td><b>0.6329</b></td><td>10.9883</td><td>0.6854</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>16.3431</b></td><td>0.6309</td><td><b>11.3364</b></td><td><b>0.7012</b></td></tr>
+</table>
+<p>绝对值很低(iPhone360 PSNR ≈ 11),作者明示「低绝对值反映任务本身的难度:完全外推下去未见区域做到像素级准确」。iPhone SSIM 上 Ours 略低于 HiMoR(0.6309 vs 0.6329),如实标注。</p>
+<h3>11.6 定性结果</h3>
+<div class="figure"><img src="images/2603.21618/6_backpack_cr.png" alt="backpack" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图5</b>(论文 Fig.6)iPhone Backpack 场景(无测试 GT):本文重建出背包背面未见区域,明显优于 SoM/HiMoR。</div></div>
+<div class="figure"><img src="images/2603.21618/7_davis_cr.png" alt="davis" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图6</b>(论文 Fig.7)DAVIS(无 GT 相机/深度,in-the-wild):本文在快速运动下保持几何一致、恢复遮挡区域更可靠。</div></div>
+<div class="figure"><img src="images/2603.21618/5_harusit_eccv.png" alt="harusit" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图7</b>(论文 Fig.9)iPhone Haru-sit(无测试 GT):腿部等未见区域重建合理。</div></div>
+<div class="figure"><img src="images/2603.21618/11_suppl_iphone.png" alt="iphone suppl" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图8</b>(论文 Fig.11)iPhone Block/Teddy 与 SoM/MoSca/HiMoR 定性对比 —— 视角差异小时 baseline 也有竞争力。</div></div>
+<div class="figure"><img src="images/2603.21618/suppl_bbox_score_cr.png" alt="bbox score" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图9</b>(论文 Fig.10)(a) 评估 bbox 可视化:整图比较有背景歧义、纯前景比较有大片白色,外扩 1/8 图幅的 bbox 最可靠;(b) 逐场景分数与视觉质量的对应 —— CLIP-I 比 PSNR 更贴合感知。</div></div>
+</div>
+
+<!-- ========== 12 消融实验 ========== -->
+<div class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+<h3>12.1 初始化方法消融(Tab.5 + Fig.8,iPhone360)</h3>
+<table>
+<tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>CLIP-I↑</th></tr>
+<tr><td>w/o 3D init(直接反投影 2D tracks,即 SoM/HiMoR 路线)</td><td>10.990</td><td>0.685</td><td>0.319</td><td>0.798</td></tr>
+<tr><td>w/o Anchor(裸 TAPIP3D 初始化)</td><td>11.282</td><td>0.695</td><td class="fail">0.402</td><td>0.875</td></tr>
+<tr class="best"><td><b>Ours(AnchorTAP3D)</b></td><td><b>11.336</b></td><td><b>0.701</b></td><td><b>0.287</b></td><td><b>0.882</b></td></tr>
+</table>
+<p>定性结论(Fig.8,walk-around 与 jelly):w/o 3D init 无法保住遮挡区几何;w/o Anchor 在 walk-around 上部分恢复、在 jelly 上<b>完全失败</b> —— 印证「无锚点引导时 3D 跟踪在长序列上不可靠」;Ours 两场景都保持整体形状。注意 w/o Anchor 的 LPIPS(0.402)比 w/o 3D init(0.319)还差,说明裸 3D 跟踪的漂移会感知上「更错」,锚点校正是质变关键。</p>
+<div class="figure"><img src="images/2603.21618/8_ablation_eccv.png" alt="ablation" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图10</b>(论文 Fig.8)初始化消融定性:左 walk-around、右 jelly。w/o 3D init 遮挡区几何缺失;w/o Anchor 部分恢复但不稳定;Ours 完整。</div></div>
+<h3>12.2 阈值 τ 消融(Fig.12,附录 0.C.1)</h3>
+<ul>
+<li>各场景 2D track 置信度分布不同:goat 均值 0.357(难),jelly 均值 0.593(易)。</li>
+<li>jelly 在 τ=0.5 最佳;goat 受益于更高的 τ=0.7;τ=0.3 对两者都退化(低质锚点传染)。</li>
+<li>作者给实践者的初始值建议:$\tau \approx 1-\mathrm{ratio}(\mathrm{confidence}>0.5)$,再在此附近搜索。</li>
+<li>主实验全部固定 τ=0.5,不做逐场景调优。</li>
+</ul>
+<div class="figure"><img src="images/2603.21618/suppl_t_abl_eccv.png" alt="threshold ablation" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图11</b>(论文 Fig.12)阈值消融:左为各场景置信度分布(标注均值/中位数),右为不同 τ 下的最终渲染。</div></div>
+<h3>12.3 深度校正消融(Fig.13,附录 0.C.2)</h3>
+<p>jelly 场景:用 LiDAR 校正的深度(Ours)vs 裸 MoGe-2 估计深度(w/ MoGe)。后者物体本身质量保留,但<b>处于任意尺度、与测试相机 GT 空间不对齐</b>。结论:深度先验的度量尺度是 360° 评测能成立的硬前提。</p>
+<div class="figure"><img src="images/2603.21618/suppl_estdepth_wide.png" alt="depth ablation" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图12</b>(论文 Fig.13)深度消融:LiDAR 校正 vs 裸 MoGe-2,后者尺度任意、与测试相机不对齐。</div></div>
+<h3>12.4 与扩散先验组合(Tab.6 + Fig.5)</h3>
+<table>
+<tr><th>方法</th><th>Jacket CLIP-I↑</th><th>Jelly CLIP-I↑</th></tr>
+<tr><td>HiMoR</td><td>0.70</td><td>0.68</td></tr>
+<tr><td>HiMoR w/ DIFIX3D+</td><td>0.84</td><td>0.72</td></tr>
+<tr><td>Ours</td><td>0.92</td><td>0.83</td></tr>
+<tr class="best"><td><b>Ours w/ DIFIX3D+</b></td><td><b>0.94</b></td><td><b>0.85</b></td></tr>
+</table>
+<p>本文无扩散,但与 DIFIX3D+ 组合后仍是更强的起点(几何保持更好 → 扩散修补更稳)。作者把「不可见背景合成」明确留给未来的扩散集成。</p>
+<div class="figure"><img src="images/2603.21618/5_difix_cr.png" alt="difix" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;"><div class="caption"><b>图13</b>(论文 Fig.5)与 DIFIX3D+ 组合的结果:本文 + 扩散先验优于 baseline + 扩散先验。</div></div>
+</div>
+
+<!-- ========== 13 同类方法对比 ========== -->
+<div class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析( vs SoM / Deformable-3DGS / GaVS)</h2>
+<p>本节对比对象均为库内有独立笔记的方法:<a href="3D-20240718-Shape-of-Motion.html">Shape-of-Motion(SoM)</a>、<a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS(D-3DGS)</a>、<a href="3D-20250630-GaVS.html">GaVS</a>,外加本文的两个直接 baseline MoSca 与 HiMoR(库内暂无笔记,数据取自本文论文,<span class="uncertain">⚠️【待核实】其细节未经独立精读</span>)。</p>
+<h3>13.1 固定维度横向对比表</h3>
+<table>
+<tr><th>维度</th><th>D-3DGS(2023)</th><th>SoM(2024)</th><th>MoSca(2024)</th><th>HiMoR(2025)</th><th><b>4DGS360(2026)</b></th><th>GaVS(2025)</th></tr>
+<tr><td>问题设定</td><td>单目动态 NVS</td><td>单目 4D 重建 + 全程 3D 轨迹</td><td>单目动态 NVS(4D motion scaffold)</td><td>单目动态 NVS(层级运动)</td><td>单目 <b>360°</b> 动态物体重建</td><td>视频稳像(小基线渲染,非 NVS 基准)</td></tr>
+<tr><td>输入假设</td><td>COLMAP 位姿+稀疏点云;不需深度/track/mask</td><td>相机(MegaSaM/COLMAP)+ Track-Anything mask + Depth Anything + TAPIR tracks,5 个外部先验,mask 需人工点选</td><td>同 SoM 类先验<span class="uncertain">⚠️【待核实】</span></td><td>同 SoM 类先验<span class="uncertain">⚠️【待核实】</span></td><td>相机(传感器/COLMAP)+ mask + <b>LiDAR 校正深度</b> + BootsTAPIR tracks;新增 AnchorTAP3D 预处理</td><td>GLOMAP 位姿 + UniDepth + RAFT + Grounded-SAM2 + ProPainter + 陀螺仪日志</td></tr>
+<tr><td>场景表示</td><td>canonical 高斯 + 变形场 MLP(γ(x),γ(t)→Δx,Δq)</td><td>canonical 高斯 + B=10 条全局 SE(3) 运动基凸组合</td><td>4D motion scaffold(显式 scaffold 节点)<span class="uncertain">⚠️【待核实】</span></td><td>canonical 高斯 + 层级运动树</td><td>同 HiMoR(两层运动树,DQB 混合;继承关系见 §4)</td><td><b>无全局表示</b>:逐帧前馈独立重建(Flash3D+UniDepth),跨帧靠网络共享+空洞正则</td></tr>
+<tr><td>初始化</td><td>SfM 点云</td><td>2D tracks × 深度反投影(遮挡点缺失)</td><td>同 SoM 路线<span class="uncertain">⚠️【待核实】</span></td><td>同 SoM 路线</td><td><b>AnchorTAP3D</b>:3D 原生,遮挡点有推断位置</td><td>逐帧前馈,无初始化问题</td></tr>
+<tr><td>监督信号</td><td>仅光度(L1+D-SSIM)+ 退火平滑</td><td>光度/深度/mask/2D track/平滑族(公开代码缺论文式 10 刚性损失,见 SoM 笔记 §9.3)</td><td>—<span class="uncertain">⚠️【待核实】</span></td><td>—<span class="uncertain">⚠️【待核实】</span></td><td>13 项(光度/mask/depth/track/ARAP 2.0/平滑族,见 §8)</td><td>动态补偿光度 + 空洞跨帧正则 + 尺度/offset 正则</td></tr>
+<tr><td>训练时长</td><td>~30 分钟级(笔记口径)</td><td>~2 h / 300 帧(A100)</td><td>—</td><td>—</td><td>~3 h / 140 帧(A6000);+ AnchorTAP3D 71 min / 130 帧</td><td>预处理 ~13 min + 微调几分钟(455 帧,RTX 5000 Ada)</td></tr>
+<tr><td>推理耗时</td><td>实时</td><td>~140 FPS</td><td>—</td><td>—</td><td>未报(与 3DGS 同价)<span class="uncertain">⚠️【待核实】</span></td><td>接近实时(未报 FPS)</td></tr>
+<tr><td>显存</td><td>—</td><td>未记录</td><td>—</td><td>—</td><td>未报(48GB 卡)<span class="uncertain">⚠️【待核实】</span></td><td>逐像素基元,高分辨率下压力大(3090 可行,具体未核实)</td></tr>
+<tr><td>关键指标</td><td>D-NeRF PSNR ~29–31;iPhone 协议下 NVS mPSNR 仅 11.92(SoM 笔记复现)</td><td>iPhone mPSNR 16.72;3D EPE 0.082</td><td>iPhone360 六场景均 CLIP-I 0.7266(本文 Tab.2,本笔记计算均值)</td><td>iPhone360 均 CLIP-I 0.7976;iPhone Mean 0.8907</td><td><b>iPhone360 均 CLIP-I 0.8822;iPhone Mean 0.9015</b></td><td>稳像指标 CR 1.0 / GC-D 31.27(口径不可比)</td></tr>
+<tr><td>开源</td><td>✓(ingra14m/Deformable-3D-Gaussians)</td><td>✓(vye16/shape-of-motion)</td><td>—</td><td>—</td><td>✓(Jaewon040/4DGS360,代码+数据)</td><td>✓(sinoyou/GaVS)</td></tr>
+</table>
+<h3>13.2 对比结论(机制层)</h3>
+<ol>
+<li><b>表示能力早已不是瓶颈,初始化才是。</b> 从 D-3DGS 的全局 MLP 变形场,到 SoM 的低维运动基凸组合,再到 MoSca scaffold / HiMoR 层级树 —— 四代表示更替在 iPhone(小视角差)上把 Mean CLIP-I 从 0.7965 推到 0.8907;而 4DGS360 表示与 HiMoR <b>完全相同</b>,仅换初始化,就在 iPhone360(大视角差)上把均 CLIP-I 从 0.7976 拉到 0.8822。<b>视角差异越大,表示越不重要、初始化越重要</b>;消融里 w/o Anchor(同表示、初始化降级)丢掉大部分增益,是同一条证据的反面。</li>
+<li><b>与 SoM 的差异精确到一处:轨迹来源。</b> 代码层面 4DGS360 ≈ SoM 的 flow3d 框架 + HiMoR 运动树 + AnchorTAP3D 预处理。SoM 笔记 §9.3 记过 SoM 的失败模式:「高度非刚性 / 长遮挡 / 无纹理」。4DGS360 恰好补上「长遮挡」一条(锚点维持遮挡区几何),「高度非刚性」(运动基表达力)与「无纹理」(2D tracker 失效)则原样继承。SoM 的重预处理链一条没少,还多了 71 分钟的 AnchorTAP3D。</li>
+<li><b>与 D-3DGS 是「先验 vs 简洁」的两极。</b> D-3DGS 零外部先验、30 分钟训练,在 D-NeRF 合成数据上漂亮,但 SoM 笔记复现其在 iPhone 真实协议下 mPSNR 仅 11.92 —— 没有深度/track 先验,真实单目下几何直接崩。4DGS360 走另一极端:先验越堆越重(LiDAR 校正深度 + 2D/3D 双 tracker + mask),换极端视角下的几何完整。<b>选型取决于视角外推需求有多远。</b></li>
+<li><b>与 GaVS 不可比指标,可比哲学。</b> GaVS 是稳像方法,干脆<b>拒绝全局 4D 表示</b>:逐帧前馈重建 + 测试时几分钟一致化,把跨帧一致性从优化问题变成正则问题,代价是只能做小基线渲染。4DGS360 反方向:坚持全局 canonical 表示,把成本压到初始化上换 360° 外推。两者说明了同一条分界线 —— <b>需要大视角外推就必须付全局优化的成本;只要小基线,前馈 + 微调就够。</b></li>
+<li><b>共同的软肋:预处理先验链。</b> 四家(SoM/MoSca/HiMoR/4DGS360)都站在同一条由外部模型组成的链条上(深度、track、mask、相机)。4DGS360 把链条加长了一环(AnchorTAP3D),鲁棒性上限仍受制于最弱的一环:2D tracker 在无纹理/大运动模糊场景失效时,锚点质量同步塌陷(阈值消融 τ=0.3 退化的实证)。D-3DGS 与 GaVS 则分别用「不要先验」和「前馈先验」绕开,但付出了能力范围的代价。</li>
+</ol>
+<h3>13.3 演进定位表</h3>
+<table>
+<tr><th>阶段</th><th>代表方法</th><th>核心思想</th><th>遗留问题</th></tr>
+<tr><td>隐式形变场</td><td>D-NeRF → D-3DGS</td><td>canonical + MLP 变形场</td><td>无持久轨迹;真实单目几何崩</td></tr>
+<tr><td>显式运动基</td><td>SoM</td><td>2D tracks → 低维 SE(3) 基凸组合</td><td>2D 原生初始化,遮挡区盲视</td></tr>
+<tr><td>结构化运动</td><td>MoSca(scaffold)→ HiMoR(层级树)</td><td>运动表示结构化、层次化</td><td>初始化仍 2D 原生,大视角外推失败</td></tr>
+<tr class="best"><td><b>3D 原生初始化</b></td><td><b>4DGS360(本文)</b></td><td>2D 锚点 + 3D tracker 补全遮挡几何</td><td>像素级精度仍弱;背景不可见区无法合成;预处理链更长</td></tr>
+<tr><td>生成式补全</td><td>4DGS360 + DIFIX3D+(本文 §12.4 的方向)</td><td>好几何作扩散先验的起点</td><td>计算成本;跨帧一致性难利用</td></tr>
+</table>
+</div>
+
+<!-- ========== 14 应用场景 ========== -->
+<div class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+<h3>与 vggt_human 主线的关系</h3>
+<p>本文与主线 pipeline(COLMAP → 3DGS → 人体重建)的相关性<b>中等偏高</b>,但定位不同:本文是<b>单目随意视频 → 动态物体 360° 高斯</b>,而 vggt_human 是多视角/3DMM 驱动的人体重建。可直接借用的点:</p>
+<ul>
+<li><b>AnchorTAP3D 思想可直接移植</b>:任何「2D tracks lift 到 3D」的初始化环节(包括 SAM3 person mask 追踪结果的空间化)都有同样的遮挡盲视问题。人体场景中转身、自遮挡是常态,walk-around / pull-up 恰是本文人体场景且提升明显。</li>
+<li><b>评估协议可借鉴</b>:前景 bbox 外扩 1/8 + CLIP-I/CLIP-T 的感知评测组合,适合评测人体重建在新视角下的感知质量 —— 比裸 PSNR 更能反映「看着对不对」。</li>
+<li><b>iPhone360 数据集含人体场景</b>(pull-up、walk-around),可作 360° 人体重建的现成测试床。</li>
+</ul>
+<h3>落地成本与硬门槛</h3>
+<table>
+<tr><th>资源项</th><th>成本</th><th>备注</th></tr>
+<tr><td>预处理</td><td>SoM 链(相机/mask/深度/2D tracks)+ AnchorTAP3D 71 min / 130 帧</td><td>mask 需人工点选(Track-Anything),无法批量</td></tr>
+<tr><td>训练</td><td>~3 h / 140 帧(A6000 48GB)</td><td>3090 24GB 未验证,<span class="uncertain">⚠️【待核实】50k fg + 100k bg 高斯 + 两层运动树,需实测</span></td></tr>
+<tr><td>深度要求</td><td>度量尺度正确的深度(LiDAR 校正或等价)</td><td>裸单目深度尺度任意,360° 评测直接不对齐</td></tr>
+<tr><td>相机要求</td><td>传感器或 COLMAP/refined 参数</td><td>相机质量是硬前提(同 SoM)</td></tr>
+</table>
+<div class="callout warn"><b>不适合的场景</b>:① 需要精确几何/像素级指标的任务(本文 PSNR ~11 就是上限,感知好≠几何准);② 输入视频中从未出现的区域(纯生成问题,作者建议留给扩散);③ 高度非刚性/拓扑变化(运动基表达力,继承自 SoM 的局限);④ 无纹理目标(2D tracker 失效)。</div>
+</div>
+
+<!-- ========== 15 可改进方向 ========== -->
+<div class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<div class="card" style="border-left:4px solid var(--red)"><h4>[高优先级] 像素级精度是公开短板</h4><p><b>问题</b>:iPhone360 PSNR 仅 11.34(Tab.4),作者自述「achieving pixel-level accuracy in unseen regions under full extrapolation」是任务难点。感知指标(CLIP-I)对位置偏差不敏感,容易掩盖几何错位。<b>佐证</b>:Tab.2 中 Ours 在 3 个场景 CLIP-T 反低于 HiMoR,说明时序稳定性并未全面胜出。<b>建议</b>:引入多帧一致性约束的几何精化阶段(如形变后多视角重投影一致性),或对未见区域显式建模不确定性。</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><h4>[高优先级] 配置工程脆弱:孤儿 yaml + 拼写静默失效</h4><p><b>问题</b>:论文宣称的 70 节点/15 基写在 <code>iphone360_base.yaml</code>,但<b>没有任何代码加载它</b>;训练脚本不传参 → 实际跑的是 50/10。nvidia.yaml 还有 3 个拼错的键被 <code>hasattr</code> 静默吞掉(configs.py:106)。<b>佐证</b>:run_training.py:105-109、train_iphone360.sh 全文、configs.py:106。<b>建议</b>:配置系统改为严格校验(未知键报错);把论文超参与代码默认对齐,或在 README 显式说明实际生效值。</p></div>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 预处理链进一步加长,鲁棒性取决于最弱环</h4><p><b>问题</b>:在 SoM 的 5 个外部先验之上又加 AnchorTAP3D(自身依赖 BootsTAP + TAPIP3D + 深度模型),全链 71 min 起;τ 需按场景置信度分布调整(goat 最优 0.7 vs jelly 0.5)。<b>佐证</b>:附录 0.A.1、0.C.1。<b>建议</b>:把 τ 自动化(作者给的 $\tau \approx 1-\mathrm{ratio}(c>0.5)$ 启发式可以直接实现);或用置信度加权替代硬阈值,免除调参。</p></div>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] mask 依赖人工点选,无法批量</h4><p><b>问题</b>:前景 mask 继承 SoM 的 Track-Anything 路线,需要人工点选。<b>佐证</b>:README 自定义数据流程指向 SoM 预处理。<b>建议</b>:换 SAM2/SAM3 自动 mask 提案 + 文本提示,与 vggt_human 的 SAM3 person mask 管线对齐后可批量。</p></div>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] LiDAR 依赖限制数据泛化</h4><p><b>问题</b>:iPhone360 训练深度靠 LiDAR 做尺度/偏移校正;无 LiDAR 时(裸 MoGe-2)尺度任意、与测试相机不对齐(Fig.13)。普通手机视频无 LiDAR。<b>建议</b>:用语义先验(人体身高、已知物体尺寸)或跨帧三角化一致性做尺度估计,替代 LiDAR。</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><h4>[低优先级] 论文叙述与源码损失不对齐</h4><p><b>问题</b>:式 13 只写 5 项,源码 13 项;LPIPS 迟启(14000 步后)未提;ARAP 层级放大因子 $5^{L-1-l}$ 未提。<b>佐证</b>:trainer.py:346-662、configs.py:44-68。<b>建议</b>:复现/对比时以源码为准;后续工作引用本文损失配置应直接引代码。</p></div>
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>性质</th></tr>
+<tr><td>高</td><td>像素级精度短板</td><td>方法层面</td></tr>
+<tr><td>高</td><td>孤儿 yaml / 拼写静默失效</td><td>工程实用性</td></tr>
+<tr><td>中</td><td>预处理链最弱环 + τ 调参</td><td>工程实用性</td></tr>
+<tr><td>中</td><td>mask 人工点选</td><td>工程实用性</td></tr>
+<tr><td>中</td><td>LiDAR 尺度依赖</td><td>数据与评估</td></tr>
+<tr><td>低</td><td>论文/源码损失不对齐</td><td>数据与评估(复现)</td></tr>
+</table>
+<p><b>个人最关键的三点</b>:① 像素级精度(决定它能不能进需要几何的 pipeline,而不只是「看着好」);② 孤儿 yaml 事件(直接影响复现数字是否对得上论文);③ mask 自动化(决定能否批量处理多段人体视频)。</p>
+</div>
+
+<!-- ========== 16 总结与演进定位 ========== -->
+<div class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+<p><b>总结</b>:4DGS360 把单目 4D 重建在大视角外推下的失败,精确定位到「2D 原生初始化对遮挡区的几何盲视」这一根因,并用一个免训练的组合式 3D tracker(AnchorTAP3D = BootsTAP 高置信锚点 + TAPIP3D 滑窗迭代)补齐初始化;表示层直接沿用 HiMoR 层级运动树,优化层沿用 SoM 系损失族并把 ARAP 权重上调到 2.0。在自建的 iPhone360 基准(训练-测试视角差 70°–135°)上,以 CLIP-I 为主的感知指标显著超越 MoSca/HiMoR;代价是预处理链更长(AnchorTAP3D 71 min/130 帧)+ 像素级指标依旧很弱 + 依赖 LiDAR 校正深度。</p>
+<p><b>演进定位</b>:在「D-3DGS(隐式形变场)→ SoM(2D 初始化 + 运动基)→ MoSca/HiMoR(结构化运动表示)」这条线上,4DGS360 是<b>「初始化革命」</b>的一步:表示不变、初始化从 2D 原生升级为 3D 原生。下一步的自然方向(作者也明示)是<b>与扩散先验集成</b>补全输入中从未出现的区域 —— 本文的好几何是扩散模型更好的起点(Tab.6 已验证)。</p>
+<div class="callout key"><b>对库内方法版图的意义</b>:如果说 <a href="3D-20240718-Shape-of-Motion.html">SoM</a> 教会我们「运动基约束让单目 4D 变得可优化」,<a href="3D-20250630-GaVS.html">GaVS</a> 教会我们「小基线下前馈 + 微调可绕开全局优化」,那么 4DGS360 补上的拼图是 —— <b>大视角外推的瓶颈从来不在表示与优化,而在初始化的几何完整性</b>。三者合起来构成单目动态重建选型的三角:视角需求、先验预算、优化成本。</div>
+</div>
+
+<!-- ========== 17 团队与资源 ========== -->
+<div class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队与 🔗 资源链接</h2>
+<p><b>Seoul National University(首尔国立大学)</b>,通讯作者 Nojun Kwak。一作 Jae Won Jang,合作者 Yeonjin Chang、Wonsik Shin、Juhwan Cho。资助:韩国 IITP(RS-2021-II211343、RS-2025-25442338)与 COMPA(RS-2026-25537086)。</p>
+<ul class="refs">
+<li>📄 arXiv abs:<a href="https://arxiv.org/abs/2603.21618" target="_blank">https://arxiv.org/abs/2603.21618</a>(v2,2026-07-22;v1 2026-03-23;abs comments: Accepted to ECCV 2026)</li>
+<li>🌐 arXiv HTML 全文:<a href="https://arxiv.org/html/2603.21618v2" target="_blank">https://arxiv.org/html/2603.21618v2</a></li>
+<li>🏠 项目主页:<a href="https://jaewon040.github.io/4dgs360/" target="_blank">https://jaewon040.github.io/4dgs360/</a></li>
+<li>💻 GitHub(代码 + 训练脚本 + AnchorTAP3D):<a href="https://github.com/Jaewon040/4DGS360" target="_blank">https://github.com/Jaewon040/4DGS360</a></li>
+<li>📦 iPhone360 数据集:<a href="https://drive.google.com/drive/folders/17hUxN0cnu2SdpJpA374Kxt-ri7tr-Qyp?usp=drive_link" target="_blank">Google Drive</a></li>
+<li>📖 库内对照笔记:<a href="3D-20240718-Shape-of-Motion.html">Shape of Motion</a> · <a href="3D-20230922-Deformable-3DGS.html">Deformable 3DGS</a> · <a href="3D-20250630-GaVS.html">GaVS</a></li>
+</ul>
+</div>
+
+<div class="footer">4DGS360 深度调研笔记 · arXiv:2603.21618v2 · 生成于 2026-10-13 · media_paper 知识库</div>
+
+
+
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
