@@ -213,6 +213,7 @@ flowchart TD
 <tr><td>S3 MANO/HaMeR 先验驱动</td><td>参数化手模驱动高斯</td><td>理论最对症</td><td class="fail">峰哥明确指出：手臂/手指姿态估计不准、帧间抖动，会引入比它消除的更大的误差；HaMeR 无置信度输出、纯单帧（<a href="3D-20231208-HaMeR.html">HaMeR 笔记</a> 源码级结论）</td><td>降级为可选弱监督，不作主干</td></tr>
 <tr class="best"><td>S4 分层混合（推荐）</td><td>场景静态 + 身体 SoM 式低维基 + 手部局部高自由度子模型</td><td>有效，且资源向手部倾斜</td><td>分区边界处理、工程量</td><td class="best">选定</td></tr>
 <tr><td>S5 <a href="3D-20260323-4DGS360.html">4DGS360</a>（HiMoR 运动树 + AnchorTAP3D）</td><td>两层层级运动树（50 节点/10 基 + 第二层 10 子/5 基），3D 原生初始化</td><td>有效，且补遮挡区几何</td><td>红利集中在测试视角远离训练轨迹的 360° 外推；预处理链比 SoM 更长（+71 min/130 帧）；~3h/140 帧（A6000，3090 未验证）；LiDAR 校正深度依赖</td><td>不整体采用，吸收两点（见 4.3）</td></tr>
+<tr><td>S6 <a href="https://arxiv.org/abs/2504.06210" target="_blank">HiMoR</a>（CVPR 2025，层级运动树）</td><td>SoM 同族（flow3d 管线），把全局扁平基换成可学习层级树：浅层节点管粗运动、深层管细运动，高斯经 k=3 近邻叶节点 RBF 加权 + 双四元数混合（DQB）插值形变</td><td>iPhone 上 CLIP-I 0.8907 &gt; SoM 0.8603（4DGS360 笔记 Tab.3）；其摘要直接用"手指相对手腕的细运动 + 手臂粗运动"做动机</td><td>与 SoM 相同的初始化与遮挡盲视短板；树节点按运动结构学习分配，手部小区域可能分不到节点（重蹈资源分配问题）</td><td>不单独采用；作为 S4 的<strong>可学习升级路径</strong>（见 4.5，Phase 2b 备选）</td></tr>
 </table>
 <div class="callout key">
 <h4>选型逻辑</h4>
@@ -245,6 +246,21 @@ flowchart TD
 <div class="callout tip">
 <h4>对方案的修正</h4>
 <p>§6 的 hand_gs 相应扩展为 <strong>hand+object 联合分区</strong>（详见 §6.4）：物体运动基与手指基分离建模。这比"把全局 B 从 10 加大"更省参数、更可解释——固连时物体系数自然收敛到与手腕相近，独立运动时专属基接管，两种情形用同一套参数化覆盖，无需预先判断。</p>
+</div>
+
+<h3>4.5 S6 专项：HiMoR 为什么值得吸收为"S4 的可学习升级路径"（2026-10-13 补）</h3>
+<p>HiMoR（<a href="https://arxiv.org/abs/2504.06210" target="_blank">arXiv 2504.06210</a>，CVPR 2025，早稻田大学 + Preferred Networks）与 SoM 是同一 flow3d 管线家族——同样的"2D tracks × 深度反投影"初始化、同样的遮挡几何盲视（4DGS360 正是为修它而来）。<strong>作为独立候选它不改变 §3 的根因诊断，因此不作为 S4 的替代；但它的运动表示本身正是 S4 手工分区的"可学习版本"</strong>：</p>
+<table>
+<tr><th>对照维度</th><th>S4（手工分层）</th><th>HiMoR（学习分层）</th></tr>
+<tr><td>层级结构</td><td>拍脑袋两分：body 全局基 + hand 局部基</td><td>树结构自动分层：浅层节点捕获粗运动（时序平滑），深层节点细化局部形变，每层各有独立运动基组</td></tr>
+<tr><td>高斯→运动绑定</td><td>mask 硬分区，边界带做权重混合</td><td>k=3 近邻叶节点 RBF（含 radius）加权 softmax + 双四元数混合（DQB），绑定是软的、可学的</td></tr>
+<tr><td>手部容量</td><td>手工保证（B_hand 独立名额）</td><td>节点按运动结构学习分配，手部小区域<strong>可能分不到节点</strong>——与 SoM 的资源分配问题同源</td></tr>
+<tr><td>实证</td><td>—</td><td>iPhone 数据集 CLIP-I 0.8907 vs SoM 0.8603（4DGS360 笔记 Tab.3）；论文摘要直接用"手指相对手腕的细运动 + 手臂粗运动"做动机，与手部问题完全对口</td></tr>
+</table>
+<div class="callout key">
+<h4>结论：混合形态是最优解</h4>
+<p><strong>顶层手工三分区保底（容量确定性）+ hand_gs 内部用 HiMoR 式可学习子树（表达力与绑定软分配）</strong>。手工分区解决 HiMoR"手部可能分不到节点"的容量风险，子树解决手工分区"边界拍脑袋"的粗糙性。该混合不增加新依赖（HiMoR 与 SoM 同代码族，运动树模块可参照 4DGS360 笔记 §4 的源码级结构表移植），列为 Phase 2b 备选：若 Phase 2 的扁平 B_hand 局部基已达验收指标则不启用。</p>
+<p>另注意 HiMoR 的一个附带观点：作者论证单目动态重建的像素级指标（PSNR）易受深度歧义与相机误差干扰、与人眼感知脱节，主张用感知指标评测——这与本方案 §10 验收指标中"目视检视 + masked 指标并用"的做法一致。</p>
 </div>
 </section>
 
@@ -352,10 +368,12 @@ flowchart LR
     P0["Phase 0<br/>数据体检"] --> P1["Phase 1<br/>SoM 式运动基替换形变 MLP"]
     P1 --> P2["Phase 2<br/>三分区 + 手部子模型"]
     P2 --> P3["Phase 3 (可选)<br/>HaMeR 弱监督接入"]
+    P2 -.->|手部扁平基不达标| P2b["Phase 2b (可选)<br/>hand_gs 升级 HiMoR 式子树"]
     P0 -.->|tracks 密度不达标| P0b["采集端补拍:<br/>降手速/提帧率/补光"]
     style P0 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
     style P1 fill:#d1fae5,stroke:#10b981,color:#064e3b
     style P2 fill:#fce7f3,stroke:#ec4899,color:#831843
+    style P2b fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
     style P3 fill:#fef3c7,stroke:#f59e0b,color:#78350f
 </div>
 
@@ -374,6 +392,11 @@ flowchart LR
 <ul>
 <li>SAM3 mask 切分 scene/body/hand 三区；手部高斯密度加密、独立局部基 B_hand、tracks 加密采样接入。</li>
 <li>与 vggt_human 的 scene_gs 静态线对接：场景部分直接复用路径 A 的 30k 静态高斯作初始化。</li>
+</ul>
+<h3>Phase 2b（可选）：hand_gs 内部升级 HiMoR 式子树</h3>
+<ul>
+<li>触发条件：Phase 2 扁平 B_hand 局部基未达验收指标（手指级细节仍糊或串号）。</li>
+<li>做法：保留顶层手工三分区，仅把 hand_gs 内的扁平基换成两层子树（父节点管手腕粗运动、子节点管手指细运动，k=3 KNN + RBF 加权 + DQB 绑定），参照 <a href="3D-20260323-4DGS360.html">4DGS360 笔记</a> §4 的源码级结构表移植（同 flow3d 代码族）。分析见 §4.5。</li>
 </ul>
 <h3>Phase 3（可选）：HaMeR 弱监督</h3>
 <ul>
@@ -436,6 +459,7 @@ flowchart LR
 <tr><td><a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS 调研笔记</a></td><td>被替换对象的失败模式分析</td></tr>
 <tr><td><a href="3D-20231208-HaMeR.html">HaMeR 调研笔记</a></td><td>手部姿态先验的能力边界（三源码级缺口）</td></tr>
 <tr><td><a href="3D-20260323-4DGS360.html">4DGS360 调研笔记</a></td><td>遮挡区几何盲视的诊断与 AnchorTAP3D 解法；ARAP 权重 20× 实证；层级运动树参照</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2504.06210" target="_blank">HiMoR</a>（CVPR 2025，库内暂无独立笔记）</td><td>层级运动树原文；S4 的可学习升级路径（§4.5 / Phase 2b），源码级结构见 4DGS360 笔记 §4</td></tr>
 <tr><td><a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline</a> / <a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事 MHR 方案</a></td><td>head/body/scene 拆分与 MHR 头模的既有脉络</td></tr>
 <tr><td><code>media_code/vggt_human/README_wsl.md</code></td><td>路径 A 实测记录（静态 3DGS + 人脸治理）</td></tr>
 <tr><td><code>media_code/deformable_human/README_wsl.md</code></td><td>路径 B 实测记录（形变 MLP + 降载参数 + 稠密化爆炸点）</td></tr>
@@ -443,7 +467,7 @@ flowchart LR
 </section>
 
 <div class="footer">
-  手部微动重建解决方案 · 2026-10-12 · 基于与峰哥的技术讨论定稿 · 媒体论文调研知识库
+  手部微动重建解决方案 · 2026-10-12 定稿 · 2026-10-13 增补（4DGS360 / 手持物体 / HiMoR 升级路径） · 基于与峰哥的技术讨论 · 媒体论文调研知识库
 </div>
 
 </div>
