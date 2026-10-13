@@ -95,6 +95,7 @@
       <a href="3D-20240718-Shape-of-Motion.html">📖 SoM 调研笔记</a>
       <a href="3D-20230922-Deformable-3DGS.html">📖 D-3DGS 调研笔记</a>
       <a href="3D-20231208-HaMeR.html">📖 HaMeR 调研笔记</a>
+      <a href="3D-20260323-4DGS360.html">📖 4DGS360 调研笔记</a>
       <a href="3D-20260720-同事人体重建Pipeline详解.html">📖 同事 Pipeline</a>
     </div>
   </div>
@@ -204,16 +205,46 @@ flowchart TD
 
 <section id="candidates">
 <h2><span class="num">4</span>候选方案对比与选型</h2>
+<h3>4.1 候选方案总表</h3>
 <table>
 <tr><th>方案</th><th>运动表示</th><th>对手部成因③</th><th>关键风险</th><th>结论</th></tr>
 <tr><td>S1 维持 D-3DGS 调参</td><td>逐帧形变 MLP</td><td class="fail">结构性无效</td><td>—</td><td class="fail">排除</td></tr>
 <tr><td>S2 全量替换为 SoM</td><td>B=10 全局 SE(3) 基 + 凸组合</td><td>有效（防撕裂/漂浮）</td><td>手部或落在低秩子空间外；预处理全家桶替换成本高；前景仅 40k 高斯资源摊薄</td><td>吸收思想，不整仓替换</td></tr>
 <tr><td>S3 MANO/HaMeR 先验驱动</td><td>参数化手模驱动高斯</td><td>理论最对症</td><td class="fail">峰哥明确指出：手臂/手指姿态估计不准、帧间抖动，会引入比它消除的更大的误差；HaMeR 无置信度输出、纯单帧（<a href="3D-20231208-HaMeR.html">HaMeR 笔记</a> 源码级结论）</td><td>降级为可选弱监督，不作主干</td></tr>
 <tr class="best"><td>S4 分层混合（推荐）</td><td>场景静态 + 身体 SoM 式低维基 + 手部局部高自由度子模型</td><td>有效，且资源向手部倾斜</td><td>分区边界处理、工程量</td><td class="best">选定</td></tr>
+<tr><td>S5 <a href="3D-20260323-4DGS360.html">4DGS360</a>（HiMoR 运动树 + AnchorTAP3D）</td><td>两层层级运动树（50 节点/10 基 + 第二层 10 子/5 基），3D 原生初始化</td><td>有效，且补遮挡区几何</td><td>红利集中在测试视角远离训练轨迹的 360° 外推；预处理链比 SoM 更长（+71 min/130 帧）；~3h/140 帧（A6000，3090 未验证）；LiDAR 校正深度依赖</td><td>不整体采用，吸收两点（见 4.3）</td></tr>
 </table>
 <div class="callout key">
 <h4>选型逻辑</h4>
 <p>S2 的思想（持久身份 + 低秩运动基）是治疗成因③的正确药物，但它的"全局 10 条基"对手部粒度过粗；S3 的先验足够强但观测源（手部姿态估计）在当前技术下不可靠。S4 取两者之长：<strong>用大尺度低秩结构锁住全局一致性（治撕裂/漂浮），用手部局部高自由度子模型补足表达力（治细节），用加密 tracks + 局部刚性正则补足监督（治串号）</strong>。HaMeR 只在置信度门控后作为弱观测源参与，姿态估计误差被隔离在硬约束之外。</p>
+</div>
+
+<h3>4.2 S5 专项：4DGS360 为什么"效果更好"但不整体采用</h3>
+<p><a href="3D-20260323-4DGS360.html">4DGS360</a> 与 SoM 的差异精确到一处——代码层面它就是 <strong>SoM 的 flow3d 框架 + HiMoR 两层运动树 + AnchorTAP3D 预处理</strong>，核心创新是把初始化从"2D tracks × 深度反投影"换成"高置信 2D 锚点条件化 3D tracker 迭代校正"，补上 SoM 范式的<strong>遮挡区几何盲视</strong>（SoM 初始化对当前帧被遮挡的点"无值"而非"有噪值"，且坏初始化无法被优化补救）。效果确实更好：iPhone360 六场景均 CLIP-I 0.8822 vs HiMoR 0.7976（其笔记 Tab.2 逐格复核），初始化消融 w/o 3D init 0.798 → 完整 0.882。但它的"使用场景有限"对本方案是决定性的：</p>
+<table>
+<tr><th>4DGS360 的特性</th><th>与本场景的关系</th></tr>
+<tr><td>红利集中在<strong>测试视角远离训练轨迹</strong>（iPhone360 的 70°–135° 外推）；视角差 &lt;45° 的 iPhone 上领先幅度收窄（0.9015 vs 0.8907）</td><td>环绕拍摄的训练视角本身覆盖 360°、渲染视角在轨迹内插——<strong>它的核心红利我们用不上</strong></td></tr>
+<tr><td>预处理链比 SoM 更长（+71 min/130 帧 AnchorTAP3D），训练 ~3h/140 帧（A6000 48GB，3090 未验证）</td><td>与"复用现有基建、控制工程量"的目标冲突</td></tr>
+<tr><td>iPhone360 深度靠 <strong>LiDAR 尺度/偏移校正</strong>，无 LiDAR 时尺度任意、360° 评测不对齐</td><td>普通手机无 LiDAR；我们的尺度由 VGGT-Omega/COLMAP 相机三角化锚定，问题可绕开，但整套预处理的收益进一步缩水</td></tr>
+<tr><td>工程坑：孤儿 yaml（论文宣称 70 节点/15 基，实际生效 50/10）、nvidia.yaml 三个键拼写错误被静默忽略</td><td>复现可信度打折，选型时扣分</td></tr>
+</table>
+
+<h3>4.3 4DGS360 带来的两点吸收（不改变 S4 选型）</h3>
+<div class="grid-2">
+<div class="card"><h4>① 遮挡几何补全思想</h4><p>人物场景中"手被身体/手中物体遮挡"是常态（其 walk-around 恰是人体场景）。AnchorTAP3D 的教训——<strong>初始化阶段的遮挡盲视无法被优化补救</strong>——直接适用于我们：手部高斯初始化必须利用"该手在其他帧可见"的信息做跨帧聚合，而不是只在 canonical 帧可见表面上撒点。Phase 1 初始化环节据此加一条硬要求。</p></div>
+<div class="card"><h4>② ARAP 权重实证</h4><p>其源码 w_arap=2.0，是 SoM 原值 0.1 的 <strong>20 倍</strong>，且作者叙事"好初始化让 ARAP 正常工作"——佐证本方案 §6.3 用 ARAP 替代姿态先验的方向，同时提示：<strong>ARAP 权重必须与初始化质量配套调</strong>，初始化差时强 ARAP 会把坏几何锁死。</p></div>
+</div>
+
+<h3>4.4 手持物体（玩偶/手机）场景：S2 思路的有效性边界</h3>
+<p>峰哥提出的关键追问：手里拿着玩偶或手机时，SoM 的低秩运动基思路还有效吗？<strong>分界线是"物体与手是否固连"</strong>：</p>
+<table>
+<tr><th>情形</th><th>低秩假设</th><th>机理</th><th>对策</th></tr>
+<tr><td>抓握固连（玩偶握在手中不动）</td><td class="best">反而更成立</td><td>物体随手腕做近似刚体运动，与手掌共享运动模式；凸组合系数在手背、指根与物体上趋同，手+物合并为一根更大"连杆"</td><td>无需特殊处理，物体作为强刚体 1–2 条基即可表达</td></tr>
+<tr><td>物体相对手独立运动（滑手机屏幕、掌中转玩偶、抛接）</td><td class="fail">三重失效放大</td><td>① 物体独立运动挤占全局基名额，手部细节更易掉出低秩子空间；② 物体遮挡手指（握手机时拇指在屏后），tracks 更稀；③ 黑屏手机/纯色玩偶无纹理，2D tracker 直接失效</td><td>物体给<strong>专属强刚体基</strong>（1–2 条，ARAP 拉满），不挤手部基名额；无纹理物体接受其监督上限，靠刚性先验补</td></tr>
+</table>
+<div class="callout tip">
+<h4>对方案的修正</h4>
+<p>§6 的 hand_gs 相应扩展为 <strong>hand+object 联合分区</strong>（详见 §6.4）：物体运动基与手指基分离建模。这比"把全局 B 从 10 加大"更省参数、更可解释——固连时物体系数自然收敛到与手腕相近，独立运动时专属基接管，两种情形用同一套参数化覆盖，无需预先判断。</p>
 </div>
 </section>
 
@@ -277,8 +308,21 @@ $$\mathcal{L}_{arap} = \sum_{i}\sum_{j\in\mathcal{N}(i)} \omega_{ij}\, \Big\| (\
 <span class="label">(式 2)</span>
 </div>
 <p>对手部高斯的 kNN 邻域施加邻域变换一致性：允许手指段间相对运动（邻域跨关节时权重 $\omega_{ij}$ 衰减），惩罚段内拉伸剪切。效果等价于"软骨架"，但完全数据驱动、不承担姿态估计误差。<span class="uncertain">【待核实】ARAP 权重衰减的具体形式（按初始距离/按运动系数差异）需 Phase 1 确定。</span></p>
+<div class="callout tip">
+<h4>来自 4DGS360 的权重实证（2026-10-13 补）</h4>
+<p><a href="3D-20260323-4DGS360.html">4DGS360</a> 源码默认 <code>w_arap=2.0</code>，是 SoM 原值 0.1 的 <strong>20 倍</strong>（其笔记 §10.3，configs.py:56）；其经验"好初始化让 ARAP 正常工作、坏初始化上 ARAP 反而失效"提示：ARAP 权重必须与初始化质量配套，<strong>初始化差时强 ARAP 会把坏几何锁死</strong>。本方案 ARAP 初值取 0.1–1.0 扫描的下端起步，初始化质量达标后再上调。</p>
+</div>
 
-<h3>6.4 HaMeR 弱监督（可选，置信度门控）</h3>
+<h3>6.4 手持物体扩展：hand+object 联合分区（2026-10-13 补）</h3>
+<p>针对"手里拿着玩偶/手机"的情形（分析见 §4.4），hand_gs 扩展为 hand+object 联合分区：</p>
+<ul>
+<li><strong>物体专属强刚体基</strong>：手中物体（玩偶/手机）单独分 1–2 条运动基，ARAP 权重拉满（刚体内部不允许任何拉伸剪切）；</li>
+<li><strong>基名额隔离</strong>：物体基与手指基分离，物体独立运动（滑屏、转动、抛接）不挤占手部 B_hand 名额；</li>
+<li><strong>固连情形自动退化</strong>：抓握固连时物体系数经优化自然收敛到与手腕基相近，无需预先判断是否固连；</li>
+<li><strong>无纹理物体的上限声明</strong>：黑屏手机等无纹理表面 2D tracker 失效（SoM 范式共同软肋），此时物体监督仅靠边缘 tracks + 强刚性先验，属已知上限，<span class="uncertain">【待核实】必要时采集端改用有纹理道具。</span></li>
+</ul>
+
+<h3>6.5 HaMeR 弱监督（可选，置信度门控）</h3>
 <p><a href="3D-20231208-HaMeR.html">HaMeR 笔记</a>的三个源码级缺口决定它只能当配角：① 无置信度输出（仅 ViTPose 2D 分数可作代理）；② 纯单帧无时序；③ 检测级联是第一召回瓶颈。使用方式：</p>
 <ul>
 <li>仅取<strong>高 ViTPose 分数帧</strong>的 HaMeR 输出，投影为 2D landmark 观测，以小权重加入手部监督；</li>
@@ -333,7 +377,7 @@ flowchart LR
 </ul>
 <h3>Phase 3（可选）：HaMeR 弱监督</h3>
 <ul>
-<li>按 §6.4 的置信度门控方式接入；若 Phase 2 手部质量已达标则跳过。</li>
+<li>按 §6.5 的置信度门控方式接入；若 Phase 2 手部质量已达标则跳过。</li>
 </ul>
 </section>
 <section id="engineering">
@@ -375,6 +419,8 @@ flowchart LR
 <div class="card"><h4>R2：B_hand 与 ARAP 权重调参 [中]</h4><p>基太少表达不足、太多退回逐帧过拟合。<strong>缓解</strong>：Phase 1 扫描 {8,12,16}，以手部 masked 指标定。</p></div>
 <div class="card"><h4>R3：分区边界 artifacts [中]</h4><p>手腕处 hand/body 基不连续可能出现接缝。<strong>缓解</strong>：边界带高斯同时挂两组系数、权重按距离混合。<span class="uncertain">【推测】该设计未经验证，Phase 2 重点检视。</span></p></div>
 <div class="card"><h4>R4：单目尺度与深度噪声 [低]</h4><p>VGGT-Omega 深度噪声会污染 tracks 反投影。<strong>缓解</strong>：沿用 SoM 的置信度加权与 scale+shift 对齐。</p></div>
+<div class="card"><h4>R5：手持物体引入的新失效面 [中]（2026-10-13 补）</h4><p>物体独立运动挤占运动基、遮挡手指、无纹理表面 tracker 失效（详见 §4.4）。<strong>缓解</strong>：物体专属强刚体基 + 基名额隔离（§6.4）；无纹理物体接受监督上限，必要时采集端换有纹理道具。</p></div>
+<div class="card"><h4>R6：手部初始化的遮挡盲视 [中]（2026-10-13 补）</h4><p>4DGS360 的核心教训：2D 原生初始化对遮挡点"无值"，坏初始化无法被优化补救、强 ARAP 反把坏几何锁死。<strong>缓解</strong>：手部高斯初始化必须跨帧聚合"该手在其他帧可见"的信息，Phase 1 加硬要求（§4.3①）。</p></div>
 </div>
 <div class="callout warn">
 <h4>明确不做</h4>
@@ -389,6 +435,7 @@ flowchart LR
 <tr><td><a href="3D-20240718-Shape-of-Motion.html">Shape of Motion 调研笔记</a></td><td>运动基 + 凸组合 + 持久身份的方法来源，含源码级超参</td></tr>
 <tr><td><a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS 调研笔记</a></td><td>被替换对象的失败模式分析</td></tr>
 <tr><td><a href="3D-20231208-HaMeR.html">HaMeR 调研笔记</a></td><td>手部姿态先验的能力边界（三源码级缺口）</td></tr>
+<tr><td><a href="3D-20260323-4DGS360.html">4DGS360 调研笔记</a></td><td>遮挡区几何盲视的诊断与 AnchorTAP3D 解法；ARAP 权重 20× 实证；层级运动树参照</td></tr>
 <tr><td><a href="3D-20260720-同事人体重建Pipeline详解.html">同事人体重建 Pipeline</a> / <a href="3D-20260720-同事方案MHR高斯数字人分析.html">同事 MHR 方案</a></td><td>head/body/scene 拆分与 MHR 头模的既有脉络</td></tr>
 <tr><td><code>media_code/vggt_human/README_wsl.md</code></td><td>路径 A 实测记录（静态 3DGS + 人脸治理）</td></tr>
 <tr><td><code>media_code/deformable_human/README_wsl.md</code></td><td>路径 B 实测记录（形变 MLP + 降载参数 + 稠密化爆炸点）</td></tr>
