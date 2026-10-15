@@ -623,49 +623,70 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
 <p class="lead">物体线要区分<strong>两条不同的路</strong>：<strong>重建</strong>（从已知图像恢复物体几何/外观）与<strong>生成</strong>（从单图/文本凭空生成物体）。前馈高斯重建属于前者；生成式 LRM 系属于后者，选型时不能混。</p>
 
 <h3>6.1 以物体为中心:ParticleSplat</h3>
-<p><strong>ParticleSplat</strong>（arXiv:2609.19463，2026-09-16，CMU 等：Lyuxing He / Daniel Guo / Deepak Pathak / David Held / Tal Daniel）把「以物体为中心」的先验注入前馈高斯重建。</p>
+<p><strong>ParticleSplat</strong>（arXiv:2609.19463v1，2026-09-16，<strong>CMU Robotics Institute</strong>：Lyuxing He / Daniel Guo / Elizabeth Terveen / Deepak Pathak / David Held / Tal Daniel）把「以物体为中心」的先验注入前馈高斯重建，是物体线里少见的<strong>自监督</strong>方案。</p>
 <div class="grid grid-2">
-  <div class="card blue" style="border-left:4px solid var(--accent)">
+  <div class="card key">
     <h4>思路与结构</h4>
     <ul>
       <li>基于 <strong>Deep Latent Particles (DLP)</strong>：把图像表示为一组带位置/尺度/外观属性的「粒子」；</li>
-      <li>作者指出的关键局限：DLP 本质是 <strong>2D</strong> 的，无法做显式 3D 空间与几何推理；</li>
-      <li>利用「潜在粒子 ↔ 3D 高斯基元」的结构相似性，引入<strong>3D 潜在粒子空间</strong>，用新视角合成目标训练；</li>
-      <li>多视角 + 相机位姿联合编码到共享的 <strong>3D object-centric latent</strong>，粒子的组合重建完整场景。</li>
+      <li>DLP 本质是 <strong>2D</strong> 的，无法做显式 3D 空间与几何推理 —— 本文补上这一维；</li>
+      <li>前景粒子属性从 DLP 的 $6+d_{obj}$ 扩到 <strong>$7+d_{obj}$</strong>：新增 <em>depth extent</em> $z_e$，控制粒子沿视线的厚度；</li>
+      <li>编码器 $q_\phi(\mathcal{Z}\mid\mathcal{O})$：可微空间 softmax → STN 取局部 glimpse → CNN 预测属性 → <strong>Plücker 射线嵌入</strong>做相机条件化 → 跨视图注意力精炼；</li>
+      <li>解码器<strong>三步走</strong>：粒子 → 规范高斯 patch → 图像平面高斯（协方差经雅可比 $\mathbf{\Sigma}'=\mathbf{J}\mathbf{W}\mathbf{\Sigma}\mathbf{W}^T\mathbf{J}^T$）→ 世界空间 3D 高斯；背景另用 $H\times W$ 稠密像素对齐高斯；</li>
+      <li>表达极省：$L=20$（RLBench）/ $40$（真实）个粒子即可重建整场景，标称压缩比 <strong>819.2×</strong>。</li>
     </ul>
   </div>
-  <div class="card blue" style="border-left:4px solid var(--accent)">
-    <h4>能力与结果</h4>
+  <div class="card key">
+    <h4>能力与结果（已核实）</h4>
     <ul>
-      <li><strong>无监督学出物体掩码</strong>；</li>
-      <li>支持可控 3D 场景编辑（在 latent 里改粒子即可移动物体）；</li>
-      <li>语言条件 RLBench 模仿学习：成功率 <strong>73.0%</strong>（DLP 46.6%）；</li>
-      <li>仿真与真实数据集均验证。</li>
+      <li><strong>无需掩码监督</strong>，自监督学出物体分解；可在 latent 里改粒子做 3D 场景编辑；</li>
+      <li>NVS（表 1）：RLBench 1×RGB-D PSNR <strong>25.35</strong>；2×RGB-D <strong>28.77</strong>；真实场景 2×RGB <strong>24.24</strong>；</li>
+      <li>语言条件 RLBench 模仿学习（表 2）：Overall 成功率 <strong>73.0%</strong>，DLP 46.6%、GNFactor 31.7%；</li>
+      <li>MimicGen 多视图（表 3）：Overall <strong>56.1%</strong>（DLP 34.1%）；</li>
+      <li>运行时（A.5.1）：单视图峰值 <strong>251.1 MiB / 30.91 ms</strong>；两视图 347.3 MiB / 33.65 ms；</li>
+      <li>训练（A.4）：50,000 步、batch 8、lr 8e-5、<strong>单张 A6000</strong>，RLBench ≈30 h、真实数据 ≈2 h。</li>
     </ul>
-    <p>项目页：lyuxinghe.github.io/ParticleSplat-website/</p>
   </div>
+</div>
+<div class="callout warn">
+<p><strong>硬约束</strong>：① <strong>训练与推理都需 GT 相机位姿</strong>（消融去掉位姿条件后 PSNR 25.35→23.91）；② 粒子预算 $L$ 固定，<strong>超预算的物体会被吸收进背景</strong>；③ 深度监督在单视图下至关重要（去掉后 25.35→19.63），多视图下影响很小。代码与视频见项目页 <code>lyuxinghe.github.io/ParticleSplat-website/</code>（权重发布未提及）。</p>
 </div>
 
 <h3>6.2 可扩展性:iLRM</h3>
-<p><strong>iLRM</strong>（arXiv:2507.23277）针对 Transformer 类前馈重建的<strong>可扩展性瓶颈</strong>：全注意力跨多视图图像 token 的复杂度是 $O\!\big(N^2(hw)^2\big)$，视角数或分辨率一涨就爆。</p>
+<p><strong>iLRM</strong>（arXiv:2507.23277v3，2025-07-31 首版 / 2026-05-31 修订，<strong>成均馆 + 延世 + Rembrand + Meta</strong>：Gyeongjin Kang 等 7 人）针对 Transformer 类前馈重建的<strong>可扩展性瓶颈</strong>：全注意力跨多视图图像 token 的复杂度是 $O\!\big(N^2(hw)^2\big)$，视角数或分辨率一涨就爆。</p>
 <ul>
-  <li><strong>解耦场景表示与输入图像</strong>：引入紧凑的 <strong>viewpoint tokens</strong>（由 Plücker 射线嵌入初始化），与高分辨率 image tokens 分离；</li>
-  <li><strong>两阶段注意力</strong>：先让低分辨率 viewpoint tokens 做全局交互（便宜），再与高分辨率 image tokens 融合——复杂度随视角数近似线性；</li>
-  <li><strong>每层注入高分辨率信息</strong>（update block 逐步精修 viewpoint tokens）；</li>
-  <li>RE10K / DL3DV 上质量与速度均优于同期前馈方法。</li>
+  <li><strong>解耦场景表示与输入图像</strong>：紧凑的 <strong>viewpoint tokens</strong>（由 Plücker 射线嵌入按 $p=8$ patch 切分后线性投影）与高分辨率 image tokens 分离，输出高斯的 $H^v W^v$ <strong>不绑定输入分辨率</strong>；</li>
+  <li><strong>每层 = 1 个 cross-attention + 1 个 self-attention</strong>，共 <strong>12 个 update layer</strong>、隐藏维 $d=768$、12 头：cross-attention 让每个 viewpoint token 只对自己那张图的 image token 一对一细化，self-attention 再做跨视图全局聚合；</li>
+  <li><strong>token uplifting</strong>（$k=2$）与 <strong>mini-batch cross-attention</strong>（Quarter 版）进一步压算力：16×256² 输入下相对算力比 (a):(b):(c):(d) = <strong>1 : 1 : 0.25 : 0.08</strong>；</li>
+  <li>容量与速度（表 1，RE10K）：8 视图 <strong>PSNR 31.57</strong> / 131,072 高斯 / <strong>0.028 s</strong> / 185 M 参数，优于 GS-LRM（28.10）与 DepthSplat（27.47）；</li>
+  <li>可扩展性（表 3/4，DL3DV）：24 视图 PSNR 27.38、仅 <strong>2.01 GB</strong>、0.123 s；12 视图 @512×960 用 1,474,560 高斯 / 3.53 GB，而 DepthSplat 在此设置直接 OOM；</li>
+  <li>宽覆盖（表 5，540×960）：32 视图 0.53 s / 24.30 dB，快于 Long-LRM（0.84 s / 23.97）。</li>
 </ul>
-<p>与 4.4 的 CompactSplat、GrapeSplat 同属<strong>去像素耦合</strong>思路：把「每个像素一个高斯」改成「先有一组紧凑 3D 锚点/查询，再长出高斯」。</p>
+<p><strong>训练</strong>：AdamW（$\beta_2=0.95$、wd 0.05）、峰值 lr 2e-4、warmup 2500；主力配置 <strong>8×H100、batch 256、50k 步</strong>（4 视图版用 8×RTX 4090、batch 128、100k 步）。损失为 MSE + 感知，<strong>$\lambda=0.5$</strong>。</p>
+<div class="callout warn">
+<p><strong>局限</strong>：① 需准确相机位姿且仅限静态场景；② 视角数很大时自注意力仍是瓶颈；③ 以渲染监督为主，<strong>几何精度可能弱于显式几何监督方法</strong>。与 §4.4 的 CompactSplat、GrapeSplat 同属<strong>去像素耦合</strong>思路：把「每个像素一个高斯」改成「先有一组紧凑 3D 锚点/查询，再长出高斯」。</p>
+</div>
 
 <h3>6.3 可重光照:F-RNG</h3>
-<p><strong>F-RNG</strong>（arXiv:2605.25975，2026-05-28）解决前馈高斯的一个实用缺口：<strong>光照烘焙死</strong>，无法重打光。</p>
+<p><strong>F-RNG</strong>（arXiv:2605.25975v2，2026-05-25 首版 / 05-28 修订，<strong>南开 + 南大 + NVIDIA</strong>：Guangming Fu† / Jiahui Fan† / Jian Yang / Miloš Hašan / Beibei Wang‡）解决前馈高斯的一个实用缺口：<strong>光照烘焙死</strong>，无法重打光。</p>
 <table>
   <tr><th>组件</th><th>做法</th></tr>
-  <tr><td>基础</td><td>架在<strong>现有 LRM</strong> 之上，<strong>不重训、不微调</strong> LRM（可自动受益于未来更强的 LRM）</td></tr>
-  <tr><td>几何</td><td>latent-interpolated fine-grained geometry synthesis，增强 LRM 的几何表示</td></tr>
-  <tr><td>外观</td><td>prior-guided relightable appearance distillation：把 <strong>本征分解模型（IDM）</strong>的光照/材质先验蒸馏进高斯表示</td></tr>
-  <tr><td>渲染</td><td>universal neural renderer，支持灵活高保真重光照</td></tr>
+  <tr><td>基础</td><td>架在 <strong>RelitLRM 骨干</strong>之上，<strong>不重训、不微调</strong>（可自动受益于未来更强的 LRM）</td></tr>
+  <tr><td>几何</td><td>latent-interpolated fine-grained geometry synthesis：显著性图选 Top-K patch → IDM 先验 tokenize → 潜空间双线性插值 → FineGeoDetokenizer 出 sub-pixel 高斯（式 5–8）</td></tr>
+  <tr><td>外观</td><td>prior-guided relightable appearance distillation：MaterialFormer 结合 IDM 先验与几何/外观 token 预测材质 token（式 10–11），再由 <strong>light-independence 正则</strong>强制材质不随光照变（式 12）</td></tr>
+  <tr><td>渲染</td><td>universal neural appearance decoder $\Theta$：跨物体训练的 MLP，用 $\omega_o,\omega_i$ 直接出神经反射率（式 13），比物理着色模型更能刻画毛发 / 绒毛</td></tr>
 </table>
-<p>相比 SOTA 的 LRM 重光照方法：重光照推理快约 <strong>25×</strong>、质量约 <strong>+2.0 dB</strong>；且避免了「换一种光照就要重跑一次大模型」的重复推理。<span class="uncertain">【待核实】</span>代码与权重原文未给出。</p>
+<p><strong>输入假设</strong>：<strong>6 个稀疏视图 + Plücker 光线（需位姿）</strong>，另有 IDM（DiffusionRenderer）提供的 normal/depth/albedo/roughness/metallic G-buffer 作引导；渲染 512×512、128 spp。</p>
+<table>
+  <tr><th>数据集</th><th>Ours PSNR</th><th>RelitLRM</th><th>数据集</th><th>Ours PSNR</th><th>RelitLRM</th></tr>
+  <tr><td>BlenderKit</td><td class="best">30.02</td><td>27.63</td><td>Stanford-Orb</td><td class="best">32.24</td><td>30.72</td></tr>
+  <tr><td>TensoIR</td><td class="best">30.96</td><td>28.66</td><td>Owl</td><td class="best">26.03</td><td>23.14</td></tr>
+  <tr><td>Objaverse</td><td class="best">31.77</td><td>30.02</td><td>重光照耗时</td><td class="best">246 ms</td><td>6,826 ms</td></tr>
+</table>
+<p>换算下来：重光照质量约 <strong>+2.0 dB</strong>、速度约 <strong>25×</strong>。更关键的是表 2 —— 仅用 <strong>6 视图</strong>的 F-RNG 反而超过用 <strong>100 视图</strong>逐场景优化的 GS-IR / R3DG（如 Lego：29.65 vs 22.88 / 22.49），而重建本身只要 <strong>7 s</strong>（对手约 50 min）。</p>
+<div class="callout warn">
+<p><strong>局限</strong>：① <strong>高反射 / 透明材质</strong>性能明显下降；② 逐像素高斯使<strong>显存随视图数与分辨率增长</strong>——这是它固定用 6 视图的原因；③ 骨干 RelitLRM 假设远距离光照，不支持局部 / 间接反弹光。代码与权重：正文与附录均未声明。<span class="uncertain">【待核实】</span>各模块张量维度与损失权重 $\lambda_c,\lambda_{KLD}$ 在主文中未给出（应在补充材料）。</p>
+</div>
 
 <h3>6.4 相邻路线:生成式 LRM 系(注意区分「重建 / 生成」)</h3>
 <div class="callout warn">
@@ -715,9 +736,19 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
     <td>式 4–5 / 6–7；绑定项把高斯锁在人身上</td>
   </tr>
   <tr>
+    <td><strong>iLRM</strong></td>
+    <td>MSE</td><td>感知</td><td>—</td>
+    <td>$\mathcal{L}=\sum_t\mathcal{L}_{\text{MSE}}+\lambda\mathcal{L}_{\text{perc}}$，<strong>$\lambda=0.5$</strong>（式 5）</td>
+  </tr>
+  <tr>
+    <td><strong>ParticleSplat</strong></td>
+    <td>图像项（MSE 或 VGG 感知）</td><td>深度项 $\lambda_D$</td><td>场景级 masked KL + 粒子稀疏正则</td>
+    <td>多视图负 ELBO；$\beta_{KL}=0.02/0.1$、$\beta_{KP}=0.02/0.01$、$\lambda_D=0.001$、$\beta_{reg}=\beta_{KL}$</td>
+  </tr>
+  <tr>
     <td><strong>F-RNG</strong></td>
-    <td>渲染</td><td>特征</td><td><strong>IDM 本征分解蒸馏</strong></td>
-    <td>把光照/材质先验蒸馏进高斯，实现可重光照</td>
+    <td>渲染</td><td>特征</td><td><strong>IDM 本征分解蒸馏 + light-independence 正则</strong></td>
+    <td>正文仅显式给出式 12 $\mathcal{L}_{\text{ind}}$（$\lambda_c$ 余弦项 + $\lambda_{KLD}$ KL 项），权重数值未给</td>
   </tr>
 </table>
 <div class="callout key">
@@ -796,17 +827,20 @@ flowchart LR
   <tr><th>方法</th><th>数据集</th><th>关键指标</th><th>对照基线</th><th>说明</th></tr>
   <tr class="best"><td><strong>DeltaSplat</strong></td><td>视频序列</td><td>较全量重建基线 +2.2%</td><td>全量前馈基线</td><td>增量残差策略的收益</td></tr>
   <tr><td><strong>Tele360</strong></td><td>360° 环视</td><td>35.4 ms/帧（&gt;25 FPS）</td><td>传统逐场景 3DGS</td><td>无位姿、实时</td></tr>
-  <tr><td><strong>iLRM</strong></td><td>RE10K / DL3DV</td><td>质量与速度均优于同期前馈方法</td><td>全注意力前馈方法</td><td>复杂度近似线性</td></tr>
+  <tr class="best"><td><strong>iLRM</strong></td><td>RE10K(8 视图) / DL3DV(24 视图)</td><td>PSNR 31.57 / 27.38；0.028 s / 2.01 GB</td><td>GS-LRM 28.10 / DepthSplat 27.47</td><td>复杂度近似线性，可扩展性最强</td></tr>
   <tr><td><strong>GrapeSplat</strong></td><td>通用 / DTU</td><td>通用场景前馈重建</td><td>像素耦合基线</td><td>开源</td></tr>
 </table>
 
 <h3>10.2 物体 / 可重光照线</h3>
 <table>
   <tr><th>方法</th><th>任务</th><th>关键指标</th><th>对照</th><th>说明</th></tr>
-  <tr class="best"><td><strong>ParticleSplat</strong></td><td>语言条件 RLBench 模仿学习</td><td>成功率 73.0%</td><td>DLP 46.6%</td><td>3D 潜在粒子空间带来的提升</td></tr>
-  <tr><td><strong>F-RNG</strong></td><td>可重光照</td><td>推理快约 25×、质量约 +2.0 dB</td><td>SOTA LRM 重光照方法</td><td>不重训 LRM，蒸馏 IDM 先验</td></tr>
+  <tr class="best"><td><strong>ParticleSplat</strong></td><td>RLBench 模仿学习（单视图，表 2）</td><td>成功率 <strong>73.0%</strong></td><td>DLP 46.6% / GNFactor 31.7%</td><td>3D 潜在粒子空间带来的提升</td></tr>
+  <tr><td><strong>ParticleSplat</strong></td><td>NVS（RLBench 2×RGB-D，表 1）</td><td>PSNR <strong>28.77</strong></td><td>VAE-GS 25.93</td><td>1 视图时 25.35</td></tr>
+  <tr><td><strong>iLRM</strong></td><td>跨数据集泛化（RE10K 训练，表 2）</td><td>DL3DV 29.56 / ACID 30.96</td><td>DepthSplat 24.28 / 28.37</td><td>8 视图配置</td></tr>
+  <tr class="best"><td><strong>F-RNG</strong></td><td>可重光照（Objaverse，表 1）</td><td>PSNR <strong>31.77</strong></td><td>RelitLRM 30.02</td><td>+2.0 dB；重光照 246 ms vs 6,826 ms</td></tr>
+  <tr><td><strong>F-RNG</strong></td><td>重光照 vs 100 视图逐场景 GS（表 2）</td><td>6 视图即超过 GS-IR / R3DG</td><td>GS-IR / R3DG（100 视图，~50 min）</td><td>重建仅 7 s</td></tr>
 </table>
-<p><span class="uncertain">【待核实】</span>：F-RNG 的 25× 与 +2.0 dB、Tele360 的 35.4 ms 均已回官方摘要/正文核对；但<strong>跨论文的 PSNR 绝对值</strong>因数据集与划分不同未在此并列，避免误导。人物线的 HumanGS / VFAvatar / SpatialAvatar-0 具体数值待补。</p>
+<p><span class="uncertain">【待核实】</span>：物体线（ParticleSplat / iLRM / F-RNG）数字已逐条回原文表格核对（标有表号）；但<strong>跨论文的 PSNR 绝对值仍不可直接并列</strong>（数据集与划分不同），故本表按"方法 × 数据集"分行、不跨行比大小。人物线的 HumanGS（TH2.1→AvRex PSNR 25.24）已核实；VFAvatar / SpatialAvatar-0 / FiCA 的具体数值仍待补。</p>
 </section>
 
 <section id="ablation">
@@ -814,23 +848,43 @@ flowchart LR
 <p class="lead">前馈方法最值得看的消融，是<strong>"砍掉哪个组件会掉多少"</strong>——它直接说明该组件是不是真卖点。</p>
 <div class="grid grid-2">
   <div class="card purple">
-    <h4>DeltaSplat：增量步长 K</h4>
-    <p>论文对"一次前向覆盖多少增量"做了 K 的扫描（含 K=3 的设置）。结论：<strong>增量式重建在同等推理预算下优于全量回归</strong>，但 K 过大反而退化——增量假设的窗口有限度。</p>
+    <h4>ParticleSplat：位姿 / 深度 / 表示设计</h4>
+    <ul>
+      <li><strong>位姿条件化</strong>（表 8，RLBench NVS）：去掉后 2×RGB-D PSNR 28.77→27.62、1×RGB-D 25.35→23.91，两个设置都有效；</li>
+      <li><strong>深度监督</strong>（表 8）：单视图去掉后 25.35→<strong>19.63</strong>（崩），多视图去掉后 28.38（几乎不掉）—— 深度只在单视图下救命；</li>
+      <li><strong>表示设计</strong>（表 11，单视图成功率）：VAE-GS 42.0 &lt; DLP 46.6 &lt; Ours <strong>73.0</strong>，说明增益来自「object-centric 结构 + 显式 3D 信息」的组合，而非仅重建目标。</li>
+    </ul>
   </div>
   <div class="card purple">
-    <h4>InfiniSplat v2：两阶段</h4>
-    <p>去掉 Stage II 精修，只剩 Stage I 粗重建时，高频细节与几何精度明显下降；说明<strong>"先粗后精"的分阶段设计是该方法的核心贡献</strong>，而非可选装饰。</p>
+    <h4>iLRM：架构 / 规模 / mini-batch</h4>
+    <ul>
+      <li><strong>逐层跨注意力</strong>（Fig.10）：去掉迭代精修 29.24→28.58；去掉分辨率解耦 →28.47；去掉 token uplifting →28.90；</li>
+      <li><strong>自注意力</strong>（表 7）：去掉后 29.24→<strong>23.33</strong>（全局依赖不可省）；换 group-attention 无增益还带回二次复杂度；</li>
+      <li><strong>模型规模</strong>（Fig.9）：12 层 185 M 29.24 &gt; 9 层 29.01 &gt; 6 层 28.68 &gt; 3 层 28.04，层数≈优化步数；</li>
+      <li><strong>mini-batch cross-attn</strong>（表 6）：Quarter 版仅掉 30.39→30.08，迭代时间 1.51→<strong>0.94 s</strong>、显存 62.5→39.0 GB、算力 3.83→0.81 GFLOPs。</li>
+    </ul>
   </div>
   <div class="card purple">
-    <h4>HumanGS：SMPL-X 绑定</h4>
-    <p>去掉顶点绑定/拉普拉斯正则后，人体高斯会"散开"、关节处出现漂浮伪影。绑定项是<strong>稀疏视图下保持人体结构</strong>的关键。</p>
+    <h4>F-RNG：四个新增模块</h4>
+    <ul>
+      <li>完整模型 32.44 → <strong>去掉 IDM 先验 31.21</strong>（降幅最大，外观无法合理分解光照 / 材质）；</li>
+      <li>去掉细粒度几何合成 31.46；去掉神经外观建模 31.72；</li>
+      <li>去掉 light-independence 正则 32.07 —— 数值掉得最少，但会出现<strong>严重 baked-in 光照</strong>（Fig.5C），即"指标看不出来、视觉上一眼假"。</li>
+    </ul>
   </div>
   <div class="card purple">
-    <h4>iLRM：viewpoint tokens</h4>
-    <p>去掉解耦的 viewpoint tokens、退回全注意力后，视角数增加会引发复杂度与显存的双重爆炸——<strong>可扩展性正是靠这个解耦换来的</strong>。</p>
+    <h4>HumanGS / DeltaSplat / InfiniSplat v2</h4>
+    <ul>
+      <li><strong>HumanGS</strong>（表 S2）：1 高斯 vs 1 tight+4 free，LPIPS 30.66→30.81（TH2.1）、0.028→0.024，四个数据集一致提升，验证 free 高斯对宽松衣物 / 头发的价值；</li>
+      <li><strong>DeltaSplat</strong>：增量式在同等推理预算下优于全量回归（+2.2%），但增量窗口有限度；</li>
+      <li><strong>InfiniSplat v2</strong>：去掉 Stage II 精修会明显损失高频细节与几何精度，说明「先粗后精」是核心贡献而非装饰。</li>
+    </ul>
   </div>
 </div>
-<p><span class="uncertain">【待核实】</span>：本节为定性归纳，具体消融数值（掉多少 dB / 掉多少成功率）需逐篇回原文消融表核对后在补。</p>
+<div class="callout tip">
+<p><strong>一个值得记的观察</strong>：F-RNG 的 light-independence 正则在指标上只值 0.37 dB，但去掉后出现 baked-in 光照 —— <strong>纯看 PSNR 的消融会漏掉这类"视觉上致命"的组件</strong>。评估前馈高斯时，定性可视化与定量指标缺一不可。</p>
+</div>
+<p><span class="uncertain">【待核实】</span>：ParticleSplat / iLRM / F-RNG 的消融数值已回原文表核对（标有表号）；DeltaSplat、InfiniSplat v2 的消融仍为定性归纳（未取到具体数值）。</p>
 </section>
 
 <section id="versus">
@@ -854,7 +908,7 @@ flowchart LR
     <td><strong>GrapeSplat</strong></td><td>2026</td><td>多视 RGB</td><td>去像素耦合高斯</td><td>渲染</td><td>通用多视</td><td>中</td><td>前馈</td><td>低</td><td>通用场景</td><td class="best">✅</td>
   </tr>
   <tr>
-    <td><strong>iLRM</strong></td><td>2025</td><td>多视 RGB + 位姿</td><td>viewpoint tokens → 高斯</td><td>渲染</td><td>RE10K/DL3DV</td><td>中</td><td>前馈（可扩展）</td><td class="best">低</td><td>近线性复杂度</td><td>—</td>
+    <td><strong>iLRM</strong></td><td>2025</td><td>多视 RGB + <strong>位姿（必需）</strong></td><td>viewpoint tokens → 高斯</td><td>MSE + 感知（λ=0.5）</td><td>RE10K + DL3DV</td><td>8×H100 · 50k 步</td><td>0.028 s（8 视图）</td><td class="best">2.01 GB（24 视图）</td><td>RE10K 31.57 / 近线性复杂度</td><td>项目页</td>
   </tr>
   <tr class="best">
     <td><strong>Tele360</strong></td><td>2026</td><td><strong>4~6 路无位姿 2K</strong></td><td>动态高斯（逐时刻）</td><td>多视一致 + VGGT 蒸馏</td><td>360° 环视</td><td>高（多卡）</td><td>35.4 ms/帧</td><td>中</td><td>&gt;25 FPS 实时</td><td>—</td>
@@ -869,10 +923,10 @@ flowchart LR
     <td><strong>SpatialAvatar-0</strong></td><td>2026</td><td>1~K 肖像</td><td>FLAME-bound 高斯 + 精修</td><td>渲染 + FLAME 绑定</td><td>肖像</td><td>中</td><td>~50 ms *</td><td>中</td><td>少样本头像</td><td>项目页</td>
   </tr>
   <tr>
-    <td><strong>ParticleSplat</strong></td><td>2026</td><td>多视 + 位姿</td><td>3D 潜在粒子 → 高斯</td><td>新视角合成</td><td>仿真 + 真实</td><td>中</td><td>前馈</td><td>中</td><td>RLBench 73.0%</td><td>—</td>
+    <td><strong>ParticleSplat</strong></td><td>2026</td><td>多视 / 单目 + <strong>GT 位姿（必需）</strong></td><td>3D 潜在粒子 → 高斯</td><td>自监督（多视图负 ELBO）</td><td>RLBench / MimicGen / 真实 / RE10K 子集</td><td>单 A6000 · 50k 步 · ≈30 h</td><td>30.91 ms（单视图）</td><td class="best">251.1 MiB（单视图）</td><td>RLBench 73.0%；NVS 28.77</td><td>代码 + 视频</td>
   </tr>
   <tr>
-    <td><strong>F-RNG</strong></td><td>2026</td><td>多视 RGB</td><td>高斯（本征解耦）</td><td>渲染 + IDM 蒸馏</td><td>多视</td><td>低（不重训 LRM）</td><td>快约 25×</td><td>中</td><td>+2.0 dB 重光照</td><td>—</td>
+    <td><strong>F-RNG</strong></td><td>2026</td><td><strong>6 稀疏视图 + 位姿</strong> + IDM G-buffer</td><td>高斯（本征解耦）</td><td>渲染 + IDM 蒸馏 + light-indep. 正则</td><td>Objaverse / TensoIR / Orb / Owl 等</td><td>低（不重训 RelitLRM）</td><td>重建 7 s；重光照 246 ms</td><td>未给（推理 L40 48 GB）</td><td>+2.0 dB；重光照 25×</td><td>未声明</td>
   </tr>
 </table>
 <p><span class="uncertain">*【待核实】</span>SpatialAvatar-0 的 ~50 ms 来自二手来源；"训练时长/显存"列标注为高/中/低为相对量级，非实测绝对值（论文多未给出统一口径）。</p>
@@ -986,17 +1040,18 @@ flowchart LR
 <h3>16.1 主要研究团队（按论文）</h3>
 <table>
   <tr><th>方法</th><th>机构 / 团队</th><th>arXiv</th><th>备注</th></tr>
-  <tr><td><strong>ParticleSplat</strong></td><td>CMU 等（Lyuxing He / Daniel Guo / Deepak Pathak / David Held / Tal Daniel）</td><td>2609.19463</td><td>物体中心</td></tr>
-  <tr><td><strong>Tele360</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2609.15032</td><td>无位姿实时</td></tr>
-  <tr><td><strong>HumanGS</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2604.10259</td><td>模板绑定</td></tr>
+  <tr><td><strong>ParticleSplat</strong></td><td>CMU Robotics Institute（Lyuxing He / Daniel Guo / Elizabeth Terveen / Deepak Pathak / David Held / Tal Daniel）</td><td>2609.19463</td><td>物体中心 · 自监督</td></tr>
+  <tr><td><strong>F-RNG</strong></td><td>南开 + 南大 + NVIDIA（Guangming Fu† / Jiahui Fan† / Jian Yang / Miloš Hašan / Beibei Wang‡）</td><td>2605.25975</td><td>可重光照</td></tr>
+  <tr><td><strong>iLRM</strong></td><td>成均馆 + 延世 + Rembrand + Meta（Gyeongjin Kang 等 7 人）</td><td>2507.23277</td><td>可扩展性</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>清华 Yebin Liu 组</td><td>2609.15032</td><td>无位姿实时</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>IIIT-H</td><td>2604.10259</td><td>模板绑定 · 开源</td></tr>
   <tr><td><strong>InfiniSplat v2</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.20341</td><td>迭代精修</td></tr>
   <tr><td><strong>DeltaSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.09853</td><td>增量重建</td></tr>
   <tr><td><strong>DensiTok</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.07958</td><td>生成先验</td></tr>
   <tr><td><strong>CompactSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.13177</td><td>NeurIPS 2026</td></tr>
   <tr><td><strong>GrapeSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2609.23182</td><td>开源</td></tr>
-  <tr><td><strong>F-RNG</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2605.25975</td><td>可重光照</td></tr>
 </table>
-<p><span class="uncertain">【待核实】</span>：机构信息未逐一回 abs 页核对，引用前请补全。</p>
+<p><span class="uncertain">【待核实】</span>：ParticleSplat / F-RNG / iLRM 三篇的机构与作者已回 arXiv abs 页（含全文首页）核对；其余各篇机构未逐一核对，引用前请补全。</p>
 
 <h3>16.2 资源链接</h3>
 <ul>
