@@ -4384,7 +4384,8 @@
    "meta": [
     "📄 综述: InfiniSplat v2 / DeltaSplat / DensiTok / CompactSplat / GrapeSplat / iLRM / Tele360 / HumanGS / VFAvatar / FFAvatar / SpatialAvatar-0 / ParticleSplat / F-RNG 等 15+ 篇(数字均回原文表核对)",
     "📅 2026 下半年(编撰 2026-10-15)",
-    "📂 Survey · 前馈式高斯重建"
+    "📂 Survey · 前馈式高斯重建",
+    "🧭 含几何基座谱系小节: VGGT / π³ / VGGT-Ω / DA3 的输出契约与本库 5 处用法"
    ],
    "tags": [
     "Feed-Forward Gaussian",
@@ -4392,9 +4393,10 @@
     "无位姿重建",
     "参数化模板绑定",
     "去像素耦合",
-    "可重光照"
+    "可重光照",
+    "几何基座模型"
    ],
-   "summary": "把「逐场景优化」压成「一次前向」的前馈式高斯重建 2026 下半年调研。三条补短板主线:<strong>①迭代精修</strong>(InfiniSplat v2 两阶段、DeltaSplat 增量残差 +2.2%)、<strong>②注入生成先验</strong>(DensiTok、VidSplat)、<strong>③去像素耦合</strong>(CompactSplat / GrapeSplat / iLRM，复杂度近似线性)。应用面三线:通用/场景、<strong>人物重建</strong>(Tele360 无位姿 35.4 ms 每帧即 &gt;25 FPS;HumanGS 用 SMPL-X 绑定高斯 + LBS,0.29 s 重建且已开源;VFAvatar 只凭随手拍照片集 10 s 出 avatar、FFAvatar 4D 头部 468 FPS、SpatialAvatar-0 FLAME-bound 高斯 ~50 ms 前馈)、<strong>物体重建与可重光照</strong>(ParticleSplat 语言条件 RLBench 成功率 73.0% vs DLP 46.6%;F-RNG 蒸馏 IDM 先验,重光照快约 25× / +2.0 dB)。含固定维度横向对比表(11 维)、演进定位表与可改进方向优先级。",
+   "summary": "把「逐场景优化」压成「一次前向」的前馈式高斯重建 2026 下半年调研。三条补短板主线:<strong>①迭代精修</strong>(InfiniSplat v2 两阶段、DeltaSplat 增量残差 +2.2%)、<strong>②注入生成先验</strong>(DensiTok、VidSplat)、<strong>③去像素耦合</strong>(CompactSplat / GrapeSplat / iLRM，复杂度近似线性)。应用面三线:通用/场景、<strong>人物重建</strong>(Tele360 无位姿 35.4 ms 每帧即 &gt;25 FPS;HumanGS 用 SMPL-X 绑定高斯 + LBS,0.29 s 重建且已开源;VFAvatar 只凭随手拍照片集 10 s 出 avatar、FFAvatar 4D 头部 468 FPS、SpatialAvatar-0 FLAME-bound 高斯 ~50 ms 前馈)、<strong>物体重建与可重光照</strong>(ParticleSplat 语言条件 RLBench 成功率 73.0% vs DLP 46.6%;F-RNG 蒸馏 IDM 先验,重光照快约 25× / +2.0 dB)。含固定维度横向对比表(11 维)、演进定位表与可改进方向优先级。 §3.4 新增<strong>几何基座谱系</strong>(VGGT → π³ → VGGT-Ω / DA3):交代前馈头站在哪一层上游,并汇总本调研内 5 处已验证的基座用法(InfiniSplat v2 冻结 DA3、DeltaSplat 用 π³ 初始化、DensiTok 插件式替换、Tele360 对 VGGT 做 Gram 蒸馏、VFAvatar 用 VGGT 作重建分支)。",
    "links": [
     {
      "href": "3D-20261015-前馈式高斯重建2026下半年调研.html",
@@ -4419,6 +4421,18 @@
     {
      "href": "https://arxiv.org/abs/2605.25975",
      "text": "📄 F-RNG"
+    },
+    {
+     "href": "https://arxiv.org/abs/2503.11651",
+     "text": "📄 VGGT"
+    },
+    {
+     "href": "https://arxiv.org/abs/2507.13347",
+     "text": "📄 π³ (Pi3)"
+    },
+    {
+     "href": "https://arxiv.org/abs/2605.15195",
+     "text": "📄 VGGT-Ω"
     }
    ],
    "file": "3D-20261015-前馈式高斯重建2026下半年调研.html",

@@ -165,6 +165,7 @@
   <tr><td><strong>物体重建</strong></td><td>ParticleSplat、F-RNG、iLRM（+ 相邻的生成式 LRM 系：TripoSG / TRELLIS.2 / Hunyuan3D 2.1）</td><td>物体级前馈重建、可重光照、以物体为中心</td></tr>
 </table>
 <p>对照基线为逐场景优化的 3DGS / 2DGS 与第一代前馈方法（pixelSplat、MVSplat、GS-LRM 等），库内对应笔记见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a> 与 <a href="3D-20241002-EVA-Gaussian.html">EVA-Gaussian</a>。</p>
+<p>需要先明确一层前置：上述方法大多<strong>不从零学几何</strong>，而是站在<strong>几何基座模型</strong>（VGGT / π³ / VGGT-Ω / DA3）之上 —— 基座负责位姿与稠密几何，前馈头只负责「翻译成高斯」。基座谱系、输出契约与它们在本报告中的具体用法（冻结 / 蒸馏 / 插件式替换）见 <strong>§3.4</strong>。</p>
 </section>
 
 <section id="motivation">
@@ -254,13 +255,100 @@ flowchart TD
     BB -. latent .-> PRIOR["② 生成先验补全"]
     REF -.-> G
     PRIOR -.-> DEC
-    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
-    style G fill:#ede9fe,stroke:#a78bfa,color:#3c3489
-    style REF fill:#dcfce7,stroke:#34d399,color:#14532d
-    style PRIOR fill:#dcfce7,stroke:#34d399,color:#14532d
-    style OUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style IN fill:#1a2029,stroke:#60a5fa,color:#e2e8f0
+    style G fill:#222b36,stroke:#a78bfa,color:#e2e8f0
+    style REF fill:#1a2029,stroke:#34d399,color:#e2e8f0
+    style PRIOR fill:#1a2029,stroke:#34d399,color:#e2e8f0
+    style OUT fill:#1a2029,stroke:#60a5fa,color:#e2e8f0
 </div>
 <p><span class="uncertain">⚠️【推测】</span>上图为三条主线的<strong>归并示意</strong>，非某一篇论文的原始框图；各方法的具体模块名与连接见第 4~6 节。</p>
+
+<h3>3.4 几何基座谱系:VGGT → π³ → VGGT-Ω / DA3</h3>
+<p>前馈高斯方法并不从零学「图像 → 几何」。它们几乎都站在一个<strong>预训练的几何基座模型</strong>（geometry foundation model，下称<strong>基座</strong>）之上：基座负责从多视图恢复<strong>相机位姿 + 稠密几何</strong>（深度 / 点图），前馈头只负责把这份几何「翻译」成高斯。因此 <strong>VGGT / π³ / VGGT-Ω / DA3 不是本报告方法的同级竞品，而是整条链路的<u>上游供给层</u></strong> —— 基座升级一次，挂在它上面的前馈方法就可能「免费」受益。这也是本报告把它单独成节、放在总体框架里的原因。</p>
+
+<div class="callout key">
+<h4>一句话定位（四个基座各自解决了什么）</h4>
+<ul>
+  <li><strong>VGGT</strong>（2025-03）把「多视图图像 → 相机 + 点图 + 深度 + 轨迹」统一进一次前向，把「几何基座」做成了事实标准；</li>
+  <li><strong>π³</strong>（2025-07）是对 VGGT 的<strong>减法改进</strong>：删掉 camera token 与帧索引位置编码，让架构本身排列等变（去掉顺序归纳偏置），速度与位姿精度双升；</li>
+  <li><strong>VGGT-Ω</strong>（2026-05）是对 VGGT 的<strong>规模化升级</strong>：register 注意力压缩帧间二次复杂度 + 4M 监督 / 18M 自监督，首次验证前馈 3D 重建的 <strong>Scaling Law</strong>，并把训练显存压到原版 ~30%；</li>
+  <li><strong>DA3</strong>（Depth Anything 3）是同期<strong>另一支头部路线</strong>：单目 RGB → 深度 / 相机，附 Gaussian head；在 Ω 出现前是几何轨道的次优参照。</li>
+</ul>
+</div>
+
+<h4>谱系与输出契约对比</h4>
+<table>
+  <tr><th>基座</th><th>机构 / 时间</th><th>Backbone 与核心机制</th><th>输出契约</th><th>关键指标</th><th>开源</th></tr>
+  <tr>
+    <td><strong>VGGT</strong><br><span class="uncertain">arXiv:2503.11651</span><br>CVPR 2025 Best Paper</td>
+    <td>Meta FAIR / Oxford VGG<br>2025-03</td>
+    <td>DINOv2 ViT-L <strong>冻结</strong> + 交替注意力（frame-wise / global）+ Plücker 坐标 + camera token；24 层 / hidden 1024 / 16 头 / patch 16</td>
+    <td>相机参数（R,t,f）+ 点图 + 深度 + 3D 点轨迹；<strong>不直接出高斯</strong></td>
+    <td>数百张图像 <strong>&lt;1 s</strong>（43.2 FPS）；相机 / 深度 / 点云 / 追踪多基准 SOTA</td>
+    <td>✅ 全部<br><code>facebookresearch/vggt</code></td>
+  </tr>
+  <tr>
+    <td><strong>π³（Pi3）</strong><br><span class="uncertain">arXiv:2507.13347</span></td>
+    <td>上海交大 + 上海 AI Lab + 浙大 + 中科大 + 复旦<br>2025-07</td>
+    <td>同款 DINOv2 ViT-L + 交替注意力，但<strong>移除 camera token 与帧索引位置编码</strong> → 架构级完全排列等变（非后处理保证）</td>
+    <td>仿射不变位姿 $T_i$ + <strong>自身相机系下的局部点图</strong> $X_i$ + 置信度 $C_i$；后处理用 ROE solver 解全局尺度</td>
+    <td>Sintel ATE <strong>0.074</strong>（VGGT 0.167，↓55.7%）；Sintel 深度 AbsRel 0.233（↓22.1%）；<strong>57.4 FPS</strong>（相对 VGGT ↑33%）</td>
+    <td>✅ 全部<br><code>yyfz/Pi3</code></td>
+  </tr>
+  <tr>
+    <td><strong>VGGT-Ω</strong><br><span class="uncertain">arXiv:2605.15195</span><br>CVPR 2026 Oral / Best Paper Finalist</td>
+    <td>Oxford VGG + Meta AI<br>2026-05</td>
+    <td>DINOv3 patch16 + <strong>register attention</strong>（每帧 1 camera token + 16 register；25% 的 global 层改为 register 内自注意力）+ 单 dense head；只预测 depth + camera，<strong>单次预测无迭代</strong></td>
+    <td>深度 + 置信度 + 相机参数；额外支持<strong>动态场景</strong></td>
+    <td>Sintel AUC@3° <strong>40.0</strong>（此前最佳 MegaSaM 22.5，<strong>+77%</strong>）；ETH3D 56.3；<strong>训练显存压至 VGGT 的 ~30%</strong></td>
+    <td>✅ 部分<br>仅 1B <code>facebookresearch/vggt-omega</code>，10B 未开源</td>
+  </tr>
+  <tr>
+    <td><strong>DA3</strong><br>（Depth Anything 3）<br><span class="uncertain">【待核实】arXiv 编号</span></td>
+    <td>ByteDance-Seed<br>2025/26</td>
+    <td>MLP over patch latents 解码 + 大规模混合监督；单目 RGB 输入</td>
+    <td>深度 + 相机（另有 <strong>Gaussian head</strong> 可产出高斯）</td>
+    <td>213 ms @630×840（单 A100，FP16）；9 基准 zero-shot <strong>边界 F1 仅 6.61</strong>（局部 / 边界明细显著弱于全局指标）</td>
+    <td>✅（仓库名库内未记录）</td>
+  </tr>
+</table>
+
+<h4>谱系排序的硬证据:位姿 AUC@3° / @30°（VGGT-Ω 论文 Table 1，↑ 越高越好）</h4>
+<table>
+  <tr><th>方法</th><th>7Scenes@3°</th><th>ETH3D@3°</th><th>Sintel@3°</th><th>Sintel@30°</th><th>ETH3D@30°</th></tr>
+  <tr><td>MonST3R</td><td>9.0</td><td>1.7</td><td>4.3</td><td>45.8</td><td>14.3</td></tr>
+  <tr><td>MegaSaM</td><td>10.6</td><td>5.9</td><td>22.5</td><td>58.3</td><td>38.1</td></tr>
+  <tr><td>VGGT（原版）</td><td>10.9</td><td>18.8</td><td>15.0</td><td>50.0</td><td>62.1</td></tr>
+  <tr><td>π³（Pi3）</td><td>13.3</td><td>35.3</td><td>14.8</td><td>53.5</td><td>79.6</td></tr>
+  <tr><td>DA3</td><td>18.7</td><td>46.1</td><td>16.2</td><td>52.7</td><td>87.0</td></tr>
+  <tr><td>VGGT-Ω-1B</td><td>29.6</td><td>49.8</td><td>35.3</td><td>73.0</td><td>88.5</td></tr>
+  <tr class="best"><td><strong>VGGT-Ω-10B</strong></td><td><strong>36.4</strong></td><td><strong>56.3</strong></td><td><strong>40.0</strong></td><td><strong>79.1</strong></td><td><strong>90.4</strong></td></tr>
+</table>
+<p>这张表同时给出<strong>谱系坐标</strong>：静态 ETH3D@3° 沿 VGGT 18.8 → π³ 35.3 → Ω 56.3 逐代抬升，DA3（46.1）插在 π³ 与 Ω 之间 —— 即库内 Pareto 调研所称的「几何轨道前馈三连：VGGT → π³ → VGGT-Ω」。而 Ω 相对前代的增益主要来自<strong>规模而非架构技巧</strong>：模型 0.2B→10B、数据 2K→2M 序列，3D point error 单调下降 <strong>0.275 → 0.073</strong>（power-law），这是目前前馈 3D 重建领域唯一被点名的 Scaling Law 证据。消融也印证「免费午餐」成立：替换 25% 的 global 层为 register 注意力<strong>无可测精度损失，却省 ~23% FLOPs 与 16% backbone 显存</strong>；再叠加 10% 步数的自监督反而让 point error 从 0.071 降到 <strong>0.070</strong>。</p>
+
+<h4>本调研的方法，分别站在哪个基座上</h4>
+<p>下表把本报告第 4~6 节已交代清楚的「基座依赖」关系汇总成索引。三种典型用法 —— <strong>① 冻结当编码器 / 初始化</strong>、<strong>② 冻结当蒸馏教师</strong>、<strong>③ 插件式可替换 backbone</strong> —— 共同说明基座是<strong>可插拔的上游</strong>，而不是被一起重训的组件。</p>
+<table>
+  <tr><th>本调研方法</th><th>所用基座</th><th>用法</th><th>出处</th></tr>
+  <tr><td><strong>InfiniSplat v2</strong></td><td>DA3 NESTED-GIANT-LARGE-1.1</td><td>几何分支 $\Phi_{\mathrm{geo}}$ <strong>冻结</strong>，由该基座初始化，自带 depth head + camera head</td><td>§4.1 模块表</td></tr>
+  <tr><td><strong>DeltaSplat</strong></td><td>π³</td><td>其挂载的后置优化器 YoNoSplat <strong>由 π³ 预训练初始化</strong></td><td>§4.2</td></tr>
+  <tr><td><strong>DensiTok</strong></td><td>AnySplat / WorldMirror / <strong>Depth Anything 3</strong></td><td>插件式插入，backbone 与重建头<strong>全程冻结</strong>，仅中间补插件可训</td><td>§4.3</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>VGGT（冻结）</td><td>Teacher-Student <strong>Gram 矩阵蒸馏</strong>：不对齐特征本身，而对齐 patch 间相似性结构</td><td>§5.1（损失权重 $\lambda_{\mathrm{Gram}}\!=\!0.1$）</td></tr>
+  <tr><td><strong>VFAvatar</strong></td><td>VGGT</td><td>双分支互增强中的<strong>重建分支</strong>（另一支用 LHM 生成先验）</td><td>§5.3</td></tr>
+</table>
+
+<div class="callout">
+<h4>为什么值得单独一节:基座是唯一「可跨任务替换」的先验</h4>
+<p>本报告第 7 节的共性观察与此处呼应：<strong>场景线</strong>用几何基座（VGGT / DA3）做位姿与几何蒸馏，<strong>人物线</strong>用参数化模板（SMPL-X / FLAME）做绑定，<strong>物体线</strong>用本征分解（IDM）做材质解耦。三条线里只有<strong>几何基座可以跨任务替换、且升级后下游「免费」受益</strong>。所以第 14 节把「把几何基座当作可替换先验，让前馈头随基座升级而受益」列为改进优先级之一（F-RNG 已示范「不重训基座」的思路）。据此，本方向的方法演进应当理解为<strong>「换更好的基座」+「补更好的头」两条腿并行</strong>，而非只卷解码器。</p>
+</div>
+
+<div class="callout warn">
+<h4>引用边界（避免过度推断）</h4>
+<p><span class="uncertain">⚠️【待核实】</span><strong>DA3 在库内没有专篇笔记</strong>：其 arXiv 编号、会议、作者、参数量、推理显存均<strong>库内未记录</strong>，上表 DA3 一行全部来自其它笔记的旁引（横向对比表 / 工程实现描述），引用时请勿当作一手数字。<br>
+另，<strong>库内 VGGT 与 π³ 的专篇笔记并未点名 Tele360 / VidSplat / ReSplat / AnySplat / NoPoSplat 把它们当 backbone 或蒸馏来源</strong>——上表「所用基座」一列只收录<strong>本报告正文已逐条核实</strong>的关系（以本报告 §4~§5 的模块表与损失表为准），不做外推。</p>
+</div>
+
+<p><strong>库内专篇索引</strong>：完整的架构拆解、训练策略、消融与衍生工作见 <a href="3D-20250314-VGGT.html">VGGT</a>、<a href="3D-20250717-Pi3.html">π³（Pi3）</a>、<a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> 三篇笔记；横向质量 - 速度定位见 <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">三维重建质量速度 Pareto 全谱调研</a>。</p>
 </section>
 
 <section id="scene">
@@ -316,9 +404,9 @@ flowchart LR
     REF --> RAST["渲染 → 残差/梯度"]
     RAST --> REF
     REF --> FIN["最终高斯 G*"]
-    style GEO fill:#e0e7ff,stroke:#6366f1,color:#312e81
-    style REF fill:#dcfce7,stroke:#34d399,color:#14532d
-    style FIN fill:#ede9fe,stroke:#a78bfa,color:#3c3489
+    style GEO fill:#222b36,stroke:#6366f1,color:#e2e8f0
+    style REF fill:#1a2029,stroke:#34d399,color:#e2e8f0
+    style FIN fill:#222b36,stroke:#a78bfa,color:#e2e8f0
 </div>
 
 <h4>⑤ 监督信号</h4>
@@ -469,9 +557,9 @@ flowchart TD
     BA --> POS["高斯位置点图"]
     POS --> RAST["光栅化 / 编码流式传输"]
     VGGT["冻结 VGGT（教师）"] -. Gram 蒸馏 .-> BB
-    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
-    style BA fill:#dcfce7,stroke:#34d399,color:#14532d
-    style RAST fill:#ede9fe,stroke:#a78bfa,color:#3c3489
+    style IN fill:#1a2029,stroke:#60a5fa,color:#e2e8f0
+    style BA fill:#1a2029,stroke:#34d399,color:#e2e8f0
+    style RAST fill:#222b36,stroke:#a78bfa,color:#e2e8f0
 </div>
 
 <h4>⑤ 监督信号(总损失)</h4>
@@ -538,9 +626,9 @@ flowchart LR
     DEC --> G["每顶点 5 高斯<br/>1 tight + 4 free"]
     G --> LBS["LBS 变换 (显式)"]
     LBS --> RAST["光栅化 / 动画"]
-    style IM fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
-    style G fill:#ede9fe,stroke:#a78bfa,color:#3c3489
-    style LBS fill:#dcfce7,stroke:#34d399,color:#14532d
+    style IM fill:#1a2029,stroke:#60a5fa,color:#e2e8f0
+    style G fill:#222b36,stroke:#a78bfa,color:#e2e8f0
+    style LBS fill:#1a2029,stroke:#34d399,color:#e2e8f0
 </div>
 
 <h4>⑤ 监督信号</h4>
@@ -781,7 +869,7 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
 <h3>8.1 训练流程（离线、一次性）</h3>
 <div class="mermaid">
 flowchart TB
-  A["大规模多视角数据集<br/>RE10K / DL3DV / Objaverse…"] --> B["几何基座编码<br/>VGGT / DA3 / π³ 或自训 ViT"]
+  A["大规模多视角数据集<br/>RE10K / DL3DV / Objaverse…"] --> B["几何基座编码<br/>VGGT / π³ / VGGT-Ω / DA3 或自训 ViT"]
   B --> C["跨视图注意力<br/>（迭代精修 or 单向回归）"]
   C --> D["高斯头回归<br/>位置 μ / 尺度 s / 旋转 q / 不透明度 α / 球谐 SH"]
   D --> E["可微光栅化<br/>与 GT 视图比对"]
