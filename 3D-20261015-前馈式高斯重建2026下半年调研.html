@@ -563,35 +563,42 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
 <h3>5.3 少样本 / 单图头像</h3>
 <div class="grid grid-2">
   <div class="card key">
-    <h4>VFAvatar（SIGGRAPH 2026 · 清华大学 Jia Jia 组 · ✅ 开源）</h4>
-    <p>从<strong>日常随手拍照片集</strong>（如 OOTD）重建 3D avatar，不假设全身对齐、也不预跑位姿估计。</p>
+    <h4>VFAvatar（SIGGRAPH 2026 · 清华 Shuo Huang 等 · ✅ 开源）</h4>
+    <p>从<strong>日常随手拍照片集</strong>（任意姿态/视角/尺度/构图，含遮挡）重建 3D avatar，不要求全身图、也不预跑位姿估计；推理时每 subject 随机取 8 张。</p>
     <ul>
-      <li>耦合「无位姿重建基础模型」与「预训练人体生成先验」，二者互促；</li>
-      <li><strong>可见性感知、视角注意</strong>的残差聚合机制，把不同照片里的部分观测拼成一个连贯 avatar；</li>
-      <li>推理 &lt;10 s，支持形状与姿态操控；在 OOD 的 PuzzleIOI 基准上验证泛化。</li>
+      <li><strong>双分支互增强</strong>：重建分支用 <strong>VGGT</strong>（无位姿重建基座），生成分支用 <strong>LHM</strong>（人体生成先验），用<strong>零初始化适配器</strong> $\varphi$（1×1 卷积初始化为 0）把跨视图线索注入 LHM 的 image token；</li>
+      <li><strong>VRA（View-Attentive Residual Aggregation）</strong>：由 canonical point map 提供可见性感知 key，把 N 条视图条件路径坍缩成单一规范点流；</li>
+      <li>点 token 数 $K$=20,000，LHM 模块仅 $B$=2 个 transformer block；两阶段训练（先绕过 VRA 让 point map 收敛，再联合微调）；</li>
+      <li>OOD 基准 PuzzleIOI（表 2）：P2S <strong>1.335</strong> / PSNR <strong>25.168</strong> / LPIPS 0.079，推理 <strong>10 s</strong>（对比 Up2You 2.309/24.670/90 s、PuzzleAvatar 1.918/23.610/6 h）；</li>
+      <li>消融（表 3）：去掉互增强（Indep PMap 25.173 / Indep Feat 24.782）或替换 VRA 均掉点，两块都承重。</li>
     </ul>
-    <p>代码：<a href="https://github.com/huangshuo200823/VFAvatar" target="_blank">github.com/huangshuo200823/VFAvatar</a></p>
+    <p>代码：<a href="https://github.com/huangshuo200823/VFAvatar" target="_blank">github.com/huangshuo200823/VFAvatar</a>（SIGGRAPH '26，DOI 10.1145/3799902.3811171）</p>
   </div>
   <div class="card key">
-    <h4>FFAvatar（ECCV 2026 · arXiv:2606.30347）</h4>
+    <h4>FFAvatar（ECCV 2026 · 华科 HUST · arXiv:2606.30347）</h4>
     <p>从 1~N 张肖像构建<strong>可动画 4D 头部</strong> avatar，支持<strong>增量重建</strong>（新照片到来时渐进精修）。</p>
     <ul>
-      <li>交替注意力机制<strong>解耦身份外观</strong>与表情/视角变化，得到跨姿态表情一致的 canonical 外观；</li>
-      <li>sparse-to-dense：先在 <strong>FLAME 顶点级</strong>稀疏基元学粗外观，再在 <strong>UV 域</strong>稠密化捕捉细节；</li>
-      <li>即插即用的 motion refinement 模块，建模参数化形变之外的残差运动。</li>
+      <li>冻结 <strong>DINOv3</strong> 提特征 → <strong>AlterAtt</strong>（交替 intra/inter-image 注意力）解耦身份外观与表情/视角；</li>
+      <li>sparse-to-dense：FLAME 顶点级稀疏高斯 → UV 域重心坐标插值稠密化，共 $M$+5023 个高斯；</li>
+      <li><strong>MARM</strong> 运动感知精修头，补偿 FLAME 之外的残差运动；</li>
+      <li>损失（附录 A.3）：$\mathcal{L}=\mathcal{L}_{rgb}+\lambda_{mask}\mathcal{L}_{mask}+\lambda_{off}\mathcal{L}_{off}$，$\lambda_{lpips}$=1.0、$\lambda_{off}$=0.1，$\lambda_{mask}(t)$ 从 0→1.0（$\alpha$=0.5、$T$=10,000）；</li>
+      <li>训练：VFHQ 15,204 段、Adam 4e-5、300K 迭代、<strong>单张 A800</strong>；</li>
+      <li>VFHQ few-shot PSNR <strong>23.35</strong> / LPIPS 0.081、创建 2.1 s；<strong>Ours(fast) 达 468 FPS</strong>；输入帧 1→8 增益最大（+1.53 dB）。</li>
     </ul>
-    <p>⚠️ 注意<strong>同名论文</strong>：另有 arXiv:2605.15320「FFAvatar: Few-Shot, Feed-Forward, and Generalizable Avatar Reconstruction」（NTU），引用时按 ID 区分。</p>
+    <p>项目页：<code>jj-yao.github.io/ffavatar/</code>（正文未声明开源）。⚠️ 注意<strong>同名论文</strong>：另有 arXiv:2605.15320「FFAvatar: Few-Shot, Feed-Forward, and Generalizable Avatar Reconstruction」（NTU），引用时按 ID 区分。</p>
   </div>
   <div class="card purple">
-    <h4>SpatialAvatar-0（arXiv:2606.15659）</h4>
+    <h4>SpatialAvatar-0（arXiv:2606.15659 · ZJU / USYD / SpatialReal / La Trobe）</h4>
     <p>统一「通用前馈生成器」与「逐主体精修」两套范式，共享同一个 <strong>FLAME-mesh-bound 高斯</strong>表示。</p>
     <ul>
-      <li>表示：FLAME UV 网格（256×256）每有效像素 1 个高斯（约 58K/identity），刚性绑定到父三角面；</li>
-      <li>前馈生成器用无参 K-source mean-pool；两阶段 schedule（单目-时序 → 多视图-空间）防身份先验坍缩；用冻结 DINOv3 ViT-B/16 + DPT head；</li>
-      <li><strong>10K 步保布局精修</strong>：冻结 FLAME 绑定与高斯数量，用三段 anti-spike 正则替代自适应稠密化；</li>
-      <li>原文结果：VFHQ/HDTF 跨域零样本超 GAGAvatar <strong>+1.5 dB</strong>；单目基准超 300K 步 GeoAvatar <strong>+1.3 dB</strong>、精修 schedule 缩短至约 1/60。</li>
+      <li>表示：FLAME UV 网格 <strong>×256</strong> 每有效像素 1 个高斯（<strong>约 58K / identity</strong>），刚性绑定到父三角面，按有效 UV 像素索引以<strong>消除 split/clone densification</strong>；</li>
+      <li>前馈：冻结 <strong>DINOv3 ViT-B/16</strong> + 可训练 DPT head → 重心坐标 warp 到 UV → <strong>StyleUNet UV 生成器</strong>（32 通道）+ 27 维视角谐波编码拼接 → 五路并行解码头；K&gt;1 时用<strong>无参 mean-pool</strong> 聚合；</li>
+      <li>FiLM 调制残差头（112 维条件：表情/位姿/眼码，<strong>有意排除 shape $\beta$</strong>），FiLM 与残差层零初始化；</li>
+      <li><strong>10K 步保布局精修</strong>：冻结绑定与高斯数量，用三段 anti-spike 正则替代 densification；</li>
+      <li>VFHQ/HDTF 零样本超 GAGAvatar 约 <strong>+1.5 dB</strong>；逐主体单目 PSNR <strong>33.960</strong>（超 300K 步 GeoAvatar +1.3 dB，迭代预算短 30×）；单张 3090 前馈生成约 <strong>50 ms</strong>、逐主体精修 ~2.0 min / 265.6 FPS；</li>
+      <li>训练：Phase 1 CelebV-HQ 200K 步 + Phase 2 NeRSemble v2（L2-SP anchor $\lambda$=1e-3、25% cross-time mix），<strong>单张 H100 NVL 训练 14 天</strong>。</li>
     </ul>
-    <p><span class="uncertain">【待核实】</span>33.96 dB PSNR、50 ms 生成、265.6 FPS @512²/RTX 3090 等数字来自二手综述页，未逐表核对。</p>
+    <p>消融（表 5）最有信息量：Phase 1 单用 24.84 dB → 加 Phase 2 <strong>掉到 22.73（灾难性遗忘）</strong> → 加 anchor+mix 回 24.94 → 再加逐主体精修跃至 <strong>29.95（+5.01）</strong>。许可 CC BY-NC-SA 4.0，代码未明确放出。</p>
   </div>
   <div class="card purple">
     <h4>FiCA（arXiv:2606.24232 · Meta）</h4>
@@ -608,14 +615,14 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
 <h3>5.4 人物线小结</h3>
 <table>
   <tr><th>方法</th><th>输入</th><th>人体先验</th><th>表示 / 动画</th><th>推理</th><th>开源</th></tr>
-  <tr><td><strong>Tele360</strong></td><td>4~6 路无位姿 RGB（2K）</td><td>无模板（VGGT 蒸馏）</td><td>动态高斯（逐时刻）</td><td class="best">35.4 ms / 帧</td><td>—</td></tr>
-  <tr><td><strong>HumanGS</strong></td><td>稀疏多视图 + SMPL-X</td><td>SMPL-X</td><td>顶点绑定 canonical 高斯 + LBS</td><td class="best">0.29 s 重建</td><td>✅</td></tr>
-  <tr><td><strong>VFAvatar</strong></td><td>日常照片集</td><td>生成先验</td><td>可操控高斯 avatar</td><td>&lt;10 s</td><td>✅</td></tr>
-  <tr><td><strong>FFAvatar</strong></td><td>1~N 肖像</td><td>FLAME</td><td>可动画 4D 头部</td><td>秒级</td><td>—</td></tr>
-  <tr><td><strong>SpatialAvatar-0</strong></td><td>1~K 肖像</td><td>FLAME</td><td>FLAME-bound 高斯 + 精修</td><td>~50 ms<span class="uncertain">*</span></td><td>项目页</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>4~6 路无位姿 2K RGB</td><td>无模板（VGGT 蒸馏 + 可微 BA）</td><td>2K→1K 像素对齐高斯</td><td class="best">~35 ms / 帧</td><td>—</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>稀疏多视 + SMPL-X</td><td>SMPL-X（每顶点 K=5）</td><td>顶点绑定 canonical 高斯 + LBS</td><td class="best">0.29 s 重建 / 0.048 s 合成</td><td>✅</td></tr>
+  <tr><td><strong>VFAvatar</strong></td><td>日常照片集（推理取 8 张）</td><td>VGGT + LHM 互增强</td><td>可操控高斯 avatar</td><td>10 s</td><td>✅</td></tr>
+  <tr><td><strong>FFAvatar</strong></td><td>1~N 肖像</td><td>FLAME + DINOv3</td><td>UV 稠密高斯 + MARM 精修</td><td>2.1 s / <strong>468 FPS</strong>（fast）</td><td>项目页</td></tr>
+  <tr><td><strong>SpatialAvatar-0</strong></td><td>1~K 肖像</td><td>FLAME-bound</td><td>FLAME-bound 高斯 + 10K 步精修</td><td>~50 ms（RTX 3090）</td><td>项目页</td></tr>
   <tr><td><strong>FiCA</strong></td><td>单张肖像</td><td>人体基座 + 扩散</td><td>Gaussian Codec Avatar</td><td>即时</td><td>—</td></tr>
 </table>
-<p><span class="uncertain">*【待核实】</span>：SpatialAvatar-0 的 50 ms 来自二手来源。<strong>共性观察</strong>：人物线几乎全部收敛到「参数化模板（SMPL-X/FLAME）绑定高斯 + 前馈预测 + 显式 LBS 动画」这一组合；差异主要在<strong>是否用大预训练先验</strong>（Tele360/HumanGS 走"小而专"，VFAvatar/FiCA/SpatialAvatar-0 走"大先验 + 精修"）。</p>
+<p><strong>共性观察</strong>：人物线几乎全部收敛到「参数化模板（SMPL-X/FLAME）绑定高斯 + 前馈预测 + 显式 LBS 动画」这一组合；差异主要在<strong>是否用大预训练先验</strong>（Tele360/HumanGS 走"小而专"，VFAvatar / FiCA / SpatialAvatar-0 走"大先验 + 精修"）。另一个分野是<strong>输入自由度</strong>：Tele360 要 4~6 路同步相机但免位姿；VFAvatar 只要随手拍但要 8 张；FFAvatar / SpatialAvatar-0 能到单图，代价是收窄到头部/需逐主体精修。</p>
 </section>
 
 <section id="object">
@@ -727,13 +734,23 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
   </tr>
   <tr>
     <td><strong>Tele360</strong></td>
-    <td>多视一致 / 光流</td><td>感知</td><td><strong>位姿蒸馏（VGGT）</strong></td>
-    <td>式 2 / 4 / 9 / 16；无位姿输入靠蒸馏约束几何</td>
+    <td>渲染（$\lambda_{render}$=1.0）</td><td>VGG-19 感知 + SSIM</td><td>几何 / 相机 / Gram / BA / GFC</td>
+    <td>$\lambda_{geo}$=2.0、$\lambda_{cam}$=<strong>20.0</strong>、$\lambda_{BA}$=1.0、$\lambda_{GFC}$=0.01、$\lambda_{Gram}$=0.1（式 21）</td>
   </tr>
   <tr>
     <td><strong>HumanGS</strong></td>
-    <td>渲染 L1</td><td>LPIPS</td><td><strong>SMPL-X 顶点绑定</strong> + 拉普拉斯平滑</td>
-    <td>式 4–5 / 6–7；绑定项把高斯锁在人身上</td>
+    <td>MSE 重建 + 感知（$\lambda_{perc}$=1.0）</td><td>VGG-19 特征 L1</td><td>紧致正则（<strong>仅约束 tight 高斯</strong>）</td>
+    <td>$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg}$，$\lambda_{reg}$=0.1（式 9–10）</td>
+  </tr>
+  <tr>
+    <td><strong>VFAvatar</strong></td>
+    <td>posed 空间 L1 + LPIPS + mask 一致</td><td>LPIPS</td><td>ASAP 各向同性 + ACAP 锚定 + surface + cano</td>
+    <td>$\lambda_{photo}$=1.0、$\lambda_{mask}$=0.5、$\lambda_{ASAP}$=<strong>50.0</strong>、$\lambda_{ACAP}$=10.0、$\lambda_{surface}$=10.0、$\lambda_{cano}$=1.0；$\tau_{ASAP}$=0.0625、$\tau_{ACAP}$=5.0</td>
+  </tr>
+  <tr>
+    <td><strong>SpatialAvatar-0</strong></td>
+    <td>L1 + MS-SSIM + LPIPS</td><td>LPIPS</td><td>面区 L1 + UV 域 TV + Jacobian 惩罚 + 反尖刺 $\mathcal{L}_{aspect}$</td>
+    <td>结构见式 2；<span class="uncertain">具体 $\lambda$ 数值未获取</span>（App. A.2），已知 L2-SP anchor $\lambda$=1e-3</td>
   </tr>
   <tr>
     <td><strong>iLRM</strong></td>
@@ -754,7 +771,7 @@ $$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{
 <div class="callout key">
 <p><strong>共性观察</strong>：几乎所有方法都保留「渲染损失 + 感知损失」这一对，真正的区分度在第三条。可以用一句话概括三类先验的差别：<strong>场景线</strong>用几何基座（VGGT/DA3）做位姿与几何蒸馏；<strong>人物线</strong>用参数化模板（SMPL-X/FLAME）做绑定；<strong>物体线</strong>用本征分解（IDM）做材质解耦。</p>
 </div>
-<p><span class="uncertain">【待核实】</span>：上表为跨方法归纳，各项权重系数随论文超参不同，未逐篇列出精确数值；引用具体系数时请回原文表格核对。</p>
+<p>上表中 Tele360 / HumanGS / VFAvatar / iLRM / ParticleSplat / F-RNG 的权重数值已回原文核对（标有式号）。<span class="uncertain">【待核实】</span>SpatialAvatar-0 的 $\lambda$ 数值、F-RNG 的 $\lambda_c,\lambda_{KLD}$ 仍在补充材料中，未取到。<strong>跨论文直接比权重没有意义</strong>——各家的损失项定义与量纲不同（VFAvatar 的 $\lambda_{ASAP}$=50 是阈值型正则，不能与 Tele360 的 $\lambda_{cam}$=20 类比）。</p>
 </section>
 
 <section id="flowchart">
@@ -801,9 +818,10 @@ flowchart LR
   <tr><td><strong>InfiniSplat v2</strong></td><td>大规模多视数据，两阶段训练</td><td>前馈，实时级</td><td>—</td><td>难以复现（数据未开源）</td></tr>
   <tr><td><strong>DeltaSplat</strong></td><td>视频序列增量训练</td><td>增量前向，省算力</td><td>—</td><td>中</td></tr>
   <tr><td><strong>DensiTok</strong></td><td>tokenizer 预训练 + 下游生成</td><td>插件式，接生成模型</td><td>—</td><td>中（作为组件用）</td></tr>
-  <tr><td><strong>Tele360</strong></td><td>2K 多视 + VGGT 蒸馏</td><td class="best">35.4 ms/帧（&gt;25 FPS）</td><td>—</td><td>高（无位姿 4~6 路输入）</td></tr>
-  <tr><td><strong>HumanGS</strong></td><td>SMPL-X 标注多视</td><td class="best">0.29 s 重建</td><td>✅ 开源</td><td>中（需 SMPL-X 权限）</td></tr>
-  <tr><td><strong>VFAvatar</strong></td><td>照片集 + 生成先验</td><td>&lt;10 s</td><td>✅ 开源</td><td>低（日常照片即可）</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>DNA-Rendering（3,126 scans + ~1,000 多视视频）· 8×A100 · 300K 步</td><td class="best">~35 ms/帧 · ~20 GB</td><td>未声明</td><td>高（需 4~6 路 2K 同步相机）</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>THuman2.1 10K 帧 · 单 RTX 6000 · ~32 h</td><td class="best">0.29 s 重建 / 0.048 s 合成</td><td>✅ 开源</td><td>中（需 SMPL-X 权限）</td></tr>
+  <tr><td><strong>VFAvatar</strong></td><td>多源（MVHumanNet / Huge100k / THuman2.0 / 4D-Dress）· 训练算力未给</td><td>10 s</td><td>✅ 开源</td><td>低（日常照片即可，推理取 8 张）</td></tr>
+  <tr><td><strong>SpatialAvatar-0</strong></td><td>CelebV-HQ + NeRSemble v2 · 单 H100 NVL · <strong>14 天</strong></td><td class="best">~50 ms 前馈 / 2.0 min 精修</td><td>项目页（CC BY-NC-SA）</td><td>中高（训练 14 天 + 逐主体精修）</td></tr>
   <tr><td><strong>GrapeSplat</strong></td><td>通用多视</td><td>前馈</td><td>✅ 开源</td><td>低</td></tr>
 </table>
 
@@ -831,7 +849,21 @@ flowchart LR
   <tr><td><strong>GrapeSplat</strong></td><td>通用 / DTU</td><td>通用场景前馈重建</td><td>像素耦合基线</td><td>开源</td></tr>
 </table>
 
-<h3>10.2 物体 / 可重光照线</h3>
+<h3>10.2 人物线</h3>
+<table>
+  <tr><th>方法</th><th>数据集 / 协议</th><th>关键指标</th><th>对照</th><th>说明</th></tr>
+  <tr class="best"><td><strong>Tele360</strong></td><td>DNA-Rendering NVS（表 1）</td><td>PSNR <strong>32.15</strong> / SSIM 0.9689 / LPIPS 0.0286；~35 ms</td><td>NeuS2 30.61；GHG 26.27（~150 ms）</td><td>免位姿；位姿 AUC@5 <strong>69.31</strong> &gt; VGGT 63.82</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>ActorsHQ（表 3）</td><td>PSNR <strong>30.72</strong> / LPIPS 0.0346</td><td>DoubleField 28.18；GPS-Gaussian 23.62</td><td>跨数据集泛化</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>TH2.1→AvRex 动画（表 1）</td><td>PSNR <strong>25.24</strong> / SSIM 0.96 / LPIPS 0.04</td><td>HumanRAM 24.58；Animat. Gaussians 25.51（建模 12,000 s）</td><td>建模 <strong>0.29 s</strong>，比 LHM 快 &gt;15×</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>稀疏鲁棒（表 S1，1/2/4/6 视图）</td><td>PSNR <strong>24.07 / 25.71 / 27.19 / 27.84</strong></td><td>HumanRAM 25.44 / 27.39 / 29.10 / 29.90</td><td>稀疏下不崩，但绝对值不占优</td></tr>
+  <tr class="best"><td><strong>VFAvatar</strong></td><td>PuzzleIOI（OOD，表 2）</td><td>P2S <strong>1.335</strong> / PSNR 25.168 / LPIPS 0.079</td><td>Up2You 2.309（90 s）；PuzzleAvatar 1.918（<strong>6 h</strong>）</td><td>推理 <strong>10 s</strong></td></tr>
+  <tr><td><strong>FFAvatar</strong></td><td>VFHQ few-shot（表 1）</td><td>PSNR <strong>23.35</strong> / SSIM 0.864 / LPIPS 0.081；CSIM 0.861</td><td>GPAvatar 22.91；LAM 22.65</td><td>Ours(fast) <strong>468 FPS</strong></td></tr>
+  <tr><td><strong>SpatialAvatar-0</strong></td><td>VFHQ / HDTF 零样本（表 1/2）</td><td>PSNR <strong>23.34</strong> / <strong>24.67</strong></td><td>GAGAvatar 21.83 / 23.13</td><td>约 +1.5 dB</td></tr>
+  <tr><td><strong>SpatialAvatar-0</strong></td><td>SplattingAvatar 逐主体（表 4）</td><td>PSNR <strong>33.960</strong> / SSIM 0.971</td><td>GeoAvatar 32.635；GAGAv* 23.541</td><td>10K 步 vs GeoAvatar 300K 步</td></tr>
+</table>
+<p><strong>读表提示</strong>：三套"最强"数字并不在同一数据集上 —— Tele360 是 DNA-Rendering 多人环视，VFAvatar 是 OOD 的 PuzzleIOI，SpatialAvatar-0 是 VFHQ/HDTF 零样本，<strong>不可横向比大小</strong>。另外如实列出一点：HumanGS 在 1/2 稀疏视图下其实<strong>低于</strong> HumanRAM（24.07 vs 25.44）—— 它的卖点是"不崩 + 0.29 s 快"，不是绝对指标最优。</p>
+
+<h3>10.3 物体 / 可重光照线</h3>
 <table>
   <tr><th>方法</th><th>任务</th><th>关键指标</th><th>对照</th><th>说明</th></tr>
   <tr class="best"><td><strong>ParticleSplat</strong></td><td>RLBench 模仿学习（单视图，表 2）</td><td>成功率 <strong>73.0%</strong></td><td>DLP 46.6% / GNFactor 31.7%</td><td>3D 潜在粒子空间带来的提升</td></tr>
@@ -840,7 +872,7 @@ flowchart LR
   <tr class="best"><td><strong>F-RNG</strong></td><td>可重光照（Objaverse，表 1）</td><td>PSNR <strong>31.77</strong></td><td>RelitLRM 30.02</td><td>+2.0 dB；重光照 246 ms vs 6,826 ms</td></tr>
   <tr><td><strong>F-RNG</strong></td><td>重光照 vs 100 视图逐场景 GS（表 2）</td><td>6 视图即超过 GS-IR / R3DG</td><td>GS-IR / R3DG（100 视图，~50 min）</td><td>重建仅 7 s</td></tr>
 </table>
-<p><span class="uncertain">【待核实】</span>：物体线（ParticleSplat / iLRM / F-RNG）数字已逐条回原文表格核对（标有表号）；但<strong>跨论文的 PSNR 绝对值仍不可直接并列</strong>（数据集与划分不同），故本表按"方法 × 数据集"分行、不跨行比大小。人物线的 HumanGS（TH2.1→AvRex PSNR 25.24）已核实；VFAvatar / SpatialAvatar-0 / FiCA 的具体数值仍待补。</p>
+<p><span class="uncertain">【待核实】</span>：物体线（ParticleSplat / iLRM / F-RNG）数字已逐条回原文表格核对（标有表号）；但<strong>跨论文的 PSNR 绝对值仍不可直接并列</strong>（数据集与划分不同），故本表按"方法 × 数据集"分行、不跨行比大小。人物线中 <strong>FiCA</strong> 的具体数值仍未取到（论文页未给出可比数字）。</p>
 </section>
 
 <section id="ablation">
@@ -911,16 +943,19 @@ flowchart LR
     <td><strong>iLRM</strong></td><td>2025</td><td>多视 RGB + <strong>位姿（必需）</strong></td><td>viewpoint tokens → 高斯</td><td>MSE + 感知（λ=0.5）</td><td>RE10K + DL3DV</td><td>8×H100 · 50k 步</td><td>0.028 s（8 视图）</td><td class="best">2.01 GB（24 视图）</td><td>RE10K 31.57 / 近线性复杂度</td><td>项目页</td>
   </tr>
   <tr class="best">
-    <td><strong>Tele360</strong></td><td>2026</td><td><strong>4~6 路无位姿 2K</strong></td><td>动态高斯（逐时刻）</td><td>多视一致 + VGGT 蒸馏</td><td>360° 环视</td><td>高（多卡）</td><td>35.4 ms/帧</td><td>中</td><td>&gt;25 FPS 实时</td><td>—</td>
+    <td><strong>Tele360</strong></td><td>2026</td><td><strong>4~6 路无位姿 2K RGB</strong></td><td>2K→1K 像素对齐高斯</td><td>渲染 + 几何/相机/Gram/BA</td><td>DNA-Rendering（3,126 scans + ~1,000 多视视频）</td><td>8×A100 · 300K 步</td><td class="best">~35 ms / 帧</td><td class="best">~20 GB</td><td>PSNR 32.15；位姿 AUC@5 69.31</td><td>未声明</td>
   </tr>
   <tr>
-    <td><strong>HumanGS</strong></td><td>2026</td><td>稀疏多视 + SMPL-X</td><td>顶点绑定 canonical 高斯 + LBS</td><td>渲染 + 绑定正则</td><td>SMPL-X 标注多视</td><td>中</td><td>0.29 s 重建</td><td>中</td><td>稀疏视图可动</td><td class="best">✅</td>
+    <td><strong>HumanGS</strong></td><td>2026</td><td>稀疏多视 + SMPL-X</td><td>顶点绑定 canonical 高斯（K=5）+ LBS</td><td>MSE + VGG 感知 + 紧致正则</td><td>THuman2.1（10K 帧）</td><td>单 RTX 6000 · 70K 步 · ~32 h</td><td>0.29 s 重建 / 0.048 s 合成</td><td>未给</td><td>AvRex PSNR 25.24（快 LHM &gt;15×）</td><td class="best">✅</td>
   </tr>
   <tr>
-    <td><strong>VFAvatar</strong></td><td>2026</td><td>日常照片集</td><td>可操控高斯 avatar</td><td>生成先验 + 渲染</td><td>照片集</td><td>中</td><td>&lt;10 s</td><td>中</td><td>免逐人优化</td><td class="best">✅</td>
+    <td><strong>VFAvatar</strong></td><td>2026</td><td>日常照片集（推理取 8 张）</td><td>可操控高斯 avatar（20K 点）</td><td>photo + mask + ASAP/ACAP + surface</td><td>MVHumanNet / Huge100k / THuman2.0 / 4D-Dress</td><td>未给</td><td>10 s</td><td>未给</td><td>PuzzleIOI P2S 1.335 / PSNR 25.168</td><td class="best">✅</td>
   </tr>
   <tr>
-    <td><strong>SpatialAvatar-0</strong></td><td>2026</td><td>1~K 肖像</td><td>FLAME-bound 高斯 + 精修</td><td>渲染 + FLAME 绑定</td><td>肖像</td><td>中</td><td>~50 ms *</td><td>中</td><td>少样本头像</td><td>项目页</td>
+    <td><strong>SpatialAvatar-0</strong></td><td>2026</td><td>1~K 肖像（K∈{1,2,3,4}）</td><td>FLAME-bound 高斯（~58K / 身份）</td><td>L1 + MS-SSIM + LPIPS + 反尖刺</td><td>CelebV-HQ + NeRSemble v2</td><td>单 H100 NVL · 14 天</td><td>~50 ms（前馈）</td><td>未给</td><td>VFHQ 23.34；逐主体 PSNR 33.96</td><td>项目页</td>
+  </tr>
+  <tr>
+    <td><strong>FFAvatar</strong></td><td>2026</td><td>1~N 肖像（可增量）</td><td>UV 稠密高斯 + MARM 精修</td><td>$\mathcal{L}_{rgb}+\lambda_{mask}\mathcal{L}_{mask}+\lambda_{off}\mathcal{L}_{off}$</td><td>VFHQ（15,204 段 / ~3M 帧）</td><td>单 A800 · 300K 步</td><td>2.1 s / <strong>468 FPS</strong>（fast）</td><td>25.8 GB（训练）</td><td>VFHQ few-shot PSNR 23.35</td><td>项目页</td>
   </tr>
   <tr>
     <td><strong>ParticleSplat</strong></td><td>2026</td><td>多视 / 单目 + <strong>GT 位姿（必需）</strong></td><td>3D 潜在粒子 → 高斯</td><td>自监督（多视图负 ELBO）</td><td>RLBench / MimicGen / 真实 / RE10K 子集</td><td>单 A6000 · 50k 步 · ≈30 h</td><td>30.91 ms（单视图）</td><td class="best">251.1 MiB（单视图）</td><td>RLBench 73.0%；NVS 28.77</td><td>代码 + 视频</td>
@@ -933,11 +968,12 @@ flowchart LR
 
 <h3>12.1 对比结论</h3>
 <ul>
-  <li><strong>输入假设是第一条分水岭</strong>：有无位姿（Tele360 无位姿 vs iLRM/ParticleSplat 需位姿）、有无模板（HumanGS 要 SMPL-X vs Tele360 无模板）、图像数（单图 / 少样本 / 多视），三条轴一交叉，适用场景几乎不重叠。</li>
-  <li><strong>实时性靠"去像素耦合"</strong>：想在高分辨率下维持实时，必须走 GrapeSplat / CompactSplat / iLRM 的紧凑表示，而不是"每像素一个高斯"。</li>
-  <li><strong>可动画靠"参数化绑定"</strong>：要驱动、要动画，人物线基本只有"模板绑定高斯 + LBS"一条成熟路径（HumanGS / SpatialAvatar-0 / FFAvatar）。</li>
-  <li><strong>可重光照靠"本征解耦"</strong>：只此一家（F-RNG），且它是<strong>架在别人 LRM 之上的插件</strong>，不自己训基座。</li>
-  <li><strong>开源率低</strong>：表内 12 项中明确开源仅 3~4 项（HumanGS / VFAvatar / GrapeSplat），其余多处于投稿期或未放出代码——<strong>研究与落地之间存在明显的时间差</strong>。</li>
+  <li><strong>输入假设是第一条分水岭</strong>：有无位姿（Tele360 无位姿 vs iLRM / ParticleSplat / F-RNG 需位姿）、有无模板（HumanGS / FFAvatar / SpatialAvatar-0 要 SMPL-X / FLAME vs Tele360 无模板）、图像数（单图 / 1~K / 1~N / 4~6 路同步 / 6 稀疏视图）——三条轴一交叉，适用场景几乎不重叠。</li>
+  <li><strong>实时性靠"去像素耦合"</strong>：想在高分辨率下维持实时，必须走 GrapeSplat / CompactSplat / iLRM 的紧凑表示，而不是"每像素一个高斯"。iLRM 在 24 视图下只用 <strong>2.01 GB</strong>，而 DepthSplat 同设置直接 OOM，是最干净的对照。</li>
+  <li><strong>可动画靠"参数化绑定"</strong>：要驱动、要动画，人物线基本只有"模板绑定高斯 + LBS"一条成熟路径（HumanGS / SpatialAvatar-0 / FFAvatar）。代价是显式收窄——VFAvatar 自己就承认 canonical SMPL-X 表示<strong>难以表达裙子等偏离人体拓扑的服装</strong>。</li>
+  <li><strong>可重光照靠"本征解耦"</strong>：只此一家（F-RNG），且它是<strong>架在别人 LRM 之上的插件</strong>，不自己训基座；代价是显存随视图数 / 分辨率增长，只能固定用 6 视图。</li>
+  <li><strong>训练成本的量级差</strong>：单卡可复现（HumanGS ~32 h / 单 RTX 6000、ParticleSplat ~30 h / 单 A6000）↔ 重资产（Tele360 8×A100、SpatialAvatar-0 单 H100 NVL <strong>14 天</strong>、iLRM 8×H100）。选型时"能不能训得动"往往比"指标高多少"更决定性。</li>
+  <li><strong>开源率低</strong>：表内 13 项中明确开源仅 3 项（HumanGS / VFAvatar / GrapeSplat），另 3 项只有项目页（FFAvatar / SpatialAvatar-0 / iLRM），其余未放出代码——<strong>研究与落地之间存在明显的时间差</strong>。</li>
 </ul>
 
 <h3>12.2 演进定位</h3>
@@ -1043,8 +1079,11 @@ flowchart LR
   <tr><td><strong>ParticleSplat</strong></td><td>CMU Robotics Institute（Lyuxing He / Daniel Guo / Elizabeth Terveen / Deepak Pathak / David Held / Tal Daniel）</td><td>2609.19463</td><td>物体中心 · 自监督</td></tr>
   <tr><td><strong>F-RNG</strong></td><td>南开 + 南大 + NVIDIA（Guangming Fu† / Jiahui Fan† / Jian Yang / Miloš Hašan / Beibei Wang‡）</td><td>2605.25975</td><td>可重光照</td></tr>
   <tr><td><strong>iLRM</strong></td><td>成均馆 + 延世 + Rembrand + Meta（Gyeongjin Kang 等 7 人）</td><td>2507.23277</td><td>可扩展性</td></tr>
-  <tr><td><strong>Tele360</strong></td><td>清华 Yebin Liu 组</td><td>2609.15032</td><td>无位姿实时</td></tr>
-  <tr><td><strong>HumanGS</strong></td><td>IIIT-H</td><td>2604.10259</td><td>模板绑定 · 开源</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>清华 + Shadow AI（Hanzhang Tu 等，Yebin Liu 通讯）</td><td>2609.15032</td><td>无位姿实时</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>IIIT Hyderabad + IISER Thiruvananthapuram（Devdoot Chatterjee 等）</td><td>2604.10259</td><td>模板绑定 · 开源</td></tr>
+  <tr><td><strong>VFAvatar</strong></td><td>清华大学（Shuo Huang 等，SIGGRAPH '26）</td><td>DOI 10.1145/3799902.3811171</td><td>随手拍 avatar · 开源</td></tr>
+  <tr><td><strong>FFAvatar</strong></td><td>华中科技大学（Jianjiang Yao 等，ECCV 2026）</td><td>2606.30347</td><td>4D 头部 · 增量</td></tr>
+  <tr><td><strong>SpatialAvatar-0</strong></td><td>ZJU / USYD / SpatialReal / La Trobe（Yiran Wang 等）</td><td>2606.15659</td><td>FLAME-bound 4D 头部</td></tr>
   <tr><td><strong>InfiniSplat v2</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.20341</td><td>迭代精修</td></tr>
   <tr><td><strong>DeltaSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.09853</td><td>增量重建</td></tr>
   <tr><td><strong>DensiTok</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.07958</td><td>生成先验</td></tr>
