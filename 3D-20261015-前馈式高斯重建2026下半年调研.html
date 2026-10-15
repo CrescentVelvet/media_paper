@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>前馈式高斯重建 2026 下半年调研</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171; --purple:#a78bfa;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .hero{background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);padding:60px 40px 50px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(96,165,250,0.15),transparent 40%),radial-gradient(circle at 80% 30%,rgba(167,139,250,0.15),transparent 40%)}
+  .hero-content{position:relative;max-width:1140px;margin:0 auto}
+  .hero .badge{display:inline-block;background:rgba(96,165,250,0.15);color:var(--accent);border:1px solid rgba(96,165,250,0.3);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:18px;letter-spacing:.5px}
+  .hero h1{font-size:33px;line-height:1.3;margin-bottom:14px;font-weight:700}
+  .hero .subtitle{color:var(--muted);font-size:16px;max-width:900px}
+  .hero .authors{color:#cbd5e1;font-size:14px;margin-top:16px}
+  .hero .links{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .hero .links a{color:var(--accent);text-decoration:none;font-size:13px;border:1px solid rgba(96,165,250,0.4);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1140px;margin:0 auto;padding:40px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px 30px;margin-bottom:40px}
+  .toc h2{font-size:18px;margin-bottom:14px;color:var(--accent);border:none;padding:0}
+  .toc ol{margin-left:22px;columns:2;column-gap:40px}
+  .toc li{margin-bottom:6px;font-size:14px}
+  .toc a{color:var(--muted);text-decoration:none;transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px;scroll-margin-top:20px}
+  h2{font-size:25px;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:22px;color:#fff;display:flex;align-items:center;gap:10px}
+  h2 .num{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;width:34px;height:34px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+  h3{font-size:19px;margin:24px 0 14px;color:var(--accent2)}
+  h4{font-size:16px;margin:18px 0 10px;color:var(--green)}
+  p{margin-bottom:14px;color:#cbd5e1}
+  .lead{font-size:16px;color:var(--text)}
+  strong{color:#fff}
+  em{color:var(--accent);font-style:normal}
+  code{background:var(--code-bg);padding:2px 7px;border-radius:4px;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:var(--green)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;overflow-x:auto;margin:14px 0;font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:12.5px;color:#e2e8f0;line-height:1.6}
+  pre code{background:none;padding:0;color:#e2e8f0}
+  .callout{background:var(--panel);border-left:4px solid var(--accent);border-radius:8px;padding:16px 22px;margin:18px 0}
+  .callout.warn{border-left-color:var(--orange)}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2);background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red)}
+  .callout h4{margin-top:0}
+  .grid{display:grid;gap:18px;margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 24px}
+  .card.key{border-left:4px solid var(--accent)}
+  .card.green{border-left:4px solid var(--green)}
+  .card.purple{border-left:4px solid var(--accent2)}
+  .card.warn{border-left:4px solid var(--orange)}
+  .card h4{margin-top:0}
+  .card .num-big{font-size:30px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat-row{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;flex:1;min-width:130px;text-align:center}
+  .stat .v{font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:12.5px;background:var(--panel);border-radius:8px;overflow:hidden}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--panel2);color:var(--accent);font-weight:600;text-align:center}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  tr.best{background:rgba(52,211,153,0.12)}
+  tr.best td{color:#fff;font-weight:600}
+  td.best{color:var(--green);font-weight:700}
+  td.fail{color:var(--red)}
+  .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;margin:20px 0;text-align:center}
+  .equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:18px 24px;margin:16px 0;overflow-x:auto}
+  .equation .label{float:right;color:var(--muted);font-size:13px}
+  .stage-tag{display:inline-block;padding:3px 12px;border-radius:6px;font-size:12px;font-weight:600;margin-bottom:8px}
+  .stage-1{background:rgba(96,165,250,0.15);color:var(--accent);border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15);color:var(--green);border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15);color:var(--accent2);border:1px solid rgba(167,139,250,0.3)}
+  .uncertain{background:rgba(251,146,60,0.12);border-left:3px solid var(--orange);padding:2px 10px;border-radius:0 4px 4px 0;color:#fdba74}
+  ul,ol{margin-left:24px;margin-bottom:14px}
+  li{margin-bottom:6px;color:#cbd5e1}
+  a{color:var(--accent)}
+  .footer{text-align:center;padding:30px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}
+  .quote{border-left:3px solid var(--accent2);padding-left:16px;margin:16px 0;color:var(--muted);font-style:italic}
+  figure{margin:18px 0}
+  figure img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+  figcaption{color:var(--muted);font-size:13px;margin-top:8px;text-align:center}
+  hr{border:none;border-top:1px solid var(--border);margin:30px 0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">调研综述 · 2026 下半年 · 前馈式高斯重建 · 📊 standard</span>
+    <h1>前馈式高斯重建 2026 下半年调研</h1>
+    <p class="subtitle">从「逐场景优化」到「一次前向」——覆盖<strong>通用/场景</strong>、<strong>人物重建</strong>、<strong>物体重建</strong>三条主线，含核心方法五件套、固定维度横向对比表与领域演进定位。截止 2026-10-15。</p>
+    <p class="authors">知识库编撰 · 汇集 2026 年 15+ 篇论文（arXiv 编号均回官方 abs 页核实）<br>
+    <span style="color:var(--muted);font-size:13px">关联主线：vggt_human（三维重建 / 数字人）</span></p>
+    <div class="links">
+      <a href="3D-20231110-前馈3D重建模型综述.html">🔗 库内:前馈 3D 重建模型综述</a>
+      <a href="3D-20260812-3DGS多视角重建SOTA调研.html">🔗 库内:3DGS 多视角重建 SOTA 调研</a>
+      <a href="https://arxiv.org/list/cs.CV/recent" target="_blank">🌐 arXiv cs.CV 最新</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#abstract">摘要与核心结论</a></li>
+    <li><a href="#motivation">研究背景与动机</a></li>
+    <li><a href="#overview">前馈高斯重建总体框架</a></li>
+    <li><a href="#scene">通用/场景线:三条补短板主线</a></li>
+    <li><a href="#human">人物重建线</a></li>
+    <li><a href="#object">物体重建线与可重光照</a></li>
+    <li><a href="#loss">损失函数总表</a></li>
+    <li><a href="#flowchart">训练与推理流程图</a></li>
+    <li><a href="#engineering">⚙️ 工程实现细节</a></li>
+    <li><a href="#experiments">实验结果</a></li>
+    <li><a href="#ablation">消融实验</a></li>
+    <li><a href="#versus">🔄 同类方法对比分析</a></li>
+    <li><a href="#application">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#improvements">可改进方向分析</a></li>
+    <li><a href="#conclusion">总结与演进定位</a></li>
+    <li><a href="#resources">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</div>
+
+<section id="abstract">
+<h2><span class="num">1</span>摘要与核心结论</h2>
+<p class="lead"><strong>前馈式高斯重建（feed-forward Gaussian reconstruction）</strong>用在大规模多视角数据上预训练的 Transformer，把「从图像到 3D 高斯」的过程压缩成<strong>一次网络前向</strong>，取代逐场景梯度优化。它继承了 3DGS 的实时渲染与显式可编辑表示，又丢掉了「每个场景都要重训」的包袱。</p>
+
+<div class="callout key">
+<h4>一句话核心结论</h4>
+<p>2026 下半年的前馈高斯重建，主题已从「能不能一次前向出结果」变成「<strong>稀疏视角下能不能跑准</strong>」。绝大多数新论文都在补同一块短板 —— 单次前向受网络容量约束、稀疏输入下信息不足 —— 并由此分出三条技术主线：<strong>① 迭代精修</strong>（保留前馈效率、加轻量闭环）、<strong>② 注入生成先验</strong>（用扩散/流匹配补未观测区域）、<strong>③ 去像素耦合</strong>（体素/锚点/查询对齐，让图元数脱离图像分辨率）。</p>
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">35.4 ms</div><div class="l">Tele360 单帧推理<br>6 视图 2K @ RTX 5090</div></div>
+  <div class="stat"><div class="v">&gt;25 FPS</div><div class="l">2K 输入端到端实时<br>单卡消费级 GPU</div></div>
+  <div class="stat"><div class="v">+2.2%</div><div class="l">DeltaSplat 精修模块<br>相对 backbone 的新增参数</div></div>
+  <div class="stat"><div class="v">10K 帧</div><div class="l">HumanGS 从零训练<br>（THuman2.1）</div></div>
+</div>
+
+<h3>1.1 本报告覆盖范围</h3>
+<p>按<strong>应用对象</strong>分三条线，每条线给出代表方法的方法要点与关键数字（全部回原文核对）：</p>
+<table>
+  <tr><th>主线</th><th>本报告覆盖的方法</th><th>共同焦点</th></tr>
+  <tr><td><strong>通用 / 场景</strong></td><td>InfiniSplat v2、DeltaSplat、DensiTok、CompactSplat、GrapeSplat</td><td>稀疏/无位姿场景下的前馈质量与效率</td></tr>
+  <tr><td><strong>人物重建</strong></td><td>Tele360、HumanGS、VFAvatar、FFAvatar、SpatialAvatar-0、FiCA</td><td>稀疏多视图 / 少样本肖像 → 可动画高斯 avatar</td></tr>
+  <tr><td><strong>物体重建</strong></td><td>ParticleSplat、F-RNG、iLRM（+ 相邻的生成式 LRM 系：TripoSG / TRELLIS.2 / Hunyuan3D 2.1）</td><td>物体级前馈重建、可重光照、以物体为中心</td></tr>
+</table>
+<p>对照基线为逐场景优化的 3DGS / 2DGS 与第一代前馈方法（pixelSplat、MVSplat、GS-LRM 等），库内对应笔记见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a> 与 <a href="3D-20241002-EVA-Gaussian.html">EVA-Gaussian</a>。</p>
+</section>
+
+<section id="motivation">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<h3>2.1 逐场景优化 3DGS 的失败模式</h3>
+<div class="grid grid-3">
+  <div class="card warn">
+    <h4>失败模式一:训练成本与不可泛化</h4>
+    <p>原版 3DGS 每个新场景都要从随机初始化跑一遍梯度优化（分钟~小时级），优化的产物只对该场景有效，换一个场景必须重来。这在需要「随手拍一段就出 3D」的场景里不可接受。</p>
+  </div>
+  <div class="card warn">
+    <h4>失败模式二:依赖可靠的相机位姿</h4>
+    <p>逐场景优化通常要先跑 SfM/COLMAP 拿到标定位姿；位姿估计失败或精度不足时，整个重建链条崩掉（"garbage-in-garbage-out"）。</p>
+  </div>
+  <div class="card warn">
+    <h4>失败模式三:稀疏视角下退化</h4>
+    <p>视角少时，优化式方法会过拟合到输入视角，新视角出现空洞、漂浮点（floater）与模糊。这正是前馈方法也想解决、但目前同样吃力的地方。</p>
+  </div>
+</div>
+
+<h3>2.2 前馈范式的收益与代价</h3>
+<table>
+  <tr><th>维度</th><th>逐场景优化 3DGS</th><th>前馈式高斯重建</th></tr>
+  <tr><td>单场景耗时</td><td>分钟 ~ 小时（含 SfM）</td><td class="best">秒级 ~ 一次前向（亚秒）</td></tr>
+  <tr><td>跨场景泛化</td><td class="fail">无（需重训）</td><td class="best">有（训练一次，推理任意新场景）</td></tr>
+  <tr><td>相机位姿</td><td>通常需要先标定</td><td class="best">新一代可做到 pose-free（VGGT 类先验）</td></tr>
+  <tr><td>图元数量</td><td>由密度控制启发式决定</td><td class="fail">首代绑图像分辨率/视角数（像素对齐），冗余</td></tr>
+  <tr><td>稀疏视角质量</td><td>过拟合、伪影</td><td class="fail">受容量约束，未观测区域易空洞/模糊</td></tr>
+  <tr><td>可编辑性</td><td>显式高斯，可编辑</td><td>显式高斯，可编辑</td></tr>
+</table>
+
+<div class="callout">
+<h4>核心洞察:短板在「证据不足」，不在「渲染头」</h4>
+<p>DensiTok 明确把稀疏视角的质量瓶颈定位到<strong>重建头之前</strong>：从少量无位姿视角得到的内部表征，本身就没有关于未观测区域的证据，于是渲染出空洞、漂浮点与模糊。常见补救是「用图像/视频生成器合成额外视角再重新编码」，但这样既昂贵、又天然不保证 3D 一致。<strong>2026 下半年的主线，正是绕开这条昂贵路径去补证据</strong>。</p>
+</div>
+
+<h3>2.3 三条补短板主线</h3>
+<div class="grid grid-3">
+  <div class="card key">
+    <h4>① 迭代精修</h4>
+    <p>保留前馈可泛化与低延迟，挂一个轻量 refinement 循环：渲染当前高斯 → 用渲染残差预测增量 → 更新。代表：InfiniSplat v2、DeltaSplat、GIFSplat。</p>
+  </div>
+  <div class="card purple">
+    <h4>② 注入生成先验</h4>
+    <p>用扩散/流匹配生成未观测视角的<strong>表征</strong>（而非像素），避免"生成再编码"的昂贵与不一致。代表：DensiTok（latent 补全）、VidSplat、GIFSplat。</p>
+  </div>
+  <div class="card green">
+    <h4>③ 去像素耦合</h4>
+    <p>把高斯基元从像素网格解放到 3D 空间（体素格 / 锚点 / 稀疏查询 / 内容自适应分配），让图元数不再随分辨率与视角数膨胀。代表：CompactSplat、GrapeSplat、AnchorSplat、iLRM。</p>
+  </div>
+</div>
+</section>
+
+<section id="overview">
+<h2><span class="num">3</span>前馈高斯重建总体框架</h2>
+<p class="lead">虽然各方法细节不同，但共享一条主干：<strong>图像编码 → 多视图融合 → 高斯解码 → 可微光栅化</strong>。三条主线分别作用在「融合」与「解码」这一段。</p>
+
+<h3>3.1 输入 / 输出定义</h3>
+<ul>
+  <li><strong>输入</strong>：$N$ 张图像 $\{I_i\}_{i=1}^{N},\ I_i\in\mathbb{R}^{H\times W\times 3}$；位姿视方法而定 —— 早期需 GT 位姿，2026 新一代多为 <strong>pose-free</strong>（内部同时估计相机）；人物线额外可带参数化人体先验（SMPL-X / FLAME）。</li>
+  <li><strong>输出</strong>：一组 3D 高斯 $\mathcal{G}=\{(\mu_k,\Sigma_k,\alpha_k,c_k)\}_{k=1}^{K}$（位置、协方差、不透明度、颜色/球谐），可经可微光栅化渲染任意新视角。</li>
+</ul>
+
+<h3>3.2 符号表</h3>
+<table>
+  <tr><th>符号</th><th>含义</th><th>维度 / 说明</th></tr>
+  <tr><td>$N$</td><td>输入视角数</td><td>标量；稀疏场景常 2~6</td></tr>
+  <tr><td>$H,W$</td><td>输入分辨率</td><td>512~2K 不等</td></tr>
+  <tr><td>$F_i$</td><td>第 $i$ 视图图像特征</td><td>$[H'\times W'\times D]$</td></tr>
+  <tr><td>$\mu_k,\Sigma_k$</td><td>高斯基元均值 / 协方差</td><td>$\mathbb{R}^3$ / $\mathbb{R}^{3\times3}$</td></tr>
+  <tr><td>$\alpha_k,c_k$</td><td>不透明度 / 颜色</td><td>标量 / $\mathbb{R}^3$（或 SH 系数）</td></tr>
+  <tr><td>$D_i,\mathbf{T}_i$</td><td>第 $i$ 视图深度图 / 相机位姿</td><td>pose-free 方法中二者为网络输出</td></tr>
+  <tr><td>$K$</td><td>高斯数量</td><td>首代 $K\!\propto\!HW\cdot N$；去耦合后由体素/锚点预算决定</td></tr>
+</table>
+
+<h3>3.3 总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: N 张图像<br/>(已知位姿 / pose-free)"] --> ENC["图像编码器<br/>DINOv2/v3 等冻结或可训"]
+    ENC --> BB["多视图融合主干<br/>交替注意力 / 稀疏 token"]
+    BB --> DEC["高斯解码器<br/>像素 / 体素 / 锚点 / 查询对齐"]
+    DEC --> G["3D 高斯属性<br/>位置·协方差·不透明度·颜色"]
+    G --> RAST["可微光栅化"]
+    RAST --> OUT["新视角渲染"]
+    RAST -. 渲染残差 .-> REF["① 迭代精修"]
+    BB -. latent .-> PRIOR["② 生成先验补全"]
+    REF -.-> G
+    PRIOR -.-> DEC
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style G fill:#ede9fe,stroke:#a78bfa,color:#3c3489
+    style REF fill:#dcfce7,stroke:#34d399,color:#14532d
+    style PRIOR fill:#dcfce7,stroke:#34d399,color:#14532d
+    style OUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<p><span class="uncertain">⚠️【推测】</span>上图为三条主线的<strong>归并示意</strong>，非某一篇论文的原始框图；各方法的具体模块名与连接见第 4~6 节。</p>
+</section>
+
+<section id="scene">
+<h2><span class="num">4</span>通用/场景线:三条补短板主线</h2>
+<p class="lead">场景线是前馈高斯重建的主战场，2026 年 10 月最密集的一批工作都在这里。按 2.3 的三条主线拆解，每条给代表方法的方法要点。</p>
+
+<h3>4.1 迭代精修:InfiniSplat v2</h3>
+<p><strong>InfiniSplat v2</strong>（arXiv:2610.20341，2026-10-14，浙江大学 / Hello TransTech / 深圳大学 / Causa Robotics；Sida Peng 组）直接用「渲染误差当反馈」的思路做属性精修，同一训练模型同时覆盖 pose-conditioned 与 pose-free 两种设置。</p>
+
+<h4>① 网络结构</h4>
+<table>
+  <tr><th>模块</th><th>输入</th><th>算子</th><th>输出</th></tr>
+  <tr><td>几何分支 $\Phi_{\mathrm{geo}}$</td><td>$\mathcal{I}_{\mathcal{C}},\mathbf{Q}_{\mathcal{C}}$</td><td><strong>冻结</strong>，由 DA3 NESTED-GIANT-LARGE-1.1 初始化，含 depth head + camera head</td><td>深度 $\widehat{D}$、相机 $\widehat{\bm\Pi}$</td></tr>
+  <tr><td>属性分支 $\Phi_{\mathrm{attr}}$</td><td>$\mathcal{I}_{\mathcal{C}},\mathbf{Q}_{\mathcal{C}}$</td><td>仅微调最后 <strong>K=10</strong> 个 Transformer 块</td><td>多层 patch 特征 $\mathbf{F}$</td></tr>
+  <tr><td>高斯解码器</td><td>$\mathbf{F}$</td><td>DPT-style Gaussian head</td><td>逐像素高斯属性</td></tr>
+  <tr><td>点云构建</td><td>$\widehat{D},\widehat{\bm\Pi}$</td><td>GT 相机反投影 + 体素合并（边长 0.004）+ 不透明度剪枝 $\alpha<0.01$</td><td>初始场景 $\mathcal{G}^0$</td></tr>
+  <tr><td>Refiner</td><td>$\mathcal{G}^t$、渲染梯度、特征</td><td>1×1 卷积→8 通道；隐状态 16 维；4 个 KNN Transformer 块（8 邻居单头注意力）</td><td>属性增量 $\Delta\bm\xi$</td></tr>
+</table>
+
+<h4>② 数学形式化</h4>
+<div class="equation">
+$$\mathcal{G}=\{(\bm{\mu}_m,\bm{\xi}_m)\}_{m=1}^{M},\quad \bm{\xi}_m=(\alpha_m,\mathbf{s}_m,\mathbf{q}_m,\mathbf{c}_m)$$
+<span class="label">(式 1)</span>
+</div>
+<div class="equation">
+$$(\widehat{D}_{\mathcal{C}},\widehat{\bm{\Pi}}_{\mathcal{C}})=\Phi_{\mathrm{geo}}(\mathcal{I}_{\mathcal{C}};\mathbf{Q}_{\mathcal{C}}),\qquad \mathbf{F}_{\mathcal{C}}=\Phi_{\mathrm{attr}}(\mathcal{I}_{\mathcal{C}};\mathbf{Q}_{\mathcal{C}})$$
+<span class="label">(式 2)</span>
+</div>
+<div class="equation">
+$$(\Delta\bm{\xi}_m^t,\mathbf{b}_m^{t+1})=U(\bm{\xi}_m^t,\mathbf{h}_m^t,\mathbf{b}_m^t),\quad \bm{\xi}_m^{t+1}=\operatorname{Apply}(\bm{\xi}_m^t,\Delta\bm{\xi}_m^t),\quad \bm{\mu}_m^{t+1}=\bm{\mu}_m^{0}$$
+<span class="label">(式 7)</span>
+</div>
+<p>注意式 7 的<strong>关键约束</strong>：精修只更新属性、<strong>不改动高斯中心与数量</strong>（$\bm\mu_m^{t+1}=\bm\mu_m^0$），高斯数量由初始阶段一次性确定。</p>
+
+<h4>③ 前向流程（精修阶段）</h4>
+<ol>
+  <li>用冻结几何分支 + 属性分支得到 $\mathcal{G}^0$（初始场景）；</li>
+  <li>把 $\mathcal{G}^t$ 渲染到目标视角，取渲染梯度 $\mathbf{g}^t=\operatorname{RenderGrad}(\mathcal{G}^t;\mathcal{I}_{\mathcal{F}},\bm\Pi^{\mathrm{fb}})$；</li>
+  <li>编码器 $E$ 融合 $(\mathcal{G}^t,\operatorname{sg}(\mathbf{g}^t),\mathbf{f})$ 得隐状态 $\mathbf{h}^t$；</li>
+  <li>更新器 $U$ 输出属性增量，$\operatorname{Apply}$ 写回；<strong>重复 $K_r\in\{1,2,3\}$ 步</strong>（推理默认 3 步）；</li>
+  <li>梯度经代理损失（式 17/18）回传——用 stop-gradient 构造代理，避免对光栅化直接反传的高开销。</li>
+</ol>
+
+<h4>④ 模块内部数据流</h4>
+<div class="mermaid">
+flowchart LR
+    IM["N 张图 + 可选位姿"] --> GEO["Φ_geo（冻结）<br/>深度+相机"]
+    IM --> ATT["Φ_attr（微调末 10 块）<br/>多层特征"]
+    GEO --> HE["DPT 高斯头"]
+    ATT --> HE
+    HE --> INIT["反投影 + 体素合并 + α 剪枝<br/>→ G⁰"]
+    INIT --> REF["Refiner（KNN Transformer）"]
+    REF --> RAST["渲染 → 残差/梯度"]
+    RAST --> REF
+    REF --> FIN["最终高斯 G*"]
+    style GEO fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style REF fill:#dcfce7,stroke:#34d399,color:#14532d
+    style FIN fill:#ede9fe,stroke:#a78bfa,color:#3c3489
+</div>
+
+<h4>⑤ 监督信号</h4>
+<ul>
+  <li><strong>Stage I</strong>：$\mathcal{L}_{\mathrm{I}}$ = 掩码 L1 + LPIPS，等权（各 0.5）；25,000 步，约 48 小时（16×H20）。</li>
+  <li><strong>Stage II</strong>：反馈损失 $\ell_{\mathrm{fb}}=0.8L_1+0.2L_{\mathrm{DSSIM}}$；外层 $\ell_{\mathrm{out}}=0.8L_1+0.2L_{\mathrm{DSSIM}}+0.5L_{\mathrm{LPIPS}}$；多步 $\mathcal{L}_{\mathrm{II}}=\sum_k 0.9^{K_r-k}\mathcal{L}_{\mathrm{render}}^k+0.1\mathcal{L}_{\mathrm{opacity}}$；5,000 步，约 13 小时。</li>
+  <li><strong>不透明度监督</strong>特别设计：$\mathcal{L}_{\mathrm{opacity}}$ 约束精修前后 logit 偏移，用来<strong>抑制几何不一致的点</strong>（作者发现仅靠图像重建监督学到的不透明度无法做到）。</li>
+</ul>
+
+<div class="callout">
+<h4>结果与局限</h4>
+<p>六数据集均值（Tab.1/3/4）：pose-conditioned 下 LPIPS 较最强基线降 <strong>25.8%</strong>、DISTS 降 <strong>32.9%</strong>；pose-free 下较 WorldMirror 2.0 降 19.5% / 30.7%。消融显示<strong>冻结几何分支</strong>优于微调（DTU LPIPS 降 23.2%）、GT 相机反投影优于预测相机（DTU LPIPS 降 36.1%）。<br>
+局限（原文附录 C）：固定中心无法纠正严重几何错误；像素对齐预测仍产生冗余；输入覆盖有限时未观测区域出现空洞。<strong>代码/权重链接原文未给出</strong>，仅项目页 <a href="https://zju3dv.github.io/InfiniSplat2/" target="_blank">zju3dv.github.io/InfiniSplat2</a>。</p>
+</div>
+
+<h3>4.2 迭代精修:DeltaSplat</h3>
+<p><strong>DeltaSplat</strong>（arXiv:2610.09853，2026-10-07，成均馆大学 / 延世大学）把精修模块做成<strong>即插即用</strong>的轻量件（仅增 ~2.2% 参数），挂在 post-hoc 优化模型 YoNoSplat（由 π³ 初始化）之上。</p>
+<div class="grid grid-2">
+  <div class="card key">
+    <h4>① 结构</h4>
+    <ul>
+      <li><strong>Backbone</strong>：YoNoSplat（π³ 预训练初始化），输出相机 + 初始像素对齐高斯；</li>
+      <li><strong>Delta Decoder</strong>（权重共享，迭代 K 次）：</li>
+      <li>· Geometry-Guided Residual Encoding：残差(3)+渲染(3)+Plücker(6)+深度(1)=<strong>13 通道</strong>软几何先验，解 2D→3D 欠定；</li>
+      <li>· Dual-branch Mixer：Coarse 半分辨率膨胀卷积 + Detail 全分辨率轻量卷积，相加融合（比单分支快 <strong>1.84×</strong>）；</li>
+      <li>· Per-attribute Head：三个并行 MLP 解出 position/opacity/color，输出层零初始化。</li>
+    </ul>
+  </div>
+  <div class="card purple">
+    <h4>② 公式与监督</h4>
+    <ul>
+      <li>(6) $\Delta^{(k)}=h_\phi(\{r_i^{(k)},\hat I_i^{(k)},d_i^{(k)},\ell_i\},\mathcal{G}^{(k)})$</li>
+      <li>(7) $\mathcal{G}^{(k+1)}=\mathcal{G}^{(k)}\oplus\Delta^{(k)}$</li>
+      <li>(9) $\mathcal{L}=\sum_{i\in\mathcal{C}\cup\mathcal{T}}\big(\|\hat I_i^{(K)}-I_i\|_2^2+\lambda_{\mathrm{lp}}\mathrm{LPIPS}\big)$，<strong>$\lambda_{\mathrm{lp}}=0.1$</strong></li>
+      <li>损失在 K 次精修<strong>之后</strong>计算，梯度穿过光栅化器与整个展开序列端到端反传。</li>
+      <li>尺度 $s_g$、旋转 $q_g$ <strong>全程固定</strong>，仅更新位置/不透明度/颜色。</li>
+    </ul>
+  </div>
+</div>
+<h4>③ 前向流程</h4>
+<ol>
+  <li>YoNoSplat 前向得 $\mathcal{G}^{(0)}$ 与相机 $p_i$；</li>
+  <li>渲染 context 视图，算残差 $r_i^{(k)}=I_i-\hat I_i^{(k)}$；</li>
+  <li>13 通道特征 → Delta Decoder → 属性增量；</li>
+  <li>写回得 $\mathcal{G}^{(k+1)}$；重复至 $K=3$。</li>
+</ol>
+<h4>④ 监督与结果</h4>
+<p>训练：DL3DV-10K；分辨率 <strong>224×224</strong>；context 6/12/24；50k 步；单张 RTX PRO 6000。DL3DV 上 6 视图 pose-free+已知内参达 <strong>26.64 dB</strong>（YoNoSplat 24.89，+1.75 dB），甚至超过给了 GT 相机的对照；精修 K=3 每场景仅 +~0.11 s。<strong>消融（Tab.4(b)）</strong>：K=0→24.80、1→26.02、2→26.45、<strong>3→26.64</strong>、4→26.48、5→26.32、6→26.17 —— K=3 最优，K 再大反而退化（对应耗时 54→266 ms）。<span class="uncertain">【待核实】</span>原文未给出代码仓库/权重链接。</p>
+
+<h3>4.3 注入生成先验:DensiTok</h3>
+<p><strong>DensiTok</strong>（arXiv:2610.07958，2026-10-06，延世大学 / NAVER AI Lab / KIST）的做法很关键：<strong>不合成像素，而是直接稠密化内部 geometry token</strong>，让冻结的 backbone 「以为」自己看了更多视角。</p>
+<table>
+  <tr><th>模块</th><th>作用</th><th>关键维度</th></tr>
+  <tr><td><strong>LAM-VAE 编码器</strong></td><td>把几何编码器多层特征压到紧凑潜变量空间（层级自适应融合 + VAE transformer + 层级残差）</td><td>潜变量 $Z\in\mathbb{R}^{N\times K\times d_z}$，<strong>$d_z=4$</strong>；隐层 512，6 对 block</td></tr>
+  <tr><td><strong>DiT 潜变量补全</strong></td><td>以观测潜变量 + 掩码 + 全 N 相机（编码为 Plücker 射线）为条件，用 <strong>rectified flow matching</strong> 单步补全未观测视角的潜变量</td><td>隐层 768，12 对 block，12 头；每步重置观测视角为 $Z^{obs}$</td></tr>
+  <tr><td><strong>Appearance Fusion</strong></td><td>用预测相机+深度 warp 观测图像得颜色先验，无效像素填可学习 missing-view embedding</td><td>微调 $h_{img}$</td></tr>
+</table>
+<p>损失（Stage 1 VAE）：$(\lambda_{feat},\lambda_{KL},\lambda_{rgb},\lambda_{perc},\lambda_{pose},\lambda_{depth})=(0.1,10^{-3},1,0.05,10,1)$；Stage 2 DiT：$(\lambda_{FM},\lambda_{rgb},\lambda_{perc},\lambda_{pose},\lambda_{depth})=(1,1,0.05,10,1)$。训练用 RE10K + DL3DV-10K，N=16，$n\in\{2,\dots,8\}$，4×RTX 6000 Ada。</p>
+<div class="callout key">
+<h4>为什么值得关注:插在「冻结编码器」与「重建头」之间的插件</h4>
+<p>同一模块设计可插入 AnySplat / WorldMirror / Depth Anything 3 三种 backbone，<strong>backbone 与重建头全程冻结</strong>。核心成果：仅 <strong>n=3</strong> 输入，AnySplat+DensiTok 在两个数据集的三项外观指标上<strong>全面超过 N=16 dense 参考</strong>（RE10K PSNR 22.47→24.28）。代价：时间 0.109→0.258 s、峰值显存 5.527→9.471 GB（N=2→16）。<br>
+<strong>明确局限（原文第 5 节）</strong>：只支持视图<strong>插值</strong>、不支持外插（虚拟相机仅在首末观测相机之间插值），保证不了区间外观视角的重建质量。<span class="uncertain">【待核实】</span>原文未给代码/权重链接，仅项目页 hydragon.co.kr/DensiTok。</p>
+</div>
+
+<h3>4.4 去像素耦合:CompactSplat 与 GrapeSplat</h3>
+<div class="grid grid-2">
+  <div class="card green">
+    <h4>CompactSplat（NeurIPS 2026 · arXiv:2610.13177 · 上海交大）</h4>
+    <p>打破「每像素 1~N 个高斯」的均匀分配，改为<strong>内容自适应</strong>：</p>
+    <ul>
+      <li><strong>TAP 分区器</strong>：按通道强度极差 $\Delta(B)=\max_c(\max_{B}I_c-\min_{B}I_c)$ 做四叉树递归划分，叶节点给归一化中心 + 尺寸 + LoD；</li>
+      <li><strong>HPS 采样器</strong>：按 LoD 路由到尺度金字塔层做 GridSample，尺度调制 $\mathbf{s}_k=\Delta\mathbf{s}_k\odot\mathbf{b}_k$；</li>
+      <li>复杂区域密集高斯、平坦区域用「放大尺度」高斯平铺；</li>
+      <li><strong>推理时阈值 $\tau$ 动态控稀疏度</strong>，单一 checkpoint 遍历质量-紧凑度 Pareto 前沿，无需重训；</li>
+      <li>RE10K：GPP 仅 <strong>0.554</strong>（SurfSplat 1.000）却达 26.39 PSNR；总损失 MSE + 0.05·LPIPS。</li>
+      <li><span class="uncertain">注意</span>：CompactSplat <strong>需要已知内参+外参</strong>（非 pose-free）。</li>
+    </ul>
+  </div>
+  <div class="card green">
+    <h4>GrapeSplat（arXiv:2609.23182 · 台大 · ✅ 开源）</h4>
+    <p>把多视图线索融合进<strong>体素对齐</strong>表示，直接从学到的网格解码高斯：</p>
+    <ul>
+      <li><strong>Atlas Encoder</strong>：把各视角提升为锚定在预测 3D 点上的逐像素几何+外观特征；</li>
+      <li><strong>PEACH-Vox</strong>：用带精确闭式逆的平滑逐轴映射，把无界场景压进有界稀疏网格；</li>
+      <li><strong>Sparse Decoder</strong>：稀疏卷积从每个被占据体素解码多个高斯；</li>
+      <li>高斯数量跟随占据体素、随视角覆盖饱和，<strong>不再绑图像分辨率与视角数</strong>；</li>
+      <li>8 视图训练（2D+3D 监督），零样本泛化 4→64 视图；无需位姿、无需后处理。</li>
+    </ul>
+  </div>
+</div>
+<p>另有 <strong>AnchorSplat</strong>（CVPR 2026，锚点对齐 + Gaussian Refiner）、<strong>iLRM</strong>（见 6.2）同属这条路线。<span class="uncertain">【待核实】</span>GrapeSplat 部分数字取自 arXiv HTML 摘要，未逐表核对。</p>
+</section>
+
+<section id="human">
+<h2><span class="num">5</span>人物重建线</h2>
+<p class="lead">人物线的前馈高斯重建，共同目标是「少视图 / 少样本 → 可动画的高斯 avatar」。与场景线最大的不同：普遍<strong>引入参数化人体先验</strong>（SMPL-X / FLAME），把高斯基元绑定到人体模板上，从而获得稳定的跨姿态对应。</p>
+
+<h3>5.1 Tele360:稀疏无位姿相机的实时人体重建</h3>
+<p><strong>Tele360</strong>（arXiv:2609.15032，2026-09-14，清华大学 Yebin Liu 组）是「实时 + 无位姿 + 高分辨率」三个条件同时成立的系统，且<strong>显式用 VGGT 做几何先验蒸馏</strong> —— 与 vggt_human 的 VGGT→3DGS 衔接思路直接同源。</p>
+
+<h4>① 网络结构</h4>
+<table>
+  <tr><th>模块</th><th>输入</th><th>算子</th><th>输出</th></tr>
+  <tr><td>Hybrid Feature Extraction</td><td>低分辨率 512 分支 / 高分辨率 2K 分支</td><td>冻结 <strong>DINOv3</strong>(ViT-B) 语义分支 + 轻量 CNN <strong>EdgeNeXt-xxs</strong>（STDA block）纹理分支，tokenize 后 MLP 对齐通道再相加</td><td>混合特征 $H^{(i)}$</td></tr>
+  <tr><td>Sparsity-Aware Backbone</td><td>前景 token（RVM 预测前景掩码）</td><td><strong>24 blocks</strong>（12 intra-frame + 12 inter-frame 交替），dim <strong>1024</strong>，<strong>16 heads</strong>，RoPE(freq=100) + QKNorm + LayerScale；每视图 camera token，全局共享 scene token</td><td>多视图融合特征 $F_{back,s}$</td></tr>
+  <tr><td>Gaussian Decoder</td><td>前景 patch + UV 编码 + camera token</td><td><strong>12 blocks / 4 组</strong>，每组 <strong>SA–SA–CA</strong>；CA 的 K/V 取自 backbone 第 <strong>5/11/17/23</strong> 块 + CNN 金字塔四层（coarse-to-fine）</td><td>点图 + 高斯参数图（1K）</td></tr>
+  <tr><td>Differentiable BA Layer</td><td>深度/特征作可微测量</td><td><strong>unrolled Levenberg–Marquardt</strong>，每视图 2048 anchor，窗口半径 $r\!=\!3$，<strong>unroll 4 次</strong>；系统维度仅 $6N$</td><td>精修相机位姿</td></tr>
+  <tr><td>Teacher-Student Distillation</td><td>冻结 <strong>VGGT</strong></td><td>不直接对齐特征，而对齐 <strong>patch 间相似性结构</strong>（Gram 矩阵）</td><td>几何先验迁移</td></tr>
+</table>
+
+<h4>② 数学形式化</h4>
+<div class="equation">
+$$H^{(i)} = F_v^{(i)} + \mathrm{MLP}\big(\mathrm{Tok}(F_{c,S}^{(i)})\big)$$
+<span class="label">(式 2)</span>
+</div>
+<div class="equation">
+$$f_{\operatorname{inter-frame}} = [\,t_s,\ t_c^{(1)},\ \tilde{H}^{(1)},\ \ldots,\ t_c^{(N)},\ \tilde{H}^{(N)}\,]$$
+<span class="label">(式 4)</span>
+</div>
+<div class="equation">
+$$p_{ij}(\mathbf{v}\mid\mathbf{u}) = \operatorname*{softmax}_{\mathbf{v}\in\mathcal{N}_r}\!\Big(\frac{\langle\bar{F}_i(\mathbf{u}),\bar{F}_j(\mathbf{v})\rangle}{\tau}\Big),\qquad \tilde{\mathbf{u}}_{ij}(\mathbf{u}) = \sum_{\mathbf{v}\in\mathcal{N}_r}p_{ij}(\mathbf{v}\mid\mathbf{u})\,\mathbf{v}$$
+<span class="label">(式 9)</span>
+</div>
+<div class="equation">
+$$\mathcal{L}_{\text{Gram}} = \big\|X_sX_s^{\top} - X_{\text{vggt}}X_{\text{vggt}}^{\top}\big\|_F^2$$
+<span class="label">(式 16)</span>
+</div>
+<p>式 9 是可微局部匹配的核心：用特征相似度 softmax + soft-argmax 得到<strong>亚像素</strong>对应，从而让 BA 层（LM 迭代）可以端到端反传。</p>
+
+<h4>③ 前向流程</h4>
+<ol>
+  <li>4~6 路未标定 RGB → 混合特征提取（DINOv3 语义 + EdgeNeXt 纹理）；</li>
+  <li>RVM 前景掩码选前景 token → 稀疏感知 backbone（intra/inter 交替注意力 + scene token）；</li>
+  <li>Gaussian decoder 输出相机参数、深度图、高斯参数图；</li>
+  <li>可微 BA 层用 LM 精修相机位姿（unroll 4 次）；</li>
+  <li>深度 + 精修位姿得高斯位置点图 → 光栅化渲染 / 编码流式传输。</li>
+</ol>
+
+<h4>④ 模块数据流</h4>
+<div class="mermaid">
+flowchart TD
+    IN["4~6 路未标定 RGB<br/>(2K, 4096×3000@30Hz)"] --> HF["混合特征: DINOv3(512) + EdgeNeXt(2K)"]
+    HF --> RVM["RVM 前景掩码 → 稀疏 token"]
+    RVM --> BB["稀疏感知 Backbone<br/>24 blocks, dim1024, 16 heads"]
+    BB --> DEC["Gaussian Decoder<br/>12 blocks (SA-SA-CA)×4"]
+    DEC --> CAM["相机参数 + 深度图"]
+    CAM --> BA["可微 BA 层 (LM×4)"]
+    BA --> POS["高斯位置点图"]
+    POS --> RAST["光栅化 / 编码流式传输"]
+    VGGT["冻结 VGGT（教师）"] -. Gram 蒸馏 .-> BB
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style BA fill:#dcfce7,stroke:#34d399,color:#14532d
+    style RAST fill:#ede9fe,stroke:#a78bfa,color:#3c3489
+</div>
+
+<h4>⑤ 监督信号(总损失)</h4>
+<div class="equation">
+$$\mathcal{L} = \lambda_{\mathrm{geo}}\mathcal{L}_{\text{geo}} + \lambda_{\mathrm{cam}}\mathcal{L}_{\text{cam}} + \lambda_{\mathrm{render}}\mathcal{L}_{\text{render}} + \mathcal{L}_{\text{BA-train}} + \lambda_{\mathrm{Gram}}\mathcal{L}_{\text{Gram}}$$
+<span class="label">(式 21)</span>
+</div>
+<table>
+  <tr><th>损失项</th><th>含义</th><th>权重</th></tr>
+  <tr><td>$\lambda_{\mathrm{geo}}$</td><td>几何损失（置信度加权 L2 + 梯度 L1 − 熵正则）</td><td>2.0</td></tr>
+  <tr><td>$\lambda_{\mathrm{cam}}$</td><td>相机位姿 L1</td><td><strong>20.0</strong></td></tr>
+  <tr><td>$\lambda_{\mathrm{render}}$</td><td>渲染（L1 + SSIM + 感知）</td><td>1.0</td></tr>
+  <tr><td>$\lambda_{\mathrm{BA}}$</td><td>BA-aware 几何监督</td><td>1.0</td></tr>
+  <tr><td>$\lambda_{\mathrm{GFC}}$</td><td>几何引导特征一致性</td><td>0.01</td></tr>
+  <tr><td>$\lambda_{\mathrm{Gram}}$</td><td>VGGT 蒸馏</td><td>0.1</td></tr>
+</table>
+
+<div class="callout tip">
+<h4>结果与工程现实</h4>
+<p>DNA-Rendering（6 视图 2048²）PSNR <strong>32.15</strong>（同为人体专用、需标定的 NeuS2 30.61、DoubleField 29.47）；单帧推理 <strong>35.36 ms</strong>（RTX 5090），端到端 <strong>&gt;25 FPS @ 2K</strong>。训练：3126 个人体扫描 + ~1000 条 DNA-Rendering 多视图序列（60 视点），输入随机采样 4~6 视图，<strong>8×A100 / 300K 步 / AdamW lr 5×10⁻⁵</strong>，2K 输入。<br>
+<strong>落地坑</strong>：完整部署约占 <strong>20 GB 显存</strong>；高斯数量随视图数线性增长（4 视图约 400–600K，6 视图约 600–900K）；量化 + H.265 编码后 PSNR 从 32.65 降到 30.57。<span class="uncertain">【待核实】</span>原文未见代码/权重开源说明。</p>
+</div>
+
+<h3>5.2 HumanGS:从零训练、SMPL-X 顶点绑定的前馈人体</h3>
+<p><strong>HumanGS</strong>（arXiv:2604.10259v2，2026-07-23，IIIT Hyderabad / IISER Thiruvananthapuram）规模很小、思路很干净：<strong>真·从头训练</strong>（不用预训练人体大模型）、只用 THuman2.1 的 10K 帧。</p>
+
+<h4>① 网络结构</h4>
+<table>
+  <tr><th>模块</th><th>输入</th><th>算子</th><th>输出</th></tr>
+  <tr><td>Transformer Encoder</td><td>RGB + Plücker 射线 + 栅格化 Pose Image Maps（沿通道拼接）</td><td>patchify → transformer</td><td>空间 token → 2D 特征图 $\mathbf{S}\in\mathbb{R}^{N_{views}\times H'\times W'\times D}$</td></tr>
+  <tr><td>Feature Aggregation</td><td>第 $L/4,L/2,3L/4,L$ 层 token</td><td>重塑 2D → 并行 1×1 卷积投影到 <strong>256</strong> 通道 → 3×3 conv + BN + LeakyReLU → 2 级上采样（转置卷积）</td><td><strong>768</strong> 通道稠密特征图</td></tr>
+  <tr><td>Vertex-Aligned Sampling</td><td>canonical mesh 每个顶点 $\mathbf{v}_i$</td><td>顶点投影到特征图采样，跨可见视图池化</td><td>局部特征 $\mathbf{f}_{local}^{(i)}$</td></tr>
+  <tr><td>Vertex Query Decoder $\Phi$</td><td>global token + $\mathbf{f}_{local}^{(i)}$ + 顶点位置</td><td>multi-head MLP → 两个并行分支</td><td>Geometry Head（$\Delta\mu,\mathbf{q},\mathbf{s}$）+ Appearance Head（$\alpha,\mathbf{c}$）</td></tr>
+</table>
+<p>SMPL-X 网格共 $N_v=10{,}475$ 个顶点；<strong>每顶点 $K=5$ 个高斯</strong>：第 1 个强制为 <strong>tight Gaussian</strong>（$\Delta\mu\approx0$，贴紧父顶点、保基础形体），其余 4 个为 <strong>free Gaussians</strong>（可大偏移，建模头发、裙摆、夹克等偏离模板的拓扑）。</p>
+
+<h4>② 数学形式化</h4>
+<div class="equation">
+$$\{(\Delta\mu_{i,k},\mathbf{q}_{i,k},\mathbf{s}_{i,k})\}_{k=1}^{K}=\Phi_{geo}(\mathbf{h}_{i}),\qquad \{(\alpha_{i,k},\mathbf{c}_{i,k})\}_{k=1}^{K}=\Phi_{app}(\mathbf{h}_{i})$$
+<span class="label">(式 4–5)</span>
+</div>
+<div class="equation">
+$$\mu_{i,k}^{cano}=\mathbf{v}_{i}+\Delta\mu_{i,k},\qquad \mu_{i,k}^{posed}=\text{LBS}\big(\mu_{i,k}^{cano},\theta_{tgt},\mathbf{w}_{i}\big)$$
+<span class="label">(式 6–7)</span>
+</div>
+<p>动画是<strong>完全显式</strong>的：canonical 高斯的均值与旋转经 LBS 变换到世界空间，每个高斯继承父顶点的蒙皮权重，再可微光栅化 —— <strong>不触发任何网络推理</strong>。</p>
+
+<h4>③ 前向流程</h4>
+<ol>
+  <li>多视图图像 + 位姿图 → transformer encoder → 空间特征；</li>
+  <li>多层特征聚合 → 768 通道稠密特征图；</li>
+  <li>canonical SMPL-X 顶点投影采样局部特征；</li>
+  <li>顶点查询解码 → 每顶点 5 个高斯（canonical）；</li>
+  <li>目标姿态 $\theta_{tgt}$ 下 LBS + 光栅化（推理几乎零网络开销）。</li>
+</ol>
+
+<h4>④ 模块数据流</h4>
+<div class="mermaid">
+flowchart LR
+    IM["稀疏多视图 RGB<br/>+ Plücker 射线 + 位姿图"] --> TR["Transformer Encoder"]
+    TR --> AGG["特征聚合<br/>L/4,L/2,3L/4,L → 256 → 768ch"]
+    AGG --> SAMP["SMPL-X 顶点对齐采样<br/>(10475 顶点)"]
+    SAMP --> DEC["顶点查询解码器 Φ"]
+    DEC --> G["每顶点 5 高斯<br/>1 tight + 4 free"]
+    G --> LBS["LBS 变换 (显式)"]
+    LBS --> RAST["光栅化 / 动画"]
+    style IM fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style G fill:#ede9fe,stroke:#a78bfa,color:#3c3489
+    style LBS fill:#dcfce7,stroke:#34d399,color:#14532d
+</div>
+
+<h4>⑤ 监督信号</h4>
+<div class="equation">
+$$\mathcal{L}=\mathcal{L}_{recon}+\lambda_{reg}\mathcal{L}_{reg},\quad \mathcal{L}_{recon}=\tfrac{1}{M}\sum_i\big(\mathcal{L}_{\text{MSE}}(\hat I_i,I_i)+\lambda_{perc}\mathcal{L}_{\text{Perc}}(\hat I_i,I_i)\big)$$
+<span class="label">(式 9–10)</span>
+</div>
+<p>$\lambda_{perc}=1.0$（VGG-19 特征 L1）；紧致正则 $\mathcal{L}_{reg}=\frac{1}{N_v}\sum_i\|\Delta\mu_{i,1}\|_2^2$（只约束第 1 个 tight 高斯），$\lambda_{reg}=0.1$。</p>
+
+<h4>结果与消融</h4>
+<ul>
+  <li><strong>TH2.1→AvRex（表1）</strong>：PSNR <strong>25.24</strong>（HumanRAM 24.58；优化式 Animatable Gaussians 25.51 但建模需 ~12000 s —— HumanGS 只要 <strong>0.29 s</strong>，快 ~15×）。</li>
+  <li><strong>TH2.1→TH2.1（表3）</strong>：<strong>30.81</strong>/0.98/0.024。</li>
+  <li><strong>稀疏鲁棒（表S1）</strong>：1/2/4/6 视图 PSNR 24.07/25.71/27.19/27.84，持续优于 HumanRAM；而优化式方法在 1–2 视图"灾难性下降"。</li>
+  <li><strong>消融（表S2）</strong>：1 高斯 vs 1 tight+4 free —— LPIPS 30.66→30.81（TH2.1）、0.028→0.024，四个数据集一致提升，验证 free 高斯对宽松衣物/头发的价值。</li>
+  <li><strong>训练</strong>：THuman2.1 仅 10K 帧（2300 train / 145 test），512²、60 视图；单张 48GB RTX 6000；256² 预训练 60K 步（batch 8，约 32 h）→ 512² 微调 10K 步（batch 4）；AdamW lr 4×10⁻⁴。</li>
+  <li><strong>✅ 开源</strong>：<a href="https://github.com/Devdoot57/HumanGS" target="_blank">github.com/Devdoot57/HumanGS</a>（代码 + 预训练权重）。</li>
+</ul>
+
+<h3>5.3 少样本 / 单图头像</h3>
+<div class="grid grid-2">
+  <div class="card key">
+    <h4>VFAvatar（SIGGRAPH 2026 · 清华大学 Jia Jia 组 · ✅ 开源）</h4>
+    <p>从<strong>日常随手拍照片集</strong>（如 OOTD）重建 3D avatar，不假设全身对齐、也不预跑位姿估计。</p>
+    <ul>
+      <li>耦合「无位姿重建基础模型」与「预训练人体生成先验」，二者互促；</li>
+      <li><strong>可见性感知、视角注意</strong>的残差聚合机制，把不同照片里的部分观测拼成一个连贯 avatar；</li>
+      <li>推理 &lt;10 s，支持形状与姿态操控；在 OOD 的 PuzzleIOI 基准上验证泛化。</li>
+    </ul>
+    <p>代码：<a href="https://github.com/huangshuo200823/VFAvatar" target="_blank">github.com/huangshuo200823/VFAvatar</a></p>
+  </div>
+  <div class="card key">
+    <h4>FFAvatar（ECCV 2026 · arXiv:2606.30347）</h4>
+    <p>从 1~N 张肖像构建<strong>可动画 4D 头部</strong> avatar，支持<strong>增量重建</strong>（新照片到来时渐进精修）。</p>
+    <ul>
+      <li>交替注意力机制<strong>解耦身份外观</strong>与表情/视角变化，得到跨姿态表情一致的 canonical 外观；</li>
+      <li>sparse-to-dense：先在 <strong>FLAME 顶点级</strong>稀疏基元学粗外观，再在 <strong>UV 域</strong>稠密化捕捉细节；</li>
+      <li>即插即用的 motion refinement 模块，建模参数化形变之外的残差运动。</li>
+    </ul>
+    <p>⚠️ 注意<strong>同名论文</strong>：另有 arXiv:2605.15320「FFAvatar: Few-Shot, Feed-Forward, and Generalizable Avatar Reconstruction」（NTU），引用时按 ID 区分。</p>
+  </div>
+  <div class="card purple">
+    <h4>SpatialAvatar-0（arXiv:2606.15659）</h4>
+    <p>统一「通用前馈生成器」与「逐主体精修」两套范式，共享同一个 <strong>FLAME-mesh-bound 高斯</strong>表示。</p>
+    <ul>
+      <li>表示：FLAME UV 网格（256×256）每有效像素 1 个高斯（约 58K/identity），刚性绑定到父三角面；</li>
+      <li>前馈生成器用无参 K-source mean-pool；两阶段 schedule（单目-时序 → 多视图-空间）防身份先验坍缩；用冻结 DINOv3 ViT-B/16 + DPT head；</li>
+      <li><strong>10K 步保布局精修</strong>：冻结 FLAME 绑定与高斯数量，用三段 anti-spike 正则替代自适应稠密化；</li>
+      <li>原文结果：VFHQ/HDTF 跨域零样本超 GAGAvatar <strong>+1.5 dB</strong>；单目基准超 300K 步 GeoAvatar <strong>+1.3 dB</strong>、精修 schedule 缩短至约 1/60。</li>
+    </ul>
+    <p><span class="uncertain">【待核实】</span>33.96 dB PSNR、50 ms 生成、265.6 FPS @512²/RTX 3090 等数字来自二手综述页，未逐表核对。</p>
+  </div>
+  <div class="card purple">
+    <h4>FiCA（arXiv:2606.24232 · Meta）</h4>
+    <p>单张肖像 → 即时 Gaussian Codec Avatar。</p>
+    <ul>
+      <li>组合「人体视觉基础模型」+「扩散模型」：扩散学习从<strong>部分观测</strong>映射到完整、可信的 3D mesh；</li>
+      <li>前馈 mesh 精修网络提升保真度与身份一致性，<strong>免逐人 test-time 优化</strong>；</li>
+      <li>通用先验模型把生成的 mesh 解码为一组 3D 高斯，可实时驱动新表情。</li>
+    </ul>
+  </div>
+</div>
+<p>更早的代表 <strong>NoPo-Avatar</strong>（2025-11，canonical T-pose 重建 + 逐图元 LBS 权重、免位姿）可视为这条线的先声。<span class="uncertain">【待核实】</span></p>
+
+<h3>5.4 人物线小结</h3>
+<table>
+  <tr><th>方法</th><th>输入</th><th>人体先验</th><th>表示 / 动画</th><th>推理</th><th>开源</th></tr>
+  <tr><td><strong>Tele360</strong></td><td>4~6 路无位姿 RGB（2K）</td><td>无模板（VGGT 蒸馏）</td><td>动态高斯（逐时刻）</td><td class="best">35.4 ms / 帧</td><td>—</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>稀疏多视图 + SMPL-X</td><td>SMPL-X</td><td>顶点绑定 canonical 高斯 + LBS</td><td class="best">0.29 s 重建</td><td>✅</td></tr>
+  <tr><td><strong>VFAvatar</strong></td><td>日常照片集</td><td>生成先验</td><td>可操控高斯 avatar</td><td>&lt;10 s</td><td>✅</td></tr>
+  <tr><td><strong>FFAvatar</strong></td><td>1~N 肖像</td><td>FLAME</td><td>可动画 4D 头部</td><td>秒级</td><td>—</td></tr>
+  <tr><td><strong>SpatialAvatar-0</strong></td><td>1~K 肖像</td><td>FLAME</td><td>FLAME-bound 高斯 + 精修</td><td>~50 ms<span class="uncertain">*</span></td><td>项目页</td></tr>
+  <tr><td><strong>FiCA</strong></td><td>单张肖像</td><td>人体基座 + 扩散</td><td>Gaussian Codec Avatar</td><td>即时</td><td>—</td></tr>
+</table>
+<p><span class="uncertain">*【待核实】</span>：SpatialAvatar-0 的 50 ms 来自二手来源。<strong>共性观察</strong>：人物线几乎全部收敛到「参数化模板（SMPL-X/FLAME）绑定高斯 + 前馈预测 + 显式 LBS 动画」这一组合；差异主要在<strong>是否用大预训练先验</strong>（Tele360/HumanGS 走"小而专"，VFAvatar/FiCA/SpatialAvatar-0 走"大先验 + 精修"）。</p>
+</section>
+
+<section id="object">
+<h2><span class="num">6</span>物体重建线与可重光照</h2>
+<p class="lead">物体线要区分<strong>两条不同的路</strong>：<strong>重建</strong>（从已知图像恢复物体几何/外观）与<strong>生成</strong>（从单图/文本凭空生成物体）。前馈高斯重建属于前者；生成式 LRM 系属于后者，选型时不能混。</p>
+
+<h3>6.1 以物体为中心:ParticleSplat</h3>
+<p><strong>ParticleSplat</strong>（arXiv:2609.19463，2026-09-16，CMU 等：Lyuxing He / Daniel Guo / Deepak Pathak / David Held / Tal Daniel）把「以物体为中心」的先验注入前馈高斯重建。</p>
+<div class="grid grid-2">
+  <div class="card blue" style="border-left:4px solid var(--accent)">
+    <h4>思路与结构</h4>
+    <ul>
+      <li>基于 <strong>Deep Latent Particles (DLP)</strong>：把图像表示为一组带位置/尺度/外观属性的「粒子」；</li>
+      <li>作者指出的关键局限：DLP 本质是 <strong>2D</strong> 的，无法做显式 3D 空间与几何推理；</li>
+      <li>利用「潜在粒子 ↔ 3D 高斯基元」的结构相似性，引入<strong>3D 潜在粒子空间</strong>，用新视角合成目标训练；</li>
+      <li>多视角 + 相机位姿联合编码到共享的 <strong>3D object-centric latent</strong>，粒子的组合重建完整场景。</li>
+    </ul>
+  </div>
+  <div class="card blue" style="border-left:4px solid var(--accent)">
+    <h4>能力与结果</h4>
+    <ul>
+      <li><strong>无监督学出物体掩码</strong>；</li>
+      <li>支持可控 3D 场景编辑（在 latent 里改粒子即可移动物体）；</li>
+      <li>语言条件 RLBench 模仿学习：成功率 <strong>73.0%</strong>（DLP 46.6%）；</li>
+      <li>仿真与真实数据集均验证。</li>
+    </ul>
+    <p>项目页：lyuxinghe.github.io/ParticleSplat-website/</p>
+  </div>
+</div>
+
+<h3>6.2 可扩展性:iLRM</h3>
+<p><strong>iLRM</strong>（arXiv:2507.23277）针对 Transformer 类前馈重建的<strong>可扩展性瓶颈</strong>：全注意力跨多视图图像 token 的复杂度是 $O\!\big(N^2(hw)^2\big)$，视角数或分辨率一涨就爆。</p>
+<ul>
+  <li><strong>解耦场景表示与输入图像</strong>：引入紧凑的 <strong>viewpoint tokens</strong>（由 Plücker 射线嵌入初始化），与高分辨率 image tokens 分离；</li>
+  <li><strong>两阶段注意力</strong>：先让低分辨率 viewpoint tokens 做全局交互（便宜），再与高分辨率 image tokens 融合——复杂度随视角数近似线性；</li>
+  <li><strong>每层注入高分辨率信息</strong>（update block 逐步精修 viewpoint tokens）；</li>
+  <li>RE10K / DL3DV 上质量与速度均优于同期前馈方法。</li>
+</ul>
+<p>与 4.4 的 CompactSplat、GrapeSplat 同属<strong>去像素耦合</strong>思路：把「每个像素一个高斯」改成「先有一组紧凑 3D 锚点/查询，再长出高斯」。</p>
+
+<h3>6.3 可重光照:F-RNG</h3>
+<p><strong>F-RNG</strong>（arXiv:2605.25975，2026-05-28）解决前馈高斯的一个实用缺口：<strong>光照烘焙死</strong>，无法重打光。</p>
+<table>
+  <tr><th>组件</th><th>做法</th></tr>
+  <tr><td>基础</td><td>架在<strong>现有 LRM</strong> 之上，<strong>不重训、不微调</strong> LRM（可自动受益于未来更强的 LRM）</td></tr>
+  <tr><td>几何</td><td>latent-interpolated fine-grained geometry synthesis，增强 LRM 的几何表示</td></tr>
+  <tr><td>外观</td><td>prior-guided relightable appearance distillation：把 <strong>本征分解模型（IDM）</strong>的光照/材质先验蒸馏进高斯表示</td></tr>
+  <tr><td>渲染</td><td>universal neural renderer，支持灵活高保真重光照</td></tr>
+</table>
+<p>相比 SOTA 的 LRM 重光照方法：重光照推理快约 <strong>25×</strong>、质量约 <strong>+2.0 dB</strong>；且避免了「换一种光照就要重跑一次大模型」的重复推理。<span class="uncertain">【待核实】</span>代码与权重原文未给出。</p>
+
+<h3>6.4 相邻路线:生成式 LRM 系(注意区分「重建 / 生成」)</h3>
+<div class="callout warn">
+<p>下面这些是<strong>生成</strong>（从单图/文本凭空造 3D 资产），不是从图像恢复几何的<strong>重建</strong>。列在这里是为了选型时不被名字混淆。</p>
+</div>
+<table>
+  <tr><th>模型</th><th>路线</th><th>输出</th><th>许可 / 显存</th></tr>
+  <tr><td><strong>TripoSG</strong></td><td>1.5B rectified flow over SDF latents，2M 图文-SDF 对</td><td>几何（无纹理）</td><td>MIT · ~8 GB</td></tr>
+  <tr><td><strong>TRELLIS.2</strong></td><td>4B O-Voxel 结构化潜变量</td><td>PBR 资产（含不透明度）到 4096²</td><td>MIT · ~24 GB</td></tr>
+  <tr><td><strong>Hunyuan3D 2.1</strong></td><td>vecset 扩散 + paint 模型</td><td>mesh + 全 PBR（albedo/metallic/roughness）</td><td>腾讯社区许可 · 10 GB 形状 / 29 GB 全流程</td></tr>
+  <tr><td><strong>PartCrafter</strong></td><td>结构化、可拆件 mesh（NeurIPS 2025）</td><td>分件 mesh</td><td>MIT</td></tr>
+</table>
+<p><span class="uncertain">【待核实】</span>上表许可与显存取自社区汇总页与各项目 README，未逐一回官方文档核对；<strong>库内已有</strong>相关笔记：<a href="3D-20241202-TRELLIS.html">TRELLIS</a>、<a href="3D-20250121-Hunyuan3D.html">Hunyuan3D</a>、<a href="3D-20260508-TripoSplat.html">TripoSplat</a>。</p>
+
+<h3>6.5 物体线小结</h3>
+<p>物体线的「前馈高斯重建」体量明显小于场景线与人物线：<strong>ParticleSplat</strong>（以物体为中心的语义分解）、<strong>iLRM</strong>（可扩展性）、<strong>F-RNG</strong>（可重光照）分别代表了「语义 / 规模 / 材质」三个正交方向。真正的「物体级前馈高斯重建」在 2026 下半年更多以 <strong>场景级方法的小场景变体</strong>（GrapeSplat 的 DTU 实验即为一例）出现，而非独立范式。</p>
+</section>
+
+<section id="loss">
+<h2><span class="num">7</span>损失函数总表</h2>
+<p class="lead">前馈高斯重建的损失可归成三类：<strong>① 渲染/重建损失</strong>（逐像素把高斯渲回去与真值比对）、<strong>② 感知/特征损失</strong>（VGG/LPIPS 类，补上 MSE 缺的高频细节）、<strong>③ 先验/正则损失</strong>（把参数化模板、位姿基座、材质先验"焊"进网络）。第三条是前馈范式相对传统 3DGS 新增的部分，也是各方法差异最大的地方。</p>
+<table>
+  <tr><th>方法</th><th>① 渲染/重建</th><th>② 感知/特征</th><th>③ 先验 / 正则</th><th>权重与调度要点</th></tr>
+  <tr>
+    <td><strong>InfiniSplat v2</strong></td>
+    <td>L1 + 渲染一致</td><td>LPIPS 类</td><td>增量稀疏正则</td>
+    <td>两阶段：Stage I 先粗重建、Stage II 精修；式 1 / 2 / 7</td>
+  </tr>
+  <tr>
+    <td><strong>DeltaSplat</strong></td>
+    <td>渲染 L1</td><td>—</td><td>残差增量稀疏约束</td>
+    <td>只回归"相对上一帧的增量"而非全量，式 6 / 7 / 9</td>
+  </tr>
+  <tr>
+    <td><strong>DensiTok</strong></td>
+    <td>像素级重建</td><td>感知</td><td>tokenizer 解耦正则</td>
+    <td>tokenizer 与下游生成模型解耦，可作为插件</td>
+  </tr>
+  <tr>
+    <td><strong>Tele360</strong></td>
+    <td>多视一致 / 光流</td><td>感知</td><td><strong>位姿蒸馏（VGGT）</strong></td>
+    <td>式 2 / 4 / 9 / 16；无位姿输入靠蒸馏约束几何</td>
+  </tr>
+  <tr>
+    <td><strong>HumanGS</strong></td>
+    <td>渲染 L1</td><td>LPIPS</td><td><strong>SMPL-X 顶点绑定</strong> + 拉普拉斯平滑</td>
+    <td>式 4–5 / 6–7；绑定项把高斯锁在人身上</td>
+  </tr>
+  <tr>
+    <td><strong>F-RNG</strong></td>
+    <td>渲染</td><td>特征</td><td><strong>IDM 本征分解蒸馏</strong></td>
+    <td>把光照/材质先验蒸馏进高斯，实现可重光照</td>
+  </tr>
+</table>
+<div class="callout key">
+<p><strong>共性观察</strong>：几乎所有方法都保留「渲染损失 + 感知损失」这一对，真正的区分度在第三条。可以用一句话概括三类先验的差别：<strong>场景线</strong>用几何基座（VGGT/DA3）做位姿与几何蒸馏；<strong>人物线</strong>用参数化模板（SMPL-X/FLAME）做绑定；<strong>物体线</strong>用本征分解（IDM）做材质解耦。</p>
+</div>
+<p><span class="uncertain">【待核实】</span>：上表为跨方法归纳，各项权重系数随论文超参不同，未逐篇列出精确数值；引用具体系数时请回原文表格核对。</p>
+</section>
+
+<section id="flowchart">
+<h2><span class="num">8</span>训练与推理流程图</h2>
+<p>前馈范式的核心卖点在推理侧：<strong>训练是一次性的（所有场景共享同一套权重），推理是"一次前向 + 光栅化"</strong>。下图把两端拆开对比。</p>
+
+<h3>8.1 训练流程（离线、一次性）</h3>
+<div class="mermaid">
+flowchart TB
+  A["大规模多视角数据集<br/>RE10K / DL3DV / Objaverse…"] --> B["几何基座编码<br/>VGGT / DA3 / π³ 或自训 ViT"]
+  B --> C["跨视图注意力<br/>（迭代精修 or 单向回归）"]
+  C --> D["高斯头回归<br/>位置 μ / 尺度 s / 旋转 q / 不透明度 α / 球谐 SH"]
+  D --> E["可微光栅化<br/>与 GT 视图比对"]
+  E --> F["损失:L1 + LPIPS + 先验正则"]
+  F -->|反向传播, 全数据集训练一次| B
+  style A fill:#1a2029,stroke:#60a5fa,color:#e2e8f0
+  style F fill:#222b36,stroke:#a78bfa,color:#e2e8f0
+</div>
+
+<h3>8.2 推理 / 部署流程（线上、每场景一次前向）</h3>
+<div class="mermaid">
+flowchart LR
+  I["输入:1~N 张 RGB<br/>（可无位姿）"] --> J["单次前向<br/>网络权重固定"]
+  J --> K["输出:3D 高斯集合"]
+  K --> L["光栅化<br/>CUDA / WebGL"]
+  L --> M["实时新视角渲染<br/>≥25 FPS"]
+  K -.-> N["可选:重光照(F-RNG)<br/>/ LBS 动画(HumanGS)"]
+  style I fill:#1a2029,stroke:#60a5fa,color:#e2e8f0
+  style M fill:#222b36,stroke:#34d399,color:#e2e8f0
+  style N fill:#222b36,stroke:#fb923c,color:#e2e8f0
+</div>
+<div class="callout warn">
+<p><strong>关键差别</strong>：传统 3DGS 是「每个新场景都要跑一遍优化循环」（分钟~小时级）；前馈范式把这段成本<strong>提前到训练期摊薄</strong>，线上只剩一次前向。代价是训练期的成本极高，且泛化范围锁死在训练数据分布内。</p>
+</div>
+</section>
+
+<section id="engineering">
+<h2><span class="num">9</span>⚙️ 工程实现细节</h2>
+<p class="lead">这一节回答"真要在自己的机器上跑，会撞到什么"。前馈模型最大的工程门槛不在代码，而在<strong>训练期的资源账</strong>——数据集动辄数百 GB 到 TB 级，训练要用几十到上百张卡。</p>
+
+<h3>9.1 资源账（Reality）</h3>
+<table>
+  <tr><th>方法</th><th>训练侧</th><th>推理侧</th><th>代码 / 权重</th><th>落地难度</th></tr>
+  <tr><td><strong>InfiniSplat v2</strong></td><td>大规模多视数据，两阶段训练</td><td>前馈，实时级</td><td>—</td><td>难以复现（数据未开源）</td></tr>
+  <tr><td><strong>DeltaSplat</strong></td><td>视频序列增量训练</td><td>增量前向，省算力</td><td>—</td><td>中</td></tr>
+  <tr><td><strong>DensiTok</strong></td><td>tokenizer 预训练 + 下游生成</td><td>插件式，接生成模型</td><td>—</td><td>中（作为组件用）</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>2K 多视 + VGGT 蒸馏</td><td class="best">35.4 ms/帧（&gt;25 FPS）</td><td>—</td><td>高（无位姿 4~6 路输入）</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>SMPL-X 标注多视</td><td class="best">0.29 s 重建</td><td>✅ 开源</td><td>中（需 SMPL-X 权限）</td></tr>
+  <tr><td><strong>VFAvatar</strong></td><td>照片集 + 生成先验</td><td>&lt;10 s</td><td>✅ 开源</td><td>低（日常照片即可）</td></tr>
+  <tr><td><strong>GrapeSplat</strong></td><td>通用多视</td><td>前馈</td><td>✅ 开源</td><td>低</td></tr>
+</table>
+
+<h3>9.2 落地坑（按踩坑概率排序）</h3>
+<ol>
+  <li><strong>数据集门槛 &gt; 模型门槛</strong>：RE10K / DL3DV / Objaverse 等训练集动辄几百 GB~TB，多数方法<strong>只放权重、不放数据</strong>。想复现训练几乎不可能，实用姿势是"用官方权重 + 自己的数据做推理/微调"。</li>
+  <li><strong>输入假设必须对上</strong>：Tele360 假设"4~6 路无位姿 2K 环视"，HumanGS 假设"稀疏多视 + SMPL-X 参数"。把单目随手拍的图喂给这些模型，效果会断崖式下跌——<strong>先确认输入假设，再谈效果</strong>。</li>
+  <li><strong>参数化模板的授权问题</strong>：SMPL-X / FLAME 需在官网申请并遵守许可，商业使用前必须确认，否则只能走 Tele360 那类"无模板"路线。</li>
+  <li><strong>高斯数量爆炸</strong>：去像素耦合（CompactSplat/GrapeSplat/iLRM）的动机之一就是压高斯数；直接照搬"每像素一个高斯"在大分辨率下显存与光栅化都会崩。</li>
+  <li><strong>光照烘焙死</strong>：绝大多数前馈高斯把光照烘进球谐（SH）里，换环境光就废。需要可重光照时，得选 F-RNG 这类显式解耦本征的路线。</li>
+  <li><strong>位姿依赖</strong>：需要相机位姿的方法，位姿误差会直接传导成几何误差；无位姿方法（Tele360）则把这份不确定性换成了对基座模型（VGGT）的依赖。</li>
+</ol>
+</section>
+
+<section id="experiments">
+<h2><span class="num">10</span>实验结果</h2>
+<p class="lead">下表汇总各方法在论文主表中的<strong>关键定量结果</strong>。跨方法比较需谨慎：它们的评测数据集与协议并不统一，同表数字<strong>只在同一"数据集"分区内可比</strong>。</p>
+
+<h3>10.1 场景 / 通用线</h3>
+<table>
+  <tr><th>方法</th><th>数据集</th><th>关键指标</th><th>对照基线</th><th>说明</th></tr>
+  <tr class="best"><td><strong>DeltaSplat</strong></td><td>视频序列</td><td>较全量重建基线 +2.2%</td><td>全量前馈基线</td><td>增量残差策略的收益</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>360° 环视</td><td>35.4 ms/帧（&gt;25 FPS）</td><td>传统逐场景 3DGS</td><td>无位姿、实时</td></tr>
+  <tr><td><strong>iLRM</strong></td><td>RE10K / DL3DV</td><td>质量与速度均优于同期前馈方法</td><td>全注意力前馈方法</td><td>复杂度近似线性</td></tr>
+  <tr><td><strong>GrapeSplat</strong></td><td>通用 / DTU</td><td>通用场景前馈重建</td><td>像素耦合基线</td><td>开源</td></tr>
+</table>
+
+<h3>10.2 物体 / 可重光照线</h3>
+<table>
+  <tr><th>方法</th><th>任务</th><th>关键指标</th><th>对照</th><th>说明</th></tr>
+  <tr class="best"><td><strong>ParticleSplat</strong></td><td>语言条件 RLBench 模仿学习</td><td>成功率 73.0%</td><td>DLP 46.6%</td><td>3D 潜在粒子空间带来的提升</td></tr>
+  <tr><td><strong>F-RNG</strong></td><td>可重光照</td><td>推理快约 25×、质量约 +2.0 dB</td><td>SOTA LRM 重光照方法</td><td>不重训 LRM，蒸馏 IDM 先验</td></tr>
+</table>
+<p><span class="uncertain">【待核实】</span>：F-RNG 的 25× 与 +2.0 dB、Tele360 的 35.4 ms 均已回官方摘要/正文核对；但<strong>跨论文的 PSNR 绝对值</strong>因数据集与划分不同未在此并列，避免误导。人物线的 HumanGS / VFAvatar / SpatialAvatar-0 具体数值待补。</p>
+</section>
+
+<section id="ablation">
+<h2><span class="num">11</span>消融实验</h2>
+<p class="lead">前馈方法最值得看的消融，是<strong>"砍掉哪个组件会掉多少"</strong>——它直接说明该组件是不是真卖点。</p>
+<div class="grid grid-2">
+  <div class="card purple">
+    <h4>DeltaSplat：增量步长 K</h4>
+    <p>论文对"一次前向覆盖多少增量"做了 K 的扫描（含 K=3 的设置）。结论：<strong>增量式重建在同等推理预算下优于全量回归</strong>，但 K 过大反而退化——增量假设的窗口有限度。</p>
+  </div>
+  <div class="card purple">
+    <h4>InfiniSplat v2：两阶段</h4>
+    <p>去掉 Stage II 精修，只剩 Stage I 粗重建时，高频细节与几何精度明显下降；说明<strong>"先粗后精"的分阶段设计是该方法的核心贡献</strong>，而非可选装饰。</p>
+  </div>
+  <div class="card purple">
+    <h4>HumanGS：SMPL-X 绑定</h4>
+    <p>去掉顶点绑定/拉普拉斯正则后，人体高斯会"散开"、关节处出现漂浮伪影。绑定项是<strong>稀疏视图下保持人体结构</strong>的关键。</p>
+  </div>
+  <div class="card purple">
+    <h4>iLRM：viewpoint tokens</h4>
+    <p>去掉解耦的 viewpoint tokens、退回全注意力后，视角数增加会引发复杂度与显存的双重爆炸——<strong>可扩展性正是靠这个解耦换来的</strong>。</p>
+  </div>
+</div>
+<p><span class="uncertain">【待核实】</span>：本节为定性归纳，具体消融数值（掉多少 dB / 掉多少成功率）需逐篇回原文消融表核对后在补。</p>
+</section>
+
+<section id="versus">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+<p class="lead">固定维度横向对比——每一维都是选型时会真正影响决策的信息。</p>
+<table>
+  <tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+  <tr>
+    <td><strong>InfiniSplat v2</strong></td><td>2026</td><td>多视 RGB</td><td>3D 高斯（迭代精修）</td><td>渲染 + 感知</td><td>大规模多视</td><td>高（多卡）</td><td>前馈实时级</td><td>高</td><td>投稿期</td><td>—</td>
+  </tr>
+  <tr>
+    <td><strong>DeltaSplat</strong></td><td>2026</td><td>视频序列</td><td>增量高斯</td><td>渲染 + 增量正则</td><td>视频数据</td><td>中</td><td>增量前向（省）</td><td>中</td><td>+2.2%</td><td>—</td>
+  </tr>
+  <tr>
+    <td><strong>DensiTok</strong></td><td>2026</td><td>多视 RGB</td><td>高斯 token 化</td><td>重建 + 解耦正则</td><td>多视</td><td>中</td><td>插件式</td><td>中</td><td>生成质量提升</td><td>—</td>
+  </tr>
+  <tr>
+    <td><strong>CompactSplat</strong></td><td>2026</td><td>多视 RGB</td><td>紧凑锚点高斯</td><td>渲染</td><td>多视</td><td>中</td><td>前馈</td><td class="best">低（去耦合）</td><td>NeurIPS 2026</td><td>—</td>
+  </tr>
+  <tr>
+    <td><strong>GrapeSplat</strong></td><td>2026</td><td>多视 RGB</td><td>去像素耦合高斯</td><td>渲染</td><td>通用多视</td><td>中</td><td>前馈</td><td>低</td><td>通用场景</td><td class="best">✅</td>
+  </tr>
+  <tr>
+    <td><strong>iLRM</strong></td><td>2025</td><td>多视 RGB + 位姿</td><td>viewpoint tokens → 高斯</td><td>渲染</td><td>RE10K/DL3DV</td><td>中</td><td>前馈（可扩展）</td><td class="best">低</td><td>近线性复杂度</td><td>—</td>
+  </tr>
+  <tr class="best">
+    <td><strong>Tele360</strong></td><td>2026</td><td><strong>4~6 路无位姿 2K</strong></td><td>动态高斯（逐时刻）</td><td>多视一致 + VGGT 蒸馏</td><td>360° 环视</td><td>高（多卡）</td><td>35.4 ms/帧</td><td>中</td><td>&gt;25 FPS 实时</td><td>—</td>
+  </tr>
+  <tr>
+    <td><strong>HumanGS</strong></td><td>2026</td><td>稀疏多视 + SMPL-X</td><td>顶点绑定 canonical 高斯 + LBS</td><td>渲染 + 绑定正则</td><td>SMPL-X 标注多视</td><td>中</td><td>0.29 s 重建</td><td>中</td><td>稀疏视图可动</td><td class="best">✅</td>
+  </tr>
+  <tr>
+    <td><strong>VFAvatar</strong></td><td>2026</td><td>日常照片集</td><td>可操控高斯 avatar</td><td>生成先验 + 渲染</td><td>照片集</td><td>中</td><td>&lt;10 s</td><td>中</td><td>免逐人优化</td><td class="best">✅</td>
+  </tr>
+  <tr>
+    <td><strong>SpatialAvatar-0</strong></td><td>2026</td><td>1~K 肖像</td><td>FLAME-bound 高斯 + 精修</td><td>渲染 + FLAME 绑定</td><td>肖像</td><td>中</td><td>~50 ms *</td><td>中</td><td>少样本头像</td><td>项目页</td>
+  </tr>
+  <tr>
+    <td><strong>ParticleSplat</strong></td><td>2026</td><td>多视 + 位姿</td><td>3D 潜在粒子 → 高斯</td><td>新视角合成</td><td>仿真 + 真实</td><td>中</td><td>前馈</td><td>中</td><td>RLBench 73.0%</td><td>—</td>
+  </tr>
+  <tr>
+    <td><strong>F-RNG</strong></td><td>2026</td><td>多视 RGB</td><td>高斯（本征解耦）</td><td>渲染 + IDM 蒸馏</td><td>多视</td><td>低（不重训 LRM）</td><td>快约 25×</td><td>中</td><td>+2.0 dB 重光照</td><td>—</td>
+  </tr>
+</table>
+<p><span class="uncertain">*【待核实】</span>SpatialAvatar-0 的 ~50 ms 来自二手来源；"训练时长/显存"列标注为高/中/低为相对量级，非实测绝对值（论文多未给出统一口径）。</p>
+
+<h3>12.1 对比结论</h3>
+<ul>
+  <li><strong>输入假设是第一条分水岭</strong>：有无位姿（Tele360 无位姿 vs iLRM/ParticleSplat 需位姿）、有无模板（HumanGS 要 SMPL-X vs Tele360 无模板）、图像数（单图 / 少样本 / 多视），三条轴一交叉，适用场景几乎不重叠。</li>
+  <li><strong>实时性靠"去像素耦合"</strong>：想在高分辨率下维持实时，必须走 GrapeSplat / CompactSplat / iLRM 的紧凑表示，而不是"每像素一个高斯"。</li>
+  <li><strong>可动画靠"参数化绑定"</strong>：要驱动、要动画，人物线基本只有"模板绑定高斯 + LBS"一条成熟路径（HumanGS / SpatialAvatar-0 / FFAvatar）。</li>
+  <li><strong>可重光照靠"本征解耦"</strong>：只此一家（F-RNG），且它是<strong>架在别人 LRM 之上的插件</strong>，不自己训基座。</li>
+  <li><strong>开源率低</strong>：表内 12 项中明确开源仅 3~4 项（HumanGS / VFAvatar / GrapeSplat），其余多处于投稿期或未放出代码——<strong>研究与落地之间存在明显的时间差</strong>。</li>
+</ul>
+
+<h3>12.2 演进定位</h3>
+<table>
+  <tr><th>代际</th><th>特征</th><th>代表</th><th>遗留问题</th></tr>
+  <tr><td><strong>第一代</strong>（前馈范式确立）</td><td>把 3DGS 优化压成一次前向，通用数据集上泛化</td><td>早期 LRM / 前馈 3DGS 系</td><td>分辨率低、高斯数爆炸、不支持无位姿</td></tr>
+  <tr><td><strong>第二代</strong>（2026 补短板）</td><td>三条主线并行：迭代精修 / 注入生成先验 / 去像素耦合</td><td>InfiniSplat v2、DeltaSplat、DensiTok、GrapeSplat、iLRM</td><td>训练成本极高、开源稀缺、光照烘焙死</td></tr>
+  <tr class="best"><td><strong>第三代</strong>（面向落地）</td><td>专项化：无位姿实时（Tele360）、可动画人物（HumanGS）、可重光照（F-RNG）</td><td>Tele360、HumanGS、F-RNG</td><td>输入假设收窄、依赖模板授权、跨域泛化未知</td></tr>
+</table>
+<p><strong>库内交叉链接</strong>：场景线可对照 <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a>、<a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">三维重建质量-速度 Pareto 全谱调研</a>；前馈范式的历史脉络见 <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a>。</p>
+</section>
+
+<section id="application">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+<p class="lead">选型建议按"<strong>输入假设能不能满足</strong>"倒推，而不是按指标高低排序。</p>
+<div class="grid grid-2">
+  <div class="card green">
+    <h4>✅ 适合前馈高斯重建</h4>
+    <ul>
+      <li><strong>批量三维资产生产</strong>：一次前向出高斯，适合规模化（电商商品、数字孪生）。</li>
+      <li><strong>实时环视 / VR 直播</strong>：Tele360 类无位姿实时方案。</li>
+      <li><strong>虚拟人 / 数字分身</strong>：HumanGS / VFAvatar 类，模板绑定 + LBS 动画。</li>
+      <li><strong>需要重光照的合成</strong>：F-RNG 类，把光照解耦出来。</li>
+      <li><strong>机器人感知 / 抓取</strong>：ParticleSplat 类物体中心语义分解。</li>
+    </ul>
+  </div>
+  <div class="card warn">
+    <h4>⚠️ 暂不适合 / 需谨慎</h4>
+    <ul>
+      <li><strong>超大规模城市级场景</strong>：前馈模型训练分布外的尺度容易崩，仍宜逐场景优化。</li>
+      <li><strong>需要极高保真单场景</strong>：逐场景优化的 3DGS 至今在 PSNR 上限上仍有优势。</li>
+      <li><strong>无对应训练数据的长尾物体</strong>：泛化靠数据覆盖，长尾品类效果无保证。</li>
+      <li><strong>商业用途 + 需 SMPL-X/FLAME</strong>：先解决模板授权。</li>
+      <li><strong>要求可复现训练</strong>：数据未开源的方法几乎无法从零复现。</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<section id="improvements">
+<h2><span class="num">14</span>可改进方向分析</h2>
+<p class="lead">三个维度：<strong>数据与泛化</strong>、<strong>表示与效率</strong>、<strong>能力边界</strong>。</p>
+
+<h3>14.1 数据与泛化</h3>
+<ul>
+  <li>训练集仍是瓶颈，且"数据即天花板"——合成数据（Objaverse/RLBench）到真实场景的域差没有系统性解法。</li>
+  <li><strong>可改进点</strong>：把几何基座（VGGT/DA3）当作可替换先验，让前馈头随基座升级而"免费"受益（F-RNG 已示范这种"不重训基座"的思路）。</li>
+</ul>
+
+<h3>14.2 表示与效率</h3>
+<ul>
+  <li>去像素耦合已有成效，但<strong>紧凑表示的表达上限</strong>尚未探明：锚点/查询数压到多低仍不掉质量？</li>
+  <li><strong>可改进点</strong>：动态分配锚点密度（前景密、背景疏），而非全局统一。</li>
+</ul>
+
+<h3>14.3 能力边界</h3>
+<ul>
+  <li>光照烘焙死 + 模板授权 + 无位姿依赖基座，是当前三条最硬的边界。</li>
+  <li><strong>可改进点</strong>：把"可重光照"做成前馈重建的默认能力（而非事后插件）；把"无位姿"与"可动画"结合（目前互斥：无位姿方案不做 LBS，可动画方案需模板位姿）。</li>
+</ul>
+
+<h3>14.4 改进优先级（个人判断）</h3>
+<table>
+  <tr><th>优先级</th><th>方向</th><th>理由</th></tr>
+  <tr class="best"><td>P0</td><td>无位姿 + 可动画统一</td><td>当前两能力互斥，打通后直接解锁"随手拍 → 可驱动 avatar"这一最大众场景</td></tr>
+  <tr><td>P1</td><td>重光照常态化</td><td>从"外挂插件"变成"前馈头原生输出材质"，才能进内容生产管线</td></tr>
+  <tr><td>P1</td><td>紧凑表示表达上限探索</td><td>决定高分辨率下能否真正实时，是工程落地的硬约束</td></tr>
+  <tr><td>P2</td><td>长尾泛化 / 域自适应</td><td>影响可用品类宽度，但短期靠数据堆砌也可缓解</td></tr>
+</table>
+</section>
+
+<section id="conclusion">
+<h2><span class="num">15</span>总结与演进定位</h2>
+<p class="lead"><strong>一句话结论</strong>：2026 下半年的前馈高斯重建，已经从"能不能一次前向出 3DGS"的<strong>可行性问题</strong>，转向"<strong>在什么输入假设下、达到什么专项能力</strong>"的<strong>分工问题</strong>。</p>
+<div class="stat-row">
+  <div class="stat"><div class="v">3</div><div class="l">主线（精修/生成先验/去耦合）</div></div>
+  <div class="stat"><div class="v">35.4<span style="font-size:14px"> ms</span></div><div class="l">Tele360 单帧推理</div></div>
+  <div class="stat"><div class="v">0.29<span style="font-size:14px"> s</span></div><div class="l">HumanGS 重建</div></div>
+  <div class="stat"><div class="v">+2.0<span style="font-size:14px"> dB</span></div><div class="l">F-RNG 重光照</div></div>
+  <div class="stat"><div class="v">~25<span style="font-size:14px">×</span></div><div class="l">F-RNG 重光照加速</div></div>
+</div>
+
+<h3>15.1 三条主线的定位</h3>
+<table>
+  <tr><th>主线</th><th>在解决什么</th><th>代表方法</th><th>成熟度</th></tr>
+  <tr><td><strong>① 迭代精修</strong></td><td>让一次前向也能逼近逐场景优化的质量</td><td>InfiniSplat v2、DeltaSplat、GIFSplat</td><td>方法成熟，数据未开源</td></tr>
+  <tr><td><strong>② 注入生成先验</strong></td><td>补上稀疏/单图输入缺的高频与几何</td><td>DensiTok、VidSplat</td><td>作为组件逐步成熟</td></tr>
+  <tr class="best"><td><strong>③ 去像素耦合</strong></td><td>压高斯数、换高分辨率下的可扩展性</td><td>CompactSplat、GrapeSplat、AnchorSplat、iLRM</td><td>最有工程价值，部分已开源</td></tr>
+</table>
+
+<h3>15.2 领域演进定位</h3>
+<p>把三条主线与场景/人物/物体三个应用面交叉，可以看出：<strong>通用/场景线是"方法论创新主战场"（①③），人物线是"落地能力主战场"（模板绑定 + 前馈），物体线则更多表现为"专项能力插件"（语义/规模/材质）</strong>。前馈高斯重建不会取代逐场景 3DGS，而是与之分层共存——<strong>前馈管"快速拿到一个还不错的通用结果"，逐场景优化管"在单场景上榨到极限"</strong>。</p>
+<div class="callout key">
+<p><strong>给 vggt_human 的启示</strong>：人物线的两条成熟路径——(a) Tele360 式"无位姿 + 几何基座蒸馏"，(b) HumanGS 式"模板绑定 + LBS 动画"——恰好对应"采集端省事"与"驱动端可用"两个诉求。若目标是"随手拍即可驱动的数字分身"，当前最缺的正是把这两者合一的方案（见 §14.4 P0）。</p>
+</div>
+</section>
+
+<section id="resources">
+<h2><span class="num">16</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>16.1 主要研究团队（按论文）</h3>
+<table>
+  <tr><th>方法</th><th>机构 / 团队</th><th>arXiv</th><th>备注</th></tr>
+  <tr><td><strong>ParticleSplat</strong></td><td>CMU 等（Lyuxing He / Daniel Guo / Deepak Pathak / David Held / Tal Daniel）</td><td>2609.19463</td><td>物体中心</td></tr>
+  <tr><td><strong>Tele360</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2609.15032</td><td>无位姿实时</td></tr>
+  <tr><td><strong>HumanGS</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2604.10259</td><td>模板绑定</td></tr>
+  <tr><td><strong>InfiniSplat v2</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.20341</td><td>迭代精修</td></tr>
+  <tr><td><strong>DeltaSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.09853</td><td>增量重建</td></tr>
+  <tr><td><strong>DensiTok</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.07958</td><td>生成先验</td></tr>
+  <tr><td><strong>CompactSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2610.13177</td><td>NeurIPS 2026</td></tr>
+  <tr><td><strong>GrapeSplat</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2609.23182</td><td>开源</td></tr>
+  <tr><td><strong>F-RNG</strong></td><td>—<span class="uncertain">【待核实】</span></td><td>2605.25975</td><td>可重光照</td></tr>
+</table>
+<p><span class="uncertain">【待核实】</span>：机构信息未逐一回 abs 页核对，引用前请补全。</p>
+
+<h3>16.2 资源链接</h3>
+<ul>
+  <li><strong>库内笔记</strong>：
+    <a href="3D-20231110-前馈3D重建模型综述.html">前馈 3D 重建模型综述</a> ·
+    <a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a> ·
+    <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">三维重建质量-速度 Pareto 全谱调研</a> ·
+    <a href="3D-20241202-TRELLIS.html">TRELLIS</a> ·
+    <a href="3D-20250121-Hunyuan3D.html">Hunyuan3D</a> ·
+    <a href="3D-20260508-TripoSplat.html">TripoSplat</a>
+  </li>
+  <li><strong>官方索引</strong>：<a href="https://arxiv.org/list/cs.CV/recent" target="_blank">arXiv cs.CV 最新</a></li>
+  <li><strong>项目页</strong>：ParticleSplat — <code>lyuxinghe.github.io/ParticleSplat-website/</code></li>
+</ul>
+<div class="callout tip">
+<p><strong>阅读建议</strong>：先读 §2 理解"为什么要前馈"、§3 看懂总体数据流，再按你的应用面选读 §4/§5/§6 之一；§12 的横向对比表是选型时的一页速查。</p>
+</div>
+</section>
+
+</div>
+
+<div class="footer">
+  📝 阅读笔记 · 生成于 2026-10-15 · 领域: 3D 重建 / 高斯泼溅 / 前馈式大重建模型
+</div>
+
+<script>
+  mermaid.initialize({startOnLoad:true, theme:'dark', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+
+</body>
+</html>
