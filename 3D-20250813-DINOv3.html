@@ -640,7 +640,7 @@ flowchart LR
 <section class="section" id="s11">
 <h2><span class="num">11</span>⚙️ 工程实现细节(源码验证)</h2>
 
-<div class="callout"><b>验证口径说明:</b>本节所有源码事实来自官方仓库 <code>facebookresearch/dinov3</code> 的 <code>git clone --depth 1</code>(工作副本位于本工作区 <code>.tmp_vision/src_dino/</code>,约 32MB)。下文 <code>file:line</code> 均为该副本中的实际行号,可逐行核对。</div>
+<div class="callout"><b>验证口径说明:</b>本节所有源码事实来自官方仓库 <code>facebookresearch/dinov3</code> 的 <code>git clone --depth 1</code>(克隆于 2026-10-16,核对后副本已清理)。下文 <code>file:line</code> 均为该次克隆的实际行号,可对照 upstream 仓库逐行核对。</div>
 
 <h3>11.1 预训练配置(<code>dinov3/configs/train/dinov3_vit7b16_pretrain.yaml</code>)</h3>
 <table>
@@ -1310,7 +1310,7 @@ flowchart LR
 <h3>本笔记的核对口径</h3>
 <ul>
   <li><b>论文层面</b>:全部依据 arXiv HTML v1 全文(LaTeXML 版),表格数字逐格抄录;<b>图注为原文英文引录</b>,中文为本人翻译。</li>
-  <li><b>源码层面</b>:全部依据 <code>facebookresearch/dinov3</code> 的 <code>git clone --depth 1</code> 工作副本(位于本工作区 <code>.tmp_vision/src_dino/</code>);所有 <code>file:line</code> 均可逐行核对。</li>
+  <li><b>源码层面</b>:全部依据 <code>facebookresearch/dinov3</code> 的 <code>git clone --depth 1</code> 工作副本(2026-10-16 克隆核对,副本已清理);所有 <code>file:line</code> 均可对照 upstream 仓库逐行核对。</li>
   <li><b>配图</b>:20 张全部从 <code>arxiv.org/html/2508.10104v1/</code> 下的原始相对路径下载(非猜测文件名),下载后做过<b>双向 diff</b>(笔记引用的 <code>src</code> 全集 vs <code>images/2508.10104/</code> 文件全集)与 <b>PNG/JPEG 文件头尾完整性校验</b>。</li>
   <li><b>不确定项</b>:文中所有 <span class="uncertain">【推测】</span> / <span class="uncertain">【存疑】</span> / <span class="uncertain">【待核实】</span> 均为本人标注,原文无对应表述。</li>
 </ul>

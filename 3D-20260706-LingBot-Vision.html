@@ -591,7 +591,7 @@ flowchart LR
 <section class="section" id="s11">
 <h2><span class="num">11</span>⚙️ 工程实现细节(源码验证)</h2>
 
-<div class="callout"><b>验证口径说明:</b>本节所有源码事实来自官方仓库 <code>Robbyant/lingbot-vision</code> 的下载副本(位于本工作区 <code>.tmp_vision/src_lbv/</code>),含 4 份 yaml、<code>vit.py</code> 等核心文件。下文 <code>file:line</code> 均为该副本中的实际行号。</div>
+<div class="callout"><b>验证口径说明:</b>本节所有源码事实来自官方仓库 <code>Robbyant/lingbot-vision</code> 的下载副本(2026-10-16 获取,含 4 份 yaml、<code>vit.py</code> 等核心文件,核对后副本已清理)。下文 <code>file:line</code> 均可对照 upstream 仓库核对。</div>
 
 <h3>11.1 主干实现(<code>lbot_vision/vit.py</code>)</h3>
 <table>
@@ -1071,7 +1071,7 @@ LingBot-Vision 是「<b>把边界从预测目标改写为预训练组织信号</
 <h3>本笔记的核对口径</h3>
 <ul>
   <li><b>论文层面</b>:全部依据 arXiv HTML v1 全文(LaTeXML 版),表格数字逐格抄录;<b>图注为原文英文引录</b>,中文为本人翻译。</li>
-  <li><b>源码层面</b>:全部依据 <code>robbyant/lingbot-vision</code> 的工作副本(位于本工作区 <code>.tmp_vision/src_lbv/</code>);所有 <code>file:line</code>(如 <code>vit.py:85</code> 的 <code>pos_embed_rope_dtype</code> 默认值)均可逐行核对。</li>
+  <li><b>源码层面</b>:全部依据 <code>robbyant/lingbot-vision</code> 的工作副本(2026-10-16 获取核对,副本已清理);所有 <code>file:line</code>(如 <code>vit.py:85</code> 的 <code>pos_embed_rope_dtype</code> 默认值)均可对照 upstream 仓库逐行核对。</li>
   <li><b>配图</b>:37 张全部从 <code>arxiv.org/html/2607.05247v1/</code> 下的原始相对路径下载(非猜测文件名),下载后做过<b>双向 diff</b>(笔记引用的 <code>src</code> 全集 vs <code>images/2607.05247/</code> 文件全集)与 <b>PNG/JPEG 文件头尾完整性校验</b>。</li>
   <li><b>关键澄清(避免误读)</b>:论文附录 A 的 <code>figures/hat_sampling_lsd/</code> 与 <code>figures/hat_sampling_wolsd/</code> 是 <b>Figure 3 的图片资源目录名</b>(lsd = θ 通道用经典 LSD level-line 引导,wolsd = 全通道均匀随机),<b>不是训练超参</b>;原文通篇无 "hard attention" / "RECON" 提法。</li>
   <li><b>数字复核</b>:摘要「7× fewer parameters」按精确参数量(1.1B vs 6.716B)复算为 <b>6.1×</b>;「13%/16%/20%/15%」各改进百分比均已按表格原始值手算命中;ViT-L 0.310 打平 7B DINOv3 0.309(约 22.4× 更少参数,论文原话 23×)。</li>
