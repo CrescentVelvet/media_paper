@@ -4380,6 +4380,132 @@
    ]
   },
   {
+   "title": "DINOv3: 自监督视觉基座(Gram Anchoring 稳住长训练,冻结特征直接服务下游)",
+   "meta": [
+    "📄 arXiv: 2508.10104",
+    "📅 2025-08-13",
+    "🏢 Meta AI (FAIR) · 26 作者 · abs 页 comments 为空(按规范不加会议 badge)"
+   ],
+   "tags": [
+    "自监督学习",
+    "ViT-7B/16",
+    "Gram Anchoring",
+    "RoPE-box jittering",
+    "冻结特征",
+    "蒸馏家族",
+    "LVD-1689M"
+   ],
+   "summary": "Meta 第三代自监督视觉基座,核心解法是 <strong>Gram anchoring</strong>:长训练后语义特征会漂移、密集任务掉点,于是用教师特征的 Gram 矩阵(余弦相似度)做事后约束把学生拉回,ADE20k 线性探测 +5.4。ViT-7B/16(6716M 参数、RoPE、4 registers)在 LVD-1689M 上三阶段训练。<strong>对本库最关键的证据</strong>:VGGT 换 DINOv3 编码器后 AUC@30 升到 86.3/89.6(Tab.13);冻结特征全面胜过 DepthAnythingV2(Tab.12),坐实其「前馈重建默认冻结编码器」地位。蒸馏出 S/S+/B/L/H+ + ConvNeXt 全谱系,但 7B 权重需申请。源码复核发现 Gram 损失实为 L2 归一化后余弦矩阵的 MSE(gram_loss.py),与论文式(2)的原始内积表述差一个常数因子。",
+   "links": [
+    {
+     "href": "3D-20250813-DINOv3.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2508.10104",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/facebookresearch/dinov3",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://huggingface.co/collections/facebook/dinov3-68924841bd6b561778e31009",
+     "text": "🤗 HuggingFace"
+    }
+   ],
+   "file": "3D-20250813-DINOv3.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17",
+    "s18"
+   ]
+  },
+  {
+   "title": "LingBot-Vision: 面向稠密空间感知的边界中心视觉预训练(Masked Boundary Modeling)",
+   "meta": [
+    "📄 arXiv: 2607.05247",
+    "📅 2026-07-06",
+    "🏢 蚂蚁灵波 Robbyant (Ant Group) · 9 作者 · Tech report(按规范不加会议 badge)"
+   ],
+   "tags": [
+    "自监督学习",
+    "Masked Boundary Modeling",
+    "Boundary Field",
+    "a-contrario 校验",
+    "稠密空间感知",
+    "深度补全",
+    "Apache-2.0"
+   ],
+   "summary": "把「边界」从下游预测目标改写为<strong>预训练的组织信号</strong>:用 boundary field a(p)=(d,θ,φ¹,φ²) 把线段重参数化成稠密场,再把边界 token 强制并入掩码集 M⁺=M∪ℬ 逼模型重建结构。监督信号用四步管线从教师自身噪声预测里「长」出来(角点配对→投票聚合→a-contrario 校验)。<strong>几何指标极高效</strong>:1.1B 在 NYUv2 以 0.296 赢过 6.7B DINOv3 的 0.309,0.3B 蒸馏档(0.310)打平 7B 教师;训练语料仅 160.75M(不足 DINOv3 的 1/10)。Apache-2.0 商用友好。落差:ADE20k 语义分割差约 2 mIoU,且未在跨视图对应(前馈重建核心环节)验证。笔记含与 DINOv3 的 7 维选型决策表和给 vggt_human 的 3 条建议。",
+   "links": [
+    {
+     "href": "3D-20260706-LingBot-Vision.html",
+     "text": "📖 阅读笔记"
+    },
+    {
+     "href": "https://arxiv.org/abs/2607.05247",
+     "text": "📄 arXiv"
+    },
+    {
+     "href": "https://github.com/robbyant/lingbot-vision",
+     "text": "💻 GitHub"
+    },
+    {
+     "href": "https://www.modelscope.cn/organization/robbyant",
+     "text": "🤖 ModelScope"
+    }
+   ],
+   "file": "3D-20260706-LingBot-Vision.html",
+   "section": "3d",
+   "kind": "note",
+   "depth": "deep",
+   "topics": [
+    "前馈式大重建模型"
+   ],
+   "anchors": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17",
+    "s18"
+   ]
+  },
+  {
    "title": "前馈式高斯重建 2026 下半年调研:场景 / 人物 / 物体三条主线",
    "meta": [
     "📄 综述: InfiniSplat v2 / DeltaSplat / DensiTok / CompactSplat / GrapeSplat / iLRM / Tele360 / HumanGS / VFAvatar / FFAvatar / SpatialAvatar-0 / ParticleSplat / F-RNG 等 15+ 篇(数字均回原文表核对)",

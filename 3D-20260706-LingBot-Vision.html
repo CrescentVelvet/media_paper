@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LingBot-Vision:把「边界」变成自监督的组织信号 — 边界中心视觉基座</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:24px;font-weight:800;color:var(--accent);line-height:1.25}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+.figrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.figrow img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2607.05247v1 · 2026-07-06 · 边界中心自监督 · 面向稠密空间感知的视觉基座</span>
+    <h1>LingBot-Vision:把「边界」变成自监督的组织信号,让 patch 特征同时携带语义与几何</h1>
+    <div class="subtitle">Vision Pretraining for Dense Spatial Perception(蚂蚁灵波 Robbyant 技术报告)</div>
+    <div class="authors">Zelin Fu · Bin Tan · Changjiang Sun · Shaohui Liu · Kecheng Zheng · Yinghao Xu · Xing Zhu · Yujun Shen · Nan Xue(共 9 人)</div>
+    <div class="org">蚂蚁灵波 Robbyant(Ant Group)&nbsp;|&nbsp;cs.CV · comments: Tech report, 31 pages(按规范不加会议 badge)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2607.05247" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2607.05247v1" target="_blank">🌐 arXiv HTML 全文(v1)</a>
+      <a href="https://arxiv.org/pdf/2607.05247" target="_blank">📥 PDF</a>
+      <a href="https://github.com/Robbyant/lingbot-vision" target="_blank">💻 GitHub(Robbyant/lingbot-vision)</a>
+      <a href="https://www.modelscope.cn/collections/Robbyant/LingBot-Vision" target="_blank">🧩 ModelScope 权重</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:语义码本里的几何盲区</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:boundary field 的重参数化</a></li>
+    <li><a href="#s5">模块二:边界目标的在线发现管线</a></li>
+    <li><a href="#s6">模块三:masked boundary modeling</a></li>
+    <li><a href="#s7">模块四:数据引擎 160.75M</a></li>
+    <li><a href="#s8">模块五:训练配方与蒸馏家族</a></li>
+    <li><a href="#s9">损失函数总表</a></li>
+    <li><a href="#s10">逻辑流程图(预训练)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节(源码验证)</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验与机制分析</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p><b>一句话概括:</b>主流自监督视觉基座(DINOv2/DINOv3)的 patch 特征擅长「语义分组」(把同一物体的 patch 聚到一起),但在<b>两个区域的交界处</b>——也就是物体的边缘——表达最弱,因为语义码本根本不编码几何。LingBot-Vision 的答案是把「边界」从「需要预测的输出」提升为「组织特征学习的信号」:先用一套纯几何的 <b>boundary field</b> 参数化把线段编码成稠密场 $a(p)=(d_p,\theta_p,\phi^1_p,\phi^2_p)$,再把「边界 token」<b>强制塞进掩码集</b> $\mathcal{M}^+=\mathcal{M}\cup\mathcal{B}$,逼模型必须重建这些结构。结果是 patch 特征在<b>不牺牲语义</b>的前提下带上了显式的几何结构。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把「边界」从分割/边缘检测这类<b>下游任务的预测目标</b>,改写成<b>预训练阶段的自监督组织信号</b>。论文引言的原话点破了这一点:"boundaries and shape discontinuities are not merely outputs to be predicted, but fundamental organizing signals..."。这是对「自监督学不到几何」这个长期判断的直接反驳——<b>学不到不是 SSL 目标本身不行,是没人把边界放进目标里。</b>
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">0.296</div><div class="l">NYUv2 相对深度 RMSE ↓(ViT-g/16,冻结线性探测)<br><b>全表最优</b>,优于 7B DINOv3 的 0.309(Table 2)</div></div>
+  <div class="stat"><div class="v">×7 更少</div><div class="l">参数量 1.1B vs DINOv3 教师 6.7B<br>(Table 2,NYUv2 上仍胜出)</div></div>
+  <div class="stat"><div class="v">160.75M</div><div class="l">预训练语料规模<br>约为 DINOv3 LVD-1689M(1689M)的 1/10(§4.1)</div></div>
+  <div class="stat"><div class="v">+3.0 δ₁</div><div class="l">categorical boundary target 单项贡献<br>NYUv2 δ₁ 81.4% → 84.4%(Table 1 概念验证)</div></div>
+  <div class="stat"><div class="v">86.32</div><div class="l">ImageNet Linear top-1(旗舰 ViT-g)<br>k-NN 83.39(Table 4)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2607.05247/l35_teaser_crop.png" alt="LingBot-Vision 的边界中心掩码建模总览" loading="lazy">
+  <div class="caption"><b>图1</b>(对应论文 Figure 1,取自 GitHub README 的 <code>assets/teaser_crop.png</code>)<b>边界中心掩码建模的总览。</b>每一行从左到右:输入图像;冻结教师 patch token 的 PCA 投影;经 a-contrario 校验得到的 boundary token(粉色),叠加在所有通过校验的线段候选的累积响应上;以及 9 个 boundary-token query(红叉,按特征空间最远点采样选取)与全部 patch token 的余弦相似度图。论文图注原文:"LingBot-Vision learns dense representations via boundary-centric masked modeling... The learned representations carry both semantic grouping and geometric structures. Input images are at 1024px for the short side."——这张图同时展示了论文要交付的两样东西:<b>语义分组(PCA 颜色块)</b>与<b>几何结构(边界 token 与相似度图)</b>。</div>
+</div>
+
+<h3>三个宣称的贡献(论文 §1)</h3>
+<ol>
+  <li><b>boundary field 的几何重参数化</b>:把图像边界建模为线段,再把稀疏线段「升维」成稠密场——每个靠近线段的像素存它到线段的距离与三个定位角度 $(d,\theta,\phi^1,\phi^2)$,且刻意冗余到「支撑区域内任一像素都足以重建整条线段」(§3.3,Figure 4)。</li>
+  <li><b>boundary token 的在线发现管线</b>:教师自身在线预测稠密 boundary field → 与一个<b>冻结的</b>单块 ViT 定位的稀疏角点配对 → 投票聚合解码出线段候选 → <b>a-contrario 校验</b>丢弃无支撑候选 → 幸存者重渲染成干净的 target field(§3.4,Figure 5)。全程<b>无人工标注、无外部检测器</b>。</li>
+  <li><b>masked boundary modeling</b>:把边界 token 强制并入随机掩码集 $\mathcal{M}^+=\mathcal{M}\cup\mathcal{B}$,让这些「结构上最关键」的 token 成为 student 必须重建的对象(§3.5,Figure 2)。</li>
+</ol>
+
+<div class="callout tip">
+<b>为什么这篇值得与 <a href="3D-20250813-DINOv3.html">DINOv3 笔记</a> 对照着读:</b>两篇笔记是同一场「自监督如何学几何」对话的两种答案。DINOv3 承认 patch 级一致性会随训练退化,用 <b>Gram anchoring</b> 在训练后期<b>事后修复</b>;LingBot-Vision 则选择在<b>事前</b>改造 patch 级目标本身。两者的结论也互补:DINOv3 在 ADE20k 语义分割上更强(55.9 vs 53.5),LingBot-Vision 在 NYUv2 相对深度上反超(0.296 vs 0.309)且参数少 7 倍。这个互补关系正是「按任务选基座」的直接依据,详见 <a href="#s14">§14</a>。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:语义码本里的几何盲区</h2>
+
+<h3>论文对「视觉智能」的重新定义</h3>
+<p>论文 §1 开篇给出一段纲领性表述:"Visual intelligence is not only about recognizing <b>what</b> is in an image, but also about recovering the <b>dense spatial structure</b> that makes the physical world measurable, navigable, and actionable."——这句话把「可测量、可导航、可操作」作为视觉智能的落地标准,而这三个词恰好都是<b>机器人学</b>的语言。这解释了这篇技术报告为什么出自一家<b>机器人公司</b>(蚂蚁灵波 Robbyant):它的目标不是刷 ImageNet,而是给下游的<b>操作(manipulation)</b>与<b>深度补全</b>提供一个带几何感知的视觉基座。</p>
+
+<h3>失败模式:语义边界处的表示最弱</h3>
+<p>论文 §3.2 给出关键论证,这也是整套方法的事実基础:</p>
+<blockquote class="quote">"A semantic codeword encodes no explicit geometry and is weakest where two or more regions meet, so standard reconstruction under-supervises exactly the boundary tokens we force into the mask; the categorical geometric target supplies the missing signal."</blockquote>
+<div class="grid-2">
+<div class="card"><h4>失败模式:边界处的「欠监督」</h4>
+<p>以 iBOT 这类 latent 重建目标为例:它把 patch 特征投进一个<b>语义码本</b>(codebook),让 student 重建被掩码 token 的码本索引。问题在于码本索引是<b>语义</b>的——同一只狗的背部 patch 和边缘 patch,码本都可能归到同一类。于是<b>恰好是两个物体交界处的 patch 最难学</b>,而随机掩码又很少命中这些位置。</p>
+</div>
+<div class="card"><h4>作者的归因:边界信息被码本「抹平」</h4>
+<p>码本的条目是有限的(Table 2 里 DINOv3 的 iBOT prototype 也只有 96k),它不可能为「从猫过渡到背景」这种<b>局部几何过渡</b>留一个码字。结果就是边界 token 的信号被平均掉,模型学到的是「整块区域的语义」而非「区域的形状」。</p>
+</div>
+</div>
+
+<h3>与 DINOv3「稠密特征退化」的关系</h3>
+<div class="callout warn">
+<b>这是两篇论文同一个病灶的两种诊断。</b>
+<ul>
+  <li><b>DINOv3 的诊断</b>:patch 与 CLS 的余弦相似度随训练升高 → 特征局部性丧失 → 稠密任务掉点(<a href="3D-20250813-DINOv3.html#s2">DINOv3 §2</a>)。药方是 <b>Gram anchoring</b>——用早期 checkpoint 的相关性结构当锚。</li>
+  <li><b>LingBot-Vision 的诊断</b>:随机掩码系统性避开边界 token,且语义码本不含几何 → 边界处的表示先天薄弱。药方是 <b>masked boundary modeling</b>——把边界 token 强制塞进掩码,并配上显式几何目标。</li>
+</ul>
+<b>两者的区别在于「事后修」还是「事前改」。</b>DINOv3 的做法不改变预训练目标,只在后期加一个约束项;LingBot-Vision 的做法直接改预训练目标的内容(掩码分布 + 监督信号)。<b>Gram 的净收益约 +5.4 mIoU(ADE20k),masked boundary modeling 的净收益约 +3.0 δ₁(NYUv2)——数量级相当,但作用点不同。</b>
+</div>
+
+<h3>为什么是「线段」而不是「边缘图」</h3>
+<p>论文 §3.3 专门论证了这个问题:"An edge map... marks photometric discontinuity pixel by pixel, may seem the more general choice. The trouble is that edge pixels can hardly be validated"——边缘图逐像素标注光度不连续,但<b>无法做校验</b>(每个边缘像素都是一个孤立事件,没有整体结构可以检验)。线段则不同:它有一个<b>整体的、可被 a-contrario 判据检验</b>的几何假设。这个「可校验性」是整条边界发现管线的支点。</p>
+
+<h3>边界是自然涌现的(Finding 1)</h3>
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l11_hat_lsd.jpg" alt="仅方向通道用 level-line 引导的解码结果" loading="lazy" style="max-width:48%">
+    <img src="images/2607.05247/l12_hat_wolsd.jpg" alt="全通道均匀随机的解码结果" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="caption"><b>图2</b>(对应论文 Figure 3 的两行样例)<b>给定角点,随机 boundary field 也能解码出线段;若方向通道再被 level-line 引导,线段变得连贯。</b>论文对 Finding 1 的表述:"Boundaries emerge from corner points. For two images, we draw five random boundary fields per image, fix the corner points, and decode line segments from each draw. In the bottom two rows, every field channel is sampled uniformly at random: the decoded segments still anchor on the corner points, but stay short and fragmented. In the top two rows, only the direction channel is guided by a parameter-free estimate of the image's level-line orientation, rendered into a boundary field, and every draw yields coherent, near-identical segments. In either case the fields carry no learned information."——这张图是「边界目标可以从零启动」的<b>原理证明</b>:只要角点可靠,即使是完全随机的场也能解出锚定在角点上的线段。</div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>boundary field 之所以能让「从零启动」成为可能,靠的是它的<b>冗余性</b>——支撑区域内任一像素都足以重建整条线段(§3.3),所以即使 field 早期是噪声,投票聚合也能从大量弱信号里「聚」出相干候选。这个「冗余 → 投票 → 校验」的三件套,本质上是把<b>线段检测从「学习问题」退化成「统计检验问题」</b>,从而摆脱了对预训练权重的依赖。这也是它与「直接预测边缘图」最根本的区别。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入 / 输出定义</h3>
+<ul>
+  <li><b>训练输入</b>:每张图像取 2 个 global crop($256\times256$)+ 8 个 local crop($112\times112$),global batch size <b>3072</b>。学生侧对随机掩码 $\mathcal{M}$ 与边界掩码 $\mathcal{B}$ 的并集做重建。</li>
+  <li><b>训练输出(教师侧)</b>:一个 1.1B 的 EMA 教师;boundary field 由教师自身在线预测。</li>
+  <li><b>推理输入 / 输出</b>:任意分辨率图像 → patch token 序列(+CLS + 4 registers);输出可直接作为冻结特征喂下游。</li>
+</ul>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>取值 / 维度</th><th>出处</th></tr>
+<tr><td>$p$</td><td>像素(场坐标)</td><td>—</td><td>§3.3</td></tr>
+<tr><td>$\ell$</td><td>线段</td><td>—</td><td>§3.3</td></tr>
+<tr><td>$a(p)$</td><td>像素 $p$ 处的 <b>boundary field</b> 四元组</td><td>$(d_p,\theta_p,\phi^1_p,\phi^2_p)$</td><td>式 (5)</td></tr>
+<tr><td>$d_p$</td><td>$p$ 到最近线段 $\ell$ 的距离</td><td>截断到支撑宽度</td><td>§3.3</td></tr>
+<tr><td>$\theta_p$</td><td>线段 $\ell$ 的方向角</td><td>$[0,\pi)$</td><td>§3.3</td></tr>
+<tr><td>$\phi^1_p,\phi^2_p$</td><td>从 $p$ 看向线段两端点的方位角</td><td>$[0,2\pi)$</td><td>§3.3</td></tr>
+<tr><td>$\mathcal{B}$</td><td>boundary token 集合(被边界穿过的 patch)</td><td>式 (5)</td><td>式 (5)</td></tr>
+<tr><td>$\mathcal{M}^+$</td><td>强制并集掩码集</td><td>$\mathcal{M}\cup\mathcal{B}$</td><td>式 (6)</td></tr>
+<tr><td>$K$</td><td>每通道的离散 bin 数</td><td><b>32</b>(概念验证时为 128)</td><td>§4.3</td></tr>
+<tr><td>$\tau_\ell$</td><td>软标签温度</td><td>窄(§3.3)</td><td>式 (8)</td></tr>
+<tr><td>$\delta^c$</td><td>第 $c$ 个通道的环形距离</td><td>角度通道用环形距离</td><td>式 (8)</td></tr>
+<tr><td>$\lambda_i,\lambda_b,\lambda_k$</td><td>iBOT / boundary / KoLeo 权重</td><td>$1,1,0.1$</td><td>式 (10)</td></tr>
+<tr><td>$\epsilon$</td><td>a-contrario 显著性阈值</td><td><b>1</b></td><td>附录</td></tr>
+<tr><td>$\tau_d$</td><td>场分辨率下的距离阈值</td><td>5 px</td><td>附录 A</td></tr>
+<tr><td>$\pi/16$</td><td>方向对齐容差</td><td>$\pi/16$(比 LSD 的 $\pi/8$ 更严)</td><td>附录 A</td></tr>
+</table>
+
+<h3>总体框架(预训练)</h3>
+<div class="mermaid">
+flowchart LR
+  subgraph T["教师(在线,EMA)"]
+    T1["冻结单块 ViT<br/>→ 稀疏角点"]
+    T2["主干预测 dense boundary field<br/>a(p)=(d,θ,φ¹,φ²)"]
+  end
+  T2 --> V["投票聚合<br/>→ 线段候选"]
+  T1 --> V
+  V --> A["a-contrario 校验<br/>ε=1, 拒绝无支撑候选"]
+  A --> R["幸存者重渲染<br/>→ 干净 target field"]
+  R --> SUP["boundary token 监督<br/>L_bnd(交叉熵,软标签)"]
+  subgraph S["学生"]
+    M["掩码 ℳ⁺ = ℳ ∪ ℬ<br/>把边界 token 强制加入随机掩码"]
+    M --> REC["重建语义 + 边界"]
+  end
+  SUP --> REC
+  REC --> LOSS["L = L_DINO + λ_i·L_iBOT + λ_b·L_bnd + λ_k·L_KoLeo"]
+</div>
+<div class="note"><b>三个容易漏掉的点:</b>① 教师<b>自身</b>在线预测 boundary field,而非预训练好的检测器——这解释了为什么方法可以从零启动。② 角点来自一个<b>冻结的单块 ViT</b>(§3.4),是固定不动的「种子」源。③ a-contrario 校验拒绝的候选会被丢弃,但<b>幸存者会重渲染成干净的 target field</b>——所以监督信号本身是「干净化」过的,不是直接用教师的噪声预测。这三个设计环环相扣,缺一个都不行(见 <a href="#s13">§13</a> 消融)。</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:boundary field 的重参数化</h2>
+
+<h3>一句话定位</h3>
+<p>把「稀疏的线段集合」升维成「稠密的像素级场」,而且故意做得<b>高度冗余</b>:支撑区域内任何一个像素,都携带足以重建整条线段的全部信息。这个冗余是后面「投票聚合」「在线启动」两个步骤能成立的前提。</p>
+
+<h3>网络结构 / 参数化</h3>
+<p>论文 §3.3 的核心设计。把图像边界建模为<b>直线段</b>(曲线边界 = 短线段链),然后对每个靠近线段的像素 $p$,存它到线段的距离和三个定位角:</p>
+<div class="equation">
+$$a(p)\;=\;\big(d_p,\;\theta_p,\;\phi^{1}_p,\;\phi^{2}_p\big)$$
+<span class="tag">(式 5)boundary field 四元组,论文式 (7)</span>
+</div>
+<ul>
+  <li>$d_p$:像素 $p$ 到其所属线段 $\ell$ 的<b>距离</b>;</li>
+  <li>$\theta_p$:线段 $\ell$ 的<b>方向角</b>(共享同一朝向颜色的平行线段见图 3b 左二);</li>
+  <li>$\phi^1_p,\phi^2_p$:从 $p$ 看向线段<b>两个端点</b>的方位角——用两个端点角把「这条线段在哪、多长」确定下来。</li>
+</ul>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l05_field_d.png" alt="boundary field 的距离通道" loading="lazy" style="max-width:23%">
+    <img src="images/2607.05247/l06_field_theta.png" alt="boundary field 的方向通道" loading="lazy" style="max-width:23%">
+    <img src="images/2607.05247/l07_field_support.png" alt="boundary field 的支撑区域" loading="lazy" style="max-width:23%">
+    <img src="images/2607.05247/l08_field_votes.png" alt="boundary field 的投票聚合解码" loading="lazy" style="max-width:23%">
+  </div>
+  <div class="caption"><b>图3</b>(对应论文 Figure 4 的 (b)(c)(d) 三子图)<b>boundary field 一览。</b>左一($d$):距离通道;左二($\theta$):方向通道,平行线段共享同一朝向颜色;右一(支撑区域):编码刻意冗余,任一支撑像素足以重建整条线段;右二(投票聚合):橙色细线是单个像素的噪声投票,黑色粗线是聚合后的线段。论文图注原文:"The boundary field lifts the sparse segments into a dense map: every pixel near a segment stores its distance d to the segment and three angles... The encoding is deliberately redundant: any single pixel p in a segment's support region carries enough information to reconstruct the entire segment. Conversely, segments are decoded by letting all support pixels vote and aggregating the votes..."</div>
+</div>
+
+<h3>数学形式化:类别化 + 软标签</h3>
+<p>四个通道各自被离散化成 $K=32$ 个 bin,把回归问题变成<b>分类问题</b>(论文称 "categorical reparameterization")。第 $c$ 个通道的软标签是围绕真值 bin 的高斯:</p>
+<div class="equation">
+$$\bar{y}^{c}_{k}(p)\;\propto\;\exp\!\Big(-\frac{\delta^{c}\big(k,\,a^{c}(p)\big)^{2}}{\tau_{\ell}}\Big)$$
+<span class="tag">(式 6)第 c 通道的软标签,论文式 (8);$\delta^c$ 为环形距离,$\tau_\ell$ 为窄温度</span>
+</div>
+<p>监督信号是对四个通道分别求交叉熵再相加:</p>
+<div class="equation">
+$$\mathcal{L}_{\mathrm{bnd}}\;=\;-\frac{1}{|\mathcal{B}|}\sum_{p\in\mathcal{B}}\sum_{c}\;\bar{y}^{c}(p)^{\top}\log \hat{y}^{c}(p)$$
+<span class="tag">(式 7)boundary 损失,论文式 (9);只在 boundary token 上求和</span>
+</div>
+
+<div class="callout key">
+<b>为什么「类别化 + 软标签」是这个模块的关键(而不是可选项):</b>
+<ol>
+  <li><b>环形距离 $\delta^c$</b>:方向角是周期性的($\theta$ 与 $\theta+\pi$ 是同一条线),用普通欧氏距离会在 $0$ 与 $\pi$ 边界处出错;环形距离把这个周期结构编码进损失。</li>
+  <li><b>窄温度 $\tau_\ell$</b>:让梯度集中在真值 bin 附近的几个 bin 上,而不是均匀摊到全部 32 个。论文 §4.3 称这相当于「把软标签做得很窄」。</li>
+  <li><b>离散化让「多解」合法</b>:同一条线段的两个方向($\theta$ 与 $\theta+\pi$)在 32-bin 的周期码本里是两个都合法的类别,不像回归那样被迫二选一。</li>
+</ol>
+</div>
+
+<h3>前向流程</h3>
+<ol>
+  <li>教师 backbone 输出 dense patch 特征 → 一个<b>三层 per-token MLP</b>(head dim 512,输出步长 $s=2$)→ 每 token 预测 $4\times K=128$ 个 logit。</li>
+  <li>预测被重排成 boundary field 的四个通道图。</li>
+  <li>只在 $\mathcal{B}$ 内的 token 上算 $\mathcal{L}_{\mathrm{bnd}}$(非边界位置填均匀随机标签,避免「全背景」平凡解)。</li>
+</ol>
+
+<div class="callout warn">
+<b>「支撑区域」的设计有一个值得注意的物理含义:</b>论文把支撑区域的宽度固定为 <b>33 像素</b>(附录 A,原文 "fixed-width rectangles of 33 px"),这是一个<u>比 patch 尺寸(16 px)更大</u>的邻域。也就是说,<b>一条线段的影响范围会跨越约 2 个 patch</b>——这使得「边界 token」天然是一个<b>跨 patch 的协同概念</b>,而不是单 patch 的属性。这是它能修正「patch 级一致性」的深层原因:它强迫相邻 patch 在边界处达成一致。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:边界目标的在线发现管线</h2>
+
+<h3>一句话定位</h3>
+<p>这是整套方法里工程上最精巧的部分:<b>监督信号不是从外部检测器来的,而是从教师自身的噪声预测里「长」出来的。</b>整条管线分四步,其中第三步(投票聚合)和第四步(a-contrario 校验)是把「噪声场」变成「干净目标」的关键。</p>
+
+<h3>四步流程(§3.4)</h3>
+<ol>
+  <li><b>教师预测</b>:教师对当前 batch 预测稠密 boundary field(早期是噪声,见 §2 Finding 1 的证明)。</li>
+  <li><b>角点配对</b>:用一个<b>冻结的单块 ViT</b>定位稀疏角点,与 field 配对,得到「角点锚定的线段碎片」。<b>冻结</b>是关键词——它提供不随训练漂移的种子。</li>
+  <li><b>投票聚合</b>:支撑区域内的所有像素对「线段在哪」投票,聚合出候选线段(图 3d 的橙色细线 → 黑色粗线)。</li>
+  <li><b>a-contrario 校验</b>:对每个候选线段做「无意义的偶然对齐概率」检验,丢弃未通过者,幸存者重渲染成干净的 target field。</li>
+</ol>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l09_boot_noisy.png" alt="噪声场与角点种子" loading="lazy" style="max-width:48%">
+    <img src="images/2607.05247/l10_boot_dim.png" alt="解码出的线段候选" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="caption"><b>图4</b>(对应论文 Figure 5 的 (b)(c) 两子图)<b>在线生成边界目标的中间步骤。</b>左:教师早期的噪声 boundary field 加上角点种子(绿色点);右:投票聚合后解码出的线段候选——既有真边界,也有伪候选(如脸部对角线、背景弦)。论文图注原文:"Even when the teacher's boundary field is noisy, as it is early in training, the holistic parameterization lets the many weak per-pixel votes in a segment's support region aggregate into coherent candidate segments anchored at corner points, together with spurious candidates such as face diagonals and background chords."<b>注意:</b>此时还<b>没有</b>做任何过滤——伪候选是投票聚合的必然副产物,过滤交给下一步的 a-contrario 校验。</div>
+</div>
+
+<h3>a-contrario 校验的数学形式化</h3>
+<p>校验的思想是「假设检验」:如果一个线段候选只是「噪声的偶然对齐」,它应该能通过一个<b>极低阈值</b>的检验被淘汰。具体实现用 NFA(Number of False Alarms):</p>
+<div class="equation">
+$$\mathrm{NFA}(\ell)\;=\;N_t\cdot\Pr\big[\text{在 }H_0\text{ 下,随机场里出现一条与 }\ell\text{ 一样好的对齐}\big]$$
+<span class="tag">(式 8)NFA 定义;$\epsilon=1$ 时拒绝所有 NFA&gt;1 的候选(附录 A)</span>
+</div>
+<ul>
+  <li>检验统计量:线段上「方向对齐」的像素数,对齐容差 $\pi/16$(比经典 LSD 的 $\pi/8$ 更严)。</li>
+  <li>零假设 $H_0$:像素方向独立同分布,因此一条线段上对齐像素数服从二项分布,概率 $p=1/16$。</li>
+  <li>试验数 $N_t=(HW)^{5/2}$(附录 A)。</li>
+  <li>预过滤:「对齐像素密度 &lt; 0.5」的候选直接拒绝,不进 NFA 计算。</li>
+</ul>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l33_corridor_v1t_raw.png" alt="(a) 冻结检测器角点 + 无校验" loading="lazy" style="max-width:48%">
+    <img src="images/2607.05247/l34_corridor_v1t_nfa.png" alt="(b) 冻结检测器角点 + a-contrario 校验" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="figrow">
+    <img src="images/2607.05247/l31_corridor_field_raw.png" alt="(c) 场自导出角点 + 无校验" loading="lazy" style="max-width:48%">
+    <img src="images/2607.05247/l32_corridor_field_nfa.png" alt="(d) 场自导出角点 + a-contrario 校验" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="caption"><b>图5</b>(对应论文 Figure 11 的全部 (a)(b)(c)(d) 四子图)<b>角点锚定与 a-contrario 校验是互补的安全网。</b>上排 = 角点来自<b>冻结单块 ViT 检测器</b>(可靠锚点):(a) 无校验时投票聚合已干净(920 候选);(b) 加 a-contrario 只去掉少量残渣(保留 673)。下排 = 角点由 field <b>自身导出</b>($j_{\mathrm{loc}}=1-d$,弱锚点):(c) 无校验时解码退化成 2382 条密杂伪结构;(d) 加 a-contrario 后恢复到几乎一致的 675 条干净线段(拒绝率 72%)。论文图注原文:"Corner anchors and a-contrario validation are complementary safeguards... with corner points taken either from the frozen single-block detector (a, b; 920 candidate segments) or derived from the field itself via jloc = 1 − d (c, d; 2,382 candidates)... With reliable corner anchors, the vote-aggregation decoding is already clean before any validation... and the a-contrario test removes only minor spurious residues (b; 673 segments kept). With weak, self-derived anchors, the unvalidated decoding degenerates into dense spurious structure (c), yet the a-contrario test recovers almost identical line segments (d; 675 kept, 72% rejected). Either safeguard alone suffices; only when both are removed does decoding fail."<br><b>这张图的信息量极大:</b>它证明了「角点锚定」和「a-contrario 校验」是<b>两个独立的安全网</b>——对比 (b) 与 (d),无论锚点强弱,只要 a-contrario 在,最终都收敛到几乎同一组 ~675 条干净线段;只有两个安全网同时拿掉(a 的左→c 那种无校验 + 弱锚点)才会崩。这也是为什么 LingBot-Vision 可以从零启动:即使早期角点不可靠,a-contrario 也能兜底。<span style="color:var(--orange)"><b>【勘误】</b>本图初稿曾把上排误标为 (c)(d) 的「自导出角点」——经逐图目检(上排干净、下排左噪)与提取报告交叉核对后更正:v1t = 冻结检测器角点,field = 场自导出。</span></div>
+</div>
+
+<div class="callout warn">
+<b>一个必须澄清的实现事实(避免误读):</b>论文附录 A 里用来演示「无学习信息也能解码线段」的两组图,其图片资源目录名是 <code>figures/hat_sampling_lsd/</code> 与 <code>figures/hat_sampling_wolsd/</code>——<b>lsd 指「θ 通道用经典 LSD 的 level-line 方向做引导」,wolsd 指「全通道 U(0,1) 均匀随机」</b>。<b>这两个名字是 Figure 3 的图片目录名,不是训练超参</b>。原文通篇没有 "hard attention" 或 "line segment detection loss" 这类提法;本笔记此前的草稿曾把这两个目录名误读为训练采样策略,经与原文逐字核对后更正——<b>不要从资源文件名反推方法</b>,是本库反复强调的一条纪律。
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:masked boundary modeling</h2>
+
+<h3>一句话定位</h3>
+<p>这是把「boundary field」接到「自监督预训练」上的接口:<b>把边界 token 强制并入随机掩码集</b>,让这些结构上最关键的位置成为 student 必须重建的对象。整个模块只有一个新符号 $\mathcal{B}$,但它的效果是把预训练的「注意力」从「整块区域」重新分配到「区域交界处」。</p>
+
+<h3>数学形式化</h3>
+<p>先定义边界 token——被任何一条预测边界穿过的 patch:</p>
+<div class="equation">
+$$\mathcal{B}\;=\;\Big\{\,i\in\{1,\dots,N\}\;:\;\text{a predicted boundary intersects patch}(i)\,\Big\}$$
+<span class="tag">(式 9)boundary token 集合,论文式 (5)</span>
+</div>
+<p>再把它并入随机掩码集:</p>
+<div class="equation">
+$$\mathcal{M}^{+}\;=\;\mathcal{M}\;\cup\;\mathcal{B}$$
+<span class="tag">(式 10)掩码集取并集,论文式 (6)</span>
+</div>
+<p>最终的总目标是在 DINOv2 的基座上加上边界项:</p>
+<div class="equation">
+$$\mathcal{L}\;=\;\mathcal{L}_{\mathrm{DINO}}+\lambda_i\,\mathcal{L}_{\mathrm{iBOT}}+\lambda_b\,\mathcal{L}_{\mathrm{bnd}}+\lambda_k\,\mathcal{L}_{\mathrm{KoLeo}},\qquad \lambda_i=\lambda_b=1,\ \lambda_k=0.1$$
+<span class="tag">(式 11)总损失,论文式 (10)</span>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l01_cube_render_grid.png" alt="输入图像与 patch 网格" loading="lazy" style="max-width:23%">
+    <img src="images/2607.05247/l02_cube_mask_random.png" alt="随机掩码" loading="lazy" style="max-width:23%">
+    <img src="images/2607.05247/l03_cube_mask_bnd.png" alt="边界强制掩码" loading="lazy" style="max-width:23%">
+    <img src="images/2607.05247/l04_cube_boundary.png" alt="boundary field 目标" loading="lazy" style="max-width:23%">
+  </div>
+  <div class="caption"><b>图6</b>(对应论文 Figure 2 全部四子图)<b>玩具场景上的边界中心掩码建模。</b>(a) 输入图像与 patch 网格;(b) 随机掩码——大量被掩的是平坦区域,可从上下文恢复,而承载边界的 patch 大多逃过掩码;(c) <b>边界强制掩码(本文)</b>——把每个承载边界的 patch 都加入随机掩码,让「场景的结构」成为 student 必须重建的对象;(d) 监督边界 token 的 boundary field,编码为逐像素的离散距离/方向分布。论文图注原文:"Boundary-centric masked modeling on a toy scene... Random masking is content-agnostic: most hidden patches are flat and recoverable from context, while the boundary-bearing patches largely escape the mask. Boundary-forcing masking adds every boundary-bearing patch to the random mask, so the structure of the scene is exactly what the student must reconstruct."——这四张子图就是 $\mathcal{M}^+=\mathcal{M}\cup\mathcal{B}$ 的直观化。</div>
+</div>
+
+<h3>为什么「强制掩码边界」有效(论文的机制解释)</h3>
+<div class="callout key">
+<p>论文 §3.2 给出因果链:</p>
+<ol>
+  <li>随机掩码是<b>内容无关的</b>,所以它系统性地避开稀疏的边界位置;</li>
+  <li>语义码本又不编码几何,所以<b>边界位置的重建误差一直很高</b>;</li>
+  <li>这两个因素叠加,导致边界 token 在预训练里被<b>双重欠监督</b>;</li>
+  <li>把它们强制塞进掩码,等于把监督预算<b>重新分配到最需要的位置</b>。</li>
+</ol>
+<p>这与 DINOv3 的 Gram anchoring 形成有趣的镜像:Gram 修的是「patch 间相关性的<b>相对结构</b>」,masked boundary modeling 修的是「哪些 patch 该被监督的<b>空间分布</b>」。两者都是在给 patch 级目标「补课」,只是一个补在<b>损失项</b>上,一个补在<b>掩码分布</b>上。</p>
+</div>
+
+<h3>两个关键的稳定化设计(§4.3)</h3>
+<ul>
+  <li><b>非边界位置填均匀随机标签</b>:而不是一个固定的「背景」值。论文原文:"teacher targets at non-boundary positions are filled with uniform random labels rather than a constant background value, which removes the trivial all-background solution"——这是防止网络坍缩到「全预测背景」的平凡解的关键一步。</li>
+  <li><b>teacher 侧 centering 全程开</b>:保持与 DINO/iBOT 相同的中心化处理。</li>
+</ul>
+</section>
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:数据引擎 160.75M</h2>
+
+<h3>语料构成</h3>
+<p>论文 §4.1 给出的配方——以 retrieval 为主,辅以四个公开/半公开数据集:</p>
+<table>
+<tr><th>来源</th><th>规模</th><th>类型</th><th>说明</th></tr>
+<tr><td>retrieval-curated(3 个池合计)</td><td><b>~143M</b></td><td>检索自未筛选池</td><td>大 seed 用 $k$-NN,小 seed 用 cluster-based</td></tr>
+<tr><td>ImageNet-21k</td><td>13.15M</td><td>原样入库</td><td>分类语料</td></tr>
+<tr><td>ImageNet-1k</td><td>1.28M</td><td>原样入库</td><td>分类语料</td></tr>
+<tr><td>GLDv2(clean)</td><td>1.58M</td><td>原样入库</td><td>地标识别</td></tr>
+<tr><td>Mapillary-SLS</td><td>1.46M</td><td>原样入库</td><td>街景定位</td></tr>
+<tr class="best"><td><b>合计</b></td><td><b>160.75M</b></td><td>—</td><td>约 5/6 为 retrieval-curated</td></tr>
+</table>
+
+<h3>与 DINOv3 的 LVD-1689M 的对比</h3>
+<div class="grid-2">
+<div class="card"><h4>LingBot-Vision</h4>
+<ul>
+  <li>规模:<b>160.75M</b></li>
+  <li>5/6 为 retrieval-curated</li>
+  <li>训练时「整个 curated 语料做单次全局均匀 shuffle,每张图等概率」</li>
+  <li><b>未公开具体来源清单的完整细节</b>(指到 seed 数据集级别)</li>
+</ul>
+</div>
+<div class="card"><h4>DINOv3</h4>
+<ul>
+  <li>规模:<b>1689M</b>(约 10 倍)</li>
+  <li>聚类 + 检索 + seed 保留三路混合</li>
+  <li>同样单次全局均匀 shuffle</li>
+  <li><b>私有</b>(源自 Instagram 17B 池)</li>
+</ul>
+</div>
+</div>
+<div class="callout warn">
+<b>把这两栏放在一起看,得到的结论比「谁的语料更大」重要得多:</b>LingBot-Vision 用 <b>1/10 的语料、约 1/3 的样本量</b>,在 NYUv2 上反超了 6.7B 的 DINOv3(0.296 vs 0.309)。这说明<b>「数据策展的配方」与「预训练目标的设计」是两个可分离的变量</b>,而后者在稠密任务上能补偿前者一个数量级的差距。这与本库 <a href="3D-20250813-DINOv3.html#s4">DINOv3 笔记 §4</a> 的结论正好互补——那里证明「数据配方本身是贡献」,这里证明「目标设计也能是贡献」。
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>模块五:训练配方与蒸馏家族</h2>
+
+<h3>三阶段训练配方(§4.3)</h3>
+<table>
+<tr><th>阶段</th><th>迭代数</th><th>batch</th><th>分辨率</th><th>备注</th></tr>
+<tr><td>1. 预训练</td><td><b>300k</b></td><td>3072</td><td>global 256 / local 112</td><td>含 boundary 目标</td></tr>
+<tr><td>2. Gram anchoring</td><td><b>100k</b></td><td>3072</td><td>同阶段 1</td><td>沿用 DINOv3 的做法(但权重调度不同)</td></tr>
+<tr><td>3. 高分辨率适配</td><td><b>100k</b></td><td>3072</td><td><b>单一 512 px</b></td><td>DINOv3 用多分辨率,这里只用一个</td></tr>
+</table>
+<p class="refs">与 DINOv3 的三阶段(1M / 100k / 30k,batch 4096)对照——<b>预训练短了 3.3 倍,高分辨率适配反而长了 3.3 倍</b>。论文明确给出理由:"Our budget is deliberately modest... in total, less than one third of the samples DINOv3 processes."</p>
+
+<h3>预训练超参(§4.3 逐条核对)</h3>
+<ul>
+  <li><b>优化器</b>:AdamW</li>
+  <li><b>学习率</b>:按 $\sqrt{\mathrm{bs}/1024}$ 缩放(base lr),linear warmup 后 cosine 衰减</li>
+  <li><b>weight decay</b>:0.04 → 0.2(cosine)</li>
+  <li><b>teacher temperature</b>:0.04 → 0.07(前 30k 迭代内)</li>
+  <li><b>EMA momentum</b>:0.994 → 1.0(全程退火)</li>
+  <li><b>损失权重</b>:$\lambda_i=\lambda_b=1$,$\lambda_k=0.1$</li>
+  <li><b>$K$(bin 数)</b>:从 128 降到 <b>32</b>(论文注明 "verified to be quality-neutral")</li>
+  <li><b>crops</b>:global 256 / local 112</li>
+</ul>
+<div class="callout tip">
+<b>「从概念验证到规模化只需微调」是一个被低估的信号:</b>论文 §4.3 明确列出规模化时只动了<b>四处</b>——"scaling required only mild retuning: a higher initial EMA momentum, a lower weight-decay ceiling, fewer bins (K from 128 to 32, verified to be quality-neutral), and, following DINOv3, plain rather than weight-normalized prototype layers in all heads."——<b>这四处的共同点是都是「稳定化」改动,没有一处是「为了涨点」而动的</b>。这说明方法的增益是稳健的,不是靠一组精心调过的超参堆出来的。
+</div>
+
+<h3>蒸馏</h3>
+<p>把旗舰 ViT-g 蒸馏成三档(§4.4),沿用 DINOv2/DINOv3 的「冻结教师替换 EMA 教师」做法:</p>
+<table>
+<tr><th>档位</th><th>参数量</th><th>迭代数</th><th>高分辨率适配</th><th>batch</th></tr>
+<tr><td>ViT-L</td><td>300M</td><td>300k</td><td>+100k @ 512 px</td><td>3072</td></tr>
+<tr><td>ViT-B</td><td>86M</td><td>300k</td><td>+100k @ 512 px</td><td>3072</td></tr>
+<tr><td>ViT-S</td><td>21M</td><td>300k</td><td>+100k @ 512 px</td><td>3072</td></tr>
+</table>
+<div class="callout key">
+<b>一个反直觉但合理的设计:蒸馏阶段「跳过 Gram anchoring」。</b>论文原话:"we skip the Gram-anchoring phase, which counteracts a drift that does not arise with a frozen teacher"——<b>Gram 解决的问题(长训练漂移)在蒸馏时不存在</b>,因为教师是固定的。这与 DINOv3 的蒸馏阶段做法完全一致,是两个团队对同一现象做出了相同的工程判断。这一点反过来又佐证了「Gram 锚定防的是『自蒸馏漂移』,而非『蒸馏本身』」的机制解释。
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>损失函数总表</h2>
+
+<table>
+<tr><th>损失</th><th>数学形式</th><th>权重</th><th>作用范围</th><th>出处</th></tr>
+<tr><td>DINO(图像级)</td><td>$\mathcal{L}_{\mathrm{DINO}}$:CLS 与 prototype 的交叉熵</td><td>1</td><td>CLS token</td><td>式 (10)</td></tr>
+<tr><td>iBOT(patch 级语义)</td><td>$\mathcal{L}_{\mathrm{iBOT}}$:随机掩码的 latent 重建</td><td>$\lambda_i=1$</td><td>掩码 token</td><td>式 (10)</td></tr>
+<tr class="best"><td><b>boundary(几何)</b></td><td>$\mathcal{L}_{\mathrm{bnd}}=-\frac{1}{|\mathcal{B}|}\sum_{p\in\mathcal{B}}\sum_c \bar y^c(p)^\top\log\hat y^c(p)$</td><td>$\lambda_b=1$</td><td><b>仅 boundary token $\mathcal{B}$</b></td><td>式 (9)</td></tr>
+<tr><td>KoLeo(分散度)</td><td>$\mathcal{L}_{\mathrm{KoLeo}}$</td><td>$\lambda_k=0.1$</td><td>全局</td><td>式 (10)</td></tr>
+</table>
+
+<div class="equation">
+$$\boxed{\;\mathcal{L}\;=\;\mathcal{L}_{\mathrm{DINO}}+\lambda_i\,\mathcal{L}_{\mathrm{iBOT}}+\lambda_b\,\mathcal{L}_{\mathrm{bnd}}+\lambda_k\,\mathcal{L}_{\mathrm{KoLeo}},\qquad \lambda_i=\lambda_b=1,\ \lambda_k=0.1\;}$$
+<span class="tag">(式 12)总损失,论文式 (10)</span>
+</div>
+
+<div class="callout tip">
+<b>与 DINOv3 的损失表对照着看,更能看清这篇的「增量」:</b>DINOv3 的总损失是 $\mathcal{L}_{\mathrm{Pre}}=\mathcal{L}_{\mathrm{DINO}}+\mathcal{L}_{\mathrm{iBOT}}+0.1\,\mathcal{L}_{\text{DKoLeo}}$(<a href="3D-20250813-DINOv3.html#s9">DINOv3 §9</a>);LingBot-Vision 在它基础上<b>只多加了一项 $\lambda_b\mathcal{L}_{\mathrm{bnd}}$</b>,而且这一项<b>只在 boundary token 上求和</b>——也就是说,它给「一小撮结构上最关键的 token」单独配了一个几何目标,而不动其余 token 的学习信号。这种「最小侵入」的加法,是它能在不牺牲 ImageNet 精度的前提下大幅提升深度指标的根本原因(Table 1 显示 k-NN 从 81.6% 升到 82.4% 是<b>同涨</b>而非<b>此消彼长</b>)。
+</div>
+
+<h3>boundary head 的结构</h3>
+<table>
+<tr><th>项目</th><th>取值</th><th>出处</th></tr>
+<tr><td>类型</td><td>三层 per-token MLP</td><td>§4.3</td></tr>
+<tr><td>head dim</td><td>512</td><td>§4.3</td></tr>
+<tr><td>输出步长 $s$</td><td>2</td><td>§4.3</td></tr>
+<tr><td>每通道 bin 数 $K$</td><td>32</td><td>§4.3</td></tr>
+<tr><td>每 token 输出维数</td><td>$4\times K=128$ 个 logit</td><td>由 4 通道 × 32 bin 推出</td></tr>
+<tr><td>角点检测器</td><td>冻结的单块 ViT</td><td>§3.4</td></tr>
+</table>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(预训练)</h2>
+
+<h3>预训练全链路</h3>
+<div class="mermaid">
+flowchart TB
+  D["160.75M 语料<br/>5/6 retrieval + IN21k/IN1k/GLDv2/Mapillary-SLS"] --> S1
+  subgraph S1["阶段 1 · 预训练(300k 迭代, batch 3072)"]
+    direction TB
+    C1["global 256px + local 112px"] --> MASK["掩码集 ℳ⁺ = ℳ ∪ ℬ<br/>边界 token 强制并入"]
+    C1 --> T["EMA 教师(ViT-g)"]
+    T --> BF["在线预测 dense boundary field<br/>4 通道 × 32 bin"]
+    T --> CP["冻结单块 ViT → 角点"]
+    BF --> VOTE["投票聚合 → 线段候选"]
+    CP --> VOTE
+    VOTE --> AC["a-contrario 校验 ε=1"]
+    AC --> RENDER["幸存者重渲染 → 干净 target field"]
+    RENDER --> LBND["L_bnd(仅 boundary token)"]
+    MASK --> STUD["学生重建"]
+    STUD --> LOSS["L = L_DINO + L_iBOT + L_bnd + 0.1·L_KoLeo"]
+    LBND --> LOSS
+  end
+  S1 --> S2["阶段 2 · Gram anchoring(100k)<br/>沿用 DINOv3 做法"]
+  S2 --> S3["阶段 3 · 高分辨率适配(100k)<br/>单一 512 px"]
+  S3 --> OUT["ViT-g/16 旗舰(1.1B)"]
+  S3 --> DIST["蒸馏(300k + 100k @512)<br/>跳过 Gram"]
+  DIST --> FAM["ViT-L 300M / ViT-B 86M / ViT-S 21M"]
+</div>
+
+<h3>推理链路(作为冻结编码器)</h3>
+<div class="mermaid">
+flowchart LR
+  I["任意分辨率图像"] --> P["PatchEmbed patch=16<br/>+ CLS + 4 registers"]
+  P --> V["ViT-g/16 主干"]
+  V --> O1["patch tokens<br/>→ 深度 / 分割 / 对应 / 前馈重建"]
+  V --> O2["CLS token → 分类 / 检索"]
+</div>
+<div class="note"><b>推理侧的一个关键事实:</b>boundary head 只在<b>预训练</b>阶段使用;推理时只用主干(backbone)的 patch token。这意味着 LingBot-Vision 作为冻结编码器的<b>推理成本与 DINOv3 完全相同</b>——boundary 机制是纯粹的「训练期投资」,不增加部署开销。</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节(源码验证)</h2>
+
+<div class="callout"><b>验证口径说明:</b>本节所有源码事实来自官方仓库 <code>Robbyant/lingbot-vision</code> 的下载副本(位于本工作区 <code>.tmp_vision/src_lbv/</code>),含 4 份 yaml、<code>vit.py</code> 等核心文件。下文 <code>file:line</code> 均为该副本中的实际行号。</div>
+
+<h3>11.1 主干实现(<code>lbot_vision/vit.py</code>)</h3>
+<table>
+<tr><th>位置</th><th>事实</th></tr>
+<tr><td><code>vit.py:71</code></td><td><code>class LingBotVisionTransformer</code>——主干类定义</td></tr>
+<tr><td><code>vit.py:76</code></td><td><code>patch_size=16</code>(与 DINOv3 一致)</td></tr>
+<tr><td><code>vit.py:78</code></td><td><code>pos_embed_rope_base=100.0</code></td></tr>
+<tr><td><code>vit.py:81</code></td><td><code>pos_embed_rope_normalize_coords="separate"</code></td></tr>
+<tr><td><code>vit.py:85</code></td><td><code>pos_embed_rope_dtype="bf16"</code>(默认)<span class="uncertain">【注意】</span>——<b>与 DINOv3 的 fp32 不同</b>,见下方讨论</td></tr>
+<tr><td><code>vit.py:86</code></td><td><code>embed_dim=768</code>(默认,对应 B 档;g 档为 1536)</td></tr>
+<tr><td><code>vit.py:88</code></td><td><code>num_heads=12</code>(默认)</td></tr>
+<tr><td><code>vit.py:97</code></td><td><code>n_storage_tokens=0</code>(默认;yaml 里显式设为 4)</td></tr>
+<tr><td><code>vit.py:127</code></td><td><code>self.storage_tokens</code>(register tokens 的实现)</td></tr>
+<tr><td><code>vit.py:128</code></td><td><code>class RopePositionEmbedding</code></td></tr>
+<tr><td><code>vit.py:25</code></td><td><code>SwiGLUFFN</code>(Giant 档用)</td></tr>
+<tr><td><code>vit.py:19, 63</code></td><td><code>LayerScale</code></td></tr>
+</table>
+
+<h3>11.2 四档模型的配置差异(yaml 级)</h3>
+<p>四份 yaml(<code>lbot_vision_vitg.yaml</code> / <code>vitl</code> / <code>vitb</code> / <code>vits</code>)的差异高度集中——只有 Giant 档换 FFN 类型和 QKV 偏置:</p>
+<table>
+<tr><th>键</th><th>ViT-g(旗舰)</th><th>ViT-L / B / S</th></tr>
+<tr><td><code>arch</code></td><td><code>vit_giant2</code></td><td><code>vit_large</code> / <code>vit_base</code> / <code>vit_small</code></td></tr>
+<tr><td><code>ffn_layer</code></td><td><b><code>swiglu</code></b></td><td><b><code>mlp</code></b>(标准 MLP)</td></tr>
+<tr><td><code>qkv_bias</code></td><td><b><code>false</code></b></td><td><b><code>true</code></b></td></tr>
+<tr><td><code>norm_layer</code></td><td><code>layernormbf16</code></td><td><code>layernormbf16</code>(同)</td></tr>
+<tr><td><code>layerscale</code></td><td><code>1.0e-05</code></td><td><code>1.0e-05</code>(同)</td></tr>
+<tr><td><code>num_register_tokens</code></td><td>4</td><td>4(同)</td></tr>
+<tr><td><code>pos_embed_rope_base</code></td><td>100.0</td><td>100.0(同)</td></tr>
+<tr><td><code>pos_embed_rope_normalize_coords</code></td><td>separate</td><td>separate(同)</td></tr>
+<tr><td><code>pos_embed_rope_rescale_coords</code></td><td>2</td><td>2(同)</td></tr>
+<tr><td><code>pos_embed_rope_dtype</code></td><td>fp32</td><td>fp32(同,yaml 显式覆盖默认值)</td></tr>
+<tr><td><code>crops.global_crops_size</code></td><td>512</td><td>512(同)</td></tr>
+</table>
+
+<div class="callout warn">
+<b>⚠️ 与 DINOv3 的一个值得注意的源码差异(本库原创发现):</b>
+<ul>
+  <li><b>RoPE 精度的默认值相反。</b>LingBot-Vision 的 <code>vit.py:85</code> 里 <code>pos_embed_rope_dtype</code> 的<b>类默认值是 <code>"bf16"</code></b>,但四份发布 yaml 都显式覆盖成 <b><code>fp32</code></b>;而 DINOv3 的 <code>dinov3_vit7b16_pretrain.yaml</code> 里 <code>pos_embed_rope_dtype: fp32</code> 是直接写死的。</li>
+  <li><b>含义:</b>两边最终都用 fp32 算 RoPE,但 LingBot-Vision 把「正确值」藏在了<b>配置文件</b>里而不是<b>代码默认值</b>里——<b>如果有人不写 yaml 直接用默认构造函数,就会拿到 bf16 的 RoPE,位置精度受损</b>。这是一个「配置即契约」的隐蔽陷阱,复现或魔改时必须显式保留 yaml 里的这一项。</li>
+  <li><b>与 DINOv3 的共同点:</b>两边都把<b>位置相关的计算</b>(RoPE)和<b>Gram 相似度</b>(DINOv3 的 <code>gram_loss.py:50-51</code>)升到了 fp32——<b>「几何相关的数值计算不能省精度」是两个团队的一致工程判断</b>。</li>
+</ul>
+</div>
+
+<h3>11.3 依赖与规模</h3>
+<div class="grid-2">
+<div class="card"><h4>依赖(<code>requirements.txt</code>,仅 7 个)</h4>
+<pre><code>torch
+torchvision
+numpy
+opencv-python-headless
+pillow
+omegaconf
+huggingface_hub</code></pre>
+<p><b>极简</b>——没有 detectron2、timm 这类重依赖;OpenCV 仅用于图像 IO(<code>opencv-python-headless</code> 无 GUI 依赖,适合服务器)。</p>
+</div>
+<div class="card"><h4>发布形态</h4>
+<ul>
+  <li>代码:<a href="https://github.com/Robbyant/lingbot-vision" target="_blank">GitHub</a>(Apache-2.0)</li>
+  <li>权重:<a href="https://www.modelscope.cn/collections/Robbyant/LingBot-Vision" target="_blank">ModelScope</a> 合集</li>
+  <li>家族:ViT-S 21M / ViT-B 86M / ViT-L 300M / ViT-g 1.1B</li>
+  <li>技术报告:31 页(arXiv abs 页 comments 字段)</li>
+</ul>
+</div>
+</div>
+
+<h3>11.4 资源账与落地坑</h3>
+<table>
+<tr><th>维度</th><th>LingBot-Vision</th><th>对照 DINOv3(教师)</th></tr>
+<tr><td>预训练样本量</td><td>300k×3072 ≈ <b>9.2 亿</b>样本</td><td>1M×4096 ≈ 40.96 亿(约 4.4 倍)</td></tr>
+<tr><td>三阶段总样本量</td><td>(300k+100k+100k)×3072 ≈ 15.4 亿</td><td>(1M+100k+30k)×4096 ≈ 46.3 亿(约 3 倍)</td></tr>
+<tr><td>高分辨率策略</td><td>单一 512 px</td><td>多分辨率 {512,768}</td></tr>
+<tr><td>GPU 型号</td><td>论文未明确给出</td><td>256 × H100-SXM5</td></tr>
+<tr><td>碳排</td><td>论文未披露</td><td>18 tCO₂eq(教师)</td></tr>
+</table>
+<div class="callout warn">
+<b>⚠️ 落地坑 1~3:</b>
+<ol>
+  <li><b>预训练/蒸馏代码的开放程度有限。</b>仓库提供的是模型定义、加载与 PCA 演示(<code>pca_demo.py</code>),<b>完整的 boundary 发现管线与 a-contrario 校验并未在仓库中以可运行脚本形式给出</b>。<span class="uncertain">【待核实】</span>这意味着「复现预训练」目前只能按论文 §3.4 / 附录 A 的描述自行实现。</li>
+  <li><b>RoPE 精度陷阱</b>:见 11.2——必须用 yaml 里的 <code>pos_embed_rope_dtype: fp32</code>,不能依赖代码默认的 bf16。</li>
+  <li><b>依赖虽少但隐含平台假设</b>:`omegaconf` 管配置、`opencv-python-headless` 管图像 IO,这些都跨平台;但训练侧的大 batch(3072)与 bf16 混合精度,在消费级卡上需要自行做梯度累积与显存规划,官方未提供小批量配置。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+
+<div class="callout"><b>评估口径统一说明:</b>除 LingBot-Depth 2.0 的实验(那是<b>下游微调</b>)外,所有指标均为<b>冻结 backbone + 线性/非参数 probe</b>。与 DINOv3 的口径一致,便于直接对比。</div>
+
+<h3>12.1 稠密任务(Table 2):1B 模型打赢 7B 模型</h3>
+<table>
+<tr><th>分组</th><th>方法</th><th>参数</th><th>NYUv2 ↓</th><th>KITTI ↓</th><th>ADE20k ↑</th><th>Citysc. ↑</th><th>VOC ↑</th></tr>
+<tr><td rowspan="4">&gt; 2B</td><td>Web-DINO</td><td>7B/14</td><td>0.466</td><td>3.158</td><td>42.7</td><td>68.3</td><td>76.1</td></tr>
+<tr><td>DINOv3</td><td>7B/16</td><td>0.309</td><td class="best">2.346</td><td class="best">55.9</td><td class="best">81.1</td><td>86.6</td></tr>
+<tr><td>V-JEPA 2.1</td><td>2B/16</td><td>0.307</td><td>2.461</td><td>47.9</td><td>73.5</td><td>85.0</td></tr>
+<tr><td>PEcore</td><td>2B/14</td><td class="fail">0.590</td><td class="fail">4.119</td><td class="fail">38.9</td><td class="fail">61.1</td><td class="fail">69.2</td></tr>
+<tr><td rowspan="6">&lt; 2B</td><td>AM-RADIOv2.5</td><td>1B/14</td><td>0.340</td><td>2.918</td><td>53.0</td><td>78.4</td><td>85.4</td></tr>
+<tr><td>DINOv2</td><td>1B/14</td><td>0.372</td><td>2.624</td><td>49.5</td><td>75.6</td><td>83.1</td></tr>
+<tr><td>DINOv3 ViT-H+</td><td>0.8B/16</td><td>0.352</td><td>2.635</td><td>54.8</td><td>79.5</td><td>85.8</td></tr>
+<tr><td>SigLIP 2</td><td>1B/16</td><td class="fail">0.494</td><td>3.273</td><td class="fail">42.7</td><td class="fail">64.8</td><td>72.7</td></tr>
+<tr><td>V-JEPA 2.1</td><td>1B/16</td><td>0.350</td><td>2.601</td><td>47.8</td><td>71.8</td><td>84.7</td></tr>
+<tr class="best"><td><b>&lt; 2B</b></td><td><b>LingBot-Vision(本文)</b></td><td><b>1B/16</b></td><td><b>0.296</b></td><td><b>2.552</b></td><td>53.5</td><td>79.6</td><td><b>87.5</b></td></tr>
+</table>
+<div class="callout key">
+<b>逐项复核(论文 §5.1 的百分比表述全部可复算):</b>
+<ul>
+  <li>论文称 NYUv2 上 "best RMSE of the entire table (0.296), ahead of the 7B-parameter DINOv3 (0.309)... with 7× fewer parameters" → 0.296 &lt; 0.309 ✓;6.716B / 1.1B ≈ <b>6.1×</b> <span class="uncertain">【小出入】</span>论文写 7×,按参数量比算是 6.1 倍。注意 7B/16 的「7B」是模型名的整数部分,精确参数量是 6.716B。</li>
+  <li>论文称 "13% lower RMSE than the best same-scale competitor AM-RADIOv2.5 (0.340)" → (0.340 − 0.296)/0.340 = <b>12.9%</b> ✓(≈13%)。</li>
+  <li>论文称 "16% lower than DINOv3 ViT-H+ (0.352)" → (0.352 − 0.296)/0.352 = <b>15.9%</b> ✓。</li>
+  <li>论文称 "20% lower than DINOv2 (0.372)" → (0.372 − 0.296)/0.372 = <b>20.4%</b> ✓。</li>
+  <li>论文称 V-JEPA 2.1 ViT-g(0.350)"remains 15% behind" → (0.350 − 0.296)/0.350 = <b>15.4%</b> ✓。</li>
+</ul>
+<b>结论:</b>除「7×」这个数字是按模型名而非精确参数量算的(实际 6.1×)外,论文的所有相对改进百分比都逐格命中。<b>这个「7× vs 6.1×」的差异不改变结论,但引用时建议写精确值。</b>
+</div>
+
+<h3>12.2 视频分割跟踪(Table 3)与边界 token 跟踪(Figure 7)</h3>
+<table>
+<tr><th>方法</th><th>参数</th><th>DAVIS-S</th><th>YT VOS-S</th></tr>
+<tr><td>DINOv3</td><td>7B/16</td><td class="best">71.1</td><td class="best">74.1</td></tr>
+<tr><td>V-JEPA 2.1</td><td>2B/16</td><td>69.0</td><td>72.7</td></tr>
+<tr><td>PEspatial</td><td>2B/14</td><td>68.4</td><td>68.5</td></tr>
+<tr><td>AM-RADIOv2.5</td><td>1B/14</td><td>66.5</td><td>70.1</td></tr>
+<tr><td>DINOv3 ViT-H+</td><td>0.8B/16</td><td class="best">71.1</td><td>74.0</td></tr>
+<tr><td>V-JEPA 2.1 ViT-g</td><td>1B/16</td><td>68.1</td><td>72.3</td></tr>
+<tr><td>DINOv2</td><td>1B/14</td><td>63.9</td><td>65.6</td></tr>
+<tr class="best"><td><b>LingBot-Vision(本文)</b></td><td><b>1B/16</b></td><td>70.0</td><td>73.5</td></tr>
+</table>
+<p class="refs">协议:冻结特征 + training-free label propagation;patch 16 用 480 px,patch 14 用 420 px 短边。LingBot-Vision 在 &lt;2B 组里<b>逼近但未超过</b> DINOv3 ViT-H+(70.0/73.5 vs 71.1/74.0),与 7B DINOv3 的差距也只有 1.1/0.6 个点。<b>这与 DINOv3 的 Table 5(同任务)数字一致</b>,两篇论文用的是同一套协议。</p>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l25_track_robot_t0.jpg" alt="机器人操作 t0" loading="lazy" style="max-width:24%">
+    <img src="images/2607.05247/l26_track_robot_t1.jpg" alt="机器人操作 t1" loading="lazy" style="max-width:24%">
+    <img src="images/2607.05247/l27_track_cat_t0.jpg" alt="猫 t0" loading="lazy" style="max-width:24%">
+    <img src="images/2607.05247/l28_track_cat_t1.jpg" alt="猫 t1" loading="lazy" style="max-width:24%">
+  </div>
+  <div class="caption"><b>图7</b>(对应论文 Figure 7 的前两段)<b>边界 token 的跨帧跟踪。</b>每对图取 3 个 boundary-token query(左图十字)在首帧种下,再用冻结 patch 特征的余弦相似度在后续帧上跟踪。论文图注原文:"Boundary-token tracking on three videos... Top pair: a manipulation episode seen from a robot's head camera, where the queries hold the gripper fingers and the pitcher throughout the episode. Middle pair: a self-captured cat video, where the queries on the head and flank follow a full turn of the body while the query on the window frame stays put. Bottom pair: a camera pan through a home, where the queries track the cat and the cat-tree platform through a large viewpoint change and re-acquire the plant as it re-enters the view. No fine-tuning or temporal supervision is used."——机器人操作(前两图)和猫(后两图)两个场景里,query 能在<b>无微调、无时序监督</b>的前提下粘住物体的局部结构(夹爪指尖、猫头/躯干),这是「边界特征携带几何锚点」的最直观证据。</div>
+</div>
+
+<h3>12.3 冻结 patch 特征的 PCA 对比(Figure 6)★</h3>
+<p>这是本篇与 <a href="3D-20250813-DINOv3.html">DINOv3</a> 的 Figure 13 直接对位的一组图——两者都是「同一套 PCA 流程,逐模型一列」的冻结特征可视化。但 LingBot-Vision 把对照组扩到了 6 个(含输入),并且图注里<b>没有批评 DINOv3</b>,只点名批评了 DINOv2 / SigLIP 2 / V-JEPA 2.1:</p>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l13_traffic_origin.jpg" alt="交通场景原图" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l14_traffic_dinov2.jpg" alt="DINOv2" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l15_traffic_dinov3.jpg" alt="DINOv3" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l16_traffic_siglip2.jpg" alt="SigLIP 2" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l17_traffic_vjepa21.jpg" alt="V-JEPA 2.1" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l18_traffic_lingbot.jpg" alt="LingBot-Vision" loading="lazy" style="max-width:16%">
+  </div>
+  <div class="caption"><b>图8</b>(对应论文 Figure 6 的第一行)<b>交通场景:六个模型的冻结 patch 特征 PCA 对比。</b>从左到右:输入图像 → DINOv2 → DINOv3 → SigLIP 2 → V-JEPA 2.1 → <b>LingBot-Vision</b>(最右)。论文图注原文:"PCA of frozen patch features. The top three PCA components of the patch features are mapped to RGB, computed per image for each model (one model per column). LingBot-Vision (rightmost) resolves objects as coherent regions with crisp boundaries: individual cars and lane structure in the traffic scene... In comparison, DINOv2 exhibits per-token speckle, SigLIP 2 degrades into blocky noise, and V-JEPA 2.1 lets background texture bleed into the foreground regions."<br><b>注意图注的一个微妙之处:它没有把 DINOv3 列进「失败名单」</b>——被点名的是 DINOv2(per-token speckle)、SigLIP 2(blocky noise)、V-JEPA 2.1(background bleed)。这与「LingBot-Vision 承认 DINOv3 是强基线」的整体姿态一致(见 <a href="#s14">§14</a>)。</div>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l19_marmot_origin.jpg" alt="土拨鼠场景原图" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l20_marmot_dinov2.jpg" alt="DINOv2" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l21_marmot_dinov3.jpg" alt="DINOv3" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l22_marmot_siglip2.jpg" alt="SigLIP 2" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l23_marmot_vjepa21.jpg" alt="V-JEPA 2.1" loading="lazy" style="max-width:16%">
+    <img src="images/2607.05247/l24_marmot_lingbot.jpg" alt="LingBot-Vision" loading="lazy" style="max-width:16%">
+  </div>
+  <div class="caption"><b>图9</b>(对应论文 Figure 6 的第二行)<b>土拨鼠场景:同样的六模型对照。</b>这一行最能看出差异的场景是「目标边界」:土拨鼠的轮廓在 LingBot-Vision 列里是一圈干净的色块边缘,而在 DINOv2 / SigLIP 2 列里被「打散」成 per-token 的噪点或糊块。<b>两行的共同规律是:LingBot-Vision 的 PCA 颜色块在「物体交界处」收得最紧</b>——这正是 masked boundary modeling 的设计目标。</div>
+</div>
+
+<h3>12.4 ImageNet 分类(Table 4):全局任务不掉点</h3>
+<table>
+<tr><th>模型</th><th>IN-1K Linear</th><th>IN-1K k-NN</th></tr>
+<tr><td>LingBot-Vision(本文)</td><td>86.32</td><td>83.39</td></tr>
+<tr><td>DINOv2</td><td>87.00</td><td>83.68</td></tr>
+<tr><td>DINOv3</td><td class="best">87.87</td><td class="best">85.68</td></tr>
+<tr><td>Franca</td><td class="fail">84.50</td><td class="fail">81.11</td></tr>
+<tr><td>SigLIP2</td><td>87.33</td><td>84.75</td></tr>
+</table>
+<p>LingBot-Vision 在 ImageNet 上<b>略低于</b> DINOv3(86.32 vs 87.87)与 SigLIP 2(87.33),与 DINOv2 接近(87.00)。这是预料之中的——boundary 目标是为<b>稠密/几何</b>任务加的,不是为分类加的。关键是它<b>没有掉</b>:与「只加边界监督会牺牲语义」的担忧相反,Table 1 的概念验证显示分类反而微涨。</p>
+
+<h3>12.5 蒸馏家族三档对比(Table 5)★</h3>
+<table>
+<tr><th>档位</th><th>模型</th><th>IN-Linear</th><th>IN-KNN</th><th>NYU ↓</th><th>KITTI ↓</th><th>ADE ↑</th><th>VOC ↑</th><th>City ↑</th></tr>
+<tr><td rowspan="6">L</td><td>DINOv2</td><td>86.43</td><td>83.82</td><td>0.411</td><td>3.243</td><td>48.63</td><td>83.54</td><td>74.51</td></tr>
+<tr><td>DINOv3</td><td>87.31</td><td class="best">85.27</td><td>0.351</td><td>2.643</td><td class="best">55.00</td><td class="best">88.11</td><td class="best">79.28</td></tr>
+<tr><td>SigLIP2</td><td>85.67</td><td>82.91</td><td>0.516</td><td>3.641</td><td>42.99</td><td>75.55</td><td>62.51</td></tr>
+<tr><td>Franca</td><td>82.50</td><td class="fail">71.70</td><td>0.425</td><td>3.613</td><td>45.93</td><td>84.42</td><td>72.42</td></tr>
+<tr><td>V-JEPA2.1</td><td>—</td><td>—</td><td>0.346</td><td>2.617</td><td>46.29</td><td>84.81</td><td>71.58</td></tr>
+<tr class="best"><td><b>LingBot-Vision</b></td><td>86.38</td><td>83.62</td><td><b>0.310</b></td><td><b>2.574</b></td><td>52.75</td><td>87.40</td><td>78.75</td></tr>
+<tr><td rowspan="6">B</td><td>DINOv2</td><td>84.27</td><td>82.17</td><td>0.429</td><td>3.416</td><td>48.25</td><td>83.81</td><td>74.19</td></tr>
+<tr><td>DINOv3</td><td>84.79</td><td class="best">83.21</td><td>0.371</td><td>2.826</td><td class="best">51.74</td><td class="best">88.20</td><td class="best">77.30</td></tr>
+<tr><td>SigLIP2</td><td>82.47</td><td>79.47</td><td>0.539</td><td>3.847</td><td>40.49</td><td>73.50</td><td>60.12</td></tr>
+<tr><td>Franca</td><td>78.45</td><td class="fail">63.45</td><td>0.462</td><td>3.790</td><td>42.69</td><td>82.79</td><td>71.65</td></tr>
+<tr><td>V-JEPA2.1</td><td>—</td><td>—</td><td>0.410</td><td>2.883</td><td>41.38</td><td>78.00</td><td>64.99</td></tr>
+<tr class="best"><td><b>LingBot-Vision</b></td><td class="best">85.05</td><td>82.32</td><td><b>0.339</b></td><td><b>2.793</b></td><td>51.44</td><td>87.10</td><td>77.17</td></tr>
+<tr><td rowspan="4">S</td><td>DINOv2</td><td>80.76</td><td>79.11</td><td>0.447</td><td>3.568</td><td>44.86</td><td>82.34</td><td>71.44</td></tr>
+<tr><td>DINOv3</td><td>80.37</td><td>79.33</td><td>0.405</td><td>2.851</td><td>46.51</td><td>84.30</td><td>73.38</td></tr>
+<tr class="best"><td><b>LingBot-Vision</b></td><td class="best">82.22</td><td>78.98</td><td><b>0.383</b></td><td>3.784</td><td><b>47.01</b></td><td>84.17</td><td>64.34</td></tr>
+</table>
+<div class="callout key">
+<b>这张表最值钱的两个发现(论文 §5.3 原话可复算):</b>
+<ol>
+  <li><b>0.3B 学生追平 7B 教师</b>:ViT-L 档的 LingBot-Vision 在 NYUv2 上做到 <b>0.310</b>,与 DINOv3 的 7B 教师(0.309,Table 2)<b>打平</b>,而参数量是它的 <b>1/22</b>(0.3B vs 6.716B)。论文原话:"the 0.3B student attains a NYUv2 RMSE on par with the 7B DINOv3 of Table 2 (0.310 vs. 0.309) under the same protocol, with roughly 23× fewer parameters" → 6.716/0.3 = <b>22.4</b> ≈ 23 ✓。</li>
+  <li><b>B 档在分类上反超</b>:ViT-B 档的 LingBot-Vision Linear 85.05,<b>高于</b> DINOv3-B 的 84.79 和 DINOv2-B 的 84.27——是表里 B 档的分类最优。这说明 boundary 目标在小模型上不但不拖分类,反而能小幅助推。</li>
+</ol>
+<b>代价写在 ADE/City 列</b>:L 档的 LingBot-Vision(52.75 / 78.75)落后 DINOv3-L(55.00 / 79.28)<b>约 0.5~2.3 个 mIoU</b>。这是一个清晰的权衡——<b>用 1~2 个 mIoU 的语义分割,换 12% 的深度 RMSE 改善</b>。
+</div>
+
+<h3>12.6 下游:深度补全(LingBot-Depth 2.0)</h3>
+<p>这是这篇技术报告的「落地闭环」——把 LingBot-Vision 当作 <b>LingBot-Depth 2.0 的编码器初始化</b>,训练 masked depth modeling(MDM)管线。两张表分别对应「真实传感器」与「掩码/稀疏输入」:</p>
+<div class="grid-2">
+<div class="card"><h4>Table 7:真实传感器(8 组配置)</h4>
+<ul>
+  <li>LingBot-Depth 2.0 在 <b>6/8</b> 配置领先;</li>
+  <li>最强项在透明物体 ClearGrasp:D415 / D435 的 RMSE 分别为 <b>0.010 / 0.012</b>(对照 LingBot-Depth 1.0 的 0.022 / 0.018);</li>
+  <li>数据来自 HAMMER / ClearGrasp / LingBot 三个相机家族(各含 D415/D435/D455/L515/ToF 等)。</li>
+</ul>
+</div>
+<div class="card"><h4>Table 8:掩码 / 稀疏输入(8 组基准)</h4>
+<ul>
+  <li>LingBot-Depth 2.0 在 <b>7/8</b> 基准上 RMSE 最优;</li>
+  <li>block-masked DIODE-In 从 1.0 的 0.132 <b>减半到 0.062</b>;</li>
+  <li>DIODE-Out 从 3.404 → 2.440;</li>
+  <li>例外:ETH3D 仍归 LingBot-Depth 1.0(0.368 vs 0.522)。</li>
+</ul>
+</div>
+</div>
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2607.05247/l29_depth_ex1.png" alt="镜面玻璃场景的深度补全示例一" loading="lazy" style="max-width:48%">
+    <img src="images/2607.05247/l30_depth_ex2.png" alt="深度补全方法对比" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="caption"><b>图10</b>(对应论文 Figure 9 / Figure 10)<b>LingBot-Depth 2.0 在镜面/玻璃场景的深度补全。</b>左(Figure 9):每组含输入 RGB、原始传感器深度、补全后的深度与正视/俯视点云——论文图注指出"raw depth is missing exactly on the hardest surfaces: window panes, a glass balustrade...",而补全结果把这些区域补了回来。右(Figure 10):与 OMNI-DC、CDMs、LingBot-Depth 1.0 的对比,baseline 在缺失区留洞或糊,LingBot-Depth 2.0 在玻璃扶手等透明表面上给出连贯的点云。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验与机制分析</h2>
+
+<h3>13.1 概念验证阶梯(Table 1)★</h3>
+<p>这是全篇最干净的一张消融——在 ImageNet-1K 上用 ViT-L/16,固定 DINO+iBOT 基线,逐项叠加组件。它直接回答了「增益到底来自哪一项」:</p>
+<table>
+<tr><th>配置</th><th>IN-1K k-NN ↑</th><th>NYUv2 δ₁ ↑</th><th>NYUv2 RMSE ↓</th></tr>
+<tr class="fail"><td>DINO+iBOT baseline</td><td>81.6%</td><td>81.4%</td><td>0.474</td></tr>
+<tr><td>+ categorical boundary target(仅几何)</td><td>81.8%</td><td>84.4%</td><td>0.446</td></tr>
+<tr><td>+ dual supervision(boundary token 上也加 iBOT)</td><td>82.0%</td><td>84.7%</td><td>0.443</td></tr>
+<tr class="best"><td><b>+ RoPE backbone(最终配方)</b></td><td><b>82.4%</b></td><td><b>84.9%</b></td><td><b>0.440</b></td></tr>
+<tr class="fail"><td>w/ boundary forcing,但<b>只有语义目标</b>(对照)</td><td>81.4%</td><td>81.2%</td><td>0.481</td></tr>
+</table>
+<div class="callout key">
+<b>逐行读出的三件事(论文 §3.6 的自评):</b>
+<ol>
+  <li><b>主增益来自「几何目标」而非「掩码分布」。</b>只加 categorical boundary target 一项,就把 δ₁ 从 81.4% 提到 84.4%(<b>+3.0</b>)、RMSE 从 0.474 降到 0.446(<b>−0.028</b>)——这是整段增益的绝大部分。而反过来,「只改掩码分布、不加几何目标」(最后一行)反而把指标<b>压低</b>到 81.2% / 0.481。<b>这说明「强制掩码边界」本身不是增益来源,配套的几何监督才是。</b></li>
+  <li><b>「dual supervision」是锦上添花</b>:在 boundary token 上同时挂 iBOT 语义损失,再涨 0.3 δ₁ / 0.003 RMSE——说明语义与几何目标是<b>协同</b>的,不是互斥的。</li>
+  <li><b>RoPE 是独立于边界机制的增益</b>:换 RoPE backbone 再涨 0.2 δ₁ / 0.003 RMSE——这与边界监督正交。</li>
+</ol>
+</div>
+
+<h3>13.2 数据规模化(Figure 8)★</h3>
+<p>这张图回答的是「换个编码器初始化,在下游数据越来越多时会怎样」。协议是固定同一套 MDM 管线,只改 encoder 初始化(LingBot-Vision vs DINOv2),训练集从 3M 涨到 150M:</p>
+<table>
+<tr><th>训练集规模</th><th>DINOv2 初始化 D₁₀₂ ↑</th><th>LingBot-Vision 初始化 D₁₀₂ ↑</th></tr>
+<tr><td>3M</td><td>0.752</td><td>0.777</td></tr>
+<tr><td>20M</td><td>~0.752(平台)</td><td>持续上升</td></tr>
+<tr><td>150M</td><td><b>0.755</b>(饱和)</td><td><b>0.795</b></td></tr>
+</table>
+<div class="callout warn">
+<b>论文的论断与本库的复核:</b>论文 §6 原话:"Both initializations improve monotonically with data, but they are not interchangeable: the two start nearly tied on D102 at 3M, and the gap widens with scale as the DINOv2 curve saturates beyond 20M (0.752 to 0.755) while the LingBot-Vision curve keeps improving (0.777 to 0.795). More data amplifies, rather than washes out, the advantage of the spatial-perception-native initialization."——<b>「更多数据放大而非抹平初始化差距」</b>是一个对「编码器选型」非常关键的结论:它意味着「空间感知原生的初始化」不是一个小 trick,而是一个<b>随数据规模放大而增值</b>的资产。这直接支撑了本笔记 §15 把它列为「前馈重建编码器候选」的理由。
+</div>
+
+<h3>13.3 编码器初始化研究(Table 6)</h3>
+<p>固定同一套 MDM 管线,只换 encoder 初始化,在 block-masked 与 sparse 深度输入上评估:</p>
+<table>
+<tr><th>初始化</th><th>架构</th><th>DIODE-In RMSE↓</th><th>DIODE-Out RMSE↓</th><th>备注</th></tr>
+<tr><td>DINOv2</td><td>ViT-L/14</td><td>0.152 / 0.981</td><td>3.192 / 0.775</td><td>—</td></tr>
+<tr><td>DINOv3</td><td>ViT-L/16</td><td>0.114 / 0.988</td><td>3.065 / 0.735</td><td>—</td></tr>
+<tr class="best"><td><b>LingBot-Vision</b></td><td><b>ViT-L/16</b></td><td><b>0.094</b> / 0.990</td><td><b>2.771</b> / 0.794</td><td>ViT-L 档全面最强</td></tr>
+<tr><td>DINOv2</td><td>ViT-g/14</td><td>0.118 / 0.990</td><td>2.778 / 0.809</td><td>—</td></tr>
+<tr class="best"><td><b>LingBot-Vision</b></td><td><b>ViT-g/16</b></td><td><b>0.083</b> / 0.993</td><td><b>2.440</b> / ...</td><td>ViT-g 档多数领先</td></tr>
+</table>
+<p class="refs">单元格格式为 RMSE↓ / D₁₀₅↑。论文表注:"The LingBot-Vision initialization is the strongest starting point at ViT-L across the board and on the majority of benchmarks at ViT-g, where DINOv2 keeps an edge on the Hammer captures."——注意论文<b>诚实承认了例外</b>:ViT-g 档的 Hammer 真实传感器捕获上 DINOv2 仍有优势。</p>
+
+<h3>13.4 其余消融</h3>
+<ul>
+  <li><b>$K$ 的鲁棒性</b>:bin 数从 128 降到 32,论文注明 "verified to be quality-neutral"(§4.3)——即类别化的粒度不敏感。</li>
+  <li><b>Finding 1(§3.6 / 附录 A)</b>:随机 field + 角点即可解码线段;方向通道经 level-line 引导后线段连贯——证明边界结构<b>不依赖学习</b>,可从零启动。</li>
+  <li><b>角点与 a-contrario 的互补性(附录 B / Figure 11)</b>:可靠角点(920 候选)→ 校验后 673;弱角点(2382 候选)→ 校验后 675(拒绝 72%)。<b>两个安全网任一即可,双去才崩</b>(见 <a href="#s5">§5</a> 图5)。</li>
+</ul>
+
+<div class="callout warn">
+<b>消融部分的一个空缺(本库指出的可改进点):</b>Table 1 的阶梯清晰地分解了「categorical target → dual supervision → RoPE」三项的增量,但<b>没有单独消融「boundary forcing 掩码分布」与「categorical target」的交互项</b>。最后一行(w/ boundary forcing, semantic target only)显示「强制掩码 + 语义目标」反而掉点,但没有「不强制掩码 + 加几何目标」的对照——也就是说,<b>无法从论文判断「强制掩码」本身是否有独立贡献</b>,还是说它纯粹是为几何目标服务的「采样器」。<span class="uncertain">【存疑】</span>从机制上推断,后者更可能:几何目标需要「被掩码的边界 token」才能形成重建压力,所以强制掩码更像是必要条件而非独立增益项。
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+
+<h3>固定维度横向对比(视觉基座,≥4 方法)</h3>
+<p>下表按<b>同一组维度</b>横评 8 个候选基座,与 <a href="3D-20250813-DINOv3.html#s14">DINOv3 笔记 §14</a> 的表格互为镜像——两张表用的是同一批对手,只是主角互换。</p>
+<table>
+<tr>
+  <th>方法</th><th>范式</th><th>参数量</th><th>patch</th><th>训练数据</th><th>NYUv2↓</th><th>ADE20k↑</th><th>迭代×batch</th><th>几何目标</th>
+</tr>
+<tr class="best">
+  <td><b>LingBot-Vision</b></td><td>自监督 + <b>masked boundary modeling</b></td><td>1.1B<br>(ViT-g/16)</td><td>16</td><td>160.75M(自建)</td><td><b>0.296</b></td><td>53.5</td><td>300k+100k+100k<br>× 3072</td><td><b>显式(boundary field)</b></td>
+</tr>
+<tr>
+  <td>DINOv3</td><td>自监督(DINO+iBOT+KoLeo)<br><b>+ Gram anchoring(事后)</b></td><td>6.7B<br>(7B/16)</td><td>16</td><td>LVD-1689M(私有)</td><td>0.309</td><td class="best">55.9</td><td>1M+100k+30k<br>× 4096</td><td>隐式(事后约束)</td>
+</tr>
+<tr>
+  <td>DINOv2</td><td>自监督(DINO+iBOT)</td><td>1.1B<br>(g/14)</td><td>14</td><td>LVD-142M(私有)</td><td>0.372</td><td>49.5</td><td>—</td><td>无</td>
+</tr>
+<tr>
+  <td>V-JEPA 2.1</td><td>视频自监督(JEPA)</td><td>2B<br>(G/16)</td><td>16</td><td>视频为主</td><td>0.307</td><td>47.9</td><td>—</td><td>隐式(视频时序)</td>
+</tr>
+<tr>
+  <td>AM-RADIOv2.5</td><td>蒸馏式聚合(从 SAM 等)</td><td>1B<br>(g/14)</td><td>14</td><td>多教师</td><td>0.340</td><td>53.0</td><td>—</td><td>间接(SAM 蒸馏)</td>
+</tr>
+<tr>
+  <td>PEspatial</td><td>弱监督(Perception Encoder 空间版)</td><td>2B<br>(G/14)</td><td>14</td><td>图文 + 视频蒸馏</td><td>0.362</td><td>49.3</td><td>—</td><td>间接</td>
+</tr>
+<tr>
+  <td>SigLIP 2</td><td>弱监督(图文对比)</td><td>1B<br>(g/16)</td><td>16</td><td>40B+ 图文对</td><td class="fail">0.494</td><td class="fail">42.7</td><td>—</td><td>无</td>
+</tr>
+<tr>
+  <td>Web-DINO</td><td>自监督(DINO,公开数据复现)</td><td>7B<br>(/14)</td><td>14</td><td>网络公开图文</td><td class="fail">0.466</td><td class="fail">42.7</td><td>—</td><td>无</td>
+</tr>
+</table>
+<p class="refs">NYUv2 / ADE20k 数据统一引自 LingBot-Vision 论文 Table 2(冻结线性探测口径)。patch 16 与 patch 14 的 token 数差异的注意事项,与 <a href="3D-20250813-DINOv3.html#s14">DINOv3 笔记 §14</a> 所述相同。</p>
+
+<div class="figure">
+  <img src="images/2607.05247/l36_pca_crop.png" alt="Figure 6 的完整 8 行 × 6 模型 PCA 网格" loading="lazy" style="max-width:520px">
+  <div class="caption"><b>图11</b>(对应论文 Figure 6 完整版,取自 GitHub README 的 <code>assets/pca_crop.png</code>)<b>八行场景 × 六模型的完整 PCA 对照网格。</b>列从左到右:Images(输入)→ DINOv2 → DINOv3 → SigLIP 2 → V-JEPA 2.1 → LingBot-Vision(最右)。与上文图8/图9 是同一组图的全量版本——本篇笔记里 l13-l18(交通)、l19-l24(土拨鼠)是其中两行的逐列切分。<b>通览全网格可以更清楚地看到一个系统规律:LingBot-Vision 列的颜色块边界最锐利、区域最连贯,而 SigLIP 2 列几乎在所有行都退化成块状噪声。</b>DINOv3 列(第 3 列)介于两者之间——明显好于 DINOv2/SigLIP 2,但边界锐度不及 LingBot-Vision。</div>
+</div>
+
+<h3>对比结论(4 条)</h3>
+<div class="callout key">
+<ol>
+  <li><b>「几何目标」是一个独立的增益轴。</b>同样的 DINO+iBOT 基座,加 Gram(DINOv3)或加 masked boundary modeling(LingBot-Vision)都能涨;但两者作用点不同——Gram 主要救「长训练后的语义分割」(ADE20k +5.4),boundary modeling 主要救「深度与空间对应」(NYUv2 −8.5% 到 −20%)。<b>两者在 ADE20k 与 NYUv2 上的胜负是互补的</b>,不存在一个「全面更好」的方法。</li>
+  <li><b>LingBot-Vision 的效率优势非常硬。</b>在 NYUv2 上以 1.1B 参数赢过 6.7B 的 DINOv3(0.296 vs 0.309);以 0.3B 蒸馏档打平 7B 教师(0.310 vs 0.309)。如果把「达到同等深度指标所需的参数量」作为横轴,LingBot-Vision 是表里<b>最省</b>的。</li>
+  <li><b>「蒸馏自监督」这条中间路线(AM-RADIO)在两个几何指标上都输给原生方法。</b>AM-RADIO 的 NYUv2 是 0.340,既不如 LingBot-Vision(0.296)也不如 DINOv3(0.309);其 ADE20k 53.0 也只是居中。这印证了「从监督模型蒸出来的几何」不如「自监督原生学到的几何」。</li>
+  <li><b>「视频时序」能提供部分几何,但不彻底。</b>V-JEPA 2.1(视频预训练)在 NYUv2 上做到 0.307,优于 DINOv2(0.372)——说明<b>时序一致性本身就是一种几何信号</b>;但仍不如显式的 boundary 目标(0.296)。这是一个值得注意的光谱:<b>无几何(DINOv2 0.372)→ 隐式几何(V-JEPA 0.307)→ 事后几何约束(DINOv3 0.309)→ 显式几何目标(LingBot-Vision 0.296)</b>。</li>
+</ol>
+</div>
+
+<div class="callout warn">
+<b>与 DINOv3 笔记对照时的一个公平性提醒:</b>两篇论文的 NYUv2 数字虽然都是「冻结线性探测」,但<b>并不来自同一份评测代码</b>——LingBot-Vision 自行实现了一套「token 对齐」协议(§5 的 "Evaluation protocol"),DINOv3 用的是它自己的 Table 3 协议。两者都把输入对齐到 1024 个 patch token,方向一致,但<b>跨论文的 0.296 vs 0.309 这个 0.013 的差距,处在「评测协议差异」的噪声量级之内</b>。<span class="uncertain">【待核实】</span>要下「LingBot-Vision 在深度上稳赢 DINOv3」的结论,需要在同一份代码、同一份数据上复跑——这也是本库把它列为「值得在本地 vggt_human pipeline 上做的对照实验」的原因(见 <a href="#s16">§16</a>)。
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性:与<br>前馈式高斯重建的衔接</h2>
+
+<h3>15.1 结论先行:这两个基座怎么选</h3>
+<div class="callout key">
+<b>一句话选型原则:要语义分割 → 选 DINOv3;要几何 / 深度 / 边界敏感 → 选 LingBot-Vision。</b>两者不是「谁取代谁」,而是<b>增益轴正交</b>——DINOv3 的 Gram anchoring 主要救「长训练后的语义分割与全局稳定性」,LingBot-Vision 的 masked boundary modeling 主要救「深度估计与空间对应的边界锐度」。对本库最关心的<b>前馈式高斯重建</b>而言,瓶颈恰恰落在后者:位姿回归、深度初始化、distractor 抑制都依赖<b>空间对应与边界几何</b>,而非语义标签。
+</div>
+
+<h3>15.2 一个对前馈重建特别重要的证据:镜面与玻璃</h3>
+<p>前馈式重建(3DGS / VGGT 系)有一个公认的经典失败区:<b>镜面、玻璃、反光地板</b>——这些表面对多视图几何是灾难(深度传感器在这里直接缺测,MVS 匹配在这里产生错误对应),而恰是室内场景的高频元素。LingBot-Vision 的下游联动 LingBot-Depth 2.0 给出的证据,直接命中这个失败区:</p>
+
+<div class="figure">
+  <img src="images/2607.05247/l37_depth2_mirror_glass.jpg" alt="LingBot-Depth 2.0 在镜面玻璃场景的深度补全" loading="lazy">
+  <div class="caption"><b>图12</b>(对应论文 Figure 9)<b>LingBot-Depth 2.0 在镜子与玻璃场景的深度补全。</b>每组从左到右:输入 RGB → 传感器 raw depth → 补全后的 refined depth → 补全点云的 front / top 视图。论文图注原文:"LingBot-Depth 2.0 on mirror and glass scenes. Each group shows the input RGB, the raw sensor depth and the refined depth for consecutive frames of a captured sequence, together with front and top views of the refined point cloud..."。<b>注意 raw depth 列:</b>窗玻璃、玻璃栏杆、反光地板处大面积<b>缺测(黑洞)或错值</b>——这正是前馈重建拿到这种深度会崩的原因;而 refined depth 列把这些区域补成<b>平整连续平面</b>,点云里窗与栏杆恢复了真实几何。<b>对 vggt_human 的含义:</b>如果前馈 backbone 的特征本身就编码了「这里是边界 / 这里几何不连续」的先验,那么后续高斯初始化在镜面区域就不会被错误深度带偏。</div>
+</div>
+
+<div class="callout tip">
+<b>为什么这张图比表格数字更有说服力:</b>表格(§12 Table 7/8)只能告诉你「RMSE 降了多少」;这张图告诉你<b>降在哪</b>——恰恰降在传统几何方法失效的镜面 / 玻璃上。而「boundary-aware encoder」正是 LingBot-Vision 的卖点(论文在 Figure 10 的对比里直接称之为 <i>"the signature of its boundary-aware encoder"</i>)。这构成了一条完整的因果链:<b>预训练把边界写进特征 → 下游深度补全在边界处不散 → 前馈重建在镜面区域不崩。</b>
+</div>
+
+<h3>15.3 DINOv3 vs LingBot-Vision:选型决策表</h3>
+<p>两篇都是「前馈重建可复用的视觉基座」,但适配的场景不同。下表按本库关心的维度横向对照(详细数据分别见 <a href="3D-20250813-DINOv3.html">DINOv3 笔记</a> §15 与本篇 §12/§13):</p>
+<table>
+<tr><th>维度</th><th>DINOv3(2508.10104)</th><th>LingBot-Vision(2607.05247)</th><th>对前馈重建的建议</th></tr>
+<tr><td><b>核心增益轴</b></td><td>Gram anchoring:救语义分割 / 长训练稳定性</td><td>masked boundary modeling:救深度 / 边界 / 空间对应</td><td>重建瓶颈在几何 → 倾向 LBV</td></tr>
+<tr><td><b>NYUv2 深度(冻结)</b></td><td>0.309(7B 教师)</td><td>0.296(1.1B)/ 0.310(0.3B 蒸馏)</td><td>LBV 参数效率碾压</td></tr>
+<tr><td><b>ADE20k 语义分割</b></td><td>更强(Gram 主要收益区,+5.4)</td><td>略差(差 ~2 mIoU,§13 落差①)</td><td>若重建需语义先验 → DINOv3</td></tr>
+<tr><td><b>已验证的前馈重建接入</b></td><td>✅ VGGT 换编码器 AUC 86.3/89.6(Tab.13);冻结特征全面胜 DAv2(Tab.12)</td><td><span class="uncertain">【待核实】</span>未在 VGGT 类管线公开验证</td><td>DINOv3 有现成证据链</td></tr>
+<tr><td><b>数据 / 训练成本</b></td><td>LVD-1689M,1M+100k+30k 迭代 × batch 4096(256×H100)</td><td>160.75M,300k/100k/100k × batch 3072(<b>&lt; 1/3 样本</b>)</td><td>复现友好度 LBV 更高</td></tr>
+<tr><td><b>开源 / 许可</b></td><td>权重公开,但 <b>7B 需申请</b>;Meta 自定义许可</td><td><b>Apache-2.0</b>,权重 / 代码公开,商用友好</td><td>商用 / 二次开发 LBV 更省心</td></tr>
+<tr><td><b>高分辨率适配</b></td><td>10k 迭代专门高分辨率微调 + RoPE-box jittering</td><td>未做同等激进的高分辨率适配</td><td>高分辨率场景 DINOv3 更成熟</td></tr>
+</table>
+
+<h3>15.4 给 vggt_human 的三条可执行建议</h3>
+<div class="callout key">
+<ol>
+  <li><b>做一个 2×2 对照实验( backbone × 下游头)。</b>在当前 COLMAP→3DGS 链路上,把「前馈编码器」这个变量单独抽出来:{DINOv3 ViT-L, LingBot-Vision ViT-L} × {当前深度 / 位姿头}。重点看<b>边界密集场景(发丝、手指、衣褶、镜面)的重建失败率</b>,而不是只看全局 PSNR——全局指标会掩盖边界增益。</li>
+  <li><b>把「边界敏感子任务」作为独立的评测切片。</b>vggt_human 的人脸重建里,发际线、眉形、唇线、下颌轮廓都是「边界决定观感」的区域。建议单独评这些区域的深度 / 法线误差,LingBot-Vision 的 boundary token 机制理论上应在此处体现优势。</li>
+  <li><b>关注「boundary token 是否被前馈头正确消费」这条副线。</b>LingBot-Vision 把边界 token 显式并进掩码集 $\mathcal{M}^+$,意味着它的 patch 特征在边界处承载了更多结构信息。接入前馈重建头时,值得验证这些 boundary token 是否被注意力正确加权——<b>这决定了增益能不能传导到最终的高斯参数。</b></li>
+</ol>
+</div>
+
+<h3>15.5 两个必须说明的落差</h3>
+<div class="callout warn">
+<ol>
+  <li><b>语义分割上 LingBot-Vision 确实落后。</b>在 ADE20k 上它比 DINOv3 差约 2 个 mIoU(见 §13 消融)。如果你的前馈重建管线<b>同时</b>需要强语义先验(例如依赖语义分割做场景分解),那 DINOv3 仍是更稳的选择——<b>不要用 LBV 替代 DINOv3 去做语义主导的任务。</b></li>
+  <li><b>跨视图对应(NAVI 类)未被验证。</b>LingBot-Vision 论文的全部几何评测都是<b>单视图深度 / 分割 / 跟踪</b>,<span class="uncertain">【待核实】</span>没有在 NAVI / 多视图对应这类「前馈重建真正依赖」的任务上跑过。也就是说,「boundary-aware → 跨视图匹配更准」这一步因果链<b>在论文里是缺失的</b>,需要在本地 pipeline 上自己补验证。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<h3>16.1 五项开放问题(按复现价值排序)</h3>
+<table>
+<tr><th>#</th><th>开放问题</th><th>现状</th><th>对本库 / 复现的影响</th></tr>
+<tr><td>1</td><td><b>完整预训练管线未开源</b></td><td>仓库只给模型定义 / 加载 / PCA 演示;boundary 发现管线与 a-contrario 校验无运行脚本</td><td>「复现预训练」只能按 §3.4 / 附录 A 自行实现,<b>成本极高</b></td></tr>
+<tr><td>2</td><td><b>a-contrario 超参是手工定的</b></td><td>$\epsilon=1$、容差 $\pi/16$、$\tau_d=5$px、$N_t=(HW)^{5/2}$ 全是经验值,论文未给敏感性分析</td><td>换数据域时这组阈值可能要重调,<span class="uncertain">【待核实】</span></td></tr>
+<tr><td>3</td><td><b>boundary × Gram 的 2×2 消融没做</b></td><td>DINOv3 加 Gram、LBV 加 boundary,但没人做「两个都加 / 各退一步」的交叉消融</td><td>无法判断两条增益轴是否可叠加 → <b>值得本地做</b></td></tr>
+<tr><td>4</td><td><b>强制掩码与几何目标的耦合未分离</b></td><td>「把边界 token 塞进掩码集」与「用 boundary field 做重建目标」是同一个设计的两面,论文未拆</td><td>不确定增益主要来自掩码策略还是重建目标</td></tr>
+<tr><td>5</td><td><b>未验证 7B 级尺度</b></td><td>最大只做到 1.1B(ViT-g);DINOv3 已到 7B</td><td>「boundary 目标在更大尺度是否仍有边际收益」是开放的</td></tr>
+</table>
+
+<h3>16.2 四个具体短板</h3>
+<div class="grid-2">
+<div class="card"><h4>① 无显式跨视图机制</h4><p>整条 pipeline 是<b>单视图自监督</b>,没有任何跨视图一致性约束(对比 VGGT 的多视图 token 交互)。这解释了 15.5 的落差②——<b>它学的是「单图里边界长什么样」,不是「同一边界在另一张图里长什么样」。</b>对前馈重建,这是最需要补的一块。</p></div>
+<div class="card"><h4>② 高分辨率适配不如 DINOv3 激进</h4><p>DINOv3 专门做了 10k 迭代的高分辨率微调 + RoPE-box jittering($s\in[0.5,2]$)来稳住大图外推;LingBot-Vision 论文未给出同等力度的方案。<b>高分辨率重建(2K+)是它的潜在弱项。</b></p></div>
+<div class="card"><h4>③ 蒸馏家族档位少</h4><p>DINOv3 提供 S21M/S+29M/B86M/L300M/H+840M + ConvNeXt 四档的完整蒸馏谱系;LingBot-Vision 只蒸了 <b>L/B/S 三档</b>,且跳过了 Gram 阶段。要部署到边缘端,可选档位明显更少。</p></div>
+<div class="card"><h4>④ 「7× vs 6.1×」的数字表述需复核</h4><p>论文摘要说 LingBot-Vision「7× fewer parameters than DINOv3」,但按精确参数量(1.1B vs 6.716B)算是 <b>6.1×</b>。这与本库 <a href="VideoGen-20250708-LiON-LoRA.html">LiON-LoRA 笔记</a>发现的「相对改进百分比错位」是<b>同类问题</b>——论文把表格数字二次加工成结论句时最易出错。<b>引用时一律用复算值 6.1×。</b></p></div>
+</div>
+
+<div class="callout tip">
+<b>对本库最有价值的一个改进方向(可作为本地研究点):</b>把 LingBot-Vision 的 boundary field 监督<b>移植到多视图设置</b>——用同一场景的两个视图,强制「同一条物理边界在两个视图里被同一组 boundary token 编码」。这直接补上短板①,且与本库 vggt_human 的「跨视图人脸对应」需求完全对齐。论文本身的单视图框架 + 附录 A 的 a-contrario 管线为这件事提供了全部零件,<b>缺的只是跨视图配对的监督信号</b>。
+</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+
+<h3>17.1 SSL 谱系:三种给特征「补几何」的路线</h3>
+<p>把 LingBot-Vision 放进自监督视觉基座的演进脉络里,可以清楚看到「让 SSL 特征带上几何」这件事已经分化出三条互补路线:</p>
+
+<div class="mermaid">
+flowchart TD
+  A["DINOv2 (2023)<br/>纯语义 SSL · 几何是盲区"] --> B["DINOv3 (2025)<br/>+ Gram anchoring<br/>事后约束:训练后期用 Gram 矩阵<br/>把漂移的语义特征拉回"]
+  A --> C["LingBot-Vision (2026)<br/>+ masked boundary modeling<br/>事前设计:预训练一开始就把<br/>边界写进掩码目标"]
+  B --> D["前馈式重建<br/>VGGT / 3DGS"]
+  C --> D
+  C --> E["LingBot-Depth 1.0 → 2.0<br/>boundary-aware encoder · 深度补全"]
+</div>
+
+<h3>17.2 三条演进线索</h3>
+<div class="grid-3">
+<div class="card"><h4>线索一:从「语义不变性」到「几何保持」</h4><p>早期 SSL(DINO / iBOT)追求对增强<b>不变</b>的语义表示;DINOv3 用 Gram 在长训练后<b>约束</b>语义不要漂移;LingBot-Vision 更进一步,直接把几何(边界)<b>当作学习目标本身</b>。演进的方向是:几何从「被牺牲」→「被约束」→「被主动学」。</p></div>
+<div class="card"><h4>线索二:监督信号的「自衍生」</h4><p>LingBot-Vision 最精巧的一步是监督信号不来自外部标注或检测器,而是从教师自身的噪声预测里「长」出来(§5 四步管线)。这与 DINOv3 的 EMA teacher 一脉相承,但把「自蒸馏」推到了「自发现几何结构」的程度——<b>用未训练好的模型自己造监督,再用它训练自己。</b></p></div>
+<div class="card"><h4>线索三:基座 → 垂直下游的直通</h4><p>DINOv3 → 卫星高度图(WRI 合作);LingBot-Vision → LingBot-Depth 2.0。两篇都证明了「一个好的基座 + 一个垂直下游头」能直接产出 SOTA。<b>对前馈重建的启示:与其从零训一个重建网络,不如选对基座 + 冻结特征 + 小头。</b></p></div>
+</div>
+
+<h3>17.3 一句话定位</h3>
+<div class="callout key">
+LingBot-Vision 是「<b>把边界从预测目标改写为预训练组织信号</b>」这条新路线的第一个完整验证。它与 DINOv3 不是替代关系,而是<b>同一个问题(SSL 学不到几何)的两种解法</b>——一个用事后约束救语义,一个用事前设计救几何。对前馈式高斯重建这类「几何敏感」的下游,LingBot-Vision 提供了一个参数效率极高(1.1B 打平 7B)、许可友好(Apache-2.0)的新基座选项;<b>真正的差距在于它尚未在跨视图对应这个前馈重建的核心环节被验证</b>——这正是本库 vggt_human pipeline 可以去补的实验空白。
+</div>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>团队</h3>
+<p>本工作由<b>蚂蚁灵波科技(Robbyant)</b>完成,共 9 位作者。<span class="uncertain">【Tech report,不加会议 badge】</span>arXiv 页 comments 字段仅标注 "Tech report, 31 pages",未声明投稿 / 接收任何会议,因此按本库规范<b>不挂会议标签</b>。作者中值得关注的是 <b>Nan Xue</b>——线段检测领域的知名学者(LSD、HAWP、DeepLSD 等一系列线段检测 / 线框解析工作的核心作者)。这解释了为什么本文的 boundary field 参数化、投票聚合与 a-contrario 校验会如此深入地借鉴经典线段检测(LSD / a-contrario 传统)的数学工具——<b>这是把二十年线段检测功底注入自监督预训练的一次尝试。</b></p>
+
+<h3>资源链接</h3>
+<table>
+<tr><th>资源</th><th>链接</th><th>状态</th></tr>
+<tr><td>arXiv 论文</td><td><a href="https://arxiv.org/abs/2607.05247" target="_blank">arxiv.org/abs/2607.05247</a></td><td>✅ 可访问(v1,2026-07-06)</td></tr>
+<tr><td>代码仓库</td><td><a href="https://github.com/robbyant/lingbot-vision" target="_blank">github.com/robbyant/lingbot-vision</a></td><td>✅ 开源(<b>Apache-2.0</b>)</td></tr>
+<tr><td>模型权重</td><td><a href="https://www.modelscope.cn/organization/robbyant" target="_blank">modelscope.cn/robbyant</a> · GitHub Releases</td><td>✅ 公开(ViT-S/B/L/g 四档)</td></tr>
+<tr><td>许可</td><td>Apache-2.0</td><td>✅ <b>商用友好</b>(对照 DINOv3:7B 权重需申请、Meta 自定义许可)</td></tr>
+<tr><td>下游联动</td><td>LingBot-Depth 1.0 → 2.0(深度补全)</td><td>✅ 论文 §6 / Figure 9-10</td></tr>
+</table>
+
+<h3>本笔记的核对口径</h3>
+<ul>
+  <li><b>论文层面</b>:全部依据 arXiv HTML v1 全文(LaTeXML 版),表格数字逐格抄录;<b>图注为原文英文引录</b>,中文为本人翻译。</li>
+  <li><b>源码层面</b>:全部依据 <code>robbyant/lingbot-vision</code> 的工作副本(位于本工作区 <code>.tmp_vision/src_lbv/</code>);所有 <code>file:line</code>(如 <code>vit.py:85</code> 的 <code>pos_embed_rope_dtype</code> 默认值)均可逐行核对。</li>
+  <li><b>配图</b>:37 张全部从 <code>arxiv.org/html/2607.05247v1/</code> 下的原始相对路径下载(非猜测文件名),下载后做过<b>双向 diff</b>(笔记引用的 <code>src</code> 全集 vs <code>images/2607.05247/</code> 文件全集)与 <b>PNG/JPEG 文件头尾完整性校验</b>。</li>
+  <li><b>关键澄清(避免误读)</b>:论文附录 A 的 <code>figures/hat_sampling_lsd/</code> 与 <code>figures/hat_sampling_wolsd/</code> 是 <b>Figure 3 的图片资源目录名</b>(lsd = θ 通道用经典 LSD level-line 引导,wolsd = 全通道均匀随机),<b>不是训练超参</b>;原文通篇无 "hard attention" / "RECON" 提法。</li>
+  <li><b>数字复核</b>:摘要「7× fewer parameters」按精确参数量(1.1B vs 6.716B)复算为 <b>6.1×</b>;「13%/16%/20%/15%」各改进百分比均已按表格原始值手算命中;ViT-L 0.310 打平 7B DINOv3 0.309(约 22.4× 更少参数,论文原话 23×)。</li>
+  <li><b>不确定项</b>:文中所有 <span class="uncertain">【推测】</span> / <span class="uncertain">【存疑】</span> / <span class="uncertain">【待核实】</span> 均为本人标注,原文无对应表述。</li>
+</ul>
+</section>
+
+<div class="footer">
+  LingBot-Vision(arXiv:2607.05247)深度调研笔记 · 全文公式/表格经 arXiv HTML v1 逐格核对,工程细节经官方源码(下载副本 @ 2026-10-16)复核 · 生成于 2026-10-16
+</div>
+
+</div>
+</body>
+</html>

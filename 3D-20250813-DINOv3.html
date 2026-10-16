@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DINOv3:用 Gram 锚定锁住稠密特征 — 6.7B 自监督视觉基座</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:24px;font-weight:800;color:var(--accent);line-height:1.25}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+.figrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.figrow img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2508.10104v1 · 2025-08-13 · 自监督视觉基座 · 前馈式重建的默认冻结编码器</span>
+    <h1>DINOv3:用 Gram 锚定把稠密特征「锁」住,让 6.7B 自监督基座能一直训练下去</h1>
+    <div class="subtitle">DINOv3: Self-Supervised Vision Foundation Models(Meta AI 技术报告)</div>
+    <div class="authors">Oriane Siméoni · Huy V. Vo · Maximilian Seitzer · Federico Baldassarre · Maxime Oquab · Cijo Jose · Vasil Khalidov · Marc Szafraniec · … · Patrick Labatut · Piotr Bojanowski(共 26 人)</div>
+    <div class="org">Meta AI(FAIR)&nbsp;|&nbsp;cs.CV · abs 页 comments 为空,按规范不加会议 badge</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2508.10104" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2508.10104v1" target="_blank">🌐 arXiv HTML 全文(v1)</a>
+      <a href="https://arxiv.org/pdf/2508.10104" target="_blank">📥 PDF</a>
+      <a href="https://github.com/facebookresearch/dinov3" target="_blank">💻 GitHub(facebookresearch/dinov3)</a>
+      <a href="https://huggingface.co/collections/facebook/dinov3-68924841bd6b561778e31009" target="_blank">🤗 HF 权重合集</a>
+      <a href="https://ai.meta.com/dinov3/" target="_blank">🏠 官方站点</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:稠密特征退化</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:数据引擎 LVD-1689M</a></li>
+    <li><a href="#s5">模块二:架构与 RoPE-box jittering</a></li>
+    <li><a href="#s6">模块三:Gram anchoring(核心创新)</a></li>
+    <li><a href="#s7">模块四:高分辨率适配</a></li>
+    <li><a href="#s8">模块五:蒸馏与模型家族</a></li>
+    <li><a href="#s9">损失函数总表</a></li>
+    <li><a href="#s10">逻辑流程图(三阶段训练)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节(源码验证)</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验与机制分析</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性(前馈式重建)</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p><b>一句话概括:</b>DINOv3 要解决的不是「分类精度」——DINOv2 已经够高(IN-ReAL 89.7 线性探测,Table 14)——而是<b>训练越久、模型越大,稠密(patch 级)特征就越崩</b>的退化现象:patch 与 CLS 的余弦相似度随训练单调升高,相似度图从「局部干净」变成「全局糊成一团」,分割/深度/对应全面掉点。DINOv3 的答案是 <b>Gram anchoring</b>:取一个<b>训练早期</b>的 checkpoint 当 Gram 教师,用 patch 特征自相关矩阵(Gram 矩阵)的 Frobenius 距离,把 student 的「patch 间相关性结构」钉死。这一招让 6.7B 的教师模型可以「无限期」训练下去而不掉稠密指标,从而把自监督预训练真正推到了 LLM 那种规模的尺度游戏里。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>论文自己的三段式总结(Abstract)——① 靠精细的数据准备、架构设计与优化,同时放大<b>数据集</b>(LVD-1689M)与<b>模型</b>(ViT-7B/16);② 提出 <b>Gram anchoring</b>,解决长期训练下稠密特征图退化这个「已知但未解决」的问题;③ 用 post-hoc 策略(高分辨率适配、蒸馏、文本对齐)在<b>分辨率、模型规模、文本对齐</b>三个自由度上放大模型的适用面。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">55.9</div><div class="l">ADE20k mIoU(稠密线性探测,ViT-7B/16 冻结)<br>DINOv2 g/14 为 49.5 → <b>+6.4</b>(Table 3)</div></div>
+  <div class="stat"><div class="v">0.309</div><div class="l">NYUv2 相对深度 RMSE ↓(KITTI 2.346)<br>DINOv2 0.372 / 2.624(Table 3)</div></div>
+  <div class="stat"><div class="v">+5.4 mIoU</div><div class="l">Gram anchoring 的净收益<br>ADE20k 50.3 → 55.7(Figure 9b 消融)</div></div>
+  <div class="stat"><div class="v">6.7B</div><div class="l">教师模型参数量(#Blocks 40 / Embed 4096 / Patch 16)<br>Table 2</div></div>
+  <div class="stat"><div class="v">61,440</div><div class="l">预训练 GPU 小时(256×H100-SXM5,1000k steps)<br>47 MWh / 18 tCO₂eq(Table 20)</div></div>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2508.10104/d01_intro_cat1.jpg" alt="DINOv3 高分辨率自然图像 PCA 特征" loading="lazy" style="max-width:32%">
+    <img src="images/2508.10104/d02_intro_cat2.jpg" alt="DINOv3 高分辨率自然图像 PCA 特征" loading="lazy" style="max-width:32%">
+    <img src="images/2508.10104/d03_intro_sat1.jpg" alt="DINOv3 航拍图像 PCA 特征" loading="lazy" style="max-width:32%">
+  </div>
+  <div class="caption"><b>图1</b>(对应论文 Figure 1(c)(d))<b>同一套算法、同一个模型,自然图像与航拍图像都给出干净的高分辨率密集特征。</b>左/中:高分辨率自然图像的 PCA 特征图;右:航拍图像。引自 Figure 1 图注原文——"(a) 历年 ImageNet-1k 线性探测精度演进,对比全监督(SL)/弱监督(WSL)/自监督(SSL)……另一方面我们展示 SSL 提供了高质量密集特征的独特前景。借助 DINOv3,我们在密集任务上显著优于弱监督模型……我们也给出 DINOv3 在自然(c)与航拍(d)图像上的高分辨率特征 PCA 图。"这张图是论文的<b>门面主张</b>:SSL 不再只是在分类上追平 WSL,而是在<b>密集任务上反超</b>。</div>
+</div>
+
+<h3>三个宣称的贡献(论文 §1)</h3>
+<ol>
+  <li><b>规模化(数据 + 模型 + 优化)</b>:构建 LVD-1689M 数据配方(Table 1 做了 Raw / Clustering / Retrieval / 混合 四路对照);把教师从 DINOv2 的 ViT-g/14(1.1B)扩到自研 ViT-7B/16(6.7B),引入轴向 RoPE + 4 个 registers;<b>去掉 DINOv2 里那一堆 cosine schedule,改用常数超参训练 1M 迭代</b>(§3.2,原文:"Departing from the multiple cosine schedules in DINOv2, we train with constant hyperparameter schedules for 1M iterations")。</li>
+  <li><b>Gram anchoring</b>:提出用早期 checkpoint 的 patch 特征 Gram 矩阵约束 student,缓解长训练下的 patch 级不一致(§4)。</li>
+  <li><b>Post-hoc 三个自由度的拉伸</b>:高分辨率适配(§5.1)、蒸馏出 S/S+/B/L/H+ 五档 + ConvNeXt 四档(§5.2)、文本对齐给零样本能力(§5.3)。卫星版 SAT-493M 也一并放出。</li>
+</ol>
+
+<div class="callout tip">
+<b>为什么这篇值得进本库的「前馈式重建」专题:</b>因为它同时提供了 ① 一个<b>可直接冻结使用</b>(❄,无需微调)的编码器,② 一份<b>「把 VGGT 的 DINOv2 换成 DINOv3 会怎样」的官方对照实验</b>(Table 13),③ 一整套从小到大的模型家族(21M→6.7B),让前馈重建这条线可以按显存预算选型。详见 §15。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:稠密特征退化</h2>
+
+<h3>SSL 的谱系与 DINOv3 的位置</h3>
+<p>论文把视觉预训练划成三条路线:全监督(SL)、弱监督图文对比(WSL,以 CLIP / SigLIP 2 / Perception Encoder 为代表)、自监督(SSL,以 DINO / iBOT / DINOv2 为代表)。论文在 §2 给出的判断是:SSL 在<b>分类</b>上已经追平甚至超过 WSL(Figure 1a 的 ImageNet-1k 线性探测曲线),但在<b>规模化</b>上落后——"relatively little work has focused on scaling unsupervised image pretraining"。已有的规模化尝试要么撞训练稳定性(Darcet et al., 2025),要么方法过于简化。唯一的例外是 DINOv2(1.1B),能匹配 CLIP 级别的表现;而把 DINOv2 往 7B 扩的尝试(Fan et al., 2025)"在全局任务上有前景,但在稠密预测上结果令人失望"。</p>
+
+<div class="callout warn">
+<b>论文点名的「已知但未解决」问题(Abstract 原话):</b>"the known yet unsolved issue of dense feature maps degrading during long training schedules"。注意这个措辞——论文<b>不</b>声称这是一个新发现的问题,而是声称这是一个<b>业界都知道、但一直没解决</b>的问题。DINOv3 的贡献是把这个问题<b>解决</b>了,并且顺手把它变成了「可以放心无限期训练」的前提。
+</div>
+
+<h3>失败模式到底长什么样(机制层面)</h3>
+<p>论文 §4 的观察链条非常清楚,值得逐层拆开:</p>
+<ol>
+  <li><b>现象</b>:训练越久,全局 benchmark 继续涨,但<b>稠密任务掉点</b>(Figure 5/6)。</li>
+  <li><b>量化代理指标</b>:patch token 与 CLS token 之间的余弦相似度<b>随训练上升</b>。Figure 5 的图注直接写明:"segmentation performance is maximal when the cosine similarities between the patch tokens and the class tokens are low. As training progresses, these similarities increase and the performance on dense tasks decreases."——即 <b>CLS 与 patch 的相似度是一个「稠密特征健康度」的负向指标</b>。</li>
+  <li><b>视觉后果</b>:Figure 6——"As training progresses, the features produced by the model become less localized and the similarity maps become noisier."(特征局部性下降、相似度图变噪)。</li>
+  <li><b>本质归因</b>:patch 级一致性(patch-level consistency)丧失,即 patch 表示的<b>相对结构</b>被破坏;论文还提到持续训练会出现不同类型的 outlier(App. A)。</li>
+</ol>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2508.10104/d13_cos_orig.jpg" alt="输入图像" loading="lazy" style="max-width:32%">
+    <img src="images/2508.10104/d14_cos_early.png" alt="20 万迭代时的余弦相似度图" loading="lazy" style="max-width:32%">
+    <img src="images/2508.10104/d15_cos_late.png" alt="100 万迭代时的余弦相似度图" loading="lazy" style="max-width:32%">
+  </div>
+  <div class="caption"><b>图2</b>(对应论文 Figure 6,子图取 iter 199,999 / 999,999 两档)<b>训练越久,相似度图越糊。</b>左:输入图像;中:训练早期(约 20 万迭代)时,红色标注的 query patch 与其它 patch 的余弦相似度图——局部结构清晰、物体边界干净;右:训练后期(约 100 万迭代)时同样的图——相似度弥散到整幅图像,物体边界已不可辨。论文图注原文:"Evolution of the cosine similarity between the patch noted in red and all other patches. As training progresses, the features produced by the model become less localized and the similarity maps become noisier."这张图的价值在于它把「稠密特征退化」从抽象指标变成了<b>肉眼可见的现象</b>,也让后面 Figure 10 的 Gram 修复效果有了直接对照。</div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>退化发生在 patch 之间的<b>相关性结构</b>上,而不是单个 patch 的表示上。这个判断直接决定了药方——如果问题是「patch 特征各自变坏」,该做的是重建目标;既然是「patch 间关系变坏」,那就应该<b>直接对关系矩阵下手</b>,而 Gram 矩阵 $X_S X_S^\top$ 恰好就是 patch 间所有内积构成的矩阵。因果链条是完整闭合的,这是本文方法设计上最漂亮的一环。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入 / 输出定义</h3>
+<ul>
+  <li><b>训练输入</b>:每 mini-batch 4096 张图像(256 张/GPU × 16 GPU? 非也——论文写 "global batch size 4096",实际部署为 32 节点 × 8 卡 = 256 GPU,<code>batch_size_per_gpu: 16</code>,合 4096)。每张图取 <b>2 个 global crop(256×256)+ 8 个 local crop(112×112)</b>。</li>
+  <li><b>训练输出(teacher 侧)</b>:一个 6.7B 的 EMA 教师;Gram teacher 另有独立的<u>冻结</u>权重(取自早期 checkpoint)。</li>
+  <li><b>推理输入 / 输出</b>:任意分辨率图像 → patch token 序列(+CLS + 4 registers);输出去掉 head 后的 backbone 特征,可直接喂线性层做分割/深度探测。</li>
+</ul>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>维度 / 取值</th><th>出处</th></tr>
+<tr><td>$I$</td><td>输入图像</td><td>$256\times256$(global)/ $112\times112$(local)</td><td>源码 yaml <code>crops</code></td></tr>
+<tr><td>$X_S$</td><td>student 在 global crop 上的 patch 特征矩阵(送进 Gram 前的表示)</td><td>$P\times C$,$C=4096$</td><td>式 (2)</td></tr>
+<tr><td>$X_G$</td><td>Gram teacher 在同一 global crop 上的 patch 特征矩阵(<b>冻结</b>)</td><td>$P\times C$</td><td>式 (2)</td></tr>
+<tr><td>$P$</td><td>patch token 数</td><td>$256/16=16$ → $16\times16=256$(global crop)</td><td>由 patch 16 推出</td></tr>
+<tr><td>$X_SX_S^\top$</td><td>student 的 <b>Gram 矩阵</b>(patch 两两内积,即 patch 间相关性结构)</td><td>$P\times P$</td><td>式 (2)</td></tr>
+<tr><td>$w_{\mathrm{Gram}}$</td><td>Gram 项权重</td><td>论文 §4.4 写 $w_{\mathrm{Gram}}=2$;yaml 用 schedule 从 0 线性/余弦升到 <b>2.0</b></td><td>§4.4 / <code>gram_anchor.yaml</code></td></tr>
+<tr><td>$\mathcal{M}$</td><td>iBOT 的随机掩码集合</td><td>mask ratio $0.1\sim0.5$</td><td><code>pretrain.yaml</code> <code>ibot.mask_ratio_min_max</code></td></tr>
+<tr><td>$\tau_t,\tau_s$</td><td>teacher / student 温度</td><td>teacher $0.04\to0.07$</td><td>源码 <code>schedules.teacher_temp</code></td></tr>
+<tr><td>$s$</td><td>RoPE-box jitter 的坐标盒子缩放系数</td><td>$s\in[0.5,2]$</td><td>§3.2 / Figure 11</td></tr>
+<tr><td>$K$</td><td>prototype 数(DINO / iBOT head)</td><td>256k / 96k</td><td>Table 2</td></tr>
+</table>
+
+<div class="note">
+<b>关于「global batch size」的两种读法:</b>论文正文写 "global batch size of 4096"(§5.2 对比段落);而官方预训练 yaml 里是 <code>batch_size_per_gpu: 16</code>,论文 Table 20 记训练用 <b>256 张 H100</b>——$16\times256=4096$,两者自洽。这也说明「batch 4096」不是一个可以随便缩小的数字:它是 256 卡物理配置下的产物。
+</div>
+
+<h3>总体框架(三阶段 + 蒸馏)</h3>
+<div class="mermaid">
+flowchart LR
+  A["阶段1 · 预训练<br/>1M 迭代<br/>batch 4096 · constant LR<br/>L_DINO + L_iBOT + 0.1·L_KoLeo"] --> B["阶段2 · Gram anchoring<br/>+100k 迭代<br/>w_Gram=2 · teacher 每 10k 更新(≤3 次)"]
+  B --> C["阶段3 · 高分辨率适配<br/>+10k 迭代<br/>global {512,768} / local {112,168,224,336}<br/>仍带 Gram(必需)"]
+  C --> D["蒸馏<br/>1M + 250k cooldown<br/>跳过 Gram"]
+  D --> E["ViT-S 21M / S+ 29M / B 86M / L 300M / H+ 840M"]
+  D --> F["ConvNeXt T 29M / S 50M / B 89M / L 198M"]
+  C --> G["7B 教师(需申请权重)"]
+  C --> H["SAT-493M 卫星版(100k 预训练 + 10k Gram + 8k 高分辨率)"]
+</div>
+<div class="note"><b>流程说明:</b>阶段 1→2 的关键在「不重置」——Gram 是在原训练<b>继续跑</b>的基础上叠加的 refinement,<code>gram_anchor.yaml</code> 的 <code>it_first_update: 1010000</code> 正对应「第一次 Gram teacher 更新发生在 1.01M 迭代」,即阶段 1 结束之后。阶段 3 是<b>唯一一次分辨率分布改变</b>,论文强调此阶段若不挂 Gram 会显著掉点。蒸馏链与主链解耦:学生面对的是<b>冻</b>教师,不存在 patch 级漂移,所以跳过 Gram。</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:数据引擎 LVD-1689M</h2>
+
+<h3>一句话定位</h3>
+<p>LVD-1689M 不是「更干净的数据集」,而是<b>一个数据混合配方</b>。它的核心主张来自 Table 1 的四路对照:clustering 型 curation 和 retrieval 型 curation 各有强项,<b>把它们混起来</b>才能同时拿到聚类对「细粒度长尾」的增益与检索对「大规模语义」的增益。</p>
+
+<h3>网络结构 / 数据流</h3>
+<table>
+<tr><th>阶段</th><th>操作</th><th>规模 / 超参</th><th>出处</th></tr>
+<tr><td>原始池</td><td>Instagram 公开帖(已经过平台级内容审核)</td><td>约 <b>17B</b> 张</td><td>§3.1</td></tr>
+<tr><td>Part A · 聚类</td><td>层次 $k$-means(DINOv2 特征),再用平衡采样</td><td>5 级,簇数从低到高:<b>200M / 8M / 800k / 100k / 25k</b></td><td>§3.1</td></tr>
+<tr><td>Part B · 检索</td><td>以 seed 数据集为 query,去未筛选池做相似图检索</td><td>大 seed 用 $k$-NN,小 seed 用 cluster-based</td><td>§3.1</td></tr>
+<tr><td>Part C · 未筛选保留</td><td>seed 本身直接入库</td><td>—</td><td>§3.1</td></tr>
+<tr><td>训练采样</td><td>整个 curated 语料做单次全局均匀 shuffle</td><td>每张图等概率</td><td>§3.1</td></tr>
+</table>
+
+<h3>数学形式化:为什么「混合」优于「二选一」</h3>
+<p>论文的关键论证在 Table 1。这张表在<b>缩短的 200k 迭代</b>下对照四种数据,并且刻意选了 5 个下游任务来看不同数据配方的偏好(式 1 为记号,用于说明采样分布):</p>
+<div class="equation">
+$$p(x)=\frac{1}{|\mathcal{D}_{\mathrm{LVD}}|},\quad \mathcal{D}_{\mathrm{LVD}}=\mathcal{D}_{\mathrm{clu}}\cup\mathcal{D}_{\mathrm{ret}}\cup\mathcal{D}_{\mathrm{seed}},\qquad |\mathcal{D}_{\mathrm{LVD}}|=1689\text{M}$$
+<span class="tag">(式 1)采样分布定义,依据 §3.1 原文</span>
+</div>
+
+<table>
+<tr><th>数据集</th><th>IN1k k-NN</th><th>IN1k Linear</th><th>ObjectNet</th><th>iNaturalist 2021</th><th>Paris</th></tr>
+<tr><td>Raw(未筛选)</td><td>80.1</td><td>84.8</td><td>70.3</td><td>70.1</td><td>63.3</td></tr>
+<tr><td>Clustering(仅聚类)</td><td>79.4</td><td>85.4</td><td class="best">72.3</td><td>81.3</td><td class="best">85.2</td></tr>
+<tr><td>Retrieval(仅检索)</td><td class="best">84.0</td><td>86.7</td><td>70.7</td><td class="best">86.0</td><td>82.7</td></tr>
+<tr class="best"><td><b>LVD-1689M(本文)</b></td><td><b>84.6</b></td><td><b>87.2</b></td><td><b>72.8</b></td><td><b>87.0</b></td><td><b>85.9</b></td></tr>
+</table>
+<p class="refs">数据引自论文 Table 1(200k 迭代短程消融)。<b>粗体 = 该列最优</b>,绿底 = 本文配方。</p>
+
+<div class="callout key">
+<b>这张表真正说明了什么(逐列读):</b>
+<ul>
+  <li><b>Clustering 的强项是「深而窄」</b>:Paris(细粒度地标识别)从 Raw 的 63.3 飙到 85.2,是所有列中最大涨幅(+21.9);ObjectNet 也最高(72.3)。聚类擅长把长尾类别的样本「配平」。</li>
+  <li><b>Retrieval 的强项是「广而准」</b>:IN1k k-NN 84.0(vs Raw 80.1)、iNaturalist 86.0(vs 701 的 70.1)。按 seed 检索保证语义对齐,直接拉高通用判别性。</li>
+  <li><b>两路都有短板</b>:Clustering 的 IN1k k-NN(79.4)甚至<b>低于</b> Raw(80.1);Retrieval 的 ObjectNet(70.7)低于 Clustering(72.3)。</li>
+  <li><b>混合是「上包络」而非「平均」</b>:LVD-1689M 在五列里<b>全部第一</b>——84.6 / 87.2 / 72.8 / 87.0 / 85.9。这不是把两个配方平均后的折中结果,而是<b>同时拿到了两边的上界</b>。这一点比"数据更多更好"要硬得多。</li>
+</ul>
+</div>
+
+<div class="callout warn">
+<b>不可复现性提示(继承 DINOv2 的坑):</b>论文明确写 "We build our large-scale pre-training dataset by leveraging a large data pool of web images collected from public posts on Instagram";且官方 README 的 Known Limitations 里写着训练使用私有数据集。也就是说 <b>LVD-1689M 本身不公开</b>,Table 1 的四路对照<b>只能读、不能重跑</b>。复现 DINOv3 的可行路径是在自己的数据上重放「聚类 + 检索 + seed 保留」的混合流程,而非复刻同一个语料。
+</div>
+
+<div class="callout tip">
+<b>对前馈重建线的直接启发:</b>这条线的多视图数据(如 DL3DV / RE10K / 自采集扫描)天然是「场景中心 + 长尾物体」的分布。Table 1 的结论可以平移为操作建议:<b>不要只用 cluster-based 采样</b>——它会把 IN1k 这类通用判别性拉低;也不要只用 retrieval——它会丢掉少见物体的多样性。这与本库 <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a> 中「训练数据分布决定泛化边界」的判断一致。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:架构与 RoPE-box jittering</h2>
+
+<h3>网络结构:ViT-7B/16 vs DINOv2 ViT-g/14</h3>
+<table>
+<tr><th>项目</th><th>DINOv2(教师)</th><th>DINOv3(教师)</th><th>解读</th></tr>
+<tr><td>Backbone</td><td>ViT-giant</td><td>ViT-7B(自定义)</td><td>—</td></tr>
+<tr><td>#Params</td><td>1.1B</td><td class="best">6.7B</td><td>×6,但<b>深度不变</b></td></tr>
+<tr><td>#Blocks</td><td>40</td><td>40</td><td>宽而不深</td></tr>
+<tr><td>Patch Size</td><td>14</td><td class="best">16</td><td><b>token 数减少约 25%</b>(同分辨率下 $(\frac{14}{16})^2\approx0.766$);推理更省</td></tr>
+<tr><td>Pos. Embeddings</td><td>Learnable</td><td class="best">RoPE(轴向)</td><td>可外推分辨率,这是高分辨率适配的前提</td></tr>
+<tr><td>Registers</td><td>4</td><td>4</td><td>沿用(抑制 high-norm outlier token)</td></tr>
+<tr><td>Embed. Dim.</td><td>1536</td><td class="best">4096</td><td>×2.67</td></tr>
+<tr><td>FFN Type</td><td>SwiGLU</td><td>SwiGLU</td><td>不变</td></tr>
+<tr><td>FFN Hidden Dim.</td><td>4096</td><td class="best">8192</td><td>×2</td></tr>
+<tr><td>Attn. Heads</td><td>24</td><td class="best">32</td><td>head 变多</td></tr>
+<tr><td>Attn. Head Dim.</td><td>64</td><td class="best">128</td><td>$32\times128=4096$ ✓</td></tr>
+<tr><td>DINO Head</td><td>MLP 4096-4096-256</td><td class="best">MLP 8192-8192-512</td><td>head 也同步放大</td></tr>
+<tr><td>DINO Prototypes</td><td>128k</td><td class="best">256k</td><td>×2</td></tr>
+<tr><td>iBOT Head</td><td>MLP 4096-4096-256</td><td>MLP 8192-8192-384</td><td>瓶颈维 384</td></tr>
+<tr><td>iBOT Prototypes</td><td>128k</td><td>96k</td><td><b>反向缩小</b>(少而精)</td></tr>
+</table>
+<p class="refs">数据引自论文 Table 2。注意 <b>iBOT prototype 从 128k 降到 96k</b> 这个反直觉的改动——和正文不同方向的缩放,说明 patch 级目标并不需要那么大的「码本」。</p>
+
+<h3>数学形式化:轴向 RoPE + box jittering</h3>
+<p>DINOv3 的 RoPE 实现在标准化到 $[-1,1]$ 的坐标盒上给每个 patch 分配坐标,再在多头注意力里按两个 patch 的<b>相对位置</b>加偏置:</p>
+<div class="equation">
+$$\text{Attn}(i,j)\;=\;\underbrace{q_i^\top k_j}_{\text{内容项}}\;\cdot\;\underbrace{R\!\left(\mathbf{p}_i-\mathbf{p}_j\right)}_{\text{相对位置项}},\qquad \mathbf{p}\in[-1,1]^2$$
+<span class="tag">(式 2)轴向 RoPE 的相对位置偏置,依据 §3.2 原文描述</span>
+</div>
+<p>关键在于坐标盒<b>不是固定的</b>,而是训练时随机缩放:</p>
+<div class="equation">
+$$[-1,1]^2\rightarrow[-s,s]^2,\qquad s\sim\mathcal{U}[0.5,\,2]$$
+<span class="tag">(式 3)RoPE-box jittering,依据 §3.2 原文</span>
+</div>
+
+<h3>前向流程(训练时的一张图)</h3>
+<ol>
+  <li>取 2 个 global crop($256\times256$)+ 8 个 local crop($112\times112$);global 面积比 $\in[0.32,1.0]$,local $\in[0.05,0.32]$。</li>
+  <li>按 ImageNet 统计量归一化(mean 0.485/0.456/0.406,std 0.229/0.224/0.225)。</li>
+  <li>patch 化 + patch embed(patch 16)→ 拼接 CLS 与 4 个 storage token。</li>
+  <li>40 个 block,每块内注意力加轴向 RoPE 相对位置偏置;随机抽一个 $s\sim U[0.5,2]$ 缩放坐标盒。</li>
+  <li>输出被 3 个 head 共享:DINO head(CLS,图像级)、iBOT head(patch 级)、KoLeo(head 之后的特征多样性项)。</li>
+</ol>
+<h3>模块内部机制:Mermaid</h3>
+<div class="mermaid">
+flowchart TB
+  IMG["图像 → global 256 / local 112 ×8"] --> PE["PatchEmbed patch=16<br/>+ CLS + 4 storage tokens"]
+  PE --> B["×40 blocks<br/>Attention(qkv_bias=false, 32 heads × 128)<br/>+ SwiGLU FFN(hidden 8192)<br/>+ LayerScale 1e-5"]
+  B --> R["轴向 RoPE<br/>坐标盒 [-1,1] → 随机 [-s,s], s~U[0.5,2]"]
+  R --> H1["DINO head<br/>8192-8192-512, 256k prototypes"]
+  R --> H2["iBOT head<br/>patch 级, 96k prototypes"]
+  R --> H3["KoLeo<br/>特征分散度"]
+  H1 --> LOSS["L_Pre = L_DINO + L_iBOT + 0.1·L_KoLeo"]
+  H2 --> LOSS
+  H3 --> LOSS
+</div>
+
+<div class="callout tip">
+<b>RoPE-box jittering 的价值(论文原话):</b>"In order to improve the robustness of the model to resolutions, scales and aspect ratios, we employ RoPE-box jittering."——它把「位置编码对分辨率/aspect ratio 的敏感性」转成了一个<b>训练期的随机增强</b>。这对前馈重建很重要:多视图前馈模型的输入比例往往不统一(DL3DV 用 $448\times256$,RE10K 用 $256\times256$),一个在训练期就见过各种坐标尺度的编码器更不容易在不同输入比例下漂移。
+</div>
+
+<div class="callout warn">
+<b>常数 schedule 是个容易被忽略的设计决定:</b>论文 §3.2 明确 "we get rid of all parameter scheduling, and train with constant hyperparameter schedules for 1M iterations"。源码印证:<code>dinov3_vit7b16_pretrain.yaml</code> 里 <code>schedules.lr</code> 的 start / peak / end 全部是 <b>5.0e-05</b>,<code>weight_decay</code> 全是 0.04,只有 <code>teacher_temp</code> 保留 $0.04\to0.07$ 的 warmup 和 <code>momentum</code> 0.994 恒定。这是「先把优化器从变量里摘出去,再让模型和数据去当变量」的思路——也是能放心把训练时长拉到 1M+ 迭代的前提。
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:Gram anchoring(核心创新)</h2>
+
+<h3>一句话定位</h3>
+<p>不去修单个 patch 的表示,而是<b>直接约束 patch 两两之间的相关性矩阵</b>——用一个<b>训练早期</b>的 checkpoint 当「锚」,把它算出的 Gram 矩阵当作目标,把 student 的 Gram 矩阵往它上面拉。名字里的 anchoring 正是这个意思:锚不在当下,而在过去。</p>
+
+<h3>目标函数</h3>
+<div class="equation">
+$$\mathcal{L}_{\text{Gram}}=\left\|\mathbf{X}_{\mathrm{S}}\cdot\mathbf{X}_{\mathrm{S}}^{\top}-\mathbf{X}_{\mathrm{G}}\cdot\mathbf{X}_{\mathrm{G}}^{\top}\right\|_{\text{F}}^{2}$$
+<span class="tag">(式 4)Gram anchoring 损失,论文式 (2)</span>
+</div>
+<p>其中 $\mathbf{X}_{\mathrm{S}}$ 是 student 的 patch 特征,$\mathbf{X}_{\mathrm{G}}$ 是 Gram teacher 的特征,$\|\cdot\|_{\text{F}}$ 是 Frobenius 范数。叠加后的总体目标:</p>
+<div class="equation">
+$$\mathcal{L}_{\mathrm{Ref}}=w_{\mathrm{D}}\,\mathcal{L}_{\mathrm{DINO}}+\mathcal{L}_{\mathrm{iBOT}}+w_{\mathrm{DK}}\,\mathcal{L}_{\text{DKoLeo}}+w_{\mathrm{Gram}}\,\mathcal{L}_{\text{Gram}}$$
+<span class="tag">(式 5)refinement 阶段总损失,论文式 (3);$w_{\mathrm{Gram}}=2$</span>
+</div>
+
+<h3>前向流程(Gram 阶段的一次迭代)</h3>
+<ol>
+  <li><b>取 student 特征</b>:只用 <b>global crop</b> 的 patch token("We only compute this loss on the global crops"),取 pre-head 的 patch 表示。</li>
+  <li><b>取 teacher 特征</b>:<u>冻结</u>的 Gram teacher 对同一批 global crop 前向,取 <code>backbone_out["x_norm_patchtokens"]</code>。</li>
+  <li><b>分辨率对齐(关键)</b>:Gram teacher 的 crop 尺寸是 <b>512</b>,student 的 global crop 是 <b>256</b>——teacher 的 patch 网格是 $32\times32$,student 是 $16\times16$。代码用 <code>F.interpolate(mode="bicubic", antialias=False)</code> 把 teacher 的 $D\times32\times32$ 特征图<b>下采样</b>到 $16\times16$ 再算 Gram。<b>这个「高分辨率 teacher → 低分辨率 student」的不对称,正是后文 §7 所说「高分辨率 Gram」的实现方式。</b></li>
+  <li><b>可选 L2 归一化</b>:<code>gram.normalized: true</code> → 两侧特征都先做 $\ell_2$ 归一化,于是 Gram 矩阵退化为<b>余弦相似度矩阵</b>(见下方源码复核)。</li>
+  <li><b>算 MSE</b>:<code>mse_loss(student_sim, target_sim)</code>,其中 $sim=\mathbf{X}\mathbf{X}^\top$。</li>
+  <li><b>反向传播</b>:梯度只流进 student(student 侧的 Gram 是可微的,teacher 侧 <code>requires_grad_(False)</code>)。</li>
+</ol>
+
+<h3>模块内部机制:Mermaid</h3>
+<div class="mermaid">
+flowchart LR
+  G["global crop<br/>256×256"] --> S["student(patch 16)<br/>→ 16×16 patch 特征"]
+  G --> GT["512×512 观测<br/>Gram teacher(冻结)<br/>→ 32×32 patch 特征"]
+  GT --> DS["bicubic 下采样<br/>32×32 → 16×16"]
+  S --> NS1["L2 归一化(normalized=true)"]
+  DS --> NS2["L2 归一化"]
+  NS1 --> GS["student Gram (余弦相似度矩阵)<br/>16×16 × 16×16"]
+  NS2 --> GG["teacher Gram(目标)"]
+  GS --> M["MSE(student_sim, target_sim)"]
+  GG --> M
+  M --> L["w_Gram = 2"]
+</div>
+
+<h3>核心超参与更新节奏</h3>
+<table>
+<tr><th>超参</th><th>取值</th><th>说明</th><th>出处</th></tr>
+<tr><td>起始时机</td><td><b>1M 迭代之后</b></td><td>原文 "for efficiency, we start only after 1M iterations";yaml <code>it_first_update: 1010000</code></td><td>§4 / 源码</td></tr>
+<tr><td>teacher 更新频率</td><td><b>每 10k 迭代</b></td><td><code>update_frequency: 10000</code></td><td>§4 / 源码</td></tr>
+<tr><td>最多更新次数</td><td><b>3 次</b></td><td><code>max_updates: 3</code>;更新方式是把 EMA 教师权重拷进 Gram 教师</td><td>§4 / 源码</td></tr>
+<tr><td>$w_{\mathrm{Gram}}$</td><td><b>2</b></td><td>yaml 用 schedule 从 0 升到 2.0(warmup 1000 epochs)</td><td>§4.4 / 源码</td></tr>
+<tr><td>是否归一化</td><td><b>是</b></td><td><code>normalized: true</code></td><td>源码</td></tr>
+<tr><td>作用粒度</td><td><b>图像级</b></td><td><code>img_level: true</code>——每张图内部算 Gram,而不是整个 batch 一起</td><td>源码</td></tr>
+<tr><td>token 子集</td><td>全部</td><td><code>tokens_used: all</code>(另有 masked / unmasked 两个未启用的选项)</td><td>源码</td></tr>
+<tr><td>是否裁剪负相似度</td><td><b>否</b></td><td><code>remove_neg: false</code>——负相似度项照样参与 MSE</td><td>源码</td></tr>
+</table>
+
+<div class="callout key">
+<b>「锚在过去」为什么合理(论文的机制解释):</b>论文 §4 明确,late application of $\mathcal{L}_{\text{Gram}}$ "still manages to <b>repair</b> very degraded local features"——即使是在特征已经严重退化之后才介入,Gram 依然能<b>修复</b>它。原因是 Gram teacher 取自退化发生之前的 checkpoint,它携带的是「健康时期的 patch 相关性结构」。另一个更硬的发现是损失耦合:论文观察 Fig.7 后写道 "applying the Gram objective significantly influences the iBOT loss, causing it to decrease more rapidly... the Gram and iBOT objectives impact the features in a similar way, whereas the DINO losses affect them differently."——<b>Gram 主要压低的是 iBOT(patch 级)损失,对 DINO(图像级)损失几乎无影响</b>。这从损失耦合的角度证实了「退化发生在 patch 级、修复也必须发生在 patch 级」。
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2508.10104/d10_gram_orig.jpg" alt="输入图像(1024×1024)" loading="lazy" style="max-width:32%">
+    <img src="images/2508.10104/d11_gram_wo.png" alt="不用 Gram 锚定的余弦相似度图" loading="lazy" style="max-width:32%">
+    <img src="images/2508.10104/d12_gram_w.png" alt="用 Gram 锚定后的余弦相似度图" loading="lazy" style="max-width:32%">
+  </div>
+  <div class="caption"><b>图3</b>(对应论文 Figure 10)<b>Gram anchoring 的定性效果。</b>左:输入图像($1024\times1024$);中:不加 Gram 时的余弦相似度图(文件名为 <code>*_yolov3_iter9999_1024_seed1_None.png</code>,取自一个 patch-14 且无 Gram 的长训模型);右:加高分辨率 Gram($\mathcal{L}_{\mathrm{HRef}}$,文件名 <code>*_U1_iter999999_512_seed1.png</code>,取自 DINOv3 系 U1 模型 100 万迭代)后的同类图。对比可见右图的相似度被<b>重新局部化</b>——目标物体区域被清晰点亮,而不是弥散到整幅图像。论文图注:"Qualitative effect of Gram anchoring. We visualize cosine maps before and after using the refinement objective $\mathcal{L}_{\mathrm{HRef}}$. The input resolution of the images is $1024\times1024$ pixels."</div>
+</div>
+
+<div class="callout warn">
+<b>Gram teacher 的选取是有讲究的,而且结论反直觉(Figure 9b 消融):</b>论文实验了三种 Gram teacher 来源,结论是"choosing the Gram teacher from 100k or 200k does not significantly impact the results, but using a much later Gram teacher (1M iterations) is detrimental because the patch-level consistency of such a teacher is inferior."——即<b>只能用早期 teacher,用「最新的」teacher 反而有害</b>,因为最新的那个自己已经退化了。<span class="uncertain">【推测】</span>这也解释了为什么 Gram 只能是「一次性导入 + 少量刷新」:一旦 Gram teacher 被替换成最新 EMA 教师,锚就失效了。yaml 的 <code>max_updates: 3</code> 与「每 10k 更新」组合起来,把 Gram teacher 的漂移限制在一个很小的步数内($1.01\text{M}\to1.03\text{M}$),与这个结论自洽。
+</div>
+
+<div class="callout tip">
+<b>源码复核纠正了一处「论文表述 vs 实际实现」的差异(本库原创发现):</b>
+<ul>
+  <li>论文式 (2) 写的是原始内积 $\mathbf{X}\mathbf{X}^\top$;但官方实现的 <code>GramLoss.forward</code>(<code>src_dino/dinov3/loss/gram_loss.py:34-84</code>)在算相似度矩阵<b>之前</b>先对两侧特征做了 <code>F.normalize(feats, dim=-1)</code>(<code>L55 / L66</code>,由 <code>apply_norm=&lt;cfg.gram.normalized&gt;=true</code> 控制)。</li>
+  <li>因此<b>实际被优化的对象是「余弦相似度矩阵」而非「内积矩阵」</b>。两者相差每个 token 的模长因子。</li>
+  <li>第二处:实现用的是 <code>torch.nn.MSELoss()</code>(<code>L24</code>),即 $\frac{1}{P^2}\sum_{i,j}(\cdot)^2$;而式 (2) 写的是 Frobenius 范数的平方 $\sum_{i,j}(\cdot)^2$。二者只差一个常数 $1/P^2$,乘进 $w_{\mathrm{Gram}}$ 后被吸收,<b>数值上等价</b>。</li>
+  <li>第三处:实现保留了负相似度项(<code>remove_neg: false</code>,只有 <code>remove_neg</code>/<code>remove_only_teacher_neg</code> 两个开关的代码分支,<code>L75-L82</code>),而论文未提及这个选项。这在「读论文以为只约束正相关」和「实际代码把负相关也一起拉」之间划出一条不可忽略的界线。</li>
+</ul>
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:高分辨率适配</h2>
+
+<h3>为什么需要单独一个阶段</h3>
+<p>预训练全程在 $256\times256$ 的 global crop 上跑,但下游用途(PCA 可视化、分割、深度、前馈重建的输入)动辄 $1024$ 甚至 $4096$。直接把 RoPE 模型推到大分辨率当然能跑,但<b>稠密特征的语义质量会漂</b>。DINOv3 的解法是在预训练之后再加一个短阶段:改变 global / local / Gram teacher 三种 crop 的分辨率分布,让模型重新适应。</p>
+
+<h3>网络结构 / 训练配置</h3>
+<table>
+<tr><th>项目</th><th>取值</th><th>出处</th></tr>
+<tr><td>迭代数</td><td><b>10k</b> 额外迭代</td><td>§5.1</td></tr>
+<tr><td>global crop 尺寸集合</td><td>{512, 768}</td><td>§5.1 / 源码</td></tr>
+<tr><td>local crop 尺寸集合</td><td>{112, 168, 224, 336}</td><td>§5.1</td></tr>
+<tr><td>Gram teacher crop 尺寸</td><td>512 / 1152(随配比)</td><td>§4.4 概率表</td></tr>
+<tr><td>是否仍挂 Gram</td><td><b>是,且必需</b></td><td>§5.1</td></tr>
+</table>
+
+<h3>数学形式化:三种 crop 尺寸的联合采样分布</h3>
+<p>论文 §4.4 给出了 (global, local, Gram teacher) 三元组的采样概率表,这正是「高分辨率 Gram」的工程实现:</p>
+<div class="equation">
+$$\Pr\big[(512,112,768)\big]=0.3,\quad \Pr\big[(768,112,1152)\big]=0.3,\quad \Pr\big[(768,168,1152)\big]=0.3$$
+$$\Pr\big[(768,224,1152)\big]=0.05,\quad \Pr\big[(768,336,1152)\big]=0.05$$
+<span class="tag">(式 6)高分辨率适配的 crop 三元组采样,论文 §4.4(原文:"These values were obtained empirically")</span>
+</div>
+<p>注意 Gram teacher 的尺寸始终<b>大于等于</b> student 的 global crop(768 vs 512、1152 vs 768),也就是「用更精细的教师网格去监督更粗的学生网格」——这与 §6 里 bicubic 下采样的方向一致。</p>
+
+<h3>前向流程与监督信号</h3>
+<ul>
+  <li><b>监督信号</b>:仍是 $\mathcal{L}_{\mathrm{Ref}}$(式 5),但 Gram teacher 换成了 <b>7B 教师</b>本体,且取的是<b>2× 分辨率</b>的特征。</li>
+  <li><b>论文的强断言</b>:"We found this component to be essential: without it, the model performance on dense prediction tasks degrades significantly."</li>
+  <li><b>收益</b>:论文 §5.1 记录高分辨率 Gram 相对普通 $\mathcal{L}_{\mathrm{Ref}}$ 再带来 <b>+2 mIoU on ADE20k</b>;Figure 9(a) 给出定性证据——把高分辨率特征图下采样成小图后,余弦图的一致性明显变好。</li>
+</ul>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2508.10104/d16_dog_orig.jpg" alt="狗的高分辨率 PCA 特征(输入)" loading="lazy" style="max-width:48%">
+    <img src="images/2508.10104/d17_dog_2048.jpg" alt="2048×2048 下的 PCA 特征" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="caption"><b>图4</b>(对应论文 Figure 4)<b>分辨率越高,特征越锐利,且语义不垮。</b>左:输入;右同一主体在 $2048\times2048$ 下由 DINOv3 提取、取 PCA 前三主成分映射到 RGB 的稠密特征。论文图注:"DINOv3 at very high resolution. We visualize dense features of DINOv3 by mapping the first three components of a PCA computed over the feature space to RGB. To focus the PCA on the subject, we mask the feature maps via background subtraction. With increasing resolution, DINOv3 produces crisp features that stay semantically meaningful."Figure 4 完整子图覆盖 $512/1024/2048/4096$ 四档,此处的两档已足够看出趋势。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2508.10104/d04_clutter_cos.jpg" alt="4096×4096 杂乱场景的余弦相似度图" loading="lazy" style="max-width:70%">
+  <div class="caption"><b>图5</b>(对应论文 Figure 3)<b>在 $4096\times4096$ 的杂乱场景里,相似度图依然只点亮语义正确的区域。</b>论文图注:"High-resolution dense features. We visualize the cosine similarity maps obtained with DINOv3 output features between the patches marked with a red cross and all other patches. Input image at $4096\times4096$. Please zoom in, do you agree with DINOv3?"——图注里那句 "Please zoom in, do you agree with DINOv3?" 是论文少见的俏皮措辞,也说明作者对这一点很有底气。这张图是本篇里<b>「冻结编码器能否直接用于高分辨率下游」的最直接证据</b>。</div>
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>模块五:蒸馏与模型家族</h2>
+
+<h3>一句话定位</h3>
+<p>6.7B 的教师没法直接部署,所以 DINOv3 用<b>固定教师</b>(而非 DINOv2 的 EMA 教师)把它蒸馏成五档 ViT + 四档 ConvNeXt。关键设计决定是<b>跳过 Gram</b>——因为教师是冻的,不存在 patch 级漂移这个病,药自然也就不需要。</p>
+
+<h3>网络结构:家族全表</h3>
+<table>
+<tr><th>模型</th><th>参数量</th><th>GFLOPs @256</th><th>GFLOPs @512</th><th>备注</th></tr>
+<tr><td>ConvNeXt-Tiny</td><td>29M</td><td>5</td><td>20</td><td>CNN 路线,极小算力</td></tr>
+<tr><td>ConvNeXt-Small</td><td>50M</td><td>11</td><td>46</td><td></td></tr>
+<tr><td>ConvNeXt-Base</td><td>89M</td><td>20</td><td>81</td><td></td></tr>
+<tr><td>ConvNeXt-Large</td><td>198M</td><td>38</td><td>152</td><td></td></tr>
+<tr class="best"><td><b>ViT-S/16</b></td><td><b>21M</b></td><td><b>12</b></td><td><b>63</b></td><td>最小可用 ViT</td></tr>
+<tr><td>ViT-S+/16</td><td>29M</td><td>16</td><td>79</td><td>自定义档</td></tr>
+<tr><td>ViT-B/16</td><td>86M</td><td>47</td><td>216</td><td>社区最常用</td></tr>
+<tr><td>ViT-L/16</td><td>300M</td><td>163</td><td>721</td><td><b>性价比甜点</b></td></tr>
+<tr><td>ViT-H+/16</td><td>840M</td><td>450</td><td>1903</td><td>自定义档</td></tr>
+<tr><td>ViT-7B/16</td><td>6716M</td><td>3550</td><td>14515</td><td>教师本体,权重需申请</td></tr>
+</table>
+<p class="refs">数据引自论文 Figure 16(a)。<b>数值对照</b>:ViT-L/16 的 163 GFLOPs @256 只有 7B 教师(3550)的 <b>4.6%</b>,而 Table 14 显示它在多数密集任务上已接近教师——这是「蒸馏 + 冻结编码器」路线在工程上成立的根本原因。</p>
+
+<h3>蒸馏配方</h3>
+<ul>
+  <li><b>教师</b>:7B 模型本体,<b>固定不更新</b>("we use the 7B model directly as the teacher... the teacher model is fixed")。</li>
+  <li><b>目标函数</b>:与第一阶段完全相同(即 $\mathcal{L}_{\mathrm{Pre}}$,式 1),保证学习信号一致。</li>
+  <li><b>迭代</b>:<b>1M + 250k</b> 迭代(cosine 降温),之后接高分辨率适配阶段,<b>但不带 Gram</b>。</li>
+  <li><b>学生档位</b>:ViT-S 21M / B 86M / L 0.3B,外加两个自定义档 ViT-S+ 29M 与 ViT-H+ 0.8B(用于填补与 7B 教师之间的空档)。</li>
+  <li><b>为何跳过 Gram</b>:论文原话 "We do not observe patch-level consistency issues and therefore do not apply the Gram anchoring technique."——固定教师不漂,学生跟着不漂。</li>
+</ul>
+
+<div class="callout key">
+<b>一个可以直接抄的工程结论(Table 14):</b>ViT-L 学生已在多数密集任务上接近 7B 教师——ADE20k <b>54.9</b>(7B 为 55.9)、NYU RMSE <b>0.352</b>(7B 为 0.309)、NAVI <b>62.3</b>(7B 为 64.4)。而参数量只有 <b>1/22</b>、算力只有 <b>1/20</b>。所以本库后续讨论「前馈重建该用哪一档 DINOv3」时,<b>ViT-L/16 是默认起点,ViT-B/16 是显存紧张时的退路</b>。
+</div>
+
+<div class="callout warn">
+<b>权重获取的现实约束(README 已确认):</b>
+<ul>
+  <li>ViT-S/S+/B/L/H+ 与 ConvNeXt 全家 + SAT-493M 的 ViT-L <b>公开可下</b>(HuggingFace <code>facebook/dinov3-{vits16,vits16plus,vitb16,vitl16,vith16plus}-pretrain-lvd1689m</code>)。</li>
+  <li><b>ViT-7B/16 的权重需要申请</b>(README 的 Known Limitations 段落明确写出)。这意味着「用 7B 当冻结编码器」在实践上是<b>有门槛的</b>——本库引用的多个前馈重建工作全都落在 H+ 及以下档位,与这个约束一致。</li>
+  <li>环境要求:PyTorch $\ge$ 2.7.1,官方<b>只在 Linux 上测过</b>。</li>
+</ul>
+</div>
+
+<div class="figure">
+  <img src="images/2508.10104/d18_family_vitb4096.png" alt="ViT-B 在 4096 分辨率下的 PCA 特征稳定性" loading="lazy" style="max-width:70%">
+  <div class="caption"><b>图6</b>(对应论文 Figure 17)<b>家族成员在跨分辨率时的特征稳定性。</b>本图截取自 Figure 17 中 ViT-B 一行(文件 <code>vitb4096_cat_marc_pca_rgb.png</code>)。论文对本图的完整描述:"Stability of the features at multiple resolutions for the DINOv3 ViT family of models. Top-to-bottom: ViT-S, S+, B, L, H+. We run inference on an image at multiple resolutions, then perform principal component analysis on the features computed on a $1792\times1024$ image ($112\times64$ image tokens). We then project features at all resolutions onto the principal components 5–7 that we map to the RGB space for visualization. While the models are functional at all resolutions, we observe that the features remain consistent across a large range of resolutions before drifting: for example, ViT-S+ features are stable between $896\times512$ and $3584\times2048$ inputs, while ViT-L barely starts drifting on the largest resolution $7168\times4096$. ViT-H+ remains stable throughout the whole tested range."<br><b>为什么这张图对前馈重建特别重要:</b>多视图前馈模型常被要求在训练分辨率之外推理(比如训练 $256$、推理 $512$ 或 $1024$)。这张图量化了「每个档位能安全外推多远」——ViT-L/H+ 的安全区比 ViT-S+ 大得多,这直接影响「换编码器就要同时换推理分辨率预算」这个工程决策。</div>
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>损失函数总表</h2>
+
+<table>
+<tr><th>阶段</th><th>损失</th><th>数学形式</th><th>权重</th><th>出处</th></tr>
+<tr><td rowspan="3">阶段 1<br>预训练<br>(1M iter)</td><td>DINO(图像级)</td><td>$\mathcal{L}_{\mathrm{DINO}}$:CLS 与 prototype 的交叉熵,teacher 用 Sinkhorn-Knopp 居中</td><td>1.0</td><td>式 (1) / 源码 <code>dino.loss_weight</code></td></tr>
+<tr><td>iBOT(patch 级)</td><td>$\mathcal{L}_{\mathrm{iBOT}}$:随机掩码 patch 的 latent 重建</td><td>1.0(mask ratio $0.1\!\sim\!0.5$)</td><td>式 (1) / 源码 <code>ibot.loss_weight</code></td></tr>
+<tr><td>DKoLeo</td><td>$\mathcal{L}_{\text{DKoLeo}}$:特征分散度正则($k$-NN 距离)</td><td><b>0.1</b></td><td>式 (1) / 源码 <code>koleo_loss_weight</code></td></tr>
+<tr><td>阶段 2<br>Gram anchoring<br>(+100k iter)</td><td>Gram</td><td>$\mathcal{L}_{\text{Gram}}=\|\mathbf{X}_S\mathbf{X}_S^\top-\mathbf{X}_G\mathbf{X}_G^\top\|_F^2$</td><td><b>2</b>(schedule 从 0 升到 2)</td><td>式 (2) / 源码 <code>gram.loss_weight_schedule</code></td></tr>
+<tr><td>阶段 3<br>高分辨率<br>(+10k iter)</td><td>同阶段 2</td><td>$\mathcal{L}_{\mathrm{Ref}}$ 全式</td><td>同上 + Gram teacher 取 2× 分辨率特征</td><td>式 (3) / §5.1</td></tr>
+<tr><td>蒸馏</td><td>同阶段 1</td><td>$\mathcal{L}_{\mathrm{Pre}}$,教师固定</td><td>同阶段 1</td><td>§5.2</td></tr>
+</table>
+
+<div class="equation">
+$$\boxed{\;\mathcal{L}_{\mathrm{Pre}}=\mathcal{L}_{\mathrm{DINO}}+\mathcal{L}_{\mathrm{iBOT}}+0.1\cdot\mathcal{L}_{\text{DKoLeo}}\;}$$
+<span class="tag">(式 7)阶段 1 总损失,论文式 (1)</span>
+</div>
+
+<div class="equation">
+$$\boxed{\;\mathcal{L}_{\mathrm{Ref}}=w_{\mathrm{D}}\,\mathcal{L}_{\mathrm{DINO}}+\mathcal{L}_{\mathrm{iBOT}}+w_{\mathrm{DK}}\,\mathcal{L}_{\text{DKoLeo}}+w_{\mathrm{Gram}}\,\mathcal{L}_{\text{Gram}}\;}$$
+<span class="tag">(式 8)refinement(阶段 2/3)总损失,论文式 (3);$w_{\mathrm{Gram}}=2$</span>
+</div>
+
+<div class="callout tip">
+<b>源码侧的权重细节(<code>dinov3_vit7b16_gram_anchor.yaml</code> 与 <code>pretrain.yaml</code> 对照):</b>
+<ul>
+  <li>阶段 1:三个权重是<b>常数</b>(1.0 / 1.0 / 0.1),与论文式 (1) 完全一致。</li>
+  <li>阶段 2:Gram 权重不是常数,而是 <code>loss_weight_schedule: {start: 0, peak: 0, end: 2.0, warmup_epochs: 1000, cosine_epochs: 1}</code>——即从 0 出发、经 1000 个 epoch 的 warmup 后余弦升到 <b>2.0</b>。<b>这解释了为什么早期介入会让训练不稳:loss 权重本身是从 0 缓升的。</b></li>
+  <li>同一个 yaml 里还多了一个阶段 1 没有的开关:<code>dino.reweight_dino_local_loss: true</code>,配 <code>local_loss_weight_schedule: {start: 1, peak: 1, end: 0.5, ...}</code>——refinement 阶段把 local crop 上的 DINO 损失权重<b>从 1 降到 0.5</b>。<span class="uncertain">【推测】</span>合理的解释是:此时模型已经在主攻 patch 级一致性(靠 Gram),而 local crop 上的图像级目标是"反方向"的,故降权。论文正文未提及这一条,属于<b>只能在源码里读到的实现细节</b>。</li>
+</ul>
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(三阶段训练)</h2>
+
+<h3>训练全链路</h3>
+<div class="mermaid">
+flowchart TB
+  D["LVD-1689M<br/>1689M 图(聚类 + 检索 + seed 保留)"] --> S1
+  subgraph S1["阶段 1 · 预训练(1M 迭代)"]
+    direction TB
+    A1["2 global 256px + 8 local 112px"] --> A2["ViT-7B/16(student, qkv_bias=false, SwiGLU64, RoPE+jitter)"]
+    A2 --> A3["DINO head / iBOT head(mask ratio 0.1~0.5) / KoLeo"]
+    A3 --> A4["L_Pre = L_DINO + L_iBOT + 0.1·L_KoLeo<br/>constant LR 5e-5 · AdamW · batch 4096"]
+    A4 -->|"EMA 更新"| TE["EMA teacher(6.7B)"]
+  end
+  S1 --> IR{"迭代 > 1,000,000 ?"}
+  IR -->|否| S1
+  IR -->|是| S2
+  subgraph S2["阶段 2 · Gram anchoring(+100k 迭代)"]
+    direction TB
+    B1["冻结早期 checkpoint 作为 Gram teacher<br/>(100k 或 200k,不可用 1M)"] --> B2["对同一 global crop 取 teacher patch 特征"]
+    B2 --> B3["L_Gram = || X_S X_Sᵀ − X_G X_Gᵀ ||_F²<br/>双侧 L2 归一化 · img_level"]
+    B3 --> B4["L_Ref = w_D·L_DINO + L_iBOT + w_DK·L_DKoLeo + 2·L_Gram"]
+    B4 -->|"每 10k 迭代,最多 3 次"| B5["把 EMA 教师权重灌进 Gram teacher(update_gram)"]
+    B5 --> B2
+  end
+  S2 --> S3
+  subgraph S3["阶段 3 · 高分辨率适配(+10k 迭代)"]
+    direction TB
+    C1["采样 (global, local, Gram teacher) 三元组<br/>(512,112,768) (768,112,1152) (768,168,1152) (768,224,1152) (768,336,1152)"]
+    C1 --> C2["Gram teacher 特征 bicubic 下采样到 student 网格"]
+    C2 --> C3["继续优化 L_Ref(必需,去掉显著掉点)"]
+  end
+  S3 --> OUT["7B 教师(权重需申请)"]
+  S3 --> DIST["蒸馏(1M + 250k,固定教师,跳过 Gram)"]
+  DIST --> FAM["ViT-S/S+/B/L/H+ · ConvNeXt T/S/B/L"]
+</div>
+
+<h3>推理链路(作为冻结编码器使用)</h3>
+<div class="mermaid">
+flowchart LR
+  I["任意分辨率图像<br/>按 ImageNet 统计量归一化"] --> P["PatchEmbed patch=16<br/>(分辨率按 patch 对齐,保留 aspect ratio)"]
+  P --> V["40 blocks + 轴向 RoPE"]
+  V --> O1["patch tokens(hidden 4096,7B)<br/>→ 分割 / 深度 / 对应 / 前馈重建"]
+  V --> O2["CLS token<br/>→ 分类 / 检索"]
+  V --> O3["4 registers<br/>(丢弃,不用于下游)"]
+</div>
+<div class="note"><b>两个可直接抄的实现要点(来自 §6.3 的评估协议):</b>① <b>推理前按最短边缩放到目标尺寸,但长边取 patch 16 的整数倍</b>——论文的例子很具体:DAVIS 原生 $480\times854$,要在 960 处理时,patch-16 模型缩到 $960\times1712$(略横向拉伸,得到 $60\times107$ 特征图),而 patch-14 模型缩到 $966\times1708$(略纵向拉伸,得到 $69\times122$ 特征图)。<b>换编码器档位就要重算这个对齐</b>,否则特征图尺寸会变、下游 head 的输入形状会跟着变。② 做 patch 相似度/标签传播时,在<b>特征图分辨率</b>上算,最后再双线性上采样回原生分辨率。</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节(源码验证)</h2>
+
+<div class="callout"><b>验证口径说明:</b>本节所有源码事实来自官方仓库 <code>facebookresearch/dinov3</code> 的 <code>git clone --depth 1</code>(工作副本位于本工作区 <code>.tmp_vision/src_dino/</code>,约 32MB)。下文 <code>file:line</code> 均为该副本中的实际行号,可逐行核对。</div>
+
+<h3>11.1 预训练配置(<code>dinov3/configs/train/dinov3_vit7b16_pretrain.yaml</code>)</h3>
+<table>
+<tr><th>键</th><th>值</th><th>意义</th></tr>
+<tr><td><code>student.arch</code></td><td><code>vit_7b</code></td><td>自定义架构名(非 timm 内置)</td></tr>
+<tr><td><code>student.patch_size</code></td><td><code>16</code></td><td>与 DINOv2 的 14 不同,token 数少约 23.4%</td></tr>
+<tr><td><code>student.ffn_layer</code></td><td><code>swiglu64</code></td><td>SwiGLU,ratio 64/…(配合 <code>ffn_ratio: 3</code> 得到 hidden 8192)</td></tr>
+<tr><td><code>student.qkv_bias</code></td><td><code>false</code></td><td>QKV 无偏置(与 ViT-L 蒸馏档相反,见 11.4)</td></tr>
+<tr><td><code>student.n_storage_tokens</code></td><td><code>4</code></td><td>即 4 个 registers</td></tr>
+<tr><td><code>student.pos_embed_type</code></td><td><code>rope</code></td><td>轴向 RoPE</td></tr>
+<tr><td><code>pos_embed_rope_base</code></td><td><code>100</code></td><td>RoPE 频率基</td></tr>
+<tr><td><code>pos_embed_rope_normalize_coords</code></td><td><code>separate</code></td><td>坐标归一化按轴分开</td></tr>
+<tr><td><code>pos_embed_rope_rescale_coords</code></td><td><code>2</code></td><td>坐标重标定倍率</td></tr>
+<tr><td><code>pos_embed_rope_dtype</code></td><td><code>fp32</code></td><td><b>RoPE 用 fp32 算</b>(其余走 bf16),位置精度不能省</td></tr>
+<tr><td><code>student.fp8_enabled</code></td><td><code>true</code></td><td>块级 FP8(<code>fp8_filter: blocks</code>)——能上 256 卡跑 1M 迭代的关键之一</td></tr>
+<tr><td><code>student.layerscale</code></td><td><code>1.0e-05</code></td><td>极小的 LayerScale 初值(与 LingBot-Vision 一致)</td></tr>
+<tr><td><code>student.drop_path_rate</code></td><td><code>0.4</code></td><td>高 drop path,大模型正则</td></tr>
+<tr><td><code>dino.head_n_prototypes</code></td><td><code>262144</code></td><td>256k prototypes</td></tr>
+<tr><td><code>dino.head_bottleneck_dim</code> / <code>head_hidden_dim</code> / <code>head_nlayers</code></td><td><code>512</code> / <code>8192</code> / <code>3</code></td><td>对应论文 Table 2 的 "MLP 8192-8192-512"</td></tr>
+<tr><td><code>dino.koleo_loss_weight</code></td><td><code>0.1</code></td><td>KoLeo 权重</td></tr>
+<tr><td><code>ibot.mask_ratio_min_max</code></td><td><code>[0.1, 0.5]</code></td><td>iBOT 掩码比例区间</td></tr>
+<tr><td><code>ibot.mask_sample_probability</code></td><td><code>0.5</code></td><td>一半的 crop 施加掩码</td></tr>
+<tr><td><code>ibot.head_n_prototypes</code></td><td><code>98304</code></td><td>96k(比 DINO 头少)</td></tr>
+<tr><td><code>train.batch_size_per_gpu</code></td><td><code>16</code></td><td>×256 GPU = 4096 全局 batch</td></tr>
+<tr><td><code>train.centering</code></td><td><code>sinkhorn_knopp</code></td><td>用 SwAV 的 Sinkhorn-Knopp 替代 DINO 的 centering(论文 Table 2 亦提及)</td></tr>
+<tr><td><code>train.checkpointing</code> / <code>compile</code></td><td><code>true</code> / <code>true</code></td><td>梯度检查点 + torch.compile 默认开</td></tr>
+<tr><td><code>optim.optimizer</code></td><td><code>adamw</code></td><td>β₁=0.9,β₂=0.99(<code>adamw_beta1/2</code>)</td></tr>
+<tr><td><code>optim.scaling_rule</code></td><td><code>sqrt_wrt_1024</code></td><td>LR 按 $\sqrt{\text{bs}/1024}$ 缩放</td></tr>
+<tr><td><code>optim.layerwise_decay</code></td><td><code>0.98</code></td><td>逐层 LR 衰减(Swin 式)</td></tr>
+<tr><td><code>optim.patch_embed_lr_mult</code></td><td><code>0.2</code></td><td>patch embed 的学习率乘 0.2</td></tr>
+<tr><td><code>optim.clip_grad</code></td><td><code>30.0</code></td><td>梯度裁剪</td></tr>
+<tr><td><code>schedules.lr</code></td><td>start/peak/end = <b>5.0e-05</b>,warmup 100 epochs,freeze_last_layer 5</td><td><b>常数 LR</b>(无 cosine 全程衰减)</td></tr>
+<tr><td><code>schedules.weight_decay</code></td><td>start/peak/end = <b>0.04</b></td><td>常数 WD</td></tr>
+<tr><td><code>schedules.teacher_temp</code></td><td>0.04 → 0.07(warmup 100 epochs)</td><td>唯一保留的调度之一</td></tr>
+<tr><td><code>schedules.momentum</code></td><td><b>0.994</b> 恒定</td><td>EMA 动量</td></tr>
+<tr><td><code>crops</code></td><td>global 256(scale 0.32–1.0)×2 + local 112(scale 0.05–0.32)×8</td><td>与论文一致</td></tr>
+<tr><td><code>crops.rgb_mean/std</code></td><td>ImageNet 统计量(0.485/0.456/0.406;0.229/0.224/0.225)</td><td>SAT-493M 版另用一组统计量</td></tr>
+</table>
+
+<h3>11.2 Gram 阶段配置(<code>dinov3/configs/train/dinov3_vit7b16_gram_anchor.yaml</code>)</h3>
+<pre><code>gram:
+  use_loss: true          # ← 阶段 1 的 pretrain.yaml 里是 false
+  loss_weight: 1.0        # 被下面的 schedule 覆盖
+  ema_teacher: false      # 用独立冻结的 gram_teacher,而非 EMA 教师
+  ckpt: ignore            # ← 占位值,复现时必须替换成真实 checkpoint 路径
+  it_load_ema_teacher: -1 # ← 占位值;与 ckpt 二选一必须给
+  rep_update: true        # 允许更新 gram teacher 权重
+  update_frequency: 10000 # 每 10k 迭代更新一次
+  it_first_update: 1010000# 首次更新在 1.01M 迭代 → 即阶段 1 跑完之后
+  max_updates: 3          # 最多更新 3 次
+  normalized: true        # ← 关键:L2 归一化后才算 Gram(即余弦相似度矩阵)
+  img_level: true         # 每张图内部算 Gram
+  remove_neg: false       # 不裁剪负相似度
+  remove_only_teacher_neg: false
+  tokens_used: all
+  global_teacher_resize_method: bicubic
+  global_teacher_resize_antialias: false
+  loss_weight_schedule:
+    start: 0
+    peak: 0
+    end: 2.0              # ← 最终权重 2.0,对应论文 w_Gram = 2
+    warmup_epochs: 1000
+    cosine_epochs: 1
+crops:
+  global_crops_size: 256
+  local_crops_size: 112
+  gram_teacher_crops_size: 512   # ← Gram 教师看到的是 2× 分辨率的 crop
+  gram_teacher_no_distortions: true
+dino:
+  reweight_dino_local_loss: true # ← 阶段 1 没有的开关
+  local_loss_weight_schedule:
+    start: 1
+    peak: 1
+    end: 0.5              # ← local crop 的 DINO 损失权重从 1 降到 0.5
+optim:
+  epochs: 1200            # ← 阶段 1 是 1000
+schedules:
+  lr: {start: 0, peak: 3.0e-05, end: 3.0e-05, warmup_epochs: 100}
+  momentum: {start: 0.999, peak: 0.999, end: 0.999}  # ← 阶段 1 是 0.994</code></pre>
+
+<div class="callout warn">
+<b>⚠️ 落地坑 1:发布配置里的 Gram teacher 是占位值,必须自己补。</b><code>gram.ckpt: ignore</code> 与 <code>gram.it_load_ema_teacher: -1</code> 都不能直接用。源码 <code>src_dino/dinov3/train/ssl_meta_arch.py:218-225</code> 里有两条硬断言:
+<pre><code># L218-221
+if self.gram_ema_teacher and self.gram_ckpt is not None:
+    raise ValueError("Cannot use both `gram.ema_teacher` and `gram.ckpt` at the same time. ...")
+# L222-225
+if self.gram_ckpt is None and self.gram_it_load_ema_teacher &lt; 0:
+    raise ValueError("If no gram checkpoint is provided, "
+                     "`gram.it_load_ema_teacher` must be set to a non-negative value.")</code></pre>
+即<b>要么给一个 Gram teacher checkpoint,要么指定在第几次迭代把 EMA 教师灌进 Gram 教师</b>,没有第三条路。想要复现 Gram 阶段,先得自己训到 100k/200k 迭代存一个早期 checkpoint。
+</div>
+
+<h3>11.3 Gram 损失与教师更新的实现</h3>
+<table>
+<tr><th>位置</th><th>事实</th></tr>
+<tr><td><code>dinov3/loss/gram_loss.py:11</code></td><td><code>class GramLoss(nn.Module)</code>,文件仅 <b>84 行</b>——整个核心创新在代码层面的分量就是这么小</td></tr>
+<tr><td><code>gram_loss.py:24</code></td><td><code>self.mse_loss = torch.nn.MSELoss()</code>(而非直接写 Frobenius 范数)</td></tr>
+<tr><td><code>gram_loss.py:50-51</code></td><td>两侧特征先 <code>.float()</code> 升精度再算——<b>Gram 矩阵在 fp32 下计算</b>,避免 bf16 下的精度损失(与 <code>pos_embed_rope_dtype: fp32</code> 是同一类考量)</td></tr>
+<tr><td><code>gram_loss.py:54-55 / 65-66</code></td><td><code>if self.apply_norm: F.normalize(feats, dim=-1)</code>——<b>先 L2 归一化再算相似度矩阵</b></td></tr>
+<tr><td><code>gram_loss.py:62 / 73</code></td><td><code>torch.matmul(f, f.transpose(-1,-2))</code> 得到 $P\times P$ 相似度矩阵</td></tr>
+<tr><td><code>gram_loss.py:75-82</code></td><td><code>remove_neg</code> / <code>remove_only_teacher_neg</code> 两个互斥开关(发布配置里都是 false,即<b>不裁剪</b>)</td></tr>
+<tr><td><code>gram_loss.py:84</code></td><td><code>return self.mse_loss(student_sim, target_sim)</code></td></tr>
+<tr><td><code>ssl_meta_arch.py:20</code></td><td><code>from dinov3.loss import DINOLoss, GramLoss, KoLeoLoss, ...</code></td></tr>
+<tr><td><code>ssl_meta_arch.py:55-59</code></td><td>Gram teacher 用 <code>build_model_from_cfg(cfg, only_teacher=True)</code> 单独构建一份 backbone,存入 <code>gram_model_dict["backbone"]</code>——<b>确实是一份独立权重,不是 EMA 教师的视图</b></td></tr>
+<tr><td><code>ssl_meta_arch.py:181</code></td><td><code>self.gram_teacher.requires_grad_(False)</code>——梯度完全不进 teacher</td></tr>
+<tr><td><code>ssl_meta_arch.py:476-491</code></td><td><code>get_gram_teacher_output</code>:student 侧取 <code>student_global["patch_pre_head"]</code>,teacher 侧取 <code>backbone_out["x_norm_patchtokens"]</code></td></tr>
+<tr><td><code>ssl_meta_arch.py:494-506</code></td><td><code>F.interpolate(..., size=(N_student, N_student), mode=&lt;cfg.gram.global_teacher_resize_method&gt;, align_corners=False, antialias=...)</code>——<b>教师特征网格下采样到学生网格</b>,这就是「高分辨率 Gram」</td></tr>
+<tr><td><code>ssl_meta_arch.py:690-699</code></td><td>从 <code>self.model_ema.state_dict()</code> 按前缀挑键灌进 <code>gram_teacher</code>,随后 <code>requires_grad_(False)</code> + <code>.eval()</code></td></tr>
+<tr><td><code>ssl_meta_arch.py:713-726</code></td><td><code>update_ema</code>:<code>torch._foreach_mul_(t, m); torch._foreach_add_(t, s, alpha=1-m)</code></td></tr>
+<tr><td><code>ssl_meta_arch.py:728-745</code></td><td><code>update_gram</code>:同样的 EMA 写法,但源是 <code>self.teacher</code>、目标是 <code>self.gram_teacher</code>——<b>与 DINOv3 的「伪代码」一致的极简实现</b></td></tr>
+</table>
+
+<h3>11.4 家族档位的配置差异(源码级)</h3>
+<p>DINOv3 的蒸馏档 <code>vitl_im1k_lin834.yaml</code> 与教师档 <code>dinov3_vit7b16_pretrain.yaml</code> 在配置上存在几处系统性差异(下表由官方仓库内多个 yaml 横向对照得出,非论文所述):</p>
+<table>
+<tr><th>键</th><th>ViT-7B 教师</th><th>ViT-L 蒸馏(ImageNet-1k)</th></tr>
+<tr><td><code>student.arch</code></td><td><code>vit_7b</code></td><td><code>vit_large</code></td></tr>
+<tr><td><code>student.ffn_layer</code></td><td><code>swiglu64</code></td><td><code>swiglu</code>(标准倍率)</td></tr>
+<tr><td><code>student.drop_path_rate</code></td><td>0.4</td><td>更小(蒸馏档普遍降)</td></tr>
+<tr><td><code>train.batch_size_per_gpu</code></td><td>16</td><td>16(同)</td></tr>
+<tr><td><code>crops.global_crops_size</code></td><td>256</td><td>256(同)</td></tr>
+<tr><td>阶段数</td><td>3(含 Gram)</td><td>1(无 Gram)</td></tr>
+</table>
+
+<h3>11.5 资源账与可复现性</h3>
+<div class="grid-2">
+<div class="card"><h4>教师训练(Table 20)</h4>
+<ul>
+  <li>GPU:<b>256 × H100-SXM5</b>(700W)</li>
+  <li>步数:1,000k</li>
+  <li>GPU 小时:<b>61,440</b></li>
+  <li>PUE 1.1,总耗电 <b>47 MWh</b></li>
+  <li>碳排 <b>18 tCO₂eq</b>(碳强度 0.385 kg CO₂eq/kWh)</li>
+  <li>对照:DINOv2 ViT-g 为 22,016 GPU-h / 9.7 MWh / 3.7 t;<b>MetaCLIP ViT-G 为 368,640 GPU-h / 160 MWh / 62 t</b></li>
+</ul>
+</div>
+<div class="card"><h4>小型复现(README 官方指引)</h4>
+<ul>
+  <li>命令:<code>python -m dinov3.run.submit dinov3/train/train.py --nodes 4 --config-file dinov3/configs/train/vitl_im1k_lin834.yaml ...</code></li>
+  <li>硬件:4 节点 × H100-80GB(<b>32 GPU</b>),SLURM + submitit</li>
+  <li>耗时:<b>约 14 小时</b></li>
+  <li>结果:k-NN <b>82.0%</b> / linear <b>83.5%</b></li>
+  <li>数据:ImageNet-22k(需自备路径)</li>
+</ul>
+</div>
+</div>
+<div class="callout warn">
+<b>⚠️ 落地坑 2~5:</b>
+<ol>
+  <li><b>7B 权重需申请</b>:README 明确 "DINOv3 ViT-7B/16 is trained on a private dataset" 且权重走 <code>ai.meta.com/resources/models-and-libraries/dinov3-downloads/</code> 申请制。想做「用 7B 编码器」的实验,先确认能拿到权重。</li>
+  <li><b>数据私有</b>:LVD-1689M 不公开,Table 1~2 的对照无法逐位复刻。</li>
+  <li><b>环境</b>:PyTorch $\ge$ 2.7.1,官方<b>只在 Linux 上测过</b>;Windows/WSL 下 <code>torch.compile</code> + FP8 组合大概率要重做。</li>
+  <li><b>FP8 是硬依赖还是软依赖?</b>配置里 <code>fp8_enabled: true</code> 是<b>训练效率</b>选项(block 级 FP8);推理侧不涉及,但若要在消费级卡上重训大档位,需确认目标硬件是否支持 FP8,否则要手动关掉。<span class="uncertain">【待核实】</span>官方未给出关闭 FP8 后的等效超参。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+
+<div class="callout"><b>评估口径统一说明:</b>除特别注明外,所有指标均为<b>冻结 backbone + 线性/轻量 probe</b>,不做 backbone 微调。分割输入分辨率对齐到 1024 个 patch token(patch 14 → $448^2$,patch 16 → $512^2$)。这一口径对本库特别重要——它衡量的正是「直接当冻结编码器用」的性能。</div>
+
+<h3>12.1 稠密线性探测:语义分割 + 单目深度(Table 3)</h3>
+<table>
+<tr><th>类别</th><th>方法</th><th>ViT</th><th>ADE20k ↑</th><th>Citysc. ↑</th><th>VOC ↑</th><th>NYUv2 ↓</th><th>KITTI ↓</th></tr>
+<tr><td rowspan="2">Agglomerative</td><td>AM-RADIOv2.5</td><td>g/14</td><td>53.0</td><td>78.4</td><td>85.4</td><td>0.340</td><td>2.918</td></tr>
+<tr><td>PEspatial</td><td>G/14</td><td>49.3</td><td>73.2</td><td>82.7</td><td>0.362</td><td>3.082</td></tr>
+<tr><td rowspan="2">Weakly-sup.</td><td>SigLIP 2</td><td>g/16</td><td>42.7</td><td>64.8</td><td>72.7</td><td>0.494</td><td>3.273</td></tr>
+<tr><td>PEcore</td><td>G/14</td><td class="fail">38.9</td><td class="fail">61.1</td><td class="fail">69.2</td><td class="fail">0.590</td><td class="fail">4.119</td></tr>
+<tr><td rowspan="3">Self-sup.</td><td>Franca</td><td>g/14</td><td>46.3</td><td>68.7</td><td>82.9</td><td>0.445</td><td>3.140</td></tr>
+<tr><td>DINOv2</td><td>g/14</td><td>49.5</td><td>75.6</td><td>83.1</td><td>0.372</td><td>2.624</td></tr>
+<tr><td>Web-DINO</td><td>7B/14</td><td>42.7</td><td>68.3</td><td>76.1</td><td>0.466</td><td>3.158</td></tr>
+<tr class="best"><td><b>Self-sup.</b></td><td><b>DINOv3</b></td><td><b>7B/16</b></td><td><b>55.9</b></td><td><b>81.1</b></td><td><b>86.6</b></td><td><b>0.309</b></td><td><b>2.346</b></td></tr>
+</table>
+<div class="callout key">
+<b>逐项复核(论文自己给出的百分比有可核之处):</b>
+<ul>
+  <li>ADE20k:论文称 "outperforms the self-supervised baselines by more than 6 mIoU points"。按表复核:55.9 − 49.5(DINOv2)= <b>+6.4</b> ✓(对 Web-DINO 是 +13.2)。</li>
+  <li>论文称 "weakly supervised baselines by more than 13 points":55.9 − 42.7(SigLIP 2)= <b>+13.2</b> ✓。</li>
+  <li>Cityscapes:论文称 "best mIoU of 81.1, surpassing AM-RADIOv2.5 by 2.5 points" → 81.1 − 78.4 = <b>+2.7</b>。<b>此处论文表述与表格不一致</b>(相对误差约 8%)。</li>
+  <li>KITTI:论文称 "outperforms its predecessor DINOv2 by 0.278 RMSE" → 2.624 − 2.346 = <b>0.278</b> ✓。</li>
+</ul>
+<b>结论:</b>除 Cityscapes 那个 2.5 / 2.7 的轻微出入外,论文的百分比表述均可逐格复算命中。这个 0.2 的差值不影响任何定性结论,但记录在此便于后续引用时直接使用表格值。
+</div>
+
+<h3>12.2 3D 一致性:关键点对应(Table 4)</h3>
+<p>这一节是本库最关心的——它衡量的正是「特征里有没有携带 3D 感知」。协议沿用 Probe3D,指标是 correspondence recall。</p>
+<table>
+<tr><th>方法</th><th>ViT</th><th>NAVI(几何)</th><th>SPair(语义)</th></tr>
+<tr><td>AM-RADIOv2.5</td><td>g/14</td><td>59.4</td><td>56.8</td></tr>
+<tr><td>PEspatial</td><td>G/14</td><td>53.8</td><td>49.6</td></tr>
+<tr><td>SigLIP 2</td><td>g/16</td><td>49.4</td><td>42.6</td></tr>
+<tr><td>PEcore</td><td>G/14</td><td class="fail">39.9</td><td class="fail">23.1</td></tr>
+<tr><td>Franca</td><td>g/14</td><td>54.6</td><td>51.0</td></tr>
+<tr><td>DINOv2</td><td>g/14</td><td>60.1</td><td>56.1</td></tr>
+<tr><td>Web-DINO</td><td>7B/14</td><td>55.0</td><td class="fail">32.2</td></tr>
+<tr class="best"><td><b>DINOv3</b></td><td><b>7B/16</b></td><td><b>64.4</b></td><td><b>58.7</b></td></tr>
+</table>
+<p>论文的两个论断都成立:几何对应上 "improves over the second best model (DINOv2) by <b>4.3%</b> recall"(64.4 − 60.1 = 4.3 ✓);语义对应上 "+2.6%"(58.7 − 56.1 = 2.6 ✓)。论文还点名批评弱监督模型 "do not fare well on this task, indicating a <b>lack of 3D awareness</b>"——这是一个很值得记下来的判断:<b>3D 感知在自监督目标里,不在图文对比目标里</b>。</p>
+
+<h3>12.3 视频分割跟踪(Table 5)</h3>
+<table>
+<tr><th>方法</th><th>DAVIS S/M/L</th><th>YouTube-VOS S/M/L</th><th>MOSE S/M/L</th></tr>
+<tr><td>AM-RADIOv2.5 g/14</td><td>66.5 / 77.3 / 81.4</td><td>70.1 / 78.1 / 79.2</td><td>44.0 / 52.6 / 54.3</td></tr>
+<tr><td>PEspatial G/14</td><td>68.4 / 74.5 / 70.5</td><td>68.5 / 67.5 / 55.6</td><td>39.3 / 40.2 / 34.0</td></tr>
+<tr><td>PEcore G/14</td><td class="fail">48.2 / 53.1 / 49.8</td><td class="fail">34.7 / 33.0 / 25.3</td><td class="fail">17.8 / 19.0 / 15.4</td></tr>
+<tr><td>Franca g/14</td><td>61.8 / 66.9 / 66.5</td><td>67.3 / 70.5 / 67.9</td><td>40.3 / 42.6 / 41.9</td></tr>
+<tr><td>DINOv2 g/14</td><td>63.9 / 73.6 / 76.6</td><td>65.6 / 73.5 / 74.6</td><td>40.4 / 47.6 / 48.5</td></tr>
+<tr class="best"><td><b>DINOv3 7B/16</b></td><td><b>71.1 / 79.7 / 83.3</b></td><td><b>74.1 / 80.2 / 80.7</b></td><td><b>46.0 / 53.9 / 55.6</b></td></tr>
+</table>
+<p>论文称 DAVIS-L 上 "83.3 $\mathcal{J}\&\mathcal{F}$, <b>6.7 points above DINOv2</b>" → 83.3 − 76.6 = 6.7 ✓。另一个值得注意的现象是<b>分辨率单调性</b>:论文写 "performance as a function of resolution follows a healthy trend... In contrast, performance at higher resolutions stays almost flat for SigLIP 2 and PEcore, and degrades for PEspatial."——PEspatial 在 YouTube-VOS 上从 S 的 68.5 掉到 L 的 55.6,是「高分辨率下特征崩溃」的典型症状。<b>这正是 Gram anchoring 要解决的问题,而 DINOv3 是表里唯一在所有分辨率下单调上升的自监督模型。</b></p>
+
+<h3>12.4 视频分类(Table 6)与 ImageNet 域泛化(Table 7)</h3>
+<div class="grid-2">
+<div class="card"><h4>视频分类(attentive probe,top-1)</h4>
+<table>
+<tr><th>方法</th><th>UCF101</th><th>SSv2</th><th>K400</th></tr>
+<tr><td>V-JEPA 2 g/16</td><td><b>94.0 / 93.8</b></td><td><b>73.8 / 75.4</b></td><td class="fail">83.3 / 84.3</td></tr>
+<tr><td>DINOv2 g/14</td><td>93.5 / 93.8</td><td>67.4 / 68.4</td><td>84.4 / 85.6</td></tr>
+<tr class="best"><td><b>DINOv3 7B/16</b></td><td>93.5 / 93.5</td><td>70.1 / 70.8</td><td><b>87.8 / 88.2</b></td></tr>
+</table>
+<p class="refs">格式:单 clip / TTA。论文坦承在 SSv2(运动理解)上 "the dedicated video model V-JEPA v2 shines";但 <b>K400 上 DINOv3 反超 V-JEPA 2 达 4.5 个点</b>。一个从未见过视频的<b>图像</b>模型能做到这点,说明 patch 级时空一致性已经隐含在稠密特征里。</p>
+</div>
+<div class="card"><h4>ImageNet 域泛化(linear probe)</h4>
+<table>
+<tr><th>方法</th><th>Val</th><th>V2</th><th>R</th><th>A</th><th>C↓</th><th>Obj.</th></tr>
+<tr><td>SigLIP 2 g/16</td><td><b>89.1</b></td><td>81.6</td><td>92.2</td><td>71.8</td><td class="fail">30.0</td><td>78.6</td></tr>
+<tr><td>DINOv2 g/14</td><td>87.3</td><td>79.5</td><td class="fail">81.1</td><td class="fail">65.4</td><td>24.1</td><td class="fail">66.4</td></tr>
+<tr class="best"><td><b>DINOv3 7B/16</b></td><td>88.4</td><td><b>81.4</b></td><td><b>91.1</b></td><td><b>71.3</b></td><td><b>19.6</b></td><td><b>79.0</b></td></tr>
+</table>
+<p class="refs">DINOv3 在 Val 上略低于 SigLIP 2(88.4 vs 89.1),但在<b>全部 5 个鲁棒性维度</b>上领先,其中 ImageNet-R 从 DINOv2 的 81.1 跳到 91.1(+10.0)、ObjectNet 从 66.4 跳到 79.0(+12.6)。论文 §8 的评价是 "our models achieve similar results on classification tasks, making them the optimal choice across compute budgets"。</p>
+</div>
+</div>
+
+<h3>12.5 相对深度:冻结 vs 微调的决定性对照(Table 12)</h3>
+<p>这是全篇对「前馈重建能不能只换编码器」最有说服力的一张表。同一套 Depth Anything V2 框架,一列是 <b>🔥 需要微调</b>,一列是 <b>❄ 完全冻结</b>:</p>
+<table>
+<tr><th>方法</th><th>是否微调</th><th>NYUv2 ARel↓ / δ₁↑</th><th>KITTI</th><th>ETH3D</th><th>ScanNet</th><th>DIODE</th></tr>
+<tr><td>DPT</td><td>🔥</td><td>9.8 / 90.3</td><td>10.0 / 90.1</td><td>7.8 / 94.6</td><td>8.2 / 93.4</td><td class="fail">18.2 / 75.8</td></tr>
+<tr><td>Marigold</td><td>🔥</td><td>5.5 / 96.4</td><td>9.9 / 91.6</td><td>6.5 / 96.0</td><td>6.4 / 95.1</td><td class="fail">30.8 / 77.3</td></tr>
+<tr><td>DAv2 (ViT-g)</td><td>🔥</td><td>4.4 / 97.9</td><td>7.5 / 94.7</td><td class="fail">13.1 / 86.5</td><td>—</td><td>—</td></tr>
+<tr class="best"><td><b>DINOv3</b></td><td><b>❄ 冻结</b></td><td><b>4.3 / 98.0</b></td><td><b>7.3 / 96.7</b></td><td><b>5.4 / 97.5</b></td><td><b>4.4 / 98.1</b></td><td><b>25.6 / 82.2</b></td></tr>
+</table>
+<div class="callout key">
+<b>这张表要读出来的三件事:</b>
+<ol>
+  <li><b>冻结的 DINOv3 全面优于需要微调的 DAv2</b>,包括在 NYUv2(4.3 vs 4.4)和 KITTI(7.3 vs 7.5)上这种接近的指标,以及 ETH3D 上 <b>13.1 → 5.4(降低 59%)</b> 这种碾压式的差距。</li>
+  <li><b>DAv2 在 ETH3D 上从 KITTI 的 7.5 掉到 13.1</b>,是典型的「跨域泛化崩盘」;而 DINOv3 在五个数据集上全部保持在 4.3~7.3 的窄区间(只有 DIODE 因域差大而到 25.6)。<b>冻结编码器的价值不在单点最优,而在跨域稳定。</b></li>
+  <li>对前馈重建的直接含义:<b>几何先验的质量可以在完全不训练编码器的前提下拿到。</b>这解释了本库 §15 列出的那几个前馈重建工作为什么全都只做「冻结 DINOv3 + 可训练 head」。</li>
+</ol>
+</div>
+
+<h3>12.6 把 VGGT 的编码器换成 DINOv3(Table 13)★</h3>
+<p>这是 Meta 自己做的、跨到 3D 重建领域的实验。做法极其简单:"Simply by swapping DINOv2 for DINOv3 ViT-L as the image feature extractor in the VGGT pipeline"——<b>其余一切不变</b>,包括 VGGT 自己的聚合器与训练数据。</p>
+<table>
+<tr><th>方法</th><th>Re10K 位姿 AUC@30</th><th>CO3Dv2 位姿 AUC@30</th><th>DTU Acc↓</th><th>DTU Comp↓</th><th>DTU Overall↓</th><th>ScanNet-1500 AUC@5 / @10</th></tr>
+<tr><td>CUT3R</td><td>75.3</td><td>82.8</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>FLARE</td><td>78.8</td><td>83.3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>VG GSfM v2</td><td>78.9</td><td>83.4</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>VGGT(原生,DINOv2)</td><td>85.3</td><td>88.2</td><td>0.389</td><td>0.374</td><td>0.382</td><td>33.9 / 55.2</td></tr>
+<tr class="best"><td><b>VGGT + DINOv3 ViT-L</b></td><td><b>86.3</b></td><td><b>89.6</b></td><td><b>0.375</b></td><td><b>0.361</b></td><td><b>0.368</b></td><td><b>35.2 / 56.1</b></td></tr>
+</table>
+<p class="refs">数据引自论文 Table 13。论文原文:"we are able to obtain state-of-the-art results on various 3D geometry tasks"。</p>
+<div class="callout tip">
+<b>这个实验的意义远超一个 +1.0 AUC:</b>它证明了<b>「冻结视觉编码器的质量」与「多视图聚合器的架构」是两个可分离的变量</b>。对于本库关心的前馈式高斯重建,这意味着一条非常省力的改进路径——<b>不动聚合器与训练数据,只把编码器从 DINOv2 换成 DINOv3(哪怕是蒸馏档)</b>,就能拿到跨任务的一致提升。库内多条线(VGGT-Ω、PDF-GS、SAM 3D Body、FFAvatar、TripoSplat、MAC-Splat、Tele360,详见 <a href="#s15">§15</a>)已经在事实上按这个思路走了。
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验与机制分析</h2>
+
+<h3>13.1 Gram anchoring 的净收益(Figure 9b)★</h3>
+<p>这是全篇最有价值的一张消融表,因为它同时回答了「Gram 到底值多少」和「Gram teacher 该选哪一档」两个问题。协议是让模型在退化后继续训练,比较不同 Gram 配置的恢复效果:</p>
+<table>
+<tr><th>配置</th><th>Gram teacher 迭代</th><th>Gram 分辨率倍率</th><th>IN1k Linear ↑</th><th>ADE20k mIoU ↑</th><th>NYU RMSE ↓</th></tr>
+<tr class="fail"><td>Baseline(无 Gram)</td><td>—</td><td>—</td><td>88.2</td><td>50.3</td><td>0.307</td></tr>
+<tr><td>GRAM 200k</td><td>200k</td><td>×1</td><td>88.0</td><td>53.6</td><td>0.285</td></tr>
+<tr class="best"><td><b>GRAM 200k</b></td><td><b>200k</b></td><td><b>×2(高分辨率)</b></td><td><b>88.0</b></td><td><b>55.7</b></td><td><b>0.281</b></td></tr>
+<tr><td>GRAM 100k</td><td>100k</td><td>×2</td><td>87.9</td><td><b>55.7</b></td><td>0.284</td></tr>
+<tr><td>GRAM 1M</td><td><b>1M(最晚)</b></td><td>×2</td><td>88.1</td><td>54.9</td><td>0.290</td></tr>
+</table>
+<p class="refs">数据引自论文 Figure 9(b) 的内嵌表格。</p>
+<div class="callout key">
+<b>逐行读出的四件事:</b>
+<ol>
+  <li><b>Gram 的净收益主要落在稠密任务上</b>:ADE20k 从 50.3 → 55.7(<b>+5.4 mIoU</b>)、NYU RMSE 从 0.307 → 0.281(<b>−8.5%</b>);而 IN1k Linear 从 88.2 微降到 88.0(<b>−0.2</b>)。<b>这是一个「几乎免费换稠密」的交易</b>——代价是分类上可忽略的 0.2 个点。</li>
+  <li><b>高分辨率 Gram(×2)是必需的,不是锦上添花</b>:同样的 200k teacher,×1 得 53.6 mIoU、×2 得 55.7——<b>单这一项就值 +2.1 mIoU</b>,与论文 §5.1 所称 "adds +2 mIoU on ADE20k" 吻合。</li>
+  <li><b>Gram teacher 越早不一定越好,但越晚一定越差</b>:100k 与 200k 基本打平(55.7 / 55.7 mIoU,0.284 / 0.281 RMSE),而 1M 明显最差(54.9 / 0.290)。论文给出的原因是 "the patch-level consistency of such a teacher is inferior"——<b>1M 的 teacher 自己已经退化了</b>。</li>
+  <li><b>IN1k Linear 对 Gram 完全不敏感</b>(87.9~88.2 全在一个噪声带内)。这佐证了「退化是 patch 级现象」的判断:图像级的 DINO 目标不受影响,所以改 Gram 也影响不到分类。</li>
+</ol>
+</div>
+
+<h3>13.2 为什么 Gram 会「即时生效」(Figure 8)与损失耦合(Figure 7)</h3>
+<div class="grid-2">
+<div class="card"><h4>Figure 8:效果来得极快</h4>
+<p>论文原文:"incorporating Gram anchoring leads to significant improvements on dense tasks <b>within the first 10k iterations</b>. We also see notable gains on the ADE20k benchmark following the Gram teacher updates."——三个关键信息:① 前 10k 迭代内就开始涨点;② 每次 Gram teacher 更新(每 10k)之后 ADE20k 都会再跳一下;③ 更长的训练继续提升 ObjectNet,而其他全局 benchmark 对 Gram 反应温和。</p>
+</div>
+<div class="card"><h4>Figure 7:损失耦合的方向性</h4>
+<p>论文原文:"applying the Gram objective significantly influences the <b>iBOT</b> loss, causing it to decrease more rapidly... the <b>Gram and iBOT objectives impact the features in a similar way, whereas the DINO losses affect them differently.</b>"——<b>Gram 和 iBOT 在优化同一类东西(patch 级结构),DINO 在优化另一类东西(图像级语义)。</b>这是「为什么 Gram 能修稠密而不伤分类」的机制性解释。</p>
+</div>
+</div>
+
+<h3>13.3 数据配方的消融</h3>
+<p>见 <a href="#s4">§4</a> 的 Table 1 分析。结论:聚类与检索的强项互补,混合配方在 5 个下游任务上全部第一。</p>
+
+<h3>13.4 架构与训练的消融(Table 2 + 源码)</h3>
+<p>Table 2 本质上是「DINOv2 ViT-g → DINOv3 ViT-7B」的一次<b>受控变量对比</b>:深度固定 40 层,只动宽度(patch 16 / embed 4096 / 32 头 × 128 维)、位置编码(Learnable → RoPE)、prototype 数(128k→256k / 128k→96k)。论文没有给这一组改动的逐项 ablation 表,而是把它们作为「规模化设计」整体呈现。<span class="uncertain">【存疑】</span>因此<b>无法从论文判断哪一项改动贡献最大</b>——尤其是 RoPE 与 patch 16 这两项,对下游 3D 任务的实际影响可能在 VGGT 类实验中比在 ImageNet 上更显著。</p>
+
+<h3>13.5 跨分辨率稳定性(Figure 17)</h3>
+<p>见 <a href="#s8">§8</a> 图6。关键数字:ViT-S+ 在 $896\times512$ 到 $3584\times2048$ 之间稳定;ViT-L 直到 $7168\times4096$ 才开始漂;ViT-H+ 在整段测试范围内都稳定。<b>这条曲线直接给出了「每档模型能安全外推多高分辨率」的预算表。</b></p>
+
+<div class="callout warn">
+<b>消融部分的两个空缺(本库指出的可改进点):</b>
+<ol>
+  <li><b>没有「只用 iBOT 不用 Gram」的对照</b>。既然 Gram 与 iBOT 作用方向一致,为什么不能在退化出现前就调大 iBOT 权重来预防?论文未回答——这恰好是 LingBot-Vision 走的路(masked boundary modeling 改的是 patch 级目标的<b>内容</b>,而非事后加约束),见 <a href="3D-20260706-LingBot-Vision.html">LingBot-Vision 笔记</a>。</li>
+  <li><b>没有 Gram 与「重跑一次高分辨率预训练」的对照</b>。论文无法排除「Gram 只是提供了某种稳定正则化,换成任意冻结早期模型的特征蒸馏都能 work」这种可能。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+
+<h3>固定维度横向对比(视觉基座,≥4 方法)</h3>
+<p>下表按<b>同一组维度</b>横评 9 个候选基座。选择这几个方法的理由是它们都在本库 §15 的候选名单里出现过,或者是前馈重建这条线的事实基线。所有「稠密」列均为<b>冻结 backbone 线性探测</b>口径。</p>
+<table>
+<tr>
+  <th>方法</th><th>范式</th><th>参数量</th><th>patch</th><th>训练数据</th><th>ADE20k↑</th><th>NYU↓</th><th>NAVI↑</th><th>训练算力</th><th>权重开放度</th>
+</tr>
+<tr class="best">
+  <td><b>DINOv3</b></td><td>自监督(DINO+iBOT+KoLeo)<br><b>+ Gram anchoring</b></td><td><b>6.7B</b><br>(7B/16)</td><td>16</td><td>LVD-1689M(私有,17B 池筛选)</td><td><b>55.9</b></td><td><b>0.309</b></td><td><b>64.4</b></td><td>61,440 GPU-h<br>(256×H100)</td><td>蒸馏档全开;<br><b>7B 需申请</b></td>
+</tr>
+<tr>
+  <td>DINOv2</td><td>自监督(DINO+iBOT)</td><td>1.1B<br>(ViT-g/14)</td><td>14</td><td>LVD-142M(私有)</td><td>49.5</td><td>0.372</td><td>60.1</td><td>22,016 GPU-h<br>(A100-40GB)</td><td>✅ 完全开放</td>
+</tr>
+<tr>
+  <td>LingBot-Vision</td><td>自监督 + <b>masked boundary modeling</b></td><td>1.1B<br>(ViT-g/16)</td><td>16</td><td>160.75M(自建,5/6 retrieval)</td><td>53.5</td><td><b>0.296</b></td><td>—</td><td>300k+100k+100k<br>迭代,batch 3072</td><td>✅ 代码+权重开放</td>
+</tr>
+<tr>
+  <td>V-JEPA 2.1</td><td>视频自监督(JEPA 预测式)</td><td>2B<br>(ViT-G/16)</td><td>16</td><td>视频为主</td><td>47.9</td><td>0.307</td><td>—</td><td>未在本文对照</td><td>✅ 开放</td>
+</tr>
+<tr>
+  <td>AM-RADIOv2.5</td><td><b>蒸馏式聚合</b>(从 SAM 等监督模型蒸馏)</td><td>1B<br>(g/14)</td><td>14</td><td>多教师蒸馏</td><td>53.0</td><td>0.340</td><td>59.4</td><td>不适用(蒸馏)</td><td>✅ 开放</td>
+</tr>
+<tr>
+  <td>PEspatial</td><td>弱监督(Perception Encoder 空间版)</td><td>2B<br>(G/14)</td><td>14</td><td>图像-文本 + 视频蒸馏</td><td>49.3</td><td>0.362</td><td>53.8</td><td>86B 样本级(PE 主线)</td><td>✅ 开放</td>
+</tr>
+<tr>
+  <td>SigLIP 2</td><td>弱监督(图文对比 + 多目标)</td><td>1B<br>(g/16)</td><td>16</td><td>40B+ 图文对</td><td class="fail">42.7</td><td class="fail">0.494</td><td class="fail">49.4</td><td>未在本文对照</td><td>✅ 开放</td>
+</tr>
+<tr>
+  <td>PEcore</td><td>弱监督(纯图文对比)</td><td>2B<br>(G/14)</td><td>14</td><td>40B+ 图文对</td><td class="fail">38.9</td><td class="fail">0.590</td><td class="fail">39.9</td><td>未在本文对照</td><td>✅ 开放</td>
+</tr>
+<tr>
+  <td>Web-DINO</td><td>自监督(DINO 目标,试图复现 DINOv2)</td><td>7B<br>(/14)</td><td>14</td><td>网络公开图文</td><td class="fail">42.7</td><td class="fail">0.466</td><td>55.0</td><td>未在本文对照</td><td>✅ 开放</td>
+</tr>
+</table>
+<p class="refs">ADE20k / NYU / NAVI 数据统一引自 DINOv3 论文 Table 2(稠密线性探测);算力数据引自 DINOv3 论文 Table 20 与各自原文。LingBot-Vision 行的 ADE20k/NYU 引自其论文 Table 2(评估口径同为冻结线性探测,但<b>注意其 patch 16 与 DINOv3 一致、与 patch 14 组不可直接比 token 数</b>)。</p>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2508.10104/d05_pca_orig.jpg" alt="原图" loading="lazy" style="max-width:18%">
+    <img src="images/2508.10104/d08_pca_siglip2.jpg" alt="SigLIP 2 ViT-g/16 的 PCA 特征" loading="lazy" style="max-width:18%">
+    <img src="images/2508.10104/d09_pca_pespatial.jpg" alt="PEspatial ViT-G/14 的 PCA 特征" loading="lazy" style="max-width:18%">
+    <img src="images/2508.10104/d07_pca_dinov2.jpg" alt="DINOv2 ViT-g/14 的 PCA 特征" loading="lazy" style="max-width:18%">
+    <img src="images/2508.10104/d06_pca_dinov3.jpg" alt="DINOv3 ViT-7B/16 的 PCA 特征" loading="lazy" style="max-width:18%">
+  </div>
+  <div class="caption"><b>图7</b>(对应论文 Figure 13 的第一行)<b>同一张图、同一套 PCA 流程,四个基座的稠密特征直接对照。</b>从左到右:原图 → SigLIP 2 ViT-g/16 → PEspatial ViT-G/14 → DINOv2 ViT-g/14(with registers) → DINOv3 ViT-7B/16。论文图注:"Comparison of dense features. We compare several vision backbones by projecting their dense outputs using PCA and mapping them to RGB. From left to right: SigLIP 2 ViT-g/16, PEspatial ViT-G/14, DINOv2 ViT-g/14 with registers, DINOv3 ViT-7B/16. Images are forwarded at resolution $1280\times960$ for models using patch 16 and $1120\times840$ for patch 14, i.e. all feature maps have size $80\times60$."——注意论文<b>刻意让所有模型的特征图尺寸相同</b>($80\times60$),所以差异完全来自特征质量而非分辨率。视觉上最直观的差异是:DINOv2(第 4 张)存在明显的<b>网格状/斑块状伪影</b>(论文 §12 也承认 "DINOv2... fails at object discovery, this can in part be attributed to <b>the artifacts present in the dense features</b>"),而 DINOv3(第 5 张)的边界更连续、区域更均质。这张图是「Gram anchoring 修好了什么」最直接的视觉证据。</div>
+</div>
+
+<h3>对比结论(4 条)</h3>
+<div class="callout key">
+<ol>
+  <li><b>「自监督 vs 弱监督」在稠密任务上已经分出胜负,而且差距很大。</b>同为 1~2B 量级,自监督的 DINOv2/AM-RADIO 在 ADE20k 上比弱监督的 SigLIP 2/PEcore 高 <b>6.8~15.1 个 mIoU</b>;在 3D 对应(NAVI)上高 <b>9.5~20.2 个 recall 点</b>。论文对后者的诊断是 "lack of 3D awareness"——图文对比目标里<b>没有</b>能让模型学会跨视图几何一致性的信号。</li>
+  <li><b>「蒸馏自监督模型」这条中间路线(AM-RADIO)确实有效,但仍被原生 DINOv3 压制。</b>AM-RADIOv2.5 的 ADE20k 53.0 已高于所有弱监督基线,逼近 DINOv2 的 49.5;但 DINOv3 的 55.9 仍领先它 2.9。这说明<b>「从强监督模型蒸出来的空间能力」不能完全替代「自监督原生学到的空间能力」</b>。</li>
+  <li><b>数据规模不等于特征质量(Web-DINO 是最好的反例)。</b>Web-DINO 用 7B 参数、网络公开数据重放 DINO 目标,ADE20k 只有 42.7、NYU 0.466——<b>连 1.1B 的 DINOv2(49.5 / 0.372)都不如</b>。这反向印证了 Table 1 的结论:LVD-1689M 的<b>策展配方</b>本身就是贡献,不是「有公开数据就能重放」。</li>
+  <li><b>LingBot-Vision 与 DINOv3 是「事后修补」与「事前设计」两条不同的路。</b>DINOv3 承认 patch 级一致性会随训练退化,用 Gram 去<b>事后修</b>;LingBot-Vision 则选择改造 patch 级目标本身(把边界 token 强制塞进掩码集)。结果是 LingBot-Vision 用 <b>1.1B 参数量、不到 DINOv3 三分之一的样本量</b>,在 NYUv2 深度上做到了 0.296,<b>反超 6.7B 的 DINOv3(0.309)</b>;但在 ADE20k 语义分割上仍落后 2.4 个 mIoU。详尽的机制对比与源码级差异见 <a href="3D-20260706-LingBot-Vision.html">LingBot-Vision 笔记</a> 的「同类方法对比」章节。</li>
+</ol>
+</div>
+
+<div class="callout warn">
+<b>横向对比的口径陷阱(引用这些数字时必须带上):</b>
+<ul>
+  <li><b>patch 16 vs patch 14 会改变可比性。</b>DINOv3 与 LingBot-Vision 用 patch 16,DINOv2 / AM-RADIO / PEspatial 用 patch 14。论文自己的做法是「对齐到 1024 个 patch token」,于是在 patch 16 下输入是 $512^2$、在 patch 14 下是 $448^2$——<b>两者看到的输入总像素量不同</b>。这意味着表格里的差距有一部分来自「输入像素量」而非纯特征质量。</li>
+  <li><b>「参数量」列不能直接当效率指标。</b>DINOv3 的 6.7B 是<b>教师</b>;实际部署的 ViT-L 只有 300M,而在 ADE20k 上做到 54.9(见表 14),只比 7B 教师低 1.0。横向比「谁家大」时要指明比的是哪一档。</li>
+  <li><b>迭代数/batch 不可直接换算算力。</b>LingBot-Vision 的 300k 迭代 × batch 3072 与 DINOv3 的 1M 迭代 × batch 4096 之间,还差着模型规模(1.1B vs 6.7B)这个更大的乘数。</li>
+</ul>
+</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性:与<br>前馈式高斯重建的衔接</h2>
+
+<p><b>本节回答用户最初的问题:把 DINOv3 当作「前馈使用的视觉模型」,它的位置在哪里。</b></p>
+
+<h3>15.1 结论先行</h3>
+<div class="callout key">
+<b>结论:DINOv3 已经是 2026 年前馈式高斯重建这条线的<u>事实默认冻结编码器</u>,而且这个地位不是靠宣传得来的,是靠三件事叠出来的——</b>
+<ol>
+  <li><b>Meta 自己给出了可分离性证明</b>:Table 13 显示,把 VGGT 的 DINOv2 换成 DINOv3 ViT-L,聚合器与训练数据全不动,相机位姿 / DTU 重建 / ScanNet 位姿三项同时提升(§12.6)。</li>
+  <li><b>冻结即可拿几何先验</b>:Table 12 显示 DINOv3 ❄ 冻结在相对深度上全面优于需要微调的 DAv2 ViT-g(§12.5)。前馈重建的 encoder 因此可以是纯推理组件,不进入训练回路。</li>
+  <li><b>patch 16 + RoPE 恰好命中前馈重建的成本结构</b>:token 数比 patch 14 少约 23.4%,而多视图注意力的开销近似 token 数的平方——这一项直接换算成前馈模型的显存与延迟。</li>
+</ol>
+</div>
+
+<h3>15.2 库内证据链(逐个核对,含交叉链接)</h3>
+<table>
+<tr><th>库内工作</th><th>DINOv3 的角色</th><th>用的哪一档</th><th>交叉链接</th></tr>
+<tr>
+  <td>VGGT-Ω</td>
+  <td>帧内编码器,配 register attention;<b>明确记载 "DINOv3 p16 比 DINOv2 p14 token 少 ~25%"</b>作为速度收益来源</td>
+  <td>DINOv3 <b>patch 16</b></td>
+  <td><a href="3D-20260514-VGGT-Omega.html">3D-20260514-VGGT-Omega.html</a></td>
+</tr>
+<tr>
+  <td>PDF-GS</td>
+  <td><b>语义级 distractor 检测</b>:用 patch 特征的 L2 距离生成 mask M¹/M²;消融显示 DINOv3 特征优于 DINOv2、SSIM、PSNR</td>
+  <td>DINOv3 <b>ViT-B/16</b></td>
+  <td><a href="3D-20260414-PDF-GS.html">3D-20260414-PDF-GS.html</a></td>
+</tr>
+<tr>
+  <td>SAM 3D Body</td>
+  <td>图像编码器,输出 $1280\times32\times32$ 特征图供 prompt encoder 使用</td>
+  <td>DINOv3 <b>ViT-H16-Plus</b>(最大规格)</td>
+  <td><a href="3D-20260217-SAM-3D-Body.html">3D-20260217-SAM-3D-Body.html</a></td>
+</tr>
+<tr>
+  <td>TripoSplat</td>
+  <td>DeG-VAE 的<b>语义分支</b>(纹理分支走 FLUX.2 VAE),双路特征</td>
+  <td>DINOv3(档位未在笔记中记录,<span class="uncertain">【待核实】</span>)</td>
+  <td><a href="3D-20260508-TripoSplat.html">3D-20260508-TripoSplat.html</a></td>
+</tr>
+<tr>
+  <td>FFAvatar(ECCV 2026)</td>
+  <td>冻结 DINOv3 + <b>可训练 DPT head</b>——「冻编码器训头」范式的典型样例</td>
+  <td>DINOv3 <b>ViT-B/16</b></td>
+  <td><a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a></td>
+</tr>
+<tr>
+  <td>MAC-Splat(ECCV 2026)</td>
+  <td>与 MASt3R 配合提供对应点</td>
+  <td>DINOv3</td>
+  <td><a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a></td>
+</tr>
+<tr>
+  <td>Tele360<br>(清华 Yebin Liu 组)</td>
+  <td><b>双分支</b>:冻结 DINOv3 语义分支 + EdgeNeXt-xxs 纹理分支;并显式用 VGGT 蒸馏几何先验</td>
+  <td>DINOv3 <b>ViT-B</b></td>
+  <td><a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a></td>
+</tr>
+<tr>
+  <td>VGGT(原生,2025)</td>
+  <td>基线用的是 <b>DINOv2</b>——这正是 §12.6 的对照起点</td>
+  <td>DINOv2</td>
+  <td><a href="3D-20250314-VGGT.html">3D-20250314-VGGT.html</a></td>
+</tr>
+</table>
+<div class="callout">
+<b>这张表读出来的分布很有信息量:</b>7 个已知档位的工作里,<b>3 个用 ViT-B/16、1 个用 ViT-H16-Plus、1 个用 patch16 未标档位</b>——<b>没有一个用 7B</b>。这与 §8 的权重开放度约束完全吻合:7B 权重需申请,而 ViT-B/L 在 HuggingFace 直接可下。<b>「前馈重建该选哪一档」在实践中已经被这个约束提前回答了。</b>
+</div>
+
+<h3>15.3 为什么是 DINOv3 而不是别的(逐条给依据)</h3>
+<div class="grid-2">
+<div class="card"><h4>① 成本:token 数少 23.4%</h4>
+<p>patch 16 vs patch 14,同一分辨率下 token 数比 $(\frac{14}{16})^2 = 0.766$。因为多视图 transformer 的自注意力开销 $\sim O(N^2)$,前馈重建模型(VGGT-Ω、LocusGS 这类)最紧张的资源就是 token 数。库内 <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω 笔记</a>直接把这个记为「速度快 20~25%」的来源。</p>
+</div>
+<div class="card"><h4>② 精度:冻结即可用</h4>
+<p>Table 12 的 ❄ 列:相对深度五个数据集上全面覆盖需要微调的 DAv2 ViT-g。含义是前馈重建不需要把 encoder 放进训练回路,<b>省掉一整个「joint finetune encoder」的工程复杂度</b>。</p>
+</div>
+<div class="card"><h4>③ 分辨率:能外推</h4>
+<p>RoPE + box jittering 让编码器在训练分辨率之外不漂(Figure 17 给出每档的安全区间)。前馈重建常在训练时用小图、推理时上采样到高分辨率,这是硬需求。</p>
+</div>
+<div class="card"><h4>④ 选型:五档可选</h4>
+<p>21M / 29M / 86M / 300M / 840M 五档 ViT + 四档 ConvNeXt,覆盖从移动端到服务器的显存预算。且 Table 14 显示 ViT-L 已接近 7B 教师——<b>不必为了精度去申请 7B 权重</b>。</p>
+</div>
+</div>
+
+<div class="callout tip">
+<b>⑤ 还有一个容易被忽略的理由:语义与几何在同一份特征里。</b>前馈重建经常需要两件事同时成立——把「人」和「背景」分开(语义),以及把「同一个点在不同视图里对齐」(几何)。Table 4 显示 DINOv3 在 NAVI(几何对应)与 SPair(语义对应)上<b>同时</b>领先;而 Table 3、Table 5 显示弱监督模型在两者上都弱。库内 <a href="3D-20260217-SAM-3D-Body.html">SAM 3D Body</a> 与 <a href="3D-20260414-PDF-GS.html">PDF-GS</a> 恰好分别用到了这两面(前者用密度高的特征图做 prompt,b 后者用 L2 距离做语义级 distractor 检测)。
+</div>
+
+<h3>15.4 落地适配性:具体的账</h3>
+<table>
+<tr><th>维度</th><th>具体数字 / 事实</th><th>对前馈重建的含义</th></tr>
+<tr><td>ViT-B/16 算力</td><td>47 GFLOPs @256 / 216 GFLOPs @512(Figure 16a)</td><td>与一个中等规模的前馈聚合器同级,encoder 不是瓶颈</td></tr>
+<tr><td>ViT-L/16 算力</td><td>163 / 721 GFLOPs</td><td>仍是 7B 教师(3550 / 14515)的 4.6%</td></tr>
+<tr><td>7B 教师算力</td><td>3550 GFLOPs @256</td><td>逐帧前向在 500 帧规模下不可接受,<b>实际不用于前馈重建</b></td></tr>
+<tr><td>特征维度</td><td>DINOv3 家族 ViT-B/L/H+ 输出 768/1024/1280 维(patch 16);DINOv2 系 ViT-g 为 1536 维</td><td>决定下游 head 的输入通道;SAM 3D Body 用的 1280 维来自 H16-Plus</td></tr>
+<tr><td>推理分辨率对齐</td><td>最短边缩放到目标,<b>长边取 patch 16 的整数倍</b></td><td>换档位必须重算对齐,否则特征图尺寸变化(§10 已给具体例子)</td></tr>
+<tr><td>权重获取</td><td>ViT-S/S+/B/L/H+ ✅ HF 直接下载;7B 需申请</td><td><b>工程上从 ViT-L 起步</b></td></tr>
+<tr><td>许可</td><td>DINOv3 License Agreement(<code>dinov3/LICENSE.md</code>)</td><td>商用前必须逐条读;<b>本笔记不做法律判断</b></td></tr>
+<tr><td>推理依赖</td><td>PyTorch ≥ 2.7.1,官方仅测 Linux</td><td>WSL2 可用;Windows 原生没测过</td></tr>
+</table>
+
+<div class="callout warn">
+<b>必须说清楚的两个落差(避免把 DINOv3 当成万灵药):</b>
+<ol>
+  <li><b>DINOv3 是单视图编码器,前馈式高斯重建需要跨视图一致性。</b>DINOv3 提供的是「每一帧里的好特征」,而不是「帧与帧之间的对应关系」。从单视图特征到跨视图一致,靠的是上层的聚合器(VGGT 的 alternating attention、LocusGS 的 anchor-guided cross-attention)或外挂的匹配器(MASt3R)。<b>DINOv3 的 Table 4 说明它「有助于」3D 对应,而不是「解决」3D 对应。</b></li>
+  <li><b>「换编码器就涨点」的结论是在 VGGT 这一个聚合器上验证的。</b>Table 13 只做了一次替换实验。对于 query-based 架构(LocusGS / TokenGS 一脉),换编码器是否同样单调受益,论文没有证据。<span class="uncertain">【待核实】</span>这是一个值得在本地 vggt_human pipeline 上直接做的小实验——成本低(不训 encoder)、结论明确。</li>
+</ol>
+</div>
+
+<h3>15.5 与本库「前馈式大重建模型」专题的定位关系</h3>
+<p>本库此前的「前馈式大重建模型」专题(<a href="3D-20261015-前馈式高斯重建2026下半年调研.html">2026 下半年调研</a>、<a href="3D-20260812-3DGS多视角重建SOTA调研.html">3DGS 多视角重建 SOTA 调研</a>)覆盖的是<b>重建侧</b>——聚合器怎么设计、高斯怎么解码、训练数据怎么组织。本笔记补上的是<b>编码器侧</b>那一半:</p>
+<div class="mermaid">
+flowchart LR
+  subgraph ENC["编码器侧(本笔记)"]
+    D["DINOv3:6.7B 教师 → ViT-S/S+/B/L/H+ 蒸馏家族<br/>冻结,提供语义 + 几何先验"]
+  end
+  subgraph AGG["聚合器侧(库内既有专题)"]
+    A1["VGGT / VGGT-Ω:alternating attention"]
+    A2["LocusGS / TokenGS:query-based + anchor"]
+    A3["PDF-GS / MAC-Splat:匹配 + masked 监督"]
+  end
+  subgraph OUT["重建侧"]
+    O["高斯参数 → 前馈 3DGS"]
+  end
+  ENC --> AGG --> OUT
+  D -.->|"Table 13:换掉 DINOv2 直接涨点"| A1
+  D -.->|"PDF-GS 消融:DINOv3 特征大于 DINOv2 大于 SSIM"| A3
+</div>
+<p>这样拆分的价值在于:它把「提升前馈重建质量」这件事从「必须改架构」变成了<b>两条可独立推进的线</b>。在不改动聚合器的前提下,仅替换/升级编码器就是一个低成本、可验证的增益来源。</p>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<h3>16.1 方法本身的开放问题</h3>
+<table>
+<tr><th>#</th><th>问题</th><th>依据</th><th>可能的推进方向</th></tr>
+<tr>
+  <td>1</td>
+  <td><b>稠密特征退化缺少理论解释。</b>论文只能给出「patch 级一致性丧失」这个现象级描述 + 「CLS 与 patch 相似度上升」这个代理指标,没有说明为什么规模化必然导致它。</td>
+  <td>§4 通篇是经验性的;论文称其为 "known yet unsolved issue"</td>
+  <td>把 DINO 目标与 iBOT 目标的梯度冲突写成可分析的形式;这与 2D 检测里「分类头压倒定位头」是同类现象,可借鉴解耦式工作</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><b>Gram teacher 的选取是经验性的,且有效窗口很窄。</b>100k/200k 都行、1M 有害——但没有给出「什么时候的 teacher 才算早」的判据。</td>
+  <td>Figure 9b;论文仅给出定性理由</td>
+  <td>用 Figure 5 的「CLS-patch 余弦相似度」曲线定义一个可量化的「退化起点」,把 teacher 选取从调参变成读数</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><b>Gram 只作用于 global crop。</b>local crop 上的 patch 结构没有被锚定。</td>
+  <td>§4 原文 "We only compute this loss on the global crops"</td>
+  <td>在 local crop 上也挂 Gram(需要 teacher 侧同 crop 的对应特征),看是否进一步提升细粒度任务</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><b>没有交代「为什么不用更大的 iBOT 权重从源头预防」。</b></td>
+  <td>见 §13 的空缺分析</td>
+  <td>与 LingBot-Vision 的路线正面比较:事后约束 vs 事前改目标</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><b>高分辨率外推有硬上限。</b>测试到 $7168\times4096$,ViT-S+ 在 $3584\times2048$ 之后开始漂。</td>
+  <td>Figure 17</td>
+  <td>RoPE 的 base 与 rescale 是否可随分辨率自适应(目前是常数 100 / 2)</td>
+</tr>
+</table>
+
+<h3>16.2 「作为前馈重建编码器」时的具体短板</h3>
+<div class="grid-2">
+<div class="card"><h4>① 没有跨视图机制</h4>
+<p>DINOv3 是<b>逐帧</b>编码器。前馈重建需要的「同一 3D 点在不同视角的特征一致」是上层聚合器负责建立或外挂匹配器建立的。DINOv3 只提供「单帧内的好特征」。</p>
+<p><b>可改进:</b>把 Gram 的思想从「帧内 patch 相关性」推广到「跨视图 patch 相关性」——即用一个早期 checkpoint 的<u>跨视图</u>特征相关性当锚。这在概念上是 Gram anchoring 的自然延伸,但需要多视图数据与配对机制,论文未涉及。</p>
+</div>
+<div class="card"><h4>② 首帧 token 尺寸固定,难以适配变长序列</h4>
+<p>patch 16 在低分辨率下 token 数不足(如 $256^2 \to 16\times16=256$ token),高分辨率下 token 数爆炸($4096^2 \to 65536$ token)。前馈重建常在 $448\times256$ 这种非方形输入上工作,需要对 patch 网格做特殊对齐。</p>
+<p><b>可改进:</b>论文的评估协议已经给出「最短边缩放到目标 + 长边取 patch 整数倍」的做法,但<b>这会造成轻微的非等比拉伸</b>(论文自己的例子:$960\times1712$ 是「slight horizontal stretch」)。对几何敏感的 3D 任务而言,这个拉伸是系统性误差来源。<span class="uncertain">【推测】</span>这是一个尚未被前馈重建社区认真对待的细节。</p>
+</div>
+<div class="card"><h4>③ 最大档位的权重不开放</h4>
+<p>7B 需申请,而 Table 12/13 的最优结果全部来自 7B 或 7B 蒸馏档。对学术复现构成实际门槛。</p>
+<p><b>缓解:</b>Table 14 显示 ViT-L 已接近 7B(ADE20k 54.9 vs 55.9、NAVI 62.3 vs 64.4),代价是 1/22 参数。因此<b>「用 ViT-L 顶替 7B」在多数前馈重建场景是可接受的近似</b>。</p>
+</div>
+<div class="card"><h4>④ 训练数据与训练流程都不可复现</h4>
+<p>LVD-1689M 私有、7B 训练细节只在论文层面公开、官方只提供 ViT-L/ImageNet-1k 的「快速上手」配置。</p>
+<p><b>缓解:</b>把 Table 1 的「聚类 + 检索 + seed 保留」配方作为<b>方法</b>而不是<b>数据集</b>来复用——这是本笔记给出的可操作路径。</p>
+</div>
+</div>
+
+<h3>16.3 对本地 vggt_human pipeline 的三条可执行建议</h3>
+<div class="callout tip">
+<ol>
+  <li><b>先把 encoder 换成 DINOv3 ViT-L/16 跑一次对照。</b>依据是 Table 13 的可分离性结论。成本极低(只换推理组件,不训 encoder),预期收益可从 Table 13 的外推估计(相机位姿 +1.0 AUC@30、DTU Overall 0.382 → 0.368)。<b>唯一需要小心的是 §10 提到的 patch 16 vs 14 分辨率对齐重算</b>。</li>
+  <li><b>如果显存紧张,退到 ViT-B/16。</b>依据是 Table 14(86M 参数在 ADE20k 上 51.8、NYU 0.373)与库内分布(FFAvatar、PDF-GS、Tele360 都在用 B 档)。<b>不要一开始就冲 H+ 或 7B</b>——7B 权重门槛 + 算力(3550 GFLOPs/帧)都不划算。</li>
+  <li><b>编码器与聚合器分开调参。</b>既然二者是可分离变量(Table 13),实验设计上就应该做「2×2:encoder ∈ {DINOv2, DINOv3} × aggregator ∈ {基线, 改进}」的对照,而不是把两者揉在一起做消融——后者无法归因。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+
+<h3>这篇论文在自监督视觉里的位置</h3>
+<div class="mermaid">
+flowchart LR
+  A["DINO 2021<br/>自蒸馏 + 多裁剪<br/>首次证明 SSL 可做检测/分割"] --> B["iBOT 2021<br/>+ 掩码 patch 重建"]
+  B --> C["DINOv2 2023<br/>1.1B ViT-g/14<br/>LVD-142M 数据策展<br/>首个强通用视觉特征"]
+  C --> D["<b>DINOv3 2025</b><br/>6.7B ViT-7B/16<br/>LVD-1689M + RoPE<br/><b>Gram anchoring</b><br/>可无限期训练 + 蒸馏家族"]
+  C --> E["Web-DINO / Franca<br/>试图用公开数据复现<br/>→ 未达 DINOv2 水平"]
+  D --> F["前馈式 3D 重建<br/>VGGT-Ω / PDF-GS / SAM3D-Body<br/>FFAvatar / TripoSplat / MAC-Splat / Tele360"]
+  G["LingBot-Vision 2026<br/>改造 patch 级目标本身<br/>(masked boundary modeling)"] -.->|"另一条路:事前设计"| D
+</div>
+
+<h3>三条演进线索</h3>
+<div class="grid-3">
+<div class="card"><h4>线索一:规模化的瓶颈从「数据」转到「稳定性」</h4>
+<p>DINOv2 的贡献是证明「数据策展 > 数据规模」;DINOv3 的贡献是证明「当规模足够大时,<b>训练稳定性</b>成为新瓶颈」,而且这个瓶颈不能靠调学习率解决,必须改目标函数。</p>
+</div>
+<div class="card"><h4>线索二:自监督的战场从「分类」转到「稠密」</h4>
+<p>Figure 1a 显示 SSL 在 IN1k 上已到平台期;真正的增量在稠密任务上,而稠密任务恰好是 3D 重建、分割、深度、对应的公共底座。<b>DINOv3 的定位变化,本质上是「视觉基座」的定义从「分类特征」变成「空间特征」。</b></p>
+</div>
+<div class="card"><h4>线索三:一个基座同时服务自然图像与遥感</h4>
+<p>SAT-493M 卫星版用<b>完全相同的超参</b>,只换 RGB 统计量 + 缩短训练(100k 预训练 + 10k Gram + 8k 高分辨率),就在 GEO-Bench 上刷新 15 个任务中的 12 个。这说明 Gram anchoring 不是针对某个域的补丁,而是<b>针对「长训练退化」这个通用病</b>的药。</p>
+</div>
+</div>
+
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2508.10104/d19_sat_dinov3.png" alt="DINOv3 卫星版 PCA 特征" loading="lazy" style="max-width:48%">
+    <img src="images/2508.10104/d20_sat_dinov2.png" alt="DINOv2 卫星版 PCA 特征" loading="lazy" style="max-width:48%">
+  </div>
+  <div class="caption"><b>图8</b>(对应论文 Figure 18)<b>同一套 DINOv3 模型在遥感上的多用途:左 DINOv3、右 DINOv2 的 PCA 特征对照。</b>论文图注:"Illustration of versatile applications in remote sensing made possible by a single DINOv3 model. The PCA on DINOv3 features shows finer details than DINOv2. The segmentation map was computed using only GEO-Bench chesapeake labels. The canopy height model decoder was trained on the Open-Canopy dataset using 4 channels (RGB + InfraRed), while inference was performed on RGB channels only."——注意最后那半句:<b>训练用 4 通道(RGB+红外),推理只用 RGB</b>,仍然可用。这是冻结特征泛化能力的一个很强的小证据(极简的「模态缺失仍可工作」演示),也说明「一个冻结基座 + 不同 head」这套范式在域外同样成立。</div>
+</div>
+
+<h3>一句话定位</h3>
+<div class="callout key">
+<b>DINOv3 不是「又一个更强的 DINOv2」,而是把自监督视觉预训练从「能训多大的模型」推进到「能训多久的模型」。</b>Gram anchoring 的价值不在于它多精巧(核心代码只有 84 行),而在于它解除了「训练时长」这个约束——而训练时长一旦解除,规模化就重新变成一个纯粹的资源问题,这恰恰是 LLM 已经走通的那条路。对于本库关心的前馈式重建,它的实际贡献是把「编码器」这一层变成了一个<b>可以直接选购的、冻结的、跨域稳定的组件</b>,从而让研究者可以把精力集中在聚合器与解码器上。
+</div>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>研究团队</h3>
+<p><b>Meta AI(FAIR)</b>。作者共 26 人,按 arXiv abs 页顺序:Oriane Siméoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Hervé Jégou, Patrick Labatut, Piotr Bojanowski。</p>
+<div class="callout">
+<b>值得注意的两点:</b>
+<ul>
+  <li><b>Andrea Vedaldi</b> 在列——他是 Oxford VGG 的核心人物,也是本库 <a href="3D-20250314-VGGT.html">VGGT</a> 的作者之一。<b>DINOv3 与 VGGT 之间有人员重叠</b>,这为 Table 13 那个「换掉 VGGT 的编码器」实验提供了很自然的解释:同一批人既有基座也有下游。</li>
+  <li><b>项目定位是 Technical Report</b>,不是会议论文。arXiv abs 页的 comments 字段为空;标题即 "DINOv3"。这与本库对新笔记的规范一致——<b>不加会议 badge</b>。</li>
+</ul>
+</div>
+
+<h3>资源链接</h3>
+<table>
+<tr><th>资源</th><th>链接</th><th>状态</th></tr>
+<tr><td>arXiv abs</td><td><a href="https://arxiv.org/abs/2508.10104" target="_blank">arxiv.org/abs/2508.10104</a></td><td>Submitted 13 Aug 2025</td></tr>
+<tr><td>arXiv HTML 全文(v1)</td><td><a href="https://arxiv.org/html/2508.10104v1" target="_blank">arxiv.org/html/2508.10104v1</a></td><td>✅ 可访问(本笔记所有表格/图注均以此为准)</td></tr>
+<tr><td>官方代码</td><td><a href="https://github.com/facebookresearch/dinov3" target="_blank">github.com/facebookresearch/dinov3</a></td><td>✅ 公开(训练 + 评测代码)</td></tr>
+<tr><td>HuggingFace 权重</td><td><a href="https://huggingface.co/collections/facebook/dinov3-68924841bd6b561778e31009" target="_blank">collections/facebook/dinov3-…</a></td><td>✅ 公开(ViT-S/S+/B/L/H+、ConvNeXt 四档、SAT-493M)</td></tr>
+<tr><td>7B 权重</td><td><a href="https://ai.meta.com/resources/models-and-libraries/dinov3-downloads/" target="_blank">ai.meta.com/resources/models-and-libraries/dinov3-downloads/</a></td><td>⚠️ <b>申请制</b></td></tr>
+<tr><td>官方站点 / Blog</td><td><a href="https://ai.meta.com/dinov3/" target="_blank">ai.meta.com/dinov3/</a> · <a href="https://ai.meta.com/blog/dinov3-self-supervised-vision-model/" target="_blank">blog 文章</a></td><td>✅ 可访问</td></tr>
+<tr><td>Colab 示例</td><td>pca.ipynb · segmentation_tracking.ipynb · dense_sparse_matching.ipynb · foreground_segmentation.ipynb</td><td>✅ 仓库内提供</td></tr>
+<tr><td>卫星版(下游应用)</td><td>Canopy Height Maps v2(<a href="http://ai.meta.com/blog/world-resources-institute-dino-canopy-height-maps-v2" target="_blank">WRI 合作</a>);chmv2 已进 HuggingFace transformers</td><td>✅</td></tr>
+</table>
+
+<h3>本笔记的核对口径</h3>
+<ul>
+  <li><b>论文层面</b>:全部依据 arXiv HTML v1 全文(LaTeXML 版),表格数字逐格抄录;<b>图注为原文英文引录</b>,中文为本人翻译。</li>
+  <li><b>源码层面</b>:全部依据 <code>facebookresearch/dinov3</code> 的 <code>git clone --depth 1</code> 工作副本(位于本工作区 <code>.tmp_vision/src_dino/</code>);所有 <code>file:line</code> 均可逐行核对。</li>
+  <li><b>配图</b>:20 张全部从 <code>arxiv.org/html/2508.10104v1/</code> 下的原始相对路径下载(非猜测文件名),下载后做过<b>双向 diff</b>(笔记引用的 <code>src</code> 全集 vs <code>images/2508.10104/</code> 文件全集)与 <b>PNG/JPEG 文件头尾完整性校验</b>。</li>
+  <li><b>不确定项</b>:文中所有 <span class="uncertain">【推测】</span> / <span class="uncertain">【存疑】</span> / <span class="uncertain">【待核实】</span> 均为本人标注,原文无对应表述。</li>
+</ul>
+</section>
+
+<div class="footer">
+  DINOv3(arXiv:2508.10104)深度调研笔记 · 全文公式/表格经 arXiv HTML v1 逐格核对,工程细节经官方源码(git clone @ 2026-10-16)复核 · 生成于 2026-10-16
+</div>
+
+</div>
+</body>
+</html>
+
+

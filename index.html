@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 73</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 39</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 75</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 41</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -2541,9 +2541,61 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/Jaewon040/4DGS360" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card" data-file="3D-20250813-DINOv3.html" data-kind="note" data-depth="deep"
+              data-topics="前馈式大重建模型" data-search="DINOv3: 自监督视觉基座(Gram Anchoring 稳住长训练,冻结特征直接服务下游) 自监督学习 ViT-7B/16 Gram Anchoring RoPE-box jittering 冻结特征 蒸馏家族 LVD-1689M Meta 第三代自监督视觉基座,核心解法是 Gram anchoring:长训练后语义特征会漂移、密集任务掉点,于是用教师特征的 Gram 矩阵(余弦相似度)做事后约束把学生拉回,ADE20k 线性探测 +5.4。ViT-7B/16(6716M 参数、RoPE、4 registers)在 LVD-1689M 上三阶段训练。对本库最关键的证据:VGGT 换 DINOv3 编码器后 AUC@30 升到 86.3/89.6(Tab.13);冻结特征全面胜过 DepthAnythingV2(Tab.12),坐实其「前馈重建默认冻结编码器」地位。蒸馏出 S/S+/B/L/H+ + ConvNeXt 全谱系,但 7B 权重需申请。源码复核发现 Gram 损失实为 L2 归一化后余弦矩阵的 MSE(gram_loss.py),与论文式(2)的原始内积表述差一个常数因子。">
+            <h3>87. DINOv3: 自监督视觉基座(Gram Anchoring 稳住长训练,冻结特征直接服务下游)</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2508.10104</span>
+                <span>📅 2025-08-13</span>
+                <span>🏢 Meta AI (FAIR) · 26 作者 · abs 页 comments 为空(按规范不加会议 badge)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">自监督学习</span>
+                <span class="tag">ViT-7B/16</span>
+                <span class="tag">Gram Anchoring</span>
+                <span class="tag">RoPE-box jittering</span>
+                <span class="tag">冻结特征</span>
+                <span class="tag">蒸馏家族</span>
+                <span class="tag">LVD-1689M</span>
+            </div>
+            <p>Meta 第三代自监督视觉基座,核心解法是 <strong>Gram anchoring</strong>:长训练后语义特征会漂移、密集任务掉点,于是用教师特征的 Gram 矩阵(余弦相似度)做事后约束把学生拉回,ADE20k 线性探测 +5.4。ViT-7B/16(6716M 参数、RoPE、4 registers)在 LVD-1689M 上三阶段训练。<strong>对本库最关键的证据</strong>:VGGT 换 DINOv3 编码器后 AUC@30 升到 86.3/89.6(Tab.13);冻结特征全面胜过 DepthAnythingV2(Tab.12),坐实其「前馈重建默认冻结编码器」地位。蒸馏出 S/S+/B/L/H+ + ConvNeXt 全谱系,但 7B 权重需申请。源码复核发现 Gram 损失实为 L2 归一化后余弦矩阵的 MSE(gram_loss.py),与论文式(2)的原始内积表述差一个常数因子。</p>
+            <a href="3D-20250813-DINOv3.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2508.10104" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/facebookresearch/dinov3" target="_blank">💻 GitHub</a>
+            <a href="https://huggingface.co/collections/facebook/dinov3-68924841bd6b561778e31009" target="_blank">🤗 HuggingFace</a>
+        </div>
+
+        <div class="note-card" data-file="3D-20260706-LingBot-Vision.html" data-kind="note" data-depth="deep"
+              data-topics="前馈式大重建模型" data-search="LingBot-Vision: 面向稠密空间感知的边界中心视觉预训练(Masked Boundary Modeling) 自监督学习 Masked Boundary Modeling Boundary Field a-contrario 校验 稠密空间感知 深度补全 Apache-2.0 把「边界」从下游预测目标改写为预训练的组织信号:用 boundary field a(p)=(d,θ,φ¹,φ²) 把线段重参数化成稠密场,再把边界 token 强制并入掩码集 M⁺=M∪ℬ 逼模型重建结构。监督信号用四步管线从教师自身噪声预测里「长」出来(角点配对→投票聚合→a-contrario 校验)。几何指标极高效:1.1B 在 NYUv2 以 0.296 赢过 6.7B DINOv3 的 0.309,0.3B 蒸馏档(0.310)打平 7B 教师;训练语料仅 160.75M(不足 DINOv3 的 1/10)。Apache-2.0 商用友好。落差:ADE20k 语义分割差约 2 mIoU,且未在跨视图对应(前馈重建核心环节)验证。笔记含与 DINOv3 的 7 维选型决策表和给 vggt_human 的 3 条建议。">
+            <h3>88. LingBot-Vision: 面向稠密空间感知的边界中心视觉预训练(Masked Boundary Modeling)</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2607.05247</span>
+                <span>📅 2026-07-06</span>
+                <span>🏢 蚂蚁灵波 Robbyant (Ant Group) · 9 作者 · Tech report(按规范不加会议 badge)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">自监督学习</span>
+                <span class="tag">Masked Boundary Modeling</span>
+                <span class="tag">Boundary Field</span>
+                <span class="tag">a-contrario 校验</span>
+                <span class="tag">稠密空间感知</span>
+                <span class="tag">深度补全</span>
+                <span class="tag">Apache-2.0</span>
+            </div>
+            <p>把「边界」从下游预测目标改写为<strong>预训练的组织信号</strong>:用 boundary field a(p)=(d,θ,φ¹,φ²) 把线段重参数化成稠密场,再把边界 token 强制并入掩码集 M⁺=M∪ℬ 逼模型重建结构。监督信号用四步管线从教师自身噪声预测里「长」出来(角点配对→投票聚合→a-contrario 校验)。<strong>几何指标极高效</strong>:1.1B 在 NYUv2 以 0.296 赢过 6.7B DINOv3 的 0.309,0.3B 蒸馏档(0.310)打平 7B 教师;训练语料仅 160.75M(不足 DINOv3 的 1/10)。Apache-2.0 商用友好。落差:ADE20k 语义分割差约 2 mIoU,且未在跨视图对应(前馈重建核心环节)验证。笔记含与 DINOv3 的 7 维选型决策表和给 vggt_human 的 3 条建议。</p>
+            <a href="3D-20260706-LingBot-Vision.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2607.05247" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/robbyant/lingbot-vision" target="_blank">💻 GitHub</a>
+            <a href="https://www.modelscope.cn/organization/robbyant" target="_blank">🤖 ModelScope</a>
+        </div>
+
         <div class="note-card" data-file="3D-20261015-前馈式高斯重建2026下半年调研.html" data-kind="survey" data-depth="standard"
               data-topics="前馈式大重建模型|质量速度权衡与实时" data-search="前馈式高斯重建 2026 下半年调研:场景 / 人物 / 物体三条主线 Feed-Forward Gaussian 3DGS 无位姿重建 参数化模板绑定 去像素耦合 可重光照 几何基座模型 把「逐场景优化」压成「一次前向」的前馈式高斯重建 2026 下半年调研。三条补短板主线:①迭代精修(InfiniSplat v2 两阶段、DeltaSplat 增量残差 +2.2%)、②注入生成先验(DensiTok、VidSplat)、③去像素耦合(CompactSplat / GrapeSplat / iLRM，复杂度近似线性)。应用面三线:通用/场景、人物重建(Tele360 无位姿 35.4 ms 每帧即 &amp;gt;25 FPS;HumanGS 用 SMPL-X 绑定高斯 + LBS,0.29 s 重建且已开源;VFAvatar 只凭随手拍照片集 10 s 出 avatar、FFAvatar 4D 头部 468 FPS、SpatialAvatar-0 FLAME-bound 高斯 ~50 ms 前馈)、物体重建与可重光照(ParticleSplat 语言条件 RLBench 成功率 73.0% vs DLP 46.6%;F-RNG 蒸馏 IDM 先验,重光照快约 25× / +2.0 dB)。含固定维度横向对比表(11 维)、演进定位表与可改进方向优先级。 §3.4 新增几何基座谱系(VGGT → π³ → VGGT-Ω / DA3):交代前馈头站在哪一层上游,并汇总本调研内 5 处已验证的基座用法(InfiniSplat v2 冻结 DA3、DeltaSplat 用 π³ 初始化、DensiTok 插件式替换、Tele360 对 VGGT 做 Gram 蒸馏、VFAvatar 用 VGGT 作重建分支)。">
-            <h3>87. 前馈式高斯重建 2026 下半年调研:场景 / 人物 / 物体三条主线</h3>
+            <h3>89. 前馈式高斯重建 2026 下半年调研:场景 / 人物 / 物体三条主线</h3>
             <div class="meta">
                 <span>📄 综述: InfiniSplat v2 / DeltaSplat / DensiTok / CompactSplat / GrapeSplat / iLRM / Tele360 / HumanGS / VFAvatar / FFAvatar / SpatialAvatar-0 / ParticleSplat / F-RNG 等 15+ 篇(数字均回原文表核对)</span>
                 <span>📅 2026 下半年(编撰 2026-10-15)</span>
@@ -2651,7 +2703,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>88. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>90. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2674,7 +2726,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>89. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>91. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2697,7 +2749,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>90. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>92. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2723,7 +2775,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>91. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>93. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2766,7 +2818,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-10-15 · 涵盖 91 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-10-16 · 涵盖 93 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
