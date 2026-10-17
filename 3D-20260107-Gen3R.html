@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gen3R: 3D 场景生成 × 前馈重建的潜空间联姻 — 输入视频直接出几何</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2601.04090 · 2026-01-07(v1)/2026-03-23(v2) · 浙江大学 + 字节跳动 · 重建先验 × 视频扩散</span>
+    <h1>Gen3R: 把 VGGT 改造成几何 VAE,与视频扩散联合生成「RGB + 位姿 + 深度 + 点云」</h1>
+    <div class="subtitle">Gen3R: 3D Scene Generation Meets Feed-Forward Reconstruction —— 不压缩 3D 输出,而是直接在重建模型的 token 流形上做扩散;单图/首尾帧/整段视频三种输入统一出几何</div>
+    <div class="authors">Jiaxin Huang · Yuanbo Yang · Bangbang Yang · Lin Ma · Yuewen Ma · Yiyi Liao†(†通讯作者)</div>
+    <div class="org">浙江大学 · 字节跳动(ByteDance)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2601.04090" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2601.04090v2" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://xdimlab.github.io/Gen3R/" target="_blank">🏠 项目主页</a>
+      <a href="https://github.com/JaceyHuang/Gen3R" target="_blank">💻 GitHub(推理+训练代码+权重,MIT)</a>
+      <a href="https://huggingface.co/JaceyH919/Gen3R" target="_blank">🤗 HuggingFace 权重</a>
+      <a href="3D-20251015-FlashWorld.html">📖 对照笔记:FlashWorld</a>
+      <a href="3D-20250314-VGGT.html">📖 VGGT</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:为什么直接压缩点云失败</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:几何适配器(VGGT → 非对称几何 VAE)</a></li>
+    <li><a href="#s5">模块二:几何感知联合潜空间扩散</a></li>
+    <li><a href="#s6">模块三:潜变量解码为场景属性</a></li>
+    <li><a href="#s7">三种推理任务模式与条件机制</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">训练与推理流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性(重点:几何→3DGS 桥接)</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p><b>一句话:</b>Gen3R 不去学习一个全新的 3D VAE,而是<b>把已经很强的重建基础模型 VGGT 重铸成一个「非对称几何 VAE」</b>——用一个轻量因果卷积适配器把 VGGT 的中间 token 压进视频扩散模型(Wan2.1-1.3B)的潜空间,并用 KL 损失把几何潜分布对齐到 RGB 潜分布;随后两个模态的潜变量沿宽度拼接,由同一个 DiT 联合去噪,一次前向同时产出 <b>RGB 视频、逐帧深度、相机内外参、全局点云</b>四种资产。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">1.3B + 1B</div><div class="l">Wan2.1-Fun-1.3B-Control-Camera DiT + VGGT-1B(均预训练冻结底座)</div></div>
+  <div class="stat"><div class="v">16ch</div><div class="l">几何潜变量通道(与 Wan VAE 同分辨率 70×70、时序压缩 ×4、空间 ×8)</div></div>
+  <div class="stat"><div class="v">20.51 dB</div><div class="l">单图生成 Re10K PSNR(Tab.1,带相机条件;第三方复现 20.09,见 §13)</div></div>
+  <div class="stat"><div class="v">−31.5%</div><div class="l">单图几何生成 CD 相对最强基线 WVD 的降幅(Tab.2,手算复核)</div></div>
+  <div class="stat"><div class="v">49 帧 / 560²</div><div class="l">单次推理窗口(<code>infer.py:232,286,289</code> 硬编码)</div></div>
+  <div class="stat"><div class="v">MIT</div><div class="l">推理+训练代码与权重全部开源(HF: JaceyH919/Gen3R)</div></div>
+</div>
+
+<p><b>问题:</b>给定 1 张图、首尾 2 帧、或一整段视频,生成/重建出几何一致、相机可控的 3D 场景资产。<b>方法:</b>重建模型的 token 流形本身就是「自带多视角几何结构的紧凑潜空间」,与其费劲训一个 3D VAE,不如把 VGGT 的 token 适配进视频扩散的潜空间、用分布对齐损失让两者同构,再联合扩散。<b>结果:</b>外观生成上 1-view 设定在 Re10K/DL3DV 取得最优或次优 PSNR;几何生成 CD 全面压制 Aether / WVD;并且在<b>纯重建(全帧输入)任务上反超 VGGT 自身的 CD</b>(TartanAir 1.5101 vs 1.5957)——生成先验反过来修正了重建模型的漂浮点。</p>
+
+<div class="callout key"><b>核心贡献(论文 §1 自述三点):</b>
+<ol>
+<li><b>框架</b>:把视频扩散模型与几何基础模型(VGGT)在<b>潜空间层面</b>桥接,RGB 先验与几何先验互相增益;</li>
+<li><b>解耦但对齐的双潜空间</b>:几何/外观潜变量保持独立通路、只约束分布一致(KL),既保多视角一致又保可控生成;</li>
+<li><b>灵活的多任务统一</b>:1-view / 2-view / 全序列重建三种条件模式、有无相机条件均可,一个模型覆盖生成与重建。</li>
+</ol>
+</div>
+
+<div class="callout warn"><b>⚠️ 会议信息核实(按本库规范处理):</b>arXiv abs 页 comments 字段<b>只有项目主页链接,无会议信息</b>(2026-03-23 v2 核实),项目主页亦未标注会议 → <b>本笔记不加会议 badge</b>。v1 提交 2026-01-07,v2 修订 2026-03-23。</div>
+
+<div class="figure">
+  <img src="images/2601.04090/fig_pipeline_gen3r_method_v7.png" alt="Gen3R 总体架构" loading="lazy">
+  <div class="caption"><b>图1</b>(论文 Fig.2,方法总览)左:VGGT token 经 Adapter 压成几何潜变量 $\mathcal{G}$,与 Wan VAE 的外观潜变量 $\mathcal{A}$ 用 $\mathcal{L}_{KL}$ 对齐;中:联合扩散输出多量几何 + 视频;右:Wan DiT 从噪声联合去噪两种潜变量,支持 1-view / 2-view / 重建三种模式。图片下载自 arXiv HTML。</div>
+</div>
+
+<div class="tag-row">
+  <span class="tag">3D Scene Generation</span><span class="tag">Video Diffusion Prior</span><span class="tag">VGGT Latent</span><span class="tag">Geometry Adapter</span><span class="tag">Joint Latent</span><span class="tag">Point Cloud + Pose + Depth</span><span class="tag">Feed-forward Reconstruction</span><span class="tag">Wan2.1-1.3B</span>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:为什么「直接压缩点云」会失败</h2>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>路线一:SDS / 增量外扩</h4>
+    <p>LucidDreamer 式逐帧扩画 + 优化。<b>具体失败模式</b>:几何结构差、优化成本高(论文 §1: "poor geometric structure or high optimization cost")。</p>
+  </div>
+  <div class="card">
+    <h4>路线二:从头训 3D 几何 VAE</h4>
+    <p>WVD / 后续工作学一个压缩 3D 场景的 VAE 再做潜空间扩散。<b>具体失败模式</b>:大规模 3D GT 稀缺,监督只有 2D 信号,几何与生成质量双输(§1: "suboptimal geometry and constrained generation quality")。</p>
+  </div>
+  <div class="card">
+    <h4>路线三:用 RGB VAE 压重建输出</h4>
+    <p>拿现成图像 VAE 去编码 VGGT 的点云(WVD VAE-only)。<b>具体失败模式</b>:本文 Tab.3 实测——RGB VAE 编解码点云后 Co3Dv2 CD 从 VGGT 的 0.9632 恶化到 <b>1.2080</b>,TartanAir 从 1.5957 恶化到 2.7867。点云分布与图像分布差异过大,压缩即失真。</p>
+  </div>
+</div>
+
+<div class="callout key"><b>作者的关键洞察(论文 §1):</b>DUSt3R / VGGT 这类 transformer 前馈重建模型,<b>本身就工作在空间紧凑的 token 空间里</b>,而这些 token 已经编码了深度、相机、全局结构等跨视角几何信息。「重建模型的内在潜流形,能不能直接拿来当 3D 生成的地基?」——答案是把它重铸成 VAE 用,而不是去压缩它的输出。</div>
+
+<div class="callout warn"><b>⚠️ 关键假设与失效条件:</b>
+<ul>
+<li><b>假设 1:VGGT token 流形足以支撑扩散建模</b>——依赖 VGGT 自身质量。失效条件:输入域超出 VGGT 训练分布(如强动态人体、极端模糊),token 本身即失真,扩散只能放大不能修复。</li>
+<li><b>假设 2:几何/外观两潜空间只需「分布对齐」即可联合建模</b>——KL 只对齐边缘分布,不约束逐样本对应。失效条件见 §15 改进方向 1:两模态逐像素错位时,RGB-几何资产各自可用但不可互相当监督。</li>
+<li><b>假设 3:静态场景</b>——VGGT 与所有训练数据都是静态多视角;<b>运动物体(含动态人体)违反该假设</b>,这是本文对 vggt_human 类 pipeline 的主要边界(§14)。</li>
+</ul>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<p><b>输入:</b>条件图像序列 $\mathcal{I}_{cond}$(1 张 / 首尾 2 张 / 全部 $F$ 张,缺失位置补零)、二值掩码 $\mathcal{M}$、可选文本 $\mathbf{y}$、可选逐帧相机条件 $\mathcal{T}_{cond}$(Plücker 光线图)。<b>输出:</b>RGB 视频 $F\times H\times W\times 3$、逐帧深度、相机外参 $[F,3,4]$ 与内参 $[F,3,3]$、全局点云(由深度按相机反投影)。官方推理默认 $F=49$、$H=W=560$。</p>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 出处</th></tr>
+<tr><td>$\mathcal{V}$</td><td>VGGT 中间 token(4 层 patch token + 相机 token 广播,共 $L=5$ 组)</td><td>$[N, L, h_v, w_v, C]$, $h_v=w_v=40$, $C=2048$;论文 §6.2</td></tr>
+<tr><td>$\mathcal{E}_{adp}, \mathcal{D}_{adp}$</td><td>几何适配器编码器/解码器(因果 3D 卷积,类 Wan causal VAE)</td><td>输入/输出 10240 维,隐藏 [512,256,128,128];<code>geo_adapter/config.json</code></td></tr>
+<tr><td>$\mathcal{G}$</td><td>几何潜变量</td><td>$[n, h, w, c]$, $h=w=70$, $c=16$</td></tr>
+<tr><td>$\mathcal{A}$</td><td>Wan VAE 外观潜变量</td><td>同 $\mathcal{G}$ 的时空分辨率,16 通道</td></tr>
+<tr><td>$\mathcal{Z}$</td><td>联合潜变量(沿宽度拼接)</td><td>$[B, 16, f, 70, 140]$;<code>pipeline_gen3r.py:674</code></td></tr>
+<tr><td>$G_\theta$</td><td>Wan2.1 DiT(本文微调)</td><td>dim 1536 / 30 层 / 12 头 / FFN 8960 / patch(1,2,2) / in 36 通道;<code>transformer/config.json</code></td></tr>
+<tr><td>$\mathcal{D}_{pt}, \mathcal{D}_{dep}, \mathcal{D}_{cam}$</td><td>VGGT 预训练 DPT 头:点图 / 深度 / 相机</td><td>冻结复用;中间层取第 4/11/17/23 层</td></tr>
+<tr><td>$F=49$, $f=13$</td><td>视频帧数 / 潜变量帧数(时序压缩 ×4)</td><td><code>infer.py:286</code>;<code>pipeline_gen3r.py:392</code></td></tr>
+</table>
+
+<h3>总体数据流</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph ENC["训练期:潜空间构建(冻结 VGGT/Wan)"]
+        I["条件帧 I_cond<br/>[B,F,3,560,560]"] --> VGGT["VGGT aggregator<br/>取第4/11/17/23层token<br/>+相机token广播 L=5"]
+        VGGT --> V["几何 token V<br/>[N,5,40,40,2048]"]
+        V --> EADP["E_adp<br/>reshape+重采样到70×70<br/>因果3D卷积"]
+        EADP --> G["几何潜 G<br/>[B,16,13,70,70]"]
+        I --> EVAE["Wan VAE encoder E_w"] --> A["外观潜 A<br/>[B,16,13,70,70]"]
+        G -. "L_KL 分布对齐" .- A
+    end
+    subgraph DIFF["联合扩散(微调 Wan2.1-1.3B DiT)"]
+        Z0["噪声 Z_T [B,16,13,70,140]"] --> DIT["G_theta 50步去噪<br/>宽度拼接 A|G<br/>左右两半共享RoPE"]
+        COND["条件:文本umt5-xxl + 控制图潜 + mask + Plücker相机图<br/>(in_dim 36=16噪+20条件)"] --> DIT
+        DIT --> ZHAT["联合潜 Z_hat"]
+    end
+    subgraph DEC["解码:双路独立解码器"]
+        ZHAT --> |"左半 chunk"| VAE_D["Wan VAE decoder"] --> RGB["RGB 视频<br/>[B,49,560,560,3]"]
+        ZHAT --> |"右半 chunk"| DADP["D_adp"] --> V2["重建 token V_hat"]
+        V2 --> HEADS["冻结 VGGT DPT 头"] --> GEO["点图/深度/相机内外参<br/>深度×相机反投影→全局点云"]
+    end
+    ENC -.-> |"训练 G_theta"| DIFF
+    style VGGT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style DIT fill:#fef3c7,stroke:#d97706,color:#78350f
+    style GEO fill:#dcfce7,stroke:#16a34a,color:#14532d
+</div>
+
+<div class="callout tip"><b>机制解释——为什么沿<b>宽度</b>拼接而不是加通道或加 token?</b>宽度拼接(引自下游工作的做法)让外观/几何两半<b>逐像素空间对齐</b>:DiT 的每个空间位置 $(i,j)$ 同时看到该位置的 RGB 潜与几何潜,自注意力天然建模跨模态对应;同时<b>不增加任何新参数</b>(输入通道 36 中仅 16 维是新的,而 Wan 条件通道机制本来就吃 36 维),最大限度保留 Wan2.1 的视频先验。代价是序列长度翻倍(§10 资源账)。</div>
+</section>
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:几何适配器(把 VGGT 改造成非对称几何 VAE)</h2>
+
+<h3>4.1 网络结构表</h3>
+<table>
+<tr><th>步骤</th><th>算子</th><th>输入形状</th><th>输出形状</th><th>出处</th></tr>
+<tr><td>1</td><td>VGGT aggregator(冻结)</td><td>$[N,3,560,560]$</td><td>4 层 token 各 $[N,1600,2048]$ + 相机 token</td><td><code>vggt/models/aggregator.py</code></td></tr>
+<tr><td>2</td><td>相机 token 广播 + 拼接</td><td>相机 token $[N,2048]$</td><td>$\mathcal{V}\in[N,5,40,40,2048]$($L{=}5$: 4 层 patch + 1 相机)</td><td>论文 §6.2</td></tr>
+<tr><td>3</td><td>reshape 通道</td><td>$[N,5,40,40,2048]$</td><td>$[N,40,40,10240]$</td><td>论文 §6.2</td></tr>
+<tr><td>4</td><td>nearest-exact 重采样</td><td>$40\times40$</td><td>$70\times70$</td><td>论文 §6.2</td></tr>
+<tr><td>5</td><td>2D 卷积投影</td><td>10240 通道</td><td>1024 通道</td><td>论文 §6.2</td></tr>
+<tr><td>6</td><td>因果 3D 卷积 Encoder3d(dim_mult [4,2,1,1],hidden 128×mult=[512,256,128,128],2×ResBlock/级)</td><td>$[N,1024,13,70,70]$</td><td>$\mu,\log\sigma^2$: $z_{dim}\times2=32$ 通道</td><td><code>geometry_adapter.py:278-336, 511-538</code></td></tr>
+<tr><td>7</td><td>重参数化</td><td>32 通道</td><td>$\mathcal{G}$: $[B,16,13,70,70]$</td><td>同上</td></tr>
+<tr><td>8</td><td>Decoder3d(镜像,输出 10240 通道)</td><td>$\mathcal{G}$</td><td>$\hat{\mathcal{V}}$ $[N,5,40,40,2048]$</td><td><code>geometry_adapter.py:389-503</code></td></tr>
+<tr><td>9</td><td>token 还原 + 冻结 VGGT DPT 头</td><td>$\hat{\mathcal{V}}$</td><td>点图/深度/相机(与原版 VGGT 解码完全同构)</td><td><code>common_utils.py:116-131</code></td></tr>
+</table>
+
+<h3>4.2 数学形式化</h3>
+<div class="equation">
+$$\mathcal{V} = \mathcal{E}_{\mathcal{V}}(\mathcal{I}) \in \mathbb{R}^{N\times L\times h_v\times w_v\times C},\qquad
+\mathcal{G} = \mathcal{E}_{adp}(\mathcal{V}),\quad \hat{\mathcal{V}} = \mathcal{D}_{adp}(\mathcal{G})$$
+<span class="tag">(式 1)</span>
+</div>
+<p>其中 $L=5$(4 层 patch token + 相机 token 广播到 $40\times40$ 空间网格,$h_v=w_v=40$,$C=2048$,$L\times C=10240$)。适配器与 Wan VAE 共享<b>时序压缩 ×4、空间压缩 ×8</b>(<code>geo_adapter/config.json</code>),因此几何潜与外观潜同形,可逐像素对齐拼接。</p>
+
+<div class="callout tip"><b>机制解释:</b>「非对称」体现在——编码侧输入是 10240 维的富几何 token,解码侧却要重建全部 4 个量(点/深度/相机/图像 token),中间只过 16 通道潜变量。瓶颈极狠(单帧潜像素 70×70×16 = 78400 维 vs 原 token 5×1600×2048 ≈ 1640 万维,压缩比 <b>≈210×</b>),逼得潜空间必须学出「可生成」的流形而非像素记忆。</div>
+
+<h3>4.3 适配器训练损失(源码直读)</h3>
+<div class="equation">
+$$\mathcal{L}_{rec} = \underbrace{\mathcal{L}_{tok}^{img} + \mathcal{L}_{tok}^{cam}}_{\text{SmoothL1, }\beta=0.15} + 10\,\mathcal{L}_{cam} + 2\,\mathcal{L}_{dep} + \mathcal{L}_{pt},\qquad
+\mathcal{L}_{sim} = (1-\cos_{img}) + (1-\cos_{cam})$$
+<span class="tag">(式 2)</span>
+</div>
+<div class="equation">
+$$\mathcal{L}_{KL} = D_{KL}\big(q(\mathcal{G})\,\|\,p_{Wan}(\mathcal{A})\big),\qquad
+\mathcal{L}_{adp} = \mathcal{L}_{rec} + \mathcal{L}_{sim} + 0.1\cdot w_{ada}\cdot\mathcal{L}_{KL}$$
+<span class="tag">(式 3)</span>
+</div>
+<p>各项权重出自 <code>train_geo_adapter_pl.py:297-341</code>:token 重建 SmoothL1($\beta$=0.15)、相机位姿 L1 权重 10、深度 2、点云 1,另有图像/相机 token 的余弦相似度损失(各权重 1);KL 项把几何潜的后验分布 $q(\mathcal{G})$ 拉向 <b>Wan VAE 对同一批帧编码出的外观潜后验</b> $p_{Wan}(\mathcal{A})$,权重用 <code>calculate_adaptive_weight</code> 按数量级自适应(取 $10^{\lfloor\log_{10}(L_{rec}/L_{KL})\rfloor}$)再乘 0.1。消融(Tab.4)证明没有这项 KL,PSNR 掉 4.2 dB。</p>
+
+<h3>4.4 模块内部流程</h3>
+<div class="mermaid">
+flowchart TD
+    A["输入帧 [N,3,560,560]"] --> B["冻结 VGGT aggregator<br/>取第4/11/17/23层"]
+    B --> C["4组patch token<br/>各 [N,40,40,2048]"]
+    B --> D["相机token [N,2048]"]
+    D --> E["广播到40×40空间网格<br/>(论文§6.2)"]
+    C --> F["拼接 L=5 → [N,5,40,40,2048]"]
+    E --> F
+    F --> G["reshape [N,40,40,10240]<br/>nearest-exact重采样→70×70<br/>2D卷积→1024"]
+    G --> H["CausalConv3d Encoder3d<br/>dim_mult=[4,2,1,1] × 128<br/>→ μ,logσ² (32ch)"]
+    H --> I["重参数化 → G [B,16,13,70,70]"]
+    I -->|"L_KL: 对齐 Wan VAE 外观潜分布"| J["p_wan(A)"]
+    I --> K["Decoder3d 镜像结构"]
+    K --> L["V_hat → 冻结DPT头解码<br/>L_rec + L_sim 监督"]
+    style B fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style J fill:#fef3c7,stroke:#d97706,color:#78350f
+</div>
+
+<p><b>监督信号:</b>该模块有完整监督(重建 + 相似度 + KL),训练数据为带相机标注的多视角视频(无需 3D GT,深度/点云监督来自冻结 VGGT 自身的预测——即<b>教师自蒸馏</b>)。</p>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:几何感知联合潜空间扩散</h2>
+
+<h3>5.1 联合潜空间构造</h3>
+<div class="equation">
+$$\mathcal{Z} = [\mathcal{A};\mathcal{G}] \in \mathbb{R}^{n\times h\times 2w\times c},\qquad
+\mathcal{Z}_{in} = \mathcal{Z}_t \oplus \mathcal{Z}_{cond}$$
+<span class="tag">(式 4)</span>
+</div>
+<p>$\mathcal{A}$ 与 $\mathcal{G}$ 沿<b>宽度</b>拼成 $[B,16,13,70,140]$;条件潜 $\mathcal{Z}_{cond}=[\mathcal{A}_{cond}\oplus\mathcal{M}_a;\mathcal{G}_{cond}\oplus\mathcal{M}_g]$(几何侧条件潜与掩码恒置零——即<b>几何不直接吃条件</b>,只通过外观侧间接约束),最终 DiT 输入通道 $16 + 20 = 36$(<code>transformer/config.json: in_dim 36</code>)。Plücker 相机图经 4× 时序打包成 $[B,24,13,H,W]$ 后同样在宽度上翻倍走 control adapter(<code>pipeline_gen3r.py:680-688</code>)。</p>
+
+<h3>5.2 结构改动(对 Wan2.1 的最小侵入)</h3>
+<table>
+<tr><th>改动点</th><th>内容</th><th>出处</th></tr>
+<tr><td>输入通道</td><td>in_channels 36(16 噪声潜 + 20 条件潜),out 16</td><td><code>transformer/config.json</code></td></tr>
+<tr><td>位置编码</td><td><b>宽度左右两半共享同一组 RoPE</b>——$(i,j)$ 位置的外观 token 与几何 token 拿到相同旋转相位,强制跨模态逐位对应</td><td>论文 §6.2</td></tr>
+<tr><td>主干</td><td>Wan2.1-Fun-V1.1-1.3B-Control-Camera(图-相机条件版),dim 1536、30 层、12 头、FFN 8960、patch (1,2,2)</td><td><code>train_dit.sh:11</code> + config</td></tr>
+<tr><td>全量微调</td><td><code>--trainable_modules "."</code>,bf16 + deepspeed + 梯度检查点</td><td><code>train_dit.sh</code></td></tr>
+</table>
+
+<h3>5.3 扩散过程与条件采样</h3>
+<div class="equation">
+$$z_t = (1-\sigma_t)\,x + \sigma_t\,\epsilon,\qquad v_\theta = \epsilon - x,\qquad
+\mathcal{L}_{FM} = \mathbb{E}\big[\,w(\sigma)\cdot m\cdot\|v_\theta(z_t) - (\epsilon - x)\|^2\,\big]$$
+<span class="tag">(式 5)</span>
+</div>
+<p>Flow Matching 目标(<code>train_dit.py:1588-1613</code>):预测目标为 $\epsilon - x$;损失为带阈值掩码的 MSE($|diff|>50$ 的元素置零,防离群爆梯度)乘 SD3 式 $\sigma$ 加权。条件组合每步等概率($1/3$)取 1-view / 2-view(首尾帧)/ 全序列;文本以 20% 概率丢弃(CFG);相机条件以 50% 概率丢弃(<code>train_dit.py:283-284</code>)。推理:FlowMatchEulerDiscrete 调度、shift 2.0、默认 50 步、CFG 5~6(<code>scheduler_config.json</code> + <code>infer.py:290</code>)。</p>
+
+<h3>5.4 前向流程(逐步)</h3>
+<ol>
+<li>文本经 umt5-xxl(24 层、4096 维)编码,首帧经 CLIP image encoder 取全局特征;</li>
+<li>条件图经 Wan VAE 编码为 $\mathcal{A}_{cond}$,缺失帧补零,掩码按 control_index 置 1;</li>
+<li>几何条件潜与几何掩码全零初始化(论文 §6.1)——几何完全靠生成;</li>
+<li>噪声 $\mathcal{Z}_T\sim\mathcal{N}(0,I)$ 与条件沿通道拼接($36$ 通道),DiT 迭代 50 步;</li>
+<li>输出 $\hat{\mathcal{Z}}=[B,16,13,70,140]$,按宽度对半切开送两条解码路。</li>
+</ol>
+
+<p><b>监督信号:</b>联合潜空间上的 Flow Matching 损失(<b>不区分</b>外观/几何半区,无单独几何权重)。</p>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:潜变量解码为场景属性</h2>
+
+<h3>6.1 网络结构表</h3>
+<table>
+<tr><th>输入</th><th>算子</th><th>输出</th><th>出处</th></tr>
+<tr><td>左半潜 $[B,16,13,70,70]$</td><td>Wan VAE decoder(冻结)</td><td>RGB 视频 $[B,49,560,560,3]$</td><td><code>pipeline_gen3r.py:454</code></td></tr>
+<tr><td>右半潜 $[B,16,13,70,70]$</td><td>$\mathcal{D}_{adp}$</td><td>VGGT token $\hat{\mathcal{V}}$ $[B,10240,F,40,40]$</td><td><code>pipeline_gen3r.py:440</code></td></tr>
+<tr><td>$\hat{\mathcal{V}}$</td><td>convert_to_token_list(相机 token 取空间均值重复 5 份)</td><td>4 组 $[B,F,1605,2048]$ token 列表</td><td><code>common_utils.py:116-131</code></td></tr>
+<tr><td>token 列表</td><td>冻结 VGGT camera_head</td><td>外参 $[B,F,3,4]$、内参 $[B,F,3,3]$</td><td><code>pipeline_gen3r.py:445-446</code></td></tr>
+<tr><td>token 列表 + 占位帧</td><td>冻结 point_head / depth_head(DPT)</td><td>点图 $[B,F,560,560,3]$、深度 $[B,F,560,560,1]$(+置信度,被丢弃)</td><td><code>pipeline_gen3r.py:447-448</code></td></tr>
+<tr><td>深度 + 内外参</td><td>unproject_depth_map_to_point_map</td><td>全局点云 $[F,560,560,3]$ + 点掩码</td><td><code>pipeline_gen3r.py:449-452</code></td></tr>
+</table>
+
+<div class="callout warn"><b>⚠️ 逐帧几何 vs 逐点图:</b>官方推理默认导出的点云是<b>深度反投影</b>路径(<code>infer.py:107-116</code> 存 <code>pcds.ply</code>),与论文 §3.3 一致;point_head 的直接点图输出在 <code>results['point_maps']</code> 里也有,但不落盘。两条路径来自同一批 token,一致性未在论文中量化——<span class="uncertain">【待核实】两者差异幅度</span>。</div>
+
+<div class="callout key"><b>该模块无直接训练</b>:解码侧全部冻结(VGGT 头 + Wan VAE 解码器),训练只发生在适配器与 DiT。这是「桥接」思想的精髓——<b>所有 3D 知识都在预训练权重里,新增参数只有几何适配器与 DiT 的微调</b>。</div>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>三种推理任务模式与条件机制</h2>
+
+<table>
+<tr><th>模式</th><th>CLI</th><th>输入</th><th>条件注入方式</th><th>输出</th></tr>
+<tr><td>1-view 生成</td><td><code>--task 1view</code></td><td>单张图 + 文本 + 相机轨迹(内置 zoom/arc/translate 或自定义 json)</td><td>control_index=[0],其余 48 帧掩码 0</td><td>49 帧 RGB + 全套几何</td></tr>
+<tr><td>2-view 生成</td><td><code>--task 2view</code></td><td>首尾帧 + 文本 + 相机</td><td>control_index=[0,-1]</td><td>同上</td></tr>
+<tr><td>全序列重建</td><td><code>--task allview</code></td><td>整段视频/帧目录(截取前 49 帧)</td><td>全部帧掩码 1;<b>相机条件强制置零</b>(<code>infer.py:272-273</code>)</td><td>同上,但几何即重建结果</td></tr>
+</table>
+
+<div class="callout tip"><b>对「输入视频出几何」的直接回答:</b><code>allview</code> 模式就是峰哥要的能力——视频进,RGB + 深度 + 相机内外参 + 全局点云出。但注意三点:① 它<b>仍是扩散采样(50 步)而非确定性编码</b>,生成先验参与几何结果(这是它比 VGGT 更干净的原因,也意味着输出不完全等于输入);② 帧数硬上限 49,长视频需自行窗口化(见 §15 改进 2);③ 相机位姿是<b>模型自己生成的</b>(allview 忽略输入相机),若下游需要与外部 SLAM/COLMAP 对齐,需自行做相似变换配准。</div>
+
+<h3>相机条件的两种来源</h3>
+<ul>
+<li>内置轨迹(zoom_in/out、arc_left/right、translate_up/down):先用 VGGT 估首帧内参与场景尺度(<code>scene_scale = 0.8 × median(depth)</code>,<code>infer.py:252</code>),再程序化生成 49 帧 c2w;</li>
+<li>外部 json(<code>extrinsics</code> 4×4 + <code>intrinsics</code> 3×3,OpenCV 约定),或 <code>free</code>(无相机条件,轨迹由模型自由发挥)。</li>
+</ul>
+<p>相机条件以 Plücker 光线图 $[F,6,560,560]$ 注入(<code>compute_rays</code>),经时序 4× 打包成潜分辨率后走 control adapter;1-view/2-view 模式下也可完全不给(<code>free</code>)。</p>
+</section>
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<table>
+<tr><th>损失项</th><th>公式 / 形式</th><th>权重(真值)</th><th>作用对象</th><th>出处</th></tr>
+<tr><td>token 重建(图像×4 + 相机)</td><td>SmoothL1($\beta$=0.15)</td><td>1 / 1</td><td>适配器</td><td><code>train_geo_adapter_pl.py:297-300</code></td></tr>
+<tr><td>相机位姿回归</td><td>L1(pose_enc)</td><td>10</td><td>适配器</td><td><code>train_geo_adapter_pl.py:318</code></td></tr>
+<tr><td>深度回归</td><td>compute_depth_loss(gamma 1, alpha 0.2)</td><td>2</td><td>适配器</td><td><code>train_geo_adapter_pl.py:319</code></td></tr>
+<tr><td>点云回归</td><td>compute_point_loss(同上)</td><td>1</td><td>适配器</td><td><code>train_geo_adapter_pl.py:320</code></td></tr>
+<tr><td>token 余弦相似度</td><td>$1-\cos$(图像 + 相机两组)</td><td>1</td><td>适配器</td><td><code>train_geo_adapter_pl.py:325-327</code></td></tr>
+<tr><td><b>KL 分布对齐(本文核心)</b></td><td>$D_{KL}(q(\mathcal{G})\|p_{Wan}(\mathcal{A}))$</td><td>$0.1\times$ 自适应数量级权重</td><td>适配器</td><td><code>train_geo_adapter_pl.py:332-342</code></td></tr>
+<tr><td>Flow Matching</td><td>$\|v_\theta - (\epsilon - x)\|^2$,阈值 50 掩码 × SD3 $\sigma$ 加权</td><td>1(唯一项)</td><td>DiT</td><td><code>train_dit.py:1590-1613</code></td></tr>
+</table>
+<div class="callout warn"><b>⚠️ 值得注意:</b>DiT 的损失对整个联合潜空间<b>一视同仁</b>,几何半区没有任何额外权重或单独约束——几何质量全靠「KL 预对齐的潜空间 + 宽度拼接的空间对应 + 冻结解码头」三者兜住。这既是设计上的简洁,也是 §15 改进方向 1 的隐患来源。</div>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>训练与推理流程图</h2>
+
+<h3>9.1 训练流程(两阶段)</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph P1["阶段一:几何适配器(24×H20)"]
+        A1["300k+ 多视角场景<br/>Re10K/DL3DV/ACID/TartanAir/<br/>KITTI-360/Waymo/Co3Dv2/<br/>MVImgNet/VKITTI2/WildRGB-D"] --> B1["冻结 VGGT 提 token"]
+        B1 --> C1["适配器编解码"]
+        C1 --> D1["L_rec+L_sim+L_KL<br/>25帧15k步(bs192)→49帧6k步"]
+        D1 --> E1["geo_adapter 权重"]
+    end
+    subgraph P2["阶段二:DiT 联合扩散(24×H20)"]
+        A2["同一批数据(文本用MLLM生成)"] --> B2["编码:Wan VAE→A,适配器→G<br/>宽度拼接 Z"]
+        B2 --> C2["Flow Matching 微调 Wan2.1-1.3B<br/>49帧/560²,8k步,bs4<br/>条件1/3采样,文本丢20%,相机丢50%"]
+        C2 --> D2["Gen3R DiT 权重"]
+    end
+    E1 --> P2
+    style P1 fill:#eff6ff,stroke:#3b82f6,color:#1e3a5f
+    style P2 fill:#fff7ed,stroke:#d97706,color:#78350f
+</div>
+
+<h3>9.2 推理流程(allview: 视频 → 几何)</h3>
+<div class="mermaid">
+flowchart LR
+    V["输入视频<br/>截前49帧,resize+居中裁560×560"] --> ENC["条件编码<br/>Wan VAE→A_cond,掩码全1<br/>相机条件置零"]
+    ENC --> DENOISE["50步 FlowMatchEuler 去噪<br/>CFG=5,shift=2.0<br/>序列长≈31.9k token"]
+    DENOISE --> SPLIT["按宽度对半切"]
+    SPLIT --> R1["Wan VAE解码 → rgb.mp4"]
+    SPLIT --> R2["几何适配器解码 → VGGT token"]
+    R2 --> H["冻结VGGT头:<br/>外参4×4+内参3×3+深度+点图"]
+    H --> U["深度反投影<br/>→ pcds.ply(体素0.005去重)<br/>cameras.json"]
+    style DENOISE fill:#fef3c7,stroke:#d97706,color:#78350f
+    style H fill:#dcfce7,stroke:#16a34a,color:#14532d
+</div>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码级)</h2>
+
+<h3>10.1 仓库与权重全景</h3>
+<table>
+<tr><th>项</th><th>内容</th><th>出处</th></tr>
+<tr><td>仓库</td><td>JaceyHuang/Gen3R,MIT;推理 <code>infer.py</code>(301 行)+ 训练 <code>train_geo_adapter_pl.py</code>(960 行)+ <code>train_dit.py</code>(1790 行),内嵌完整 VGGT 与 VideoX-Fun Wan2.1 实现</td><td>git clone 实读</td></tr>
+<tr><td>权重(HF JaceyH919/Gen3R,2026-01-13 更新)</td><td><code>transformer/</code>(DiT)+ <code>geo_adapter/</code> + <code>wan_vae/</code> + <code>vggt/</code>(1B)+ <code>text_encoder/</code>(umt5-xxl,3 shards)+ <code>clip_image_encoder/</code> + <code>scheduler/</code></td><td>HF API 文件清单</td></tr>
+<tr><td>加载坑</td><td>README 明确:<code>from_pretrained("JaceyH919/Gen3R")</code> 直拉会模块命名报错,<b>必须 git lfs clone 到本地 ./checkpoints 再 from_pretrained</b></td><td>README §Setup</td></tr>
+<tr><td>环境</td><td>Debian 12 + CUDA 12.4 + torch 2.5.1+cu124 + flash-attn 2.7.0 + open3d 0.18 + pytorch3d 0.7.8;官方开发卡为 H20 96G</td><td><code>requirements.txt</code> / README</td></tr>
+</table>
+
+<h3>10.2 关键超参:论文宣称 vs 源码真值</h3>
+<table>
+<tr><th>超参</th><th>论文(§4.1)</th><th>源码 / 配置真值</th><th>出处</th></tr>
+<tr><td>适配器阶段 1</td><td>25 帧 @560²,15k 步,bs 2 × 累积 4,24×H20(总 192)</td><td>脚本默认 bs 1 × 累积 8(单卡参考配置)</td><td><code>train_geo_adapter_pl.sh</code></td></tr>
+<tr><td>适配器阶段 2</td><td>49 帧,6k 步,bs 1 × 累积 8</td><td>一致</td><td>同上</td></tr>
+<tr><td>DiT 微调</td><td>49 帧 @560²,8k 步,bs 4,24×H20</td><td>bs 4 × 累积 2,lr 1e-5 cosine(warmup 50),bf16,deepspeed,梯度检查点,stride-2 采帧</td><td><code>train_dit.sh</code></td></tr>
+<tr><td>条件采样</td><td>三模式各 1/3;文本丢 20%;相机丢「一定概率」</td><td>相机丢弃率实测 <b>0.5</b></td><td><code>train_dit.py:283-284</code></td></tr>
+<tr><td>推理</td><td>未写步数</td><td>FlowMatchEuler shift=2.0,默认 50 步,CFG 默认 6(<code>infer.py</code> 实传 5),seed 42</td><td><code>scheduler_config.json</code>, <code>pipeline_gen3r.py:564-566</code>, <code>infer.py:290</code></td></tr>
+<tr><td>训练数据规模</td><td>10 个数据集、>300k 场景、每集约 90% 进训练;文本标注由 MLLM 生成</td><td>数据需自行整理成 nerfstudio 式目录(images + captions.txt + transforms.json),<b>不提供整理好的数据</b></td><td>论文 §4.1 / README §0</td></tr>
+</table>
+
+<h3>10.3 输出产物与后处理(推理)</h3>
+<table>
+<tr><th>产物</th><th>格式</th><th>细节</th></tr>
+<tr><td><code>rgb.mp4</code></td><td>49 帧 560×560</td><td>生成/重建的 RGB(<b>注意:不是输入帧原样回显</b>,是扩散采样结果)</td></tr>
+<tr><td><code>pcds.ply</code></td><td>PLY 点云</td><td>深度反投影,open3d 体素降采样 0.005(<code>--remove_far_points</code> 时 0.003 + 深度 80 分位截断 + 离群过滤);<b>原始点数上限 49×560×560 ≈ 1537 万</b>,降采样前无置信度过滤</td></tr>
+<tr><td><code>cameras.json</code></td><td>extrinsics [49,4,4] + intrinsics [49,3,3]</td><td>OpenCV 约定;VGGT 坐标系,<b>尺度任意(非米制)</b></td></tr>
+<tr><td>深度图</td><td>—</td><td><b>默认不保存</b>(<code>infer.py:99-105</code> 整段注释掉),需要时取消注释;深度与置信度在 <code>sample.depth_maps</code> / DPT head 第二返回值里</td></tr>
+</table>
+
+<h3>10.4 资源账</h3>
+<ul>
+<li><b>训练</b>:两阶段均为 24×H20(96G);适配器 ≈ 15k+6k 步,DiT 8k 步(论文 §4.1)。</li>
+<li><b>推理显存</b>:论文与 README 均未给单卡推理显存数字。<span class="uncertain">【推测】按配置估算:DiT 1.3B + VGGT-1B ≈1.2B + umt5-xxl(24 层 × dim 4096,约 5.6B)+ CLIP-huge + Wan VAE + 适配器,bf16 权重合计 ≈ 17~18GB;DiT 序列长 ≈ (70×140)/(2×2)×13 ≈ 31.9k token,注意力峰值可观。24GB 3090 直跑大概率吃紧,需启用 pipeline 内置的 <code>model_cpu_offload_seq</code>(<code>pipeline_gen3r.py:171</code>)或自行分段加载——可行性【待核实】。</span></li>
+<li><b>推理耗时</b>:论文与 README 均未报告。<span class="uncertain">【待核实】50 步 × 31.9k token 的 1.3B DiT,量级估计为单场景分钟级;建议实测后再决定能否进在线 pipeline。</span></li>
+</ul>
+
+<h3>10.5 落地坑清单(实读源码确认)</h3>
+<ol>
+<li><b>49 帧硬上限</b>:<code>infer.py:232</code> 无条件截前 49 帧,长视频直接丢尾;<code>pipeline_gen3r.py:392</code> 的公式允许其他帧数,但训练从未见过 ≠49 的时序长度,<span class="uncertain">【推测】外推质量无保证</span>。</li>
+<li><b>分辨率锁定 560×560</b>:任何输入都 resize + 居中裁剪(<code>infer.py:236-239</code>),横构图视频左右内容直接裁掉——对宽画幅街拍/行车数据是硬伤。</li>
+<li><b>allview 忽略相机条件</b>:README 明示 "note that --cameras are ignored in this task";位姿完全由模型生成,与外部标定不一致时需自行配准。</li>
+<li><b>尺度任意</b>:VGGT 系输出无绝对尺度;需要米制几何时必须引入外部尺度源(如一段已知位移)。</li>
+<li><b>bf16 全链路</b>(<code>infer.py:213</code>),深度精度受 bf16 限制;<span class="uncertain">【推测】远距离薄结构可能受影响</span>。</li>
+<li><b>置信度被丢弃</b>:DPT head 返回 (pred, conf)(<code>dpt_head.py:157-159</code>),pipeline 里 <code>depth_maps, _ = ...</code> 直接扔掉 conf(<code>pipeline_gen3r.py:447-448</code>),点云过滤只能靠体素/分位数规则。</li>
+</ol>
+</section>
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 外观生成(Tab.1,带相机条件;最优行标绿)</h3>
+<table>
+<tr><th>设定</th><th>方法</th><th>Re10K PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>DL3DV PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td rowspan="3">1-view</td><td>LVSM</td><td>18.97</td><td>0.7161</td><td>0.2992</td><td>15.61</td><td>0.5384</td><td>0.4434</td></tr>
+<tr><td>Gen3C</td><td>20.26</td><td>0.7186</td><td>0.2302</td><td>16.21</td><td>0.5557</td><td>0.4575</td></tr>
+<tr class="best"><td>Gen3R(本文)</td><td>20.51</td><td>0.7388</td><td>0.2281</td><td>16.38</td><td>0.5821</td><td>0.4234</td></tr>
+<tr><td rowspan="3">2-view</td><td>DepthSplat</td><td>26.67</td><td>0.8711</td><td>0.1742</td><td>16.83</td><td>0.6094</td><td>0.3971</td></tr>
+<tr><td><b>LVSM(插值最强)</b></td><td><b>29.58</b></td><td><b>0.9197</b></td><td><b>0.1060</b></td><td><b>18.80</b></td><td><b>0.6404</b></td><td>0.3575</td></tr>
+<tr class="best"><td>Gen3R(本文)</td><td>27.05</td><td>0.8732</td><td>0.1352</td><td>18.59</td><td>0.6149</td><td><b>0.3416</b></td></tr>
+</table>
+<div class="callout warn"><b>⚠️ 诚实读表:</b>2-view 设定下 Gen3R 全面落后 LVSM(Re10K −2.53 dB)。LVSM 是非生成的插值方法,首尾帧都给时「生成」反而引入误差;<b>Gen3R 的主场是 1-view(欠约束)与重建鲁棒性</b>,不是插值。另外 I.Q.(成像质量)子项 Gen3R 领先(0.5993 vs Gen3C 0.5200)——视频扩散先验贡献了视觉质量。</div>
+
+<h3>11.2 几何生成(Tab.2,Chamfer Distance↓,Umeyama 对齐 + FPS 采样后计算)</h3>
+<table>
+<tr><th>设定</th><th>方法</th><th>Co3Dv2 CD↓</th><th>WildRGB-D CD↓</th><th>TartanAir CD↓</th></tr>
+<tr><td rowspan="4">1-view</td><td>Aether</td><td>1.9498</td><td>0.3066</td><td>3.8457</td></tr>
+<tr><td>WVD</td><td>1.6137</td><td>0.2635</td><td>3.7302</td></tr>
+<tr><td>VGGT(纯重建参考)</td><td>2.3561</td><td>0.3534</td><td>3.0487</td></tr>
+<tr class="best"><td>Gen3R(本文)</td><td><b>1.1047</b></td><td><b>0.1992</b></td><td><b>2.7809</b></td></tr>
+<tr><td rowspan="4">2-view</td><td>Aether</td><td>1.5520</td><td>0.3038</td><td>3.1082</td></tr>
+<tr><td>WVD</td><td>1.7081</td><td>0.2148</td><td>3.4531</td></tr>
+<tr><td>VGGT</td><td>1.2759</td><td>0.1463</td><td>2.0877</td></tr>
+<tr class="best"><td>Gen3R(本文)</td><td><b>0.9767</b></td><td><b>0.1426</b></td><td><b>1.9734</b></td></tr>
+</table>
+<p>手算复核:1-view Co3Dv2 对 WVD −31.5%、WildRGB-D −24.4%、TartanAir 对 WVD −25.4%;<b>2-view TartanAir 上 Gen3R(1.9734)反超 VGGT(2.0877)</b>——生成补全了 VGGT 在少视角下缺失的区域(VGGT accuracy 好但 completeness 差)。</p>
+
+<div class="figure">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <img src="images/2601.04090/fig_single_image_inputs_re10k_0127.png" alt="单图输入" loading="lazy">
+    <img src="images/2601.04090/fig_single_image_ours_re10k_0127.png" alt="Gen3R 生成的全局点云" loading="lazy">
+  </div>
+  <div class="caption"><b>图2</b>(论文 Fig.3 局部)单图(左) → Gen3R 生成的全局点云(右,含相机视锥):未观测区域被生成式补全,且全局结构一致。图片下载自 arXiv HTML。</div>
+</div>
+
+<h3>11.3 前馈重建:生成先验是否反哺重建?(Tab.3)</h3>
+<table>
+<tr><th>方法</th><th>Co3Dv2 CD↓</th><th>WildRGB-D CD↓</th><th>TartanAir CD↓</th></tr>
+<tr><td>VGGT(原模型)</td><td>0.9632</td><td>0.1165</td><td>1.5957</td></tr>
+<tr class="fail"><td>WVD(VAE only,RGB VAE 压点云)</td><td>1.2080</td><td>0.1526</td><td>2.7867</td></tr>
+<tr><td>Ours(VAE only,仅适配器压缩)</td><td>0.9986</td><td>0.1165</td><td>1.6518</td></tr>
+<tr class="best"><td>Gen3R(完整,扩散生成)</td><td>0.9625</td><td>0.1260</td><td><b>1.5101</b></td></tr>
+</table>
+<div class="callout warn"><b>⚠️ 「重建被生成反哺」要打折:</b>三个数据集上 Gen3R 对 VGGT 的 CD 变化为 −0.07% / +8.2% / −5.4%,位姿 AUC@30(附录 Tab.9)Re10K 0.8265 vs VGGT 0.8387、WildRGB-D 0.8391 vs 0.8406——<b>几何互有胜负、位姿反而略输</b>。论文叙事里的 "enhance the robustness" 主要体现在<b>清理漂浮点等定性伪影</b>(Fig.5/9),量化上并非全面超越。<b>如果输入是稠密、静态、纹理好的视频,直接跑 VGGT/Pi3 更便宜;Gen3R 的价值在稀疏、欠约束、需要补全的场景。</b></div>
+
+<div class="figure">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <img src="images/2601.04090/fig_reconstruction_inputs_co3d.png" alt="重建输入" loading="lazy">
+    <img src="images/2601.04090/fig_reconstruction_vggt_co3d.png" alt="VGGT 点云(有漂浮点)" loading="lazy">
+    <img src="images/2601.04090/fig_reconstruction_ours_co3d.png" alt="Gen3R 点云(更干净)" loading="lazy">
+  </div>
+  <div class="caption"><b>图3</b>(论文 Fig.5)前馈重建对比:输入(左)→ VGGT(中,可见漂浮点)→ Gen3R(右,生成先验清理漂浮点)。量化上两者 CD 互有胜负(Tab.3),差异主要在定性伪影。图片下载自 arXiv HTML。</div>
+</div>
+
+<h3>11.4 相机可控性与 OOD 泛化</h3>
+<table>
+<tr><th>方法</th><th>1-view Re10K AUC@30↑</th><th>1-view WildRGB-D</th><th>2-view Re10K</th><th>2-view WildRGB-D</th></tr>
+<tr><td>Aether</td><td>0.6398</td><td>0.5375</td><td>0.6220</td><td>0.5068</td></tr>
+<tr><td>WVD</td><td>0.6727</td><td>0.6780</td><td>0.7249</td><td>0.7113</td></tr>
+<tr class="best"><td>Gen3R</td><td><b>0.7443</b></td><td><b>0.8004</b></td><td><b>0.7732</b></td><td><b>0.8098</b></td></tr>
+</table>
+<p>OOD(附录 Tab.8,LLFF / Mip-NeRF360 / ScanNet++):1-view 三数据集 PSNR 13.19 / 13.17 / 15.42,全面小胜 LVSM 与 Aether;2-view 下 LVSM 仍凭插值优势领先。<b>结论一致:欠约束越强,Gen3R 越占优。</b></p>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+
+<table>
+<tr><th>变体(1-view)</th><th>Re10K PSNR↑</th><th>LPIPS↓</th><th>Co3Dv2 CD↓</th><th>WildRGB-D CD↓</th><th>相对完整版变化(手算)</th></tr>
+<tr><td>2-Stage(先生成视频,再 VGGT 重建)</td><td>17.38</td><td>0.3412</td><td>1.6223</td><td>0.2330</td><td class="fail">PSNR −3.13 dB(−15.3%),CD +46.9%</td></tr>
+<tr class="fail"><td>w/o $\mathcal{L}_{KL}$(无分布对齐)</td><td>16.31</td><td>0.3941</td><td>1.9620</td><td>0.3280</td><td>PSNR −4.20 dB(−20.5%),CD +77.6%</td></tr>
+<tr class="best"><td>完整 Gen3R</td><td>20.51</td><td>0.2281</td><td>1.1047</td><td>0.1992</td><td>—</td></tr>
+</table>
+
+<div class="callout key"><b>两条结论:</b>
+<ol>
+<li><b>2-Stage 失败证明「联合潜空间」不是花架子</b>:先扩散 RGB 再喂给 VGGT,误差级联(生成的中间帧与真实几何不完全一致,VGGT 把幻觉当真);联合扩散让两模态在同一去噪过程里互相校准。</li>
+<li><b>KL 对齐是收敛关键</b>:没有它,几何潜与外观潜分布脱节(Fig.7 可视化),DiT 训练难以收敛——相机可控性 AUC 从 0.7443 崩到 0.4100(Tab.5)。</li>
+</ol>
+</div>
+
+<div class="figure">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <img src="images/2601.04090/fig_ablation_KL_loss_wan.png" alt="Wan VAE 外观潜分布" loading="lazy">
+    <img src="images/2601.04090/fig_ablation_KL_loss_wo_kl.png" alt="无 KL 的几何潜分布" loading="lazy">
+    <img src="images/2601.04090/fig_ablation_KL_loss_ours.png" alt="有 KL 的几何潜分布" loading="lazy">
+  </div>
+  <div class="caption"><b>图4</b>(论文 Fig.7)潜空间分布可视化:Wan VAE 外观潜(左)/ 无 KL 对齐的几何潜(中,明显偏移)/ 有 KL 对齐的几何潜(右,与外观潜同构)。分布脱节即 Tab.4 中 −4.2 dB 的来源。图片下载自 arXiv HTML。</div>
+</div>
+</section>
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>13.1 横向对比表(固定维度)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td><b>Gen3R(本文)</b></td><td>2026</td><td>1/2/49 帧 ± 相机</td><td>RGB + 深度 + 位姿 + 点云(<b>无 GS</b>)</td><td>FM + 适配器重建/KL(无 3D GT)</td><td>10 数据集 300k+ 场景</td><td>24×H20,8k+21k 步</td><td>50 步扩散,<span class="uncertain">【待核实】</span></td><td><span class="uncertain">【待核实】</span></td><td>Re10K 1-v 20.51 PSNR;CD 最优</td><td class="best">✅ 全量(MIT)</td></tr>
+<tr><td>WVD(复现)</td><td>2025</td><td>单/少图</td><td>RGB + 点云</td><td>LDM 于点云 VAE 潜空间</td><td>同上规模</td><td>—</td><td>—</td><td>—</td><td>Re10K 1-v 17.62;CD 1.6137</td><td class="fail">✗ 未开源(本文复现)</td></tr>
+<tr><td>Aether</td><td>2025</td><td>单/少图</td><td>RGB + 深度 + 位姿</td><td>合成数据 3D 监督</td><td>UE 合成数据</td><td>—</td><td>—</td><td>—</td><td>Re10K 1-v 16.57</td><td class="partial">~ 部分</td></tr>
+<tr><td>Gen3C(<a href="VideoGen-20250305-GEN3C.html">库内</a>)</td><td>2025</td><td>单图 + 轨迹</td><td>RGB + 单目深度</td><td>深度 warp + 修复</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Re10K 1-v 20.26(接近本文)</td><td class="best">✅</td></tr>
+<tr><td>Geometry Forcing</td><td>2025</td><td>单/少图</td><td>RGB 视频</td><td>扩散中间特征对齐全局几何模型</td><td>—</td><td>—</td><td>—</td><td>—</td><td>Re10K 1-v 16.32(弱)</td><td class="best">✅</td></tr>
+<tr><td>LVSM</td><td>2024</td><td>2+ 视图</td><td>像素对齐 3DGS</td><td>渲染损失</td><td>多视角数据集</td><td>—</td><td>快(前馈)</td><td>—</td><td>Re10K 2-v 29.58(插值王)</td><td class="best">✅</td></tr>
+<tr><td>DepthSplat</td><td>2024</td><td>2+ 视图(需成本体)</td><td>像素对齐 3DGS</td><td>渲染损失</td><td>多视角数据集</td><td>—</td><td>快(前馈)</td><td>—</td><td>Re10K 2-v 26.67;遮挡处有洞</td><td class="best">✅</td></tr>
+<tr><td><a href="3D-20251015-FlashWorld.html">FlashWorld</a>(库内)</td><td>2025</td><td>单图/文本 + 轨迹</td><td><b>像素对齐 3DGS(直接渲染资产)</b></td><td>双模式 + DMD2 蒸馏</td><td>多视角 + 海量单图 OOD 共训</td><td>—</td><td class="best">4 步 / 单卡 4~9s</td><td>5B 模型</td><td>WorldScore 均分第一;第三方 Re10K 20.18</td><td class="partial">推理开源,训练申请制</td></tr>
+<tr><td><a href="3D-20250314-VGGT.html">VGGT</a>(库内)</td><td>2025</td><td>1~数百帧</td><td>点云 + 深度 + 位姿</td><td>3D 监督(冻结使用)</td><td>—</td><td>—</td><td>秒级前馈</td><td>~24G 可跑</td><td>重建 CD 与本文互有胜负</td><td class="best">✅</td></tr>
+</table>
+
+<h3>13.2 对比结论(机制层面)</h3>
+<ul>
+<li><b>对 WVD(最相近)</b>:WVD 压缩的是 VGGT 的<b>输出</b>(点云),用图像 VAE 硬编几何分布,压缩即失真(Tab.3 的 1.2080 vs 0.9632 是直接证据);Gen3R 压缩的是 VGGT 的<b>中间 token 流形</b>,信息瓶颈前移到网络内部特征,失真小一个量级(适配器 VAE-only 已接近无损:0.9986 vs 0.9632)。</li>
+<li><b>对 Geometry Forcing</b>:GF 在扩散<b>训练过程</b>中把中间特征拉向重建模型特征——两个分布没有显式对齐,约束弱;Gen3R 在扩散<b>之前</b>就把潜空间对齐好(KL),DiT 只需学一个同构空间(论文 §4.2 原文:"GF aligns intermediate diffusion features ... during training, which is less effective in practice",Tab.1 数据支持:16.32 vs 20.51)。</li>
+<li><b>对 LVSM / DepthSplat(重建派)</b>:插值设定赢不了前馈重建(2-view 输 2.53 dB),但它们出不了遮挡区域内容;Gen3R 能<b>生成</b>未观测区域(Fig.4 空洞补全)。两者是互补关系。</li>
+<li><b>对 FlashWorld</b>:第三方同协议评测(OneWorld,见 <a href="3D-20251015-FlashWorld.html">FlashWorld 笔记 §15.4</a>)两者 Re10K 仅差 0.09 dB(20.18 vs 20.09,Gen3R 自报 20.51 存在 +0.42 dB 自评偏差),真正差异在<b>产物形态与速度</b>:FlashWorld 4 步直出可渲染 3DGS,Gen3R 50 步出几何真值(深度/位姿/点云)但不给 GS。</li>
+</ul>
+
+<h3>13.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>SDS / 逐帧外扩优化</td><td>DreamFusion、LucidDreamer</td><td>2D 扩散先验</td><td>几何差、优化贵</td></tr>
+<tr><td>多视角生成 + 重建后接</td><td>MVDream→3DGS、本文 2-Stage 消融</td><td>多视角扩散</td><td>误差级联(本文 Tab.4 实证)</td></tr>
+<tr><td>几何中心 3D VAE + 潜空间扩散</td><td>WVD、Aether</td><td>从头学 3D 潜空间</td><td>3D GT 稀缺、VAE 失真</td></tr>
+<tr><td><b>重建模型 token 即几何潜空间</b></td><td><b>Gen3R(本文)</b></td><td>VGGT 流形 + 视频扩散先验,双空间 KL 对齐</td><td>无显式可渲染表示(无 GS);静态场景假设;49 帧/560² 上限</td></tr>
+<tr><td>视频扩散直出 3DGS + 少步蒸馏</td><td><a href="3D-20251015-FlashWorld.html">FlashWorld</a>、<a href="3D-20251211-SHARP.html">SHARP</a>(库内)</td><td>像素对齐高斯 + DMD2</td><td>几何无显式真值、质量受蒸馏限制</td></tr>
+<tr><td>纯前馈重建(无生成)</td><td><a href="3D-20250314-VGGT.html">VGGT</a>、<a href="3D-20250717-Pi3.html">Pi3</a>(库内)</td><td>大规模 3D 监督</td><td>不能补全未观测区域</td></tr>
+</table>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性(重点:几何 → 3DGS 桥接)</h2>
+
+<h3>14.1 对「输入视频生成几何」的直接评估</h3>
+<p>Gen3R 的 <code>allview</code> 模式就是"视频进、几何出":一段视频(≤49 帧) → <code>pcds.ply</code>(全局点云)+ <code>cameras.json</code>(49 组内外参)+ 逐帧深度(取消注释后)+ 重建 RGB。相比直接跑 <a href="3D-20250314-VGGT.html">VGGT</a>/<a href="3D-20250717-Pi3.html">Pi3</a>,它的增量价值是<b>生成先验带来的几何去噪与缺失补全</b>(Fig.5:VGGT 的漂浮点被清掉);代价是 50 步扩散的耗时与结果随机性(seed 固定可复现)。</p>
+
+<h3>14.2 不生成 3DGS 怎么办:三条桥接路线</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph R1["路线A:点云初始化 + 光度优化(零模型改动,推荐先试)"]
+        A1["Gen3R allview<br/>pcds.ply + cameras.json + rgb.mp4"] --> A2["以 PLY 点初始化 3DGS<br/>颜色取对应像素"]
+        A2 --> A3["固定/微调位姿<br/>对49帧生成RGB做光度优化"]
+        A3 --> A4["可渲染 3DGS 资产"]
+    end
+    subgraph R2["路线B:像素对齐 GS 初始化(更贴合,需小改)"]
+        B1["取消深度保存注释<br/>拿 depth+K+E 逐像素反投影"] --> B2["每像素一个高斯<br/>(类 FlashWorld 解码器做法)"]
+        B2 --> B3["同样的光度优化"]
+    end
+    subgraph R3["路线C:Gen3R 当老师生成新视角,重建成片"]
+        C1["1view/2view 模式沿目标轨迹<br/>生成49个新视角+几何"] --> C2["生成的RGB+位姿喂给<br/>3DGS/LVSM 式重建"]
+    end
+    style R1 fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style R2 fill:#eff6ff,stroke:#3b82f6,color:#1e3a5f
+    style R3 fill:#fff7ed,stroke:#d97706,color:#78350f
+</div>
+
+<div class="callout tip"><b>桥接要点与自检:</b>
+<ul>
+<li><b>几何-外观错位风险</b>:RGB 与深度来自<b>两个独立解码器</b>(Wan VAE / VGGT 头),训练时无任何逐像素对齐损失(§8)。初始化 GS 前建议自检:把 <code>pcds.ply</code> 按 <code>cameras.json</code> 投影回某帧,与该帧 RGB 边缘对比——错位明显时路线 A 的颜色初始化会把错位烙进高斯。<span class="uncertain">【待核实】错位幅度的实测数据(论文与仓库均无此项评估)。</span></li>
+<li><b>尺度与坐标系</b>:输出为 VGGT 任意尺度;GS 优化本身能吸收整体尺度,但与外部(如 COLMAP/SfM)结果对齐需相似变换。</li>
+<li><b>监督视角密度</b>:49 个视角对 3DGS 优化偏少(常规 COLMAP 管线 100+ 视角);好在 Gen3R 能<b>沿任意轨迹再生成新视角</b>(1view 模式以重建帧为条件),可用来增密监督——这是它相对纯重建方法的独特价值。</li>
+<li><b>置信度要用起来</b>:DPT 头第二返回值就是逐像素 conf(<code>dpt_head.py:157-159</code>),改两行代码即可在初始化时滤掉低置信高斯。</li>
+</ul>
+</div>
+
+<h3>14.3 对 vggt_human 类人体视频 pipeline 的适用性判断</h3>
+<div class="callout red"><b>⚠️ 静态场景假设是硬边界:</b>Gen3R 的全部几何监督与训练数据都是静态多视角;<b>运动中的人体违反多视图一致性假设</b>,扩散先验会把"人动了"解释成"几何长这样",输出的深度/点云在动态区域不可信。可能的分工:用 SAM3 person mask 把人剔掉后,Gen3R 只负责<b>背景场景(scene_gs 底座)</b>的几何与补全——这与 vggt_human 现有的拆分架构天然兼容;人体本体仍走 3DMM/逐人高斯路线。<span class="uncertain">【待核实】该分工需实测,Gen3R 训练集中含 Waymo/KITTI 街景(有少量动态目标被当噪声处理),对带人视频的行为无法从论文推断。</span></div>
+
+<h3>14.4 资源与集成成本</h3>
+<table>
+<tr><th>项</th><th>评估</th></tr>
+<tr><td>单卡 3090(24G)可行性</td><td><span class="uncertain">【待核实】</span>权重 bf16 合计 ≈17~18GB(含 umt5-xxl 5.6B),pipeline 带 cpu offload 钩子(<code>pipeline_gen3r.py:171</code>);建议先按 offload 方案试跑,显存不足时把文本编码器常驻 CPU</td></tr>
+<tr><td>单场景耗时</td><td><span class="uncertain">【待核实】</span>论文/仓库均未报告;50 步 × 31.9k token 的 1.3B DiT + VGGT 双解码,量级估计分钟级,离线资产生产可用、在线交互不可行</td></tr>
+<tr><td>接入难度</td><td>低:单条 <code>python infer.py --task allview --frame_path video.mp4</code>;输出 PLY + JSON,无需格式转换即可进 3DGS 训练器</td></tr>
+<tr><td>训练复现门槛</td><td>高:10 数据集需自行整理为 nerfstudio 式目录;官方配置 24×H20,单卡仅作参考(脚本已给单卡参数)</td></tr>
+</table>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<div class="grid-2">
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>1. [高] RGB-几何双解码器无逐像素对齐约束 → 3DGS 桥接的最大隐患</h4>
+<p><b>问题:</b>联合潜变量在宽度拼接后,<code>decode_latents</code> 直接 <code>latents.chunk(2, dim=-1)</code> 分两路独立解码(<code>pipeline_gen3r.py:439, 454</code>),扩散损失对两半一视同仁(<code>train_dit.py:1612</code>),<b>全链路没有一条损失约束"第 i 个像素的颜色与深度必须自洽"</b>。论文也从未评估 RGB-深度逐像素一致性。<b>改进:</b>① 加一条重投影一致性损失(用生成的 K/E/depth 把 RGB 帧 warp 到邻帧);② 或训练一个共享解码头。短期替代:桥接前做点云投影自检(§14.2)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>2. [高] 49 帧 / 560² 硬上限,长视频无窗口化机制</h4>
+<p><b>问题:</b><code>infer.py:232</code> 无条件截前 49 帧;<code>infer.py:289</code> 分辨率写死 560;没有任何跨窗口的位姿/点云缝合逻辑。<b>改进:</b>滑窗 + 重叠段相似变换配准(VGGT 系的 <a href="3D-20250717-Pi3.html">Pi3</a>/CUT3R 已有成熟做法可借);分辨率侧可先超分输入或改 RoPE 插值,<span class="uncertain">【待核实】未见官方讨论</span>。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>3. [中] 相机信息在解码端被过度压缩</h4>
+<p><b>问题:</b><code>convert_to_token_list</code> 把相机 token 在空间维<b>取均值再重复 5 份</b>(<code>common_utils.py:123</code>),4 层 token 共享同一份均值相机信息;位置稍异的微调相机估计无从表达。<b>改进:</b>保留逐 patch 相机 token 或加相机专用的轻量 adapter 头;<span class="uncertain">【推测】这是重建位姿 AUC 略输 VGGT(Tab.9)的可能原因之一</span>。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>4. [中] 置信度产出被白白丢弃</h4>
+<p><b>问题:</b>DPT 头原生返回 (pred, conf)(<code>dpt_head.py:157-159</code>),pipeline 两处 <code>depth_maps, _ = ...</code>、<code>point_maps, _ = ...</code> 直接丢弃(<code>pipeline_gen3r.py:447-448</code>),点云过滤只剩体素降采样与 80 分位截断(<code>common_utils.py:134-150</code>)。<b>改进:</b>导出 conf 并用于 GS 初始化过滤/加权监督,改动 <10 行。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>5. [中] 评估缺口:无 RGB-几何一致性、无长程/动态评估</h4>
+<p><b>问题:</b>几何只在 Co3Dv2/WildRGB-D/TartanAir 评 CD,位姿只在 Re10K/WildRGB-D 评 AUC;<b>没有任何指标回答"生成的深度和生成的 RGB 是不是同一个场景"</b>;动态场景完全缺席。<b>改进:</b>补 RGB→depth 渲染重投影误差指标;补动态数据集上的失败案例分析。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--green)">
+<h4>6. [低] 50 步未蒸馏,离实时很远</h4>
+<p><b>问题:</b>推理 50 步全量 CFG(双流 → 每步 2×31.9k token)。<b>改进:</b>库内已有成熟路线可迁移——<a href="ImageGen-20240523-DMD2.html">DMD2</a> 少步蒸馏、<a href="3D-20251015-FlashWorld.html">FlashWorld</a> 的跨模式蒸馏;<span class="uncertain">【推测】压到 8 步内、单场景 10s 级是合理目标</span>。</p>
+</div>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>改进点</th><th>维度</th><th>优先级</th><th>代码/实验佐证</th></tr>
+<tr><td>RGB-几何逐像素对齐损失</td><td>方法层面</td><td class="fail">高</td><td><code>pipeline_gen3r.py:439</code>;训练无跨模态损失</td></tr>
+<tr><td>长视频窗口化 + 位姿缝合</td><td>工程实用性</td><td class="fail">高</td><td><code>infer.py:232</code> 硬截断</td></tr>
+<tr><td>相机 token 去均值化</td><td>方法层面</td><td>中</td><td><code>common_utils.py:123</code>;Tab.9 位姿略输 VGGT</td></tr>
+<tr><td>导出并使用置信度</td><td>工程实用性</td><td>中</td><td><code>dpt_head.py:157-159</code> vs <code>pipeline_gen3r.py:447-448</code></td></tr>
+<tr><td>RGB-深度一致性评估</td><td>数据与评估</td><td>中</td><td>论文无此指标</td></tr>
+<tr><td>少步蒸馏</td><td>工程实用性</td><td>低</td><td>50 步默认值</td></tr>
+</table>
+
+<p><b>个人认为最关键的三点:</b>①(对齐损失)决定它能不能直接进 3DGS 管线;②(窗口化)决定它能不能处理真实拍摄的长素材;④(置信度导出)是性价比最高的即改即赚项——VGGT 系模型在弱纹理/遮挡处的 conf 已经很有区分度。</p>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+
+<p><b>Gen3R 的本质贡献是一个视角转换:</b>3D 生成的瓶颈不是"怎么设计 3D VAE",而是"承认重建基础模型的 token 流形已经是最好的几何潜空间"。把 VGGT 重铸为非对称几何 VAE + KL 对齐 + 宽度拼接联合扩散,三个组件都不复杂,但组合出的模型第一次让「生成 RGB」与「生成几何」在同一个去噪过程里互相校准——消融里 2-Stage 管线 −3.13 dB 的差距就是这个"校准"的价格。</p>
+
+<p><b>对本库场景的意义:</b>它是<a href="3D-20251015-FlashWorld.html">FlashWorld</a>(要速度、要 3DGS、要秒级)与 <a href="3D-20250314-VGGT.html">VGGT</a>(要确定性、要稠密帧)之间的<b>第三极:要几何质量与缺失补全,能接受分钟级</b>。在 vggt_human 语境下,它最合适的角色是<b>静态背景的生成式重建器</b>(配 SAM3 掩码剔人),输出的深度+位姿+点云经 §14.2 路线 A/B 桥接进 3DGS;动态人体区域不应交给它。</p>
+
+<div class="callout warn"><b>⚠️ 遗留核实项:</b>单卡推理显存/耗时(§10.4);RGB-深度逐像素错位幅度(§14.2);≠49 帧输入的行为(§10.5-1);带动态人物视频的实际表现(§14.3)。建议在 3090 上做一次 allview 冒烟测试后再定集成方案。</div>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队与资源链接</h2>
+
+<ul>
+<li><b>作者:</b>Jiaxin Huang(一作,浙大,<a href="https://jaceyhuang.github.io/" target="_blank">主页</a>)· Yuanbo Yang · Bangbang Yang · Lin Ma · Yuewen Ma · Yiyi Liao(通讯,浙大)</li>
+<li><b>机构:</b>浙江大学 · 字节跳动;受 NSFC 62441223 资助</li>
+<li><b>📄 arXiv:</b><a href="https://arxiv.org/abs/2601.04090" target="_blank">2601.04090</a>(v1 2026-01-07,v2 2026-03-23,CC BY 4.0)</li>
+<li><b>💻 代码:</b><a href="https://github.com/JaceyHuang/Gen3R" target="_blank">JaceyHuang/Gen3R</a>(MIT;推理 + 训练全量)</li>
+<li><b>🤗 权重:</b><a href="https://huggingface.co/JaceyH919/Gen3R" target="_blank">JaceyH919/Gen3R</a>(需本地 clone 加载)</li>
+<li><b>🏠 项目页:</b><a href="https://xdimlab.github.io/Gen3R/" target="_blank">xdimlab.github.io/Gen3R</a></li>
+<li><b>底座:</b>Wan2.1-Fun-V1.1-1.3B-Control-Camera(<a href="VideoGen-20250326-Wan2.1.html">Wan2.1 库内笔记</a>)+ facebook/VGGT-1B(<a href="3D-20250314-VGGT.html">VGGT 库内笔记</a>)</li>
+</ul>
+
+<div class="note">
+<b>本笔记的信息来源与核实范围:</b>论文 arXiv HTML v2 全文(正文 + 附录 §6~8,全部表格数字逐格转录);官方 GitHub 仓库 <code>git clone --depth 1</code> 逐文件实读(<code>infer.py</code> / <code>pipeline_gen3r.py</code> / <code>geometry_adapter.py</code> / <code>train_dit.py</code> / <code>train_geo_adapter_pl.py</code> / <code>common_utils.py</code> / <code>dpt_head.py</code>,文中 file:line 均可回查);HF 仓库文件清单与 <code>transformer/config.json</code>、<code>geo_adapter/config.json</code>、<code>scheduler/scheduler_config.json</code>(经 hf-mirror 拉取);arXiv abs 页(版本史与 comments)。相对变化百分比均按表格原始值手算复核(§11、§12)。标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文/源码直接佐证的推断。推理显存与耗时论文、README 均未给出,未编造数字。
+</div>
+</section>
+
+</div>
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-17 · 领域: 3D 重建/生成 · arXiv 2601.04090 · Gen3R</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

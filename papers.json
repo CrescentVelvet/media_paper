@@ -3051,6 +3051,68 @@
       ]
     },
     {
+      "title": "Gen3R: 3D 场景生成 × 前馈重建的潜空间联姻 — 输入视频直接出几何",
+      "meta": [
+        "📄 arXiv: 2601.04090",
+        "📅 2026-01-07",
+        "🏢 浙江大学 · 字节跳动",
+        "✅ 全量开源(推理+训练代码+权重,MIT)"
+      ],
+      "tags": [
+        "3D Scene Generation",
+        "Video Diffusion Prior",
+        "VGGT Latent",
+        "Geometry Adapter",
+        "Joint Latent",
+        "Point Cloud + Pose + Depth",
+        "Feed-forward Reconstruction",
+        "Wan2.1-1.3B"
+      ],
+      "summary": "浙大+字节:把 <strong>VGGT 重铸成非对称几何 VAE</strong>(轻量因果卷积适配器把第 4/11/17/23 层 token 压成 16ch 几何潜,与 Wan VAE 外观潜做 KL 分布对齐),两潜空间沿宽度拼接进 Wan2.1-1.3B DiT 联合扩散,一次前向同出 RGB 视频 + 深度 + 相机内外参 + 全局点云。1-view 生成 Re10K PSNR 20.51 最优、几何 CD 比最强基线 WVD 低 31.5%;KL 消融缺失时 PSNR 掉 4.2 dB。支持 1view/2view/全序列重建(allview=视频进几何出)三种模式;静态场景假设是硬边界,动态人体不适用。推理 50 步、49 帧/560² 上限,权重 bf16 ≈17-18GB(3090 待实测)。不出 3DGS,需经点云/像素对齐初始化桥接(笔记 §14.2 给三条路线)。GitHub/OpenReview 无会议标注(abs comments 为空),按规范不加 badge。",
+      "links": [
+        {
+          "href": "3D-20260107-Gen3R.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2601.04090",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/JaceyHuang/Gen3R",
+          "text": "💻 GitHub"
+        }
+      ],
+      "file": "3D-20260107-Gen3R.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "3D 生成",
+        "视频扩散先验用于 3D",
+        "前馈式大重建模型"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17"
+      ]
+    },
+    {
       "title": "TripoSplat: Generative 3D Gaussians with Learned Density Control",
       "meta": [
         "📄 arXiv: 2605.16355",
