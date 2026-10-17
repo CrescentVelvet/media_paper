@@ -126,7 +126,7 @@ li{margin-bottom:6px}
     <li><a href="#s12">⚙️ 工程实现细节(源码级)</a></li>
     <li><a href="#s13">实验结果</a></li>
     <li><a href="#s14">消融实验</a></li>
-    <li><a href="#s15">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🔄 同类方法对比分析(含 GLD / Gen3R 正面对比)</a></li>
     <li><a href="#s16">🎯 应用场景与落地适配性</a></li>
     <li><a href="#s17">可改进方向分析</a></li>
     <li><a href="#s18">总结与演进定位</a></li>
@@ -738,7 +738,69 @@ flowchart TD
 <tr><td>MV-oriented 两阶段</td><td>CAT3D、DimensionX、GenXD、Bolt3D、Wonderland</td><td>多视角/视频扩散先验</td><td>视角间无 3D 约束 → 重建噪声;两阶段慢</td></tr>
 <tr><td>3D-oriented 渲染在环</td><td>DMV3D、Dual3D、Director3D、DiffusionGS、Cycle3D</td><td>可微渲染 = 硬一致性约束</td><td>数据稀缺导致模糊;需逐场景精修</td></tr>
 <tr><td><b>跨模式蒸馏(本文)</b></td><td><b>FlashWorld</b></td><td>视频扩散先验 + MV/3D 双模式互蒸馏</td><td>静态场景;24 视角固定;教师质量即上限</td></tr>
+<tr><td>几何潜空间 NVS</td><td><a href="https://arxiv.org/abs/2603.22275" target="_blank">GLD</a>(2026.03)</td><td>几何基础模型特征空间(DA3 / VGGT)当 latent</td><td>只做稀疏视图 NVS;无文本、无场景补全;采样 66s</td></tr>
+<tr><td>重建-生成联合 latent</td><td><a href="https://arxiv.org/abs/2601.04090" target="_blank">Gen3R</a>(2026.01)</td><td>VGGT 几何 token 与 Wan 视频 latent 对齐后联合生成</td><td>输出是点云而非 3DGS,不能实时渲染;需已知/估计位姿</td></tr>
 <tr><td>长程自回归(下一步)</td><td><a href="3D-20260414-Lyra2.html">Lyra 2.0</a>、<a href="3D-20260903-OctWorld.html">OctWorld</a>(库内)</td><td>显式 3D 记忆/缓存</td><td>视频输出为主,非显式场景资产</td></tr>
+</table>
+
+<h3>15.4 与 GLD / Gen3R 的正面对比(2026-10 补充)</h3>
+
+<div class="callout key"><b>结论先行(两句):</b><br>
+① <b>对 Gen3R:「略强」成立,但不是代差。</b>唯一同协议第三方评测(OneWorld,arXiv 2603.16099,Tab.2/Tab.3)里 FlashWorld 在 Re10K/DL3DV 的 PSNR/SSIM/LPIPS 三指标与 WorldScore-Indoor 六项上<b>全部小胜</b>,领先幅度 PSNR +0.09 dB、SSIM +0.010、LPIPS −0.013 —— 属于同档位内的抖动,不能支撑「明显更强」。<br>
+② <b>对 GLD:「比 GLD 强」这句话没有依据。</b>两篇论文<b>互不引用</b>(对两篇 HTML 全文做字符串检索,FlashWorld 在 GLD 中出现 0 次、在 Gen3R 中出现 0 次),GLD 也<b>不是同类任务</b>(给定 1~4 个已知视角 + 目标位姿做 NVS,输出 RGB/深度/点云,不支持文本、不生成轨迹、不产 3DGS 资产)。把 20.18 与 GLD 的 13.50 / 16.36 并列,是把两种评测口径当成了同一把尺子。<span class="uncertain">【推测】「比 GLD 和 Gen3R 强」的说法最可能源自 OneWorld 的对比表(该表把 FlashWorld 排在 Gen3R 之前),GLD 则是被顺带并入「被超越名单」的误读。</span></div>
+
+<h4>A. 三者定位对比(任务不同,先对齐再比数)</h4>
+<table style="font-size:12.5px">
+<tr><th>维度</th><th>FlashWorld</th><th>Gen3R(CVPR 2026)</th><th>GLD(ECCV 2026)</th></tr>
+<tr><td>任务定义</td><td><b>开放域 3D 场景生成</b>:单图或纯文本 → 可漫游场景</td><td><b>条件式场景生成</b>:1 视图或首末 2 视图 → RGB 视频 + 全局几何</td><td><b>新视角合成(NVS)</b>:1/2/4 个已知视角 + 目标位姿 → 目标视角 RGB + 深度</td></tr>
+<tr><td>输出表示</td><td>像素对齐 <b>3DGS</b>(≈405 万高斯,gsplat 实时渲染,.ply/.spz)</td><td>RGB 视频(49 帧)+ 深度 + 相机位姿 + <b>全局点云</b>(无 splatting)</td><td>目标视角 RGB + 深度 + 反投影<b>点云</b>(逐场景,无显式场景资产)</td></tr>
+<tr><td>底座 / 先验</td><td>Wan2.2-TI2V-5B(视频 DiT,双模式)</td><td>VGGT 几何 encoder + Wan2.1 视频 DiT(联合 latent,输入 36 通道)</td><td>DA3 / VGGT 特征空间当 latent + <b>从零训练</b>的 DiT-DH(无 T2I 预训练)</td></tr>
+<tr><td>训练开销</td><td>预训练 20k + 后训练 10k 步,64×H20,≈5 天</td><td>adapter 15k+6k 步 + DiT 微调 8k 步,24×H20</td><td>8×B200,175k 步(收敛速度比 VAE latent 快 4.4×)</td></tr>
+<tr><td>推理耗时</td><td><b>4 步去噪,9s(H20)/ 7s(A800)/ 4s(H100)</b>;24GB 档 20s</td><td>论文未报耗时(49 帧 Wan2.1 多步采样)</td><td>两级级联采样 <b>66.1s</b> + 解码 0.43s(单 Re10K 场景;测试 GPU 未注明)</td></tr>
+<tr><td>评测指标</td><td>无参考 IQA/CLIP 系 + WorldScore(无 GT 场景)</td><td>PSNR/SSIM/LPIPS + 几何 CD/Acc/Comp + AUC@30</td><td>PSNR/SSIM/LPIPS + <b>ATE/RPE/Reproj/MEt3R</b></td></tr>
+<tr><td>开源程度</td><td>推理代码 + 权重(Apache-2.0);<b>训练代码申请制</b></td><td>代码全开(<code>infer.py</code> / <code>train_dit.py</code> / <code>train_geo_adapter_pl.py</code>,MIT);权重发布状态<span class="uncertain">【待核实】</span></td><td>代码 + HF 权重(Apache-2.0,含 DA3/VGGT 两套 ckpt)</td></tr>
+<tr><td>会议状态</td><td>ICLR 2026 Oral(OpenReview 标注;arXiv comments 无)</td><td>CVPR 2026(第三方页面标注;arXiv comments 仅项目页 → 按本库规范不加 badge)</td><td>ECCV 2026(仓库 badge 标注;arXiv comments 仅项目页 → 不加 badge)</td></tr>
+</table>
+
+<h4>B. 同协议三方数字(OneWorld 统一复现,单图 GT-NVS,Re10K/DL3DV 各 500 场景)</h4>
+<table style="font-size:13px">
+<tr><th>方法</th><th>Re10K PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>DL3DV PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>WS-Indoor 3D Consist.↑</th><th>Photo. Consist.↑</th><th>Subj. Quality↑</th></tr>
+<tr class="best"><td>FlashWorld</td><td><b>20.18</b></td><td><b>0.724</b></td><td><b>0.256</b></td><td><b>16.02</b></td><td><b>0.566</b></td><td><b>0.451</b></td><td><b>83.57</b></td><td><b>80.19</b></td><td><b>54.09</b></td></tr>
+<tr><td>Gen3R</td><td>20.09</td><td>0.714</td><td>0.269</td><td>15.94</td><td>0.557</td><td>0.468</td><td>82.12</td><td>78.83</td><td>52.58</td></tr>
+<tr><td>Gen3R(自报,Tab.1 单视图)</td><td>20.51</td><td>0.7388</td><td>0.2281</td><td>16.38</td><td>0.5821</td><td>0.4234</td><td>—</td><td>—</td><td>—</td></tr>
+</table>
+<div class="note"><b>逐格复核(按原始值手算):</b>① FlashWorld 对 Gen3R 的领先量为 Re10K <b>+0.09 dB / +0.010 / −0.013</b>、DL3DV <b>+0.08 / +0.009 / −0.017</b>,WorldScore-Indoor 六项全胜但幅度只有 +0.7~+1.9 分;② <b>Gen3R 在 I.Q.(成像质量)上反超</b>(Re10K 0.593 vs 0.584,DL3DV 0.543 vs 0.538),"更强"并非全维度成立;③ Gen3R 自报 Re10K 20.51 比 OneWorld 复现值 20.09 高 <b>0.42 dB</b>,这一自评偏差已大于两方法之间的差距(0.09 dB)—— 所以「FlashWorld 比 Gen3R 强」的结论强度,不应超过这条复现偏差。</div>
+
+<h4>C. GLD 的数字为什么不能与上面并列</h4>
+<table style="font-size:13px">
+<tr><th>GLD 设定(原表)</th><th>Re10K PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>ATE↓</th><th>该表基线集</th></tr>
+<tr><td>主设置(双视图,Tab.3)</td><td>16.36</td><td>0.630</td><td>0.431</td><td><b>0.211</b></td><td>MVGenMaster 15.23 / Matrix3D 14.49 / CAMEO 13.80 / CAT3D† 13.35 / VAE 15.66</td></tr>
+<tr><td>N=1(Tab.4)</td><td>13.50</td><td>0.552</td><td>0.541</td><td>0.267</td><td>同表 VAE 12.99 / DINO 13.49</td></tr>
+<tr><td>N=4(Tab.4)</td><td>19.00</td><td>0.696</td><td>0.327</td><td>0.182</td><td>同表 VAE 18.68 / DINO 17.73</td></tr>
+</table>
+<p><b>三条口径差异(缺一不可,否则必然误判):</b></p>
+<ul>
+<li><b>评测任务难度不同(最容易被忽略的一条)</b>:GLD 主实验是 <b>N=2 源视图、每数据集 200 样本</b>,且按<b>插值</b>设定采样(首末帧固定为源视图,目标帧夹在两者之间);OneWorld 的 FlashWorld / Gen3R 数字是<b>单视图条件、500 场景、沿轨迹取目标视角</b>。<b>插值 NVS 天然远易于外推生成</b> —— 两条曲线本来就不在同一难度档上。</li>
+<li><b>分辨率与帧设定不同</b>:GLD 在 504×504(多档纵横比 504×378 / 336 / 280)上评测,FlashWorld 是 480×704 的 24 帧轨迹,Gen3R 是 560×560 的 49 帧。PSNR 对分辨率、压缩率与帧间内容变化都敏感。</li>
+<li><b>预训练先验不同</b>:GLD 的扩散模型是<b>从零训练</b>(无 T2I/T2V 预训练,8×B200 跑 175k 步),其论文的卖点是"用几何潜空间把收敛速度提 4.4×",不是绝对画质;FlashWorld 与 Gen3R 都站在 Wan 系视频先验上。拿从零小模型和 5B 视频先验比 PSNR,比的是"有没有大预训练",不是方法优劣。</li>
+<li><b>评测维度不同</b>:GLD 主报 <b>ATE / RPE / Reproj / MEt3R</b>(几何一致性),而 FlashWorld 只报无参考 IQA/CLIP 系指标,<b>从不报 ATE</b>;Gen3R 报 Chamfer 距离。三者没有一对共同指标可以正面对撞 —— 这也是"谁更强"在这条对比上无法回答的根本原因。</li>
+</ul>
+
+<h4>D. 机制层面:强在哪、弱在哪</h4>
+<div class="grid-2">
+<div class="card"><h4>FlashWorld 在单视图 NVS 上不输 Gen3R 的原因</h4><p style="font-size:14px">FlashWorld 的 3D 模式把"生成"直接压进高斯参数,渲染结果天然共享同一 3D 表示;4 步 DMD2 蒸馏把 MV 教师的高频细节搬到学生上。Gen3R 走的是"几何 latent 与外观 latent 对齐后联合采样",外观仍由 Wan2.1 的 VAE latent 承载,而它只微调了 8k 步 —— <b>外观先验的调用深度不如 FlashWorld 彻底</b>,这解释了它在画质类指标上小幅落后、但在几何类指标上有独立输出。</p></div>
+<div class="card"><h4>Gen3R 真正的领先点:几何是"一等公民"</h4><p style="font-size:14px">Gen3R 把 VGGT 的 4 层 token(第 4/11/17/23 块,C=2048)经 adapter 压成与 Wan latent 同分辨率同维度的几何 latent,用 KL 项对齐后再联合生成,<b>一次采样同时出 RGB 视频 + 深度 + 位姿 + 全局点云</b>。FlashWorld 的深度是渲染副产品、不可控也不报精度;Gen3R 的几何是显式监督、可评测(Co3Dv2 CD 1.10 / TartanAir 2.78)。<b>要做"生成即重建"的下游(点云/网格/位姿初始化),Gen3R 的接口更干净。</b></p></div>
+<div class="card"><h4>GLD 的价值不在跑分,在"潜空间"这一变量</h4><p style="font-size:14px">GLD 是控制变量式研究:固定 DiT 与数据,只换 latent(DA3 level-1 / VGGT / DINO / VAE),证明几何基础模型的特征空间本身编码跨视图对应(注意力层呈强 correspondence),因此收敛快 4.4×、ATE 最多比基线低 2.8×。<b>代价</b>:两级级联采样 66.1s(VAE 28.0s),且只能在已知位姿的目标视角上做 NVS,没有场景补全与轨迹生成能力。</p></div>
+<div class="card"><h4>三者不是替代关系,而是流水线不同环节</h4><p style="font-size:14px">GLD / Gen3R 属于<b>「给定视图 → 反演/合成几何与外观」</b>(输入侧已有时空锚点);FlashWorld 属于<b>「无场景先验 → 开放域造场景」</b>。真正可比的是 Gen3R(同为"从少量视图生成一个 3D 场景"),GLD 只在与"稀疏视图 NVS"这条子任务上可比。<span class="uncertain">【推测】若把 GLD 的几何 latent 作为 FlashWorld 高斯解码器的额外条件(替代/补充 CMC 的低噪锚点),可能同时改善漂浮伪影与几何精度 —— 未见公开工作验证。</span></p></div>
+</div>
+
+<h4>E. 选型结论(落到我们的 pipeline)</h4>
+<table style="font-size:13px">
+<tr><th>需求</th><th>首选</th><th>理由</th></tr>
+<tr><td>要<b>可实时渲染的 3DGS 场景资产</b>,秒级,单卡可跑</td><td><b>FlashWorld</b></td><td>唯一同时满足「4 步 / 9s / 405 万高斯 / 权重开源」;24GB 档 20s 可上 3090</td></tr>
+<tr><td>要<b>从 1~2 张图直接拿几何一致的点云/深度/位姿</b>,且需要能训练</td><td><b>Gen3R</b></td><td>几何显式输出 + 代码全开(MIT,含 <code>train_dit.py</code>);但输出非 3DGS、不能实时渲染</td></tr>
+<tr><td>要研究/复用<b>几何潜空间</b>,或做稀疏视图 NVS 的表示选型</td><td><b>GLD</b></td><td>latent 选型的对照实验最完整;绝对画质与速度都不是它的目标</td></tr>
+<tr><td>要"生成即带位姿可控"的长视频世界</td><td>都不合适</td><td>三者都缺长程记忆;见 §15.3 的 <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> / <a href="3D-20260903-OctWorld.html">OctWorld</a> 路线</td></tr>
 </table>
 </section>
 
@@ -852,11 +914,13 @@ flowchart TD
 <li>🤗 权重:<a href="https://huggingface.co/imlixinyang/FlashWorld" target="_blank">huggingface.co/imlixinyang/FlashWorld</a>(model.ckpt,含 transformer + recon_decoder)</li>
 <li>🎮 在线 Demo:<a href="https://huggingface.co/spaces/imlixinyang/FlashWorld-Demo-Spark" target="_blank">HuggingFace Spaces</a>(免费)</li>
 <li>🏆 OpenReview:<a href="https://openreview.net/forum?id=2IftRjRB07" target="_blank">forum?id=2IftRjRB07</a>(页面标注 ICLR 2026 Oral;arXiv abs comments 未含会议信息,本笔记按规范不加 badge,见 §1)</li>
+<li>📊 对比文献(2026-10 补充,本库未单独建笔记):<a href="https://arxiv.org/abs/2601.04090" target="_blank">Gen3R</a>(2601.04090,v2)· <a href="https://arxiv.org/abs/2603.22275" target="_blank">GLD</a>(2603.22275,v1)· <a href="https://arxiv.org/abs/2603.16099" target="_blank">OneWorld</a>(2603.16099,唯一同时复现 FlashWorld 与 Gen3R 的第三方评测)</li>
 <li>📖 库内关联:<a href="3D-20250923-Lyra.html">Lyra</a>(自蒸馏镜像思想) · <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> / <a href="3D-20260903-OctWorld.html">OctWorld</a>(长程扩展方向) · <a href="3D-20251211-SHARP.html">SHARP</a>(前馈邻近视角) · <a href="ImageGen-20240523-DMD2.html">DMD2</a>(蒸馏底座) · <a href="VideoGen-20250728-Wan2.2.html">Wan2.2</a>(模型底座) · <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">质量-速度 Pareto 调研</a></li>
 </ul>
 
 <div class="note">
-<b>本笔记的信息来源与核实范围:</b>论文 arXiv HTML v1 全文(含 Appendix A–E);官方推理仓库 imlixinyang/FlashWorld(commit 424db44)逐文件实读(app.py / cli.py / models/ / utils.py / quant.py,文中 file:line 均可回查);Wan2.2-TI2V-5B 官方 HF config(VAE/Transformer);GitHub README 与 OpenReview 页面(会议信息)。<b>训练代码未公开(申请制),训练侧超参(Appendix A)无法源码复核,已如实标注。</b>标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文/源码直接佐证的推断。文中全部相对提升数字与平均分均按表格原始值手算复核(§13、§14)。
+<b>本笔记的信息来源与核实范围:</b>论文 arXiv HTML v1 全文(含 Appendix A–E);官方推理仓库 imlixinyang/FlashWorld(commit 424db44)逐文件实读(app.py / cli.py / models/ / utils.py / quant.py,文中 file:line 均可回查);Wan2.2-TI2V-5B 官方 HF config(VAE/Transformer);GitHub README 与 OpenReview 页面(会议信息)。<b>训练代码未公开(申请制),训练侧超参(Appendix A)无法源码复核,已如实标注。</b>标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文/源码直接佐证的推断。文中全部相对提升数字与平均分均按表格原始值手算复核(§13、§14)。<br>
+<b>§15.4 对比章节的核实范围(2026-10-17 补):</b>Gen3R 与 GLD 均<b>未单独调研</b>,只取其论文原文数据用于对比:Gen3R arXiv 2601.04090v2 的 Table 1(单/双视图外观指标)与 §4.1 训练配置;GLD arXiv 2603.22275v1 的 Table 3/4(2D+3D 指标)与 Appendix D.2(Table 15 推理延迟);同协议数字取自 OneWorld arXiv 2603.16099 的 Table 2/3(该文用同一套 500 场景协议同时复现了 FlashWorld 与 Gen3R)。已对两篇 HTML 全文做字符串检索,确认<b>均未提及 FlashWorld</b>(各 0 次),因此不存在两篇作者自述的"FlashWorld 更强"。Gen3R 代码仓库(JaceyHuang/Gen3R,MIT)与 GLD 仓库(cvlab-kaist/GLD)均实测可访问;Gen3R 权重发布状态未核实。
 </div>
 </section>
 

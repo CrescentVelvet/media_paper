@@ -2000,7 +2000,7 @@ tr:nth-child(even) { background: var(--code-bg); }
         </div>
 
         <div class="note-card" data-file="3D-20251015-FlashWorld.html" data-kind="note" data-depth="deep"
-              data-topics="3D 生成|视频扩散先验用于 3D|质量速度权衡与实时" data-search="FlashWorld: 秒级高质量 3D 场景生成 — 双模式预训练 + 跨模式蒸馏 3D Scene Generation 3DGS Video Diffusion Prior DMD2 Distillation Dual-Mode Wan2.2-5B Few-step Pixel-aligned Gaussians 厦大+腾讯的 3D 场景生成模型:单图/文本 + 给定相机轨迹,4 步去噪直出 24 视角像素对齐 3DGS(约 405 万高斯),单卡 H20 9s / A800 7s。核心配方:在 Wan2.2-TI2V-5B 视频扩散上同时训练 MV-oriented(高质量但不一致)与 3D-oriented(一致但模糊)双模式,再以 MV 模式为冻结教师、3D 模式为少步学生做跨模式 DMD2 蒸馏(+GAN 与 CMC 跨模式一致性损失治漂浮伪影),并用海量单图 + 随机轨迹做 OOD 共训提升开放域泛化。T3Bench/DL3DV/WorldScore 三子集 Q-Align/CLIP 系指标全面领先 Director3D(7min)/Prometheus(15s),WorldScore 平均分 68.72 第一。推理代码与权重开源。GitHub/OpenReview 标注 ICLR 2026 Oral(arXiv abs comments 未含,按规范不加 badge)。">
+              data-topics="3D 生成|视频扩散先验用于 3D|质量速度权衡与实时" data-search="FlashWorld: 秒级高质量 3D 场景生成 — 双模式预训练 + 跨模式蒸馏 3D Scene Generation 3DGS Video Diffusion Prior DMD2 Distillation Dual-Mode Wan2.2-5B Few-step Pixel-aligned Gaussians 厦大+腾讯的 3D 场景生成模型:单图/文本 + 给定相机轨迹,4 步去噪直出 24 视角像素对齐 3DGS(约 405 万高斯),单卡 H20 9s / A800 7s。核心配方:在 Wan2.2-TI2V-5B 视频扩散上同时训练 MV-oriented(高质量但不一致)与 3D-oriented(一致但模糊)双模式,再以 MV 模式为冻结教师、3D 模式为少步学生做跨模式 DMD2 蒸馏(+GAN 与 CMC 跨模式一致性损失治漂浮伪影),并用海量单图 + 随机轨迹做 OOD 共训提升开放域泛化。T3Bench/DL3DV/WorldScore 三子集 Q-Align/CLIP 系指标全面领先 Director3D(7min)/Prometheus(15s),WorldScore 平均分 68.72 第一。推理代码与权重开源。GitHub/OpenReview 标注 ICLR 2026 Oral(arXiv abs comments 未含,按规范不加 badge)。 2026-10 补:GLD / Gen3R 正面对比 —— 唯一同协议第三方评测(OneWorld,2603.16099)中 FlashWorld 对 Gen3R 小幅领先(Re10K PSNR 20.18 vs 20.09,WorldScore-Indoor 六项全胜),差距仅 0.09 dB 量级;GLD(2603.22275)是稀疏视图 NVS + 几何潜空间研究,与本文非同类任务、两篇互不引用,「比 GLD 强」无同口径依据。">
             <h3>66. FlashWorld: 秒级高质量 3D 场景生成 — 双模式预训练 + 跨模式蒸馏</h3>
             <div class="meta">
                 <span>📄 arXiv: 2510.13678</span>
@@ -2020,7 +2020,7 @@ tr:nth-child(even) { background: var(--code-bg); }
                 <span class="tag">Few-step</span>
                 <span class="tag">Pixel-aligned Gaussians</span>
             </div>
-            <p>厦大+腾讯的 3D 场景生成模型:单图/文本 + 给定相机轨迹,<strong>4 步去噪直出 24 视角像素对齐 3DGS(约 405 万高斯)</strong>,单卡 H20 9s / A800 7s。核心配方:在 Wan2.2-TI2V-5B 视频扩散上同时训练 MV-oriented(高质量但不一致)与 3D-oriented(一致但模糊)双模式,再以 MV 模式为冻结教师、3D 模式为少步学生做<strong>跨模式 DMD2 蒸馏</strong>(+GAN 与 CMC 跨模式一致性损失治漂浮伪影),并用海量单图 + 随机轨迹做 OOD 共训提升开放域泛化。T3Bench/DL3DV/WorldScore 三子集 Q-Align/CLIP 系指标全面领先 Director3D(7min)/Prometheus(15s),WorldScore 平均分 68.72 第一。推理代码与权重开源。GitHub/OpenReview 标注 ICLR 2026 Oral(arXiv abs comments 未含,按规范不加 badge)。</p>
+            <p>厦大+腾讯的 3D 场景生成模型:单图/文本 + 给定相机轨迹,<strong>4 步去噪直出 24 视角像素对齐 3DGS(约 405 万高斯)</strong>,单卡 H20 9s / A800 7s。核心配方:在 Wan2.2-TI2V-5B 视频扩散上同时训练 MV-oriented(高质量但不一致)与 3D-oriented(一致但模糊)双模式,再以 MV 模式为冻结教师、3D 模式为少步学生做<strong>跨模式 DMD2 蒸馏</strong>(+GAN 与 CMC 跨模式一致性损失治漂浮伪影),并用海量单图 + 随机轨迹做 OOD 共训提升开放域泛化。T3Bench/DL3DV/WorldScore 三子集 Q-Align/CLIP 系指标全面领先 Director3D(7min)/Prometheus(15s),WorldScore 平均分 68.72 第一。推理代码与权重开源。GitHub/OpenReview 标注 ICLR 2026 Oral(arXiv abs comments 未含,按规范不加 badge)。 2026-10 补:GLD / Gen3R 正面对比 —— 唯一同协议第三方评测(OneWorld,2603.16099)中 FlashWorld 对 Gen3R 小幅领先(Re10K PSNR 20.18 vs 20.09,WorldScore-Indoor 六项全胜),差距仅 0.09 dB 量级;GLD(2603.22275)是稀疏视图 NVS + 几何潜空间研究,与本文非同类任务、两篇互不引用,「比 GLD 强」无同口径依据。</p>
             <a href="3D-20251015-FlashWorld.html">📖 阅读笔记</a>
             <a href="https://arxiv.org/abs/2510.13678" target="_blank">📄 arXiv</a>
             <a href="https://github.com/imlixinyang/FlashWorld" target="_blank">💻 GitHub</a>
@@ -2818,7 +2818,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-10-16 · 涵盖 93 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-10-17 · 涵盖 93 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
