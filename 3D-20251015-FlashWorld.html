@@ -739,7 +739,7 @@ flowchart TD
 <tr><td>3D-oriented 渲染在环</td><td>DMV3D、Dual3D、Director3D、DiffusionGS、Cycle3D</td><td>可微渲染 = 硬一致性约束</td><td>数据稀缺导致模糊;需逐场景精修</td></tr>
 <tr><td><b>跨模式蒸馏(本文)</b></td><td><b>FlashWorld</b></td><td>视频扩散先验 + MV/3D 双模式互蒸馏</td><td>静态场景;24 视角固定;教师质量即上限</td></tr>
 <tr><td>几何潜空间 NVS</td><td><a href="https://arxiv.org/abs/2603.22275" target="_blank">GLD</a>(2026.03)</td><td>几何基础模型特征空间(DA3 / VGGT)当 latent</td><td>只做稀疏视图 NVS;无文本、无场景补全;采样 66s</td></tr>
-<tr><td>重建-生成联合 latent</td><td><a href="https://arxiv.org/abs/2601.04090" target="_blank">Gen3R</a>(2026.01)</td><td>VGGT 几何 token 与 Wan 视频 latent 对齐后联合生成</td><td>输出是点云而非 3DGS,不能实时渲染;需已知/估计位姿</td></tr>
+<tr><td>重建-生成联合 latent</td><td><a href="3D-20260107-Gen3R.html">Gen3R</a>(2026.01,库内笔记)</td><td>VGGT 几何 token 与 Wan 视频 latent 对齐后联合生成</td><td>输出是点云而非 3DGS,不能实时渲染;需已知/估计位姿</td></tr>
 <tr><td>长程自回归(下一步)</td><td><a href="3D-20260414-Lyra2.html">Lyra 2.0</a>、<a href="3D-20260903-OctWorld.html">OctWorld</a>(库内)</td><td>显式 3D 记忆/缓存</td><td>视频输出为主,非显式场景资产</td></tr>
 </table>
 
@@ -758,7 +758,7 @@ flowchart TD
 <tr><td>训练开销</td><td>预训练 20k + 后训练 10k 步,64×H20,≈5 天</td><td>adapter 15k+6k 步 + DiT 微调 8k 步,24×H20</td><td>8×B200,175k 步(收敛速度比 VAE latent 快 4.4×)</td></tr>
 <tr><td>推理耗时</td><td><b>4 步去噪,9s(H20)/ 7s(A800)/ 4s(H100)</b>;24GB 档 20s</td><td>论文未报耗时(49 帧 Wan2.1 多步采样)</td><td>两级级联采样 <b>66.1s</b> + 解码 0.43s(单 Re10K 场景;测试 GPU 未注明)</td></tr>
 <tr><td>评测指标</td><td>无参考 IQA/CLIP 系 + WorldScore(无 GT 场景)</td><td>PSNR/SSIM/LPIPS + 几何 CD/Acc/Comp + AUC@30</td><td>PSNR/SSIM/LPIPS + <b>ATE/RPE/Reproj/MEt3R</b></td></tr>
-<tr><td>开源程度</td><td>推理代码 + 权重(Apache-2.0);<b>训练代码申请制</b></td><td>代码全开(<code>infer.py</code> / <code>train_dit.py</code> / <code>train_geo_adapter_pl.py</code>,MIT);权重发布状态<span class="uncertain">【待核实】</span></td><td>代码 + HF 权重(Apache-2.0,含 DA3/VGGT 两套 ckpt)</td></tr>
+<tr><td>开源程度</td><td>推理代码 + 权重(Apache-2.0);<b>训练代码申请制</b></td><td>代码全开(<code>infer.py</code> / <code>train_dit.py</code> / <code>train_geo_adapter_pl.py</code>,MIT);HF 权重已发布(2026-10-17 复核,<a href="3D-20260107-Gen3R.html">Gen3R 笔记</a>)</td><td>代码 + HF 权重(Apache-2.0,含 DA3/VGGT 两套 ckpt)</td></tr>
 <tr><td>会议状态</td><td>ICLR 2026 Oral(OpenReview 标注;arXiv comments 无)</td><td>CVPR 2026(第三方页面标注;arXiv comments 仅项目页 → 按本库规范不加 badge)</td><td>ECCV 2026(仓库 badge 标注;arXiv comments 仅项目页 → 不加 badge)</td></tr>
 </table>
 
@@ -920,7 +920,7 @@ flowchart TD
 
 <div class="note">
 <b>本笔记的信息来源与核实范围:</b>论文 arXiv HTML v1 全文(含 Appendix A–E);官方推理仓库 imlixinyang/FlashWorld(commit 424db44)逐文件实读(app.py / cli.py / models/ / utils.py / quant.py,文中 file:line 均可回查);Wan2.2-TI2V-5B 官方 HF config(VAE/Transformer);GitHub README 与 OpenReview 页面(会议信息)。<b>训练代码未公开(申请制),训练侧超参(Appendix A)无法源码复核,已如实标注。</b>标注 <span class="uncertain">【推测】/【待核实】</span> 处为无原文/源码直接佐证的推断。文中全部相对提升数字与平均分均按表格原始值手算复核(§13、§14)。<br>
-<b>§15.4 对比章节的核实范围(2026-10-17 补):</b>Gen3R 与 GLD 均<b>未单独调研</b>,只取其论文原文数据用于对比:Gen3R arXiv 2601.04090v2 的 Table 1(单/双视图外观指标)与 §4.1 训练配置;GLD arXiv 2603.22275v1 的 Table 3/4(2D+3D 指标)与 Appendix D.2(Table 15 推理延迟);同协议数字取自 OneWorld arXiv 2603.16099 的 Table 2/3(该文用同一套 500 场景协议同时复现了 FlashWorld 与 Gen3R)。已对两篇 HTML 全文做字符串检索,确认<b>均未提及 FlashWorld</b>(各 0 次),因此不存在两篇作者自述的"FlashWorld 更强"。Gen3R 代码仓库(JaceyHuang/Gen3R,MIT)与 GLD 仓库(cvlab-kaist/GLD)均实测可访问;Gen3R 权重发布状态未核实。
+<b>§15.4 对比章节的核实范围(2026-10-17 补):</b>Gen3R 与 GLD 均<b>未单独调研</b>,只取其论文原文数据用于对比:Gen3R arXiv 2601.04090v2 的 Table 1(单/双视图外观指标)与 §4.1 训练配置;GLD arXiv 2603.22275v1 的 Table 3/4(2D+3D 指标)与 Appendix D.2(Table 15 推理延迟);同协议数字取自 OneWorld arXiv 2603.16099 的 Table 2/3(该文用同一套 500 场景协议同时复现了 FlashWorld 与 Gen3R)。已对两篇 HTML 全文做字符串检索,确认<b>均未提及 FlashWorld</b>(各 0 次),因此不存在两篇作者自述的"FlashWorld 更强"。Gen3R 代码仓库(JaceyHuang/Gen3R,MIT)与 GLD 仓库(cvlab-kaist/GLD)均实测可访问。2026-10-17 复核:Gen3R HF 权重(JaceyH919/Gen3R)已发布,详见 <a href="3D-20260107-Gen3R.html">Gen3R 库内笔记</a>。
 </div>
 </section>
 
