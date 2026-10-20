@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VideoToWorld: 从不一致生成视频重建 3D 世界 — 非刚性 ICP 对齐 + 逆变形 2DGS</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure video{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+.imgrow{display:grid;gap:10px;margin:10px 0}
+.imgrow img{width:100%;border-radius:8px;border:1px solid var(--border)}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2603.16736 · 2026-03-17 · TUM Visual Computing · 重建侧非刚性对齐</span>
+    <h1>VideoToWorld:从不一致生成视频重建 3D 世界</h1>
+    <div class="subtitle">World Reconstruction From Inconsistent Views</div>
+    <div class="authors">Lukas Höllein · Matthias Nießner</div>
+    <div class="org">Technical University of Munich (TUM), Visual Computing & AI Lab</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2603.16736" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2603.16736v2" target="_blank">🌐 arXiv HTML 全文 (v2)</a>
+      <a href="https://github.com/lukasHoel/video_to_world" target="_blank">💻 GitHub(MIT,已开源)</a>
+      <a href="https://lukashoel.github.io/video_to_world/" target="_blank">🏠 项目主页</a>
+      <a href="https://www.youtube.com/watch?v=qXnUwhVmBzA" target="_blank">🎬 演示视频</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:生成漂移</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">阶段一:GFM 场景初始化与体素置信度过滤</a></li>
+    <li><a href="#s5">阶段二 A:非刚性 frame-to-model ICP</a></li>
+    <li><a href="#s6">阶段二 B:全局非刚性优化</a></li>
+    <li><a href="#s7">阶段三 A:逆变形场训练</a></li>
+    <li><a href="#s8">阶段三 B:非刚性感知 2DGS 优化</a></li>
+    <li><a href="#s9">损失函数总表与逻辑流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要与核心贡献</h2>
+
+<p>论文要解决的问题:<strong>相机可控的视频扩散模型(VDM)生成的视频虽然视觉上可信,但帧与帧之间在 3D 上并不一致(作者称之为 generative drift,生成漂移)</strong> —— 同一面墙、同一扇窗在不同帧里位置/形状会轻微扭曲。直接把这种视频交给任何假设多视角一致性的重建器(COLMAP / 3DGS / 前馈 GFM),都会产生浮空伪影、多重表面、模糊纹理。既有路线都在<b>生成侧</b>下功夫(相机条件、3D cache 重投影、一致性微调),成本高且仍消除不了漂移。本文反其道而行:<b>承认"生成模型不可能完美一致",把一致性责任整体移到重建侧</b> —— 用一套轻量的、逐场景(per-scene)的非刚性几何对齐 + 非刚性感知的 2DGS 优化,把任意 VDM 变成可靠的 3D 世界生成器。</p>
+
+<div class="callout key">
+<b>一句话核心贡献:</b>把 VDM 生成视频的几何不一致显式建模为<b>逐帧非刚性形变</b> —— 先用几何基础模型(DepthAnything-3)把每帧提升为带置信度的点云并做体素化过滤;再用<b>定制的非刚性迭代 frame-to-model ICP</b>(hashgrid MLP 预测 se(3) twist 形变场 + RoMa 稀疏对应 + ARAP 式 TV 正则)把 N 帧点云焊进同一个 canonical 空间,接一轮全局联合优化把表面"削薄";最后训练一个<b>视角条件的逆变形场</b>,渲染前把 canonical 高斯"逆变形回"各帧的(不一致)坐标系再算光度损失 —— 从而用不一致的图像集训出一个 3D 一致、可实时自由探索的 2DGS 世界。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">79.29</div><div class="l">3D 一致性 (WorldScore)<br>DA3 69.53 / VGGT-X† 69.66</div></div>
+  <div class="stat"><div class="v">86.59</div><div class="l">光度一致性<br>DA3 71.62 / VGGT-X† 67.05</div></div>
+  <div class="stat"><div class="v">25 min</div><div class="l">对齐阶段耗时 (N=50 帧)<br>20GB @ 单卡 A6000</div></div>
+  <div class="stat"><div class="v">10 min</div><div class="l">2DGS 训练 (≈1.5M 高斯)<br>8GB,5000 迭代</div></div>
+</div>
+
+<div class="callout warn">
+<b>发表状态:</b>arXiv v1 提交于 2026-03-17,v2 于 2026-03-18。<b>abs 页 comments 字段只有项目页/视频/代码三个链接,没有会议接收信息</b>,按本库规范不标会议 badge。项目页 BibTeX 的 booktitle 字段写着 "European Conference on Computer Vision (ECCV), 2026",另有中文二手博客称其为 CVPR 2026 —— 两者口径互相矛盾且均无官方佐证,<span class="uncertain">⚠️【待核实】以后续正式接收信息为准</span>。
+</div>
+
+<p><b>为什么这篇值得精读:</b>它是"生成视频 → 3D"这条链路里<b>重建侧兜底路线</b>目前最完整的一个公开实现(代码 MIT 全开源),思路与库内已收录的生成侧路线(<a href="3D-20251015-FlashWorld.html">FlashWorld</a>、<a href="3D-20260107-Gen3R.html">Gen3R</a>、<a href="3D-20260414-Lyra2.html">Lyra 2.0</a>)正好构成对立两极;其"用可学习的非刚性形变场吸收观测不一致"的机制,对任何"多观测不完全对齐"的重建场景(包括人体跨帧微动)都有直接可迁移性。</p>
+
+<div class="figure">
+<video controls muted loop preload="metadata"><source src="images/2603.16736/teaser.mp4" type="video/mp4"></video>
+<div class="caption"><b>图1</b> 官方 teaser(项目页演示视频,arXiv HTML 版 Figure 1 为视频拼版、LaTeXML 未导出位图,故以项目页视频替代)。输入:VDM 生成的不一致帧;中:本文非刚性对齐后的点云;右:对齐点云初始化 2DGS 后的新视角渲染,可在场景中自由漫游。</div>
+</div>
+
+<div class="figure">
+<img src="images/2603.16736/method.png" alt="method overview" loading="lazy">
+<div class="caption"><b>图2</b> 论文 Figure 2 方法总览:三阶段 pipeline —— ① 用几何基础模型(DA3)估计逐帧深度与相机,反投影得到<b>未对齐</b>的稠密点云(可见多层错位表面);② 非刚性几何对齐(迭代 frame-to-model ICP + 全局优化)把表面收敛成单层锐利结构;③ 以对齐点云初始化、配合逆变形渲染损失训练 2DGS,得到可实时探索的一致 3D 世界。</div>
+</div>
+
+</section>
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:生成漂移(Generative Drift)</h2>
+
+<h3>问题的具体失败模式(不是"效果不好"这种空话)</h3>
+<p>让相机可控的 VDM 绕着一个房间转一圈,人眼看着每帧都合理,但几何上:<b>第 10 帧的窗比第 1 帧略宽、桌子的位置随帧轻微漂移、重访已见区域时纹理甚至物体都会变</b>。论文把这种退化命名为 generative drift。它对重建的破坏是结构性的:</p>
+<div class="grid-3">
+  <div class="card"><h4>多重错位表面</h4><p>GFM(如 DA3)逐帧反投影出的点云里,同一物理表面在不同帧的预测彼此错位,形成"厚"的多层壳。刚性对齐(VGGT-X 这类 BA 式方法)无法消除,因为错位本身不是刚性的。</p></div>
+  <div class="card"><h4>浮空伪影</h4><p>直接训 3DGS 时,优化器被迫用额外的漂浮高斯去"解释"同一物体在不同帧里的位置冲突,新视角下立刻露馅。</p></div>
+  <div class="card"><h4>纹理糊化</h4><p>高斯位置在多个冲突观测间取平均,表面"摊开"变厚,纹理被平均成模糊。</p></div>
+</div>
+
+<h3>既有三条路线及其局限(作者的问题切分)</h3>
+<table>
+<tr><th>路线</th><th>代表</th><th>失效模式 / 代价</th></tr>
+<tr><td>① 相机轨迹条件生成</td><td>SEVA、Gen3C、ViewCrafter(Plücker 嵌入或 3D cache 重投影)</td><td>即使显式建模多视角控制,<b>生成漂移仍然存在</b>:帧不跟随输入相机、物体几何跨帧扭曲(论文引 [88] 的观察)</td></tr>
+<tr><td>② 一致性微调 / RGB-D 联合生成</td><td>Voyager 等,在生成模型训练里加 3D 一致目标</td><td>每个模型都要昂贵的重新训练;论文附录 0.E.1 实测 Voyager 的 RGB-D 输出 lift 后<b>依然有重叠错位表面</b></td></tr>
+<tr><td>③ 长时程自回归保持上下文</td><td>Genie3 等分钟级 rollout</td><td>推理算力巨大、撞上下文上限;一致性随 rollout 长度衰减</td></tr>
+</table>
+
+<div class="callout key">
+<b>核心洞察(作者的关键假设):</b>生成模型<b>不可能做到完全 3D 一致</b>,与其继续堆生成侧的训练成本,不如在重建侧把漂移当作"已知的非刚性观测误差"显式建模。这实质上是把动态场景重建(DynamicFusion / 4DGS 一系)的数学工具借用到"静态场景的不一致观测"上:<b>每帧被当作同一个 canonical 场景的一次轻微非刚性形变观测</b>,对齐问题就变成了带形变场的 frame-to-model 配准。
+</div>
+
+<h3>假设的失效条件(论文自陈)</h3>
+<div class="callout red">
+<b>对齐救不了"改写"型幻觉。</b>漂移(物体位置/形状的连续扭曲)可以用连续形变场吸收;但 VDM 重访区域时<b>凭空生成新物体</b>(附录 0.D 的例子:一盏路灯突然出现在重访帧里)属于离散的内容改变,对齐会把幻觉物体同样对齐进 canonical 几何,光度优化则在所有视角间取平均,使幻觉在两个视角都可见(见 §15 图10 分析)。论文指出可引入鲁棒重建机制检测 outlier 帧,但本文未实现。
+</div>
+
+<h3>定位:与库内"生成侧一致性"路线的对极</h3>
+<p>库内已有多篇在<b>生成侧</b>解决一致性:<a href="3D-20251015-FlashWorld.html">FlashWorld</a>(跨视角联合生成)、<a href="3D-20260107-Gen3R.html">Gen3R</a>(潜空间生成×重建联姻)、<a href="3D-20260414-Lyra2.html">Lyra 2.0</a> 与 <a href="3D-20260903-OctWorld.html">OctWorld</a>(3D 记忆/缓存维持长程一致),谱系梳理见 <a href="VideoGen-20260427-视频生成几何一致性调研.html">视频生成几何一致性调研</a>。本文是唯一一篇<b>不动生成模型、纯重建侧 per-scene 优化</b>的工作 —— 这使它天然与所有生成侧方法正交、可叠加。</p>
+
+</section>
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>输入 / 输出定义</h3>
+<table>
+<tr><th></th><th>内容</th><th>形状 / 规模</th></tr>
+<tr><td><b>输入</b></td><td>VDM 生成的视频序列 $\mathbf{V}=\{\mathbf{I}_i\}_{i=0}^{N}$(文本或相机轨迹条件;可多条序列自回归拼成大场景)</td><td>$\mathbf{I}_i\in\mathbb{R}^{3\times H\times W}$;论文实验 $N{=}50$(代码默认从原序列 stride=2 抽 50 帧,<code>configs/common.py:22-24</code>)</td></tr>
+<tr><td><b>输出</b></td><td>canonical 空间的 2DGS 场景 $\mathcal{G}$(位置/旋转/scale/不透明度/SH 颜色),可实时任意视角渲染</td><td>论文 §4.1:约 1.5M 高斯(代码默认上限 4M,<code>configs/stage3_gs.py:44</code>)</td></tr>
+</table>
+
+<h3>三阶段划分</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: VDM 生成视频 (可相机轨迹条件)"] --> S0
+    subgraph S0["阶段一: GFM 场景初始化 (§3.1)"]
+        A1["DepthAnything-3<br/>逐帧 depth + conf + 相机"] --> A2["反投影成逐帧点云"]
+        A2 --> A3["体素化置信度过滤<br/>(体素局部分位数 + 占据计数)"]
+    end
+    S0 --> S1
+    subgraph S1["阶段二: 非刚性几何对齐 (§3.2)"]
+        B1["逐帧 frame-to-model ICP<br/>hashgrid MLP 预测 se(3) twist<br/>+ RoMa 稀疏对应 + color ICP + TV"] --> B2["MAD 自适应离群剔除<br/>体素并入 canonical 模型"]
+        B2 --> B3["全局联合优化<br/>LOO 一致性 + anchor 防退化"]
+    end
+    S1 --> S2
+    subgraph S2["阶段三: 非刚性感知 2DGS (§3.3)"]
+        C1["训练逆变形场 F_inv<br/>(视角条件 hashgrid MLP)"] --> C2["canonical 点云初始化 2DGS<br/>(法线定向 / kNN 定 scale)"]
+        C2 --> C3["渲染前逆变形回各帧坐标系<br/>光度损失 L1 + LPIPS"]
+    end
+    S2 --> OUT["输出: 3D 一致、可实时探索的 2DGS 世界"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style S0 fill:#eff6ff,stroke:#93c5fd,color:#1e3a5f
+    style S1 fill:#f5f3ff,stroke:#c4b5fd,color:#4c1d95
+    style S2 fill:#ecfdf5,stroke:#6ee7b7,color:#065f46
+</div>
+
+<h3>符号表(与论文原文一致)</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 备注</th></tr>
+<tr><td>$\mathbf{I}_i$</td><td>第 $i$ 帧生成图像</td><td>$[3,H,W]$,RGB</td></tr>
+<tr><td>$\mathbf{d}_i,\mathbf{c}_i$</td><td>GFM 预测的逐像素深度与置信度</td><td>$[H,W]$;代码注意:DA3 输出的是 camera z-depth 而非射线距离(<code>data/data_loading.py:713-718</code>)</td></tr>
+<tr><td>$\mathbf{R}_i,\mathbf{t}_i,\mathbf{K}_i$</td><td>第 $i$ 帧 pinhole 相机外参与内参</td><td>$[3,3],[3],[3,3]$</td></tr>
+<tr><td>$\bar{\mathcal{P}},\mathcal{P}$</td><td>反投影原始点云 / 体素过滤后的点云</td><td>每帧 $[M_i,3]$,带颜色 $\mathcal{C}$</td></tr>
+<tr><td>$\mathbf{v}_k,s_{\text{vox}}$</td><td>点 $k$ 所属体素索引 / 体素边长</td><td>$\mathbf{v}_k=\lfloor\mathbf{p}_k/s_{\text{vox}}\rfloor$</td></tr>
+<tr><td>$\mathcal{P}[j]$</td><td>canonical 模型点云(以第 0 帧为基)</td><td>逐帧 ICP 后不断并入增长</td></tr>
+<tr><td>$\mathcal{F}_{\theta_k}$</td><td>第 $k$ 帧的非刚性形变场(hashgrid MLP)</td><td>输入 $[M,3]$ → 输出 twist $\xi\in\mathbb{R}^6$</td></tr>
+<tr><td>$\xi,\;T(\mathbf{p})=\exp(\xi^\wedge)$</td><td>se(3) twist 坐标及其指数映射</td><td>逐点刚体变换 $(\mathbf{R}_p,\mathbf{t}_p)\in\mathrm{SE}(3)$</td></tr>
+<tr><td>$d_{\max}$</td><td>ICP inlier 距离阈值</td><td>论文 §4.1 报 $[5,3]$ cm 两档;代码实际单档 3 cm(见 §10 差异表)</td></tr>
+<tr><td>$\mathcal{F}^{-1}_{\theta_{\text{inv}}}$</td><td>逆变形场(canonical → 各帧相机系)</td><td>共享权重,条件于可学习 view embedding(32 维)</td></tr>
+<tr><td>$\mathcal{G}$</td><td>2DGS 高斯集合(位置/旋转/scale/opacity/SH)</td><td>约 1.5M 个(论文)</td></tr>
+</table>
+
+<div class="callout tip">
+<b>一个关键的参数化决定(源码佐证):</b>每帧的<b>全局刚体变换就是该帧的 c2w 外参本身</b>(以 SE(3) twist 优化),局部非刚性残差由 DeformationGrid 在<b>相机系</b>内处理;第 0 帧冻结作为 gauge fix 定义 canonical 空间(<code>frame_to_model_icp.py:7-13</code> 文件头注释)。这避免了"刚体+形变"分解的歧义性 —— 形变场只需学习刚性配准之后的残差。
+</div>
+
+</section>
+<section class="section" id="s4">
+<h2><span class="num">4</span>阶段一:GFM 场景初始化与体素置信度过滤</h2>
+
+<h3>① 前向流程(数据如何流动)</h3>
+<ol>
+<li><b>几何基础模型逐帧预测</b>:用预训练的 metric <b>DepthAnything-3</b>(代码默认权重 <code>depth-anything/DA3NESTED-GIANT-LARGE</code>,<code>preprocess_video.py:104-109</code>)对全部 $N$ 帧一次前向,输出逐帧深度、置信度与相机:<br>
+$$\{\mathbf{d}_i,\mathbf{c}_i,\mathbf{R}_i,\mathbf{t}_i,\mathbf{K}_i\}_{i=0}^{N}=\mathcal{F}_{\text{GFM}}(\mathbf{V}) \tag{式1}$$
+对相机可控 VDM,把已知轨迹条件进 GFM 取深度与置信度。此步<b>无可训练参数</b>。</li>
+<li><b>反投影为彩色点云</b>:<br>
+$$\mathbf{p}_i^{\text{cam}}(u,v)=\mathbf{K}_i^{-1}[u,v,1]^{T}\cdot\mathbf{d}_i(u,v),\quad \bar{\mathcal{P}}=\{\mathbf{R}_i\mathbf{p}_i^{\text{cam}}+\mathbf{t}_i\}_{i=0}^{N},\quad \mathcal{C}=\{\mathbf{I}_i(u,v)\}_{i=0}^{N} \tag{式2}$$
+源码实现在 <code>data/data_loading.py:97-167</code>,有效像素要求深度有限且 $&gt;0$。</li>
+<li><b>体素化置信度过滤</b>(本文设计,替代全局阈值):<br>
+$$\tau_{\text{loc}}[v]=\mathrm{perc}\big(\{\mathbf{c}_k:\mathbf{v}_k=v\},\theta_{\text{loc}}\big),\quad \tau_{\text{cnt}}=\mathrm{perc}\big(\{\mathrm{count}[v]\},\theta_{\text{cnt}}\big)$$
+$$\mathcal{P}=\{\mathbf{p}_k:\mathbf{c}_k\geq\tau_{\text{loc}}[\mathbf{v}_k]\;\wedge\;\mathrm{count}[\mathbf{v}_k]\geq\tau_{\text{cnt}}\}$$
+即<b>每个体素内部</b>按置信度分位数决定保留谁(而不是全场景一刀切),并丢弃占据点数过少的体素。</li>
+</ol>
+
+<h3>② 为什么必须是体素级过滤(机制解释)</h3>
+<p>全局置信度阈值存在两难(附录 0.C.1):阈值低了,物体之间拉出"面条状"伪影,后续 ICP 的最近邻对应被污染;阈值高了,灯、窗户等重要内容被整个删掉,到 2DGS 阶段只能靠 densification 补 —— 而 densification 引入的新高斯<b>不在对齐过的几何上</b>,会重新引入漂浮物。体素级过滤让"保留"决策局部化:每个空间区域都留下自己内部最可靠的一批点,于是全场景密度均匀,<b>下游完全不需要 densification</b>。这是"对齐优先"策略的基石。</p>
+
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(5,1fr)">
+<img src="images/2603.16736/conf_global0.jpeg" loading="lazy" alt="global 0">
+<img src="images/2603.16736/conf_global10.jpeg" loading="lazy" alt="global 10">
+<img src="images/2603.16736/conf_global20.jpeg" loading="lazy" alt="global 20">
+<img src="images/2603.16736/conf_global40.jpeg" loading="lazy" alt="global 40">
+<img src="images/2603.16736/conf_ours.jpeg" loading="lazy" alt="voxel ours">
+</div>
+<div class="caption"><b>图3</b> 论文 Figure A3:全局置信度阈值(0 / 10 / 20 / 40 分位)vs 本文体素化过滤(最右)。阈值过低残留拉伸伪影,过高删掉灯与窗户;体素方案在"保内容"与"去伪影"间取得平衡。(5 张并列,来源 arXiv HTML)</div>
+</div>
+
+<h3>③ 源码级实现与论文的差异(⚠️ 此处开始均有 file:line)</h3>
+<table>
+<tr><th>项目</th><th>论文表述(§3.1/§4.1)</th><th>代码实际</th></tr>
+<tr><td>局部置信度分位</td><td>$\theta_{\text{loc}}=15$</td><td><code>conf_thresh_percentile=80</code>(体素内保留 top 20%,<code>configs/common.py:26</code>);另有一路宽松分支 <code>conf_local_percentile=10</code></td></tr>
+<tr><td>占据计数分位</td><td>$\theta_{\text{cnt}}=50$</td><td>一致:<code>conf_voxel_min_count_percentile=50</code>(丢弃计数低于中位数的体素,<code>configs/common.py:31</code>)</td></tr>
+<tr><td>过滤模式</td><td>单一规则</td><td><code>conf_mode="voxel_or"</code>:<b>两条分支取并集</b> —— (a) voxel_guided 宽松(global 10 / local 10),(b) plain voxel 严格(local 80 + 体素热度)(<code>data/data_loading.py:492-547</code>)</td></tr>
+<tr><td>体素边长</td><td>未给具体值</td><td><code>conf_voxel_size=1.0</code>(世界系单位,<code>configs/common.py:30</code>)</td></tr>
+<tr><td>DA3 深度约定</td><td>未提</td><td>是 <b>camera z-depth</b> 而非射线距离,反投影时直接乘 $K^{-1}[u,v,1]^T$(<code>data/data_loading.py:713-718</code>)</td></tr>
+</table>
+
+<div class="callout warn">
+<b>模块监督信号:</b>本阶段全部使用<b>冻结的预训练 DA3</b>,无任何可训练参数、无损失函数。其质量上限完全取决于 GFM;DA3 在生成图像上的置信度分布与真实图像不同,这正是作者要用体素级(而非全局)阈值的原因。
+</div>
+
+</section>
+<section class="section" id="s5">
+<h2><span class="num">5</span>阶段二 A:非刚性迭代 frame-to-model ICP</h2>
+
+<p>这是全文最核心的模块。目标:把逐帧点云 $\mathcal{P}[k]$ 配准进以第 0 帧为基的 canonical 模型 $\mathcal{P}[j]$(初始即第 0 帧点云),每处理一帧就把通过质检的点并入模型,<b>模型滚动生长</b>。</p>
+
+<h3>① 形变参数化:每帧一个 twist 场</h3>
+<p>对第 $k$ 帧的每个点 $\mathbf{p}$(在其相机系内),形变场 $\mathcal{F}_{\theta_k}$ 输出 6 维 twist 坐标 $\xi$,经指数映射得到逐点刚体变换;再经该帧全局刚体 $(\mathbf{R}_k,\mathbf{t}_k)$(即 c2w):</p>
+<div class="equation">
+$$\mathbf{p}^{\prime}=\mathbf{R}_p\,\mathbf{p}^{\text{cam}}+\mathbf{t}_p,\qquad \bar{\mathcal{P}}[k]=\{\mathbf{R}_k\mathbf{p}^{\prime}+\mathbf{t}_k\,|\,\mathbf{p}\in\mathcal{P}[k]\} \tag{式3}$$
+<span class="tag">先逐点非刚性(相机系),后整帧刚性(c2w)</span>
+</div>
+<table>
+<tr><th colspan="4">DeformationGrid 网络结构(<code>models/deformation.py:53-130</code>,tcnn 实现)</th></tr>
+<tr><td>输入</td><td>$\mathbf{p}\in\mathbb{R}^3$,按帧 bbox 归一化到 $[0,1]^3$</td><td>编码</td><td>HashGrid:16 层 × 2 特征,log2 hash 表 19,分辨率 16→2048 指数增长</td></tr>
+<tr><td>主干</td><td>FullyFusedMLP 64 神经元 × 2 隐层,ReLU</td><td>输出</td><td>$\xi=[\omega;v]\in\mathbb{R}^6$;旋转不缩放,平移按 bbox 尺寸还原到世界尺度</td></tr>
+<tr><td>变换</td><td colspan="3">$\text{se3\_apply}$:Rodrigues 旋转 + 左雅可比 $J\cdot v$ 平移(<code>utils/geometry.py:271-300</code>)</td></tr>
+</table>
+
+<h3>② 能量函数(每帧独立优化 $\mathbf{R}_k,\mathbf{t}_k,\theta_k$,Adam,论文 §4.1:lr=$10^{-3}$)</h3>
+<div class="equation">
+$$E(\mathbf{R}_k,\mathbf{t}_k,\theta_k)=\mathcal{L}_{\text{data}}+\lambda_{\text{color}}\mathcal{L}_{\text{color}}+\lambda_{\text{corr}}\mathcal{L}_{\text{corr}}+\lambda_{\text{tv}}\mathcal{L}_{\text{tv}}$$
+<span class="tag">论文权重:0.05 / 1.0 / 10;代码 TV 实为 50(§10)</span>
+</div>
+<ul>
+<li><b>稠密 point-to-plane 数据项</b>(式4):$$\mathcal{L}_{\text{data}}=\frac{1}{\sum w(\mathbf{p})}\sum_{\mathbf{p}\in\mathcal{P}[k]}w(\mathbf{p})\big((\mathbf{p}^{\prime}-\mathbf{q}_{\text{nn}(j)})\cdot\mathbf{n}_{\text{nn}(j)}\big)^{2}$$ $\mathbf{q}_{\text{nn}(j)}$ 是 $\mathbf{p}'$ 在模型中的最近邻,$\mathbf{n}$ 其法线;inlier 由 $d_{\max}$ 门控(式5)。point-to-plane 允许点沿切平面滑动,只惩罚法向偏差 —— 对"把多层壳压成一层"恰好是对的度量。</li>
+<li><b>颜色 ICP 项</b>(Park et al. 2017 的切平面颜色梯度,$\lambda_{\text{color}}=0.05$):参考侧预计算切平面颜色梯度 $\mathbf{d}_p$,残差 $r_C=(I_p+\mathbf{d}_p\cdot\mathbf{u}_q)-I_q$(<code>algos/non_rigid_icp.py:423-460</code>)。几何之外给纹理边缘一个对齐信号。</li>
+<li><b>RoMa 稀疏对应项</b>($\lambda_{\text{corr}}=1.0$):用 RoMa 匹配器在当前帧与至多 20 个历史帧间采样至多 5000 对 2D 对应,经各自深度 lift 成 3D 点对,certainty 加权:$$\mathcal{L}_{\text{corr}}=\frac{\sum_i w_i\|\mathcal{P}_j[\mathbf{s}_i]-\mathcal{P}_k[\mathbf{t}_i]\|^{2}}{\sum_i w_i} \tag{式6}$$ <b>机制价值</b>:最近邻搜索有 $d_{\max}$ 的捕获半径(代码 3 cm),漂移超过这个距离的表面对最近邻不可见;RoMa 的 2D 语义匹配提供了<b>长程对应</b>,把大错位也拉回盆地。消融(§12)显示去掉它 3D 一致性从 79.79 崩到 65.62,是单项影响最大的组件。代码另有一级距离门控 <code>roma_max_corr_dist=1.0</code>(世界单位,<code>configs/roma.py:17</code>)与全局 certainty 门控(<code>losses/correspondence.py:125-157</code>)。</li>
+<li><b>TV/ARAP 正则</b>($\lambda_{\text{tv}}$ 论文 10 / 代码 50):$$\mathcal{L}_{\text{tv}}=\frac{1}{|\mathcal{P}[k]|}\sum_{\mathbf{p}}\|\mathcal{F}_{\theta_k}(\mathbf{p})-\mathcal{F}_{\theta_k}(\mathbf{p}\pm s_{\text{vox}})\|^{2} \tag{式7}$$ 约束 6 个轴向邻居的 twist 相似 —— 形变场局部近似刚体,防止逐点自由形变把表面"揉碎"。</li>
+</ul>
+
+<h3>③ 迭代与并入(frame-to-model 循环)</h3>
+<div class="mermaid">
+flowchart TD
+    F0["第 0 帧点云 = 初始 canonical 模型 (冻结, gauge fix)"] --> LOOP
+    subgraph LOOP["对 k = 1..N 逐帧"]
+        R0["刚性预对齐: 两尺度 colored ICP<br/>(体素半径 4cm/2cm, 150/70 迭代)<br/>只优化 c2w twist"] --> R1["RoMa: 与 ≤20 个历史帧匹配<br/>≤5000 对 2D 对应 + certainty"]
+        R1 --> R2["非刚性 ICP: 联合优化<br/>c2w twist + DeformationGrid<br/>(≤100 迭代, early stop)"]
+        R2 --> R3["逐点质检: MAD 自适应阈值<br/>(geom σ=2.5 / color σ=1.5, p75 基准)<br/>+ 最差 20% 点剔除"]
+        R3 --> R4["体素并入: 仅写入模型空体素<br/>(voxel 5cm) 更新 KD 树与法线"]
+    end
+    R4 --> OUT["canonical 模型 P[0] + 每帧 {c2w, DeformationGrid}"]
+    style F0 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<div class="note">源码细节:① <b>刚性预对齐是论文未明写的一步</b> —— 先做两尺度纯刚性 colored ICP(4cm/2cm)把 c2w 初始化好,再进非刚性阶段(<code>frame_to_model_icp.py:367-490</code>)。论文"coarse-to-fine、最细尺度才启用非刚性"对应的就是这个结构,但论文报的两档 $d_{\max}=[5,3]$ cm 与代码的 $[4,2]$ cm(刚性)+ $3$ cm(非刚性)<b>数值对不上</b>,见 §10 差异表。② MAD 质检的阈值来自历史帧损失的 p75 分位数 + $\sigma\cdot1.4826\cdot$MAD(<code>frame_to_model_icp.py:116-134</code>);<b>无对应的点永远保留</b>(它们可能是新内容,<code>frame_to_model_icp.py:741-746</code>);代码还额外剔除去重后最差的 20% 点(<code>filter_worst_pct=0.2</code>),这一步论文未提。③ 并入策略是"只填空体素"而非全模型降采样,控制模型规模(<code>frame_to_model_icp.py:892-893</code>)。④ early stopping:任一损失分量仍在改进就继续,连续 5 次无改进且 ≥25 迭代后停止(<code>algos/non_rigid_icp.py:546-576</code>)。</div>
+
+<h3>④ 监督信号</h3>
+<p>本阶段无图像级渲染损失;监督来自<b>几何自洽性</b>(point-to-plane)+ <b>颜色一致性</b>(color ICP)+ <b>2D 匹配先验</b>(RoMa certainty 加权)。全部信号都来自数据本身,不需要任何标注 —— 这是它能套用到任意 VDM 输出的原因。</p>
+
+</section>
+<section class="section" id="s6">
+<h2><span class="num">6</span>阶段二 B:全局非刚性优化</h2>
+
+<h3>动机:frame-to-model 的系统性偏差</h3>
+<p>上一阶段每次只优化第 $k$ 帧去迁就已冻结的模型 —— 误差会单向累积,表面虽然对齐但偏"厚"(论文 §3.2:frame-to-model 优化随时间漂移向"对齐但更厚的表面")。全局阶段把<b>所有帧的相机与形变网络同时放开</b>联合优化(第 0 帧仍冻结),让每个点被多个帧共同拉扯到一致位置。</p>
+
+<h3>能量函数</h3>
+<div class="equation">
+$$E(\{\mathbf{R}_i,\mathbf{t}_i,\theta_i\}_{i=1}^{N})=\mathcal{L}_{\text{data}}^{\text{global}}+\lambda_{\text{color}}\mathcal{L}_{\text{color}}^{\text{global}}+\lambda_{\text{anchor}}\mathcal{L}_{\text{anchor}} \tag{式8}$$
+<span class="tag">论文:100 迭代,λ_anchor=50;代码:150 迭代,λ_anchor=1000(§10)</span>
+</div>
+<p>与逐帧阶段的本质差别在<b>对应搜索</b>:对 canonical 模型中每个点,在<b>其他帧</b>里找 $k{=}5$ 个最近邻(代码:<code>loo_k_neighbors=5</code>,<code>configs/stage2_global_optimization.py:31</code>),梯度同时流向两侧点,"把表面的两边向中间挤",从而使表面变薄。</p>
+<div class="equation">
+$$\mathcal{L}_{\text{anchor}}=\frac{1}{N}\sum_{i=1}^{N}\Big[\frac{1}{M}\sum_{k=1}^{M}\|\mathcal{F}_{\theta_i}(\mathbf{a}_{k,i})-\xi^{(0)}_{k,i}\|^{2}+\|\xi_{g,i}-\xi^{(0)}_{g,i}\|^{2}\Big] \tag{式9}$$
+<span class="tag">锚定到全局优化前的快照,防退化解</span>
+</div>
+
+<h3>源码揭示的两个论文未写明的项</h3>
+<table>
+<tr><th>机制</th><th>内容</th><th>出处</th></tr>
+<tr><td><b>LOO(leave-one-out)一致性</b></td><td>式8 的 $\mathcal{L}_{\text{data}}^{\text{global}}$ 实际实现为:KNN 候选邻居先做 LOO 过滤 —— <b>只保留来自不同帧的邻居</b>(按帧区间判断)且距离 &lt; 3.125 cm;损失是邻居侧 point-to-plane</td><td><code>algos/global_optimization.py:490-541, 599-600</code></td></tr>
+<tr><td><b>thin-shell 项</b>(权重 1000)</td><td>与 LOO 共用同一 KNN 结构的<b>源侧</b> point-to-plane 损失 $((\mathbf{p}_{\text{src}}-\mathbf{p}_{\text{tgt}})\cdot\mathbf{n}_{\text{src}})^2$,显式压薄表面</td><td><code>algos/global_optimization.py:601-603</code>;<code>configs/stage2_global_optimization.py:93</code></td></tr>
+</table>
+<div class="note">工程要点:KD 树/法线每 50 迭代用当前(detached)模型重建一次;每次迭代从全部 LOO 对里重要性采样至多 20 万对(无偏估计全量目标);梯度 nan_to_num + clip 1.0;anchor 在初始化时对每帧 bbox 内均匀采 4096 个点快照 twist(<code>algos/global_optimization.py:341-365, 126-209, 858-890</code>)。TV 在此阶段默认关闭(<code>tv_reg=0.0</code>)。</div>
+
+<h3>监督信号与角色</h3>
+<p>同样无渲染损失,全部信号是跨帧几何/颜色自洽 + 防退化锚定。输出:更薄更锐的 canonical 点云 $\mathcal{P}[0]$,以及每帧最终的 $\{\mathbf{R}_i,\mathbf{t}_i,\mathcal{F}_{\theta_i}\}$ —— 这套"每帧到 canonical 的正向形变"正是下一阶段要反转的对象。</p>
+
+</section>
+<section class="section" id="s7">
+<h2><span class="num">7</span>阶段三 A:逆变形场(Inverse Deformation)训练</h2>
+
+<h3>为什么需要"逆"变形</h3>
+<p>阶段二学到的是<b>正向</b>形变:每帧相机系 → canonical。而 2DGS 训练需要的是反方向:canonical 高斯在渲染第 $i$ 帧时,要先"逆变形回"第 $i$ 帧那个(不一致的)坐标系,光度损失才能在不破坏 canonical 一致性的前提下拟合各帧外观。逐帧正向形变是 $N$ 个独立网络、且只在各自帧的点上有定义,无法直接求逆 —— 于是训练<b>一个共享的、视角条件的逆变形场</b> $\mathcal{F}^{-1}_{\theta_{\text{inv}}}(\mathbf{p},i)$ 来蒸馏这个逆映射。</p>
+
+<h3>网络结构</h3>
+<table>
+<tr><th colspan="2">ViewConditionedInverseDeformation(<code>models/deformation.py:136-258</code>)</th></tr>
+<tr><td>输入</td><td>canonical 点 $\mathbf{p}\in\mathbb{R}^3$(先经 detached 的 $\text{c2w}^{-1}$ 到该帧相机系)+ 帧索引 $i$</td></tr>
+<tr><td>空间编码</td><td>HashGrid 16 层 × 2 特征(log2 表 19,16→2048),输出 32 维</td></tr>
+<tr><td>视角条件</td><td>可学习 <code>nn.Embedding(N, 32)</code>,与空间特征拼接(共 64 维)</td></tr>
+<tr><td>主干</td><td>FullyFusedMLP 64 × <b>3</b> 隐层(比正向网格多一层),ReLU → 6 维 twist</td></tr>
+</table>
+
+<h3>训练目标</h3>
+<p>论文(式11)只有重构项 + TV;源码实际是<b>四项</b>(<code>train_inverse_deformation.py:323-328</code>):</p>
+<div class="equation">
+$$E(\theta_{\text{inv}})=\underbrace{\frac{1}{M}\sum_i\|\hat{\mathbf{p}}^{\text{cam}}_i-\mathbf{p}^{\text{cam}}_i\|^{2}}_{\mathcal{L}_{\text{inverse}}}+\underbrace{0.1\,\mathcal{L}_{\text{cycle}}+10^{-3}\,\mathcal{L}_{\text{magnitude}}+10^{-3}\,\mathcal{L}_{\text{smoothness}}}_{\text{源码附加,论文未列}} \tag{式11'}$$
+</div>
+<table>
+<tr><th>项</th><th>含义</th><th>出处</th></tr>
+<tr><td>$\mathcal{L}_{\text{inverse}}$</td><td>canonical 点经逆变形回相机系后,与正向形变给出的真值配对点的 MSE。配对生成:从各帧相机系采样点,经(冻结的)正向形变到 canonical 得标签;再施式10:$\mathbf{p}'_{\text{inv}}=\mathbf{R}_i^{T}(\mathbf{p}^{(0)}-\mathbf{t}_i)$,$\hat{\mathbf{p}}^{\text{cam}}_i=\mathbf{R}_{\text{inv}}\mathbf{p}'_{\text{inv}}+\mathbf{t}_{\text{inv}}$</td><td><code>train_inverse_deformation.py:47-86, 150-161</code></td></tr>
+<tr><td>$\mathcal{L}_{\text{cycle}}$(0.1)</td><td>canonical → 逆变形到相机系 → 再经冻结正向形变回 canonical,应回到原点(cycle consistency)</td><td><code>train_inverse_deformation.py:164-191</code></td></tr>
+<tr><td>$\mathcal{L}_{\text{magnitude}}$($10^{-3}$)</td><td>逆 twist 的 L2,偏向小形变</td><td><code>train_inverse_deformation.py:194-201</code></td></tr>
+<tr><td>$\mathcal{L}_{\text{smoothness}}$($10^{-3}$)</td><td>对输入加 $\epsilon=0.01$ 高斯扰动,约束 twist 场局部光滑(论文的 $\mathcal{L}_{\text{tv}}$ 的角色)</td><td><code>train_inverse_deformation.py:204-219</code></td></tr>
+</table>
+<div class="note">训练超参(代码):batch 8192,Adam lr $10^{-3}$ + CosineAnnealing,每视角采样 ≤10000 前向对 + ≤5000 个"kNN 插值增强"样本(在 8 近邻里随机选一个做 $t\sim U(0,1)$ 插值,提升场外泛化),每 10 epoch 重生成训练对;epoch 数 fast=15 / extensive=30(<code>configs/stage3_inverse_deformation.py</code>;<code>run_reconstruction.py:290,298</code>)。<b>只有逆网络可训练,正向形变全部冻结</b>。</div>
+
+</section>
+<section class="section" id="s8">
+<h2><span class="num">8</span>阶段三 B:非刚性感知 2DGS 优化</h2>
+
+<h3>① 从对齐点云到 2DGS 初始化</h3>
+<table>
+<tr><th>属性</th><th>初始化方式</th><th>出处 / 备注</th></tr>
+<tr><td>位置</td><td>直接取 canonical 点云 $\mathcal{P}[0]$(论文:子采样到约 1.5M)</td><td>论文 §3.3;代码上限 <code>target_num_points=4M</code></td></tr>
+<tr><td>旋转(朝向)</td><td>用点云估计法线定向 2D 高斯盘</td><td><code>train_gs.py:185-218</code>:由法线构造四元数</td></tr>
+<tr><td>scale</td><td>论文:到 $k{=}10$ 个近邻的平均欧氏距离</td><td>代码:<code>scale_init="knn"</code> 但 <b>K=4</b>,且 z 轴乘 0.1 压扁(<code>initial_flat_ratio=0.1</code>,<code>configs/stage3_gs.py:67-70</code>)</td></tr>
+<tr><td>不透明度</td><td>论文:统一 0.1</td><td>代码默认 <b>0.5</b>(<code>configs/stage3_gs.py:66</code>)</td></tr>
+<tr><td>颜色</td><td>点云 RGB → SH 0 阶系数</td><td><code>canonical_gs_model.py:31-33</code>:$(\mathrm{rgb}-0.5)/C_0$</td></tr>
+</table>
+
+<h3>② 逆变形渲染(全文最巧的一步)</h3>
+<p>直接拿不一致图像 $\{\mathbf{I}_i\}$ 监督 canonical 高斯,会把刚对齐的几何重新"拉散"去拟合漂移。本文的做法:<b>渲染第 $i$ 帧前,先用逆变形场把高斯从 canonical 变到第 $i$ 帧坐标系</b>,再按 2DGS 光栅化:</p>
+<div class="equation">
+$$\mathcal{L}_{\text{rend}}=\frac{1}{N}\sum_{i=0}^{N}\big(\lambda_{1}\|\hat{\mathbf{I}}_i-\mathbf{I}_i\|^{1}+\lambda_{2}\,\text{LPIPS}(\hat{\mathbf{I}}_i,\mathbf{I}_i)\big) \tag{式12}$$
+$$E(\mathcal{G},\{\mathbf{R}_i,\mathbf{t}_i\})=\mathcal{L}_{\text{rend}}+\lambda_{d}\mathcal{L}_{d}+\lambda_{n}\mathcal{L}_{n} \tag{式13}$$
+<span class="tag">λ_d/λ_n 为 2DGS 的深度畸变与法线一致正则</span>
+</div>
+<p>因为式10 完全可微,梯度穿过逆变形场回到 canonical 高斯属性;<b>几何不一致被形变场"因式分解"掉</b>,canonical 表示保持对齐,只学习锐利外观。源码中逐属性的处理(<code>canonical_gs_model.py:510-576</code>):</p>
+<table>
+<tr><th>属性</th><th>渲染时的变换</th></tr>
+<tr><td>位置</td><td>canonical → detached $\text{c2w}^{-1}$ → (冻结的)逆局部变形 → 可微 c2w → 世界系</td></tr>
+<tr><td>旋转</td><td>$R_{\text{total}}=R_{\text{c2w}}R_{\text{inv,local}}R_{\text{inv,global}}$,转四元数后<b>左乘</b>原四元数</td></tr>
+<tr><td>scale</td><td><b>不变换</b>(<code>deformed_scales = scales</code>)—— 形变的尺度分量被丢弃,只迁移位置与朝向</td></tr>
+</table>
+
+<h3>③ 训练协议与"两阶段"细节</h3>
+<ul>
+<li><b>无 densification</b>:论文明确"following 2DGS but without densification"—— 新点会破坏对齐几何(见 §4 机制解释);靠初始化点云的密度直接收敛,论文称"类似 EDGS,几千迭代即收敛"。</li>
+<li><b>相机联合优化</b>:$\{\mathbf{R}_i,\mathbf{t}_i\}$ 以 lr=$10^{-4}$ 微调(第 0 帧冻结);canonical 位置也可优化,lr=$10^{-5}$(<code>configs/stage3_gs.py:47-52</code>)。</li>
+<li><b>SH 分阶段</b>:先只训 0 阶(漫反射);到 5000 迭代后开放高阶 SH(<code>sh_full_from_iter=5000</code>),<b>同时冻结相机与位置</b>,避免把生成漂移动作当成视角相关效果学进 SH —— 论文 §3.3 对此有明确警告(镜面场景才需要第二阶段)。</li>
+<li><b>损失权重(代码)</b>:$0.8\cdot$L1 $+\,0.2\cdot$LPIPS;法线一致 0.05、畸变 0.01;SH 高阶 L2 正则 10.0(<code>configs/stage3_gs.py:74-82</code>)。</li>
+</ul>
+
+<div class="callout key">
+<b>与动态高斯(Deformable-3DGS 一系)的本质区别:</b>4D 方法是"canonical + 每时刻形变 → 解释动态观测",形变网络必须足够强以复现每个时刻;对不一致生成帧,这会让强形变网络<b>从任意 canonical 都能拟合训练视角</b>,canonical 本身反而是乱的(附录 0.B.1 实测:固定时刻渲染"static"视角时浮渣严重,见 §12 图8)。本文的关键是<b>先做显式几何对齐得到真正的 canonical,再让逆变形只负责"解释观测差异"</b> —— 形变能力被对齐阶段预先约束,退化方向被堵死。
+</div>
+
+</section>
+<section class="section" id="s9">
+<h2><span class="num">9</span>损失函数总表与逻辑流程图</h2>
+
+<h3>损失函数总表(权重并列论文值与代码真值,差异见 §10)</h3>
+<table>
+<tr><th>阶段</th><th>损失项</th><th>公式 / 形式</th><th>权重(论文 → 代码)</th><th>作用</th></tr>
+<tr><td>初始化</td><td>体素置信度过滤</td><td>$\tau_{\text{loc}}[v]=\mathrm{perc}(\{c_k:v_k=v\})$,计数 $\geq$ 中位数</td><td>$\theta_{\text{loc}}{=}15$ → 双分支 80/10 + global 10</td><td>保密度去伪影,免 densification</td></tr>
+<tr><td rowspan="4">逐帧 ICP</td><td>$\mathcal{L}_{\text{data}}$</td><td>point-to-plane,$d_{\max}$ 门控(式4-5)</td><td>1.0(主项)</td><td>几何对齐主驱动</td></tr>
+<tr><td>$\mathcal{L}_{\text{color}}$</td><td>Park 切平面颜色梯度(式6 旁)</td><td>0.05 → 0.05</td><td>纹理边缘对齐</td></tr>
+<tr><td>$\mathcal{L}_{\text{corr}}$</td><td>RoMa certainty 加权 3D 对应(式6)</td><td>1.0 → 1.0</td><td>长程对应,突破 $d_{\max}$ 捕获半径</td></tr>
+<tr><td>$\mathcal{L}_{\text{tv}}$</td><td>6 邻域 twist 差(式7)</td><td>10.0 → <b>50.0</b></td><td>ARAP 式局部光滑</td></tr>
+<tr><td rowspan="4">全局优化</td><td>$\mathcal{L}_{\text{data}}^{\text{global}}$</td><td>LOO(跨帧 k=5 近邻)point-to-plane</td><td>1.0 → 1.0</td><td>多帧互拉,表面变薄</td></tr>
+<tr><td>thin-shell</td><td>源侧 point-to-plane(论文未列)</td><td>— → 1000.0</td><td>显式压薄表面</td></tr>
+<tr><td>$\mathcal{L}_{\text{anchor}}$</td><td>twist 快照 MSE(式9)</td><td>50.0 → <b>1000.0</b></td><td>防联合优化退化</td></tr>
+<tr><td>$\mathcal{L}_{\text{color}}^{\text{global}}$</td><td>LOO 颜色 ICP</td><td>0.05 → 0.05</td><td>颜色一致性</td></tr>
+<tr><td rowspan="4">逆变形</td><td>$\mathcal{L}_{\text{inverse}}$</td><td>逆映射重构 MSE(式11)</td><td>1.0</td><td>蒸馏逆形变</td></tr>
+<tr><td>$\mathcal{L}_{\text{cycle}}$</td><td>canonical→cam→canonical 循环一致(论文未列)</td><td>— → 0.1</td><td>正逆互恰</td></tr>
+<tr><td>$\mathcal{L}_{\text{magnitude}}$</td><td>twist 幅值 L2</td><td>— → $10^{-3}$</td><td>小形变偏置</td></tr>
+<tr><td>$\mathcal{L}_{\text{smoothness}}$</td><td>扰动平滑(论文写作 $\mathcal{L}_{\text{tv}}$)</td><td>$\lambda_{\text{tv}}$ → $10^{-3}$</td><td>场光滑</td></tr>
+<tr><td rowspan="3">2DGS</td><td>$\mathcal{L}_{\text{rend}}$</td><td>$0.8\,\text{L1}+0.2\,\text{LPIPS}$(式12,经逆变形渲染)</td><td>0.8/0.2</td><td>外观拟合(不破坏几何)</td></tr>
+<tr><td>$\mathcal{L}_{d}$/$\mathcal{L}_{n}$</td><td>2DGS 畸变 / 法线一致(式13)</td><td>0.01 / 0.05</td><td>面元几何规整</td></tr>
+<tr><td>SH L2</td><td>高阶 SH 系数正则</td><td>10.0</td><td>防漂移被学进视角效果</td></tr>
+</table>
+
+<h3>对齐阶段全流程(训练侧)</h3>
+<div class="mermaid">
+flowchart LR
+    V["VDM 视频"] --> DA3["DA3 前向<br/>depth/conf/相机"]
+    DA3 --> FIL["体素置信度过滤<br/>voxel_or 双分支"]
+    FIL --> M0["模型 = 第0帧 (冻结)"]
+    M0 --> K{"逐帧 k=1..N"}
+    K --> RIG["刚性 colored ICP 初始化<br/>4cm→2cm"]
+    RIG --> ICP["非刚性 ICP<br/>c2w twist + DeformationGrid"]
+    ICP --> QA["MAD 质检 + 最差20%剔除"]
+    QA --> MRG["体素并入模型"]
+    MRG --> K
+    K -->|全部完成| GLO["全局联合优化<br/>LOO + thin-shell + anchor"]
+    GLO --> INV["训练逆变形场<br/>(视角条件 MLP)"]
+    INV --> GS["2DGS 训练<br/>逆变形渲染 + L1/LPIPS"]
+    GS --> OUT["一致 3D 世界"]
+    style V fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>推理 / 漫游流程</h3>
+<div class="mermaid">
+flowchart TD
+    G["训练好的 canonical 2DGS"] --> R{"渲染请求"}
+    R -->|训练视角 i| D1["逆变形场 (冻结)<br/>canonical → 帧 i 空间"] --> RR["2DGS 光栅化"]
+    R -->|自由新视角| D2["直接用 canonical 相机<br/>不施加任何形变"] --> RR
+    RR --> IMG["实时渲染图像<br/>(3D 一致)"]
+    style G fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style IMG fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<div class="note">注意推理时的不对称性:逆变形只在<b>训练</b>时用来解释各训练帧的不一致;漫游渲染直接使用 canonical 场景,形变场完全退出 —— 所以推理开销与普通 2DGS 相同,实时。</div>
+
+</section>
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码级)</h2>
+
+<p>仓库 <a href="https://github.com/lukasHoel/video_to_world">lukasHoel/video_to_world</a>(MIT),2026-10-20 clone 的 main 分支核实。结构清晰:<code>frame_to_model_icp.py</code>(阶段一)/ <code>global_optimization.py</code>(阶段二)/ <code>train_inverse_deformation.py</code> + <code>train_gs.py</code>(阶段三)/ <code>preprocess_video.py</code>(DA3 预处理),一键入口 <code>run_reconstruction.py</code>。</p>
+
+<h3>环境与依赖(README 逐项核实)</h3>
+<table>
+<tr><th>依赖</th><th>版本 / 说明</th></tr>
+<tr><td>Python</td><td>3.10(conda)</td></tr>
+<tr><td>DepthAnything-3</td><td>pin 到 commit <code>2c21ea8</code>,且需打仓库自带 patch(<code>patches/da3-export-trajectory.patch</code>,导出评测用相机轨迹);默认权重 <code>DA3NESTED-GIANT-LARGE</code></td></tr>
+<tr><td>gsplat</td><td>v1.5.3(2DGS/3DGS 光栅化)</td></tr>
+<tr><td>tiny-cuda-nn</td><td>hashgrid 编码(正/逆形变网络)</td></tr>
+<tr><td>RoMaV2</td><td>需打 patch 修 dataclasses 依赖;模型 <code>indoor</code>,certainty 阈值 0.5</td></tr>
+<tr><td>torch_kdtree</td><td>可选 GPU KD 树加速(默认 CPU KD 树)</td></tr>
+<tr><td>版本钉</td><td><code>numpy&lt;2</code>、<code>opencv&lt;4.12</code>(DA3 兼容)</td></tr>
+</table>
+
+<h3>资源账(论文 §4.1 报告值;代码内无跑批日志,<b>未独立复现</b>)</h3>
+<div class="stat-row">
+  <div class="stat"><div class="v">25 min</div><div class="l">对齐两阶段合计(N=50 帧)<br>@ A6000,20GB 显存</div></div>
+  <div class="stat"><div class="v">10 min</div><div class="l">2DGS 训练(约 1.5M 高斯)<br>8GB,5000 迭代</div></div>
+  <div class="stat"><div class="v">+10k iter</div><div class="l">可选第二阶段 SH 优化<br>(镜面场景)</div></div>
+  <div class="stat"><div class="v">~35 min</div><div class="l">单场景端到端(不含 DA3 前向与视频生成)</div></div>
+</div>
+<div class="callout warn"><b>注意:</b>① 以上数字全部来自论文,<span class="uncertain">⚠️【待核实】本地复现</span>;② DA3 GIANT-LARGE 前向是显存大头,README 建议用 <code>--max_frames</code>(默认 100)/<code>--max_stride</code>(默认 8)控制,或换 DA3-Streaming;③ 仓库另提供 <b>fast preset</b>(跳全局优化、逆变形 15 epoch、GS 10k 迭代、仅 3DGS)可再省一半以上时间。</div>
+
+<h3>⚠️ 论文宣称 vs 代码实现差异表(本笔记的核心增量,逐条已核)</h3>
+<table>
+<tr><th>#</th><th>项目</th><th>论文(§3/§4.1)</th><th>代码(file:line)</th></tr>
+<tr><td>1</td><td>TV 正则权重 $\lambda_{\text{tv}}$</td><td>10.0</td><td><b>50.0</b>(<code>configs/stage1_align.py:34</code>),生效无覆盖</td></tr>
+<tr><td>2</td><td>ICP 距离阈值 $d_{\max}$</td><td>[5cm, 3cm] 两档</td><td>刚性预对齐 4cm/2cm(<code>frame_to_model_icp.py:367</code>)+ 非刚性单档 3cm(<code>configs/stage1_align.py:24</code>);<b>代码里不存在 5cm</b></td></tr>
+<tr><td>3</td><td>coarse-to-fine 结构</td><td>渐进缩小 $d_{\max},s_{\text{vox}}$,最细尺度才开非刚性</td><td>多尺度只在<b>刚性</b>预对齐;非刚性 ICP 单尺度全分辨率(<code>frame_to_model_icp.py:367-490 vs 634-680</code>)</td></tr>
+<tr><td>4</td><td>逐帧 ICP 迭代数</td><td>50 和 150</td><td>刚性 [150, 70];非刚性 ≤100 + early stop(<code>configs/stage1_align.py:27-30</code>)</td></tr>
+<tr><td>5</td><td>全局优化迭代 / $\lambda_{\text{anchor}}$</td><td>100 迭代,50.0</td><td><b>150 迭代,1000.0</b>(<code>configs/stage2_global_optimization.py:99, 67</code>)</td></tr>
+<tr><td>6</td><td>全局阶段组成</td><td>data + color + anchor(式8)</td><td>另有 <b>thin-shell(1000.0)</b> 与 LOO 跨帧过滤机制,论文未写(<code>algos/global_optimization.py:846-852</code>)</td></tr>
+<tr><td>7</td><td>置信度过滤</td><td>$\theta_{\text{loc}}=15$,单规则</td><td><b>voxel_or 双分支并集</b>:严格(体素内 80 分位+热度)∪ 宽松(global/local 10)(<code>data/data_loading.py:492-547</code>)</td></tr>
+<tr><td>8</td><td>2DGS 初始化</td><td>不透明度 0.1;scale 用 k=10 近邻</td><td><b>不透明度 0.5</b>(<code>stage3_gs.py:66</code>);<b>k=4</b> + z 轴 ×0.1(<code>stage3_gs.py:68-70</code>)</td></tr>
+<tr><td>9</td><td>高斯数量 / 训练迭代</td><td>约 1.5M;5000 迭代(+可选 10k SH)</td><td>目标上限 <b>4M</b>;迭代 fast 10k / extensive 15k(<code>stage3_gs.py:44, 85</code>;<code>run_reconstruction.py:286-301</code>)</td></tr>
+<tr><td>10</td><td>逆变形损失</td><td>重构 + TV(式11)</td><td>另有 <b>cycle(0.1)、magnitude(1e-3)、smoothness(1e-3)</b>(<code>train_inverse_deformation.py:323-328</code>)</td></tr>
+<tr><td>11</td><td>离群剔除</td><td>MAD 阈值(§3.2)</td><td>MAD 之外还固定剔除逐帧最差 <b>20%</b> 点(<code>configs/stage1_align.py:56</code>),论文未提</td></tr>
+<tr><td>12</td><td>评测协议</td><td>—</td><td>训练内 PSNR 在<b>训练帧</b>上算,无 held-out;<code>eval_gs</code> 只渲染不算指标(<code>train_gs.py:566-621</code>)</td></tr>
+</table>
+<div class="note">整体判断:论文 §4.1 的超参像是<b>较早实验快照</b>,代码是后续调过的版本(差异方向一致:正则更强、迭代更多、过滤更细)。复现应以代码为准;引用论文数字时注意口径。</div>
+
+</section>
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>评测协议:为什么不用 PSNR(设计本身值得学)</h3>
+<p>输入帧本身不一致,传统重建指标(PSNR/SSIM/LPIPS)只会奖励"更好地复现不一致"。论文采用 <b>WorldScore</b> 协议(附录 0.C.2):</p>
+<ul>
+<li><b>3D 一致性</b>:对重建后的重渲染序列跑 DROID-SLAM,测帧间重投影误差;</li>
+<li><b>光度一致性</b>:RAFT 估计相邻帧光流,测 warping 误差;</li>
+<li><b>保真度</b>:CLIP-IQA+ 与 CLIP Aesthetic(无参考图像质量),输入视频帧自身作为上界参考(CLIP-IQA+ 47.39 / Aesthetic 39.04);</li>
+<li>16 个场景(7 种 VDM,每个 2-3 个),每序列均匀抽 100 帧重渲染再评测。</li>
+</ul>
+
+<h3>主结果:单视频 3D 重建(Table 1,跨全部 VDM 平均)</h3>
+<table>
+<tr><th>方法</th><th>3D 一致性 ↑</th><th>光度一致性 ↑</th><th>CLIP-IQA+ ↑</th><th>CLIP Aesthetic ↑</th></tr>
+<tr><td>DA3(点云初始化 + 深度正则的 3DGS)</td><td>69.53</td><td>71.62</td><td>31.64</td><td>36.64</td></tr>
+<tr><td>3DGS-MCMC(随机初始化 + DA3 相机)</td><td>67.34</td><td>69.58</td><td>35.56</td><td>35.06</td></tr>
+<tr><td>VGGT-X(刚性对齐,类 BA)</td><td>65.73</td><td>65.58</td><td>38.21</td><td>37.24</td></tr>
+<tr><td>VGGT-X†(改用 DA3 预测)</td><td>69.66</td><td>67.05</td><td>41.44</td><td>37.53</td></tr>
+<tr class="best"><td>Ours</td><td>79.29</td><td>86.59</td><td>46.56</td><td>37.61</td></tr>
+</table>
+<p><b>结论:</b>3D/光度一致性大幅领先(+9.6 / +14.9 点于最强 baseline);CLIP-IQA+ 46.56 已逼近输入视频上界 47.39 —— 即重建后画质几乎不损失。CLIP Aesthetic 各方法接近(37.24~37.61),该项区分度低。<span class="uncertain">⚠️【待核实】表内数字为论文 Table 1 原文转录,未复现</span>。</p>
+
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(3,1fr)">
+<img src="images/2603.16736/gen_input_matches.jpeg" loading="lazy" alt="input frame with RoMa matches">
+<img src="images/2603.16736/gen_input2.jpeg" loading="lazy" alt="input frame">
+<img src="images/2603.16736/gen_da3.jpeg" loading="lazy" alt="DA3 novel view">
+</div>
+<div class="imgrow" style="grid-template-columns:repeat(3,1fr)">
+<img src="images/2603.16736/gen_3dgs.jpeg" loading="lazy" alt="3DGS-MCMC novel view">
+<img src="images/2603.16736/gen_vggtx.jpeg" loading="lazy" alt="VGGT-X novel view">
+<img src="images/2603.16736/gen_ours.jpeg" loading="lazy" alt="ours novel view">
+</div>
+<div class="caption"><b>图4</b> 论文 Figure 3 节选(HY-WorldPlay 场景):上排输入帧(带 RoMa 匹配可视化),下排各方法新视角渲染。baseline 在不一致观测下纹理发虚、新视角出现漂浮物;本文(Ours)在训练视角之外仍保持锐利稳定。</div>
+</div>
+
+<h3>点云质量对比(Figure 5):对齐阶段的直接证据</h3>
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(4,1fr)">
+<img src="images/2603.16736/pcl_da3.jpg" loading="lazy" alt="DA3 pointcloud">
+<img src="images/2603.16736/pcl_vggtx.jpg" loading="lazy" alt="VGGT-X pointcloud">
+<img src="images/2603.16736/pcl_before.jpg" loading="lazy" alt="ours before global">
+<img src="images/2603.16736/pcl_after.jpg" loading="lazy" alt="ours full">
+</div>
+<div class="imgrow" style="grid-template-columns:repeat(4,1fr)">
+<img src="images/2603.16736/pcl2_da3.jpg" loading="lazy" alt="DA3 pointcloud 2">
+<img src="images/2603.16736/pcl2_vggtx.jpg" loading="lazy" alt="VGGT-X pointcloud 2">
+<img src="images/2603.16736/pcl2_before.jpg" loading="lazy" alt="ours before global 2">
+<img src="images/2603.16736/pcl2_after.jpg" loading="lazy" alt="ours full 2">
+</div>
+<div class="caption"><b>图5</b> 论文 Figure 5(两场景):DA3 原始预测是多层错位壳;VGGT-X 刚性对齐后仍稀疏错位;本文逐帧 ICP 后(before global)已收敛为单层表面,全局优化后(after)表面更薄、纹理更锐(注意第二行栅栏细节)。</div>
+</div>
+
+<h3>大规模世界生成(Figure 7):自回归 32 条视频拼 360° 场景</h3>
+<p>用 SEVA 按 WorldExplorer 的渐进扩展策略生成至多 32 条视频,重建整个 360° 可探索场景。漂移随序列数累积放大,baseline 在远离训练视角处漂浮物爆发;本文保持一致。</p>
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(4,1fr)">
+<img src="images/2603.16736/world_input.jpeg" loading="lazy" alt="input frame">
+<img src="images/2603.16736/world_we.jpeg" loading="lazy" alt="WorldExplorer">
+<img src="images/2603.16736/world_vggtx.jpeg" loading="lazy" alt="VGGT-X">
+<img src="images/2603.16736/world_ours.jpeg" loading="lazy" alt="ours">
+</div>
+<div class="imgrow" style="grid-template-columns:repeat(3,1fr)">
+<img src="images/2603.16736/world_we_nvs.jpeg" loading="lazy" alt="WorldExplorer NVS">
+<img src="images/2603.16736/world_vggtx_nvs.jpeg" loading="lazy" alt="VGGT-X NVS">
+<img src="images/2603.16736/world_ours_nvs.jpeg" loading="lazy" alt="ours NVS">
+</div>
+<div class="caption"><b>图6</b> 论文 Figure 7 节选(celestial 场景):上排输入位姿渲染,下排极端新视角。WorldExplorer / VGGT-X† 在新视角崩坏,本文保持结构完整。</div>
+</div>
+
+</section>
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+
+<h3>组件消融(Table 2,4 个 SEVA 场景平均)</h3>
+<table>
+<tr><th>变体</th><th>3D 一致性 ↑</th><th>光度一致性 ↑</th><th>CLIP-IQA+ ↑</th><th>CLIP Aesthetic ↑</th><th>读法</th></tr>
+<tr><td>only rigid(只刚体对齐)</td><td>76.98</td><td>64.93</td><td>11.43</td><td>49.12</td><td>几何一致性尚可,但画质崩 —— 刚体对齐不了的残差全靠 GS 拟合,纹理糊</td></tr>
+<tr><td>no inv(不用逆变形渲染)</td><td>78.28</td><td class="fail">55.16</td><td>15.81</td><td>46.39</td><td>光度一致性全场最低:不对齐图像直接监督,漂移被学进几何</td></tr>
+<tr><td>no filt(去掉体素过滤)</td><td>72.58</td><td>64.88</td><td>55.17</td><td>51.05</td><td>一致性显著降;画质没降 → 过滤的价值在几何不在画质</td></tr>
+<tr><td>no corr(去掉 RoMa 对应)</td><td class="fail">65.62</td><td>74.76</td><td>44.81</td><td>46.27</td><td>3D 一致性全场最低:超过 $d_{\max}$ 的错位无人能救</td></tr>
+<tr><td>no global(跳过全局优化)</td><td class="fail">63.90</td><td>77.85</td><td>49.69</td><td>51.61</td><td>3D 一致性最差一档 —— 全局"压薄"对几何一致性贡献最大</td></tr>
+<tr class="best"><td>Ours(完整)</td><td>79.79</td><td>86.88</td><td>55.30</td><td>52.40</td><td>—</td></tr>
+</table>
+
+<div class="callout warn">
+<b>读表时的三个注意:</b>① 消融只在 <b>4 个 SEVA 场景</b>上跑,CLIP-IQA+ 方差极大(11.43~55.30),小样本下宜看方向而非小数点;② "only rigid" 的 3D 一致性(76.98)接近完整版(79.79)但 CLIP-IQA+ 只有 11.43 —— 说明 DROID-SLAM 重投影一致性对"几何刚性但对不齐"不敏感、对"纹理糊"很敏感,两个指标量的是不同失败模式;③ "no global" 出现 3D 一致性 63.90 < "no corr" 65.62 的反直觉排序,论文解释为全局优化对表面削薄的贡献,但注意该结论同样建立在 4 场景上。
+</div>
+
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(7,1fr)">
+<img src="images/2603.16736/abl_input.jpg" loading="lazy" alt="input">
+<img src="images/2603.16736/abl_only_rigid.jpeg" loading="lazy" alt="only rigid">
+<img src="images/2603.16736/abl_no_inv.jpeg" loading="lazy" alt="no inv deform">
+<img src="images/2603.16736/abl_no_corr.jpeg" loading="lazy" alt="no corr">
+<img src="images/2603.16736/abl_no_filt.jpeg" loading="lazy" alt="no filter">
+<img src="images/2603.16736/abl_no_coloricp.jpeg" loading="lazy" alt="no color icp">
+<img src="images/2603.16736/abl_full.jpeg" loading="lazy" alt="full">
+</div>
+<div class="caption"><b>图7</b> 论文 Figure 6 节选(新视角渲染 zoom):输入 | only rigid | no inv | no corr | no filt | no color ICP | 完整。直观可见 no corr 与 only rigid 的表面错位残留,no inv 的细节发虚。</div>
+</div>
+
+<h3>附录消融:vs 动态重建范式(Deformable-3DGS)</h3>
+<p>把不一致帧当作"动态序列"交给 Deformable-3DGS(库内笔记:<a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a>)是最自然的替代方案。附录 0.B.1 的对比暴露了范式级缺陷:D-3DGS 的 canonical 没有显式对齐约束,强形变网络可以从<b>任意</b> canonical 配置出发拟合训练视角 —— 训练视角(dyn)能看,但固定时刻渲染(static,相当于要一个统一静态场景)浮渣爆发。本文"先对齐、后逆变形"把 canonical 空间显式钉死,堵死了这条退化路径。</p>
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(4,1fr)">
+<img src="images/2603.16736/d3dgs_input.jpeg" loading="lazy" alt="input">
+<img src="images/2603.16736/d3dgs_dyn.jpg" loading="lazy" alt="D-3DGS dynamic">
+<img src="images/2603.16736/d3dgs_static.jpg" loading="lazy" alt="D-3DGS static">
+<img src="images/2603.16736/d3dgs_ours.jpeg" loading="lazy" alt="ours">
+</div>
+<div class="caption"><b>图8</b> 论文 Figure A1 节选(chocolate 场景):输入帧 | D-3DGS 动态渲染 | D-3DGS 静态渲染 | 本文。静态一列的退化即"canonical 未对齐"的直接证据。</div>
+</div>
+
+</section>
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>横向对比表(固定维度;— 表示原文/公开资料未给出)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>不一致处理</th><th>训练/优化耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr class="best"><td><b>本文 VideoToWorld</b></td><td>2026</td><td>VDM 生成视频(任意 VDM,可有相机控制)</td><td>canonical 2DGS + 逆变形场</td><td><b>重建侧非刚性对齐</b>(ICP+全局优化+逆变形渲染)</td><td>~35 min/场景(A6000,论文值)</td><td>20GB(对齐)/8GB(GS)</td><td>3D 一致性 79.29 / 光度 86.59</td><td>✅ MIT(代码+数据)</td></tr>
+<tr><td>VGGT-X</td><td>2025</td><td>任意图像集</td><td>3DGS</td><td>刚性对齐(类 BA),无法吸收非刚性漂移</td><td>分钟级</td><td>—</td><td>69.66 / 67.05(†DA3 输入)</td><td>✅</td></tr>
+<tr><td>DA3 + 3DGS(深度正则)</td><td>2025</td><td>同上</td><td>3DGS</td><td>不处理(直接信任 GFM 几何)</td><td>分钟级</td><td>—</td><td>69.53 / 71.62</td><td>✅</td></tr>
+<tr><td>WorldExplorer</td><td>2025</td><td>文本/单图,渐进扩展生成</td><td>3DGS(生成-重建循环)</td><td>生成侧:用已建场景渲染条件化后续生成</td><td>生成成本高</td><td>—</td><td>大规模场景定性对比(图6)</td><td>✅</td></tr>
+<tr><td><a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a></td><td>2023</td><td>动态单目视频</td><td>canonical 3DGS + 逐时刻形变</td><td>把不一致当运动学,但 canonical 未对齐 → static 渲染崩</td><td>小时级</td><td>—</td><td>附录 A1 定性对比(图8)</td><td>✅</td></tr>
+<tr><td><a href="3D-20251211-SHARP.html">SHARP</a>(逐帧预测 + 相机对齐)</td><td>2025</td><td>单图 → 3DGS</td><td>逐帧 3DGS 合并</td><td>仅相机级对齐(本文提供),几何仍错位</td><td>秒级/视角</td><td>—</td><td>附录 A2 定性对比(图9)</td><td>✅</td></tr>
+<tr><td><a href="3D-20251015-FlashWorld.html">FlashWorld</a></td><td>2025</td><td>单图/文本</td><td>前馈 3DGS</td><td><b>生成侧</b>:跨视角联合生成保证一致</td><td>秒级(前馈)</td><td>—</td><td>—(路线不同,未直接对比)</td><td>✅</td></tr>
+<tr><td><a href="3D-20260107-Gen3R.html">Gen3R</a></td><td>2026</td><td>视频</td><td>潜空间生成 × 前馈重建</td><td><b>生成侧</b>:潜空间联合建模</td><td>训练昂贵,推理前馈</td><td>—</td><td>—</td><td>✅</td></tr>
+<tr><td><a href="3D-20260414-Lyra2.html">Lyra 2.0</a></td><td>2026</td><td>单图 + 相机轨迹</td><td>视频扩散 + DAv3 微调重建</td><td><b>生成侧</b>:3D cache + 自增广抑制漂移</td><td>64×GB200 训练;推理 15s/段</td><td>—</td><td>WorldScore 50.31 量级(任务不同)</td><td>✅</td></tr>
+</table>
+
+<h3>对比结论(机制层面,逐条说为什么)</h3>
+<ul>
+<li><b>vs 刚性前馈(VGGT-X / DA3):</b>漂移是逐点非刚性的,刚性变换只有 6 自由度,物理上不可能把多层壳对齐 —— 必然残留厚表面 → 纹理糊、新视角漂浮。本文把自由度提升到"逐点 6 维 twist 场 + 全局 twist",并用 TV 约束防止过自由。</li>
+<li><b>vs 动态重建(D-3DGS):</b>形变能力不受几何对齐约束时,"拟合训练视角"与"canonical 一致"两个目标脱钩 —— 本文把顺序反过来:<b>先有几何一致的 canonical,再让形变只解释观测差异</b>。这是"对齐先于拟合"的范式差异,也是附录 A1 实验的核心信息。</li>
+<li><b>vs 逐帧前馈(SHARP / DA3-FF):</b>附录 0.B.2/0.B.3 显示即使给 SHARP 提供本文优化后的相机,逐帧预测的几何仍不在统一世界系 —— <b>前馈模型的逐帧独立性是结构性的</b>,缺一个显式的跨帧对齐阶段就不行(图9)。</li>
+<li><b>vs 生成侧路线(FlashWorld / Gen3R / Lyra 2.0):</b>不是竞争而是互补。生成侧降低漂移的<b>幅度</b>,但论文实测即便相机可控 + RGB-D 联合生成(Voyager),漂移依然显著;本文是漂移的<b>兜底吸收器</b>,可直接套在改进后的生成模型输出上。代价是 per-scene ~35 min 的优化,换"任意 VDM 可用"。</li>
+</ul>
+
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(5,1fr)">
+<img src="images/2603.16736/a2_input.jpeg" loading="lazy" alt="input">
+<img src="images/2603.16736/a2_da3.jpeg" loading="lazy" alt="DA3+3DGS">
+<img src="images/2603.16736/a2_da3ff.jpeg" loading="lazy" alt="DA3 feedforward">
+<img src="images/2603.16736/a2_sharp.jpeg" loading="lazy" alt="SHARP">
+<img src="images/2603.16736/a2_ours.jpeg" loading="lazy" alt="ours">
+</div>
+<div class="caption"><b>图9</b> 论文 Figure A2 节选(Gen3C 场景):输入 | DA3 点初始化 3DGS | DA3 前馈头 | SHARP 逐帧预测+本文相机 | 本文。前馈系方法的几何错位在渲染中表现为漂浮与重影;本文对齐后表面唯一。</div>
+</div>
+
+<h3>演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>生成侧:相机条件</td><td>SEVA / Gen3C / ViewCrafter</td><td>轨迹条件 ⇒ 帧间一致</td><td>条件只是软约束,漂移仍在</td></tr>
+<tr><td>生成侧:3D 记忆/缓存</td><td>Lyra 2.0 / OctWorld / WorldExplorer</td><td>显式几何状态维持长程一致</td><td>误差放大;逐模型训练成本高</td></tr>
+<tr><td>生成侧:联合多视角生成</td><td>FlashWorld / Gen3R</td><td>同时出多视角 ⇒ 天然一致</td><td>需重训生成模型;泛化受训练分布限</td></tr>
+<tr><td>重建侧:刚性对齐</td><td>VGGT-X / DA3+BA</td><td>不一致可被刚体+三角化吸收</td><td>漂移是非刚性的,假设不成立</td></tr>
+<tr><td>重建侧:动态建模</td><td>Deformable-3DGS / 4DGS</td><td>不一致 = 运动</td><td>canonical 无对齐约束,static 渲染崩</td></tr>
+<tr class="best"><td>重建侧:非刚性对齐 + 逆变形渲染(本文)</td><td>VideoToWorld</td><td>漂移 = canonical 场景的小非刚性形变,先对齐后拟合</td><td>幻觉改写救不了;per-scene 35 min;静态场景假设</td></tr>
+</table>
+
+</section>
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<h3>对我们 pipeline(vggt_human)的可迁移性评估</h3>
+<div class="callout key">
+<b>最有价值的一点:</b>"<b>把观测不一致显式建模为逐帧小非刚性形变,canonical 表示 + 渲染时逆变形</b>"这个机制,与生成视频无关地适用于<b>任何"多观测存在微小不对齐"的重建</b>。在人脸/人体重建里,跨帧的表情微动、mask 边缘抖动、3DMM 拟合残差造成的"同一表面多层壳"与本文的 generative drift 是同构问题 —— 我们目前的做法是固定表情系数强行消除微动(见 vggt_human 规划),本文提供了另一条路:<b>允许微动存在,用逐帧形变场把它从监督信号里因式分解掉</b>。
+</div>
+<table>
+<tr><th>组件</th><th>能否直接用</th><th>说明</th></tr>
+<tr><td>体素化置信度过滤</td><td>✅ 直接可用</td><td>对任何带置信度的深度/pointmap(VGGT/DA3/MoGe)输出都适用,免 densification 的密度均匀初始化对头部重建同样重要</td></tr>
+<tr><td>非刚性 frame-to-model ICP</td><td>⚠️ 改假设后可用</td><td>本文假设<b>静态场景</b>,漂移是纯误差;人体视频里跨帧运动是<b>真实运动</b>,若当漂移对齐掉会损失动作。适用面:① 静态场景/背景分支(scene_gs);② 固定表情后残差级别的微动吸收;③ head_gs 的跨帧对齐。对真实运动需退化为运动建模(那就回到 4DGS 范式)</td></tr>
+<tr><td>逆变形渲染损失</td><td>✅ 思路直接迁移</td><td>与形变阶数无关:只要"canonical 干净、观测有噪声形变",渲染时逆变换监督就是通用机制;和我们 3DGS 人脸 finetune 里遇到的逐帧 landmark 对齐残差问题正好对口</td></tr>
+<tr><td>整套 pipeline</td><td>❌ 场景不同</td><td>本文面向静态场景漫游,不含人体先验、表情基、骨架 —— 不应直接采用,只取机制</td></tr>
+</table>
+
+<h3>工程落地成本估算(基于论文值 + 代码读数)</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>备注</th></tr>
+<tr><td>硬件门槛</td><td>对齐阶段 20GB 显存(论文 A6000 实测值)→ <b>3090(24GB)可行</b>;GS 阶段 8GB</td><td>DA3 GIANT-LARGE 前向需按 max_frames 控制;fast preset 可再降</td></tr>
+<tr><td>时间</td><td>约 35 min/场景(N=50 帧)</td><td>25min 对齐 + 10min GS;fast preset(跳全局优化)可压到 ~15-20 min <span class="uncertain">⚠️【推测】按砍掉 Stage 2 估算</span></td></tr>
+<tr><td>数据成本</td><td>任意 VDM 输出视频即可;仓库附带论文全部场景数据(data_release.zip)</td><td>相机轨迹条件可选(GFM 自己估相机)</td></tr>
+<tr><td>依赖风险</td><td>DA3 pin commit + patch、RoMaV2 patch、tcnn 编译 —— <b>Windows 原生环境大概率装不起来,需要 Linux/WSL</b></td><td>README 未提供 Windows 支持声明 <span class="uncertain">⚠️【推测】基于 tcnn/gsplat 编译链判断</span></td></tr>
+</table>
+
+</section>
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<div class="grid-2">
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] 幻觉改写无法处理(论文自陈,附录 0.D)</h4>
+<p><b>问题:</b>VDM 重访区域时可能凭空生成新物体(路灯突然出现)。对齐阶段会把这个幻觉物体同样对齐进 canonical 几何(它在多帧里自洽),2DGS 优化则对所有视角取平均 —— 幻觉被固化进最终场景,两个视角都可见。<b>代码佐证:</b>质检只按 ICP 损失 MAD 剔点(<code>frame_to_model_icp.py:718-781</code>),无逐帧/逐物体的语义一致性检查。<br><b>改进:</b>在并入阶段加"回访一致性"检测 —— 同一区域的历史渲染与新帧做语义/特征比对,冲突帧降权或剔除;或在逆变形框架里给每帧加可见性掩码头。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[高优先级] per-scene 25 min 对齐开销,无法在线</h4>
+<p><b>问题:</b>逐帧 ICP(每帧 ≤100 迭代 Adam + RoMa 匹配 ≤20 对参考帧)是串行的 frame-to-model 结构,50 帧约 25 min(A6000,论文值);要支持交互式世界生成,这个延迟不可接受。<b>代码佐证:</b>主循环 <code>frame_to_model_icp.py:357</code> 严格串行,RoMa/ICP/Merge 三段计时埋点(<code>:859-921</code>)表明作者自己也在关注耗时。<br><b>改进:</b>① 分层/关键帧化:先对齐关键帧,普通帧只做局部微调;② RoMa 对应缓存已存在(<code>roma_match_history.pt</code>),可进一步离线化;③ 用学习式前馈配准网络蒸馏这套优化(把 per-scene 优化变成一次前向)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] gauge 依赖第 0 帧 + 单向生长</h4>
+<p><b>问题:</b>canonical 就是第 0 帧坐标系(<code>frame_to_model_icp.py:315-333</code>,Frame 0 冻结)。若第 0 帧本身深度质量差或视野边缘内容少,整个场景继承其误差;frame-to-model 单向生长意味着先并入的帧有"先入为主"优势。<b>改进:</b>初始化时自动选信息量最大/置信度最高的帧做 canonical;或周期性做全局再基化(re-base)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] 逆变形不建模 scale 变化</h4>
+<p><b>问题:</b>渲染时逆变形只作用位置与旋转,<b>scale 原样保留</b>(<code>canonical_gs_model.py:574</code>)。若漂移含局部缩放分量(远近抖动在生成视频里很常见),面元大小无法跟随,只能靠位置移动近似补偿。<b>改进:</b>让逆变形网络额外输出逐点 log-scale 残差,代价是自由度升高需要更强正则。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[中优先级] 评测无 held-out 新视角指标</h4>
+<p><b>问题:</b>WorldScore 指标都在"重渲染训练轨迹"上计算;代码内训练 PSNR 也在训练帧上算(<code>train_gs.py:566-621</code>),<code>eval_gs</code> 只渲染不算指标。无法定量回答"离训练轨迹多远开始崩"。<b>改进:</b>加 hold-out 相机轨迹的渲染质量评测(哪怕无 GT,也可用 CLIP-IQA+ / 多视角一致性指标)。</p>
+</div>
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[低优先级] 论文与代码超参漂移未同步</h4>
+<p><b>问题:</b>λ_tv(10→50)、λ_anchor(50→1000)、d_max([5,3]→3cm)、迭代数、不透明度(0.1→0.5)等 12 处差异(§10),读者按论文复现会系统性偏离作者当前配置。<b>改进:</b>项目页/README 应维护"论文配置 vs 推荐配置"对照表;论文 v3 值得更新 §4.1。</p>
+</div>
+</div>
+
+<h3>幻觉固化的可视化证据(论文 Figure A4)</h3>
+<div class="figure">
+<div class="imgrow" style="grid-template-columns:repeat(5,1fr)">
+<img src="images/2603.16736/limit_frame1.jpeg" loading="lazy" alt="video frame 1">
+<img src="images/2603.16736/limit_frame2.jpeg" loading="lazy" alt="video frame 2">
+<img src="images/2603.16736/limit_pcl.jpeg" loading="lazy" alt="pointcloud with pole">
+<img src="images/2603.16736/limit_render1.jpeg" loading="lazy" alt="render 1">
+<img src="images/2603.16736/limit_render2.jpeg" loading="lazy" alt="render 2">
+</div>
+<div class="caption"><b>图10</b> 论文 Figure A4:视频帧 1 无路灯、帧 2(重访)突然出现路灯 → 对齐点云包含路灯 → 渲染 1/2 两个视角都带路灯。对齐机制对"自洽的幻觉"无能为力。</div>
+</div>
+
+<h3>优先级总览与"最关键三点"</h3>
+<table>
+<tr><th>方向</th><th>优先级</th><th>一句话</th></tr>
+<tr><td>幻觉检测/鲁棒帧过滤</td><td>高</td><td>静态世界假设的最后一道缺口</td></tr>
+<tr><td>对齐提速(关键帧/蒸馏)</td><td>高</td><td>25 min → 分钟级才谈得上实用</td></tr>
+<tr><td>canonical 选择与再基化</td><td>中</td><td>去掉对第 0 帧质量的隐性依赖</td></tr>
+<tr><td>scale 维逆变形</td><td>中</td><td>补全形变建模的最后一维</td></tr>
+<tr><td>held-out 评测</td><td>中</td><td>量化"可探索半径"</td></tr>
+</table>
+<p><b>个人认为最关键的三点:</b>① 幻觉改写检测 —— 它决定方法在"更强但更野"的下一代 VDM 上是否还成立;② 对齐蒸馏成前馈 —— 决定它能否从离线工具变成生成-重建闭环的一环;③ scale 维形变 —— 它是当前逆变形模型表达力的明显缺口,且实现成本最低。</p>
+
+</section>
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+
+<p><b>这篇论文的最大贡献不在某个模块,而在一个立场:</b>生成模型的 3D 不一致性短期内不可能在生成侧被消灭,那就<b>把不一致当作可建模的观测误差,在重建侧用经典几何工具(非刚性 ICP)+ 可微渲染(逆变形 2DGS)显式吸收它</b>。整套方法零训练、零微调、即插即用于任意 VDM —— 这与库内 FlashWorld/Gen3R/Lyra 2.0 等"让生成更一致"的重训练路线构成互补的两极。</p>
+
+<p><b>技术上值得带走的四个设计:</b></p>
+<ol>
+<li><b>体素化置信度过滤</b> —— 用空间局部性解决全局阈值两难,换来"免 densification"的干净初始化;</li>
+<li><b>twist 场 + 全局 twist 的分解</b> —— c2w 即全局刚体、hashgrid 只学残差,Frame 0 冻结消歧义;</li>
+<li><b>RoMa 长程对应补 ICP 捕获半径</b> —— 消融证明它是 3D 一致性的最大单一贡献;</li>
+<li><b>逆变形渲染</b> —— canonical 干净空间训练、观测空间监督,把"不一致"从优化目标里因式分解;并且推理时形变场完全退出,渲染零额外开销。</li>
+</ol>
+
+<p><b>局限同样清晰:</b>静态场景假设(真实运动会被当噪声对齐掉)、幻觉改写无检测、per-scene 35 min、评测无 held-out 指标。<b>演进判断:</b>这条路线大概率会沿两个方向生长 —— ① 对齐过程前馈化/蒸馏化(把 per-scene 优化变成网络前向),② 与生成侧一致性方法级联(生成侧减漂移幅度,重建侧吸收残余),成为世界模型落地的标准后处理件。</p>
+
+<div class="tag-row">
+<span class="tag">3D 重建</span><span class="tag">非刚性对齐</span><span class="tag">ICP</span><span class="tag">2DGS</span><span class="tag">逆变形渲染</span><span class="tag">视频扩散</span><span class="tag">DepthAnything-3</span><span class="tag">RoMa</span><span class="tag">世界模型</span>
+</div>
+
+</section>
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队 + 🔗 资源链接</h2>
+
+<h3>团队</h3>
+<ul>
+<li><b>Lukas Höllein</b> — TUM Visual Computing & AI Lab 博士生。一作履历与本作高度连续:<a href="https://lukashoel.github.io/text-to-room/" target="_blank">Text2Room</a>(文本生成 3D 房间)、<a href="https://lukashoel.github.io/3DGS-LM/" target="_blank">3DGS-LM</a>(3DGS 大场景调平)、<a href="https://mschneider456.github.io/world-explorer/" target="_blank">WorldExplorer</a>(本文大规模实验的 baseline 正是他自己的前作)、ViewDiff。</li>
+<li><b>Matthias Nießner</b> — TUM 教授,Visual Computing & AI Lab 负责人(3D 扫描/重建/生成方向,ScanNet、BundleFusion 等工作的通讯作者)。本文 frame-to-model 非刚性融合的思路与其组里 DynamicFusion/BundleFusion 一系工作血脉清晰。</li>
+</ul>
+
+<h3>资源链接</h3>
+<table>
+<tr><th>资源</th><th>链接</th><th>备注</th></tr>
+<tr><td>arXiv abs</td><td><a href="https://arxiv.org/abs/2603.16736" target="_blank">2603.16736</a></td><td>v1 2026-03-17 / v2 2026-03-18,本笔记基于 v2 HTML 全文</td></tr>
+<tr><td>GitHub 源码</td><td><a href="https://github.com/lukasHoel/video_to_world" target="_blank">lukasHoel/video_to_world</a></td><td>MIT;Python 3.10 + PyTorch + gsplat 1.5.3 + tiny-cuda-nn + RoMaV2;2026-10-20 clone 核实</td></tr>
+<tr><td>项目主页</td><td><a href="https://lukashoel.github.io/video_to_world/" target="_blank">lukashoel.github.io/video_to_world</a></td><td>含各 VDM 场景的演示视频</td></tr>
+<tr><td>演示视频</td><td><a href="https://www.youtube.com/watch?v=qXnUwhVmBzA" target="_blank">YouTube</a></td><td>—</td></tr>
+<tr><td>数据发布</td><td><a href="https://kaldir.vc.in.tum.de/hoellein/video_to_world/data_release.zip" target="_blank">data_release.zip</a></td><td>论文全部场景(7 种 VDM 生成视频 + 5 个 WorldExplorer 场景)</td></tr>
+</table>
+
+<h3>库内相关笔记</h3>
+<ul class="refs">
+<li><a href="3D-20240326-2DGS.html">2DGS(2D Gaussian Splatting)</a> — 本文的最终场景表示与正则来源</li>
+<li><a href="3D-20251211-SHARP.html">SHARP</a> — 单图前馈 3DGS,附录 A2 的对比对象</li>
+<li><a href="3D-20230922-Deformable-3DGS.html">Deformable-3DGS</a> — 动态重建范式,附录 A1 的对比对象</li>
+<li><a href="3D-20240718-Shape-of-Motion.html">Shape-of-Motion</a> — 动态场景 canonical+形变 范式的代表,理解本文"对齐先于拟合"差异的参照</li>
+<li><a href="3D-20250314-VGGT.html">VGGT</a> — GFM 谱系;本文用其后续者 DA3,对比项 VGGT-X 基于 VGGT</li>
+<li><a href="VideoGen-20250305-GEN3C.html">GEN3C</a> — 相机可控视频生成,本文的输入源之一</li>
+<li><a href="3D-20251015-FlashWorld.html">FlashWorld</a> / <a href="3D-20260107-Gen3R.html">Gen3R</a> / <a href="3D-20260414-Lyra2.html">Lyra 2.0</a> / <a href="3D-20260903-OctWorld.html">OctWorld</a> — 生成侧一致性路线,与本文互补对极</li>
+<li><a href="VideoGen-20260427-视频生成几何一致性调研.html">视频生成几何一致性调研</a> — 生成侧路线谱系</li>
+</ul>
+
+</section>
+
+<div class="footer">
+  🌿 笔记整理:小华子 · 2026-10-20 · 论文 arXiv:2603.16736v2 (2026-03-18) · 源码核实 lukasHoel/video_to_world@main (2026-10-20 clone)<br>
+  媒体论文调研知识库 media_paper · 深度笔记
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

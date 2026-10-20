@@ -4649,6 +4649,52 @@
         "conclusion",
         "resources"
       ]
+    },
+    {
+      "file": "3D-20260317-VideoToWorld.html",
+      "title": "VideoToWorld: 从不一致生成视频重建 3D 世界",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "视频扩散先验用于 3D",
+        "几何与时序一致性",
+        "表面与几何重建"
+      ],
+      "meta": [
+        "📄 arXiv: 2603.16736",
+        "📅 2026-03-17 (v2: 2026-03-18)",
+        "🏢 TUM Visual Computing & AI Lab"
+      ],
+      "tags": [
+        "Non-rigid ICP Alignment",
+        "Video Diffusion",
+        "Generative Drift",
+        "2DGS",
+        "Inverse Deformation Rendering",
+        "DepthAnything-3",
+        "RoMa",
+        "World Generation"
+      ],
+      "summary": "视频扩散模型(VDM)生成视频存在 generative drift——帧间几何不一致,直接重建得到多层错位表面、漂浮伪影与模糊纹理。本文把一致性责任从生成侧移到<strong>重建侧</strong>:先用 DepthAnything-3 逐帧预测深度/置信度/相机并反投影,以<strong>体素化置信度过滤</strong>(体素内分位数+占据计数)得到致密可靠点云;再用<strong>非刚性迭代 frame-to-model ICP</strong>(hashgrid MLP 预测逐点 se(3) twist + RoMa 长程对应 + color ICP + ARAP/TV 正则)把 N 帧焊入 canonical 空间,接<strong>全局联合优化</strong>(LOO 跨帧一致 + anchor 防退化)压薄表面;最后训练<strong>视角条件逆变形场</strong>,渲染时把 canonical 高斯逆变形回各帧坐标系再算 L1+LPIPS——用不一致图像训出 3D 一致的 2DGS,推理时形变场退出、渲染零额外开销。WorldScore:3D 一致性 79.29(vs DA3 69.53 / VGGT-X† 69.66)、光度一致性 86.59(vs 71.62 / 67.05),CLIP-IQA+ 46.56 逼近输入视频上界 47.39;消融显示 RoMa 对应与全局优化是几何一致性最大贡献,逆变形渲染是光度一致性最大贡献。资源账:对齐 25min/20GB + 2DGS 10min/8GB @ A6000(N=50 帧),代码 MIT 全开源(fast/extensive 双 preset)。局限:幻觉改写(重访冒出新物体)无检测、静态场景假设。源码核实发现论文与代码 12 处超参差异(λ_tv 10→50、λ_anchor 50→1000、不透明度 0.1→0.5 等),笔记附完整差异表。",
+      "links": [
+        {
+          "href": "3D-20260317-VideoToWorld.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2603.16736",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/lukasHoel/video_to_world",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://lukashoel.github.io/video_to_world/",
+          "text": "🏠 项目主页"
+        }
+      ]
     }
   ]
 }
