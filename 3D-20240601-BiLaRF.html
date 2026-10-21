@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BiLaRF:双边网格引导的辐射场处理 — ISP 解耦训练 × 单视角编辑升维 3D 修图</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:24px;font-weight:800;color:var(--accent);line-height:1.25}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+.figrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.figrow img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv:2406.00448v2 · SIGGRAPH (ACM TOG) 2024 · 3D ISP · 双边网格 × NeRF/3DGS</span>
+    <h1>BiLaRF:双边网格引导的辐射场处理 — 训练阶段解耦相机 ISP,修图阶段把单视角 2D 编辑升维成 3D</h1>
+    <div class="subtitle">Bilateral Guided Radiance Field Processing(ACM TOG, Vol.43, No.4, 2024)</div>
+    <div class="authors">Yuehao Wang · Chaoyi Wang · Bingchen Gong · Tianfan Xue(共 4 人)</div>
+    <div class="org">香港中文大学(CUHK)&nbsp;|&nbsp;上海人工智能实验室&nbsp;|&nbsp;cs.CV / cs.GR · comments: SIGGRAPH (ACM TOG), 2024</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2406.00448" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2406.00448v2" target="_blank">🌐 arXiv HTML 全文(v2)</a>
+      <a href="https://arxiv.org/pdf/2406.00448" target="_blank">📥 PDF</a>
+      <a href="https://bilarfpro.github.io/" target="_blank">🏠 项目主页</a>
+      <a href="https://github.com/yuehaowang/bilarf" target="_blank">💻 GitHub(yuehaowang/bilarf)</a>
+      <a href="https://github.com/nerfstudio-project/nerfstudio/releases/tag/v1.1.4" target="_blank">🧩 nerfstudio v1.1.4(官方集成)</a>
+      <a href="https://huggingface.co/datasets/Yuehao/bilarf_data" target="_blank">🗃️ BilaRF 数据集</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机:ISP 如何毁掉多视角一致性</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:可微 3D 双边网格</a></li>
+    <li><a href="#s5">模块二:双边引导训练(per-view 解耦)</a></li>
+    <li><a href="#s6">模块三:低秩 4D 双边网格(CP 分解)</a></li>
+    <li><a href="#s7">模块四:双边引导修图(单视角编辑 → 3D)</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 修图)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(双仓库源码验证)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+
+<p><b>一句话概括:</b>手机相机的 ISP 会对每张输入照片<b>独立地</b>做曝光调整、色彩校正、局部色调映射,这些处理破坏了 NeRF 赖以成立的多视角一致性,重建出的辐射场里全是"漂浮物"(floaters)。BiLaRF 的思路不是去仿真整条 ISP 管线,而是给<b>每个训练视角</b>挂一个可微的 <b>3D 双边网格</b>(bilateral grid,一种局部仿射颜色变换的低维网格表示),让它在训练中吸收掉视角间的光度差异——辐射场本身只学"平均曝光"的干净场景;训练完成后网格被丢弃,渲染零额外开销。更进一步,论文把这个表示推广到 <b>4D(x,y,z + 亮度引导)</b>并用 CP 分解做低秩约束,使得<b>只修一张渲染图</b>(例如在 Lightroom 里调曝光)就能把编辑一致地传播到整个 3D 场景,实现所谓"3D ISP"。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把「相机 ISP 造成的逐视角光度不一致」从 NeRF 需要拟合的"信号"里剥离出来,交给一个 <b>per-view、低分辨率、恒等初始化、TV 正则的局部仿射网格</b> 去解释;同一表示在 finishing 阶段低秩化(4D + CP 分解)后,又变成把 <b>单视角 2D 修图</b> 提升为 <b>全场景 3D 修图</b> 的载体。一个数据结构同时解决"训练时去伪影"和"训练后可编辑"两个问题。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">+0.76 dB</div><div class="l">原始 sRGB PSNR:23.83 vs ZipNeRF 23.07<br>(Table 1,自采 7 个夜间场景平均)</div></div>
+  <div class="stat"><div class="v">27.53</div><div class="l">Affine 对齐 PSNR,vs GLO 26.54 / ZipNeRF 25.17<br>(Table 1,逐通道仿射对齐后)</div></div>
+  <div class="stat"><div class="v">0.8696 / 0.1336</div><div class="l">Affine 对齐 SSIM↑ / LPIPS↓<br>全表最优(Table 1)</div></div>
+  <div class="stat"><div class="v">≈15 min</div><div class="l">单视角编辑 → 3D 的 4D 网格优化(2500 步)<br>训练阶段 ≈2.25 h,单卡 RTX 3090(附录 A)</div></div>
+  <div class="stat"><div class="v">Apache 2.0</div><div class="l">官方实现 + nerfstudio v1.1.4 双双开源<br>splatfacto 一个开关即可启用</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2406.00448/teaser2.png" alt="BiLaRF teaser:带光度变化的输入、解耦重建、逐视角还原与 3D 修图" loading="lazy">
+  <div class="caption"><b>图1</b>(对应论文 Figure 1)<b>方法总览。</b>(a) 输入是一组带光度变化的多视角图像(不同曝光、局部色调映射);(b) 本文解耦各视角不一致的相机处理后,重建出无漂浮物的辐射场,并融合各训练视角中曝光最佳的区域;(c) 训练后可以重新施加每个视角各自的处理来还原输入;(d)(e) 用户只需在一张渲染图上修图,低秩 4D 双边网格把编辑一致地提升到整个 3D 场景。</div>
+</div>
+
+<h3>三个宣称的贡献(论文 §1,按原文归纳)</h3>
+<ol>
+  <li><b>3D ISP 框架</b>:提出在 3D 空间中执行图像信号处理的整体框架——训练阶段解耦 ISP 增强,finishing 阶段再按用户意图重新施加增强(§1)。</li>
+  <li><b>双边引导训练</b>:用 per-view 可微 3D 双边网格逼近相机管线对每个输入视角的影响,网格与辐射场联合优化;副作用能力包括 HDR 融合(把不同曝光输入的最佳区域融进一个辐射场)与变化光照解耦(§3、§5.3)。</li>
+  <li><b>双边引导修图(finishing)</b>:提出低秩 4D 双边网格(CP 分解 + PARAFAC 恒等初始化),从<b>单个视角</b>的 2D 编辑学习并传播到全场景;支持物体级重着色、风格迁移等应用(§4、§5.3)。</li>
+</ol>
+
+<div class="callout tip">
+<b>与我们的直接相关性(vggt_human / media_paper 视角):</b>这是 nerfstudio <b>v1.1.4 官方集成到 splatfacto</b> 的特性(<code>use_bilateral_grid</code> 开关,PR #3316),意味着任何用 splatfacto 的 3DGS pipeline 可以零成本获得"抗 ISP 不一致"能力。对于手机实拍多视角数据(曝光自动跳变是常态),这是除 RawNeRF(要 raw 数据)和 GLO(伤画质)之外的第三条路,且是三个里唯一被主流框架收编的。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机:ISP 如何毁掉多视角一致性</h2>
+
+<h3>2.1 失败模式:漂浮物不是几何错了,是"颜色债"还不上</h3>
+<p>NeRF 的体渲染损失假设同一 3D 点在所有视角下颜色一致(至多差一个视角相关项)。但现代相机 ISP 对每张照片<b>独立</b>增强:自动曝光、白平衡、局部色调映射——尤其夜间手持拍摄时,即使不手动碰任何参数,天空亮度、地板颜色、背景灯光色调也会逐张漂移(论文 Fig 2a)。辐射场被迫用一个固定的 3D 颜色场去同时拟合这些互相矛盾的观测,优化器的"折中方案"就是把矛盾解释成几何:在空中共建一层薄纱状的密度来分别讨好各个视角——这就是 floaters 的成因(Fig 2b,ZipNeRF 结果中的漂浮物与天空诡异外观)。</p>
+
+<div class="figure">
+  <img src="images/2406.00448/inconsistencies.png" alt="手机实拍多视角图像的光度不一致现象" loading="lazy">
+  <div class="caption"><b>图2</b>(对应论文 Figure 2a)<b>三张手机拍摄的多视角图像,未手动修改任何相机参数</b>,天空亮度、地板颜色、背景灯光色调仍各不一致——ISP 的逐张独立增强是系统性的,不是噪声。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/floaters2.png" alt="光度不一致导致 ZipNeRF 重建出现漂浮物" loading="lazy">
+  <div class="caption"><b>图3</b>(对应论文 Figure 2b)<b>不一致的直接后果:</b>baseline ZipNeRF 在新视角合成中产生 floaters 与天空中的异常外观。</div>
+</div>
+
+<h3>2.2 三条既有路线及其各自的具体失败模式</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>RawNeRF:绕过 ISP,直接用 raw</h4>
+    <p>在线性 raw 空间训练,天然没有 ISP 不一致问题。<b>失败模式:</b>很多相机因硬件/存储限制<b>根本不给 raw</b>(§1);且 raw 采集链路和普通用户/现有数据集(sRGB only)不兼容。论文的目标恰恰是在只有处理后 sRGB 的情况下达到类似效果(§5.1 与 RawNeRF 的对比实验)。</p>
+  </div>
+  <div class="card">
+    <h4>GLO / NeRF-W:逐视角可学向量</h4>
+    <p>给每个视角一个可学习的外观嵌入向量,让网络自己解释差异。<b>失败模式(论文附录 D + Fig 24 给出的两条具体罪状):</b>① GLO 会"解释掉"视角相关效果——镜面高光被烘焙进场景,而高光本应主要由视角方向编码;② 低光环境下 GLO 会调制高频噪声,在暗部区域引入伪影。此外文献已知 GLO 降低渲染质量(§1 引 Barron et al., 2022)。</p>
+  </div>
+  <div class="card">
+    <h4>HDRNeRF:全局色调曲线建模</h4>
+    <p>用 per-channel MLP 逼近相机响应函数(CRF),处理多曝光输入。<b>失败模式:</b>per-channel 全局曲线只能表达<b>全局</b>色调映射,无法表达现代 ISP 的<b>局部</b>操作(局部色调映射、空间变化的增强)(§5.1)。Table 1 中其 SSIM 0.6451 / LPIPS 0.3951 远差于本文。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>论文不去逆仿真整条 ISP(非线性、设备相关、含局部操作,精确仿真不可行),而是提出一个<b>松弛的分解假设</b>:"辐射场可以烘焙(bake)一个所有视角共享的<b>平均处理</b>,3D 双边网格只需建模平均处理之上<b>额外的 per-view 残差处理</b>"(§3.3 原文)。这个假设把"不可能的全 ISP 逆向工程"化简成"可学的小残差局部仿射拟合"——残差小、低频、局部平滑,恰好是双边网格的表达甜区。
+</div>
+
+<div class="callout warn">
+<b>这个假设什么时候失效?</b>① 当视角间差异不是"平滑的局部颜色变换"时——例如运动的云、行人等瞬态物体,bilateral grid 无能为力(§5.4, Fig 16a 明确承认);② 当差异携带高频信息时——grid 分辨率(8×8×4 ~ 32×32×16)刻意压低,高频内容编码不进去;③ in-the-wild 场景(旅游照片集)中遮挡/瞬态干扰是主要矛盾时,GLO 反而更合适,论文自己也只能给出"本文 + AGLO 联合使用"的折中方案(Fig 16b)。
+</div>
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2406.00448/lim_cloud.png" alt="失败案例:运动的云产生的漂浮物无法处理" loading="lazy" style="max-width:49%">
+    <img src="images/2406.00448/lim_nerfw.png" alt="in-the-wild 设定下与 GLO 的对比" loading="lazy" style="max-width:49%">
+  </div>
+  <div class="caption"><b>图4</b>(对应论文 Figure 16)<b>方法边界(训练阶段)。</b>左:运动的云等瞬态物体造成的 floaters 不在本方法能力范围内;右:in-the-wild 设定下,本文只能处理 ISP 光度差异,与 AGLO 联合使用可略微改善(保留楼梯原始颜色),但不替代 GLO。</div>
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>3.1 输入 / 输出定义</h3>
+<ul>
+  <li><b>输入(训练阶段):</b>$L$ 张带逐视角 ISP 增强的 sRGB 多视角图像 + COLMAP 相机位姿(论文实验:自采 7 个夜间场景,20–93 张/场景,iPhone 13 × 2 + OnePlus 9 × 5,§5.1)。</li>
+  <li><b>输出(训练阶段):</b>干净的辐射场 $F_\Theta$ + $L$ 个 per-view 3D 双边网格(训练后<b>丢弃</b>,推理零开销)。</li>
+  <li><b>输入(finishing 阶段):</b>训练好的 $F_\Theta$(冻结)+ 用户选一张渲染视角并修图得到编辑图 $\mathcal{I}_e$。</li>
+  <li><b>输出(finishing 阶段):</b>一个低秩 4D 双边网格,把 $\mathcal{I}_e$ 相对渲染图的编辑一致地施加到全场景任意新视角。</li>
+</ul>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+<tr><td>$F_\Theta(\boldsymbol{x},\boldsymbol{d})\to(c,\sigma)$</td><td>辐射场映射(骨干无关:MLP-NeRF / Instant-NGP / ZipNeRF 均可)</td><td>$\boldsymbol{x}\in\mathbb{R}^3$,$c\in[0,1]^3$,$\sigma\in\mathbb{R}$</td></tr>
+<tr><td>$\widehat{C}(u,v)$ / $C(u,v)$</td><td>体渲染颜色 / GT 颜色</td><td>$(u,v)\in[0,1]^2$ 归一化像素坐标</td></tr>
+<tr><td>$\boldsymbol{A}\in\mathbb{R}^{W\times H\times M\times 12}$</td><td>3D 双边网格(每视角一个),12 = 展平的 $3\times4$ 仿射颜色矩阵</td><td>实验用 $(W,H,M)$ = $(8,8,4)$ 或 $(16,16,8)$(附录 A)</td></tr>
+<tr><td>$g(\cdot)$</td><td>guidance 函数,RGB → 标量引导值</td><td>默认 BT601 亮度 $g(C)=[0.299,0.587,0.114]\cdot C$(式 8);finishing 可换 2 层 MLP(式 9)</td></tr>
+<tr><td>$\boldsymbol{H}\in\mathbb{R}^{D\times W\times H\times M\times 12}$</td><td>4D 双边网格(finishing 用,全场景一个)</td><td>$(D,W,H,M)$ = $(16,16,16,8)$ 或 $(32,32,32,16)$(附录 A)</td></tr>
+<tr><td>$R$</td><td>4D 网格 CP 分解的秩</td><td>粗编辑 $R{=}5$,精细编辑 $R{=}8$(附录 A);$\ge 10$ 不推荐(§5.2)</td></tr>
+<tr><td>$\lambda_{TV}$</td><td>TV 正则权重</td><td>训练 $=10$(式 4,§3.3);finishing $=1$(§4、附录 C)</td></tr>
+<tr><td>$\mathcal{A},\mathcal{H}\in\mathbb{R}^{3\times 4}$</td><td>slice 出的逐像素 / 逐点仿射颜色变换</td><td>$C_e=\mathcal{A}[C\,|\,1]^\top$</td></tr>
+</table>
+
+<h3>3.3 两阶段总体数据流</h3>
+<div class="figure">
+  <img src="images/2406.00448/pipeline3.png" alt="BiLaRF 两阶段管线:训练阶段 per-view 3D 网格,finishing 阶段低秩 4D 网格" loading="lazy">
+  <div class="caption"><b>图5</b>(对应论文 Figure 3)<b>官方管线图。</b>阶段一(训练):3D 双边网格在渲染结果上逼近逐视角相机增强,让辐射场只学干净场景;阶段二(finishing):从单视角编辑学习低秩 4D 双边网格,slice 后施加 3D 级增强。</div>
+</div>
+
+<div class="mermaid">
+flowchart TD
+    subgraph S1["阶段一 Bilateral Guided Training"]
+        A1["L 张 ISP 增强的多视角 sRGB + COLMAP 位姿"] --> A2["体渲染:每个采样像素得到直接渲染色 C_hat"]
+        A2 --> A3["slice:按 (u, v, g(C_hat)) 三线性插值<br/>从该视角专属的 3D 双边网格 A^l 取 3×4 仿射"]
+        A3 --> A4["C_e = A·[C_hat|1] 与 GT 算渲染损失<br/>+ λ_TV·TV(网格) 联合反传到 NeRF 与网格"]
+        A4 --> A5["训练完成:丢弃全部网格<br/>得到干净辐射场 F_Θ(推理零开销)"]
+    end
+    subgraph S2["阶段二 Bilateral Guided Finishing"]
+        B1["冻结 F_Θ,渲染一个视角"] --> B2["用户在 Lightroom 等工具里修图得到 I_e"]
+        B2 --> B3["优化低秩 4D 双边网格 H(CP 分解,秩 R)<br/>监督:仅该视角的渲染图 ≈ I_e"]
+        B3 --> B4["推理:逐 3D 采样点 slice H[x,y,z,g(c)]<br/>在体渲染前对每点辐射色做仿射变换"]
+    end
+    A5 --> B1
+    style A5 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style B4 fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+
+<div class="callout key">
+<b>两阶段的对偶关系(全文最重要的一张地图):</b>训练阶段的 3D 网格作用在<b>体渲染之后的 2D 像素颜色</b>上(键是像素坐标 $(u,v)$ + 亮度引导 $g(\widehat C)$,每视角一个网格);finishing 阶段的 4D 网格作用在<b>体渲染之前的逐 3D 采样点辐射色</b>上(键是空间坐标 $(x,y,z)$ + 亮度引导 $g(c)$,全场景一个网格)。前者是"图像空间的 ISP 仿真器",后者是"3D 空间的修图算子"——这正是论文标题 "3D ISP" 的含义。源码佐证:<code>internal/models.py:288-294</code>(3D grid 在 volumetric_rendering 之后作用于 rendering['rgb'])vs <code>internal/models.py:266-271</code>(4D grid 在体渲染积分之前作用于 ray_results['rgb'] 的逐采样点颜色)。
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:可微 3D 双边网格</h2>
+
+<h3>4.1 网络结构表(数据流)</h3>
+<table>
+<tr><th>步骤</th><th>输入张量</th><th>算子</th><th>输出张量</th></tr>
+<tr><td>① 引导值</td><td>$C\in(\dots,3)$,$[0,1]$</td><td>BT601 点积 → 线性映射到 $[-1,1]$</td><td>$g(C)\in(\dots,1)$</td></tr>
+<tr><td>② 坐标组装</td><td>$(u,v)\in(\dots,2)$,$[0,1]$;$g(C)$</td><td>$(u,v)$ 重标定到 $[-1,1]$,拼接</td><td>$(x,y,w)\in(\dots,3)$</td></tr>
+<tr><td>③ slice(三线性插值)</td><td>网格参数 $(N,12,L,H,W)$ + 采样坐标</td><td><code>F.grid_sample</code>(bilinear 即三线性,<code>align_corners=True</code>,<code>padding_mode='border'</code>)<br><span style="color:var(--text-dim)">lib_bilagrid.py:226</span></td><td>12 维仿射系数 $\to$ reshape $\mathcal{A}\in(\dots,3,4)$</td></tr>
+<tr><td>④ 应用</td><td>$\mathcal{A}$,$C$</td><td>$C_e=\mathcal{A}_{[:,:3]}C+\mathcal{A}_{[:,3]}$</td><td>$C_e\in(\dots,3)$</td></tr>
+</table>
+
+<h3>4.2 数学形式化(论文式 3)</h3>
+<div class="equation">
+$$\begin{split}&\boldsymbol{A}\left[u,v,C\right]=\sum_{i,j,k}\kappa_{i,j,k}\bigg(u,v,g(C)\bigg)\boldsymbol{A}_{i,j,k},\\ &\kappa_{i,j,k}(u,v,w)=\Lambda\big(W\cdot u-i\big)\Lambda\big(H\cdot v-j\big)\Lambda\big(M\cdot w-k\big),\end{split}$$
+<span class="tag">式 3 · slice:三线性插值取局部仿射</span>
+</div>
+<p>其中 $\Lambda(t)=\max(1-|t|,0)$ 是 hat 线性插值核。slice 结果 reshape 成 $\mathcal{A}\in\mathbb{R}^{3\times4}$,输出 $C_e=\mathcal{A}[C\,|\,1]^\top$。每个 cell 存的不是颜色,而是一个<b>颜色变换</b>——这让网格对"内容"无关、只对"处理"建模。</p>
+
+<h3>4.3 机制解释:四个设计决策的"为什么"</h3>
+<ol>
+  <li><b>为什么用双边空间(位置 × 值)而不是纯空间?</b>相邻像素若亮度不同(如强光边缘两侧),应允许被<b>不同</b>的仿射变换处理——这正是 ISP 局部色调映射的行为;纯空间模型在高对比区域必然糊(附录 C Fig 18 的对照实验:spatial-only 在高局部对比区域保不住亮度、产生伪影)。</li>
+  <li><b>为什么分辨率刻意压低($8{\times}8{\times}4$ 起)?</b>两个作用(§3.2):省算力;<b>更重要的是防止网格把输入图像的高频内容编码进仿射的平移分量</b>——若网格过细,它就能"画"出图像内容,NeRF 主体就学不到东西(塌缩成空场景 + 每视角贴图)。低分辨率是防止这种退化的结构先验。</li>
+  <li><b>为什么恒等初始化?</b>每个 cell 初始化为恒等仿射 $[I|0]$(代码:<code>lib_bilagrid.py:175-180</code>),训练从"什么都不做"出发,只学习解释 GT 所需的<b>最小</b>偏离——与"网格只建模平均处理之上的残差"假设(§3.3)互相咬合。</li>
+  <li><b>为什么 TV 正则权重要大($\lambda_{TV}{=}10$)?</b>仿射的平移分量可以部分编码低频外观(如墙上的阴影),从而在渲染图上"伪造"纹理(ghost 伪影);大权重 TV 强迫相邻 cell 的变换平滑,把这种自由度压掉(§5.2 Fig 9:$\lambda{=}0$ 和 $0.1$ 都有 ghost,只有 $10$ 干净)。</li>
+</ol>
+
+<h3>4.4 监督信号</h3>
+<p>网格与 NeRF <b>联合优化</b>,共享同一个渲染损失(式 4 的数据项),外加仅作用于网格的 TV 正则 $\lambda_{TV}\mathcal{L}_{TV}$。没有针对网格的独立监督——它学到的"ISP 近似"完全是渲染损失的副产品。</p>
+
+<div class="figure">
+  <img src="images/2406.00448/bilanerf_training.png" alt="3D 双边网格引导 NeRF 训练示意" loading="lazy">
+  <div class="caption"><b>图6</b>(对应论文 Figure 4)<b>3D 网格如何引导训练。</b>(a) 直接渲染图不含 per-view 相机增强,与输入不匹配;(b) 施加 per-view 网格后渲染图复现了相机增强,几乎等于 (c) 输入图像——渲染损失不再把视角差异当作场景内容去拟合。</div>
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:双边引导训练(per-view 解耦)</h2>
+
+<h3>5.1 网络结构表</h3>
+<table>
+<tr><th>组件</th><th>输入 → 输出</th><th>规模(真值)</th></tr>
+<tr><td>辐射场骨干</td><td>$(\boldsymbol{x},\boldsymbol{d})\to(c,\sigma)$</td><td>官方实现 = ZipNeRF(PyTorch 重实现,附录 A);nerfstudio 版 = 3DGS(splatfacto)</td></tr>
+<tr><td>per-view 3D 网格组</td><td>$L$ 个网格,参数张量 $(L,12,M,H,W)$</td><td>$L$ = 训练图像数(数据集 20–93 张);$(W,H,M)$=$(16,16,8)$ 时<b>每视角仅 12×8×16×16 = 24,576 参数</b>(lib_bilagrid.py:148,167)</td></tr>
+<tr><td>slice + 应用</td><td>batch 像素 $(u,v)$、渲染色 $\widehat C$、视角索引 $l$ → $C_e$</td><td>官方:<code>bilateral_grids.slice(...)</code>(models.py:290-294);nerfstudio:整图 meshgrid 后 slice(splatfacto.py:727-742)</td></tr>
+</table>
+
+<h3>5.2 数学形式化(论文式 4)</h3>
+<div class="equation">
+$$\begin{split}\mathcal{L}&=\sum_{(u,v)\in\mathcal{S}}\left\|\widehat{C}_{e}(u,v)-C(u,v)\right\|_{2}^{2}+\lambda_{TV}\mathcal{L}_{TV},\\ \mathcal{L}_{TV}&=\sum_{i,j,k,l}\frac{1}{|\boldsymbol{A}^{l}|}\left\|\Delta_{x}\boldsymbol{A}^{l}_{i,j,k}\right\|_{2}^{2}+\left\|\Delta_{y}\boldsymbol{A}^{l}_{i,j,k}\right\|_{2}^{2}+\left\|\Delta_{z}\boldsymbol{A}^{l}_{i,j,k}\right\|_{2}^{2},\end{split}$$
+<span class="tag">式 4 · 训练总目标(渲染损失 + 网格 TV)</span>
+</div>
+<p>$\Delta$ 为有限差分算子;TV 对网格三个维度分别惩罚相邻 cell 的仿射系数差。注意归一化:官方实现按每维元素数归一后各维求和、再除以 batch(<code>lib_bilagrid.py:60-76</code>)。</p>
+
+<h3>5.3 前向流程(逐像素,张量维度级)</h3>
+<ol>
+  <li>采样一个 batch 的像素(官方:跨所有训练视角随机采,2<sup>16</sup>=65,536 光线/batch,configs.py:30;nerfstudio:整图采一视角),记录每像素的归一化坐标 <code>pix_xy</code> 与视角索引 <code>cam_idx</code>(datasets.py:411)。</li>
+  <li>体渲染得 $\widehat C(u,v)\in[B,3]$(此时<b>尚未</b>施加网格)。</li>
+  <li>用 $l$ 选出该像素所属视角的网格 $\boldsymbol{A}^l$;以 $(u,v,g(\widehat C))$ 三线性插值取 $\mathcal A\in[B,3,4]$。</li>
+  <li>$C_e=\mathcal A[\widehat C\,|\,1]^\top\in[B,3]$,与 GT $C$ 算 Charbonnier 损失(代码实际是 charb 而非论文公式的 L2,configs.py:72 <code>data_loss_type='charb'</code>,见 §10 差异记录)。</li>
+  <li>反传:梯度经仿射变换同时流回 NeRF 参数与网格参数;网格学习率 = 主学习率 × 0.1(train.py:169,<code>bilgrid_lr_scale</code>,configs.py:101)。</li>
+</ol>
+
+<div class="callout tip">
+<b>机制解释:为什么"每视角一个网格"就够,不需要更复杂的 ISP 仿真?</b>关键在于§2.2 的分解假设:所有视角共享的"平均处理"被烘焙进辐射场本身(它本来就只学一个 3D 颜色场),网格只需拟合<b>残差</b>——残差是小幅、低频、空间平滑的颜色变换,$16{\times}16{\times}8$ 的局部仿射网格表达力绰绰有余。这是"用对的归纳偏置换问题规模"的典型案例。
+</div>
+
+<h3>5.4 训练完成后的处置与两个副产品能力</h3>
+<ul>
+  <li><b>推理丢弃:</b>训练后渲染<b>不再使用</b>网格(§3.3;nerfstudio 实现里干脆只在 <code>self.training</code> 时施加,splatfacto.py:848-850)。推理开销为零。</li>
+  <li><b>HDR 融合(§5.3, Fig 13):</b>输入若是不同曝光的 LDR 图像(欠曝/正常/轻过曝/过曝四档),辐射场融合各视角曝光最佳的区域,得到同时保留高光与深阴影细节的"HDR 辐射场"——每张输入图各自过曝/欠曝的区域由网格各自吸收,主体只学最可靠的观测。</li>
+  <li><b>变化光照解耦(§5.3, Fig 15):</b>拍摄期间光源颜色变化(如彩色灯光渐变)会被网格当作"每视角颜色变换"吸收,缓解 baseline 的 "disco" 伪影——尽管方法并未显式建模光源。</li>
+</ul>
+
+<div class="figure">
+  <img src="images/2406.00448/hdrfusion.png" alt="HDR 融合:多曝光 LDR 输入融合成 HDR 辐射场" loading="lazy">
+  <div class="caption"><b>图7</b>(对应论文 Figure 13)<b>HDR 融合。</b>(a) 四档曝光输入各自丢失高光或阴影;(b) 融合后的辐射场同时保留建筑亮部与灌木深阴影;(c) finishing 可进一步对融合结果做 3D 级调色。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/varyinglight.png" alt="变化光照解耦:disco 伪影消除" loading="lazy">
+  <div class="caption"><b>图8</b>(对应论文 Figure 15)<b>变化光照解耦。</b>场景光源颜色在拍摄中持续变化;baseline 出现 "disco" 伪影,本文的 per-view 网格吸收了光色变化,合成结果光照统一。</div>
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:低秩 4D 双边网格(CP 分解)</h2>
+
+<h3>6.1 从 3D 到 4D:多出来的那一维是什么</h3>
+<p>finishing 要做的不是"图像空间的逐像素处理",而是"3D 空间的逐点处理"——同一个 3D 点无论从哪个视角渲染,都应受到<b>相同</b>的编辑变换,否则视角间就不一致。因此网格的索引维从 $(u,v,g)$(像素空间)升级为 $(x,y,z,g)$(场景空间 + 亮度引导),得到 5D 张量 $\boldsymbol{H}\in\mathbb{R}^{D\times W\times H\times M\times 12}$。</p>
+
+<div class="equation">
+$$\begin{split}&\kappa^{\prime}_{h,i,j,k}\big(x,y,z,g(c)\big)=\kappa_{i,j,k}\big(x,y,g(c)\big)\,\Lambda\big(D\cdot z-h\big),\\ &\boldsymbol{H}\left[x,y,z,c\right]=\sum_{h,i,j,k}\kappa^{\prime}_{h,i,j,k}\big(x,y,z,g(c)\big)\boldsymbol{H}_{h,i,j,k},\end{split}$$
+<span class="tag">式 5 · 4D slice(四线性插值)</span>
+</div>
+
+<p><b>作用位置</b>:对体渲染的<b>每个采样点</b>,先用 $F_\Theta(\boldsymbol x,\boldsymbol d)$ 查出辐射色 $c$,再以 $(x,y,z,g(c))$ slice 出 $\mathcal H\in\mathbb{R}^{3\times4}$,得到 $c_e=\mathcal H[c\,|\,1]^\top$ 后再参与体渲染积分(<code>models.py:266-271</code>,在 <code>volumetric_rendering</code> 之前)。密度/几何完全不动——纯颜色算子。</p>
+
+<h3>6.2 为什么直接优化 4D 网格不可行</h3>
+<p>监督只有<b>一个视角</b>的编辑 $\mathcal I_e$。把编辑反投影到 4D 网格,只有落在该视角可见区域内的极少数 cell 得到监督,其余 $\gg 90\%$ 的 cell 自由<b>【推测:论文未给出具体可见比例,此处为量级判断】</b>;没有任何先验时这些 cell 的仿射系数是任意的,新视角必然色彩崩坏(§4;消融 Fig 8c"direct 5D tensor"正是这个失败模式的实证)。论文把问题建模为<b>张量补全</b>,用低秩约束充当前验。</p>
+
+<h3>6.3 CP 分解(论文式 6/7)</h3>
+<div class="equation">
+$$\boldsymbol{H}=\sum_{r=1}^{R}\boldsymbol{\xi}^{1,r}\otimes\boldsymbol{\xi}^{2,r}\otimes\boldsymbol{\xi}^{3,r}\otimes\boldsymbol{\xi}^{4,r}\otimes\boldsymbol{\xi}^{5,r},\qquad \boldsymbol{\xi}^{1,r}\in\mathbb{R}^{D},\ \boldsymbol{\xi}^{2,r}\in\mathbb{R}^{W},\ \boldsymbol{\xi}^{3,r}\in\mathbb{R}^{H},\ \boldsymbol{\xi}^{4,r}\in\mathbb{R}^{M},\ \boldsymbol{\xi}^{5,r}\in\mathbb{R}^{12}$$
+<span class="tag">式 6 · CP 分解:R 个 rank-1 外积之和</span>
+</div>
+<div class="equation">
+$$\boldsymbol{H}\left[x,y,z,c\right]=\boldsymbol{U}\Big[\bigoplus_{r=1}^{R}\sum_{h,i,j,k}\kappa^{\prime}_{h,i,j,k}\big(x,y,z,g(c)\big)\,\boldsymbol{\xi}^{1,r}_{h}\boldsymbol{\xi}^{2,r}_{i}\boldsymbol{\xi}^{3,r}_{j}\boldsymbol{\xi}^{4,r}_{k}\Big],\qquad \boldsymbol{U}=\left[\boldsymbol{\xi}^{5,1},\dots,\boldsymbol{\xi}^{5,R}\right]\in\mathbb{R}^{12\times R}$$
+<span class="tag">式 7 · 分解后的 slice:四个 1D 因子分别插值再相乘,最后过 U</span>
+</div>
+<p>式 7 的工程含义很漂亮:5D 张量的插值被分解成<b>四次独立的 1D 查表(各维因子上的线性插值)+ 逐秩相乘 + 一个 $12\times R$ 线性层</b>——计算量与 $R$ 成正比,与网格总体素数无关。源码印证:<code>lib_bilagrid.py:379-409</code>,四个因子各做一次 <code>F.grid_sample</code> 后逐元素相乘得 $(N,R)$,再过 <code>fac_0 = Linear(12, R, bias=False)</code>(权重即 $\boldsymbol U$,:357-358)输出 $(N,12)$。参数量从 $D{\cdot}W{\cdot}H{\cdot}M{\cdot}12$($16^3{\cdot}8{\cdot}12\approx 393$K)降到 $R(D{+}W{+}H{+}M{+}12)$($R{=}5$ 时仅 <b>340 个可训练标量</b>,其中空间因子以"buffer 初值 + 残差参数"形式持有,:360-366)。</p>
+
+<h3>6.4 恒等初始化 + PARAFAC(论文 §4 + 代码互证)</h3>
+<ol>
+  <li>构造所有 cell 均为恒等仿射 $[I|0]$ 的稠密 5D 张量;</li>
+  <li>加小噪声打破奇异性(代码:<code>init_noise_scale=1e-6</code>,lib_bilagrid.py:284,351);</li>
+  <li>对该张量跑 <b>PARAFAC 分解</b>(tensorly 的 <code>parafac</code>,:353)得到秩 $R$ 的初始化因子——保证优化从"全场景恒等变换"出发。</li>
+</ol>
+<p>消融 Fig 10 证明这一步不是细节而是成败手:随机初始化因子时,对树桩的颜色编辑会<b>错误污染背景</b>;恒等初始化让未监督区域的默认行为是"保持原样",只有低秩先验与 TV 在传播编辑——论文称之为"半监督"设定的实用起点(§5.2)。</p>
+
+<h3>6.5 模块内部数据流图</h3>
+<div class="mermaid">
+flowchart LR
+    P["3D 采样点 (x,y,z)<br/>归一化到 bound=2"] --> Q
+    C["该点辐射色 c = F_Θ(x,d)"] --> G["guidance g(c)<br/>灰度 或 2层MLP(宽8)"]
+    G --> Q["坐标 (x,y,z,w=g(c))"]
+    Q --> F1["fac_x 1D插值 → (N,R)"]
+    Q --> F2["fac_y 1D插值"]
+    Q --> F3["fac_z 1D插值"]
+    Q --> F4["fac_w 1D插值"]
+    F1 --> M["逐元素相乘"]
+    F2 --> M
+    F3 --> M
+    F4 --> M
+    M --> U["fac_0: Linear(R→12)<br/>权重=U"]
+    U --> A["reshape 3×4 仿射 H"]
+    A --> O["c_e = H·[c|1]<br/>再参与体渲染积分"]
+    style M fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style U fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+</div>
+
+<h3>6.6 监督信号</h3>
+<p>仅两项(§4):① 编辑视角上的渲染损失(渲染图经 4D 网格后 ≈ 用户编辑图 $\mathcal I_e$);② 作用于<b>因子</b>的 TV 正则($\lambda_{TV}{=}1$,因分解的线性性,TV 可直接在因子上计算,<code>train_utils.py:262-272</code>)。<b>辐射场参数全程冻结</b>,梯度只进因子与 guidance MLP(<code>train_utils.py:331-337</code>:优化器参数组只含 <code>bil_grids4d.parameters()</code>)。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:双边引导修图(单视角编辑 → 3D)</h2>
+
+<h3>7.1 完整工作流(用户视角)</h3>
+<ol>
+  <li>在训练好的辐射场上渲染任一视角(通常沿 render path 选一帧);</li>
+  <li>在任意 2D 工具里修图——论文实验主要用 Adobe Lightroom(Masking 工具做局部编辑、Presets 调色),也可用 HDRNet、Google Photos 等(附录 B);</li>
+  <li>把编辑后图像与目标视角位姿(<code>split:idx</code> 语法,如 <code>path:88</code>)喂给 finishing 训练:<b>数据集被整个替换为该编辑图 + 其位姿</b>(datasets.py:712-758),2500 步优化(≈15 min,RTX 3090,附录 A);</li>
+  <li>之后任意新视角渲染都自动带上该编辑(4D 网格挂在渲染管线上)。</li>
+</ol>
+
+<div class="figure">
+  <img src="images/2406.00448/bilanerf_finishing.png" alt="双边引导修图:单视角编辑传播到全场景" loading="lazy">
+  <div class="caption"><b>图9</b>(对应论文 Figure 5)<b>finishing 效果。</b>(a) 选定视角;(b) 用户修图;(c) 编辑映射到被编辑区域;(d) 编辑同时传播到该视角中<b>不可见</b>的区域——低秩先验 + TV 在起作用。</div>
+</div>
+
+<h3>7.2 可学习 guidance(附录 E,式 9)</h3>
+<div class="equation">
+$$g(C)=\tanh\Big(2\cdot\big[(\mathrm{ReLU}(CW_1^\top+b_1))W_2^\top+b_2\big]\Big)/2+0.5,\qquad W_1\in\mathbb{R}^{8\times3},\ b_1\in\mathbb{R}^{8},\ W_2\in\mathbb{R}^{1\times8},\ b_2\in\mathbb{R}$$
+<span class="tag">式 9 · 2 层 MLP guidance(隐藏宽 8,仅在编辑视图上拟合)</span>
+</div>
+<p><b>为什么 finishing 需要它而训练不需要:</b>灰度引导把"亮度相同但颜色不同"的区域绑在同一网格列上;finishing 的低秩先验会把编辑沿引导维传播,于是"把绿叶调成红色"可能连带影响等亮度的其他颜色区域。可学习 guidance 只在编辑视图上训练,学会把编辑涉及的颜色分量<b>分开</b>(附录 E 的例子:整片背景统一调暗时,学到的 guidance 让背景各物体取相近引导值 → 受到一致变换,色彩传播更无缝)。代码:<code>learn_gray=True</code> 默认开启,MLP 输出经 <code>tanh(2x)</code> 压到 $[-1,1]$(lib_bilagrid.py:328-334;论文式 9 的 $/2+0.5$ 是 $[0,1]$ 约定,二者只差坐标系)。</p>
+<p class="note">⚠️ 论文自己承认该设计的边界:guidance 只在单个编辑视图上拟合,对未见区域的颜色分布可能不泛化,列为未来方向(附录 E 末段)。</p>
+
+<h3>7.3 应用展示(论文 §5.3 + 附录 F)</h3>
+<ul>
+  <li><b>360° 场景整体修图</b>(Fig 11)与夜间场景光照增强、调色(Fig 12):单视角编辑一致升维到全场景。</li>
+  <li><b>物体级重着色</b>(Fig 14):只把推土机改成别的颜色——双边空间的值维让变换集中落在"既在该空间位置、又是黄色系"的 cell 上,不伤及周围。</li>
+  <li><b>边缘感知编辑</b>(附录 C, Fig 19):前景提亮、背景压暗产生的 halo 可被双边空间处理缓解(spatial-only 会把 halo 留在渲染上)。</li>
+  <li><b>无人机大场景风格迁移</b>(附录 F, Fig 26,DL3DV-10K 两个场景):改变天气与时段;复杂案例(红色庙宇 vs 日落天空的编辑方向冲突)需<b>拆成两个 4D 网格</b>分别处理。</li>
+</ul>
+
+<div class="figure">
+  <img src="images/2406.00448/recoloring.png" alt="物体级重着色:推土机改色" loading="lazy">
+  <div class="caption"><b>图10</b>(对应论文 Figure 14)<b>物体级重着色。</b>只编辑单视角中推土机的颜色,4D 网格把变换局限到覆盖"该空间 + 黄色系"的 cell,完成 3D 一致的重着色。</div>
+</div>
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2406.00448/360_retouching.png" alt="360 场景的单视角编辑升维结果" loading="lazy" style="max-width:49%">
+    <img src="images/2406.00448/ourdata_results.png" alt="自采夜间场景的光照增强与调色" loading="lazy" style="max-width:49%">
+  </div>
+  <div class="caption"><b>图11</b>(对应论文 Figure 11 / Figure 12)<b>整体修图应用。</b>左:360° 场景的单视角编辑被一致升维到全场景;右:自采夜间场景上的光照增强、色彩调整等。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/drone_results.png" alt="无人机场景的风格迁移(天气与时段)" loading="lazy">
+  <div class="caption"><b>图12</b>(对应论文 Figure 26,附录 F)<b>无人机大场景风格迁移(DL3DV-10K)。</b>单视角修图改变天气与时段后一致升维;第二个案例中红色庙宇与日落天空的编辑方向冲突,作者拆成两个独立 4D 网格分别处理。</div>
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<table>
+<tr><th>阶段</th><th>损失项</th><th>公式 / 实现</th><th>权重(真值)</th><th>作用</th></tr>
+<tr><td rowspan="2">训练<br>(train.py)</td><td>数据项(渲染损失)</td><td>论文式 4 写 L2;代码实际为 Charbonnier:<code>data_loss_type='charb'</code>,<code>charb_padding=0.001</code>(configs.py:72-73),作用于 $C_e$(网格施加后)与 GT 之间</td><td>1.0(<code>data_loss_mult</code>,configs.py:74)</td><td>同时监督辐射场与 per-view 网格</td></tr>
+<tr><td>网格 TV</td><td>式 4 第二项;实现 = 对 $(N,12,L,H,W)$ 各维相邻元素平方差归一求和(lib_bilagrid.py:60-76)</td><td><b>$\lambda_{TV}=10$</b>(configs.py:88 <code>bilgrid_tv_loss_mult</code>;论文 §3.3;nerfstudio 硬编码 ×10,splatfacto.py:958)</td><td>压平相邻 cell 仿射差异,防 ghost(§5.2 Fig 9)</td></tr>
+<tr><td rowspan="2">修图<br>(train_bilagrid4d.py)</td><td>数据项</td><td>同一渲染损失,但监督对只有"渲染图(经 4D 网格) vs 用户编辑图 $\mathcal I_e$"(train_bilagrid4d.py:180-181)</td><td>1.0</td><td>把 2D 编辑蒸馏进 4D 网格</td></tr>
+<tr><td>因子 TV</td><td>对 CP 因子(空间四维)分别 TV(train_utils.py:262-272;lib_bilagrid.py:368-377)</td><td><b>$\lambda_{TV}=1$</b>(configs.py:113 <code>bilgrid4d_tv_loss_mult</code>;论文 §4)</td><td>低秩张量补全的局部平滑先验(附录 C Fig 22:去掉后未见区域色彩不自然)</td></tr>
+</table>
+<p class="note">说明:ZipNeRF 骨干自带的 interlevel / distortion / hash decay 等损失与本文正交,不在此复述;nerfstudio splatfacto 侧则是 L1+SSIM 主损失 + 该 tv_loss(splatfacto.py:949-958)。</p>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(训练 / 修图)</h2>
+
+<h3>9.1 训练流程(含数据流与梯度路径)</h3>
+<div class="mermaid">
+flowchart TD
+    D["L 张多视角 sRGB<br/>(跨视角随机采样 2^16 光线/batch)"] --> R["体渲染积分<br/>C_hat(u,v)"]
+    R --> SL["slice A^l[u, v, g(C_hat)]<br/>三线性插值 → 3×4 仿射"]
+    SL --> AP["C_e = A·[C_hat|1]"]
+    AP --> L1["Charbonnier(C_e, C_gt)"]
+    G["per-view 网格参数<br/>(N,12,8,16,16), 恒等初始化"] --> SL
+    G --> TV["TV 正则 ×10"]
+    L1 --> BP["反向传播"]
+    TV --> BP
+    BP --> N1["→ NeRF 参数 (lr 0.01→0.001, warmup 5k)"]
+    BP --> N2["→ 网格参数 (lr ×0.1)"]
+    N1 --> R
+    N2 --> SL
+    style G fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style TV fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<h3>9.2 修图(finishing)流程</h3>
+<div class="mermaid">
+flowchart TD
+    F0["冻结的辐射场 F_Θ"] --> V["渲染目标视角"]
+    V --> E["用户在 Lightroom 等修图<br/>→ 编辑图 I_e"]
+    E --> T["训练集 ← 仅 (I_e, 其位姿)<br/>datasets.py:712-758"]
+    T --> LOOP["2500 步优化<br/>渲染视角 → slice4d 逐点施加 → 与 I_e 算损失<br/>+ 因子 TV ×1"]
+    LOOP --> GR["产物:CP 因子(秩 R=5/8)<br/>+ 可选 guidance MLP"]
+    GR --> INF["推理:任意新视角体渲染时<br/>每个采样点过一遍 4D 网格"]
+    style LOOP fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style GR fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(双仓库源码验证)</h2>
+
+<p>本节所有结论来自 2026-10-20 对两个仓库的实读:官方 <a href="https://github.com/yuehaowang/bilarf">yuehaowang/bilarf</a>(main 分支,<code>git clone --depth 1</code>)与 <a href="https://github.com/nerfstudio-project/nerfstudio">nerfstudio</a> <b>v1.1.4 tag</b>。引用均带 file:line。</p>
+
+<h3>10.1 官方实现(yuehaowang/bilarf,Apache 2.0)</h3>
+<ul>
+  <li><b>骨干:</b>基于 <a href="https://github.com/SuLvXiangXin/zipnerf-pytorch">zipnerf-pytorch</a>(README:30;附录 A),gin 配置框架;<code>configs/llff.gin</code> 给出模型尺寸:num_levels=2、num_prop_samples=128、num_nerf_samples=32;<code>configs/360.gin</code> 用 power_transformation 射线参数化。</li>
+  <li><b>核心库单文件化:</b>方法的全部 3D/4D 网格代码抽在 <code>lib_bilagrid.py</code>(411 行),作者明确鼓励直接拷贝该文件接入任意 NeRF 代码库(README:14-26),依赖仅 PyTorch + tensorly(+ numpy)。</li>
+  <li><b>训练资源账(附录 A 原文):</b>单卡 RTX 3090;NeRF 训练 ≈2.25 h(骨干决定,网格本身开销可忽略);finishing 2500 步 ≈15 min,500–1000 步已可得可观效果。24GB 显存需把 batch 降到 16384(gin 配置注释)。</li>
+  <li><b>优化器与 schedule(论文没写、代码里的真值):</b>Adam β=(0.9, 0.99)、eps=1e-15(360 配置)或 1e-8(llff.gin);lr 0.01→0.001、5,000 步 warmup(delay_mult=1e-8);max_steps=25,000(configs.py:64,90-97)。<b>网格参数独立参数组、学习率 ×0.1</b>(train.py:169 + configs.py:101 <code>bilgrid_lr_scale</code>)——这是论文正文未提的实现细节。</li>
+  <li><b>数据损耗的真值是 Charbonnier 而非论文式 4 印刷的 L2</b>(configs.py:72 <code>data_loss_type='charb'</code>)——论文公式为示意,复现以代码为准。</li>
+  <li><b>finishing 的数据注入方式:</b>训练集被<b>整体替换</b>为用户编辑图 + 目标位姿(datasets.py:712-758),而非在原有视角上追加监督;目标位姿用 <code>{train|test|all|path}:idx</code> 语法指定(README:159-172)。NeRF 权重经 <code>strict=False</code> 加载后冻结(train_bilagrid4d.py:107;train_utils.py:331-337 只优化 <code>bil_grids4d</code>)。</li>
+  <li><b>坐标系约定差异(论文 vs 代码,仅约定不同):</b>论文 guidance $g(C)\in[0,1]$(式 8/9 的 $/2+0.5$);代码统一映射到 $[-1,1]$ 以配合 <code>F.grid_sample(align_corners=True)</code>(lib_bilagrid.py:172, 268, 334)。4D 网格还有 <code>bound=2.</code> 的坐标缩放(lib_bilagrid.py:285,393)。</li>
+  <li><b>环境:</b>Python 3.9、PyTorch 2.0.1(CUDA 11.7)、tensorly 0.8.1(lib_bilagrid.py:10);需编译 gridencoder CUDA 扩展与安装 torch-scatter(README:32-52)。</li>
+</ul>
+
+<h3>10.2 nerfstudio v1.1.4 集成(Apache 2.0)</h3>
+<ul>
+  <li><b>入口:</b>PR #3316("Bilagird for splatfacto",KevinXu02);<code>lib_bilagrid.py</code> 被原样借入 <code>nerfstudio/model_components/lib_bilagrid.py:1</code>(文件头注明借用),并追加了 <code>color_correct()</code> 工具(评估时仿射对齐用)。</li>
+  <li><b>开关与配置:</b><code>SplatfactoModelConfig.use_bilateral_grid</code>(splatfacto.py:207,默认 False),<code>grid_shape=(16,16,8)</code>(splatfacto.py:209)。启用方式:<code>ns-train splatfacto --pipeline.model.use-bilateral-grid True</code>。</li>
+  <li><b>接线位置:</b>整图渲染后,对当前相机索引 <code>cam_idx</code> 调用 <code>slice</code>(splatfacto.py:727-742 的 <code>_apply_bilateral_grid</code>);<b>只在 <code>self.training</code> 时施加</b>(splatfacto.py:848-850),eval/导出不受影响——与论文"训练后丢弃网格"一致。</li>
+  <li><b>损失:</b>主损失 (1−λ)·L1 + λ·SSIM 之外追加 <code>tv_loss = 10 * total_variation_loss(bil_grids.grids)</code>(splatfacto.py:957-958),<b>权重 10 硬编码</b>,与论文/官方配置一致。</li>
+  <li><b>优化器:</b>独立参数组 <code>"bilateral_grid"</code>(splatfacto.py:686-687),Adam lr=2e-3 指数衰减到 1e-4、warmup 1000、30,000 步(method_configs.py:640-645);splatfacto-big 为 lr=5e-3(method_configs.py:701-706)。</li>
+  <li><b>⚠️ 集成范围核实(v1.1.4 tag 实测):</b>bilateral grid <b>只接入了 splatfacto / splatfacto-big</b>;<code>nerfacto.py</code> 全文件 grep 无任何 bilateral grid 引用(0 命中)。release 标题 "Bilagrid + Splatfacto/Nerfacto" 的实际含义是「bilagrid 进 splatfacto + nerfacto 相关修复」,不要误以为 nerfacto 也有该开关。另外 <b>4D finishing(BilateralGridCP4D)在 nerfstudio 中未被接线</b>——类定义在 lib 文件里存在,但全仓库无调用点;nerfstudio 只移植了"训练阶段解耦"这一半。</li>
+</ul>
+
+<h3>10.3 论文宣称 vs 实现差异清单</h3>
+<table>
+<tr><th>条目</th><th>论文表述</th><th>代码真值</th><th>结论</th></tr>
+<tr><td>渲染损失形式</td><td>式 2/4:L2</td><td>Charbonnier(padding 0.001),configs.py:72-73</td><td>公式为示意,复现用 charb</td></tr>
+<tr><td>3D 网格分辨率</td><td>$(8,8,4)$ 中等变化 / $(16,16,8)$ 大变化(附录 A)</td><td>代码默认 $(16,16,8)$(lib_bilagrid.py:148;nerfstudio splatfacto.py:209)</td><td>一致,默认按"大变化"档</td></tr>
+<tr><td>TV 权重</td><td>训练 10、finishing 1</td><td>configs.py:88=10.0、:113=1.0;nerfstudio 硬编码 ×10</td><td>完全一致</td></tr>
+<tr><td>finishing 步数/耗时</td><td>2500 步 ≈15 min(附录 A)</td><td>max_ft_steps=2500(configs.py:106)</td><td>一致</td></tr>
+<tr><td>秩选择</td><td>R=5 粗编辑、R=8 精细(附录 A);≥10 不推荐(§5.2)</td><td>默认 rank=5(lib_bilagrid.py:280)</td><td>一致</td></tr>
+<tr><td>guidance</td><td>训练用灰度(式 8);finishing 可学 MLP(式 9)</td><td>3D 网格固定 BT601(lib_bilagrid.py:171);4D 默认 learn_gray=True(:281)</td><td>一致</td></tr>
+<tr><td>网格学习率</td><td>未提及</td><td>独立参数组 ×0.1(train.py:169)</td><td>代码独有细节</td></tr>
+</table>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+
+<h3>11.1 评测设定</h3>
+<ul>
+  <li><b>数据集:</b>自采 BilaRF 数据集,7 个真实夜间场景(PondBike / ChineseArch / NighttimePond / Statue / Building / Strat / LionPavilion),iPhone 13 × 2、OnePlus 9 × 5,每场景 20–93 张,拍摄 10–60 min(长曝光);除自动 ISP 外还逐视角改局部曝光与 ISO,部分视角故意引入剧烈曝光变化;COLMAP 估位姿(§5.1、附录 B)。数据已在 HuggingFace 开源。</li>
+  <li><b>协议:</b>因 GT 本身带 per-view ISP 增强、与输出存在色调偏差,除原始 sRGB PSNR 外,按 RawNeRF/mip-NeRF 360 协议计算<b>逐通道仿射对齐</b>后的指标(表头 "Affine-aligned sRGB",附录 Table 2 称 "CC" 前缀)。</li>
+</ul>
+
+<h3>11.2 Table 1(主表,7 场景平均,逐格照抄)</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑(sRGB)</th><th>PSNR↑(Affine)</th><th>SSIM↑(Affine)</th><th>LPIPS↓(Affine)</th></tr>
+<tr><td>ZipNeRF(baseline)</td><td>23.07</td><td>25.17</td><td>0.8224</td><td>0.1823</td></tr>
+<tr><td>ZipNeRF w/GLO</td><td>23.15</td><td>26.54</td><td>0.8521</td><td>0.1439</td></tr>
+<tr class="fail"><td>ZipNeRF w/AGLO</td><td>22.16</td><td>25.39</td><td>0.8156</td><td>0.2003</td></tr>
+<tr class="fail"><td>HDRNeRF</td><td>22.56</td><td>24.03</td><td>0.6451</td><td>0.3951</td></tr>
+<tr class="fail"><td>LLNeRF</td><td>18.37</td><td>21.71</td><td>0.6602</td><td>0.4466</td></tr>
+<tr class="best"><td>Ours(BiLaRF)</td><td><b>23.83</b></td><td><b>27.53</b></td><td><b>0.8696</b></td><td><b>0.1336</b></td></tr>
+</table>
+<p class="note">表注(论文原文):与 baseline(ZipNeRF)、GLO 类(w/GLO、w/AGLO)、相机响应函数建模(HDRNeRF)、暗场景增强(LLNeRF)比较。经与附录 Table 2 逐格核对:Table 1 的 SSIM/LPIPS 两列即 Table 2 的 CC SSIM/CC LPIPS 平均值(0.8224↔0.8225 为四舍五入差异),PSNR 两列分别对应原始与 CC 平均,数据自洽。</p>
+
+<h3>11.3 Table 2 精选:逐场景 CC PSNR(附录,照抄)</h3>
+<table>
+<tr><th>方法</th><th>PondBike</th><th>ChineseArch</th><th>NighttimePond</th><th>Statue</th><th>Building</th><th>Strat</th><th>LionPavilion</th><th>avg</th></tr>
+<tr><td>ZipNeRF</td><td>28.0486</td><td>21.4935</td><td>26.5362</td><td>23.7384</td><td>26.8481</td><td>23.5512</td><td>25.9849</td><td>25.1716</td></tr>
+<tr><td>ZipNeRF w/GLO</td><td>28.4127</td><td>25.4512</td><td>24.7949</td><td>25.9525</td><td>29.8511</td><td>25.4714</td><td>25.8575</td><td>26.5416</td></tr>
+<tr><td>ZipNeRF w/AGLO</td><td>27.6385</td><td>25.1003</td><td>24.1903</td><td>23.9220</td><td>27.9123</td><td>24.7473</td><td>24.1891</td><td>25.3857</td></tr>
+<tr><td>HDRNeRF</td><td>26.6960</td><td>22.0012</td><td>25.4842</td><td>24.0930</td><td>24.8259</td><td>22.1104</td><td>23.0263</td><td>24.0339</td></tr>
+<tr><td>LLNeRF</td><td>25.9435</td><td>21.1180</td><td>25.9706</td><td>21.0700</td><td>22.1995</td><td>13.7086</td><td>21.9384</td><td>21.7069</td></tr>
+<tr class="best"><td>Ours</td><td><b>29.6209</b></td><td><b>26.6002</b></td><td><b>26.4227</b></td><td><b>26.5037</b></td><td><b>30.8510</b></td><td><b>25.8521</b></td><td><b>26.8258</b></td><td><b>27.5252</b></td></tr>
+</table>
+
+<div class="callout warn">
+<b>读表注意(附录 D 的诚实声明):</b>原始(未对齐)PSNR 下,ZipNeRF 在个别场景反超本文(如 PondBike 26.5908 vs 26.1644)。论文解释:ZipNeRF 倾向把 ISP 引入的亮度/色偏过拟合成"视角相关光照效果",全局色调恰好匹配 GT 时 PSNR 虚高但视觉有伪影;仿射对齐(CC)后全局色调被拉平,伪影成为影响 PSNR 的主因,此时本文在<b>大多数</b>场景最优。这提醒我们:<b>在这类任务上裸 PSNR 是会撒谎的,CC PSNR / LPIPS 更接近观感</b>。
+</div>
+
+<h3>11.4 定性对比与 RawNeRF 对照</h3>
+<div class="figure">
+  <img src="images/2406.00448/cmp_slightproc_vertical3.png" alt="与 ZipNeRF 在轻微光度变化室内场景的对比" loading="lazy">
+  <div class="caption"><b>图13</b>(对应论文 Figure 6)<b>轻微光度变化也足以致害:</b>mip-NeRF 360 室内场景(良好光照、无手动调参),ZipNeRF 仍因微小不一致产生 floaters,本文消除。说明该问题不是夜间拍摄的专利,而是所有手机实拍的常态。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/cmp_rawnerf3.png" alt="与 RawNeRF 的对比" loading="lazy">
+  <div class="caption"><b>图14</b>(对应论文 Figure 7)<b>与 RawNeRF 对照:</b>RawNeRF 直接用 raw 训练,本文只用处理后 sRGB(Restormer 去噪 + HDR+ 合成输入),二者都能得到无 floater 结果。本文输入因去噪器在低光下产生紫偏,色偏被烘进辐射场;作者用 finishing 把参考图(HDR+ 合成)的正确颜色升维到全场景修复——这是训练/修图两阶段接力使用的完整范例。</div>
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+
+<h3>12.1 TV 损失权重(§5.2,Fig 9)</h3>
+<p>变量:训练阶段 $\lambda_{TV}\in\{0,\ 0.1,\ 10\}$。结论:无 TV 时网格的仿射平移分量编码低频外观(墙上阴影),在辐射场中留下 ghost 伪影;弱 TV(0.1)压不住;<b>$\lambda_{TV}=10$ 才干净</b>——"大权重是关键"是论文原话(§3.3)。finishing 侧同理(附录 C Fig 22):去掉 TV 后未见区域色彩不自然,TV 充当了低秩张量补全的局部平滑先验(权重固定 1)。</p>
+<div class="figure">
+  <img src="images/2406.00448/ablation_tvloss.png" alt="TV 损失权重消融" loading="lazy">
+  <div class="caption"><b>图15</b>(对应论文 Figure 9)<b>TV 权重消融:</b>左(无 TV)ghost 伪影;中(弱 TV)未缓解;右($\lambda_{TV}=10$)伪影基本消失。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/ablation_tvlossfinishing.png" alt="finishing 阶段 TV 损失消融" loading="lazy">
+  <div class="caption"><b>图16</b>(对应论文 Figure 22,附录 C)<b>finishing 的 TV 消融:</b>省略 TV 后编辑视角不可见区域色彩不自然;TV 相当于低秩张量补全的局部平滑先验(该阶段固定 $\lambda_{TV}=1$)。</div>
+</div>
+
+<h3>12.2 低秩近似的必要性(§5.2,Fig 8)</h3>
+<p>对照:① direct 5D 张量(无低秩);② 高秩 R=16;③ 本文 R=5。结论:direct 张量对编辑视角不可见区域无法恢复仿射系数 → 色彩失真;R=16 出现过约束不足的非自然色;<b>R=5 在未见区域给出合理外推</b>。秩扫描:R=1 容量不足无法升维编辑;R=3/5/6/7 效果相近(对秩不敏感);R≥10 开始色彩失真(Fig 8j 用 R=12 演示)。附录 C Fig 23 补充:大局部对比编辑(一层提亮、邻层压暗)时 R=5 会把两处变化平均化,R=8 才能分别表达——实践中先 R=5,不够再升 8。</p>
+<div class="figure">
+  <img src="images/2406.00448/ablation_direct4drank.png" alt="低秩近似消融" loading="lazy">
+  <div class="caption"><b>图17</b>(对应论文 Figure 8)<b>低秩消融:</b>(c) direct 5D 张量在未见区域色彩失真;(d) R=16 出现非自然色;(e) R=5 合理;(f)-(j) 秩从 1 到 12 的影响扫描。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/rank_choice.png" alt="提高秩对高对比局部编辑的影响" loading="lazy">
+  <div class="caption"><b>图18</b>(对应论文 Figure 23,附录 C)<b>秩选择的边界案例:</b>提亮建筑第二层同时压暗相邻第三层(局部高对比编辑),R=5 把两处变化平均化而退化,R=8 能分别表达。</div>
+</div>
+
+<h3>12.3 恒等初始化(§5.2,Fig 10)</h3>
+<p>PARAFAC 恒等初始化 vs 随机初始化:随机初始化下对树桩的改色(暗绿→紫)错误波及背景;恒等初始化保证未监督区域默认"不变",编辑只沿低秩 + TV 先验传播。</p>
+<div class="figure">
+  <img src="images/2406.00448/ablation_init.png" alt="4D 网格初始化消融" loading="lazy">
+  <div class="caption"><b>图19</b>(对应论文 Figure 10)<b>初始化消融:</b>(c) PARAFAC 恒等初始化,编辑一致传播;(d) 随机初始化,传播退化污染背景。</div>
+</div>
+
+<h3>12.4 附录消融(双向对照,信息量大)</h3>
+<table>
+<tr><th>消融(图号)</th><th>变量</th><th>结论(机制)</th></tr>
+<tr><td>双边空间 vs 纯空间,训练(Fig 18)</td><td>有无 guidance 值维</td><td>纯空间仿射在高局部对比区域保不住亮度(相邻亮暗像素被迫共享变换)→ 新视角伪影;值维让"位置相邻但亮度不同"的像素走不同仿射。</td></tr>
+<tr><td>网格分辨率,训练(Fig 20)</td><td>$(1,1,1)$ / $(8,8,4)$ / $(16,16,8)$</td><td>$(1,1,1)$ 退化为全局仿射 → 色彩失真,证明"局部"是必要的;$(8,8,4)$ 与 $(16,16,8)$ 差异不大。</td></tr>
+<tr><td>双边 vs 纯空间,finishing(Fig 21)</td><td>有无值维</td><td>纯空间低秩补全无法区分编辑主体与邻近区域,造成"颜色污染";值维保证只有黄色区域被调紫。</td></tr>
+<tr><td>边缘感知(Fig 19)</td><td>—</td><td>前景提亮/背景压暗的 halo 在双边空间下被缓解。</td></tr>
+<tr><td>可学习 guidance(Fig 25)</td><td>灰度 vs 2 层 MLP</td><td>灰度引导在改色任务中把等亮度异色区域绑死;学习引导能分离颜色分量,保持色相只调亮度。</td></tr>
+<tr><td>GLO 对比(Fig 24)</td><td>GLO vs 本文</td><td>GLO 把镜面高光烘进场景(解释掉视角相关效果);低光下 GLO 调制高频噪声在暗部出伪影。本文网格是低频 ISP 表示,天然规避两者。</td></tr>
+</table>
+<div class="figure">
+  <img src="images/2406.00448/ablation_bilavsspatial.png" alt="双边空间 vs 纯空间消融" loading="lazy">
+  <div class="caption"><b>图20</b>(对应论文 Figure 18)<b>训练阶段双边空间消融:</b>spatial-only 在高对比区域亮度失真并产生伪影;双边模型分别处理暗区与亮区。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/ablation_bilares.png" alt="网格分辨率消融" loading="lazy">
+  <div class="caption"><b>图21</b>(对应论文 Figure 20)<b>分辨率消融:</b>$(1,1,1)$ 退化为全局仿射导致色彩失真;$(8,8,4)$ 与 $(16,16,8)$ 都足够逼近 ISP。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/ablation_bilafinishing.png" alt="finishing 阶段双边空间消融" loading="lazy">
+  <div class="caption"><b>图22</b>(对应论文 Figure 21,附录 C)<b>finishing 阶段双边空间消融:</b>spatial-only 的低秩补全无法区分编辑主体与邻近区域,造成"颜色污染";带值维的双边空间只把黄色区域调紫。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/halo.png" alt="边缘感知编辑:halo 缓解" loading="lazy">
+  <div class="caption"><b>图23</b>(对应论文 Figure 19,附录 C)<b>边缘感知编辑:</b>前景提亮 + 背景压暗在 2D 编辑中产生 halo,双边空间处理可在 3D 结果上缓解 halo。</div>
+</div>
+<div class="figure">
+  <img src="images/2406.00448/ablation_learngray.png" alt="可学习 guidance 消融" loading="lazy">
+  <div class="caption"><b>图24</b>(对应论文 Figure 25,附录 E)<b>可学习 guidance 消融(附 guidance 可视化):</b>灰度引导在新视角产生意外颜色;学习到的引导让背景各物体取相近引导值、受到一致变换,在调亮度的同时保持色相。</div>
+</div>
+<div class="figure">
+  <div class="figrow">
+    <img src="images/2406.00448/cmp_glo2.png" alt="GLO 把镜面高光烘进场景" loading="lazy" style="max-width:49%">
+    <img src="images/2406.00448/cmp_glo.png" alt="低光下 GLO 在暗部产生伪影" loading="lazy" style="max-width:49%">
+  </div>
+  <div class="caption"><b>图25</b>(对应论文 Figure 24,附录 D)<b>与 GLO 类方法对比:</b>左,GLO 会"解释掉"视角相关效果——镜面高光被烘进场景;右,低光环境下 GLO 调制高频噪声,暗部出现伪影。双边网格是低频 ISP 表示,天然规避这两类问题。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>13.1 横向对比表(固定维度;数字来自论文 Table 1,"—"为原文未报告)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>不一致性的表示</th><th>监督信号</th><th>训练时长</th><th>推理开销</th><th>CC PSNR↑ / LPIPS↓</th><th>开源</th></tr>
+<tr><td>ZipNeRF(baseline)</td><td>2023</td><td>sRGB,理想一致</td><td>不处理</td><td>渲染损失</td><td>≈2.25 h(3090,附录 A)</td><td>0</td><td>25.17 / 0.1823</td><td>非官方 PyTorch 重实现</td></tr>
+<tr><td>NeRF-W(GLO)</td><td>2021</td><td>sRGB in-the-wild</td><td>每视角可学嵌入向量(全局调制)</td><td>渲染损失</td><td>—</td><td>0</td><td>26.54 / 0.1439(w/GLO)</td><td>无官方</td></tr>
+<tr><td>ZipNeRF w/AGLO</td><td>2023</td><td>同上</td><td>每视角仿射变换(全局)</td><td>渲染损失</td><td>—</td><td>0</td><td>25.39 / 0.2003</td><td>—</td></tr>
+<tr><td>HDRNeRF</td><td>2022</td><td>多曝光 LDR</td><td>per-channel MLP 全局色调曲线</td><td>渲染损失(曝光条件)</td><td>—</td><td>色调 MLP 查询</td><td>24.03 / 0.3951</td><td>✓</td></tr>
+<tr><td>LLNeRF</td><td>2023</td><td>低光 sRGB</td><td>增亮 + 降噪 + 颜色校正模块</td><td>渲染损失</td><td>—</td><td>0</td><td>21.71 / 0.4466</td><td>✓</td></tr>
+<tr><td>RawNeRF</td><td>2022</td><td><b>raw 线性数据</b></td><td>绕过 ISP(不在 sRGB 训练)</td><td>raw 域渲染损失</td><td>—</td><td>后处理 ISP</td><td>—(本文仅定性对比,Fig 7)</td><td>✓(数据)</td></tr>
+<tr class="best"><td>BiLaRF(本文)</td><td>2024</td><td>普通 sRGB(允许逐视角 ISP 增强)</td><td><b>per-view 3D 双边网格(局部仿射)</b></td><td>渲染损失 + 网格 TV(×10)</td><td>≈2.25 h + 修图 15 min(3090,附录 A)</td><td><b>0(训练后丢弃)</b></td><td><b>27.53 / 0.1336</b></td><td>✓ Apache 2.0 + nerfstudio 集成</td></tr>
+</table>
+
+<h3>13.2 逐条对比结论(机制层面,不是数字罗列)</h3>
+<ol>
+  <li><b>vs GLO/AGLO(表观嵌入):</b>GLO 是<b>无结构的全局调制</b>——一个向量(或一组仿射)对整图所有像素施加同一影响,表达力上天然分不清"这是 ISP 颜色变换"还是"这是视角相关高光",于是把镜面高光烘进场景、把低光噪声当作视角差异放大(附录 D,Fig 24)。双边网格的<b>局部仿射 + 低分辨率 + TV</b> 三重结构先验把它限制在"低频、空间平滑的颜色变换"——正好是 ISP 的物理形态。指标上 GLO 是最接近的竞品(26.54),但 SSIM/LPIPS 差距(0.8521→0.8696、0.1439→0.1336)反映的正是这些结构性伪影。</li>
+  <li><b>vs HDRNeRF(全局 CRF):</b>per-channel 曲线是 $g:\mathbb R\to\mathbb R$ 的全局映射,而现代 ISP 的局部色调映射是空间变化的;表达力差距直接体现在 SSIM 0.6451 的断崖上。</li>
+  <li><b>vs LLNeRF(任务专用增强):</b>LLNeRF 解决"暗"这个单一问题,其增亮模块在曝光剧烈变化时失效(Strat 场景 CC PSNR 仅 13.7086,该指标全表最低)——专用模块的泛化边界 vs 通用 ISP 表示的差距。</li>
+  <li><b>vs RawNeRF(绕开问题):</b>效果相当(Fig 7 定性),但 raw 数据的硬件/存储门槛是硬约束;本文证明"只有 sRGB"也能达到 floater-free,且 finishing 还能反过来修 RawNeRF 路线没有的编辑能力。</li>
+</ol>
+
+<h3>13.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>2D 计算摄影(网格表示的源头)</td><td>Bilateral Grid(2007)→ BGU(2016)→ HDRNet(2017)</td><td>图像增强 ≈ 双边空间的局部仿射变换,可学、边缘感知</td><td>只在 2D 图像上工作,无 3D 一致性概念</td></tr>
+<tr><td>外观嵌入</td><td>NeRF-W GLO(2021)→ AGLO(ZipNeRF,2023)</td><td>视角差异 = 低维潜向量调制</td><td>无结构,解释掉视角相关效果、放大噪声</td></tr>
+<tr><td>物理建模 ISP</td><td>HDRNeRF(2022)、RawNeRF(2022)</td><td>显式建模 CRF / 直接在 raw 域训练</td><td>全局曲线表达力不足;raw 数据门槛</td></tr>
+<tr><td>低秩张量表示</td><td>TensoRF(2022,辐射场 VM/CP 分解)→ <b>BiLaRF(2024)</b></td><td>高维信号可用低秩分解紧凑表示</td><td>—</td></tr>
+<tr><td><b>可微 ISP 代理(本文开创)</b></td><td>BiLaRF(2024)→ nerfstudio splatfacto 集成(2024)</td><td>ISP 残差 = per-view 低频局部仿射;编辑传播 = 低秩张量补全</td><td>只管光度类不一致,不管瞬态物体/几何不一致</td></tr>
+<tr><td>干扰过滤(互补路线)</td><td><a href="3D-20260414-PDF-GS.html">PDF-GS</a>(2026)</td><td>瞬态干扰在梯度域呈稀疏离群,渐进式过滤</td><td>针对人/车等瞬态遮挡,不处理 ISP 光度差异——与本文正交互补</td></tr>
+</table>
+<p class="note">库内交叉:鲁棒重建方向的兄弟笔记还有 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a>(3DGS 骨干侧背景,nerfstudio 集成的就是 splatfacto);若输入是生成视频且帧间几何不一致,问题升级,见 <a href="3D-20260317-VideoToWorld.html">VideoToWorld</a>——BiLaRF 只处理光度不一致,几何错位它管不了。</p>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<h3>14.1 能否进我们的 pipeline(vggt_human / 3DGS 主线)</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>✅ 成本:几乎为零</h4>
+    <p>nerfstudio ≥v1.1.4 的 splatfacto 加一个 flag(<code>--pipeline.model.use-bilateral-grid True</code>)即可启用;网格参数量每视角 24K(16×16×8×12),93 个视角也仅 ~2.2M 参数;官方实测训练时长与骨干持平(附录 A)。推理时网格丢弃,渲染开销不变。</p>
+  </div>
+  <div class="card">
+    <h4>✅ 收益场景判定</h4>
+    <p>手机/运动相机实拍、多机位不同型号混拍、室内外交替、夜间长曝光、有意包围曝光(HDR 融合)——只要输入存在逐视角 ISP 漂移就有效。vggt_human 若用手机环绕拍摄人像,自动曝光/白平衡逐帧跳变是常态,正落在该方法的甜区。</p>
+  </div>
+  <div class="card">
+    <h4>⚠️ 边界(论文自认)</h4>
+    <p>① 不管瞬态物体(云、行人)——那是 <a href="3D-20260414-PDF-GS.html">PDF-GS</a> 的领地,两者可叠加;② in-the-wild 旅游照不如 GLO,论文建议联合使用(Fig 16b);③ finishing 不能升维模糊/锐化这类非点算子(Fig 17);④ 极局部的编辑受网格分辨率与秩的表达力限制(Fig 17 第二行)。</p>
+  </div>
+</div>
+
+<h3>14.2 数据与工程成本清单</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>出处</th></tr>
+<tr><td>显存</td><td>官方 gin 注释:24GB 卡把 batch 从 65536 降到 16384 即可运行</td><td>configs/360.gin、llff.gin 注释</td></tr>
+<tr><td>训练时长</td><td>≈2.25 h(ZipNeRF 骨干,RTX 3090);finishing 2500 步 ≈15 min</td><td>附录 A</td></tr>
+<tr><td>数据要求</td><td>仅需 sRGB + COLMAP 位姿;不需要 raw、不需要 GT depth、不需要曝光元数据</td><td>§5.1、附录 B</td></tr>
+<tr><td>依赖</td><td>官方:torch 2.0.1 + tensorly 0.8.1 + gridencoder CUDA 扩展 + torch-scatter;nerfstudio 路线无额外依赖(tensorly 已在其依赖内)</td><td>README、requirements.txt</td></tr>
+<tr><td>移植性</td><td><code>lib_bilagrid.py</code> 单文件 411 行,官方明确定位为"拷走即用";live demo 基于 ngp_pl(Instant-NGP)证明了跨骨干迁移</td><td>README:14-26、项目页</td></tr>
+</table>
+
+<h3>14.3 落地建议(按优先级)</h3>
+<ol>
+  <li><b>[P0] splatfacto 直接开开关:</b>对任何"手机实拍、曝光不稳"的采集,先在 splatfacto 上开 <code>use_bilateral_grid</code> 做一次 A/B——成本是一条命令,收益直接看 floaters 是否消失。</li>
+  <li><b>[P1] 移植到自研 3DGS:</b>若主力是自研 pipeline,拷贝 <code>lib_bilagrid.py</code> 的 <code>BilateralGrid</code> 类(~90 行核心),在渲染输出与 L1/SSIM 损失之间插入 <code>slice</code>,加 10×TV 损失与独立参数组(参考 splatfacto.py:848-850, 957-958 的 30 行接线代码)。</li>
+  <li><b>[P2] finishing 能力谨慎引入:</b>4D 编辑链路(单视角修图 → 全场景)nerfstudio 没有移植,要用得回官方 zipnerf-pytorch 代码库;对数字人管线,"训练解耦"价值远大于"修图升维",建议只取前者。</li>
+</ol>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<div class="grid-2">
+<div class="card">
+<h4>[高优先级] 多尺度网格解决局部编辑表达力</h4>
+<p><b>问题:</b>单个低分辨率 4D 网格对极局部编辑(如只改建筑局部纹理)表达不足,论文 Fig 17 第二行承认"更大分辨率和更高秩都不能有效改善"。<b>建议:</b>按论文自己的提示引入 HDRNet 式多尺度双边网格,或残差式 coarse-to-fine 双网格(粗网格管全局色调、细网格管局部),代码上 <code>BilateralGridCP4D</code> 已支持任意分辨率,欠的是多尺度监督结构。</p>
+</div>
+<div class="card">
+<h4>[高优先级] 与瞬态干扰过滤的正交组合</h4>
+<p><b>问题:</b>本文只管光度不一致,瞬态物体(云/行人)产生的 floaters 明确无解(§5.4 Fig 16a);而 PDF-GS 类方法只管瞬态不管光度。真实手机采集两种问题并存。<b>建议:</b>网格解耦 + 梯度域/不确定性干扰过滤串联,顺序上先光度解耦再干扰过滤更合理(光度不一致会污染干扰检测的残差统计)。</p>
+</div>
+<div class="card">
+<h4>[中优先级] guidance 的泛化性与自适应</h4>
+<p><b>问题:</b>可学习 guidance 只在单个编辑视图上拟合(附录 E 末段自认"对未见区域颜色分布可能不泛化");训练阶段则全局固定 BT601 灰度,对强饱和色场景引导区分度有限。<b>建议:</b>guidance MLP 用多视角渲染一致性做自监督微调,或对训练阶段也引入(轻量)可学习引导并加跨视角一致性正则。</p>
+</div>
+<div class="card">
+<h4>[中优先级] 网格分区编辑的产品化</h4>
+<p><b>问题:</b>附录 F 的复杂案例(红色庙宇 vs 日落天空编辑方向冲突)靠手动拆两个 4D 网格解决,说明单网格的表达瓶颈在多目标差异化编辑场景真实存在,但目前完全靠人工判断。<b>建议:</b>按语义分割或编辑强度自动分区,每区独立低秩网格,加区间平滑正则——改动集中在 finishing 脚本,不动核心库。</p>
+</div>
+<div class="card">
+<h4>[低优先级] 与 3DGS 的深度耦合(而非图像空间事后处理)</h4>
+<p><b>问题:</b>当前 3D 网格作用在渲染后的 2D 像素上(图像空间),3DGS 版亦然(nerfstudio splatfacto 是整图后处理);若把 per-view 网格挂在逐高斯/逐采样点的 3D 空间(类似 finishing 的 4D 思路做训练解耦),理论上可处理视角间部分重叠区域的精细差异。<b>建议:</b>探索 per-view 4D 网格(空间 + 引导)替代 per-view 3D 网格,代价是失去"图像空间低分辨率"的简洁性,需实验验证收益。<span class="uncertain">⚠️【推测】此为本人推断方向,无论文/代码佐证。</span></p>
+</div>
+<div class="card">
+<h4>[低优先级] 评测协议扩展</h4>
+<p><b>问题:</b>主实验只在 7 个自采夜间场景上做数值评估,公开 benchmark(mip-NeRF 360 等)只有定性展示;夜间小数据集上 +0.76 dB 的统计显著性有限。<b>建议:</b>用附录 B 的 ISP 仿真管线(随机数字增益 + sRGB gamma/HDR+ 色调映射)对 mip-NeRF 360 全量做受控退化评测,给出可复现的公开基准。</p>
+</div>
+</div>
+
+<div class="figure">
+  <img src="images/2406.00448/lim_finishing.png" alt="finishing 的两类失败案例" loading="lazy">
+  <div class="caption"><b>图26</b>(对应论文 Figure 17)<b>finishing 的边界:</b>第一行,4D 网格是点算子,锐化等带空间核的 2D 操作无法升维;第二行,对建筑的困难局部编辑超出单张低分辨率 4D 网格的表达力,加大分辨率与秩均无明显改善。</div>
+</div>
+
+<div class="callout key">
+<b>个人认为最关键的三点:</b>① 与瞬态干扰过滤的正交组合——这是真实数据落地的最后一公里,且两个方法都已开源;② 多尺度网格——Fig 17 的失败案例说明单分辨率表达力是当前最硬的能力边界;③ guidance 泛化——finishing 的半监督传播质量几乎完全押在这一维的区分度上。
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+
+<p>BiLaRF 的价值不在于发明了一个新表示——双边网格是 2007 年的技术、CP 分解是 TensoRF 用过的工具、per-view 外观建模有 GLO 在前。它真正的贡献是<b>把问题重新定义对了</b>:相机 ISP 造成的多视角不一致,不是要让 NeRF"更鲁棒地拟合",而是应该被<b>结构性地剥离</b>给一个专门的、物理形态匹配的可微代理(低频、局部仿射、per-view)。这个重定义带来三个直接好处:辐射场回归干净(无 floaters)、HDR 融合与光照解耦成为免费副产品、同一个表示升维后又把"修一张图"变成"修整个 3D"。</p>
+
+<p>从演进脉络看,它是"2D 计算摄影表示 → 3D 重建组件"这条迁移路线上的关键一站,也是少有的<b>发表当年就被主流框架(nerfstudio splatfacto)官方收编</b>的表示层工作。对工程界的实际意义:3DGS/NeRF 训练对输入数据质量的容忍区间被显著拉宽——自动曝光的手机素材从"需要手动锁曝光的专业采集"降级为"随手拍也能用"。</p>
+
+<div class="callout warn">
+<b>遗留问题:</b>① 光度与几何/瞬态不一致的统一处理框架仍未出现,当前是多个正交工具的组合使用;② finishing 的低秩先验在强局部编辑下表达力受限(Fig 17),多尺度化是明显但未完成的下一步;③ 4D 编辑链路只有官方 zipnerf-pytorch 实现,未进入 nerfstudio,生态碎片化。
+</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>团队</h3>
+<ul>
+  <li><b>Yuehao Wang</b>(一作)——香港中文大学,<a href="https://yuehaowang.github.io/" target="_blank">主页</a></li>
+  <li><b>Chaoyi Wang</b>——香港中文大学</li>
+  <li><b>Bingchen Gong</b>——香港中文大学</li>
+  <li><b>Tianfan Xue</b>(通讯方向)——香港中文大学 + 上海人工智能实验室,<a href="https://tianfan.info/" target="_blank">主页</a></li>
+</ul>
+
+<h3>资源链接</h3>
+<ul class="refs">
+  <li>📄 arXiv: <a href="https://arxiv.org/abs/2406.00448" target="_blank">abs</a> · <a href="https://arxiv.org/html/2406.00448v2" target="_blank">HTML v2</a> · <a href="https://arxiv.org/pdf/2406.00448" target="_blank">PDF</a>(v1 2024-06-01,v2 2024-08-06)</li>
+  <li>🏠 项目主页: <a href="https://bilarfpro.github.io/" target="_blank">bilarfpro.github.io</a>(含 demo 视频)</li>
+  <li>💻 官方代码: <a href="https://github.com/yuehaowang/bilarf" target="_blank">yuehaowang/bilarf</a>(Apache 2.0,基于 zipnerf-pytorch;核心库 <code>lib_bilagrid.py</code> 单文件可移植)</li>
+  <li>🧩 nerfstudio 集成: <a href="https://github.com/nerfstudio-project/nerfstudio/releases/tag/v1.1.4" target="_blank">v1.1.4</a>(splatfacto <code>use_bilateral_grid</code>;仅训练解耦,无 4D finishing)</li>
+  <li>🗃️ 数据: <a href="https://huggingface.co/datasets/Yuehao/bilarf_data" target="_blank">HuggingFace BilaRF Dataset</a>(夜间实拍 + RawNeRF 合成 + 编辑样本)</li>
+  <li>📚 库内兄弟笔记: <a href="3D-20260414-PDF-GS.html">PDF-GS(瞬态干扰过滤)</a> · <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a> · <a href="3D-20260317-VideoToWorld.html">VideoToWorld(几何不一致的更重病例)</a></li>
+</ul>
+</section>
+
+
+<div class="footer">
+  <p>BiLaRF (arXiv:2406.00448v2) 深度调研笔记 · 媒体论文调研知识库 · 生成于 2026-10-20</p>
+  <p>正文数字均可回核:论文 arXiv HTML v2 / 官方仓库 yuehaowang/bilarf / nerfstudio v1.1.4 源码(引用均带 file:line)</p>
+</div>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

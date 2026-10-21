@@ -1781,6 +1781,51 @@
       ]
     },
     {
+      "file": "3D-20240601-BiLaRF.html",
+      "title": "BiLaRF: 双边网格引导的辐射场处理 — ISP 解耦训练与 3D 修图",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "鲁棒性与干扰过滤"
+      ],
+      "meta": [
+        "📄 arXiv: 2406.00448",
+        "📅 2024-06-01 (v2: 2024-08-06)",
+        "🏢 香港中文大学 & 上海人工智能实验室",
+        "🎓 SIGGRAPH (ACM TOG) 2024"
+      ],
+      "tags": [
+        "Bilateral Grid",
+        "3D ISP",
+        "NeRF",
+        "3DGS",
+        "Photometric Consistency",
+        "CP Decomposition",
+        "nerfstudio",
+        "Floater Removal"
+      ],
+      "summary": "手机 ISP 对每张输入图独立做曝光/色彩/局部色调映射,破坏多视角一致性,使 NeRF 重建出 floaters。BiLaRF 给每个训练视角挂一个可微 <strong>3D 双边网格</strong>(16×16×8,每格存 3×4 仿射颜色变换,恒等初始化 + 权重 10 的 TV 正则)吸收逐视角 ISP 残差,辐射场只学干净场景,推理时网格丢弃零开销;finishing 阶段再把该表示升为 <strong>CP 分解的低秩 4D 双边网格</strong>(秩 5/8,PARAFAC 恒等初始化),只修一张渲染图(Lightroom)即可把编辑一致传播到全 3D 场景,实现\"3D ISP\"。自采 7 个夜间场景:原始 PSNR 23.83(vs ZipNeRF 23.07),仿射对齐后 PSNR 27.53 / SSIM 0.8696 / LPIPS 0.1336 全面最优(vs GLO 26.54 / 0.8521 / 0.1439);副产品含 HDR 融合与变化光照解耦。训练 ≈2.25h、修图 2500 步 ≈15min,单卡 RTX 3090。官方实现(Apache 2.0,基于 zipnerf-pytorch)核心为可移植单文件 lib_bilagrid.py;<strong>nerfstudio v1.1.4 已官方集成到 splatfacto</strong>(use_bilateral_grid 开关,TV 权重 10 硬编码;nerfacto 未接入、4D finishing 未移植)。局限:不处理瞬态物体(云/行人,in-the-wild 需联合 GLO)、不能升维模糊/锐化等非点算子、极局部编辑受分辨率与秩限制。",
+      "links": [
+        {
+          "href": "3D-20240601-BiLaRF.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2406.00448",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/yuehaowang/bilarf",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://bilarfpro.github.io/",
+          "text": "🏠 项目主页"
+        }
+      ]
+    },
+    {
       "title": "2026 新一代高斯表面重建调研:GOF 之后的范式反超",
       "meta": [
         "📄 综述: 2604.07337 / 2506.19139 / 2603.19682 / 2603.08503",
