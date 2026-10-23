@@ -813,6 +813,69 @@
       ]
     },
     {
+      "title": "ForcingBooster: Adaptive Patch-wise Denoising for Fast Autoregressive Video Diffusion",
+      "meta": [
+        "📄 arXiv: 2610.12625",
+        "📅 2026-10-08",
+        "🏢 HKUST · VAST · 澳门科技大学",
+        "✅ 开源(代码+部分权重)"
+      ],
+      "tags": [
+        "Adaptive Computation",
+        "Patch-wise Early Exit",
+        "Autoregressive Video Diffusion",
+        "KV Cache 稀疏推理",
+        "On-policy 路由训练",
+        "Wan2.1 / LingBot / LongLive 基座"
+      ],
+      "summary": "给冻结的少步自回归视频生成器外挂 ≈3.15M 参数路由头,逐步预测每个 latent patch 的退出概率:易区域提前退出并以当前 x̂₀ 定稿、KV 写入历史供其余 patch 使用。停止代理损失(与自身 4 步输出的 patch MSE)+ 期望步数代价,on-policy 训练仅 500 步、无需视频数据。Causal Forcing 1.3B 上 patch-NFE 降 <strong>50.19%</strong>、端到端 <strong>1.30×</strong> 加速,VBench 与 4 步基线持平;但独立复核发现 14B 基座上与 uniform 2-step 无实质差距(83.32 vs 83.35),收益对基座敏感。",
+      "links": [
+        {
+          "href": "VideoGen-20261008-ForcingBooster.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2610.12625",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/IGL-HKUST/ForcingBooster",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://igl-hkust.github.io/ForcingBooster/",
+          "text": "🌐 项目主页"
+        }
+      ],
+      "file": "VideoGen-20261008-ForcingBooster.html",
+      "section": "vg-notes-2",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "质量速度权衡与实时",
+        "视频生成模型谱系"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17"
+      ]
+    },
+    {
       "title": "Cosmos 3: NVIDIA 全模态世界模型",
       "meta": [
         "📄 arXiv: 2606.02800 (v4, 2026-06-23)",

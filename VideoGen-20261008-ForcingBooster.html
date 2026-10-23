@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForcingBooster:自适应 Patch 级去噪加速自回归视频扩散 — 算法原理与源码验证</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+
+  :root{
+    --bg:#0f1419; --panel:#1a2029; --panel2:#222b36; --border:#2d3748;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#60a5fa; --accent2:#a78bfa;
+    --green:#34d399; --orange:#fb923c; --pink:#f472b6; --red:#f87171;
+    --code-bg:#0d1117;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.7;
+    padding:0;
+  }
+  .hero{
+    background:linear-gradient(135deg,#1e3a5f 0%,#2d1b4e 50%,#1a2029 100%);
+    padding:60px 40px 50px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 20% 50%, rgba(96,165,250,0.15), transparent 40%),
+               radial-gradient(circle at 80% 30%, rgba(167,139,250,0.15), transparent 40%);
+  }
+  .hero-content{position:relative;max-width:1100px;margin:0 auto}
+  .hero .badge{
+    display:inline-block; background:rgba(96,165,250,0.15); color:var(--accent);
+    border:1px solid rgba(96,165,250,0.3); padding:4px 14px; border-radius:20px;
+    font-size:13px; margin-bottom:18px; letter-spacing:.5px;
+  }
+  .hero h1{font-size:34px; line-height:1.3; margin-bottom:14px; font-weight:700}
+  .hero .subtitle{color:var(--muted); font-size:16px; max-width:820px}
+  .hero .authors{color:#cbd5e1; font-size:14px; margin-top:16px}
+  .hero .links{margin-top:18px; display:flex; gap:12px; flex-wrap:wrap}
+  .hero .links a{
+    color:var(--accent); text-decoration:none; font-size:13px;
+    border:1px solid rgba(96,165,250,0.4); padding:6px 14px; border-radius:6px;
+    transition:all .2s;
+  }
+  .hero .links a:hover{background:rgba(96,165,250,0.15)}
+  .container{max-width:1100px; margin:0 auto; padding:40px}
+  .toc{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:24px 30px; margin-bottom:40px;
+  }
+  .toc h2{font-size:18px; margin-bottom:14px; color:var(--accent); border:none; padding:0}
+  .toc ol{margin-left:22px; columns:2; column-gap:40px}
+  .toc li{margin-bottom:6px; font-size:14px}
+  .toc a{color:var(--muted); text-decoration:none; transition:color .2s}
+  .toc a:hover{color:var(--accent)}
+  section{margin-bottom:48px; scroll-margin-top:20px}
+  h2{
+    font-size:26px; border-bottom:2px solid var(--border); padding-bottom:10px;
+    margin-bottom:22px; color:#fff; display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#0f1419; width:36px; height:36px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  h3{font-size:19px; margin:24px 0 14px; color:var(--accent2)}
+  h4{font-size:16px; margin:18px 0 10px; color:var(--green)}
+  p{margin-bottom:14px; color:#cbd5e1}
+  .lead{font-size:16px; color:#e2e8f0}
+  strong{color:#fff}
+  em{color:var(--accent); font-style:normal}
+  code{
+    background:var(--code-bg); padding:2px 7px; border-radius:4px;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:13px; color:var(--green);
+  }
+  pre{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 20px; overflow-x:auto; margin:14px 0;
+    font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:13px;
+    color:#e2e8f0; line-height:1.6;
+  }
+  .callout{
+    background:var(--panel); border-left:4px solid var(--accent); border-radius:8px;
+    padding:16px 22px; margin:18px 0;
+  }
+  .callout.warn{border-left-color:var(--orange); background:linear-gradient(90deg,rgba(251,146,60,0.08),var(--panel))}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.key{border-left-color:var(--accent2); background:linear-gradient(90deg,rgba(167,139,250,0.08),var(--panel))}
+  .callout.red{border-left-color:var(--red); background:linear-gradient(90deg,rgba(248,113,113,0.08),var(--panel))}
+  .callout h4{margin-top:0}
+  .grid{display:grid; gap:18px; margin:18px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:20px 24px;
+  }
+  .card.left-bar{border-left:4px solid var(--accent)}
+  .card.left-bar.warn{border-left-color:var(--orange)}
+  .card.left-bar.red{border-left-color:var(--red)}
+  .card.left-bar.green{border-left-color:var(--green)}
+  .card h4{margin-top:0}
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:18px 0}
+  @media(max-width:760px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center}
+  .stat .v{font-size:24px; font-weight:700; color:var(--accent)}
+  .stat .v.green{color:var(--green)}
+  .stat .l{color:var(--muted); font-size:13px; margin-top:4px}
+  table{
+    width:100%; border-collapse:collapse; margin:18px 0; font-size:13px;
+    background:var(--panel); border-radius:8px; overflow:hidden;
+  }
+  th,td{padding:9px 12px; text-align:center; border-bottom:1px solid var(--border)}
+  th{background:var(--panel2); color:var(--accent); font-weight:600}
+  td{color:#cbd5e1}
+  tr:hover{background:rgba(96,165,250,0.05)}
+  .best{color:var(--green); font-weight:700}
+  tr.best td{background:rgba(52,211,153,0.08); color:var(--green); font-weight:600}
+  .fail{color:var(--red)}
+  .partial{color:var(--orange)}
+  .mermaid{
+    background:#fafafa; border-radius:10px; padding:20px; margin:18px 0;
+    text-align:center;
+  }
+  .equation{
+    background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+    padding:18px 24px; margin:16px 0; overflow-x:auto;
+  }
+  .equation .label{float:right; color:var(--muted); font-size:13px}
+  .stage-tag{
+    display:inline-block; padding:3px 12px; border-radius:6px;
+    font-size:12px; font-weight:600; margin-bottom:8px;
+  }
+  .stage-1{background:rgba(96,165,250,0.15); color:var(--accent); border:1px solid rgba(96,165,250,0.3)}
+  .stage-2{background:rgba(52,211,153,0.15); color:var(--green); border:1px solid rgba(52,211,153,0.3)}
+  .stage-3{background:rgba(167,139,250,0.15); color:var(--accent2); border:1px solid rgba(167,139,250,0.3)}
+  .figure{margin:18px 0; text-align:center}
+  .figure img{max-width:100%;border-radius:8px;border:1px solid #333}
+  .figure .caption{color:var(--muted); font-size:13px; margin-top:8px}
+  ul,ol{margin-left:24px; margin-bottom:14px}
+  li{margin-bottom:6px; color:#cbd5e1}
+  .footer{
+    text-align:center; padding:30px; color:var(--muted); font-size:13px;
+    border-top:1px solid var(--border);
+  }
+  hr{border:none; border-top:1px solid var(--border); margin:30px 0}
+
+</style>
+</head>
+<body>
+
+<!-- arXiv HTML figures (from https://arxiv.org/html/2610.12625v1, 本地存于 images/2610.12625/) -->
+
+<div class="hero">
+  <div class="hero-content">
+    <span class="badge">arXiv:2610.12625 · 2026-10-08 · v1</span>
+    <h1>ForcingBooster:自适应 Patch 级去噪 — 冻结生成器,只训练 3M 路由头给每个 patch 分配去噪步数</h1>
+    <p class="subtitle">针对少步自回归视频扩散的「空间均匀计算预算」浪费:给冻结的 4 步生成器外挂一个轻量路由头(≈3.15M 参数),逐步预测每个 latent patch 的退出概率;易区域提前退出并把当时的 $\hat{x}_0$ 固定为输出、KV 写入历史缓存供其余 patch 使用。在 Causal Forcing 1.3B 上 patch-NFE 降 50.19%、端到端加速 1.30\times,VBench 与 4 步基线基本持平。</p>
+    <p class="authors">Zekai Gu, Peng Wang<sup>†</sup>(Project leader), Jiahao Lu, Yongsen Mao, Cheng Lin, Yuan Liu<sup>†</sup>(通讯) &nbsp;|&nbsp; HKUST · VAST · 澳门科技大学</p>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2610.12625" target="_blank">📄 arXiv abs</a>
+      <a href="https://arxiv.org/html/2610.12625v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://arxiv.org/pdf/2610.12625" target="_blank">📥 PDF</a>
+      <a href="https://github.com/IGL-HKUST/ForcingBooster" target="_blank">💻 GitHub</a>
+      <a href="https://igl-hkust.github.io/ForcingBooster/" target="_blank">🌐 项目主页</a>
+      <a href="https://huggingface.co/EXCAI/ForcingBooster" target="_blank">🤗 Checkpoints</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="toc">
+  <h2>📑 目录</h2>
+  <ol>
+    <li><a href="#s1">论文摘要与核心数据</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">x₀ 预测与提前退出机制</a></li>
+    <li><a href="#s5">去噪路由器 R_φ</a></li>
+    <li><a href="#s6">稀疏推理与 KV Cache 工程</a></li>
+    <li><a href="#s7">On-policy 路由训练</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码验证)</a></li>
+    <li><a href="#s11">实验结果与独立复核</a></li>
+    <li><a href="#s12">消融与路由器分析</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队与资源链接</a></li>
+  </ol>
+</div>
+
+<!-- ==================== 1. 摘要 ==================== -->
+<section id="s1">
+<h2><span class="num">1</span>论文摘要与核心数据</h2>
+<p class="lead">少步自回归视频扩散(如 Causal Forcing、Self-Forcing 系)已把每个 chunk 的去噪压到 4 步,但<strong>所有 latent patch 共享同一步数预算</strong>。ForcingBooster 的观察是:静态背景、可从历史推断的区域早在第 1~2 步就接近 4 步收敛输出,而运动物体、新入画区域、复杂纹理需要完整 4 步。方法给<em>冻结</em>的生成器外挂一个轻量路由头,每步之后为每个 patch 预测"退出概率";退出的 patch 把当前 $\hat{\mathbf{x}}_0$ 直接固定为最终输出,其 KV 写入历史缓存继续为未退出 patch 提供上下文。路由头用 on-policy rollout 自监督训练(以生成器自身 4 步输出为参照),<strong>无需额外视频数据、无需人工退出标注</strong>。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v green">50.19%</div><div class="l">patch-NFE 减少(vs 4 步基线,Table 1)</div></div>
+  <div class="stat"><div class="v green">1.30×</div><div class="l">端到端加速(11.15s→8.56s,Table 1)</div></div>
+  <div class="stat"><div class="v">81.55</div><div class="l">VBench Total(基线 82.08,差 0.53)</div></div>
+  <div class="stat"><div class="v">~500 步</div><div class="l">路由头训练步数(Wan 1.3B 配置)</div></div>
+</div>
+
+<div class="grid grid-3">
+  <div class="card left-bar green">
+    <h4>核心贡献</h4>
+    <ol>
+      <li><strong>Patch 级早停路由</strong>:把"每个 chunk 几步"细化到"每个 patch 几步",退出 patch 的 $\hat{\mathbf{x}}_0$ 冻结为输出</li>
+      <li><strong>退出后仍供上下文</strong>:退出 patch 的 KV 写入历史 $\mathcal{H}$,活跃集合单调收缩、稀疏前向只对存活 patch 计算</li>
+      <li><strong>On-policy 自监督训练</strong>:停止代理损失(当前 $\hat{\mathbf{x}}_0$ 与全步输出偏差)+ 期望步数代价,训练目标完全由冻结生成器自产</li>
+      <li><strong>即插即用</strong>:只训练 ≈3.15M 参数的路由头,不改生成器权重与采样 schedule,验证覆盖 4 个模型(1.3B~14B)</li>
+    </ol>
+  </div>
+  <div class="card left-bar">
+    <h4>关键事实</h4>
+    <ul>
+      <li><strong>会议</strong>:无(abs 页 comments 仅项目主页链接;按规范不加 badge)</li>
+      <li><strong>版本</strong>:仅 v1(2026-10-08)</li>
+      <li><strong>主基座</strong>:Causal Forcing 1.3B(Wan2.1-T2V-1.3B 系)</li>
+      <li><strong>其他基座</strong>:Wan2.1 14B、LingBot-World-V2 14B、LongLive</li>
+      <li><strong>推理硬件</strong>:单卡 A800 80GB,BF16(论文 §4.1)</li>
+      <li><strong>训练硬件</strong>:8×A800 + 1TB RAM(README)</li>
+      <li><strong>开源</strong>:代码 + Wan/LingBot 路由 checkpoint 已放出;LongLive/H3 checkpoint "To be released"</li>
+    </ul>
+  </div>
+  <div class="card left-bar warn">
+    <h4>一句话评价</h4>
+    <p>思路干净的"空间自适应计算"工作:用 ≈3M 参数换来 ~2× patch-NFE 压缩。但要注意独立复核发现的两个细节:<strong>① 端到端时间加速(1.30×)远小于 NFE 压缩(≈2.0×),稀疏 kernel 开销与首 chunk 固定 4 步吃掉了一半收益;② 在 Wan2.1 14B 上与简单 uniform 2-step 相比 Total 反而低 0.03(83.32 vs 83.35),收益对基座敏感</strong>(详见 §11)。</p>
+  </div>
+</div>
+
+<div class="figure">
+  <img src="images/2610.12625/teaser.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;" alt="teaser">
+  <div class="caption"><b>图1</b>(原文 Figure 1)路由分配热力图:静态水面/天空等背景分配更少去噪步(蓝),运动攀登者、岩壁纹理、新入画区域分配更多步(红)。</div>
+</div>
+</section>
+
+<!-- ==================== 2. 背景与动机 ==================== -->
+<section id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<div class="grid grid-3">
+  <div class="card">
+    <h4>失败模式 ①:均匀预算的冗余</h4>
+    <p>蒸馏后的少步生成器(4 步)对 chunk 内所有 patch 施加相同的 schedule 与 NFE。但受控实验(§11 图3)显示:<strong>30.60% 的 patch 在第 1 步后就与 4 步参考输出达到 35 dB PSNR</strong>,12.25% 第 2 步达标,9.69% 第 3 步达标 —— 即约一半的 patch 根本不需要完整 4 步,均匀预算在这些位置上纯浪费。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ②:砍步数伤难区域</h4>
+    <p>反向操作——整体把 4 步砍成 1~2 步——则让 47.45% 的"难 patch"欠精修:手、前臂等高频区域在 1 步时形状崩坏,2~3 步仍有可见畸变(原文 Figure 3 左)。这说明<strong>预算应该按空间位置分配,而不是全局砍</strong>。</p>
+  </div>
+  <div class="card">
+    <h4>已有工作的盲区</h4>
+    <p>蒸馏(DMD/CausVid/Self-/Causal Forcing)压缩的是"步数"维度;缓存系(TeaCache/AdaCache/FasterCache)压缩的是"重复计算"维度;DSA 只在整帧/整 chunk 粒度选步数;Patch Forcing 是图像生成;HSA 免训练但用缓存速度场继续推进被跳过的 token。<strong>没有人在"冻结的少步自回归视频生成器"上做学习式 patch 级早停并保留 KV 上下文</strong>。</p>
+  </div>
+</div>
+
+<div class="callout key">
+  <h4>核心洞察(Insight)</h4>
+  <p>扩散/流匹配生成器在<strong>每个中间步都能给出合法的 $\hat{\mathbf{x}}_0$ 估计</strong>(即使网络参数化是 noise/velocity 也可换算)。这把"提前退出"从"截断一条未完成的轨迹"变成"直接取用当前步的干净预测"——不需要修改采样 schedule,不同 patch 在不同步退出仍然各自合法。这是整个方法可行的支点。</p>
+</div>
+
+<div class="callout warn">
+  <h4>关键假设及其失效条件</h4>
+  <ul>
+    <li><strong>假设 A:空间异质性足够大</strong>。失效条件:高运动/全画面高频内容 —— 原文 Figure 7(c) 按 RAFT 光流幅值分 5 组,高运动组加速比明显缩水(低运动组可到 ~1.5× / NFE 减 ~75%)。</li>
+    <li><strong>假设 B:中间步 $\hat{\mathbf{x}}_0$ 质量单调可判</strong>。路由器用"与 4 步输出的 MSE"做代理监督,默认 4 步输出是真理;若基座本身在某区域产出伪影,路由器学到的是"保住伪影"。</li>
+    <li><strong>假设 C:首 chunk 必须全步数</strong>(论文承认的 limitation):第一个 chunk 没有历史可借,始终跑满 4 步,成为短视频生成的瓶颈。</li>
+  </ul>
+</div>
+</section>
+
+<!-- ==================== 3. 总体框架 ==================== -->
+<section id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+
+<p class="lead"><strong>输入</strong>:条件信号 $\mathbf{y}$(文本 / 相机位姿,视基座而定)、初始高斯噪声 $\mathbf{x}_1$、已生成历史的 KV cache $\mathcal{H}$。<strong>输出</strong>:当前 chunk 的干净 latent $\hat{\mathbf{x}}_0$(逐 patch 可能在不同步定稿)。生成器 $G_\theta$ 全程冻结,唯一可学习模块是路由头 $R_\phi$。</p>
+
+<table>
+  <thead><tr><th>符号</th><th>含义</th><th>形状 / 取值(源码核实)</th></tr></thead>
+  <tbody>
+    <tr><td>$K$</td><td>去噪步数(少步 schedule)</td><td>4,<code>denoising_steps: [1000, 750, 500, 250]</code>(warp 后,Wan1B3/config/router.yaml:23)</td></tr>
+    <tr><td>$\{t_k\}$</td><td>噪声水平 schedule,$t_0=1, t_K=0$</td><td>warp 后映射到调度器网格(router_rollout.py:43-63)</td></tr>
+    <tr><td>$G_\theta$</td><td>冻结的自回归去噪网络</td><td>Wan2.1-T2V-1.3B / 14B 等,因果注意力 + KV cache</td></tr>
+    <tr><td>$\mathcal{H}$</td><td>历史(已生成帧 + 已退出 patch)的 KV cache</td><td>每层 dict,含 <code>global_end_index/local_end_index</code> 游标</td></tr>
+    <tr><td>$\hat{\mathbf{x}}_{0,t_k}$</td><td>第 $k$ 步的干净 latent 预测</td><td>$[B, F, C, H, W]$,chunk = 3 latent 帧(num_frame_per_block=3)</td></tr>
+    <tr><td>$\mathbf{u}_k$</td><td>第 $k$ 步生成器最后一层 hidden states</td><td>$[B, N, d]$,$d$=1536(1.3B)/5120(14B)</td></tr>
+    <tr><td>$R_\phi$</td><td>路由头,输出逐 patch 退出 logit</td><td>LayerNorm→Linear($d$→2048)→SiLU→Linear(2048→1),≈3.15M 参数(1.3B)</td></tr>
+    <tr><td>$p_{i,k}$</td><td>patch $i$ 在第 $k$ 步的退出概率</td><td>$\sigma(\text{logit})$,阈值 $\eta=0.5$</td></tr>
+    <tr><td>$\mathcal{A}_k$</td><td>第 $k$ 步开始时仍活跃的 patch 集合</td><td>单调收缩,$\mathcal{A}_0$ = 全部 patch</td></tr>
+    <tr><td>$d_{i,k}$</td><td>当前预测与全步参考的 patch MSE</td><td>avg_pool3d 按 patch_size 池化(model/router.py:174-178)</td></tr>
+    <tr><td>$e_{i,k}$</td><td>继续去噪时该 patch 的最终退出步(on-policy 估计)</td><td>由当前路由的完整 rollout 记录(model/router.py:336-343)</td></tr>
+    <tr><td>$\lambda_{\mathrm{nfe}}$</td><td>计算代价权重</td><td>0.03(配置 <code>nfe_weight</code>),消融区间 0.015~0.030 有效</td></tr>
+    <tr><td>$\eta$</td><td>退出阈值</td><td>0.5(<code>exit_threshold</code>),训练推理同值</td></tr>
+  </tbody>
+</table>
+
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: 条件 y(文本/相机) + 噪声 x₁ + 历史 KV cache H"] --> STEP
+    subgraph LOOP["逐去噪步循环 k = 1..K (K=4)"]
+        STEP["第 k 步: 对活跃集合 A_k 做稀疏前向<br/>G_θ(x_{t_k}, t_k; H, y) → x̂₀_{t_{k+1}}"] --> ROUTE["路由头 R_φ 读取末层 hidden u_k<br/>输出逐 patch 退出概率 p_{i,k}"]
+        ROUTE --> DECIDE{"p_{i,k} > η = 0.5 ?"}
+        DECIDE -- "是: 退出" --> EXIT["冻结 x̂₀ 为该 patch 输出<br/>其 KV 写入 H(供后续步/后续 chunk)"]
+        DECIDE -- "否: 继续" --> CONT["x̂₀ 加噪到 t_{k+1}<br/>(1-σ)x̂₀ + σ·ε,留在活跃集合"]
+        CONT --> STEP2["下一步 k+1: 活跃集合收缩<br/>只对存活 patch 计算"]:::n
+    end
+    EXIT --> OUT["chunk 输出: 逐 patch 在不同步定稿的 x̂₀ 拼接"]
+    STEP2 --> OUT
+    OUT --> NEXT["KV 提交为历史 H,进入下一 chunk"]
+    classDef n fill:#1e3a5f
+    style INPUT fill:#1e3a5f,stroke:#3b82f6,color:#e2e8f0
+    style OUT fill:#14532d,stroke:#22c55e,color:#e2e8f0
+    style NEXT fill:#3b2d5f,stroke:#a78bfa,color:#e2e8f0
+</div>
+</section>
+
+<!-- ==================== 4. x0 预测与早停 ==================== -->
+<section id="s4">
+<h2><span class="num">4</span>x₀ 预测与提前退出机制</h2>
+
+<h3>4.1 网络结构与数据流</h3>
+<table>
+  <thead><tr><th>阶段</th><th>输入</th><th>算子</th><th>输出</th></tr></thead>
+  <tbody>
+    <tr><td>去噪前向(第 $k$ 步)</td><td>$\mathbf{x}_{t_k}$:$[B,3,C,H,W]$(chunk=3 latent 帧);$t_k$;$\mathcal{H}$;$\mathbf{y}$</td><td>因果 DiT $G_\theta$(注意力带 KV cache)</td><td>$\hat{\mathbf{x}}_{0,t_{k+1}}$:$[B,3,C,H,W]$</td></tr>
+    <tr><td>patch 网格化</td><td>$\hat{\mathbf{x}}_0$</td><td>按 Wan <code>patch_size</code>$(p_t,p_h,p_w)$ 划分</td><td>patch 网格 $[B, F/p_t, H/p_h, W/p_w]$</td></tr>
+    <tr><td>退出 patch 定稿</td><td>$\hat{\mathbf{x}}_0$ + 退出 mask</td><td><code>merge_active_patches</code>(torch.where)</td><td>输出 latent 中对应 patch 冻结</td></tr>
+    <tr><td>继续 patch 加噪</td><td>$\hat{\mathbf{x}}_0$ + 存活 mask</td><td>$(1-\sigma_{t_{k+1}})\hat{\mathbf{x}}_0 + \sigma_{t_{k+1}}\varepsilon$(逐 patch σ 广播)</td><td>$\mathbf{x}_{t_{k+1}}$ 供下一步</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 数学形式化</h3>
+<div class="equation">
+$$\hat{\mathbf{x}}_{0,t_{k+1}}=G_{\theta}\left(\mathbf{x}_{t_{k}},t_{k};\mathcal{H},\mathbf{y}\right),\qquad \mathbf{x}_{t_{k+1}}=\mathcal{E}_{t_{k+1}}\big(\hat{\mathbf{x}}_{0,t_{k+1}}\big),\quad k=1,\ldots,K \tag{式 1}$$
+</div>
+<p>其中 $\mathcal{E}_{t_{k+1}}$ 是把干净预测映回下一噪声状态的算子。该形式化对 diffusion / flow matching 参数化统一:即使网络原生预测 noise 或 velocity,都可换算出等价的 $\hat{\mathbf{x}}_0$。源码中即流匹配插值:<code>(1 - sigma) * pred_x0 + sigma * noise</code>(<code>rollout/router_rollout.py:107-111</code>,σ 由 schedule 查表并经 <code>patch_values_to_latent</code> 广播到 latent 分辨率)。</p>
+
+<div class="callout tip">
+  <h4>机制解释:为什么"提前退出"在这里是合法的</h4>
+  <p>常规采样是一条轨迹:中途停下得到的是"半成品噪声态",不能直接当输出。而 $x_0$ 参数化(或等价换算)让<strong>每一步都持有一个对最终干净结果的完整猜测</strong>,退出 = 采纳当前猜测。代价是猜测可能比走完 schedule 差,这个差距恰好由 §7 的 $d_{i,k}$ 监督量化。</p>
+</div>
+
+<h3>4.3 前向流程(逐 patch 视角)</h3>
+<ol>
+  <li>第 1 步为<strong>稠密前向</strong>:全部 patch 参与,得到 $\hat{\mathbf{x}}_{0,t_1}$ 与全量 hidden $\mathbf{u}_1$(源码 <code>_forward_dense</code>,router_rollout.py:166-198)。</li>
+  <li>路由头给出 $p_{i,1}$;$p_{i,1}>\eta$ 的 patch 立即退出,$\hat{\mathbf{x}}_0$ 冻结写入输出。</li>
+  <li>存活 patch 的 $\hat{\mathbf{x}}_0$ 重新加噪到 $t_2$,进入第 2 步<strong>稀疏前向</strong>:只有存活 token 进注意力计算;上一步退出 patch 的 KV 被 collect 进 sparse cache,作为前缀上下文参与注意力(不被更新)。</li>
+  <li>重复至第 $K$ 步;从未退出的 patch 以第 $K$ 步 $\hat{\mathbf{x}}_0$ 定稿。</li>
+  <li>所有 patch 的 KV 最终提交进 $\mathcal{H}$(含一次 $t{=}0$ 的 cache-only 前向,见 §6),供下一 chunk。</li>
+</ol>
+
+<h3>4.4 监督信号</h3>
+<p>本机制本身无参数、无监督;其"退出时机是否正确"的监督由 §7 的停止代理损失提供。</p>
+</section>
+
+<!-- ==================== 5. 路由头 ==================== -->
+<section id="s5">
+<h2><span class="num">5</span>去噪路由器 $R_\phi$</h2>
+
+<h3>5.1 网络结构表(源码核实)</h3>
+<table>
+  <thead><tr><th>层</th><th>输入形状</th><th>算子</th><th>输出形状</th><th>出处</th></tr></thead>
+  <tbody>
+    <tr><td>输入</td><td>$[B, N, d]$($d$=1536, Wan 1.3B 末层 hidden)</td><td>—(前向中对输入 <code>x.detach()</code>,梯度不回传 backbone)</td><td>$[B,N,d]$</td><td><code>causal_model.py:607-613</code></td></tr>
+    <tr><td>L1</td><td>$[B,N,d]$</td><td>WanLayerNorm(affine)</td><td>$[B,N,d]$</td><td><code>causal_model.py:594</code></td></tr>
+    <tr><td>L2</td><td>$[B,N,d]$</td><td>Linear($d$→2048)+ SiLU</td><td>$[B,N,2048]$</td><td><code>causal_model.py:595-596</code>;<code>head_dim: 2048</code>(router.yaml:32)</td></tr>
+    <tr><td>L3</td><td>$[B,N,2048]$</td><td>Linear(2048→1),<strong>权重零初始化、bias 初始化为 -2.0</strong></td><td>$[B,N,1]$→squeeze 为 $[B,N]$</td><td><code>causal_model.py:597, 602-605</code></td></tr>
+  </tbody>
+</table>
+<p>参数量 ≈ $2d + (2048d+2048) + 2049$;$d{=}1536$ 时 <strong>≈3.15M</strong>($d{=}5120$ 的 14B 基座 ≈10.5M)。bias 初始化 -2.0 → 初始退出概率 $\sigma(-2)\approx0.12 < \eta=0.5$,即<strong>路由器从"全都不退出"的安全态起步</strong>,靠代价损失逐步学会退出,避免训练初期破坏生成。</p>
+
+<h3>5.2 数学形式化</h3>
+<div class="equation">
+$$p_{i,k}=\left[R_{\phi}(\mathbf{u}_{k})\right]_{i},\qquad i\in\mathcal{A}_{k} \tag{式 2}$$
+$$\mathcal{A}_{k+1}=\left\{i\in\mathcal{A}_{k}\mid p_{i,k}\leq\eta\right\},\qquad k<K \tag{式 3}$$
+</div>
+<p>源码判定为 <code>sigmoid(logits) > exit_threshold</code> 则在该步标记退出(router_rollout.py:767-777 的 <code>decide()</code>)。注意论文式 2 的 $p_{i,k}$ 写作"stop probability",代码中 logits 经 sigmoid 后直接与阈值比较,训练侧同样用 sigmoid 概率进损失(router_objective.py:42),两者一致。</p>
+
+<h3>5.3 退出 patch 的去向:冻结输出 + KV 回收</h3>
+<p>退出 patch 做两件事:<strong>①</strong> 当前 $\hat{\mathbf{x}}_{0,t_{k+1}}$ 直接作为最终输出(<code>merge_active_patches</code> 写回);<strong>②</strong> 其 KV 被 collect 进稀疏 cache 段,后续步骤以 <code>clear_kv_cache=prefix_cache</code> 的方式作为只读前缀参与注意力(router_rollout.py:556-573)。这与 HSA 的"缓存速度场继续推进被跳过 token"相反——ForcingBooster 彻底冻结退出 patch,只保留其上下文贡献。</p>
+
+<div class="figure">
+  <img src="images/2610.12625/pipeline.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;" alt="pipeline">
+  <div class="caption"><b>图2</b>(原文 Figure 2)(a) 自适应 patch 级推理:路由器逐步挑选继续去噪的 patch,退出 patch 的预测冻结、KV 复用;(b) on-policy 训练:无梯度 rollout 记录退出位置供 replay,重建误差与计算代价经退出概率回传。</div>
+</div>
+
+<h3>5.4 监督信号</h3>
+<p>停止代理损失 $\mathcal{L}_{\mathrm{stop}}$ 与计算代价损失 $\mathcal{L}_{\mathrm{comp}}$(见 §7、§8)。路由头是全网唯一可训练参数(<code>model/router.py:146-149</code> <code>_freeze_except_router</code>)。</p>
+</section>
+
+<!-- ==================== 6. 稀疏推理与 KV 工程 ==================== -->
+<section id="s6">
+<h2><span class="num">6</span>稀疏推理与 KV Cache 工程(源码层)</h2>
+
+<p class="lead">论文 §3.3 只有一段话,但真正的工程量全在源码里。这一节完全来自源码阅读。</p>
+
+<h3>6.1 稀疏前向的实现路径</h3>
+<ol>
+  <li><strong>token 选择</strong>:每步对活跃集合 <code>active_indices</code> 做 <code>index_select</code> 取 timestep,生成器以 <code>adaptive_forward_mode="sparse"</code> 前向,携带 <code>active_token_indices</code>、<code>rope_positions</code>(保持 RoPE 位置正确)、<code>collect_token_indices</code>(本步退出、需收集 KV 的 token)(router_rollout.py:213-270)。</li>
+  <li><strong>退出 KV 的分段收集与合并</strong>:每个阶段退出批次的 KV 以 <code>{k, v, indices}</code> 三元组存为 sparse cache piece,下一步经 <code>_merge_sparse_caches</code> 在序列维拼接成只读前缀(<code>clear_kv_cache</code> 参数),或直接写入 KV workspace(router_rollout.py:117-146, 161-164)。</li>
+  <li><strong>ChunkKVWorkspace 直写</strong>:正式生成时 KV 写入预分配 workspace 并维护 <code>global_end/local_end</code> 双游标,支持 local attention 窗口 rollover(router_rollout.py:386-434);<strong>训练 replay 时走"投机事务"</strong>:先快照游标状态,跑完 rollback,不产生副作用(router_rollout.py:321-375, 460-472)。</li>
+  <li><strong>收尾 cache-only 前向</strong>:最后一个阶段对仍未退出的 patch 以 $t{=}0$(context_timestep)做一次不产生新 latent 的前向,只为把它们的"干净态 KV"补进缓存(router_rollout.py:905-936)。这一步是 patch 级稀疏带来的额外开销,稠密基线没有。</li>
+  <li><strong>FSDP lockstep</strong>:分布式训练时某些 rank 可能本地无活跃 token,代码注入一个 dummy token 保证各 rank 前向次数一致、集合通信不挂死(router_rollout.py:299-319)。</li>
+</ol>
+
+<h3>6.2 为什么 NFE 减半只换来 1.3× 时间加速</h3>
+<div class="callout warn">
+  <h4>机制分析(基于源码与论文数据的推断)</h4>
+  <ul>
+    <li><strong>首 chunk 固定 4 步</strong>:81 帧 = 21 latent 帧 = 7 chunk,首 chunk 不省,直接砍掉约 1/7 的可省空间(推导见 §11)。</li>
+    <li><strong>第 1 步永远稠密</strong>:路由决策最早发生在第 1 步之后,第一步全量计算不可省。</li>
+    <li><strong>收尾 cache-only 前向</strong>:每个 chunk 多一次 $t{=}0$ 前向(见 6.1-④)。</li>
+    <li><strong>稀疏算子开销</strong>【推测】:<code>index_select</code>、分段 KV 拼接、不规则序列长度会损失 kernel 效率,论文未给出 kernel 级 breakdown。</li>
+    <li><strong>计时含非模型部分</strong>:Time 含文本编码、VAE 解码(论文 §4.1),这部分不随 NFE 压缩。</li>
+  </ul>
+</div>
+</section>
+
+<!-- ==================== 7. 训练 ==================== -->
+<section id="s7">
+<h2><span class="num">7</span>On-policy 路由训练</h2>
+
+<h3>7.1 训练循环(源码核实,与论文 §3.4 的对应关系)</h3>
+<p>论文描述:"用原始生成器全 schedule 跑出目标 $\mathbf{x}_0^*$ 并记录轨迹;把该 latent 扰动到随机噪声水平 $t_k$ 后回放(replay)得到中间预测与 hidden,计算损失"。<strong>源码实现比这段描述更精细</strong>(<code>model/router.py:237-375</code> <code>_router_loss</code>),逐步对应如下:</p>
+<ol>
+  <li><strong>随机选 chunk 与步</strong>:chunk_index ~ U{1..6}(前 6 个非首 chunk),selected_step ~ U{1,2,3}(<code>_sample_chunk_and_step</code>,model/router.py:224-235)。</li>
+  <li><strong>前缀 chunk 按当前策略真实生成</strong>:首 chunk 固定 4 步,其余前缀 chunk 用当前路由器跑,产出"on-policy 历史";随后把前缀 KV <strong>offload 到 CPU</strong> 省显存(<code>offload_training_history</code>,router_training.py:18-34)。</li>
+  <li><strong>记录轨迹</strong>:目标 chunk 用当前路由器无梯度完整 rollout,得 <code>steps_map</code>(每 patch 实际退出步)与转移噪声(显式索引保存,保证 replay 可复现,router_training.py:60-95)。</li>
+  <li><strong>构造两种 rollout</strong>:<code>exit_map = clamp(steps_map, max=selected_step)</code>(在选中步强制退出)与 <code>reference = 全 4 步</code>,分别重放(事务式,不污染缓存),得到 exit 结果与全步参考。</li>
+  <li><strong>计算监督</strong>:两结果按 patch 池化算 MSE 得 $d_{i,k}$;继续代价 $e_{i,k}=\max(\text{steps\_map}, k{+}1)$(model/router.py:336-368)。</li>
+  <li><strong>带梯度 replay 取 logits</strong>:<code>logits_at_step</code> 沿相同 steps_map 重放,只在目标步开梯度取出路由器 logits(router_rollout.py:971-1095),损失只回传到路由头(其输入已 detach)。</li>
+</ol>
+
+<h3>7.2 数学形式化</h3>
+<div class="equation">
+$$d_{i,k}=\left\|\hat{\mathbf{x}}_{0,t_{k}}^{\,i}-\mathbf{x}_{0}^{*,i}\right\|_{2}^{2} \tag{式 4}$$
+$$\mathcal{L}_{\mathrm{stop}}=\frac{1}{|\mathcal{A}_{k}|}\sum_{i\in\mathcal{A}_{k}}p_{i,k}\,d_{i,k} \tag{式 5}$$
+$$\mathcal{L}_{\mathrm{comp}}=\frac{1}{|\mathcal{A}_{k}|}\sum_{i\in\mathcal{A}_{k}}\left[p_{i,k}\cdot k+(1-p_{i,k})\cdot e_{i,k}\right] \tag{式 6}$$
+</div>
+<p>总目标 = $\mathcal{L}_{\mathrm{stop}} + \lambda_{\mathrm{nfe}}\mathcal{L}_{\mathrm{comp}}$(源码:<code>loss = mse + nfe_weight * nfe</code>,router_objective.py:51-54)。</p>
+
+<div class="grid grid-2">
+  <div class="card left-bar">
+    <h4>式 5 的机制</h4>
+    <p>只在"当前预测还差得远"时惩罚高退出概率 —— 它把"该停吗"转化为回归"停了会损失多少"。单独优化它会导致全不退出(平凡解),由式 6 拉住。</p>
+  </div>
+  <div class="card left-bar">
+    <h4>式 6 的机制</h4>
+    <p>期望步数代价:立即停付出 $k$,继续则付出 $e_{i,k}$(当前策略下最终退出步)。因 $e_{i,k}>k$,最小化它偏向提高 $p_{i,k}$。$e_{i,k}$ 由当前路由的完整 rollout 估计 → <strong>on-policy</strong>:随策略演化,代价估计同步更新。</p>
+  </div>
+</div>
+
+<div class="callout warn">
+  <h4>⚠️ 论文与源码的三处不一致(源码核实)</h4>
+  <ul>
+    <li><strong>损失命名</strong>:论文 §3.4 称代价损失为 $\mathcal{L}_{\mathrm{comp}}$,§4.5 却称 $\mathcal{L}_{\mathrm{nfe}}$、权重 $\lambda_{\mathrm{nfe}}$;源码统一为 <code>nfe_weight</code>,objective 注册名 <code>latent_mse_plus_uniform_nfe</code>(router_objective.py:27)。</li>
+    <li><strong>"无需微调生成器"</strong>:论文宣称只训练路由头,但仓库提供可选的 <strong>Adaptive DMD</strong> 预微调阶段(随机退出步下微调生成器,50 iters,<code>Wan1B3/config/adaptive_dmd.yaml</code>),且 <strong>Wan14B 的 router 配置默认 init 就是 adaptive_dmd 的产物</strong>(<code>Wan14B/config/router.yaml</code> <code>weights.init</code>)。论文未交代哪些实验用了该阶段【待核实:14B 的论文数字是否基于 adaptive DMD 后的生成器】。</li>
+    <li><strong>训练步数</strong>:论文称"约 500 步",Wan 1.3B 配置确为 <code>max_train_steps: 500</code>;但 <strong>Wan14B 配置是 5000、LingBot 14B 是 1000</strong>,"约 500 步"只对主实验成立。</li>
+  </ul>
+</div>
+</section>
+
+<!-- ==================== 8. 损失函数总表 ==================== -->
+<section id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<table>
+  <thead><tr><th>损失项</th><th>公式</th><th>权重(真值)</th><th>作用</th><th>源码出处</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>停止代理损失 $\mathcal{L}_{\mathrm{stop}}$</td>
+      <td>$\frac{1}{|\mathcal{A}_k|}\sum_{i\in\mathcal{A}_k} p_{i,k} d_{i,k}$</td>
+      <td>1.0(固定)</td>
+      <td>预测离全步参考越远,越不许退出</td>
+      <td><code>router_objective.py:51</code>(<code>mse = (probs*error).sum()/denominator</code>)</td>
+    </tr>
+    <tr>
+      <td>计算代价损失 $\mathcal{L}_{\mathrm{comp}}$(§4.5 又称 $\mathcal{L}_{\mathrm{nfe}}$)</td>
+      <td>$\frac{1}{|\mathcal{A}_k|}\sum_{i\in\mathcal{A}_k}[p_{i,k}k+(1-p_{i,k})e_{i,k}]$</td>
+      <td><strong>$\lambda_{\mathrm{nfe}}=0.03$</strong>(<code>nfe_weight</code>)</td>
+      <td>鼓励早退,压制式 5 的平凡解</td>
+      <td><code>router_objective.py:52-54</code>;配置 <code>router.yaml:25</code></td>
+    </tr>
+    <tr>
+      <td>(可选)Adaptive DMD 阶段</td>
+      <td>DMD 蒸馏损失(随机退出步采样,权重 [0.1,0.2,0.3,0.4])</td>
+      <td>生成器 lr 2e-6,critic lr 4e-7,EMA 0.99</td>
+      <td>让生成器适应"不同 patch 不同退出步"的混合轨迹</td>
+      <td><code>Wan1B3/config/adaptive_dmd.yaml</code></td>
+    </tr>
+  </tbody>
+</table>
+<p><strong>生成器本身无任何训练损失</strong> —— 主干冻结,路由器输入 detach,梯度只进路由头 ≈3.15M 参数(model/router.py:146-149,causal_model.py:612)。</p>
+</section>
+
+<!-- ==================== 9. 逻辑流程图 ==================== -->
+<section id="s9">
+<h2><span class="num">9</span>逻辑流程图</h2>
+
+<h3>9.1 推理流程(单 chunk)</h3>
+<div class="mermaid">
+flowchart TD
+    A["chunk 噪声 x₁ + 历史 KV H + 条件 y"] --> B["k=1 稠密前向: 全部 patch<br/>得 x̂₀ 与末层 hidden u₁"]
+    B --> C["路由头 sigmoid(R_φ(u₁)) > η=0.5 ?"]
+    C -- "退出集合" --> D["冻结 x̂₀ 为输出<br/>KV collect 进 sparse cache"]
+    C -- "存活集合" --> E["x̂₀ 加噪到 t₂"]
+    E --> F["k=2 稀疏前向: 仅存活 token<br/>(带只读前缀 KV + RoPE 位置)"]
+    F --> G["路由判定...循环至 k=K=4"]
+    G --> H["收尾 cache-only 前向 (t=0)<br/>补齐存活 patch 的干净 KV"]
+    D --> H
+    H --> I["全部 KV 提交进 H<br/>输出逐 patch 定稿的 x̂₀"]
+    style A fill:#1e3a5f,stroke:#3b82f6,color:#e2e8f0
+    style I fill:#14532d,stroke:#22c55e,color:#e2e8f0
+    style H fill:#3b2d5f,stroke:#a78bfa,color:#e2e8f0
+</div>
+
+<h3>9.2 训练流程(单 step,源码版)</h3>
+<div class="mermaid">
+flowchart TD
+    A["随机采样 prompt<br/>(文本, 无视频数据)"] --> B["随机选 chunk∈{1..6}, 步 k∈{1,2,3}"]
+    B --> C["前缀 chunk 按当前策略生成<br/>历史 KV offload 到 CPU"]
+    C --> D["目标 chunk: 无梯度 on-policy rollout<br/>记录 steps_map + 转移噪声"]
+    D --> E["两次事务式重放:<br/>exit_map=clamp(steps_map,k) / reference=全4步"]
+    E --> F["patch 池化 MSE → d_{i,k}<br/>e_{i,k}=max(steps_map, k+1)"]
+    F --> G["带梯度 replay 取目标步 logits"]
+    G --> H["loss = mean(p·d) + 0.03·mean(p·k+(1-p)·e)<br/>AdamW 只更新路由头"]
+    H --> I{"500 步完成?"}
+    I -- 否 --> A
+    I -- 是 --> J["保存(含 router_training_contract 校验元数据)"]
+    style A fill:#1e3a5f,stroke:#3b82f6,color:#e2e8f0
+    style J fill:#14532d,stroke:#22c55e,color:#e2e8f0
+</div>
+</section>
+
+<!-- ==================== 10. 工程实现细节 ==================== -->
+<section id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码验证)</h2>
+
+<h3>10.1 训练超参(配置文件直读)</h3>
+<table>
+  <thead><tr><th>超参</th><th>Wan 1.3B(主实验)</th><th>Wan 14B</th><th>LingBot-World-V2 14B</th></tr></thead>
+  <tbody>
+    <tr><td>训练步数</td><td class="best">500</td><td>5000</td><td>1000</td></tr>
+    <tr><td>优化器 / lr</td><td colspan="3">AdamW, lr = 1e-4(LingBot: betas [0.0,0.999], wd 0.01)</td></tr>
+    <tr><td>batch</td><td colspan="3">1/卡 × 8 卡 = 全局 8</td></tr>
+    <tr><td>schedule</td><td colspan="2">[1000,750,500,250], warp=true, shift 5.0(14B: 8.0)</td><td>timestep_indices [0,250,500,750], scheduler_shift 10.0</td></tr>
+    <tr><td>chunk 帧数(latent)</td><td colspan="2">3(num_training_frames 21)</td><td>4(num_training_frames 20, 77 像素帧)</td></tr>
+    <tr><td>首 chunk 步数</td><td colspan="3">4(first_chunk_step)</td></tr>
+    <tr><td>训练 chunk 范围 / 步选择</td><td colspan="3">chunk∈[1,6](LingBot [1,4]),step∈{1,2,3}</td></tr>
+    <tr><td>η / λ_nfe / bias 初始化</td><td colspan="3">0.5 / 0.03 / -2.0</td></tr>
+    <tr><td>head_dim</td><td colspan="3">2048</td></tr>
+    <tr><td>训练数据</td><td colspan="2">Self-Forcing 的 vidprom_filtered_extended.txt(纯文本 prompt)</td><td><strong>DL3DV-10K</strong>(dl3dv_i2v_camera 格式,图像+相机位姿条件)</td></tr>
+  </tbody>
+</table>
+<p>出处:<code>methods/Wan21/Wan1B3/config/router.yaml</code>、<code>methods/Wan21/Wan14B/config/router.yaml</code>、<code>methods/LingBotWorld/LingBotV2_14B/config/router.yaml</code>。</p>
+
+<div class="callout warn">
+  <h4>⚠️ "无需额外视频数据"的适用范围</h4>
+  <p>Wan T2V 系成立(训练只需 prompt 文件,监督由冻结生成器自产)。但 LingBot 世界模型的 router 配置数据是 <strong>DL3DV-10K</strong> 的图像+相机位姿 —— 因为相机条件 I2V 模型本身需要条件输入。严格说"no additional video data"对世界模型场景要打个折扣:仍需准备与基座训练分布匹配的条件数据。</p>
+</div>
+
+<h3>10.2 资源账</h3>
+<div class="stat-row">
+  <div class="stat"><div class="v">8×A800</div><div class="l">训练硬件(80GB,1TB RAM 服务器,README)</div></div>
+  <div class="stat"><div class="v">1×A800</div><div class="l">推理硬件(BF16, batch=1,论文 §4.1)</div></div>
+  <div class="stat"><div class="v">8.56s</div><div class="l">81 帧 480×832 端到端(含文本编码+VAE 解码)</div></div>
+  <div class="stat"><div class="v">≈3.15M</div><div class="l">路由头参数量(1.3B 基座;14B ≈10.5M)</div></div>
+</div>
+<ul>
+  <li><strong>训练显存优化</strong>:前缀 chunk 的历史 KV offload 到 CPU(router_training.py:18-34);replay 走投机事务、可回滚(router_rollout.py:460-472)。</li>
+  <li><strong>checkpoint 安全机制</strong>:训练契约(<code>router_training_contract</code>)写入 manifest,resume 时校验目标函数版本,防止用旧目标训出的 checkpoint 静默错配(router_objective.py:23-35;trainer/router.py:199)。</li>
+  <li><strong>已知门槛</strong>:backbone 必须实现 <code>enable_patch_exit_router_prediction</code> 与 sparse 前向接口 —— 仓库内 Wan / LingBot / H3 三个后端各自改了 attention 与 cache 层,接到新模型不是"即插即用零改动"。</li>
+  <li><strong>依赖</strong>:torch≥2.4、diffusers==0.31.0、flash-attn 等(requirements.txt);Python 3.10(README conda 指令)。</li>
+</ul>
+
+<h3>10.3 论文宣称 vs 仓库实现</h3>
+<table>
+  <thead><tr><th>论文宣称</th><th>源码事实</th><th>结论</th></tr></thead>
+  <tbody>
+    <tr><td>"without fine-tuning the heavyweight generator"(§5)</td><td>仓库含可选 adaptive_dmd 阶段(50 iters 微调生成器);Wan14B router 默认从其产物初始化</td><td class="fail">宣称偏强,14B 实验是否用 adaptive DMD 未交代【待核实】</td></tr>
+    <tr><td>"approximately 500 training steps"(§1)</td><td>Wan1.3B=500,Wan14B=5000,LingBot14B=1000</td><td class="fail">仅对主实验成立</td></tr>
+    <tr><td>"without relying on additional video data"(§5)</td><td>T2V 成立;LingBot 需 DL3DV-10K 条件数据</td><td>部分成立</td></tr>
+    <tr><td>评测覆盖 4 个模型</td><td>仓库含 Wan21(1.3B/14B)、LingBot(1.3B/14B)、H3(SolarWM 33B);<strong>LongLive 的 router.yaml 是玩具配置(max_updates=20,仅 3 条 prompt)</strong>,论文实验用的配置未发布</td><td class="fail">LongLive 结果不可复现【待核实】</td></tr>
+    <tr><td>正文 §4.4 引用 "Table 6"</td><td>全文只有 Table 1–3,应为 Table 3</td><td>论文笔误</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ==================== 11. 实验结果与复核 ==================== -->
+<section id="s11">
+<h2><span class="num">11</span>实验结果与独立复核</h2>
+
+<h3>11.1 主结果(Causal Forcing 1.3B,VBench)</h3>
+<table>
+  <thead><tr><th>方法</th><th>Quality ↑</th><th>Semantic ↑</th><th>Total ↑</th><th>Time (s) ↓</th><th>Speedup</th><th>NFE 减少</th></tr></thead>
+  <tbody>
+    <tr><td>1 step</td><td>83.06</td><td>69.50</td><td>80.35</td><td>7.08</td><td>1.58×</td><td>64.29%</td></tr>
+    <tr><td>2 steps</td><td>83.69</td><td>71.66</td><td>81.29</td><td>8.67</td><td>1.29×</td><td>42.86%</td></tr>
+    <tr><td>3 steps</td><td>84.24</td><td>71.96</td><td>81.78</td><td>9.78</td><td>1.14×</td><td>21.43%</td></tr>
+    <tr><td>4 steps(基线)</td><td>84.54</td><td>72.21</td><td>82.08</td><td>11.15</td><td>—</td><td>—</td></tr>
+    <tr class="best"><td><strong>ForcingBooster</strong></td><td>83.88</td><td>72.20</td><td>81.55</td><td>8.56</td><td>1.30×</td><td>50.19%</td></tr>
+  </tbody>
+</table>
+<p>计时含文本编码、首 chunk、路由执行、KV 构建与 VAE 解码(论文 §4.1);81 帧 480×832@16FPS,单卡 A800 BF16。</p>
+
+<div class="callout tip">
+  <h4>✅ 独立复核(数字全部可复算)</h4>
+  <ul>
+    <li><strong>Speedup 复算</strong>:11.15/8.56=1.302 ✓;11.15/7.08=1.575→1.58× ✓;11.15/8.67=1.286→1.29× ✓;11.15/9.78=1.140→1.14× ✓。</li>
+    <li><strong>NFE 减少的结构解释(本笔记推导)</strong>:81 像素帧 → Wan VAE(时序 4×)21 latent 帧 → 7 chunk×3 帧。首 chunk 固定 4 步,则固定 n 步策略的 NFE 占比 = $(4+6n)/28$:n=1 → 35.71%(减少 64.29% ✓),n=2 → 57.14%(42.86% ✓),n=3 → 78.57%(21.43% ✓)。三列数字全部精确命中,说明论文的 NFE 口径就是"含首 chunk 的全视频 patch-NFE"。</li>
+    <li><strong>反解 ForcingBooster 的平均退出步</strong>:由 $(4+6a)/28 = 1-0.5019$ 得路由 chunk 平均每 patch 跑 $a\approx1.66$ 步 —— 比 uniform 2-step 还省,但质量好 0.26 Total,体现了"按位置分配"的价值。</li>
+    <li><strong>Figure 3 分布自洽</strong>:30.60+12.25+9.69+47.45 = 99.99%(舍入误差)✓。</li>
+  </ul>
+</div>
+
+<div class="figure">
+  <img src="images/2610.12625/fig2_denoising.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;" alt="denoising steps required">
+  <div class="caption"><b>图3</b>(原文 Figure 3)左:固定 1/2/3 步的生成结果局部放大,手部区域随步数增加逐渐成形;右:patch 首次达到 35 dB PSNR(相对 4 步参考)的步数分布 —— 30.60% 第 1 步即达标。</div>
+</div>
+
+<h3>11.2 跨模型验证(Wan2.1 14B / LingBot-World-V2 14B / LongLive)</h3>
+<table>
+  <thead><tr><th>基座</th><th>配置</th><th>Quality ↑</th><th>Semantic ↑</th><th>Total ↑</th><th>Speedup</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="4">Wan2.1 14B</td><td>1 step</td><td>82.10</td><td>71.35</td><td>79.95</td><td>1.96×</td></tr>
+    <tr><td>2 steps</td><td>84.71</td><td>77.93</td><td class="best">83.35</td><td>1.29×</td></tr>
+    <tr><td>4 steps(基线)</td><td>84.96</td><td>78.04</td><td>83.57</td><td>—</td></tr>
+    <tr class="best"><td>+ ForcingBooster</td><td>84.73</td><td>77.65</td><td>83.32</td><td>1.31×</td></tr>
+    <tr><td rowspan="4">LingBot-World-V2 14B</td><td>1 step</td><td>78.79</td><td>69.72</td><td>76.98</td><td>1.98×</td></tr>
+    <tr><td>2 steps</td><td>80.13</td><td>71.65</td><td>78.43</td><td>1.36×</td></tr>
+    <tr><td>4 steps(基线)</td><td>80.66</td><td>72.96</td><td>79.12</td><td>—</td></tr>
+    <tr class="best"><td>+ ForcingBooster</td><td>80.34</td><td>71.32</td><td>78.54</td><td>1.25×</td></tr>
+    <tr><td rowspan="4">LongLive</td><td>1 step</td><td>78.91</td><td>73.18</td><td>77.76</td><td>1.54×</td></tr>
+    <tr><td>2 steps</td><td>79.91</td><td>72.67</td><td>78.46</td><td>1.21×</td></tr>
+    <tr><td>4 steps(基线)</td><td>80.32</td><td>73.76</td><td>79.01</td><td>—</td></tr>
+    <tr class="best"><td>+ ForcingBooster</td><td>80.02</td><td>72.82</td><td>78.58</td><td>1.15×</td></tr>
+  </tbody>
+</table>
+
+<div class="callout red">
+  <h4>⚠️ 复核发现:14B 级模型上 ForcingBooster ≈ uniform 2-step,无实质优势</h4>
+  <ul>
+    <li><strong>Wan2.1 14B</strong>:ForcingBooster Total 83.32,<strong>低于</strong> uniform 2-step 的 83.35;加速 1.31× vs 1.29× 几乎相同。Semantic 也低(77.65 vs 77.93)。</li>
+    <li><strong>LingBot 14B</strong>:Total 78.54 vs 2-step 78.43,仅高 0.11,且加速更低(1.25× vs 1.36×)。</li>
+    <li><strong>LongLive</strong>:Total 78.58 vs 78.46 高 0.12,加速 1.15× vs 1.21× 更低。</li>
+  </ul>
+  <p>论文叙事强调"比 1-step 好得多、接近 4-step",这成立;但<strong>真正的对照组应该是同速的 uniform 2-step</strong> —— 在三个非主实验模型上,ForcingBooster 与 2-step 的差距在 ±0.12 Total 以内(VBench 噪声水平内),只有 Causal Forcing 1.3B 主实验有 +0.26 的可见优势。结论:<strong>方法收益对基座/规模敏感,14B 上是否值得引入稀疏推理的复杂度存疑</strong>。另外 Wan14B 2-step 基线 Total(83.35)几乎追平其 4-step(83.57)这件事本身,也说明强基座的 2-step 已经很难打。</p>
+</div>
+
+<div class="figure">
+  <img src="images/2610.12625/exp1.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;" alt="qualitative main">
+  <div class="caption"><b>图4</b>(原文 Figure 4)Causal Forcing 上的定性对比:1/2/3 步在复杂纹理区出现伪影(红框),ForcingBooster 与 4 步基线最接近。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.12625/exp2.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;" alt="qualitative cross model">
+  <div class="caption"><b>图5</b>(原文 Figure 5)跨模型定性对比:各基座上 ForcingBooster 均接近 4 步基线,uniform 1-step 有明显伪影。</div>
+</div>
+</section>
+
+<!-- ==================== 12. 消融与路由分析 ==================== -->
+<section id="s12">
+<h2><span class="num">12</span>消融与路由器分析</h2>
+
+<h3>12.1 分配策略消融(Table 3)</h3>
+<table>
+  <thead><tr><th>策略</th><th>Total ↑</th><th>Time (s) ↓</th><th>Speedup</th><th>结论</th></tr></thead>
+  <tbody>
+    <tr><td>Random(保持退出步分布、打乱空间位置)</td><td>79.03</td><td>8.60</td><td>1.29×</td><td>严重闪烁与细节丢失 → <strong>退出位置本身携带信息</strong></td></tr>
+    <tr><td>Chunk-wise router(patch 决策聚合为整 chunk 统一步数)</td><td>80.01</td><td>8.38</td><td>1.33×</td><td>少步 chunk 脸/手变糊 → <strong>patch 粒度优于 chunk 粒度</strong></td></tr>
+    <tr class="best"><td><strong>ForcingBooster</strong></td><td>81.54</td><td>8.53</td><td>1.30×</td><td>最接近 4 步基线</td></tr>
+    <tr><td>4 steps(基线)</td><td>82.07</td><td>11.13</td><td>—</td><td>—</td></tr>
+  </tbody>
+</table>
+<p>⚠️ 两处细节:① 论文正文此处引用了"<strong>Table 6</strong>",全文只有 Table 1–3,系笔误(应为 Table 3);② 本表 ForcingBooster 数字(81.54/8.53s)与 Table 1(81.55/8.56s)略有出入,应为另一次运行,差值在噪声内。</p>
+
+<div class="figure">
+  <img src="images/2610.12625/ablation.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;" alt="allocation ablation">
+  <div class="caption"><b>图6</b>(原文 Figure 6)分配策略定性对比:Random 出现时序闪烁,Chunk-wise 在少步 chunk 脸/手变糊(红框),ForcingBooster 最接近 4 步基线。</div>
+</div>
+
+<h3>12.2 超参敏感性(Figure 7)</h3>
+<div class="figure">
+  <img src="images/2610.12625/router_analysis.svg" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;background:#fff;" alt="router analysis">
+  <div class="caption"><b>图7</b>(原文 Figure 7,SVG 矢量图)(a) 代价权重 λ_nfe 影响;(b) 退出阈值 η 影响(每个阈值单独训练一个路由);两图均报告与 4 步输出的 LPIPS 和归一化运行时长。</div>
+</div>
+<ul>
+  <li><strong>λ_nfe</strong>:为 0 或过小时路由器保留全部 4 步、纯增开销;0.015~0.030 是有效区间;再加大则时间收益边际递减、LPIPS 偏离增大。与式 6 的机制一致 —— 没有代价项就收敛到"全不退出"平凡解。</li>
+  <li><strong>η</strong>:0.1~0.9 各训一个路由。更高阈值(更保守)普遍增加耗时,但<strong>并不稳定降低 LPIPS</strong> —— 保守退出不等于更接近参考,路由质量由训练决定而非阈值蛮调。</li>
+  <li><strong>内容动力学</strong>:按 RAFT 光流幅值把视频分 5 组,低运动组最高 ~1.5× 加速 / NFE 减 ~75%;高运动组加速显著缩水。加速比是内容自适应的,延迟不可预测(对实时交互部署是双刃剑)。</li>
+</ul>
+</section>
+
+<!-- ==================== 13. 同类方法对比 ==================== -->
+<section id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>13.1 横向对比表(固定维度)</h3>
+<table>
+  <thead><tr><th>方法</th><th>年份</th><th>粒度</th><th>是否训练</th><th>改动对象</th><th>监督信号</th><th>适用基座</th><th>关键数字</th><th>开源</th></tr></thead>
+  <tbody>
+    <tr class="best"><td><strong>ForcingBooster(本文)</strong></td><td>2026.10</td><td>patch(逐 token)</td><td>训练 ≈3.15M 路由头(500 步)</td><td>冻结生成器,外挂头</td><td>与自身 4 步输出的 patch MSE + 期望步数代价(on-policy)</td><td>少步自回归视频扩散(1.3B~14B)</td><td>NFE −50.19%,1.30×,Total −0.53</td><td>✅ 代码+部分 ckpt</td></tr>
+    <tr><td>DSA(Le et al., 2026)</td><td>2026</td><td>整帧 / 整 chunk</td><td>训练(置信头与生成器联合)</td><td>生成器+置信头联合训练</td><td>置信度预测</td><td>自回归视频生成</td><td>—(论文未直接对比)</td><td>—</td></tr>
+    <tr><td>Patch Forcing(Schusterbauer et al., 2026)</td><td>2026</td><td>patch</td><td>训练生成器(空间变化噪声水平)</td><td>需重新训练图像生成器</td><td>难度预测引导采样</td><td><strong>图像</strong>扩散</td><td>—</td><td>—</td></tr>
+    <tr><td>HSA(Chu &amp; Patel, 2026)</td><td>2026</td><td>token</td><td><strong>免训练</strong></td><td>推理期启发式</td><td>无(启发式预算)</td><td>视频 DiT</td><td>—</td><td>—</td></tr>
+    <tr><td>TeaCache(Liu et al., 2025)</td><td>2024.11</td><td>整步(缓存复用)</td><td>免训练</td><td>推理期缓存</td><td>timestep embedding 调制估计输出变化</td><td>视频扩散(双向为主)</td><td>—</td><td>✅</td></tr>
+    <tr><td>CausVid(Yin et al., 2025)</td><td>2024.12</td><td>整模型(蒸馏)</td><td>训练生成器(DMD 蒸馏)</td><td>权重全量更新</td><td>分布匹配</td><td>双向→自回归视频</td><td>数十步→4 步</td><td>✅</td></tr>
+    <tr><td>Causal Forcing(Zhu et al., 2026)</td><td>2026</td><td>整模型(蒸馏)</td><td>训练生成器(自回归教师初始化)</td><td>权重全量更新</td><td>蒸馏</td><td>实时交互视频</td><td>本文基线(4 步,11.15s)</td><td>✅(权重)</td></tr>
+  </tbody>
+</table>
+<p>"—" = 论文未给出可直接填入的数字。DSA / Patch Forcing / HSA 均为本文 Related Work 中点名的最近邻方法(arXiv 2606.04432 / 2604.19141 / 2605.06892);库内另有蒸馏系代表 <a href="ImageGen-20240523-DMD2.html">DMD2</a> 与基座 <a href="VideoGen-20250326-Wan2.1.html">Wan2.1</a>、流式方向 <a href="VideoGen-20260623-Wan-Streamer.html">Wan-Streamer</a> 的笔记可交叉阅读。</p>
+
+<h3>13.2 对比结论(机制层面)</h3>
+<ol>
+  <li><strong>vs DSA(chunk 级)</strong>:DSA 证明了"自适应步数"在自回归视频里有效,但粒度止步于整 chunk。本文 Table 3 的 Chunk-wise 对照(+1.53 Total 差距)直接证明 patch 粒度不是锦上添花而是主要收益来源。代价是稀疏推理的工程复杂度(kernel、KV 管理)远高于 chunk 级开关。</li>
+  <li><strong>vs Patch Forcing(图像)</strong>:同样 patch 粒度,但 Patch Forcing 要重训生成器、且没有时间维/KV cache 问题。ForcingBooster 的增量在于"冻结主干 + 历史上下文保留",这正是自回归视频特有的设计空间。</li>
+  <li><strong>vs HSA(免训练 token 级)</strong>:HSA 用缓存速度场继续推进被跳过的 token,本质还是"所有 token 都在演化";ForcingBooster 彻底冻结退出 patch,计算省得更干净,但需要一个训练出来的判据 —— 训练成本(500 步×8 卡)换判据质量。</li>
+  <li><strong>vs 缓存系(TeaCache 等)</strong>:正交。缓存系复用"相邻步之间没变的东西",ForcingBooster 砍掉"已经收敛的东西"。理论上可叠加(论文未做)【推测】。</li>
+  <li><strong>vs 蒸馏系(CausVid/Causal Forcing)</strong>:互补关系 —— 蒸馏把步数从几十压到 4,ForcingBooster 在 4 步之内再做空间细分。论文定位就是"蒸馏之后、硬件之前"的这一层。</li>
+</ol>
+
+<h3>13.3 演进定位</h3>
+<table>
+  <thead><tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr></thead>
+  <tbody>
+    <tr><td>步数压缩(蒸馏)</td><td>DMD/DMD2 → CausVid → Self-/Causal Forcing</td><td>少步学生可模仿多步教师分布</td><td>所有空间位置共享步数;再往下压步伤质量</td></tr>
+    <tr><td>计算复用(缓存)</td><td>DeepCache → TeaCache/AdaCache → Flow Caching</td><td>相邻步/相邻 chunk 特征高度冗余</td><td>复用有误差累积;不减少"必须算"的部分</td></tr>
+    <tr><td>自适应预算(样本/chunk 级)</td><td>AdaDiff → DSA</td><td>不同样本/片段难度不同</td><td>粒度粗,空间异质性没利用</td></tr>
+    <tr><td><strong>自适应预算(patch/token 级)</strong></td><td>Patch Forcing(图像)→ HSA → <strong>ForcingBooster</strong></td><td>同一片段内空间难度不均</td><td>稀疏 kernel 开销吃掉部分理论收益;延迟随内容波动</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- ==================== 14. 落地适配 ==================== -->
+<section id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<div class="grid grid-2">
+  <div class="card left-bar green">
+    <h4>适合的场景</h4>
+    <ul>
+      <li><strong>已有少步自回归视频模型的团队</strong>:500 步路由训练(8 卡)× 一次性接入,换 1.15~1.3× 常驻加速,不动主干权重,风险可控</li>
+      <li><strong>静态/低动态内容为主的服务</strong>(虚拟主播背景、监控场景生成、慢运镜):Figure 7(c) 显示低运动组加速可达 ~1.5×</li>
+      <li><strong>长视频流式生成</strong>:chunk 越多,首 chunk 固定成本摊得越薄,相对收益越大</li>
+    </ul>
+  </div>
+  <div class="card left-bar red">
+    <h4>不适合 / 需谨慎</h4>
+    <ul>
+      <li><strong>延迟敏感且要求稳定帧率的实时交互</strong>:加速比随内容运动强度波动(1.15×~1.5×),最坏情况退化到接近基线,QoS 难保证</li>
+      <li><strong>高运动内容</strong>(体育、快剪):路由会正确识别"几乎所有 patch 都难",收益自然缩水</li>
+      <li><strong>无法改 backbone 的场景</strong>:需要 sparse 前向 + KV collect/commit 接口,仓库内是三个后端各自手改的(causal_sparse_utils.py 等),不是通用插件</li>
+      <li><strong>14B 级强基座</strong>:§11.2 复核显示与 uniform 2-step 无实质差距,先跑 2-step 基线再决定是否值得引入</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout">
+  <h4>对我们 pipeline 的参考意义</h4>
+  <p>主线(三维重建/数字人)与视频生成加速不直接相交,但两点可借鉴:<strong>① "中间步 $\hat{x}_0$ 随时可取"的早停范式</strong>可迁移到任何迭代式精修流程(如 3DGS 致密化中按区域早停);<strong>② "冻结主干 + 小头学退出时机"的自监督构造</strong>(用满预算输出当免费 reference)是个低造数据成本的通用套路。若未来数字人驱动侧接实时视频生成模型(如 Wan-Streamer 系,见 <a href="VideoGen-20260623-Wan-Streamer.html">Wan-Streamer 笔记</a>),本方法可作为推理侧加速备选,但优先验证 2-step 简单基线。</p>
+</div>
+</section>
+
+<!-- ==================== 15. 可改进方向 ==================== -->
+<section id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 时间收益远小于 NFE 收益(2.0× vs 1.30×)</h4>
+  <p><strong>问题</strong>:NFE 减 50.19% 只换来 1.30× 端到端加速。结构性原因:首 chunk 固定 4 步 + 每步首步必稠密 + 每 chunk 多一次 t=0 cache-only 前向(router_rollout.py:905-936)+ 稀疏 gather/scatter 的 kernel 效率损失 + 计时含 VAE 解码。<strong>建议</strong>:① 与注意力 kernel 层融合(sparse attention 直接消费 active mask,避免 index_select 物化);② 首 chunk 也引入路由(用单帧先验或降低首 chunk 分辨率补偿);③ 论文应给出时间 breakdown(模型前向 / VAE / 路由开销各占多少),当前完全没有。</p>
+</div>
+
+<div class="card left-bar red">
+  <h4>[高优先级] 14B 级基座上相对 uniform 2-step 无优势</h4>
+  <p><strong>问题</strong>:Wan14B 上 Total 83.32 vs 2-step 83.35(还低 0.03),LingBot/LongLive 优势 ≤0.12(§11.2 复核)。<strong>建议</strong>:论文应直面这个对照;方法层面,强基座 2-step 已接近 4-step 质量,说明"难度"更多在时间维(第 2 步 vs 第 3 步的差距)而非空间维 —— 路由或许该同时预测"退出步"与"该步的重要性权重",而不是二值退出。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 监督目标把"自身 4 步输出"当真理</h4>
+  <p><strong>问题</strong>:$d_{i,k}$ 度量与 4 步参考的偏差,基座本身的伪影会被路由器当作"已收敛"而保留;且高质量参考只能来自慢速基线,方法无法超越基线上限。<strong>建议</strong>:接入外部质量信号(如 aesthetic/reward 模型打分)替代纯 MSE,让"提前退出"有机会比基线更好而非仅仅"不更差"。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 延迟不可预测,不利实时部署</h4>
+  <p><strong>问题</strong>:加速比内容自适应(1.15×~1.5×),对要求稳定帧率的交互场景是缺点。<strong>建议</strong>:训练目标加入延迟约束(如目标 NFE 预算的拉格朗日项),让路由器学会"在固定预算内分配"而非"能省则省"。</p>
+</div>
+
+<div class="card left-bar warn">
+  <h4>[中优先级] 阈值 η 与训练耦合</h4>
+  <p><strong>问题</strong>:每个 η 需单独训一个路由(Figure 7b),部署时无法零成本调节质量/速度旋钮。<strong>建议</strong>:训练时随机采样 η(条件化路由,把 η 作为输入特征),一次训练支持全阈值区间。</p>
+</div>
+
+<div class="card left-bar">
+  <h4>[低优先级] 论文严谨性问题</h4>
+  <p>§4.4 正文引用不存在的 "Table 6";§3.4 的 $\mathcal{L}_{\mathrm{comp}}$ 在 §4.5 改名 $\mathcal{L}_{\mathrm{nfe}}$;"约 500 训练步"与 14B 配置(5000 步)不符;"不微调生成器"与可选 adaptive DMD 阶段的关系未交代;LongLive 实验配置未随仓库发布(仓库内为 20 步玩具配置)。以上均已在 §10.3 列表,复现时需留意。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+  <thead><tr><th>改进点</th><th>优先级</th><th>关键依据</th></tr></thead>
+  <tbody>
+    <tr><td>弥合 NFE-时间差距(kernel/首 chunk/breakdown)</td><td class="fail">高</td><td>1.30× vs 2.0× 落差;router_rollout.py:905-936 额外前向</td></tr>
+    <tr><td>14B 上相对 2-step 无优势的对照与机制改进</td><td class="fail">高</td><td>Table 2 复核(§11.2)</td></tr>
+    <tr><td>超越"模仿 4 步"的监督信号</td><td>中</td><td>式 4 的参考构造</td></tr>
+    <tr><td>固定延迟预算的可控分配</td><td>中</td><td>Figure 7(c) 内容自适应波动</td></tr>
+    <tr><td>η 条件化、免多训</td><td>中</td><td>Figure 7(b) 每阈值一模型</td></tr>
+  </tbody>
+</table>
+<p><strong>个人最关键的三点</strong>:① 时间/NFE 落差(决定方法的真实价值);② 14B 上与 2-step 打平(决定适用范围);③ 监督上限锁死在基线质量(决定天花板)。</p>
+</section>
+
+<!-- ==================== 16. 总结 ==================== -->
+<section id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+<p class="lead">ForcingBooster 把"自适应计算"从样本/chunk 粒度推进到 <strong>patch 粒度</strong>,并用两个干净的工程决策落地:① $x_0$ 参数化让提前退出随时合法;② 冻结主干 + 3M 路由头 + on-policy 自监督,训练成本压到 500 步。它在"蒸馏 → 缓存 → 自适应预算"的演进线上补上了空间维度的一块拼图。</p>
+<p>但独立复核揭示宣传与现实的距离:<strong>NFE −50% 只兑现为 1.30× 时间加速;在 14B 级基座上与 uniform 2-step 无实质差异;LongLive 实验配置未发布、adaptive DMD 阶段与"不微调生成器"的宣称存在张力</strong>。这是一篇思路漂亮、工程扎实(源码的事务式 KV、FSDP lockstep、checkpoint 契约都做得相当认真)、但收益适用范围比摘要读起来窄的工作。对 1.3B 级实时模型值得接入;对 14B 级,请先跑 uniform 2-step 基线。</p>
+</section>
+
+<!-- ==================== 17. 团队与资源 ==================== -->
+<section id="s17">
+<h2><span class="num">17</span>👥 研究团队与 🔗 资源链接</h2>
+<table>
+  <thead><tr><th>作者</th><th>机构</th><th>角色</th></tr></thead>
+  <tbody>
+    <tr><td>Zekai Gu</td><td>HKUST · VAST</td><td>一作</td></tr>
+    <tr><td>Peng Wang</td><td>VAST</td><td>Project leader</td></tr>
+    <tr><td>Jiahao Lu, Yongsen Mao</td><td>HKUST</td><td>—</td></tr>
+    <tr><td>Cheng Lin</td><td>澳门科技大学</td><td>—</td></tr>
+    <tr><td>Yuan Liu</td><td>HKUST</td><td>通讯作者</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li>📄 arXiv:<a href="https://arxiv.org/abs/2610.12625" target="_blank">2610.12625</a>(v1,2026-10-08;comments 仅项目主页,无会议信息)</li>
+  <li>🌐 项目主页:<a href="https://igl-hkust.github.io/ForcingBooster/" target="_blank">igl-hkust.github.io/ForcingBooster</a>(含交互式 demo;Supplementary 链接未发现)</li>
+  <li>💻 代码:<a href="https://github.com/IGL-HKUST/ForcingBooster" target="_blank">IGL-HKUST/ForcingBooster</a>(Wan21 1.3B/14B、LingBot 1.3B/14B、H3 后端;LongLive 仅玩具配置)</li>
+  <li>🤗 权重:<a href="https://huggingface.co/EXCAI/ForcingBooster" target="_blank">EXCAI/ForcingBooster</a>(Causal-Forcing 与 LingBot 路由已放出;LongLive/H3 "To be released")</li>
+  <li>🔗 库内相关:<a href="ImageGen-20240523-DMD2.html">DMD2(蒸馏系源头)</a> · <a href="VideoGen-20250326-Wan2.1.html">Wan2.1(基座)</a> · <a href="VideoGen-20260623-Wan-Streamer.html">Wan-Streamer(流式生成)</a></li>
+</ul>
+</section>
+
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+<div class="footer" style="max-width:1100px;margin:0 auto;padding:20px 40px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)">
+  笔记生成于 2026-10-23 · 论文 arXiv:2610.12625v1(2026-10-08,仅 v1) · abs 页 comments 仅含项目主页链接,<strong>无会议信息,故不标注会议 badge</strong> · 源码验证基于 GitHub IGL-HKUST/ForcingBooster 浅克隆(2026-10-23)
+</div>
+</body>
+</html>
