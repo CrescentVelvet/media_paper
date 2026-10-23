@@ -45,6 +45,9 @@ dead = []
 for f in html_files:
     s = open(f, encoding="utf-8", errors="ignore").read()
     for h in re.findall(r'href="([^"#?]+\.html)', s):
+        # 只校验站内相对链接;http(s) 外链以 .html 结尾时(如 CVF 官方页)不算站内死链
+        if h.startswith(("http://", "https://")):
+            continue
         if not os.path.exists(h):
             dead.append((f, h))
 if dead:

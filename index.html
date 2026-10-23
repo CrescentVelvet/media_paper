@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 79</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 45</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 82</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 48</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -2735,6 +2735,87 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/AMAP-ML/RL3DEdit" target="_blank">💻 GitHub(仅推理)</a>
         </div>
 
+        <div class="note-card" data-file="3D-20250224-GraphGS.html" data-kind="note" data-depth="deep"
+              data-topics="稀疏与少视角重建|相机控制与位姿条件|质量速度权衡与实时" data-search="GraphGS:图引导的大规模开放场景 3D 高斯重建 3DGS 相机图 CNNP 匹配筛选 象限过滤器 QF 多视角一致性损失 介数中心性采样 DUSt3R 粗位姿 大场景重建 把「图像对选择」从暴力枚举变成基于 DUSt3R 粗位姿的图采样问题:同心近邻配对(CNNP)+6-bit 象限过滤器(QF)把匹配对压到约 10%,喂给调参 COLMAP mapper;匹配副产物相机图二次用于 3DGS 训练——边权重驱动的多视角一致性损失 + 介数中心性自适应采样。Waymo PSNR 29.43(vs PVG 28.11),匹配提速约 20×、BA 7×,加噪位姿下 28.53 vs 3DGS 12.68。源码复核发现 8 处论文-代码差异:动态采样疑似因 read_graph.py:141 陈旧变量 bug 失效、目标视角取第 5 大权重(论文称最大)、一致性损失实为 d=1.0 平面单应、八叉树模块未发布,表5/表8 两组消融不可复现。">
+            <h3>94. GraphGS:图引导的大规模开放场景 3D 高斯重建</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2502.17377</span>
+                <span>📅 2025-02-24</span>
+                <span>🏢 HKUST(GZ) / HKU / SCUT / UC Berkeley</span>
+                <span>🏆 ICLR 2025(abs comments 证实)</span>
+                <span>✅ 开源(继承 3DGS Inria 非商用许可)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">相机图</span>
+                <span class="tag">CNNP 匹配筛选</span>
+                <span class="tag">象限过滤器 QF</span>
+                <span class="tag">多视角一致性损失</span>
+                <span class="tag">介数中心性采样</span>
+                <span class="tag">DUSt3R 粗位姿</span>
+                <span class="tag">大场景重建</span>
+            </div>
+            <p>把「图像对选择」从暴力枚举变成基于 DUSt3R 粗位姿的图采样问题:同心近邻配对(CNNP)+6-bit 象限过滤器(QF)把匹配对压到约 10%,喂给调参 COLMAP mapper;匹配副产物相机图二次用于 3DGS 训练——边权重驱动的多视角一致性损失 + 介数中心性自适应采样。Waymo PSNR 29.43(vs PVG 28.11),匹配提速约 20×、BA 7×,加噪位姿下 28.53 vs 3DGS 12.68。源码复核发现 <strong>8 处论文-代码差异</strong>:动态采样疑似因 read_graph.py:141 陈旧变量 bug 失效、目标视角取第 5 大权重(论文称最大)、一致性损失实为 d=1.0 平面单应、八叉树模块未发布,表5/表8 两组消融不可复现。</p>
+            <a href="3D-20250224-GraphGS.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2502.17377" target="_blank">📄 arXiv</a>
+            <a href="https://3dagentworld.github.io/graphgs/" target="_blank">🌐 项目主页</a>
+            <a href="https://github.com/3DAgentWorld/GraphGS" target="_blank">💻 GitHub</a>
+        </div>
+
+        <div class="note-card" data-file="3D-20251011-Gesplat.html" data-kind="note" data-depth="deep"
+              data-topics="稀疏与少视角重建|前馈式大重建模型" data-search="Gesplat: Robust Pose-Free 3D Reconstruction via Geometry-Guided Gaussian Splatting Pose-Free 3DGS 稀疏视角重建 VGGT 初始化 匹配射线高斯 GNN 属性细化 对极-光流深度正则 无开源代码 InstantSplat 框架的几何基础模型升级款:用 VGGT 替代 DUSt3R 做位姿与稠密点云初始化,把高斯位置绑到匹配射线上(位置自由度 3→1)并做位置/形状双重优化,再以 GNN 近邻图细化属性、光流-对极三角化深度做几何正则。LLFF 3/6/9 视角 PSNR 18.869/21.994/23.299,较最强基线 InstantSplat +2.1~2.7 dB,九格指标全部第一;TNT 大场景均值 21.867,领先第二名 CF-3DGS +7.23 dB。局限:非重叠视角下匹配先验失效(作者自认);无官方代码,工程细节仅照引论文。">
+            <h3>95. Gesplat: Robust Pose-Free 3D Reconstruction via Geometry-Guided Gaussian Splatting</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2510.10097 (v2)</span>
+                <span>📅 2025-10-11(v1)/ 2025-10-27(v2)</span>
+                <span>🏢 华南理工大学(SCUT)· 康文雄课题组</span>
+                <span>📰 投 Pattern Recognition(页眉标注,未核实)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Pose-Free 3DGS</span>
+                <span class="tag">稀疏视角重建</span>
+                <span class="tag">VGGT 初始化</span>
+                <span class="tag">匹配射线高斯</span>
+                <span class="tag">GNN 属性细化</span>
+                <span class="tag">对极-光流深度正则</span>
+                <span class="tag">无开源代码</span>
+            </div>
+            <p>InstantSplat 框架的几何基础模型升级款:用 VGGT 替代 DUSt3R 做位姿与稠密点云初始化,把高斯位置绑到匹配射线上(位置自由度 3→1)并做位置/形状双重优化,再以 GNN 近邻图细化属性、光流-对极三角化深度做几何正则。LLFF 3/6/9 视角 PSNR 18.869/21.994/23.299,较最强基线 InstantSplat +2.1~2.7 dB,九格指标全部第一;TNT 大场景均值 21.867,领先第二名 CF-3DGS +7.23 dB。局限:非重叠视角下匹配先验失效(作者自认);无官方代码,工程细节仅照引论文。</p>
+            <a href="3D-20251011-Gesplat.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2510.10097" target="_blank">📄 arXiv</a>
+        </div>
+
+        <div class="note-card" data-file="3D-20260601-CoRoGS.html" data-kind="note" data-depth="deep"
+              data-topics="稀疏与少视角重建|表面与几何重建" data-search="CoRoGS:面向大偏移视角鲁棒合成的上下文高斯泼溅 3DGS 图神经网络 GAT 大偏移视角合成 Delaunay 图 跨模态融合 KITTI/Waymo 自动驾驶仿真 把 3D 高斯从独立基元改造成图上的上下文推理对象:MVS+Delaunay 构建高斯图,几何/语义双路 GNN(L=2, 0.96MB)加跨模态门控融合更新节点特征,每节点解码 N=3 个高斯;语义门控法向平滑损失 + 梯度驱动图扩展补全 MVS 空洞。KITTI 右移 0.5m PSNR 24.96(超 DeSiRe-GS 2.25dB)且高斯数最少(353k);六种大偏移设置 FID/KID 全面第一,极端偏移 FID 改善 21%~33%。消融显示几何更新(-1.71dB)与上下文损失(-1.64dB)贡献最大,Delaunay 构图比 KNN 好 2.93dB。">
+            <h3>96. CoRoGS:面向大偏移视角鲁棒合成的上下文高斯泼溅</h3>
+            <div class="meta">
+                <span>📄 CVPR 2026 (CVF Open Access, pp. 8288-8297, 无 arXiv)</span>
+                <span>📅 2026-06(CVF 出版月)</span>
+                <span>🏢 北京邮电大学 / 北京大学 / 北京航空航天大学</span>
+                <span>⚠️ 代码未开源</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">图神经网络</span>
+                <span class="tag">GAT</span>
+                <span class="tag">大偏移视角合成</span>
+                <span class="tag">Delaunay 图</span>
+                <span class="tag">跨模态融合</span>
+                <span class="tag">KITTI/Waymo</span>
+                <span class="tag">自动驾驶仿真</span>
+            </div>
+            <p>把 3D 高斯从独立基元改造成图上的上下文推理对象:MVS+Delaunay 构建高斯图,几何/语义双路 GNN(L=2, 0.96MB)加跨模态门控融合更新节点特征,每节点解码 N=3 个高斯;语义门控法向平滑损失 + 梯度驱动图扩展补全 MVS 空洞。KITTI 右移 0.5m PSNR 24.96(超 DeSiRe-GS 2.25dB)且高斯数最少(353k);六种大偏移设置 FID/KID 全面第一,极端偏移 FID 改善 21%~33%。消融显示几何更新(-1.71dB)与上下文损失(-1.64dB)贡献最大,Delaunay 构图比 KNN 好 2.93dB。</p>
+            <a href="3D-20260601-CoRoGS.html">📖 阅读笔记</a>
+            <a href="https://openaccess.thecvf.com/content/CVPR2026/html/Ma_CoRoGS_Contextual_Gaussian_Splatting_for_Robust_Large-Deviation_View_Synthesis_CVPR_2026_paper.html" target="_blank">📄 CVF 官方页</a>
+            <a href="https://openaccess.thecvf.com/content/CVPR2026/supplemental/Ma_CoRoGS_Contextual_Gaussian_CVPR_2026_supplemental.zip" target="_blank">📎 Supplementary</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -2813,7 +2894,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>94. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>97. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2836,7 +2917,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>95. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>98. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2859,7 +2940,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>96. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>99. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2885,7 +2966,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>97. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>100. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -2928,7 +3009,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-10-23 · 涵盖 97 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-10-23 · 涵盖 100 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){

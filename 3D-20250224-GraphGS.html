@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GraphGS:图引导的大规模开放场景 3D 高斯重建</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,146,60,.12);border-left:3px solid var(--orange);color:#fdba74;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">ICLR 2025 · 大规模开放场景 3D 重建 · HKUST(GZ) 等 · 📊 deep</span>
+    <h1>GraphGS:图引导的大规模开放场景 3D 高斯重建</h1>
+    <div class="subtitle">Graph-Guided Scene Reconstruction from Images with 3D Gaussian Splatting(arXiv 2502.17377v1)</div>
+    <div class="authors">Chong Cheng* · Gaochao Song* · Yiyang Yao · Qinzheng Zhou · Gangjian Zhang · Hao Wang✉(*共同一作,✉通讯)</div>
+    <div class="org">香港科技大学(广州)HKUST(GZ) · 香港大学(HKU) · 华南理工大学(SCUT) · UC Berkeley(机构按论文 HTML 版署名行)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2502.17377" target="_blank">📄 arXiv 2502.17377</a>
+      <a href="https://arxiv.org/html/2502.17377v1" target="_blank">🌐 arXiv HTML 全文</a>
+      <a href="https://3dagentworld.github.io/graphgs/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/3DAgentWorld/GraphGS" target="_blank">💻 GitHub</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架 + 符号表</a></li>
+    <li><a href="#s4">模块一:同心近邻配对(CNNP)</a></li>
+    <li><a href="#s5">模块二:象限过滤器(QF)</a></li>
+    <li><a href="#s6">模块三:八叉树初始化</a></li>
+    <li><a href="#s7">模块四:相机图构建与边权重</a></li>
+    <li><a href="#s8">模块五:图引导多视角一致性约束</a></li>
+    <li><a href="#s9">模块六:自适应采样优化</a></li>
+    <li><a href="#s10">损失函数总表</a></li>
+    <li><a href="#s11">逻辑流程图(SfM / 训练 / 推理)</a></li>
+    <li><a href="#s12">⚙️ 工程实现细节(源码复核)</a></li>
+    <li><a href="#s13">实验结果</a></li>
+    <li><a href="#s14">消融实验</a></li>
+    <li><a href="#s15">🔄 同类方法对比分析</a></li>
+    <li><a href="#s16">🎯 应用场景与落地适配(含 vggt_human)</a></li>
+    <li><a href="#s17">可改进方向分析</a></li>
+    <li><a href="#s18">总结与演进定位 + 团队</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+  <h2><span class="num">1</span>论文概要与核心贡献</h2>
+  <p><strong>问题</strong>:从数千张无标定(无精确位姿)RGB 图像重建大规模开放 3D 场景,是 COLMAP 时代的老大难——exhaustive 匹配随图像数平方增长(2k 图像 COLMAP SfM &gt;24h 且常失败,表3),而 3DGS 在稀疏边界视角下容易过拟合到个别相机。<strong>方法</strong>:GraphGS 先用预训练相对位姿模型(论文引 Wang et al. 2024,即 DUSt3R,约 0.01s/对)拿到粗糙相机分布,再提出<strong>同心近邻配对(CNNP)</strong>与<strong>象限过滤器(QF)</strong>把匹配对从 $C_N^2$ 压到 $O(N)$ 量级(0.6k 图选 ~18k/18 万对,2k 图选 ~200k/200 万对,附录F),喂给 COLMAP 的 <code>matches_importer</code> + 调参 mapper 完成 BA;匹配过程顺手产出<strong>相机图</strong>,节点=相机、边=匹配对,图上再定义两件事指导 3DGS 训练:边权重驱动的<strong>多视角一致性损失</strong>与节点介数中心性驱动的<strong>自适应采样</strong>。<strong>结果</strong>:Waymo PSNR 29.43 / SSIM 0.899(对比 PVG 28.11 / 0.849,表1),Mill-19 Building 26.60(对比 VastGaussian 23.50,表2),SfM 提速约 20×(匹配)+ 5~7×(BA)(表3),训练时长近乎减半(54min→28min,表5)。</p>
+  <div class="callout key"><b>一句话核心贡献</b>:把「图像对选择」这件事从暴力枚举变成<strong>基于粗糙空间先验的图采样问题</strong>,并把匹配副产物(相机图)二次利用为 3DGS 优化的引导结构——同一份拓扑信息既加速 SfM 又抑制稀疏视角过拟合。</div>
+  <div class="stat-row">
+    <div class="stat"><div class="v">29.43</div><div class="l">Waymo PSNR(表1,vs PVG 28.11)</div></div>
+    <div class="stat"><div class="v">20×</div><div class="l">匹配提速(0.6k 图:62min→3min,表3)</div></div>
+    <div class="stat"><div class="v">-48%</div><div class="l">训练时长(54min→28min,表5;迭代 30k→16.8k)</div></div>
+    <div class="stat"><div class="v">28.53</div><div class="l">加噪位姿下 PSNR(表9,3DGS 仅 12.68)</div></div>
+    <div class="stat"><div class="v">23 min</div><div class="l">SfM 总耗时 vs COLMAP 154min(表7)</div></div>
+  </div>
+  <div class="tag-row">
+    <span class="tag">3DGS</span><span class="tag">相机图</span><span class="tag">同心近邻配对 CNNP</span><span class="tag">象限过滤 QF</span><span class="tag">介数中心性采样</span><span class="tag">多视角一致性损失</span><span class="tag">DUSt3R 粗位姿</span><span class="tag">COLMAP 加速</span><span class="tag">大场景(2k 图)</span>
+  </div>
+  <div class="figure">
+    <img src="images/2502.17377/main_v6.png" alt="GraphGS framework" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图1</b>(论文 Figure 1)GraphGS 总体框架:图像集 → 空间先验结构估计(CNNP+QF,产出相机位姿与相机图)→ 八叉树初始化点组织 → 图引导高斯优化(多视角一致性 + 自适应采样)。相机图是结构估计的副产物,被二次用于 3DGS 训练。</div>
+  </div>
+</section>
+
+<section class="section" id="s2">
+  <h2><span class="num">2</span>研究背景与动机</h2>
+  <h3>2.1 现有方法的具体失败模式(§1、§2.2)</h3>
+  <div class="grid-3">
+    <div class="card"><h4>① COLMAP 类 SfM</h4><p><strong>失败模式</strong>:exhaustive 匹配取全部 $C_N^2$ 图像对,匹配时间随图像数「指数级」恶化(论文原文措辞;实际为平方级)。2k 图像规模下无论 exhaustive 还是 vocab-tree 均 &gt;24h 且「总是失败」(表3);0.6k 也要 62min 匹配 + 140min BA。此外还有匹配失败导致注册不上相机的实际风险(§1)。</p></div>
+    <div class="card"><h4>② 位姿联合优化 NeRF 系</h4><p>BARF/GARF/Joint-TensoRF 联合优化位姿与场景。<strong>失败模式</strong>:仅在物体级场景验证,推广到大场景失败——BARF 在 Waymo/KITTI 直接不收敛(PSNR 9.07/10.68,表1),SPARF 只适合稀疏图像集、UP-NeRF 在 KITTI 不收敛(§4.2)。</p></div>
+    <div class="card"><h4>③ 大场景 3DGS 系</h4><p>VastGaussian/PVG 等默认拿 GT 或 COLMAP 位姿。<strong>失败模式</strong>:开放场景边界视角稀疏,单视角监督让高斯过拟合到特定相机附近(§3.2.1);给位姿加 0.3 rad/0.3 单位噪声后 3DGS/PVG 崩到 PSNR≈12.7(表9),鲁棒性差。</p></div>
+  </div>
+  <h3>2.2 核心洞察</h3>
+  <div class="callout key"><b>关键观察</b>:(a) 匹配对的「信息密度」极不均匀——绝大多数图像对视野不相交,既浪费匹配时间又向全局 BA 注入噪声(§3.1.2);(b) 用 DUSt3R 这类前馈模型 0.01s/对拿到的粗位姿虽然不精确,但<strong>足以支撑「谁和谁该匹配」的拓扑判断</strong>——筛选匹配对只需要相机的平面分布与朝向,不需要精确位姿(附录E「universality」:只用外参第 3、4 列,不需要内参);(c) 匹配关系天然是一张图,图的拓扑(边权重=视角亲密度,节点中心性=信息枢纽度)正好是 3DGS 训练缺的「视角间结构」。</div>
+  <div class="callout warn"><b>关键假设与失效条件(论文附录G 自承 + 本笔记复核)</b>:(a) 假设粗位姿在 xy 平面分布「大致正确」——若 DUSt3R 粗位姿本身错乱,BA 会失败,方法无法自救(附录G 原话);(b) 假设场景静态——依赖特征点匹配,动态物体多的场景会随机失败(§5 Limitations);(c) 假设视角分布稀疏不均——物体级 360° 稠密环绕采集时各节点重要性趋同,自适应采样「几乎无收益」(附录G 原话),这直接影响其对我们人体采集 pipeline 的价值(见 §16)。</div>
+</section>
+
+<section class="section" id="s3">
+  <h2><span class="num">3</span>算法总体框架 + 符号表</h2>
+  <h3>3.1 输入 / 输出定义</h3>
+  <ul>
+    <li><strong>输入</strong>:$N$ 张无位姿 RGB 图像(Waymo 场景约 600 张/3 相机、KITTI 约 100 张、Mill-19 约 2000 张;附录F),可选 DUSt3R 粗位姿。</li>
+    <li><strong>输出</strong>:该场景的 3DGS 模型(标准高斯参数:位置/旋转/缩放/不透明度/SH 颜色),以及中间产物——精炼后的相机位姿(COLMAP 格式)与相机图(<code>*graphinfo.json</code>)。</li>
+    <li><strong>不用</strong>:GT 相机位姿(§4.1 明确「不使用数据集 GT 位姿」)、内参先验(QF 只需要外参的平移与朝向列)。</li>
+  </ul>
+  <h3>3.2 符号表</h3>
+  <table>
+    <tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+    <tr><td>$N$</td><td>图像/相机数</td><td>600 / 100 / 2000(附录F)</td></tr>
+    <tr><td>$c_i$, $p^{(i)}$, $d^{(i)}$</td><td>第 $i$ 个相机、其位置、朝向单位向量</td><td>$p\in\mathbb{R}^3$, $d\in\mathbb{R}^3$</td></tr>
+    <tr><td>$s(i,j)$</td><td>$c_j$ 相对 $c_i$ 的距离升序名次(1=最近)</td><td>$1..N{-}1$</td></tr>
+    <tr><td>$r,h,w$</td><td>CNNP 参数:近邻数 / 跳隔 / 环带宽度</td><td>$r{=}5,h{=}20,w{=}1$(附录F;代码默认 <code>arg_r=5, arg_k=10, arg_w=1</code>,run_modifyMatch.py:35-37)</td></tr>
+    <tr><td>$S_{\text{neighbor}},S_{\text{concentric}},S_{\text{connection}}$</td><td>近邻集 / 同心环集 / 链式连接集</td><td>图像对集合,式(1)</td></tr>
+    <tr><td>$\mathcal{B}_p^{(i,j)},\mathcal{B}_d^{(i,j)}$</td><td>相对位置 / 相对朝向的 3-bit 象限编码</td><td>各 8 态,拼成 6-bit $\mathcal{B}^{(i,j)}$,式(2)(4)(6)</td></tr>
+    <tr><td>$w_e(i,j)$</td><td>相机图边权重</td><td>式(7);代码实现有出入,见 §12 差异表</td></tr>
+    <tr><td>$w_n(i)$</td><td>节点权重(介数中心性)</td><td>式(9);代码实际用介数+度中心性均值,见 §12</td></tr>
+    <tr><td>$P(i)$</td><td>相机 $i$ 参与优化的采样概率</td><td>式(10);论文称下限 0.5,代码实为 0.7,见 §12</td></tr>
+    <tr><td>$\lambda$</td><td>一致性损失权重</td><td>论文附录F:0.07;代码默认 0.05(train.py:263),见 §12</td></tr>
+    <tr><td>$\tau$</td><td>八叉树 LOD 剪枝阈值</td><td>论文 §3.1.3 提及但<span class="uncertain">⚠️【待核实】 未给数值;发布代码中无八叉树实现</span></td></tr>
+    <tr><td>$\sigma_{jk},\sigma_{jk}(i)$</td><td>$j{\to}k$ 最短路数 / 其中过 $i$ 的条数</td><td>介数中心性定义,式(9)</td></tr>
+  </table>
+  <h3>3.3 总体数据流</h3>
+  <div class="mermaid">
+flowchart TD
+    IMG["输入: N 张无位姿 RGB 图像<br/>(0.6k~2k 张)"] --> COARSE["粗位姿估计<br/>DUSt3R 前馈 ~0.01s/对<br/>(仅需平面分布大致正确)"]
+    COARSE --> CNNP["模块一 CNNP<br/>近邻 r + 同心环 h,w + 链式连接<br/>C_N^2 → O(N) 候选对"]
+    CNNP --> QF["模块二 象限过滤器 QF<br/>6-bit 位姿编码查表<br/>剔除无视野交叠对(≥37.5%)"]
+    QF --> PAIRS["稀疏匹配对清单<br/>pairs_*.txt"]
+    PAIRS --> COLMAP["COLMAP matches_importer<br/>+ 调参 mapper (BA)"]
+    COLMAP --> POSE["精炼位姿 R,T + 稀疏点云"]
+    PAIRS --> GRAPH["相机图构建<br/>节点=相机 边=匹配对<br/>边权重 w_e / 介数中心性 w_n"]
+    POSE --> GS["3DGS 优化 30k iter<br/>+ L_cons 一致性损失<br/>+ 自适应采样 P(i)"]
+    GRAPH --> GS
+    GS --> OUT["输出: 3DGS 场景"]
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GRAPH fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+  </div>
+  <p><strong>阶段划分</strong>:① 粗位姿(DUSt3R,外置)→ ② 匹配对生成(CNNP+QF,纯 CPU 几何判断)→ ③ COLMAP 特征匹配+BA(仍是主力 SfM 引擎)→ ④ 图引导 3DGS 训练。注意 GraphGS <strong>不是端到端位姿自由方法</strong>:它仍然跑 COLMAP 的 feature_extractor 与 mapper,只是把「匹配谁」的决策权从 COLMAP 手里拿走(源码 run_modifyMatch.py 全流程复核,见 §12)。</p>
+</section>
+
+<section class="section" id="s4">
+  <h2><span class="num">4</span>模块一:同心近邻配对(CNNP, §3.1.1)</h2>
+  <h3>4.1 要解决的问题与设计原则</h3>
+  <p>穷举匹配的 $C_N^2$ 对里,绝大多数是「隔了半条街、视野零交叠」的无效对。但简单只配近邻又会丢失全局结构,导致 BA 把场景拼成几段互不连通的碎片。CNNP 的原则(§3.1.1 原文):「被选图像对的分布应同时反映局部与全局结构」。</p>
+  <h3>4.2 数学形式化</h3>
+  <div class="equation">$$S_{all}=\bigcup_{i=1}^{N}\Big(S_{\text{neighbor}}^{(i)}\cup S_{\text{concentric}}^{(i)}\cup S_{\text{connection}}^{(i)}\Big)$$<span class="tag">式 (1)</span></div>
+  <div class="equation">$$S_{\text{neighbor}}^{(i)}=\{(c_i,c_j)\mid s(i,j)\le r\},\quad S_{\text{concentric}}^{(i)}=\{(c_i,c_j)\mid 0\le (s(i,j)-r)\bmod (h{+}w) < w\},\quad S_{\text{connection}}^{(i)}=\{(c_i,c_{i-1})\mid i\ge 2\}$$<span class="tag">式 (1) 展开</span></div>
+  <p>三类对的职责:<strong>$S_{\text{neighbor}}$</strong>(最近 $r$ 个)保证局部 BA 稳定性;<strong>$S_{\text{concentric}}$</strong>(距离名次每 $h{+}w$ 取前 $w$ 个,形成一圈圈同心环)提供局部→全局的平滑过渡;<strong>$S_{\text{connection}}$</strong>(按序号的链式相邻对)是<strong>连通性保险</strong>——附录 A 用反证法给出反例($r{=}2,h{=}N{-}3,w{=}1$ 时 8 个相机可裂成两个连通分量,论文 Figure 7),证明仅靠前两类对无法保证图连通,而 BA 要求图是一个连通分量(代码侧强校验:<code>match_script.py:140-142</code> 图非单连通分量直接 raise)。$S_{\text{connection}}$ 的对<strong>不受 QF 过滤</strong>(代码 <code>match_script.py:101-102</code> 在 QF 之后把连接对补回)。</p>
+  <h3>4.3 前向流程(代码级)</h3>
+  <ol>
+    <li>读粗位姿:<code>read_coarse_cam/json_read_cam.py:40-53</code> 读 <code>camera_info_opencv.json</code>,取 c2w 矩阵的平移列与朝向列($z$ 轴);</li>
+    <li>建 K-DTree:<code>match_script.py:349</code> <code>cKDTree(all_coords)</code>,论文 §3.1.1 也明确用 KD-Tree 加速距离检索;</li>
+    <li>对每个相机查询全量排序:<code>match_script.py:353</code> <code>kdtree.query(query_point, k=cam_num)</code>;</li>
+    <li>加连接对(<code>:354-356</code>)→ 加最近 $r$ 个(<code>:357-358</code>)→ 名次 $j&gt;r$ 且 $(j{-}r)\bmod k{=}0$ 的连续 $w$ 个(<code>:359-363</code>);</li>
+    <li>HashSet 去重(<code>remove_duplication</code>,<code>match_script.py:174-197</code>),无序对排序后落盘 <code>pairs_*.txt</code>。</li>
+  </ol>
+  <p><strong>复杂度与量级</strong>:配对本身 0.6k 图仅 0.2min、2k 图 2.1min(表10);选出对数约 $18\text{k}/C_{600}^2$(≈10%)、$200\text{k}/C_{2000}^2$(≈10%)(附录F,按 $r{=}5,h{=}20,w{=}1$)。<strong>可导性</strong>:该模块为离散集合选择,不可导、不参与反向传播。</p>
+  <h3>4.4 模块内数据流</h3>
+  <div class="mermaid">
+flowchart LR
+    CAMS["粗相机集合<br/>p(i), d(i)"] --> KDT["cKDTree 建树<br/>match_script.py:349"]
+    KDT --> NEAR["S_neighbor<br/>名次 ≤ r=5"]
+    KDT --> RING["S_concentric<br/>每 h+w=21 取 w=1"]
+    SEQ["序号链<br/>c(i-1)~c(i)"] --> CONN["S_connection<br/>(连通性保险, 免QF)"]
+    NEAR --> UNION["并集 + HashSet 去重"]
+    RING --> UNION
+    CONN --> UNION
+    UNION --> OUTP["pairs.txt<br/>0.6k: ~18k 对 (10%)<br/>2k: ~200k 对 (10%)"]
+    style CAMS fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUTP fill:#d1fae5,stroke:#10b981,color:#064e3b
+  </div>
+  <p class="note">论文 Figure 2(左)为 TikZ 矢量示意图,HTML 版无位图,本笔记以上图重述其逻辑。代码中 $h$ 命名为 <code>arg_k</code>(run_modifyMatch.py:36,默认 10),论文附录F 实验用 $h{=}20$,复现时需显式传 <code>--arg_k 20</code>。</p>
+  <p><strong>监督信号</strong>:本模块无监督信号,是纯几何先验筛选;其质量由下游 BA 成功率与最终 PSNR 间接体现(消融 w/o CNNP:PSNR 30.36→24.33,表4)。</p>
+</section>
+
+<section class="section" id="s5">
+  <h2><span class="num">5</span>模块二:象限过滤器(QF, §3.1.2)</h2>
+  <h3>5.1 为什么 CNNP 之后还要过滤</h3>
+  <p>CNNP 按距离选 pair,但「距离近」不等于「看得见面」——两个背对背的近距相机视野零交叠,送进匹配既浪费时间又向全局 BA 注入噪声(§3.1.2)。QF 用极廉价的几何编码把这类「噪声对」剔除。</p>
+  <h3>5.2 数学形式化</h3>
+  <p><strong>相对位置编码</strong>(3-bit,8 象限):</p>
+  <div class="equation">$$\mathcal{B}_{p}^{(i,j)}=\{\mathrm{sgn}(x_j-x_i),\ \mathrm{sgn}(y_j-y_i),\ \mathrm{sgn}(z_j-z_i)\}$$<span class="tag">式 (2)</span></div>
+  <p><strong>相对朝向编码</strong>(命题 1:避免解线性方程组,1 次叉乘 + 1 次内积):</p>
+  <div class="equation">$$\mathcal{B}_{d}^{(i,j)}=\Big\{\mathrm{sgn}\big(e_x\,[d_\times^{(i)}]\,d^{(j)T}\big),\ \mathrm{sgn}\big(e_y\,[d_\times^{(i)}]\,d^{(j)T}\big),\ \mathrm{sgn}\big(d^{(i)}d^{(j)T}\big)\Big\}$$<span class="tag">式 (4)</span></div>
+  <p>其中 $[d_\times^{(i)}]$ 为叉乘反对称矩阵(式(5))。附录 C 给出证明并化简为无矩阵形式 $\mathcal{B}_d^{(i,j)}=\{\mathrm{sgn}(v_x^\times),\mathrm{sgn}(v_y^\times),\mathrm{sgn}(d^{(i)}{\cdot}d^{(j)})\}$(式(16),与代码 <code>match_script.py:323-336</code> 的 <code>np.cross</code>+<code>np.dot</code> 符号位实现一致)。拼接成 6-bit $\mathcal{B}^{(i,j)}=\mathcal{B}_p^{(i,j)}\oplus\mathcal{B}_d^{(i,j)}$(式(6))后,直接查 8×8 状态表(附录B 表6)判定保留/剔除。</p>
+  <h3>5.3 严格/宽松模式与理论过滤率</h3>
+  <div class="equation">$$P_{\text{strict}}=\tfrac{7}{8}\cdot\tfrac{1}{8}\cdot 4+\tfrac{6}{8}\cdot\tfrac{1}{8}\cdot 4=\tfrac{13}{16}\approx 81.3\%,\qquad P_{\text{loose}}=\tfrac{4}{8}\cdot\tfrac{1}{8}\cdot 4+\tfrac{2}{8}\cdot\tfrac{1}{8}\cdot 4=\tfrac{6}{16}\approx 37.5\%$$<span class="tag">式 (12)(13)</span></div>
+  <p>即随机位姿假设下,严格模式理论过滤 81.3% 噪声对、宽松模式也达 37.5%(论文 §3.1.2 正文写 "more than 38%",与式(13) 自洽)。代码 <code>pd_match</code>(match_script.py:277-293)内置两张表 <code>match_list_v1</code>(strict)/<code>match_list_v2</code>(loose),与论文表6 逐项一致;默认 loose(车辆轨迹狭长,附录B),<code>--arg_s True</code> 切严格。</p>
+  <h3>5.4 与 frusta(视锥求交)基线的对比</h3>
+  <p>附录E 表10:naive frusta 方法 0.6k 图配对耗时 2min(vs QF 0.2min),2k 图 20min(vs 2.1min),且狭长车载轨迹下「所有相机朝向几乎相同,frusta 无法有效过滤」导致匹配 &gt;24h 失败。QF 只需外参的平移+朝向列(3、4 列),<strong>不需要内参</strong>,而 frusta 需要内参算近平面——这是「1 次叉乘+1 次内积」对「坐标变换+包围盒求交」的普适性胜利。</p>
+  <div class="figure">
+    <img src="images/2502.17377/supp-steps.png" alt="imagined transform" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图2</b>(论文 Figure 9,附录C)命题1的「想象变换」:平移到原点 → 把叉乘向量压到 z-y 平面 → 绕 x 轴旋转使 $d^{(i)}$ 对齐 +z 轴;全程相对朝向不变、无需显式求变换矩阵,因此可用叉乘/内积符号位直接读出相对朝向象限。论文 Figure 2(右,QF 2D 示意)、Figure 7(连通性反例)、Figure 8(象限划分)、Figure 10($d^{(j)}$ 平面四情形)均为 TikZ 矢量图,HTML 版无位图,其逻辑已并入本节文字与 §4.4 的 Mermaid 图。</div>
+  </div>
+  <p><strong>监督信号</strong>:无监督,几何查表;消融 w/o QF PSNR 30.36→29.14(表4),幅度小于 w/o CNNP,说明 QF 是「锦上添花防噪声」,CNNP 才是「保命结构」。</p>
+</section>
+
+<section class="section" id="s6">
+  <h2><span class="num">6</span>模块三:八叉树初始化(§3.1.3)——论文有、代码无</h2>
+  <p><strong>设计动机</strong>:SfM 稀疏点中并非所有点对重建质量贡献相同;借鉴 PlenOctrees,用八叉树按 LOD 管理初始点,把低于细节阈值 $\tau$ 的节点整枝剪掉。论文 §4.1 报告实际把初始点从约 300k 剪到 100k;附录E 表8:245,820 点/54min → 100,000 点/36min,PSNR 几乎不变(29.74→29.75)。</p>
+  <div class="callout warn"><b>源码复核结论(重要)</b>:发布仓库(<code>git clone</code> 主分支,2026-10 快照)中<strong>不存在任何八叉树实现</strong>——全仓搜索 <code>octree</code> 仅命中 <code>utils/sh_utils.py</code> 里 PlenOctree 的版权头;<code>scene/__init__.py:83</code> 直接 <code>create_from_pcd(scene_info.point_cloud)</code> 加载 COLMAP 全量稀疏点。阈值 $\tau$ 的取值论文与代码均无。<span class="uncertain">⚠️【待核实】 该模块可能存在于作者未发布的内部版本;用公开代码复现时,表8 的 54→36min 收益无法获得,初始点规模将是 COLMAP 原始输出。</span>此外论文 §4.1 写「300k→100k」而表8 写「245,820→100,000」,两处数字口径不一致(可能场景不同,论文未注明)。</div>
+  <p><strong>结构表(论文描述)</strong>:输入 COLMAP 稀疏点云 $[M,3]$ → 八叉树按空间递归划分 → 逐节点评估 LOD,低于 $\tau$ 的节点整枝剪除 → 输出约 $M/3$ 的初始化点。<strong>监督信号</strong>:无,纯预处理。</p>
+</section>
+
+<section class="section" id="s7">
+  <h2><span class="num">7</span>模块四:相机图构建与边权重(§3.2.1)</h2>
+  <h3>7.1 图定义</h3>
+  <p>节点:每个视角相机(存其精炼后 $R,T$);边:§3.1 选出的匹配对。无向加权图,代码用 networkx 构建(<code>match_script.py:124-150</code> <code>to_graph</code>),构建时强校验单连通分量(<code>:140-142</code>),序列化为 <code>pairs_*_graphinfo.json</code> 与配套 <code>*_caminfo.json</code> 供训练阶段读取(train.py:282-291)。</p>
+  <h3>7.2 边权重(论文公式 vs 代码实现——有差异)</h3>
+  <div class="equation">$$w_e(i,j)=\frac{e^{-k\left\|p^{(i)}-p^{(j)}\right\|_2}}{1-e^{-d^{(i)}d^{T(j)}}}$$<span class="tag">论文式 (7)</span></div>
+  <p>直觉:距离越近、朝向夹角越小,边权越大(论文 Figure 3 示例)。<strong>但代码实现为</strong>(<code>match_script.py:133</code>,默认 <code>k=0.5</code>,见 <code>:124</code>):</p>
+  <div class="equation">$$w_e^{\text{code}}(i,j)=\frac{e^{-\left\|p_1-p_2\right\|}}{1-0.5\cdot e^{-\,\mathrm{dot}(d_1,d_2)}}$$<span class="tag">match_script.py:133 复核</span></div>
+  <div class="callout warn"><b>论文-代码差异①</b>:论文式(7)中 $k$ 乘在分子距离指数上、分母为 $1-e^{-\cos\theta}$;代码中分子无 $k$,常数 0.5 乘在<strong>分母</strong>的指数项上。两式单调性方向一致(近距+同向→大权),但数值尺度不同。<span class="uncertain">⚠️【待核实】 无法判断论文排版笔误还是代码迭代后未回改论文。</span></div>
+  <div class="figure">
+    <img src="images/2502.17377/graph_weights.png" alt="edge weights example" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图3</b>(论文 Figure 3)边权重示例:节点 3 连有 (3,4),(3,6),(3,7) 三条边,权重同时考虑相对距离 $d_{34},d_{36},d_{37}$ 与相对朝向 $\theta_{34},\theta_{36},\theta_{37}$——距离小且夹角小的边权重大。</div>
+  </div>
+  <p><strong>监督信号</strong>:图本身无监督;边权重是 §8 一致性损失选目标视角的依据、节点中心性是 §9 采样概率的依据。</p>
+</section>
+
+<section class="section" id="s8">
+  <h2><span class="num">8</span>模块五:图引导多视角一致性约束(§3.2.2)</h2>
+  <h3>8.1 设计动机</h3>
+  <p>开放场景边界视角稀疏,3DGS 的单视角光度监督会让高斯「长」在少数相机附近、过拟合特定视角(§3.2.1)。论文的观察:方向差异小的相邻视角应有几乎一致的光度值(引 Kloukiniotis et al. 2022),因此可以用<strong>另一个视角的渲染结果</strong>作为伪监督源,逼高斯在视角间保持一致。</p>
+  <h3>8.2 数学形式化(论文)</h3>
+  <div class="equation">$$\mathcal{L}_{\text{cons}}=\lambda\sum_{i,j}\sum_{p}\Big\|\,I_i(p)-I_j\big(\mathbf{K}_j(R_{ji}\mathbf{K}_i^{-1}p+T_{ji})\big)\,\Big\|$$<span class="tag">式 (8)</span></div>
+  <p>$R_{ji},T_{ji}$ 为相机 $i\to j$ 的相对旋转平移,$\mathbf{K}_i,\mathbf{K}_j$ 为内参。<strong>目标视角选择规则(论文表述)</strong>:遍历相机 $i$ 的所有边,取<strong>边权重最大</strong>的相机作为 $j$。论文自承一个反直觉点:目标视角的渲染结果可能比 GT 差很多,但它起类似数据增强的作用,反而抑制过拟合。</p>
+  <h3>8.3 代码实现(与论文有出入,逐行复核)</h3>
+  <p>代码实现在 <code>utils/loss_utils.py:299-358</code> <code>compute_multiview_consistency_loss</code>,被 <code>train.py:129-138</code> 调用:</p>
+  <ol>
+    <li><strong>监督对</strong>:当前视角的<strong>渲染图</strong> <code>image</code> 与目标视角的<strong>缓存渲染图</strong>(非 GT;<code>train.py:150-151</code> 每轮把渲染图与相机参数以 <code>.cpu()</code> 缓存进 <code>images_dict/view_dict</code>,目标视角必须已被采样渲染过,否则该轮不加一致性项,<code>train.py:129</code>);</li>
+    <li><strong>对齐方式</strong>:不是论文式(8) 的一般重投影,而是<strong>平面单应(homography)warp</strong>——由 FoV 反解内参(<code>loss_utils.py:319-334</code>),<code>compute_transform_c2w</code>(<code>:112-125</code>)算相对位姿,<code>compute_homography</code>(<code>:128-144</code>)<strong>假设所有像素位于深度 $d=1.0$ 的平面上</strong>,再 <code>cv2.warpPerspective</code>(<code>:241-249</code>)把目标渲染图 warp 到当前视角;</li>
+    <li><strong>掩码与损失</strong>:$mask=(I_{\text{warped}}>0)\land(I_{\text{cur}}>0)$(<code>:342-344</code>),$L=\text{L1}(I_{\text{cur}},I_{\text{warped}})\odot mask$(<code>:347</code>),总损失中乘 <code>consistency_weight</code>(<code>train.py:138</code>);</li>
+    <li><strong>静默兜底</strong>:warp 过程任何异常都 <code>return 0 损失 + 全 1 mask</code>(<code>:350-354</code>),不报错——训练日志里看不出一致性项是否真正生效。</li>
+  </ol>
+  <div class="callout warn"><b>论文-代码差异②③</b>:② <strong>目标视角选择</strong>——论文式(8) 配套文字明确「取边权重最大的邻居」,代码 <code>utils/read_graph.py:54-61</code> 却取<strong>第 5 大权重</strong>的边(不足 6 条边时取最后一条;<code>train.py:112-115</code> 读取,取不到再退化为文件名序号 $-1$ 的 <code>get_mulitview_node</code>,<code>train.py:25-35</code>)。选「次优邻居」也许是有意拉开视差、增强增强效应,但论文未提,属实现与叙述不一致。③ <strong>单应假设</strong>——式(8) 是逐像素精确重投影,代码退化为 $d{=}1.0$ 的平面单应,对远景/近平面场景近似尚可,近景视差大的区域 warp 错位,一致性项会注入错误梯度;掩码只检查像素非零,不检查 warp 越界或深度合理性。<span class="uncertain">⚠️【待核实】 单应近似对车载前视远场景(论文主战场)误差可控,但对环绕采集的近景可能有害,论文无任何讨论。</span></div>
+  <p><strong>监督信号</strong>:本模块即监督信号本身(自监督,无 GT 参与);消融 w/o Multi-view Consistency PSNR 30.36→29.42、SSIM 0.891→0.834(表4),主要涨 SSIM。</p>
+</section>
+
+<section class="section" id="s9">
+  <h2><span class="num">9</span>模块六:自适应采样优化(§3.2.3)</h2>
+  <h3>9.1 设计动机</h3>
+  <p>外围节点(与其他视角重叠少)提供的信息少,却与枢纽节点等概率被采样——既浪费迭代又容易过拟合。思路:按图中节点重要性动态调整每个相机参与优化的概率,「不重要的视角少训」。</p>
+  <h3>9.2 数学形式化(论文)</h3>
+  <div class="equation">$$w_n(i)=\sum_{i\neq j\neq k}\frac{\sigma_{jk}(i)}{\sigma_{jk}},\qquad P(i)=\frac{w_n(i)}{\max\big(\{w_n(i)\}_{i=1}^{N}\big)}$$<span class="tag">式 (9)(10)</span></div>
+  <p>论文讨论了两个候选重要性指标(度中心性、介数中心性),并称「实验发现<strong>只用介数中心性更好</strong>」,故式(9) 定为介数中心性;$P(i)$ 为归一化采样概率,附录F 补充<strong>设最小采样概率 0.5</strong> 防低权节点被饿死。效果:30k 标称迭代实际只执行约 16.8k 次有效优化(表5),训练 54min→28min 且 PSNR 反升 28.81→30.36。</p>
+  <h3>9.3 代码实现(与论文有三处出入 + 一个疑似 bug)</h3>
+  <ol>
+    <li><strong>节点权重</strong>:<code>utils/read_graph.py:78-134</code> 同时算介数中心性(<code>:80</code>,<code>weight=None</code>,即<strong>忽略边权按无权图</strong>算最短路,与论文式(9) 基于加权图的叙述不完全一致)与度中心性(<code>:98</code>),各自 min-max 归一化后<strong>取二者平均</strong> <code>combined=(betweenness+degree)/2</code>(<code>:131-134</code>)——论文称「只用介数更好」,代码却用了两者平均;</li>
+    <li><strong>采样概率</strong>:论文式(10) 是连续概率 $P(i)=w_n/\max$ 且下限 0.5;代码 <code>train.py:94-109</code> 是<strong>二值</strong>逻辑——<code>combined/0.045 ≥ 1</code> 则权重 1,<code>≤ 0.7</code> 则权重 0.7,其余默认 1;且只在 <code>iteration ≤ 29800</code> 前生效(<code>train.py:107</code> 的魔法数,30000 总迭代的最后 200 步强制全量采样);</li>
+    <li><strong>疑似 bug(本笔记原创发现)</strong>:<code>read_graph.py:138-144</code> 构建 <code>imagename_weight_dic</code> 时,成功分支写成 <code>imagename_weight_dic[image_name] = ...</code>(<code>:141</code>),而 <code>image_name</code> 是<strong>前面第 12-19 行循环遗留的陈旧变量</strong>(恒为第一张循环里最后一个相机名),正确写法应如失败分支的 <code>camdic['image_name']</code>(<code>:144</code>)。后果:整个字典实际只有 1 个有效键,<code>train.py:97</code> 的 <code>image_name in node_importance[0]</code> 对几乎所有视角都不命中 → 全部走默认权重 1.0。<span class="uncertain">⚠️【待核实】 按发布代码原样运行,动态采样近似失效,表5 的 54→28min 收益大概率无法复现;除非作者内部版与此不同。这是「论文宣称 vs 代码实际」最严重的一处差距。</span></li>
+  </ol>
+  <p><strong>监督信号</strong>:无新损失,只改采样分布;其收益由表5(时间近乎减半且质量反升)支撑,但结合上一条 bug,论文表5 的实验应来自作者内部正确版本。</p>
+</section>
+
+<section class="section" id="s10">
+  <h2><span class="num">10</span>损失函数总表</h2>
+  <p>GraphGS 在 3DGS 标准损失上只加了一项自监督一致性损失。总目标(<code>train.py:138</code>,命中缓存时):</p>
+  <div class="equation">$$\mathcal{L}=(1-\lambda_{d})\,\mathcal{L}_1+\lambda_{d}\,\mathcal{L}_{D\text{-}SSIM}+\lambda_c\,\overline{\mathcal{L}_{cons}\odot mask},\qquad \lambda_d{=}0.2,\ \lambda_c{=}0.05\text{(代码)}/0.07\text{(论文)}$$<span class="tag">train.py:138</span></div>
+  <table>
+    <tr><th>损失项</th><th>公式 / 实现</th><th>权重</th><th>作用对象</th><th>来源</th></tr>
+    <tr><td>$\mathcal{L}_1$ 光度</td><td>$\|I_{render}-I_{gt}\|_1$,<code>loss_utils.py:22-23</code></td><td>0.8</td><td>当前视角渲染 vs GT</td><td>3DGS 原版</td></tr>
+    <tr><td>$\mathcal{L}_{D\text{-}SSIM}$</td><td>$1-\text{SSIM}$,11×11 高斯窗 $\sigma{=}1.5$,<code>loss_utils.py:28-68</code></td><td>0.2(<code>arguments/__init__.py:83</code> <code>lambda_dssim</code>)</td><td>当前视角渲染 vs GT</td><td>3DGS 原版</td></tr>
+    <tr><td>$\mathcal{L}_{cons}$ 多视角一致性</td><td>$\text{L1}(I_{cur},warp(I_{target}))\odot mask$,平面单应 $d{=}1.0$,<code>loss_utils.py:299-358</code></td><td>代码默认 0.05(<code>train.py:263</code>);论文附录F 称 0.07</td><td>当前渲染 vs 目标视角缓存渲染(无 GT)</td><td><strong>本文新增</strong></td></tr>
+  </table>
+  <p class="note">未命中缓存(目标视角尚未被渲染过)时退化为 3DGS 原版两项(<code>train.py:139-143</code>),即训练早期一致性项覆盖率随 <code>images_dict</code> 填充逐渐上升;致密化/剪枝/不透明度重置沿用 3DGS 原版策略(<code>train.py:167-177</code>,densify 500→15000 步、间隔 100、grad 阈值 2e-4、不透明度重置每 3000 步),不产生额外损失项。</p>
+</section>
+
+<section class="section" id="s11">
+  <h2><span class="num">11</span>逻辑流程图(SfM / 训练 / 推理)</h2>
+  <h3>11.1 SfM 阶段(离线,<code>run_modifyMatch.py</code> 全流程)</h3>
+  <div class="mermaid">
+flowchart TD
+    A["输入图像集 input/"] --> B{"有无粗位姿?"}
+    B -- "无" --> DUST["DUSt3R 前馈推理 ~0.01s/对<br/>→ camera_info_opencv.json"]
+    B -- "有(或自带)" --> READ
+    DUST --> READ["json_read_cam.py:41 读取<br/>只取 c2w 的 T 列与 z 朝向列"]
+    READ --> MODE{"match_mode"}
+    MODE -- "O_neighborJump(无位姿兜底)" --> CNNP1["CNNP 配对"]
+    MODE -- "C" --> CNNP2["CNNP 配对"]
+    MODE -- "Q(推荐)" --> CNNP3["CNNP 配对"] --> QF["QF 6-bit 查表过滤<br/>+补回连接对 :101-102"]
+    MODE -- "E/T(基线)" --> COLMAP1["COLMAP exhaustive /<br/>vocab_tree_matcher"]
+    CNNP1 --> W
+    CNNP2 --> W
+    QF --> W["pairs_*.txt 写盘 +<br/>to_graph(:124) 建相机图"]
+    W --> MI["colmap matches_importer<br/>--match_type pairs"]
+    COLMAP1 --> MAP
+    MI --> MAP["colmap mapper(调参)<br/>ba_global_max_refinements=1 等<br/>run_modifyMatch.py:159-176"]
+    MAP --> CHK["check_ba(校验注册相机数)"]
+    CHK --> UND["image_undistorter → COLMAP 格式"]
+    W --> GJ["*graphinfo.json + *_caminfo.json"]
+    style DUST fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GJ fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+    style UND fill:#d1fae5,stroke:#10b981,color:#064e3b
+  </div>
+  <h3>11.2 训练阶段(train.py 单迭代循环)</h3>
+  <div class="mermaid">
+flowchart TD
+    T0["读 *graphinfo.json<br/>train.py:282-291<br/>(read_graph.py 算 combined 权重)"] --> T1["随机取视角(不重复栈)<br/>train.py:87-89"]
+    T1 --> T2{"动态采样命中?<br/>:96-109"}
+    T2 -- "rand &gt; weight 且 iter ≤ 29800" --> SKIP["跳过本轮(省一次前向+反向)"]
+    SKIP --> T1
+    T2 -- "保留" --> T3["render 当前视角 :126"]
+    T3 --> T4{"目标视角有缓存渲染?<br/>:129"}
+    T4 -- "有" --> T5["L1+DSSIM(GT)<br/>+ 0.05·L_cons :138"]
+    T4 -- "无" --> T6["仅 L1+DSSIM :143"]
+    T5 --> T7["backward :145"]
+    T6 --> T7
+    T7 --> T8["缓存本视角渲染/相机到 CPU :150-151"]
+    T8 --> T9["致密化/剪枝/不透明度重置<br/>(3DGS 原版 :167-177)"]
+    T9 --> T10{"iter = 30k?"}
+    T10 -- "否" --> T1
+    T10 -- "是" --> OUT["保存 point_cloud.ply"]
+    style T5 fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+  </div>
+  <h3>11.3 推理阶段</h3>
+  <p>标准 3DGS 推理:<code>render.py</code> 逐测试视角渲染,<code>metrics.py</code> 算 PSNR/SSIM/LPIPS;图结构、一致性损失、采样策略全部只作用于训练期,<strong>推理期零额外开销</strong>,渲染 FPS 与 3DGS 同量级(表1:Ours 52 vs 3DGS 63,差异主要来自点数与初始化)。</p>
+</section>
+
+<section class="section" id="s12">
+  <h2><span class="num">12</span>⚙️ 工程实现细节(源码逐文件复核)</h2>
+  <h3>12.1 仓库结构与各文件职责</h3>
+  <table>
+    <tr><th>文件</th><th>职责</th><th>备注</th></tr>
+    <tr><td><code>run_modifyMatch.py</code></td><td>SfM 总入口:COLMAP feature_extractor → 选匹配策略 → matches_importer → 调参 mapper → undistort</td><td>7 种 match_mode(E/T/O_neighbor/O_neighborJump/O_jump/C/Q),<code>:32-34</code></td></tr>
+    <tr><td><code>match_script.py</code></td><td>CNNP 配对(<code>:345-365</code>)、QF(<code>pd_match :277-293</code>)、建图 <code>to_graph</code>(<code>:124-150</code>)</td><td>论文两大模块全部在此,纯 numpy+networkx,无深度学习</td></tr>
+    <tr><td><code>train.py</code></td><td>3DGS 训练主循环,新增一致性损失(<code>:129-138</code>)与动态采样(<code>:94-109</code>)</td><td>312 行,改自原版 3DGS train.py,改动面很小</td></tr>
+    <tr><td><code>utils/loss_utils.py</code></td><td><code>compute_multiview_consistency_loss</code>(<code>:299-358</code>)</td><td>单应 warp 实现,见 §8.3</td></tr>
+    <tr><td><code>utils/read_graph.py</code></td><td>读 graphinfo/caminfo,算中心性权重与目标邻居(<code>:40-75</code>)</td><td>含 §9.3 所述疑似 bug</td></tr>
+    <tr><td><code>read_coarse_cam/json_read_cam.py</code></td><td>读 DUSt3R 格式粗位姿 <code>camera_info_opencv.json</code>(<code>:41-53</code>)</td><td>只取 c2w 的 T 与 z 列</td></tr>
+    <tr><td><code>scene / gaussian_renderer / arguments</code></td><td>3DGS 原版组件</td><td><code>scene/__init__.py:83</code> 直接加载 COLMAP 全量点(印证八叉树缺失)</td></tr>
+    <tr><td><code>VisAnything / SIBR_viewers</code></td><td>可视化</td><td>与核心算法无关</td></tr>
+  </table>
+  <h3>12.2 关键超参数(论文 vs 代码默认值)</h3>
+  <table>
+    <tr><th>参数</th><th>论文</th><th>代码默认</th><th>出处</th></tr>
+    <tr><td>CNNP $r,h,w$</td><td>5 / 20 / 1(附录F)</td><td>5 / <strong>10</strong> / 1(<code>run_modifyMatch.py:35-37</code>)</td><td>复现论文需显式 <code>--arg_k 20</code></td></tr>
+    <tr><td>一致性损失权重 $\lambda$</td><td>0.07(附录F)</td><td>0.05(<code>train.py:263</code>)</td><td>不一致</td></tr>
+    <tr><td>最小采样概率</td><td>0.5(附录F)</td><td>0.7(<code>train.py:265</code>;函数签名默认 1,<code>train.py:38</code>)</td><td>三处口径不一</td></tr>
+    <tr><td>采样调节率 $\lambda_{ds}$</td><td>未出现</td><td>0.045(<code>train.py:264</code>)</td><td>代码独有</td></tr>
+    <tr><td>训练迭代</td><td>30k(表5)</td><td>30,000(<code>arguments/__init__.py:73</code>)</td><td>一致</td></tr>
+    <tr><td>学习率族</td><td>未列</td><td>pos 1.6e-4→1.6e-6、feat 2.5e-3、opacity 5e-2、scaling 5e-3、rot 1e-3(<code>arguments/__init__.py:74-81</code>)</td><td>与 3DGS 原版一致</td></tr>
+    <tr><td>致密化</td><td>未列</td><td>500→15000 步,间隔 100,grad 2e-4,不透明度重置每 3000 步(<code>arguments/__init__.py:84-88</code>)</td><td>3DGS 原版</td></tr>
+    <tr><td>SH 阶数</td><td>未列</td><td>3(<code>arguments/__init__.py:49</code>),每 1000 步升 1 阶(<code>train.py:83-84</code>)</td><td>3DGS 原版</td></tr>
+    <tr><td>边权重常数 $k$</td><td>式(7) 未给数值</td><td>0.5(<code>match_script.py:124</code> 默认参数)</td><td>且公式形态不同(差异①)</td></tr>
+  </table>
+  <h3>12.3 COLMAP mapper 调参(论文未写、加速的重要来源)</h3>
+  <p><code>run_modifyMatch.py:159-176</code> 对 mapper 做了大幅「宽松化」调参:<code>ba_global_max_refinements=1</code>、<code>ba_global_function_tolerance=1e-6</code>、<code>abs_pose_min_num_inliers=6</code>(COLMAP 默认 30)、<code>abs_pose_min_inlier_ratio=0.05</code>(默认 0.25)、<code>init_min_tri_angle=4</code>、<code>max_reg_trials=3</code>。注释直言「默认容差过大,收紧可加速 BA」。<strong>这意味着表3/表7 的 BA 提速(140→20min)并非全部来自匹配对筛选,调参贡献无法分离</strong>——论文未报告「同参数 COLMAP」基线。<span class="uncertain">⚠️【待核实】 inlier 阈值放宽到 6/0.05 对位姿精度的影响论文无消融,宽松注册可能也是噪声鲁棒性(表9)的一部分来源。</span></p>
+  <h3>12.4 论文-代码差异汇总(本笔记全部发现)</h3>
+  <table>
+    <tr><th>#</th><th>位置</th><th>论文</th><th>代码</th><th>影响</th></tr>
+    <tr><td>①</td><td>边权重式(7)</td><td>$e^{-k\|p_i-p_j\|}/(1-e^{-d_i\cdot d_j})$</td><td>$e^{-\|p_i-p_j\|}/(1-0.5e^{-d_i\cdot d_j})$(<code>match_script.py:133</code>)</td><td>数值尺度不同,单调性一致</td></tr>
+    <tr><td>②</td><td>一致性目标视角</td><td>边权重<strong>最大</strong>的邻居(§3.2.2)</td><td>第 <strong>5</strong> 大权重的邻居(<code>read_graph.py:54-61</code>)</td><td>机制叙述与实现不符</td></tr>
+    <tr><td>③</td><td>一致性对齐</td><td>式(8) 一般重投影</td><td>$d{=}1.0$ 平面单应(<code>loss_utils.py:128-144</code>)</td><td>近景视差区近似失真</td></tr>
+    <tr><td>④</td><td>节点权重</td><td>只用介数中心性(式9,论文称实验更优)</td><td>介数+度平均(<code>read_graph.py:131-134</code>),且介数按<strong>无权图</strong>算(<code>:80</code>)</td><td>与论文结论相反</td></tr>
+    <tr><td>⑤</td><td>采样概率</td><td>连续 $P(i)=w_n/\max$,下限 0.5</td><td>二值 1/0.7,iter≤29800(<code>train.py:94-109</code>)</td><td>机制不同</td></tr>
+    <tr><td>⑥</td><td>动态采样字典</td><td>—</td><td>疑似 bug:陈旧变量致全字典仅 1 键(<code>read_graph.py:141</code>)</td><td><strong>动态采样近似失效</strong>,表5 收益难复现</td></tr>
+    <tr><td>⑦</td><td>八叉树初始化</td><td>§3.1.3 + 表8(245,820→100,000 点)</td><td>仓库无实现</td><td>54→36min 收益无法复现</td></tr>
+    <tr><td>⑧</td><td>CNNP $h$</td><td>20(附录F)</td><td>默认 10(<code>run_modifyMatch.py:36</code>)</td><td>复现需手动对齐</td></tr>
+  </table>
+  <h3>12.5 复现要点</h3>
+  <ul>
+    <li>环境:<code>environment.yml</code> + 手动装 COLMAP;README 明确警告 <strong>COLMAP 版本须早于 3.9.1</strong>,新版会导致结果退化(原因未知);</li>
+    <li>全流程:<code>python run_modifyMatch.py -s &lt;数据&gt; --match_mode Q --threads 32</code> → <code>python train.py -s &lt;数据&gt;/matche...</code> → <code>render.py</code> / <code>metrics.py</code>;无粗位姿时先 <code>generate_coarse_cam.py</code> 或用 DUSt3R 产 <code>camera_info_opencv.json</code>;</li>
+    <li>硬件(论文附录F):单卡 RTX 3090 + AMD EPYC 7542;训练用图缓存(<code>images_dict</code>)常驻显存换一致性损失,大场景需留意内存;</li>
+    <li>若要让动态采样真正生效,需先修 <code>read_graph.py:141</code> 的键名 bug,并把 <code>train.py:38</code> 与 <code>:265</code> 的阈值口径对齐。</li>
+  </ul>
+</section>
+
+<section class="section" id="s13">
+  <h2><span class="num">13</span>实验结果</h2>
+  <h3>13.1 设置(§4.1 + 附录F)</h3>
+  <ul>
+    <li><strong>数据集</strong>:Waymo(前/前左/前右三相机,32 场景,约 600 图/块,599 对)、KITTI(约 100 图/块,99 对)、Mill-19(Building/Rubble,约 2000 图,1999 对)。每 8 张取 1 张测试。<strong>不使用数据集 GT 位姿</strong>。</li>
+    <li><strong>硬件</strong>:NVIDIA RTX 3090 + AMD EPYC 7542;粗位姿用预训练模型(Wang et al. 2024,即 DUSt3R)约 0.01s/对。</li>
+    <li><strong>指标</strong>:PSNR / SSIM / LPIPS / FPS。</li>
+  </ul>
+  <h3>13.2 Waymo / KITTI(表1,核心结果)</h3>
+  <table>
+    <tr><th>方法</th><th>FPS(Waymo)</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR(KITTI)↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+    <tr><td>Mip-NeRF 360</td><td>0.042</td><td>22.42</td><td>0.698</td><td>0.471</td><td>20.68</td><td>0.650</td><td>0.480</td></tr>
+    <tr><td>StreetSurf</td><td>0.097</td><td>23.78</td><td>0.822</td><td>0.401</td><td>22.48</td><td>0.763</td><td>0.304</td></tr>
+    <tr><td>Zip-NeRF</td><td>0.500</td><td>26.21</td><td>0.815</td><td>0.389</td><td>21.41</td><td>0.665</td><td>0.470</td></tr>
+    <tr><td>UC-NeRF</td><td>0.032</td><td>26.72</td><td>0.800</td><td>0.375</td><td>24.05</td><td>0.721</td><td>0.400</td></tr>
+    <tr class="fail"><td>BARF</td><td>0.041</td><td>9.07</td><td>0.235</td><td>1.021</td><td>10.68</td><td>0.250</td><td>0.990</td></tr>
+    <tr><td>EmerNeRF</td><td>0.043</td><td>25.92</td><td>0.763</td><td>0.384</td><td>25.24</td><td>0.801</td><td>0.237</td></tr>
+    <tr><td>3DGS</td><td>63</td><td>25.08</td><td>0.822</td><td>0.319</td><td>19.54</td><td>0.776</td><td>0.224</td></tr>
+    <tr><td>PVG</td><td>50</td><td>28.11</td><td>0.849</td><td>0.279</td><td>26.63</td><td>0.885</td><td>0.127</td></tr>
+    <tr class="best"><td>GraphGS(Ours)</td><td>52</td><td>29.43</td><td>0.899</td><td>0.217</td><td>26.98</td><td>0.887</td><td>0.157</td></tr>
+  </table>
+  <p class="note">复核(手工重算,非转述):Waymo 上 GraphGS 比最强基线 PVG <strong>PSNR +1.32dB</strong>、SSIM +0.050、LPIPS -0.062;KITTI 上 PSNR 仅 +0.35dB(26.98 vs PVG 26.63)、LPIPS 反而 0.157 vs 0.127 <strong>落后 PVG</strong>——论文宣称的 SOTA 主要在 Waymo 成立,KITTI 优势很薄。BARF 两数据集均不收敛(9.07/10.68),SPARF 全表空缺(论文注「只适合稀疏图像集」),UP-NeRF 在 KITTI 不收敛。FPS 上 3DGS(63) 仍快于 GraphGS(52),论文未解释差距来源,本笔记推断为初始化点数差异所致。<span class="uncertain">⚠️【待核实】 FPS 列未注明测试分辨率与硬件是否同机,跨方法可比性存疑。</span></p>
+  <div class="figure">
+    <img src="images/2502.17377/1.png" alt="qualitative waymo kitti" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图4</b>(论文 Figure 4)Waymo/KITTI 定性对比:GT vs GraphGS vs StreetSurf vs PVG vs 3DGS。GraphGS 对树枝等细节无明显模糊,形状/几何/颜色保真更好。</div>
+  </div>
+  <h3>13.3 Mill-19 大场景(表2)</h3>
+  <table>
+    <tr><th>方法</th><th>Building PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>Rubble PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+    <tr><td>Mega-NeRF</td><td>20.93</td><td>0.547</td><td>0.349</td><td>24.05</td><td>0.553</td><td>0.373</td></tr>
+    <tr><td>Switch-NeRF</td><td>21.54</td><td>0.579</td><td>0.294</td><td>24.31</td><td>0.562</td><td>0.329</td></tr>
+    <tr><td>3DGS(分段)</td><td>23.01</td><td>0.769</td><td>0.164</td><td>26.78</td><td>0.800</td><td>0.161</td></tr>
+    <tr><td>VastGaussian</td><td>23.50</td><td>0.804</td><td>0.130</td><td>26.92</td><td>0.823</td><td>0.132</td></tr>
+    <tr class="best"><td>GraphGS(Ours)</td><td>26.60</td><td>0.854</td><td>0.163</td><td>27.03</td><td>0.869</td><td>0.185</td></tr>
+  </table>
+  <p class="note">复核:Building 上比 VastGaussian <strong>+3.10dB</strong>,Rubble 仅 +0.11dB 且 LPIPS 0.185 vs 0.132/0.161 <strong>双双落后</strong>——大场景上的优势同样不均匀,Building 提升大、Rubble 基本持平。3DGS/VastGaussian 因显存限制对场景做了分段(论文注明)。</p>
+  <div class="figure">
+    <img src="images/2502.17377/2.png" alt="qualitative mill19" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图5</b>(论文 Figure 5)Mill-19 定性对比:GT vs GraphGS vs Mega-NeRF vs Switch-NeRF vs 3DGS。瓦砾、草地、石块等细节边缘更清晰。</div>
+  </div>
+  <h3>13.4 SfM 效率与精度(表3 + 附录D 表7)</h3>
+  <table>
+    <tr><th>规模</th><th>策略</th><th>匹配时间↓</th><th>BA 时间↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+    <tr><td rowspan="3">0.6k</td><td>COLMAP(Exhaustive)</td><td>62 min</td><td>140 min</td><td>30.05</td><td>0.89</td><td>0.23</td></tr>
+    <tr><td>COLMAP(VocabTree 256K)</td><td>50 min</td><td>104 min</td><td>29.02</td><td>0.88</td><td>0.26</td></tr>
+    <tr class="best"><td>Ours</td><td>3 min</td><td>20 min</td><td>30.18</td><td>0.90</td><td>0.24</td></tr>
+    <tr><td rowspan="3">2k</td><td>COLMAP(Ex)</td><td colspan="2">&gt;24 h(一致失败)</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>COLMAP(Vo)</td><td colspan="2">&gt;24 h(一致失败)</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr class="best"><td>Ours</td><td>12 min</td><td>194 min</td><td>26.60</td><td>0.85</td><td>0.16</td></tr>
+  </table>
+  <p>附录D 表7 横向对比 SfM 系统(Waymo 总时间):ACEZero 10min/PSNR 17.50(快但大场景收敛有问题)、PixSfM 130min/28.75、GLOMAP 28min/27.65、COLMAP 154min/29.14、<strong>Ours 23min/30.36</strong>。VGGSfM 因显存限制无法跑大图集被排除。</p>
+  <p class="note">复核:0.6k 匹配提速 62/3≈<strong>20.7×</strong>、BA 提速 140/20=<strong>7×</strong>(论文正文写「匹配 20×、BA 5×」,BA 按表3 数字实为 7×,<span class="uncertain">⚠️【待核实】 论文「5×」可能取自其他场景均值,全文未注明口径</span>);总 SfM 时间对 COLMAP 为 154/23≈<strong>6.7×</strong>。注意 §12.3:BA 提速含 mapper 调参贡献,无法与匹配筛选的贡献分离。</p>
+</section>
+
+<section class="section" id="s14">
+  <h2><span class="num">14</span>消融实验(§4.3 + 附录E)</h2>
+  <h3>14.1 模块消融(表4,Waymo)</h3>
+  <table>
+    <tr><th>配置</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>解读</th></tr>
+    <tr><td>w/o QF</td><td>29.14</td><td>0.89</td><td>0.25</td><td>-1.22dB:无视野交叠的噪声对进入 BA,位姿精度受损</td></tr>
+    <tr class="fail"><td>w/o CNNP</td><td>24.33</td><td>0.82</td><td>0.33</td><td><strong>-6.03dB:掉得最狠</strong>,局部匹配丢失全局结构,BA 质量崩</td></tr>
+    <tr><td>w/o 结构估计(整体)</td><td>24.77</td><td>0.803</td><td>0.444</td><td>-5.59dB</td></tr>
+    <tr><td>w/o 多视角一致性</td><td>29.42</td><td>0.834</td><td>0.297</td><td>-0.94dB,SSIM 掉最多(0.891→0.834):一致性项主要保结构</td></tr>
+    <tr class="best"><td>GraphGS 完整</td><td>30.36</td><td>0.891</td><td>0.267</td><td>—</td></tr>
+  </table>
+  <h3>14.2 自适应采样(表5 + 图6)</h3>
+  <table>
+    <tr><th>配置</th><th>实际迭代数</th><th>训练时长↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+    <tr><td>w/o 自适应采样</td><td>30,000</td><td>54 min</td><td>28.81</td><td>0.884</td><td>0.253</td></tr>
+    <tr class="best"><td>w 自适应采样</td><td>16,830</td><td>28 min</td><td>30.36</td><td>0.891</td><td>0.267</td></tr>
+  </table>
+  <p>迭代数近乎减半(30k→16.8k,-44%),时间 54→28min(-48%),PSNR 反而 +1.55dB——论文解释为外围节点少训抑制了过拟合。<strong>但注意 §9.3/§12.4⑥:发布代码的动态采样因疑似 bug 近似失效,这组数字应来自作者内部版本,复现性存疑。</strong></p>
+  <div class="figure">
+    <img src="images/2502.17377/abof.png" alt="adaptive sampling ablation" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图6</b>(论文 Figure 6)去掉自适应采样后:高斯点分布恶化,遮挡其他视角,几何出现严重畸变。</div>
+  </div>
+  <h3>14.3 八叉树初始化(附录E 表8)</h3>
+  <table>
+    <tr><th>配置</th><th>初始点数</th><th>训练时长↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+    <tr><td>w/o 八叉树</td><td>245,820</td><td>54 min</td><td>29.74</td><td>0.841</td><td>0.291</td></tr>
+    <tr><td>w 八叉树</td><td>100,000</td><td>36 min</td><td>29.75</td><td>0.843</td><td>0.292</td></tr>
+  </table>
+  <p class="note">初始点 -59%、时间 -33%、质量几乎不变;再往下砍点不再省时间(论文归因于致密化会补回来)。<strong>注意:发布代码无八叉树实现(§6),此消融不可复现</strong>;且论文 §4.1 另处写「约 300k→100k」,与表8 的 245,820 口径不一致。</p>
+  <h3>14.4 位姿噪声鲁棒性(附录E 表9 + 图11)</h3>
+  <table>
+    <tr><th>方法(R×0.3 &amp; T×0.3 噪声)</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+    <tr class="fail"><td>3DGS</td><td>12.676</td><td>0.510</td><td>0.613</td></tr>
+    <tr class="fail"><td>PVG</td><td>12.695</td><td>0.512</td><td>0.615</td></tr>
+    <tr class="best"><td>GraphGS</td><td>28.53</td><td>0.886</td><td>0.221</td></tr>
+  </table>
+  <p>对选定 Waymo 场景的相机朝向与位置加 0~0.3 rad / 0.3 单位随机噪声:3DGS/PVG 崩到 12.7,GraphGS 保持 28.53——机制上 GraphGS 的位姿由匹配对重新 BA 得到,不依赖初值精度。注意表9 的 GraphGS 数字(28.53)低于表4 完整版(30.36),差 1.8dB 即「粗位姿」相对「精位姿」的代价。</p>
+  <div class="figure">
+    <img src="images/2502.17377/3.png" alt="noise robustness" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图7</b>(论文 Figure 11)加噪位姿下的定性对比:PVG/3DGS 严重模糊、物体不可辨,GraphGS 保持清晰。</div>
+  </div>
+  <h3>14.5 与 naive frusta 配对对比(附录E 表10)</h3>
+  <table>
+    <tr><th>规模</th><th>方法</th><th>配对时间</th><th>匹配时间</th><th>BA 时间</th><th>PSNR↑</th></tr>
+    <tr><td rowspan="2">0.6k</td><td>Ours(CNNP+QF)</td><td>0.2 min</td><td>3 min</td><td>20 min</td><td>30.18</td></tr>
+    <tr><td>Frusta(视锥求交)</td><td>2 min</td><td>45 min</td><td>86 min</td><td>30.15</td></tr>
+    <tr><td rowspan="2">2k</td><td>Ours</td><td>2.1 min</td><td>12 min</td><td>194 min</td><td>26.60</td></tr>
+    <tr class="fail"><td>Frusta</td><td>20 min</td><td colspan="2">&gt;24 h(失败)</td><td>—</td></tr>
+  </table>
+  <p>重建质量两者几乎无差(30.18 vs 30.15),差距全在效率与 2k 规模可用性:狭长车载轨迹所有相机朝向几乎相同,frusta 无法有效过滤(§5.4 已述)。</p>
+</section>
+
+<section class="section" id="s15">
+  <h2><span class="num">15</span>🔄 同类方法对比分析</h2>
+  <h3>15.1 定位:GraphGS 在「位姿从哪来」光谱上的位置</h3>
+  <div class="mermaid">
+flowchart LR
+    subgraph 位姿来源光谱
+        A["GT 位姿<br/>3DGS / PVG / VastGaussian"] --> B["粗位姿 + 精选匹配 + BA<br/>★ GraphGS"]
+        B --> C["全 learned 匹配/BA<br/>GLOMAP / VGGSfM"]
+        C --> D["位姿联合优化<br/>BARF / SPARF / UP-NeRF"]
+        D --> E["前馈位姿+重建<br/>VGGT 系"]
+    end
+    style B fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+  </div>
+  <h3>15.2 固定维度对比表</h3>
+  <table>
+    <tr><th>方法</th><th>位姿来源</th><th>匹配/SfM 引擎</th><th>2k 图可用</th><th>稀疏视角抗过拟合机制</th><th>推理开销</th><th>主要短板</th></tr>
+    <tr><td>3DGS (2023)</td><td>GT 或 COLMAP</td><td>COLMAP 默认</td><td>SfM 直接失败(表3)</td><td>无</td><td>低(光栅化)</td><td>依赖精确位姿,加噪即崩(表9)</td></tr>
+    <tr><td>PVG (2024)</td><td>GT 或 COLMAP</td><td>同上</td><td>同上</td><td>无(动态建模见长)</td><td>低</td><td>同 3DGS;本论文最强竞品</td></tr>
+    <tr><td>VastGaussian (2024)</td><td>GT 或 COLMAP</td><td>同上</td><td>需分段(显存)</td><td>无</td><td>低</td><td>分段边界、依赖位姿</td></tr>
+    <tr><td>BARF 系</td><td>联合优化</td><td>不需要</td><td>不收敛(表1)</td><td>位姿可学但大场景发散</td><td>高(NeRF)</td><td>仅物体级有效</td></tr>
+    <tr><td>GLOMAP</td><td>全局 SfM</td><td> learned+全局 BA</td><td>28min 但质量低(表7)</td><td>—</td><td>—</td><td>PSNR 27.65 低于 GraphGS 2.7dB</td></tr>
+    <tr><td>ACEZero</td><td>场景坐标回归</td><td>学习式</td><td>收敛性问题(附录D)</td><td>—</td><td>—</td><td>PSNR 17.50,大场景不可用</td></tr>
+    <tr class="best"><td>GraphGS</td><td>DUSt3R 粗位姿 + 精选匹配 + COLMAP BA</td><td>CNNP+QF 筛选 → matches_importer → 调参 mapper</td><td>12min 匹配 + 194min BA 成功</td><td>图引导一致性损失 + 中心性采样</td><td>低(标准 3DGS)</td><td>非端到端;依赖粗位姿大致正确;静态假设</td></tr>
+  </table>
+  <h3>15.3 本质差异与不可替代性分析</h3>
+  <ul>
+    <li><strong>vs COLMAP+3DGS(工程基线)</strong>:GraphGS 不改变 SfM 引擎本身,改的是「喂给引擎的匹配对分布」与「训练期的监督结构」。这意味着它可以叠加在任何 COLMAP 系 pipeline 上,兼容性好,但天花板也受 COLMAP BA 精度限制。</li>
+    <li><strong>vs GLOMAP/ACEZero(学习式 SfM)</strong>:表7 显示学习式在速度或质量上各缺一腿;GraphGS 用「几何先验筛选 + 经典 BA」的组合在两项同时胜出,是 2025 年初「经典几何仍未死」的一个佐证。但 GLOMAP 28min 的总耗时与 GraphGS 23min 接近,若 GLOMAP 质量追平,GraphGS 的匹配筛选价值将缩水。</li>
+    <li><strong>vs VGGT 系前馈重建(2025 演进方向,见库内 VGGT 笔记)</strong>:VGGT 一步输出位姿+点云,彻底绕开 BA;GraphGS 仍把 BA 留在环路里。短期看 GraphGS 精度更高(表9 鲁棒性即来自 BA 重估),长期看前馈模型精度一旦逼近 BA,GraphGS 的「粗位姿→精选匹配→BA」三段式可能被「前馈位姿→图引导优化」两段式吸收——其相机图与两个图引导机制是可迁移资产,CNNP/QF 配对则会被取代。</li>
+    <li><strong>vs 稀疏视角 3DGS 正则系(FSGS/DNGaussian 一类)</strong>:后者用深度先验/扩散模型补监督,GraphGS 用「邻居渲染图」自监督,零额外模型;代价是需要视角图拓扑,纯 few-shot(≤10 视角)场景图退化、机制失效。</li>
+  </ul>
+  <h3>15.4 与库内兄弟笔记的关系</h3>
+  <p>基础概念见 <code>3D-20230808-3DGS基础与改进综述.html</code>;大场景划分路线对照 <code>3D-20250121-Hunyuan3D.html</code>(生成侧)与 VastGaussian;前馈位姿路线见 <code>3D-20250314-VGGT.html</code> 与 <code>3D-20231110-前馈3D重建模型综述.html</code>;同为「一致性约束抑制稀疏过拟合」思路的对照见 <code>3D-20260601-CoRoGS.html</code>。</p>
+</section>
+
+<section class="section" id="s16">
+  <h2><span class="num">16</span>🎯 应用场景与落地适配(含 vggt_human)</h2>
+  <h3>16.1 论文目标场景</h3>
+  <p>车载/街景(Waymo、KITTI)与航拍大场景(Mill-19):视角分布稀疏不均、位姿无 GT 或带噪、图像数 0.6k-2k。三个前提同时满足时收益最大(附录G 自承)。</p>
+  <h3>16.2 对我们 pipeline(vggt_human 人体重建)的适配性评估</h3>
+  <table>
+    <tr><th>模块</th><th>迁移价值</th><th>理由</th></tr>
+    <tr><td>CNNP+QF 匹配筛选</td><td>中</td><td>多机位人体采集若图像数大(数百台相机阵列或长序列),可省匹配时间;但我们是环绕式规整采集,相机分布已知,可直接按几何关系生成匹配对,不需要先跑 DUSt3R</td></tr>
+    <tr><td>相机图 + 边权重</td><td>中</td><td>图拓扑可由标定直接构建;边权重公式(距+向)可借鉴做「邻居视角选择」</td></tr>
+    <tr><td>多视角一致性损失</td><td><strong>高</strong></td><td>机制与采集规模解耦,只要有多视角就能用;但注意代码的 $d{=}1.0$ 平面单应对人体近景视差会失真(§8.3 差异③),直接照搬有风险,需改为深度感知的重投影</td></tr>
+    <tr><td>自适应采样</td><td>低</td><td>附录G 原话:物体级 360° 稠密环绕采集「各节点重要性趋同,几乎无收益」——我们正是这种情况</td></tr>
+    <tr><td>位姿鲁棒性卖点(表9)</td><td>低</td><td>我们有标定,位姿精度远高于 DUSt3R 粗位姿</td></tr>
+  </table>
+  <div class="callout tip"><b>落地结论</b>:整体框架不必搬;最值得抽走的是「用图拓扑选择一致性监督对」的思想 + 一致性损失本身(改造为深度感知 warp 后接入 vggt_human 训练)。CNNP/QF 仅在采集规模上到千图级、且相机排布不规则时才值得引入。</div>
+</section>
+
+<section class="section" id="s17">
+  <h2><span class="num">17</span>可改进方向分析</h2>
+  <h3>17.1 论文自承局限(§5 + 附录G)</h3>
+  <ul>
+    <li>缺后视相机数据 + 方法各向异性 → 反向场景重建不全;</li>
+    <li>依赖特征点匹配,动态物体多的场景随机失败;</li>
+    <li>远景效果与大高斯导致的模糊未解决;</li>
+    <li>粗位姿 xy 分布若本身错乱,BA 失败且无法自救;</li>
+    <li>物体级 360° 稠密采集下自适应采样几乎无收益。</li>
+  </ul>
+  <h3>17.2 本笔记复核出的额外问题(论文未提)</h3>
+  <ol>
+    <li><strong>一致性损失的单应假设</strong>(§8.3):$d{=}1.0$ 平面假设只适配远景,近景/深景差场景注入错误监督;且异常时静默返回 0 损失(<code>loss_utils.py:350-354</code>),失效不可观测。改进:用渲染深度做真正重投影,或至少按场景深度统计自适应 $d$;</li>
+    <li><strong>目标视角取「第 5 大权重」无任何论证</strong>(§12.4②):可能是调出来的,也可能复制自内部脚本;消融缺失;</li>
+    <li><strong>动态采样疑似失效</strong>(§12.4⑥):若 bug 属实,论文表5 的全部结论在公开代码上不成立,需作者澄清;</li>
+    <li><strong>BA 提速归因不纯净</strong>(§12.3):mapper 宽松化调参与匹配筛选的贡献混在一起,缺「同参数 COLMAP」基线;且 <code>abs_pose_min_inlier_ratio=0.05</code> 这类放宽是否会伤害高精度场景,无消融;</li>
+    <li><strong>图是静态的</strong>:BA 之后相机图不再更新,而 BA 精炼后的位姿已偏离粗位姿——边权重与中心性仍基于粗几何,迭代重构图是显然的改进点;</li>
+    <li><strong>评估口径偏窄</strong>:全部实验在车载/航拍前视轨迹,无室内、无环绕、无 handheld;KITTI 上 PSNR 仅领先 PVG 0.35dB 且 LPIPS 落后(§13.2),泛化性证据不足。</li>
+  </ol>
+  <h3>17.3 改进方向(按预期收益排序)</h3>
+  <ol>
+    <li><strong>深度感知一致性损失</strong>:用 3DGS 渲染深度把单应 warp 换成逐像素重投影,消除平面假设,预计对近景/环绕场景收益最大(对我们 vggt_human 迁移也是前置条件);</li>
+    <li><strong>BA 后迭代更新相机图</strong>:位姿精修后重算边权与中心性,让图引导全程基于最准几何;</li>
+    <li><strong>修复并重新标定动态采样</strong>:修 <code>read_graph.py:141</code> bug,把二值采样恢复为论文式(10) 的连续概率,补做采样下限消融(0.5/0.7 口径);</li>
+    <li><strong>接入前馈位姿</strong>:用 VGGT 替代 DUSt3R+BA 出位姿,GraphGS 退化为「图引导优化」插件,管线从三段式变两段式,与 2025 后前馈重建主线接轨;</li>
+    <li><strong>动态场景处理</strong>:结合 PVG/EmerNeRF 的运动分解思路,在匹配阶段用语义/光流掩码剔除动态区域特征点,补上「动态物体随机失败」短板;</li>
+    <li><strong>补做八叉树或等效点剪枝并开源</strong>:表8 显示初始点 -59% 可换 -33% 训练时间,但目前不可复现;LOD 阈值 $\tau$ 的选取规则也需公开。</li>
+  </ol>
+</section>
+
+<section class="section" id="s18">
+  <h2><span class="num">18</span>总结与演进定位 + 团队</h2>
+  <h3>18.1 核心结论</h3>
+  <ul>
+    <li><strong>问题拆解</strong>:大场景无位姿重建 = 匹配对选择(组合问题) + 位姿求解(经典 BA) + 稀疏视角过拟合(优化问题)。GraphGS 对三段各给一个图论工具:CNNP/QF、相机图复用、中心性采样 + 一致性损失。</li>
+    <li><strong>最亮的点</strong>:「匹配副产物二次利用」——同一张相机图既加速 SfM 又引导 3DGS,零额外模型;表9 的噪声鲁棒性(28.53 vs 12.68)证明「位姿交给 BA 重估」路线对加噪输入的碾压级优势。</li>
+    <li><strong>最大的坑(复现者视角)</strong>:发布代码与论文存在 8 处不一致(§12.4),其中动态采样疑似失效 bug 与八叉树缺失直接影响表5/表8 两组关键消融的可复现性;<strong>用公开代码复现,预期只能拿到「匹配筛选加速 + 一致性损失」的收益</strong>。</li>
+    <li><strong>数字复核结论</strong>:Waymo 优势扎实(+1.32dB vs PVG),KITTI 与 Rubble 优势很薄且 LPIPS 落后,「SOTA」表述需限定场景;SfM 提速数字(20×/7×)含 mapper 调参水分,纯净加速比未知。</li>
+  </ul>
+  <h3>18.2 演进定位</h3>
+  <p>GraphGS 处于「经典几何 SfM」与「前馈重建」交替期的中间产物:它证明 2025 年初经典 BA + 图论筛选在大场景仍压过学习式 SfM(GLOMAP/ACEZero,表7),但其粗位姿已依赖 DUSt3R。演进的下一步大概率是把 BA 环节也替换为前馈位姿(VGGT 系),GraphGS 的相机图与图引导优化机制可作为插件延续,CNNP/QF 的历史使命随前馈位姿精度提升而终结。</p>
+  <h3>18.3 团队与资源</h3>
+  <ul>
+    <li><strong>作者</strong>:Chong Cheng*、Gaochao Song*(共同一作)、Yiyang Yao、Qinzheng Zhou、Gangjian Zhang、Hao Wang(通讯);机构:HKUST(GZ)、HKU、SCUT、UC Berkeley(按论文 HTML 署名行);团队主页品牌为 3DAgentWorld;</li>
+    <li><strong>资助</strong>:国家自然科学基金(No. 62406267)、腾讯犀牛鸟重点研究计划、广州-HKUST(GZ) 联合资助(2025A03J3956)、广州市科技计划(2025A04J4070)、广州市教育局项目(2024312122)等(论文致谢);</li>
+    <li><strong>资源</strong>:arXiv 2502.17377v1(2025-02-24) · 项目页 3dagentworld.github.io/graphgs · 代码 github.com/3DAgentWorld/GraphGS(含 Waymo 示例数据) · 协议:继承 3DGS 的 Inria 非商用许可(LICENSE 头逐文件注明)。</li>
+  </ul>
+  <div class="callout key"><b>一句话总评</b>:GraphGS 是「图论包装经典几何」的实用主义工作——机制简单、收益真实、工程完成度尚可,但论文与代码的缝隙偏大(8 处差异、1 处疑似 bug、1 个缺失模块),引用其实验数字前务必区分「论文宣称」与「公开代码可达」。</div>
+</section>
+
+<div class="footer">
+  <p>GraphGS(arXiv 2502.17377v1)深度调研笔记 · 生成于 2026-10-23 · 遵循 media_paper 知识库统一格式</p>
+  <p>正文与附录全文经一手通读核对;官方源码(3DAgentWorld/GraphGS)经逐文件复核,所有 file:line 引用自克隆快照(已删除);论文-代码差异单独列表;所有数字均标注原文表号/章节</p>
+</div>
+
+</div>
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

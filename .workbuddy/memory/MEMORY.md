@@ -11,6 +11,7 @@
 
 ## 2. 工具链踩坑
 - **check.py 跨天误报(已修)**:`index.html` 页脚含 `生成于 YYYY-MM-DD`,`build_index.py` 每次生成写当日日期,导致隔天再跑 `check.py` 必然报「index.html 与 papers.json 不同步」。修法是比对前把日期正则归一化(`GEN_DATE_RE`),真实手改仍会被检出。新增这类带时间戳的生成内容时要注意同类问题。
+- **check.py 站内死链误判外链(2026-10-23 已修)**:死链正则 `href="([^"#?]+\.html)` 会把以 `.html` 结尾的 http(s) 外链(如 CVF Open Access 官方页 `..._paper.html`)当本地文件判死。修法:匹配后跳过 `http(s)://` 前缀。此前全库外链都不以 .html 结尾所以从未触发。
 - **bash 环境缺 coreutils**:该环境下 `ls`/`head`/`tail`/`dirname` 不可用(报 command not found),用 `python -c` 或专用工具替代。
 - `index.html` 是生成物,**禁止手改**;改 `papers.json` 后跑 `python build_index.py`,再跑 `python check.py`。
 - **提交一律列明具体路径,禁用 `git add -A`**(2026-09-17 踩坑):一次误把 `.workbuddy/memory/*` 与 `images/2607.20789/`(5 张全库无引用的孤儿图)带进提交,只能 `git reset --soft HEAD~1` 撤回重提。

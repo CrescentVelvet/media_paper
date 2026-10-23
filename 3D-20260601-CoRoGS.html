@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoRoGS:面向大偏移视角鲁棒合成的上下文高斯泼溅 — 图神经网络显式建模高斯间依赖</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">CVPR 2026 · pp. 8288-8297 · 无 arXiv 预印本(CVF 官方版) · 📊 deep</span>
+    <h1>CoRoGS:把 3D 高斯从「独立基元」改造成「图上的上下文推理」,大偏移视角外推不再崩坏</h1>
+    <div class="subtitle">CoRoGS: Contextual Gaussian Splatting for Robust Large-Deviation View Synthesis</div>
+    <div class="authors">Xin Ma · Peng Lu(通讯) · Yisong Chen · Chengwei Pan · Sheng Li</div>
+    <div class="org">北京邮电大学 · 北京大学 · 北京航空航天大学&nbsp;|&nbsp;🏆 CVPR 2026(CVF Open Access 官方页确认)</div>
+    <div class="links">
+      <a href="https://openaccess.thecvf.com/content/CVPR2026/html/Ma_CoRoGS_Contextual_Gaussian_Splatting_for_Robust_Large-Deviation_View_Synthesis_CVPR_2026_paper.html" target="_blank">📄 CVF 官方页</a>
+      <a href="https://openaccess.thecvf.com/content/CVPR2026/papers/Ma_CoRoGS_Contextual_Gaussian_Splatting_for_Robust_Large-Deviation_View_Synthesis_CVPR_2026_paper.pdf" target="_blank">📥 主文 PDF</a>
+      <a href="https://openaccess.thecvf.com/content/CVPR2026/supplemental/Ma_CoRoGS_Contextual_Gaussian_CVPR_2026_supplemental.zip" target="_blank">📎 Supplementary(zip: PDF + MP4)</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ 本文<b>无 arXiv 预印本</b>(arXiv API 标题/关键词查询均无结果),全部内容以 CVF 官方 PDF(主文 10 页 + 补充材料 10 页)为准;文件名日期 20260601 取 CVF 出版月份(2026 年 6 月),非投稿日期。<b>代码未开源</b>(截至 2026-10-23 未找到官方实现),「⚙️ 工程实现细节」章节可信度低于有源码笔记,不可验证处均以【待核实】标出。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:3D 高斯图构建</a></li>
+    <li><a href="#s5">模块二:Gaussian GNN(三路)</a></li>
+    <li><a href="#s6">模块三:上下文感知高斯解码器</a></li>
+    <li><a href="#s7">模块四:上下文平滑损失</a></li>
+    <li><a href="#s8">模块五:上下文感知图扩展</a></li>
+    <li><a href="#s9">损失函数总表</a></li>
+    <li><a href="#s10">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>城市单轨迹训练的 3DGS 在大偏移视角(变道横移 0.5–5m、地面→抬高 1–2m)下会因高斯被当作<b>独立基元</b>而几何崩坏。CoRoGS(Context-aware Robust Gaussian Splatting)把 3DGS 重构成<b>上下文表示</b>:在 MVS 点云 Delaunay 三角化得到的 3D 高斯图上跑一个几何/语义双路图神经网络(Gaussian GNN),让每个高斯聚合邻域的几何与语义上下文后再解码参数,并用语义加权的上下文平滑损失(等价 MRF)+ 梯度驱动的图扩展(生长/剪枝)保持大偏移下的结构一致性。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把 3DGS 的高斯从「各自独立优化」变成「图上的上下文推理」——Delaunay 高斯图 + 几何/语义双路消息传递 + 语义加权 MRF 平滑 + 拓扑约束的图扩展,在 KITTI 0.5m 偏移上 PSNR 24.96(比次优 DeSiRe-GS 高 2.25 dB),且只用 353k 高斯(全场最少)。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">24.96 dB</div><div class="l">KITTI 0.5m 有监督偏移 PSNR(表 1),比次优 DeSiRe-GS 22.71 高 2.25 dB(相对 +9.9%,手算)</div></div>
+  <div class="stat"><div class="v">-35.9%</div><div class="l">Left-3m 大偏移 KID 67.12 vs 最优基线 DeSiRe-GS 104.79(表 2 均值,手算)</div></div>
+  <div class="stat"><div class="v">353k</div><div class="l">高斯数量全场最少(表 1;DeSiRe-GS 482k,GSDF 1463k)</div></div>
+  <div class="stat"><div class="v">49 FPS</div><div class="l">渲染速度(表 1;快于 DeSiRe-GS 41,慢于其余基线 98–110)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/CoRoGS/fig1.png" loading="lazy" alt="CoRoGS teaser:大偏移视角渲染对比">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>城市场景大偏移新视角合成(LD-NVS)。</b>左栏为渲染结果,右栏为局部放大、渲染法向图与可视化高斯。基线方法在大偏移下出现高斯空间形变与法向不一致,CoRoGS 保持结构完整。图片来自 CVF 官方 PDF 提取。</div>
+</div>
+
+<h3>论文自述的两条贡献(§1)</h3>
+<ol>
+  <li><b>上下文 3DGS 形式化</b>:提出 contextual formulation,显式建模高斯间关系依赖,建立「全局几何一致 + 语义一致」3D 表示的新范式(式 1-2,类比 MRF)。</li>
+  <li><b>CoRoGS 框架</b>:以图神经网络实例化该形式化——3D 高斯图构建(§3.3)、Gaussian GNN(§3.4)、上下文感知解码器(§3.5)、上下文平滑损失(§3.6)、图扩展(§3.7),在 LD-NVS 上取得 SOTA 渲染质量与鲁棒泛化。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ 代码与复现状态:</b>论文未放出代码(CVF 页面无 Code 链接,GitHub 搜索无官方实现)。工程细节章节(§11)数据全部来自<b>补充材料 A 节</b>(给出了迭代数、损失权重、网络维度等关键超参),可信度高于纯主文推测,但<b>未经源码验证</b>;凡论文未写明的量(优化器、学习率、σ<sub>s</sub> 等)一律标【待核实】,不做猜测。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 任务设定:LD-NVS(大偏移新视角合成)</h3>
+<p>自动驾驶与低空航拍感知中,训练视图通常来自<b>单条行车轨迹</b>,而测试时需要外推到轨迹外视角:超车变道的横向偏移(lane-level lateral deviation)、地面行车视角到航拍视角的跨层过渡(cross-level transition)。稀疏视角 3DGS 方法能在轨迹内<b>插值</b>,但外推到未观测区域时出现几何不一致与外观退化(论文 §1)。</p>
+
+<h3>2.2 既有路线的具体失败模式</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>① 深度约束类</h4>
+    <p><b>代表</b>:DNGaussian、GSDF(估计深度图/LiDAR 先验对齐高斯中心)。</p>
+    <p><b>失败模式</b>:把每个高斯当独立基元,深度先验只约束单点位置;未观测区域的<b>几何偏差逐点累积</b>,过拟合训练视角,大偏移下高斯空间形变(论文 §1 图 1 右)。</p>
+  </div>
+  <div class="card">
+    <h4>② 法向约束类</h4>
+    <p><b>代表</b>:GaussianPro、DC-Gaussian、DeSiRe-GS(优化高斯朝向贴合表面法向)。</p>
+    <p><b>失败模式</b>:同样是逐基元局部正则,缺少高斯间依赖的显式建模;大偏移下<b>法向方向互相矛盾</b>,结构约束缺失导致整体几何崩坏(论文 §1)。</p>
+  </div>
+  <div class="card">
+    <h4>③ 生成先验 / 图结构类</h4>
+    <p><b>代表</b>:VEGS(扩散先验补全稀疏视角)、SAGS(空间邻近建图)。</p>
+    <p><b>失败模式</b>:VEGS 依赖相机覆盖有限的生成模型且训练成本高(论文 §2);SAGS 的启发式生长引入冗余基元、抓不住细粒度依赖,效率与可扩展性受限;已有图方法(如 GGN)建在<b>物体级或视角级</b>,不是高斯级(论文 §2)。</p>
+  </div>
+</div>
+
+<h3>2.3 作者的核心洞察与假设</h3>
+<div class="callout key">
+<b>核心洞察(论文 §1):</b>传统 3DGS 的「独立性假设」是其表达能力的根本瓶颈——局部一致不等于全局一致。大偏移视角下,跨区域的关联(cross-region correlations)才是几何与光度一致性的来源。因此把每个高斯的更新写成「自身属性 + 邻域上下文」的函数(式 1),并配上一个只在语义同质区强制平滑、在语义边界允许不连续的能量约束(式 2,等价 MRF)。<br>
+<b>隐含假设:</b>① MVS 能提供足够好的初始点云与法向;② LSeg 伪语义标签质量足以支撑语义加权;③ 测试偏移主要是<b>平移</b>(0.5–5m)——论文结论自陈<b>不处理动态物体与大旋转</b>,这是该假设明确的失效边界。
+</div>
+</section>
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<h3>3.1 输入 / 输出定义</h3>
+<p><b>输入</b>:单轨迹多视角 RGB 图像(训练视图,如 KITTI 左目序列)+ SfM 相机位姿;测试时为目标偏移视角的相机位姿。<b>输出</b>:偏移视角的渲染图像、法向图、语义图。场景表示为 3D 高斯图 $\mathcal{G}=(\mathcal{V},\mathcal{E})$,每个节点解码出 $N$ 个(实际取 3)3D 高斯 $\{(\mathbf{s}_v,\mathbf{q}_v,\alpha_v,\mathbf{c}_v)\}$。</p>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+<tr><td>$g_i,\ \phi_i$</td><td>第 $i$ 个高斯及其参数 $\{\mathbf{p}_i,\mathbf{s}_i,\mathbf{c}_i,\mathbf{q}_i,\alpha_i\}$(位置/缩放/颜色/旋转/不透明度)</td><td>$\mathbf{p}_i,\mathbf{s}_i,\mathbf{c}_i\in\mathbb{R}^3$;$\mathbf{q}_i\in\mathbb{R}^4$;$\alpha_i\in\mathbb{R}$</td></tr>
+<tr><td>$\hat{\phi}_i,\ \mathcal{C}_i$</td><td>上下文更新后的表示与邻域聚合上下文(式 1)</td><td>$\mathcal{C}_i=\Psi(\{\phi_j\mid j\in\mathcal{N}(i)\})$</td></tr>
+<tr><td>$\mathcal{G}=(\mathcal{V},\mathcal{E})$</td><td>3D 高斯图(MVS 点云 Delaunay 三角化)</td><td>$N$ 个节点;Delaunay 边数约 $1.5N$(补充材料 B.1)</td></tr>
+<tr><td>$v_i=\{\mathbf{p}_i,\mathbf{n}_i,\mathbf{z}_i\}$</td><td>节点属性:位置 / 表面法向 / 语义特征</td><td>$\mathbf{p}_i,\mathbf{n}_i\in\mathbb{R}^3$;$\mathbf{z}_i\in\mathbb{R}^{d_s}$,由 PointNet++ 编码器 $f_\Theta$ 给出(式 3)</td></tr>
+<tr><td>$\mathbf{e}^g_{ij},\ e^s_{ij}$</td><td>边的几何属性(法向余弦+欧氏距离)与语义属性(语义余弦)</td><td>$\mathbf{e}^g_{ij}\in\mathbb{R}^2$(式 4);$e^s_{ij}\in\mathbb{R}$</td></tr>
+<tr><td>$\mathbf{g}^v_i,\ \mathbf{s}^v_i$ / $\mathbf{g}^e_{ij},\ \mathbf{s}^e_{ij}$</td><td>节点 / 边的几何与语义嵌入(式 5-6)</td><td>Fourier 编码 + 两层 MLP(hidden 32)</td></tr>
+<tr><td>$\tilde{\mathbf{g}}^e_{ij},\ \tilde{\mathbf{s}}^e_{ij}$</td><td>边更新后的几何/语义特征(式 7)</td><td>拼接 $[\mathbf{e},\mathbf{v}_i,\mathbf{v}_j]$ 过 $\mathcal{M}_{\text{edge}}$</td></tr>
+<tr><td>$\mathbf{f}^g_i,\ \mathbf{f}^s_i$</td><td>注意力聚合后的节点几何/语义特征(式 8)</td><td>GAT 式聚合 [29]</td></tr>
+<tr><td>$\mathbf{q}^g_i,\ \mathbf{q}^s_i$</td><td>跨模态投影特征 $\mathbf{q}^g_i=\mathbf{W}_g\mathbf{f}^g_i$</td><td>共享隐空间</td></tr>
+<tr><td>$\eta_i,\ \mathbf{z}^o_i$</td><td>可学习门控与融合特征(式 10)</td><td>$\eta_i=\sigma(\mathbf{W}_\eta[\tilde{\mathbf{f}}^g_i\Vert\tilde{\mathbf{f}}^s_i])$;$\mathbf{z}^o_i\in\mathbb{R}^{32}$(补充 A.3)</td></tr>
+<tr><td>$L,\ N$</td><td>几何/语义更新重复次数;每节点解码高斯数</td><td>$L{=}2$;$N{=}3$(补充 A.1)</td></tr>
+<tr><td>$\varepsilon_g,\ \tau_g,\ \lambda_b,\ \beta(\mathbf{p}_i)$</td><td>图扩展生长准则 / 阈值 / 边界调制权重 / 边界指示器</td><td>$\tau_g{=}2{\times}10^{-4}$;$\lambda_b{=}0.2$;$\beta\in\{0,1\}$(补充 A.6)</td></tr>
+<tr><td>$w_{a,b},\ \sigma_s$</td><td>上下文损失的语义相似度权重与带宽(式 12)</td><td>$w_{a,b}=\exp(-\|s_a-s_b\|_2^2/2\sigma_s^2)$;$\sigma_s$ 论文未给值<span class="uncertain">⚠️【待核实】</span></td></tr>
+</table>
+
+<h3>3.3 五模块划分与总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: 单轨迹多视角图像 + SfM 位姿"] --> MVS["MVS 稠密重建<br/>(Vu 等 TPAMI'11)"]
+    MVS --> GRAPH["(a) 3D 高斯图构建 Sec 3.3<br/>Delaunay 三角化 → 节点 V / 边 E<br/>节点属性: 位置+法向+语义 z"]
+    GRAPH --> GNN["(b) Gaussian GNN Sec 3.4<br/>① 属性嵌入(Fourier+2层MLP)<br/>② 几何/语义双路更新(边→节点,GAT 聚合,xL=2)<br/>③ 跨模态融合(交叉注意力+门控 eta)"]
+    GNN --> DEC["(c) 上下文感知解码器 Sec 3.5<br/>融合特征+视角方向 → 每节点 N=3 个高斯参数"]
+    DEC --> RENDER["3DGS 可微渲染<br/>RGB / 法向图 / 语义图"]
+    RENDER --> LOSS["(d) 监督 Sec 3.6<br/>L1 + D-SSIM + 法向 + 语义(LSeg CE)<br/>+ 上下文平滑 L_context"]
+    LOSS -.->|"梯度驱动"| EXPAND["(e) 图扩展 Sec 3.7<br/>边界高斯分裂(生长)<br/>+ 拓扑距离约束(剪枝)"]
+    EXPAND -.->|"迭代 1500-15000, 每 100 步"| GRAPH
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GNN fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style DEC fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style LOSS fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style EXPAND fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<div class="figure">
+  <img src="images/CoRoGS/fig2.png" loading="lazy" alt="CoRoGS 总体框架">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>CoRoGS 总览。</b>(a) 3D 高斯图构建;(b) Gaussian GNN 三子模块:1) 属性嵌入、2) 几何与语义更新、3) 跨模态融合;(c) 上下文感知高斯解码器;(d) 上下文平滑损失与监督损失;(e) 图扩展模块(Growing/Pruning)。图片来自 CVF 官方 PDF 提取。</div>
+</div>
+
+<h3>3.4 上下文 3DGS 形式化(全文出发点)</h3>
+<p>传统 3DGS 把每个高斯独立参数化为 $\phi_i=\{\mathbf{p}_i,\mathbf{s}_i,\mathbf{c}_i,\mathbf{q}_i,\alpha_i\}$。CoRoGS 把更新改写为上下文条件的函数(论文 Eq.1):</p>
+<div class="equation">
+$$\hat{\phi}_i=\Phi(\phi_i,\mathcal{C}_i),\qquad \mathcal{C}_i=\Psi\big(\{\phi_j\mid j\in\mathcal{N}(i)\}\big)$$
+<span class="tag">(式 1,论文 Eq.1)</span>
+</div>
+<p>其中 $\mathcal{N}(i)$ 是 $g_i$ 的邻居,$\Psi$ 是上下文聚合算子,$\Phi$ 把上下文特征融合进更新后的表示 $\hat{\phi}_i$。配套的结构一致性约束(论文 Eq.2):</p>
+<div class="equation">
+$$\mathcal{L}_{\text{context}}=\sum_{i}\sum_{j\in\mathcal{N}(i)} w_{ij}\,\big\|\Phi(\phi_i,\mathcal{C}_i)-\Phi(\phi_j,\mathcal{C}_j)\big\|^2$$
+<span class="tag">(式 2,论文 Eq.2)</span>
+</div>
+<p>$w_{ij}$ 度量高斯 $i,j$ 间的几何与语义亲和强度。论文明确指出该能量函数<b>类比马尔可夫随机场(MRF)</b>:每个节点只与局部邻居交互,全局一致性从局部消息传播中涌现;同质区域强制平滑,语义边界允许不连续(§3.2)。实际实现时式 2 落在渲染法向图上(见 §7 式 11)。</p>
+</section>
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:3D 高斯图构建(§3.3)</h2>
+<h3>4.1 结构表</h3>
+<table>
+<tr><th>步骤</th><th>输入</th><th>算子</th><th>输出</th></tr>
+<tr><td>稠密重建</td><td>多视角图像 + SfM 位姿/稀疏点云</td><td>传统 MVS(Vu et al. TPAMI 2011 [31])</td><td>稠密点云(补充 A.2)</td></tr>
+<tr><td>三角化</td><td>MVS 点云</td><td>Delaunay 三角化(空外接球 + 最大角准则)</td><td>三角网格:顶点=高斯节点,边=空间连接,约 $1.5N$ 条边(补充 B.1)</td></tr>
+<tr><td>法向估计</td><td>三角面片</td><td>面法向=边叉积,再插值到顶点</td><td>顶点法向 $\mathbf{n}_i\in\mathbb{R}^3$(补充 A.2)</td></tr>
+<tr><td>语义属性</td><td>$(\mathbf{p}_i,\mathbf{n}_i)$</td><td>编码器 $f_\Theta$(PointNet++ [22])</td><td>$\mathbf{z}_i\in\mathbb{R}^{d_s}$(式 3)</td></tr>
+<tr><td>边属性</td><td>节点对 $(i,j)$</td><td>几何:法向余弦+欧氏距离;语义:语义余弦</td><td>$\mathbf{e}^g_{ij}\in\mathbb{R}^2$,$e^s_{ij}\in\mathbb{R}$(式 4)</td></tr>
+</table>
+
+<h3>4.2 数学形式化</h3>
+<div class="equation">
+$$\mathbf{z}_i=f_\Theta(\mathbf{p}_i,\mathbf{n}_i),\qquad v_i=\{\mathbf{p}_i,\mathbf{n}_i,\mathbf{z}_i\}$$
+<span class="tag">(式 3,论文 Eq.3)</span>
+</div>
+<div class="equation">
+$$\mathbf{e}^g_{ij}=\big[\cos(\mathbf{n}_i,\mathbf{n}_j),\ \|\mathbf{p}_i-\mathbf{p}_j\|_2\big]\in\mathbb{R}^2,\qquad e^s_{ij}=\cos(\mathbf{z}_i,\mathbf{z}_j)\in\mathbb{R}$$
+<span class="tag">(式 4,论文 Eq.4)</span>
+</div>
+
+<h3>4.3 前向流程</h3>
+<ol>
+  <li>SfM 估计相机位姿与稀疏点云 → 传统 MVS 稠密重建(补充 A.2)。</li>
+  <li>对 MVS 点云做 Delaunay 三角化,顶点与边直接作为高斯节点与空间连接,得到图 $\mathcal{G}=(\mathcal{V},\mathcal{E})$。</li>
+  <li>面片法向由网格边叉积获得,插值为顶点法向;顶点位置与法向即图的初始 $\mathbf{p}_i,\mathbf{n}_i$。</li>
+  <li>PointNet++ 编码器 $f_\Theta$ 产出语义属性 $\mathbf{z}_i$(为后续语义消息传递与边界保护服务)。</li>
+  <li>本模块在初始化时构建一次;之后由图扩展模块(§8)在训练中迭代生长/剪枝,不可微(结构性操作)。</li>
+</ol>
+
+<h3>4.4 为什么用 Delaunay 而不是 kNN(机制解释 + 消融佐证)</h3>
+<div class="callout key">
+<b>论文给出的理由(§3.3):</b>Delaunay 的空外接球与最大角准则产生更均匀、无冗余的剖分,在高斯分布不均的区域减少冗余节点与边。<b>定量佐证(补充 B.1 消融):</b>换成 KNN 图,PSNR 从 24.96 掉到 22.03(<b>-2.93 dB</b>)——KNN 只按欧氏距离连边,会把不同语义区域/不同法向的高斯连起来,误导特征聚合「误认相似」;且 KNN 每点固定连 $K$ 条边(约 $K{\times}N$ 条),Delaunay 只保留约 $1.5{\times}N$ 条有效边。
+</div>
+
+<h3>4.5 监督信号</h3>
+<p>本模块<b>无直接监督</b>——图结构由几何算法(MVS+Delaunay)生成,不经梯度优化;梯度只通过后续的节点/边特征与解码高斯参数流动。这也意味着图拓扑的误差(MVS 空洞、法向噪声)只能靠图扩展模块事后修补(见 §8 与 §16 改进方向)。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:Gaussian Graph Neural Network(§3.4)</h2>
+<p>GNN 实现式 1 中的 $\Phi$,由三个子模块组成:属性嵌入 → 几何/语义双路更新 → 跨模态融合。</p>
+
+<h3>5.1 网络结构表</h3>
+<table>
+<tr><th>子模块</th><th>输入</th><th>算子</th><th>输出</th></tr>
+<tr><td>① 属性嵌入</td><td>节点 $[\psi(\mathbf{p}_i),\psi(\mathbf{n}_i)]$ / $\mathbf{z}_i$;边 $\psi(\mathbf{e}^g_{ij})$ / $\psi(\mathbf{e}^s_{ij})$</td><td>Fourier 位置编码(位置 6 阶、法向 10 阶)+ 两层 MLP(hidden 32)(补充 A.1)</td><td>$\mathbf{g}^v_i,\mathbf{s}^v_i,\mathbf{g}^e_{ij},\mathbf{s}^e_{ij}$(式 5-6)</td></tr>
+<tr><td>② 几何/语义更新(重复 $L{=}2$ 次)</td><td>$\mathbf{g}^e_{ij},\mathbf{g}^v_i,\mathbf{g}^v_j$</td><td>先更新边:$\mathcal{M}_{\text{edge}}([\mathbf{e}_{ij},\mathbf{v}_i,\mathbf{v}_j])$(式 7);再注意力聚合到节点(式 8)</td><td>$\mathbf{f}^g_i,\mathbf{f}^s_i$</td></tr>
+<tr><td>③ 跨模态融合</td><td>$\mathbf{f}^g_i,\mathbf{f}^s_i$</td><td>投影 $\mathbf{W}_g,\mathbf{W}_s$ → 交叉注意力(式 9)→ 门控加权(式 10)</td><td>$\mathbf{z}^o_i\in\mathbb{R}^{32}$(补充 A.3)</td></tr>
+</table>
+<p class="note">GNN 参数量(补充 B.2 消融):$L{=}1$ 时 0.45MB,$L{=}2$ 时 0.96MB,$L{=}3$ 时 1.42MB——非常轻量,计算瓶颈不在参数量而在消息传递的边遍历。</p>
+
+<h3>5.2 数学形式化</h3>
+<p><b>① 属性嵌入</b>(论文 Eq.5-6):$\psi(\cdot)$ 为 Fourier 位置编码,$\mathcal{M}^{g,s}_v,\mathcal{M}^{g,s}_e$ 均为两层 MLP:</p>
+<div class="equation">
+$$\mathbf{g}^v_i=\mathcal{M}^g_v\big([\psi(\mathbf{p}_i),\psi(\mathbf{n}_i)]\big),\quad \mathbf{s}^v_i=\mathcal{M}^s_v(\mathbf{z}_i);\qquad
+\mathbf{g}^e_{ij}=\mathcal{M}^g_e\big(\psi(\mathbf{e}^g_{ij})\big),\quad \mathbf{s}^e_{ij}=\mathcal{M}^s_e\big(\psi(\mathbf{e}^s_{ij})\big)$$
+<span class="tag">(式 5-6,论文 Eq.5-6)</span>
+</div>
+<p><b>② 几何/语义更新</b>——先边后节点的两步聚合(论文 Eq.7-8):</p>
+<div class="equation">
+$$\tilde{\mathbf{g}}^e_{ij}=\mathcal{M}^g_{\text{edge}}\big([\mathbf{g}^e_{ij},\mathbf{g}^v_i,\mathbf{g}^v_j]\big),\quad
+\tilde{\mathbf{s}}^e_{ij}=\mathcal{M}^s_{\text{edge}}\big([\mathbf{s}^e_{ij},\mathbf{s}^v_i,\mathbf{s}^v_j]\big)$$
+<span class="tag">(式 7,论文 Eq.7)</span>
+</div>
+<div class="equation">
+$$\mathbf{f}^g_i=\sum_{j\in\mathcal{N}(i)}\mathrm{Attn}\big(\tilde{\mathbf{g}}^e_{ij},\mathbf{g}^v_i\big),\qquad
+\mathbf{f}^s_i=\sum_{j\in\mathcal{N}(i)}\mathrm{Attn}\big(\tilde{\mathbf{s}}^e_{ij},\mathbf{s}^v_i\big)$$
+<span class="tag">(式 8,论文 Eq.8)</span>
+</div>
+<p>$\mathrm{Attn}(\cdot)$ 为注意力聚合(GAT [29])。「先更新边、再聚合到节点」让每条边先编码<b>两端节点的成对关系</b>,节点再按注意力挑取相关邻居——比直接把邻居特征平均更能保留边界结构。</p>
+<p><b>③ 跨模态融合</b>(论文 Eq.9-10):几何与语义特征先各自投影到共享隐空间 $\mathbf{q}^g_i=\mathbf{W}_g\mathbf{f}^g_i$,$\mathbf{q}^s_i=\mathbf{W}_s\mathbf{f}^s_i$,再做双向交叉注意力:</p>
+<div class="equation">
+$$\tilde{\mathbf{f}}^g_i=\sum_{k=1}^{N}\alpha^{g\to s}_{ik}\,\mathbf{q}^s_k,\qquad \tilde{\mathbf{f}}^s_i=\sum_{k=1}^{N}\alpha^{s\to g}_{ik}\,\mathbf{q}^g_k$$
+<span class="tag">(式 9,论文 Eq.9)</span>
+</div>
+<div class="equation">
+$$\mathbf{z}^o_i=\eta_i\,\tilde{\mathbf{f}}^g_i+(1-\eta_i)\,\tilde{\mathbf{f}}^s_i,\qquad
+\eta_i=\sigma\Big(\mathbf{W}_\eta\big[\tilde{\mathbf{f}}^g_i\,\Vert\,\tilde{\mathbf{f}}^s_i\big]\Big)$$
+<span class="tag">(式 10,论文 Eq.10)</span>
+</div>
+<p>注意力权重 $\alpha^{g\to s}_{ik},\alpha^{s\to g}_{ik}$ 由相似度分数的 softmax 给出;门控 $\eta_i$ 逐节点自适应平衡「几何细节」与「语义一致」。<b>设计动机(§3.4.3)</b>:语义相似的节点几何可能不同(两辆不同的车),几何相近的节点语义可能不同(车与路面交界)——单模态更新无法建模这种跨模态依赖。</p>
+
+<h3>5.3 前向流程</h3>
+<ol>
+  <li>位置/法向过 Fourier 编码(6/10 阶)后与语义特征分别过两层 MLP,得到几何/语义两套节点与边嵌入。</li>
+  <li>进入 $L=2$ 轮更新:每轮先按式 7 更新全部边特征(拼接两端节点),再按式 8 用注意力把边特征聚合回节点。</li>
+  <li>双路特征经 $\mathbf{W}_g,\mathbf{W}_s$ 投影后做交叉注意力(几何特征去「看」语义一致的邻居,反之亦然),最后由 sigmoid 门控 $\eta_i$ 融合为 $\mathbf{z}^o_i\in\mathbb{R}^{32}$。</li>
+  <li>整条路径全程可微,梯度从渲染损失/上下文损失一路反传到 $\mathcal{M}_v,\mathcal{M}_e,\mathcal{M}_{\text{edge}},\mathbf{W}_g,\mathbf{W}_s,\mathbf{W}_\eta$ 与 $f_\Theta$。</li>
+</ol>
+
+<h3>5.4 模块内部数据流</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph EMB["① 属性嵌入"]
+        PN["位置 p + 法向 n<br/>Fourier 6/10 阶"] --> MLPG["几何 2层MLP<br/>→ g^v, g^e"]
+        Z["语义 z(PointNet++)"] --> MLPS["语义 2层MLP<br/>→ s^v, s^e"]
+    end
+    subgraph UPD["② 几何/语义双路更新 x2"]
+        EDGE["边更新 M_edge<br/>[e_ij, v_i, v_j]"] --> ATTN["注意力聚合(GAT)<br/>边 → 节点"]
+    end
+    subgraph FUSE["③ 跨模态融合"]
+        PROJ["投影 W_g / W_s"] --> XATT["交叉注意力<br/>g↔s"] --> GATE["门控 eta_i<br/>z^o = η f^g + (1-η) f^s"]
+    end
+    MLPG --> EDGE
+    MLPS --> EDGE
+    ATTN --> PROJ
+    GATE --> OUT["融合特征 z^o_i ∈ R^32<br/>→ 解码器"]
+    style EMB fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style UPD fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style FUSE fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<div class="figure">
+  <img src="images/CoRoGS/supp_fig1.png" loading="lazy" alt="跨模态融合后的特征可视化">
+  <div class="caption"><b>图3</b>(补充材料 Figure 1)<b>跨模态融合特征 $\mathbf{z}^o_i$ 的可视化。</b>融合后的上下文特征呈现连贯的空间结构,同时在场景边界(如车辆-路面)保持清晰的语义区分——门控融合既没有把边界抹平,也没有让同质区域碎裂。图片来自 CVF 补充材料 PDF 提取。</div>
+</div>
+
+<h3>5.5 监督信号</h3>
+<p>本模块<b>无独立损失</b>,通过下游渲染损失($\mathcal{L}_1$、$\mathcal{L}_{\text{D-SSIM}}$、$\mathcal{L}_{\text{normal}}$、$\mathcal{L}_{\text{semantic}}$)与上下文平滑损失($\mathcal{L}_{\text{context}}$)端到端训练。消融(主文表 3)显示三路缺一不可:去几何更新 -1.71 dB、去语义更新 -1.27 dB、融合换简单拼接 -1.03 dB(详见 §13)。</p>
+</section>
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:上下文感知高斯解码器(§3.5)</h2>
+<p>解码器把融合后的节点特征 $\mathbf{z}^o_i$ 翻译成<b>可直接光栅化的 3D 高斯属性</b>。关键设计:每个融合特征预测 $N$ 个高斯的参数(论文设 $N=3$,补充 A.1),思路借鉴 Scaffold-GS [17] 的「锚点 → 多神经高斯」结构,用少量图节点支撑更丰富的细节表达。</p>
+
+<h3>6.1 数学形式化</h3>
+<div class="equation">
+$$\big\{(\mathbf{s}_v,\mathbf{q}_v,\alpha_v,\mathbf{c}_v)\big\}_{v=1}^{N}=\mathrm{MLP}\big(\mathbf{z}^o_i,\;\psi(\mathbf{d})\big),\qquad N=3$$
+<span class="tag">(式 11,论文 §3.5)</span>
+</div>
+<p>其中 $\psi(\mathbf{d})$ 为视角方向的 Fourier 位置编码(使颜色具备视角相关性);输出:尺度 $\mathbf{s}_v\in\mathbb{R}^3$、旋转四元数 $\mathbf{q}_v\in\mathbb{R}^4$、不透明度 $\alpha_v\in\mathbb{R}$、RGB 颜色 $\mathbf{c}_v\in\mathbb{R}^3$。这些属性走标准 3DGS α-混合光栅化,可渲染<b>图像、法向图、语义图</b>三种输出。</p>
+
+<h3>6.2 语义解码(补充 A.3)</h3>
+<div class="callout tip"><b>语义图的生成方式</b>:$\mathbf{z}^o_i\in\mathbb{R}^{32}$ 经一个 MLP 解码为 <b>16 维语义向量</b>,在 α-混合管线中<b>替换 RGB 颜色</b>进行泼溅渲染,得到语义图。通道数 16 与 LSeg 分割模型的类别数对齐;作者指出该维度可替换为其他基础模型(如 DINO)的特征维度。</div>
+
+<h3>6.3 前向流程</h3>
+<ol>
+  <li>取 GNN 输出的融合特征 $\mathbf{z}^o_i$(每节点一个);</li>
+  <li>与当前渲染视角方向 $\mathbf{d}$ 的 Fourier 编码拼接,送入 MLP;</li>
+  <li>一次性输出 $N{=}3$ 组高斯属性(位置沿用节点位置 $\mathbf{p}_i$)<span class="uncertain">【待核实】位置是否含网络预测偏移,论文未显式说明,代码未开源</span>;</li>
+  <li>高斯集合送入可微光栅化器,分别渲染 RGB、法向(按 [2] 的方式)、语义(16 通道)三张图,供 §9 的五项损失监督。</li>
+</ol>
+
+<h3>6.4 监督信号</h3>
+<p>直接接受渲染端全部损失($\mathcal{L}_1$、$\mathcal{L}_{\text{D-SSIM}}$、$\mathcal{L}_{\text{normal}}$、$\mathcal{L}_{\text{semantic}}$)的梯度;同时作为「每节点 → 多高斯」的放大器,把图节点数与渲染高斯数解耦——这也是 CoRoGS 高斯总量最少却质量最高的原因之一(见 §12)。</p>
+</section>
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:上下文平滑损失(§3.6)</h2>
+<p>前三模块把「上下文」建进了特征,本模块把「上下文」建进<b>损失</b>:要求语义一致的区域法向平滑,语义跨边界的区域允许突变——一个由语义相似度门控的法向平滑正则。</p>
+
+<h3>7.1 数学形式化</h3>
+<div class="equation">
+$$\mathcal{L}_{\text{context}}=\sum_{h=1}^{H-1}\sum_{w=1}^{W-1}\Big[\,w_{(h,w),(h+1,w)}\,\big\|\mathcal{N}_{h+1,w}-\mathcal{N}_{h,w}\big\|_1+\,w_{(h,w),(h,w+1)}\,\big\|\mathcal{N}_{h,w+1}-\mathcal{N}_{h,w}\big\|_1\Big]$$
+<span class="tag">(式 12,论文 Eq.11)</span>
+</div>
+<div class="equation">
+$$w_{a,b}=\exp\!\Big(-\frac{\|s_a-s_b\|_2^2}{2\sigma_s^2}\Big)$$
+<span class="tag">(式 13,论文 Eq.12)</span>
+</div>
+<p>$\mathcal{N}$ 为渲染法向图(按 [2] 方法渲染),$s_i$ 为渲染语义图上像素 $i$ 的类别概率。式 13 的高斯核让权重随语义差异指数衰减。</p>
+
+<h3>7.2 设计解读</h3>
+<div class="grid-2">
+<div class="card"><h4>语义一致 → 强平滑</h4><p>相邻像素同属一个语义区域(如整块路面)时 $w_{a,b}\to 1$,法向差被强力惩罚 → 全局几何一致,抑制大偏移视角下的法向碎裂。</p></div>
+<div class="card"><h4>语义跨界 → 放约束</h4><p>相邻像素跨越语义边界(车辆-路面交界)时 $w_{a,b}\to 0$,约束自动放松 → 保留物体边缘的几何锐度,避免边界被抹平。</p></div>
+</div>
+<div class="callout key"><b>与「模块二跨模态融合」的呼应</b>:模块二在特征层面融合几何与语义,本损失在监督层面用语义调制几何平滑——同一思想的两处落地。消融(表 3(h))显示去掉 $\mathcal{L}_{\text{context}}$ PSNR 掉 1.64 dB、FID 恶化约 21.4,是所有损失项中影响最大的一项(详见 §13)。</div>
+
+<h3>7.3 监督信号</h3>
+<p>本模块<b>本身就是损失</b>,作用于渲染法向图与渲染语义图,梯度经法向渲染路径回传到高斯旋转/尺度参数与 GNN/解码器。语义端依赖 LSeg [10] 的离线伪标签(经 $\mathcal{L}_{\text{semantic}}$ 训练语义渲染头),因此整体语义质量受 LSeg 上限约束(见 §16 局限分析)。</p>
+</section>
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>模块五:上下文感知图扩展(§3.7 + 补充 A.6)</h2>
+<p>MVS 初始化的高斯图存在空洞(遮挡、弱纹理)。图扩展机制在训练中<b>梯度驱动地监测边界高斯</b>,只在大偏移渲染暴露出结构缺失处插入新高斯,并用 Delaunay 距离约束防止过度膨胀。</p>
+
+<h3>8.1 边界判定与生长准则</h3>
+<div class="equation">
+$$\varepsilon_g=\nabla g+\lambda_b\,\beta(p_i)\,\nabla g,\qquad \beta(p_i)\in\{0,1\},\quad \lambda_b=0.2$$
+<span class="tag">(式 14,补充 A.6 Eq.1)</span>
+</div>
+<p><b>边界指示符 $\beta(p_i)$</b>:若节点 $v_i$ 的任一关联边只属于<b>一个</b>三角形(而非内部边的两个),则标记为边界节点——这类节点通常对应结构不连续/几何缺失区域。<b>边界调制项</b>放大边界高斯的梯度信号,使其更容易触发分裂。当 $\varepsilon_g$ 超过阈值 $\tau_g=2\times10^{-4}$ 时生成新节点,形成候选集 $\mathcal{P}$。</p>
+
+<h3>8.2 插入规则与拓扑约束</h3>
+<ol>
+  <li>每个被接受的新高斯 $p_{\text{new}}$ 必须位于已有三角形之外,插入其锚节点的局部邻域;</li>
+  <li>与锚节点及其相邻节点连边,构成合法三角形,维持 Delaunay 式拓扑;</li>
+  <li>新高斯<b>继承锚节点的几何与语义属性</b>,保证局部结构与外观连续;</li>
+  <li><b>距离约束</b>:设锚点 $p_m$ 与新节点距离 $d_{mn}=\|p_m-p_{\text{new}}\|_2$,仅当 $d_{mn}\le d_{\max}$($p_m$ 与其邻居间的最大边长,由初始 Delaunay 三角化定义)才保留,违例节点与边被删除(补充 A.6 Eq.2)。</li>
+</ol>
+
+<h3>8.3 调度策略(补充 A.1)</h3>
+<p>训练前 1,500 次迭代做初始自适应训练;<b>此后每 100 次迭代执行一次图扩展,直至第 15,000 次迭代</b>;总训练 30,000 次迭代。即扩展集中在训练前半段,后半段纯参数精调。</p>
+
+<div class="figure">
+  <img src="images/CoRoGS/fig6.png" loading="lazy" alt="初始与优化后的高斯图可视化">
+  <div class="caption"><b>图4</b>(论文 Figure 6)<b>初始高斯图与优化后高斯图的可视化。</b>扩展机制补齐了 MVS 初始化缺失的区域,同时整体拓扑保持规整——没有无序增生。图片来自 CVF 官方 PDF 提取。</div>
+</div>
+
+<h3>8.4 监督信号</h3>
+<p>扩展准则本身由渲染损失的梯度 $\nabla g$ 驱动(无额外损失项);边界调制项 $\lambda_b\beta(p_i)\nabla g$ 是图拓扑对梯度流的<b>先验加权</b>。消融(表 3(e))显示去掉扩展 PSNR 掉 0.93 dB、FID 恶化约 21.1(详见 §13)。</p>
+</section>
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>损失函数总表</h2>
+<div class="equation">
+$$\mathcal{L}_{\text{total}}=\mathcal{L}_1+\lambda_D\mathcal{L}_{\text{D-SSIM}}+\lambda_N\mathcal{L}_{\text{normal}}+\lambda_S\mathcal{L}_{\text{semantic}}+\lambda_C\mathcal{L}_{\text{context}}$$
+<span class="tag">(式 15,论文 Eq.13)</span>
+</div>
+<table>
+<tr><th>损失项</th><th>定义</th><th>监督对象</th><th>权重(补充 A.1)</th><th>去除影响(表 3)</th></tr>
+<tr><td>$\mathcal{L}_1$</td><td>光度重建 L1</td><td>渲染 RGB vs GT</td><td>1.0(基准项)</td><td>—(不可去除)</td></tr>
+<tr><td>$\mathcal{L}_{\text{D-SSIM}}$</td><td>D-SSIM,沿用 3DGS [8]</td><td>渲染 RGB vs GT</td><td>$\lambda_D=0.8$</td><td>—(未单独消融)</td></tr>
+<tr><td>$\mathcal{L}_{\text{normal}}$</td><td>渲染法向 vs Omnidata [3] 伪 GT 法向</td><td>几何对齐</td><td>$\lambda_N=0.5$</td><td>PSNR −1.11 dB</td></tr>
+<tr><td>$\mathcal{L}_{\text{semantic}}$</td><td>渲染语义图 vs LSeg [10] 伪标签的交叉熵</td><td>语义对齐</td><td>$\lambda_S=0.2$</td><td>PSNR −1.17 dB</td></tr>
+<tr><td>$\mathcal{L}_{\text{context}}$</td><td>语义门控法向平滑(式 12-13)</td><td>上下文几何一致性</td><td>$\lambda_C=0.5$</td><td><b>PSNR −1.64 dB(影响最大)</b></td></tr>
+</table>
+<div class="callout warn"><b>外部依赖提示</b>:法向监督来自 Omnidata [3]、语义监督来自 LSeg [10],两者都是<b>预训练模型的伪标签</b>——CoRoGS 的几何/语义上限部分被这两个外部模型锁死,伪标签噪声会直接传入训练(见 §16 改进方向)。</div>
+</section>
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(训练 / 推理)</h2>
+<h3>10.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    A["训练图像 + 相机"] --> B["SfM 位姿 + 稀疏点云"]
+    B --> C["MVS 稠密重建"]
+    C --> D["Delaunay 三角化<br/>顶点+法向 → 初始高斯图 G"]
+    D --> E["PointNet++ 提取语义特征 z_i"]
+    E --> F["属性嵌入:Fourier 编码 + 2层MLP"]
+    F --> G["Gaussian GNN:L=2 轮<br/>边更新+注意力聚合 → 跨模态门控融合"]
+    G --> H["解码器:每节点 N=3 高斯<br/>s, q, α, c + 16维语义"]
+    H --> I["可微光栅化<br/>RGB / 法向 / 语义图"]
+    I --> J{"损失计算"}
+    J --> J1["L1 + 0.8·D-SSIM"]
+    J --> J2["0.5·法向损失(Omnidata 伪标签)"]
+    J --> J3["0.2·语义损失(LSeg 伪标签)"]
+    J --> J4["0.5·上下文平滑损失"]
+    J1 --> K["反向传播更新 θ 与高斯属性"]
+    J2 --> K
+    J3 --> K
+    J4 --> K
+    K --> L{"迭代 1500~15000<br/>且为 100 的整数倍?"}
+    L -- "是" --> M["图扩展:边界高斯 ε_g&gt;τ_g<br/>插入新节点(继承锚点属性)<br/>Delaunay 距离约束剪枝"]
+    M --> F
+    L -- "否" --> N{"达到 30000 次?"}
+    N -- "否" --> F
+    N -- "是" --> O["输出优化后的高斯图"]
+    style D fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style G fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style M fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style J4 fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+</div>
+
+<h3>10.2 推理流程</h3>
+<div class="mermaid">
+flowchart LR
+    A["加载优化后的<br/>高斯图 G"] --> B["属性嵌入 + GNN 前向<br/>(一次性,与视角无关)"]
+    B --> C["目标视角方向 d<br/>Fourier 编码"]
+    C --> D["解码器 → 每节点 N=3 高斯"]
+    D --> E["α-混合光栅化"]
+    E --> F["大偏移新视角 RGB<br/>(法向/语义图可选)"]
+    style B fill:#ede9fe,stroke:#8b5cf6,color:#3b0764
+    style E fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<p class="note">推理时 GNN 特征<b>可预计算缓存</b>(不随视角变化),每帧仅需解码器 + 光栅化;但实测 49 FPS(表 1)低于多数基线——解码器每节点 3 高斯的放大也增加了光栅化负担(见 §15 落地分析)。</p>
+</section>
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节</h2>
+<div class="callout warn"><b>可信度声明</b>:本文<b>代码未开源</b>,本章全部来自论文正文与补充材料 A 节的官方披露;未披露项以【待核实】标出,不做臆测。</div>
+
+<h3>11.1 训练配置(补充 A.1)</h3>
+<table>
+<tr><th>项目</th><th>取值</th></tr>
+<tr><td>总迭代数</td><td>30,000(所有场景统一)</td></tr>
+<tr><td>图扩展调度</td><td>1,500 次迭代后开始,每 100 次迭代一次,至 15,000 次迭代结束</td></tr>
+<tr><td>嵌入 MLP</td><td>2 层,hidden dim 32</td></tr>
+<tr><td>Fourier 位置编码</td><td>位置 6 阶、法向 10 阶</td></tr>
+<tr><td>GNN 更新轮数 $L$</td><td>2(消融见 §13:L=3 增益边际且 FID 变差)</td></tr>
+<tr><td>每融合特征预测高斯数 $N$</td><td>3</td></tr>
+<tr><td>边界调制权重 $\lambda_b$</td><td>0.2</td></tr>
+<tr><td>生长阈值 $\tau_g$</td><td>$2\times10^{-4}$</td></tr>
+<tr><td>损失权重</td><td>$\lambda_D=0.8,\ \lambda_N=0.5,\ \lambda_S=0.2,\ \lambda_C=0.5$</td></tr>
+<tr><td>硬件 / 框架</td><td>单卡 NVIDIA RTX A6000,PyTorch</td></tr>
+<tr><td>优化器 / 学习率 / batch</td><td><span class="uncertain">【待核实】论文与补充材料均未披露</span></td></tr>
+</table>
+
+<h3>11.2 高斯图初始化(补充 A.2)</h3>
+<ol>
+  <li>SfM 估计相机位姿与稀疏点云;</li>
+  <li>传统 MVS 做稠密重建;</li>
+  <li>Delaunay 三角化生成带点间连通性的三角网格;</li>
+  <li>三角形面片法向由网格边叉积求得,再插值得到顶点法向;</li>
+  <li>顶点与法向即初始高斯图 $\mathcal{G}$ 的位置与法向。</li>
+</ol>
+
+<h3>11.3 语义通道设计(补充 A.3)</h3>
+<p>融合特征 $\mathbf{z}^o_i\in\mathbb{R}^{32}$ 经 MLP 解码为 16 维语义向量(对齐 LSeg 类别数),在 α-混合管线中替换 RGB 渲染语义图;通道维度可换成其他基础模型(如 DINO)的特征维度。</p>
+
+<h3>11.4 训练动态(补充 A.5)</h3>
+<p>补充材料报告了训练过程中 PSNR 与高斯节点数的变化曲线:</p>
+<ul>
+  <li><b>收敛更快</b>:相同迭代数内取得最高 PSNR,超过 DeSiRe-GS 2.25 dB、SAGS 4.45 dB;</li>
+  <li><b>高斯数受控</b>:DeSiRe-GS 与 SAGS 训练中的高斯增长分别约为 CoRoGS 的 1.36× 与 1.20×——上下文约束让邻近高斯互相「认领」责任,抑制冗余增生;</li>
+  <li>结论:相同训练步数下以更少的存储获得更优渲染质量。</li>
+</ul>
+<div class="figure">
+  <img src="images/CoRoGS/supp_fig2.png" loading="lazy" alt="训练过程:高斯节点数与 PSNR 曲线">
+  <div class="caption"><b>图5</b>(补充材料 Figure 2)<b>训练过程对比。</b>左:高斯节点数随迭代的增长曲线,基线膨胀明显更快;右:PSNR 随迭代的收敛曲线,CoRoGS 收敛更快且终点更高。图片来自 CVF 补充材料 PDF 提取。</div>
+</div>
+
+<h3>11.5 复杂度与存储</h3>
+<ul>
+  <li>GNN 参数量:$L{=}1$ 时 0.45MB / $L{=}2$ 时 0.96MB / $L{=}3$ 时 1.42MB(补充 B.1 表 2);</li>
+  <li>图边数:Delaunay 构边约 $1.5N$ 条($N$ 为节点数),远少于 KNN 构图的约 $K{\times}N$ 条(补充 B.1);</li>
+  <li>渲染端:49 FPS、353k 高斯(KITTI 右移 0.5m 设置,主文表 1)——高斯数在所有对比方法中最少。</li>
+</ul>
+</section>
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+
+<h3>12.1 数据集与评测协议</h3>
+<ul>
+  <li><b>数据集</b>:KITTI [5] 与 Waymo Open Dataset [27],沿用 [2,7] 各选 6 个以静态物体为主的场景;</li>
+  <li><b>有监督小偏移</b>:KITTI 左目训练 → 右目评测(横向偏移 0.5m),指标 PSNR / SSIM / LPIPS;几何用渲染点云与 LiDAR 点云的 Chamfer Distance(CD↓,沿用 [6]);</li>
+  <li><b>无监督大偏移</b>:六种偏移——左移 3m/5m、上移 1m/2m、对角(左 3m+上 1m)/(左 5m+上 2m);无 GT 图像,沿用 [7] 用 FID / KID 评测生成质量。</li>
+</ul>
+
+<h3>12.2 有监督小偏移(KITTI 右移 0.5m,主文表 1)</h3>
+<table>
+<tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>CD↓</th><th>FPS↑</th><th>#GS(k)↓</th></tr>
+<tr><td>GaussianPro</td><td>21.32</td><td>0.703</td><td>0.271</td><td>2.28</td><td>109</td><td>1308</td></tr>
+<tr><td>SAGS</td><td>20.51</td><td>0.692</td><td>0.316</td><td>2.41</td><td>110</td><td>425</td></tr>
+<tr><td>DC-Gaussian</td><td>21.36</td><td>0.705</td><td>0.265</td><td>2.02</td><td>98</td><td>938</td></tr>
+<tr><td>GSDF</td><td>21.64</td><td>0.692</td><td>0.256</td><td>2.48</td><td>102</td><td>1463</td></tr>
+<tr><td>VEGS</td><td>21.85</td><td>0.699</td><td>0.275</td><td>2.31</td><td>108</td><td>1293</td></tr>
+<tr><td>DeSiRe-GS</td><td>22.71</td><td>0.765</td><td>0.248</td><td>1.88</td><td>41</td><td>482</td></tr>
+<tr class="best"><td><b>CoRoGS</b></td><td><b>24.96</b></td><td><b>0.849</b></td><td><b>0.180</b></td><td><b>1.32</b></td><td>49</td><td><b>353</b></td></tr>
+</table>
+<div class="stat-row">
+<div class="stat"><div class="v">+2.25 dB</div><div class="l">PSNR 超第二名 DeSiRe-GS</div></div>
+<div class="stat"><div class="v">353k</div><div class="l">高斯数全场最少(次少 425k)</div></div>
+<div class="stat"><div class="v">1.32</div><div class="l">CD 最优,几何重建质量最高</div></div>
+<div class="stat"><div class="v">49 FPS</div><div class="l">非最快,仅快于 DeSiRe-GS(41)</div></div>
+</div>
+
+<h3>12.3 无监督大偏移(KITTI+Waymo 平均,主文表 2)</h3>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="2">Left-3m</th><th colspan="2">Up-1m</th><th colspan="2">Diagonal-3m</th></tr>
+<tr><th>KID↓</th><th>FID↓</th><th>KID↓</th><th>FID↓</th><th>KID↓</th><th>FID↓</th></tr>
+<tr><td>GaussianPro</td><td>119.99</td><td>0.0566</td><td>99.16</td><td>0.0503</td><td>134.23</td><td>0.0791</td></tr>
+<tr><td>SAGS</td><td>105.77</td><td>0.0631</td><td>107.16</td><td>0.0627</td><td>133.03</td><td>0.0807</td></tr>
+<tr><td>DC-Gaussian</td><td>115.48</td><td>0.0514</td><td>94.95</td><td>0.0445</td><td>135.93</td><td>0.0786</td></tr>
+<tr><td>GSDF</td><td>115.09</td><td>0.0506</td><td>96.04</td><td>0.0491</td><td>145.38</td><td>0.0829</td></tr>
+<tr><td>VEGS</td><td>119.06</td><td>0.0701</td><td>108.45</td><td>0.0636</td><td>135.09</td><td>0.0801</td></tr>
+<tr><td>DeSiRe-GS</td><td>104.79</td><td>0.0480</td><td>102.26</td><td>0.0479</td><td>147.87</td><td>0.0820</td></tr>
+<tr class="best"><td><b>CoRoGS</b></td><td><b>67.12</b></td><td><b>0.0249</b></td><td><b>72.71</b></td><td><b>0.0333</b></td><td><b>107.77</b></td><td><b>0.0413</b></td></tr>
+</table>
+<table>
+<tr><th rowspan="2">方法</th><th colspan="2">Left-5m</th><th colspan="2">Up-2m</th><th colspan="2">Diagonal-5m</th></tr>
+<tr><th>KID↓</th><th>FID↓</th><th>KID↓</th><th>FID↓</th><th>KID↓</th><th>FID↓</th></tr>
+<tr><td>GaussianPro</td><td>139.39</td><td>0.1034</td><td>167.49</td><td>0.1501</td><td>180.03</td><td>0.1250</td></tr>
+<tr><td>SAGS</td><td>133.84</td><td>0.0819</td><td>175.94</td><td>0.1543</td><td>176.13</td><td>0.1180</td></tr>
+<tr><td>DC-Gaussian</td><td>132.52</td><td>0.0911</td><td>166.42</td><td>0.1621</td><td>169.09</td><td>0.1193</td></tr>
+<tr><td>GSDF</td><td>145.42</td><td>0.1133</td><td>165.36</td><td>0.1647</td><td>172.96</td><td>0.1100</td></tr>
+<tr><td>VEGS</td><td>143.08</td><td>0.1089</td><td>169.04</td><td>0.1638</td><td>173.74</td><td>0.1133</td></tr>
+<tr><td>DeSiRe-GS</td><td>143.28</td><td>0.0959</td><td>172.14</td><td>0.1592</td><td>175.09</td><td>0.1117</td></tr>
+<tr class="best"><td><b>CoRoGS</b></td><td><b>89.15</b></td><td><b>0.0378</b></td><td><b>119.19</b></td><td><b>0.0872</b></td><td><b>133.50</b></td><td><b>0.1022</b></td></tr>
+</table>
+<p>极端偏移下对最强基线 DC-Gaussian 的 FID 改善:<b>Left-5m 32.72%、Up-2m 28.38%、Diagonal-5m 21.04%</b>;六种偏移设置全部第一。分数据集细表(KITTI 补充表 3 / Waymo 补充表 4)趋势一致。</p>
+
+<h3>12.4 定性结果</h3>
+<div class="figure">
+  <img src="images/CoRoGS/fig3.png" loading="lazy" alt="KITTI 不同偏移下的定性对比">
+  <div class="caption"><b>图6</b>(论文 Figure 3)<b>KITTI 定性对比。</b>左半对应表 1(右移 0.5m),右半对应表 2(大偏移)。放大块与法向图显示:基线路缘线扭曲、细节丢失,CoRoGS 在各偏移下保持清晰。图片来自 CVF 官方 PDF 提取。</div>
+</div>
+<div class="figure">
+  <img src="images/CoRoGS/fig4.png" loading="lazy" alt="Waymo 大偏移定性对比">
+  <div class="caption"><b>图7</b>(论文 Figure 4)<b>Waymo 大偏移定性对比。</b>VEGS 与 DeSiRe-GS 在路面与车辆上出现严重伪影,CoRoGS 在远近不同距离的车顶、车辆细节上保持结构与纹理保真。图片来自 CVF 官方 PDF 提取。</div>
+</div>
+<div class="callout key"><b>读图要点</b>:大偏移视角的崩坏通常先出现在「观测欠约束区域」(路面远端、物体侧面)。CoRoGS 的优势区域恰好与此重合——上下文聚合让欠约束高斯从邻域借到结构先验,而不是各自漂飞。</div>
+</section>
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+
+<h3>13.1 组件消融(KITTI,主文表 3)</h3>
+<p>评测设置:Right-0.5m 用 PSNR/SSIM/LPIPS,Left-3m 用 FID。</p>
+<table>
+<tr><th>Case</th><th>配置</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>ΔPSNR</th></tr>
+<tr class="fail"><td>(a)</td><td>Base Model(无上下文框架)</td><td>21.25</td><td>0.6889</td><td>0.2691</td><td>123.80</td><td>−3.71</td></tr>
+<tr><td>(b)</td><td>w/o 几何更新(§3.4.2)</td><td>23.25</td><td>0.7963</td><td>0.1985</td><td>83.62</td><td>−1.71</td></tr>
+<tr><td>(c)</td><td>w/o 语义更新(§3.4.2)</td><td>23.69</td><td>0.7826</td><td>0.1936</td><td>86.93</td><td>−1.27</td></tr>
+<tr><td>(d)</td><td>w/o 跨模态融合(简单拼接)</td><td>23.93</td><td>0.8026</td><td>0.1965</td><td>86.34</td><td>−1.03</td></tr>
+<tr><td>(e)</td><td>w/o 图扩展(§3.7)</td><td>24.03</td><td>0.8136</td><td>0.1902</td><td>89.36</td><td>−0.93</td></tr>
+<tr><td>(f)</td><td>w/o $\mathcal{L}_{\text{normal}}$</td><td>23.85</td><td>0.8025</td><td>0.1928</td><td>79.68</td><td>−1.11</td></tr>
+<tr><td>(g)</td><td>w/o $\mathcal{L}_{\text{semantic}}$</td><td>23.79</td><td>0.7963</td><td>0.1949</td><td>82.96</td><td>−1.17</td></tr>
+<tr><td>(h)</td><td>w/o $\mathcal{L}_{\text{context}}$</td><td>23.32</td><td>0.7935</td><td>0.1905</td><td>89.65</td><td>−1.64</td></tr>
+<tr class="best"><td>(n)</td><td><b>完整模型</b></td><td><b>24.96</b></td><td><b>0.8492</b></td><td><b>0.1805</b></td><td><b>68.25</b></td><td>—</td></tr>
+</table>
+<p><b>结论</b>:全部 8 个组件都有正贡献。影响排序:几何更新(−1.71)> $\mathcal{L}_{\text{context}}$(−1.64)> 语义更新(−1.27)≈ $\mathcal{L}_{\text{semantic}}$(−1.17)> $\mathcal{L}_{\text{normal}}$(−1.11)> 跨模态融合(−1.03)> 图扩展(−0.93)。大偏移指标 FID 上,几何更新与 $\mathcal{L}_{\text{context}}$ 的缺失同样恶化最严重。</p>
+<div class="figure">
+  <img src="images/CoRoGS/fig5.png" loading="lazy" alt="消融实验可视化">
+  <div class="caption"><b>图8</b>(论文 Figure 5)<b>消融可视化(KITTI)。</b>(b) 去几何更新 → 车辆与路面出现明显伪影;(c) 去语义更新 → 车-路边界模糊(语义相近区域被错误合并);(d) 融合换拼接 → 路面与车辆出现可见伪影。图片来自 CVF 官方 PDF 提取。</div>
+</div>
+
+<h3>13.2 补充消融(补充 B.1)</h3>
+<h4>① 构图方式:Delaunay vs KNN(补充表 1)</h4>
+<table>
+<tr><th>构边策略</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th></tr>
+<tr class="fail"><td>Ours + KNN Graph</td><td>22.03</td><td>0.7159</td><td>0.2008</td><td>90.36</td></tr>
+<tr class="best"><td><b>Ours(Delaunay)</b></td><td><b>24.96</b></td><td><b>0.8492</b></td><td><b>0.1805</b></td><td><b>67.12</b></td></tr>
+</table>
+<p>KNN 构图 PSNR 掉 <b>2.93 dB</b>。原因:(i) KNN 仅按欧氏距离连边,常把不同语义区域、法向迥异的高斯连到一起,误导特征聚合;(ii) KNN 强制每节点固定 $K$ 条边(约 $K{\times}N$ 条),Delaunay 去除重复/无效连接后仅约 $1.5N$ 条边,更稀疏且保留有效传播路径。</p>
+<h4>② GNN 深度(补充表 2)</h4>
+<table>
+<tr><th>层数 $L$</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>FID↓</th><th>参数量</th></tr>
+<tr><td>1</td><td>24.32</td><td>0.8165</td><td>0.1828</td><td>79.68</td><td>0.45 MB</td></tr>
+<tr class="best"><td><b>2</b></td><td><b>24.96</b></td><td><b>0.8492</b></td><td><b>0.1805</b></td><td><b>67.12</b></td><td>0.96 MB</td></tr>
+<tr><td>3</td><td>25.28</td><td>0.8529</td><td>0.1796</td><td>73.25</td><td>1.42 MB</td></tr>
+</table>
+<p>1→2 层:PSNR +0.64 dB、FID −12.56,收益显著;2→3 层:PSNR 仅 +0.32 dB 且 FID 反而变差(67.12→73.25),参数增 48%——边际收益递减并出现过拟合迹象,故选 $L{=}2$。</p>
+<div class="callout tip"><b>消融阅读小结</b>:几何更新是 PSNR 的第一贡献者,上下文平滑损失是正则项里的第一贡献者,图扩展贡献最小但补齐结构完整性——三者分别对应「特征上下文 / 监督上下文 / 结构上下文」,构成论文标题中 Contextual 的完整闭环。</div>
+</section>
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+<table>
+<tr><th>方法</th><th>核心思路</th><th>高斯间关系</th><th>大偏移机制</th><th>相对 CoRoGS 的短板</th></tr>
+<tr><td>GaussianPro [2]</td><td>渐进式传播 + 多视图几何先验</td><td>独立优化</td><td>几何一致性约束</td><td>无高斯间上下文建模,大偏移 FID 明显更差</td></tr>
+<tr><td>SAGS [30]</td><td>结构感知 3DGS</td><td>局部结构约束</td><td>—</td><td>结构先验停留在局部,PSNR/FID 全面落后</td></tr>
+<tr><td>DC-Gaussian [32]</td><td>多视图几何先验(行车记录场景)</td><td>独立优化</td><td>几何误差修正</td><td>大偏移最强基线,仍被超 21%~33% FID</td></tr>
+<tr><td>GSDF [39]</td><td>3DGS + SDF 表面对齐</td><td>隐式(共享表面)</td><td>表面约束</td><td>几何更准但渲染指标平庸,无显式上下文</td></tr>
+<tr><td>VEGS [7]</td><td>扩散先验补全新视角</td><td>独立优化</td><td>生成式先验</td><td>依赖外部扩散模型,伪影明显(Fig.3/4)</td></tr>
+<tr><td>DeSiRe-GS [21]</td><td>静动态分解 + 表面重建</td><td>独立优化</td><td>表面正则</td><td>小偏移第二名,大偏移优势消失</td></tr>
+<tr class="best"><td><b>CoRoGS</b></td><td><b>图神经网络显式建模高斯依赖</b></td><td><b>显式图上下文(几何+语义)</b></td><td><b>上下文推理 + 图扩展</b></td><td>—</td></tr>
+</table>
+<div class="callout key"><b>代际差异</b>:此前方法对「高斯间关系」的处理要么是隐式的(SDF/表面正则)、要么是外部的(扩散先验)。CoRoGS 第一次把高斯集合本身当作<b>图结构数据</b>,用 GNN 做显式的依赖推理——这是从「逐点优化」到「集合推理」的范式变化,而非又一条正则项。</div>
+<div class="callout warn"><b>公平性提示</b>:基线多数为 2024-2025 年方法且未针对「图上下文」设计;VEGS 依赖扩散先验、DeSiRe-GS 面向动态分解,目标场景与 CoRoGS 不完全重合。对比最公平的口径是主文表 1/2 的同协议数字。</div>
+</section>
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性</h2>
+<div class="grid-3">
+<div class="card"><h4>自动驾驶仿真</h4><p>训练-测试视角偏差(左目训练右目评测、横向/垂直偏移)正是车载多摄像头布局与 corner case 生成的核心痛点。CoRoGS 在大偏移下的 FID/KID 优势直接对应仿真器里「合成罕见视角」的能力。</p></div>
+<div class="card"><h4>低空航拍感知</h4><p>论文结论明确点名 low-altitude aerial perception。无人机巡检/测绘中航线偏移常见,图结构上下文对大范围静态场景尤其适配。</p></div>
+<div class="card"><h4>数字孪生 / 城市建模</h4><p>KITTI/Waymo 均为城市街景。353k 高斯的低存储 + Delaunay 稀疏图边(约 1.5N)使大规模场景的存储与传输成本可控。</p></div>
+</div>
+<h3>15.1 落地约束</h3>
+<ul>
+  <li><b>速度</b>:49 FPS(表 1)满足离线仿真与近实时渲染,但对 60 FPS 以上的强实时交互(如高帧率闭环仿真)偏紧;GNN 前向虽可缓存,解码器每节点 3 高斯放大仍增加光栅化压力。</li>
+  <li><b>静态假设</b>:论文结论承认<b>动态物体与大旋转仍是局限</b>——街景中的车辆、行人未被显式解耦,落地需配合动态分解管线(如 DrivingGaussian [41]、DeSiRe-GS [21])。</li>
+  <li><b>外部伪标签</b>:法向(Omnidata)与语义(LSeg)伪标签是训练前置依赖,新域(室内、夜间)需重新评估伪标签质量。</li>
+  <li><b>MVS 初始化</b>:弱纹理/强遮挡区域 MVS 空洞会传染给初始图;图扩展能缓解但不能根除(见 §16)。</li>
+  <li><b>代码未开源</b>:工程复现依赖论文披露的超参,优化器/学习率等关键细节缺失,落地存在复现风险。</li>
+</ul>
+</section>
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+<table>
+<tr><th>方向</th><th>现状痛点</th><th>可行路径</th></tr>
+<tr><td><b>动态场景扩展</b></td><td>论文承认对动态物体处理有限(§5 Conclusion)</td><td>将图节点扩展为时变高斯场,边特征编码时间相关性;或与 DrivingGaussian 式静动态分解组合</td></tr>
+<tr><td><b>旋转大偏移</b></td><td>结论承认大旋转仍是局限</td><td>引入 rotation-aware 结构约束(如 SE(3)-等变 GNN 边特征),缓解当前仅平移偏移评测的盲区</td></tr>
+<tr><td><b>伪标签依赖</b></td><td>法向/语义监督来自 Omnidata/LSeg,上限被锁死</td><td>换用更强基础模型(DINOv2、SAM),或引入自监督几何一致性替代伪标签</td></tr>
+<tr><td><b>MVS 初始化空洞</b></td><td>初始图质量依赖传统 MVS,弱纹理区域先天不足</td><td>用前馈稠密重建(MASt3R、MV-DUSt3R+ [28])替代 MVS,或用扩散先验直接补全初始点云</td></tr>
+<tr><td><b>速度</b></td><td>49 FPS,低于部分基线(98-110)</td><td>解码器剪枝(每节点动态 N)、图节点 LOD(参考 Octree-GS [24])、烘焙缓存供实时回放</td></tr>
+<tr><td><b>图拓扑学习</b></td><td>图结构由几何算法固定,不可微</td><td>探索可微图学习(如 GNN 边权重联合优化、神经 Delaunay),让拓扑随训练演化</td></tr>
+<tr><td><b>开源与复现</b></td><td>代码未开源,关键训练细节缺失</td><td>社区复现阶段优先补齐优化器/学习率/数据划分细节</td></tr>
+</table>
+<div class="callout tip"><b>最值得跟进的方向</b>:前馈重建 + 图上下文的组合。当前 CoRoGS 仍是 per-scene 优化(30k 迭代),若把图构建与 GNN 前馈化(参考 Gaussian Graph Network [40] 的通用化思路),可把「上下文推理」从训练期特权变成推理期能力,打开 sparse-view 泛化场景。</div>
+</section>
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+<h3>17.1 一句话总结</h3>
+<p>CoRoGS 把 3D 高斯从「独立优化的基元」改造为「图上的上下文推理对象」:用 Delaunay 图承载高斯间依赖,用几何/语义双路 GNN + 跨模态门控融合做特征推理,用语义门控法向平滑损失做监督,用梯度驱动的图扩展补全结构——在 KITTI/Waymo 大偏移视角合成上实现 PSNR +2.25 dB、FID 最高 -32.7% 的显著优势,且高斯数最少(353k)。</p>
+<h3>17.2 演进定位</h3>
+<div class="mermaid">
+flowchart LR
+    A["3DGS(2023)<br/>独立高斯,点云"] --> B["Scaffold-GS(2024)<br/>锚点-神经高斯,结构初显"]
+    B --> C["GaussianPro / GSDF(2024)<br/>几何先验正则,隐式关系"]
+    C --> D["CoRoGS(2026)<br/>显式图上下文,GNN 推理"]
+    D --> E["下一步:动态/旋转/前馈泛化"]
+    style D fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<p>在 3DGS 技术谱系里,CoRoGS 的贡献不是某个模块的堆叠,而是<b>关系建模范式的显式化</b>:此前方法对高斯间关系的处理停留在隐式正则(SDF 对齐、传播约束),CoRoGS 首次把图结构作为一等公民,让上下文推理成为可学习、可消融、可扩展的组件。这与 Scaffold-GS 的「结构化」、GGS [40] 的「图网络泛化」同属结构觉醒一脉,但 CoRoGS 选择了 per-scene 优化下最彻底的图化路径。</p>
+<h3>17.3 核心启示</h3>
+<ul>
+  <li><b>大偏移 NVS 的瓶颈不在渲染器,而在欠约束区域的上下文缺失</b>——传统 3DGS 让每个高斯各自为政,视角一偏就各自漂飞;上下文聚合是低成本高收益的修复。</li>
+  <li><b>几何与语义必须双路建模再融合</b>——单模态更新无法处理「语义相似但几何不同」(两辆车)与「几何相近但语义不同」(车与路面交界)的交叉依赖。</li>
+  <li><b>图拓扑是强先验也是强约束</b>——Delaunay 比 KNN 好 2.93 dB,说明稀疏、几何有效的边比密集、距离粗暴的边更重要。</li>
+</ul>
+</section>
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>18.1 作者与机构</h3>
+<table>
+<tr><th>作者</th><th>角色 / 机构</th></tr>
+<tr><td>Xin Ma</td><td>第一作者,北京邮电大学(AAAI 2025 同主题前作 [18] 第一作者)</td></tr>
+<tr><td>Peng Lu</td><td>通讯作者,北京邮电大学</td></tr>
+<tr><td>Yisong Chen</td><td>北京大学</td></tr>
+<tr><td>Chengwei Pan</td><td>北京航空航天大学</td></tr>
+<tr><td>Sheng Li</td><td>北京大学</td></tr>
+</table>
+<p class="note">团队延续性:Xin Ma 与 Peng Lu、Chengwei Pan 此前在 AAAI 2025 发表《Novel View Synthesis under Large-Deviation Viewpoint for Autonomous Driving》[18],CoRoGS 是该方向的纵深迭代——从问题定义(大偏移)到解决方案(图上下文)的完整闭环。致谢:受国家重点研发计划 2022ZD0160805 资助。</p>
+<h3>18.2 资源链接</h3>
+<div class="links">
+  <a href="https://openaccess.thecvf.com/content/CVPR2026/html/Ma_CoRoGS_Contextual_Gaussian_Splatting_for_Robust_Large-Deviation_View_Synthesis_CVPR_2026_paper.html" target="_blank">📄 CVF 官方页</a>
+  <a href="https://openaccess.thecvf.com/content/CVPR2026/papers/Ma_CoRoGS_Contextual_Gaussian_Splatting_for_Robust_Large-Deviation_View_Synthesis_CVPR_2026_paper.pdf" target="_blank">📥 主文 PDF</a>
+  <a href="https://openaccess.thecvf.com/content/CVPR2026/supplemental/Ma_CoRoGS_Contextual_Gaussian_CVPR_2026_supplemental.zip" target="_blank">📎 Supplementary(zip)</a>
+</div>
+<div class="callout warn" style="margin-top:16px"><b>资源可用性(截至 2026-10-23)</b>:无 arXiv 预印本;代码未开源;补充材料含渲染对比视频(44546_supp.mp4)与完整超参/分数据集结果,是复现关键参考。</div>
+</section>
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-23 · 领域: 3D 重建 / 大偏移新视角合成(3DGS + 图神经网络)</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
