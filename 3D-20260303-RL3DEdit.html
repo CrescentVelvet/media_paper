@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL3DEdit:用 VGGT 当 RL 裁判,把 2D 编辑器锚定到三维一致流形</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.2}
+.subtitle{color:var(--text-dim);font-size:18px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,146,60,.12);border-left:3px solid var(--orange);color:#fdba74;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:26px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">ECCV 2026 · 3D 编辑 × 强化学习 · BJTU × 高德(阿里) × NTU</span>
+    <h1>RL3DEdit:用 VGGT 当 RL 裁判,把 2D 编辑器锚定到三维一致流形</h1>
+    <div class="subtitle">Edit in 2D, Verify in 3D: Reinforcement Learning for Multi-view Consistent Scene Editing(v1 题名:Geometry-Guided Reinforcement Learning for Multi-view Consistent 3D Scene Editing)</div>
+    <div class="authors">Jiyuan Wang · Chunyu Lin✉ · Lei Sun✝ · Zhi Cao · Yuyang Yin · Lang Nie · Zhenlong Yuan · Xiangxiang Chu · Yunchao Wei · Kang Liao · Guosheng Lin✉</div>
+    <div class="org">北京交通大学 (BJTU) · 高德地图 阿里巴巴 (AMap, Alibaba) · 南洋理工大学 (NTU) · 重庆邮电大学 (CQUPT)　(✉通讯作者 ✝项目负责)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2603.03143" target="_blank">📄 arXiv 2603.03143</a>
+      <a href="https://amap-ml.github.io/RL3DEdit/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/AMAP-ML/RL3DEdit" target="_blank">💻 GitHub(仅推理代码)</a>
+      <a href="https://huggingface.co/exander/RL3DEdit" target="_blank">🤗 模型权重</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">模块一:多图联合编辑(DiT 跨图注意力)</a></li>
+    <li><a href="#s5">模块二:VGGT 一致性验证器</a></li>
+    <li><a href="#s6">模块三:奖励设计(四件套)</a></li>
+    <li><a href="#s7">模块四:GRPO 训练(SDE 探索)</a></li>
+    <li><a href="#s8">奖励函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(含源码复核)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配(含手部微动问题)</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位 + 研究团队</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+  <h2><span class="num">1</span>论文概要与核心贡献</h2>
+  <p><strong>问题</strong>:3D 场景编辑需要对多视角图像做一致编辑,但 2D 编辑器逐图独立编辑必然产生跨视角不一致(伪影、漂浮物),而「3D 一致的编辑配对数据」极度稀缺,最有效的监督微调(SFT)路线走不通。<strong>方法</strong>:作者观察到「<em>生成多视角一致的 3D 内容很难,但验证 3D 一致性是可行的</em>」,这一不对称性天然契合强化学习——用一个可验证奖励模型(VRM)替代成对监督。具体做法:以 FLUX-Kontext 为 2D 编辑器,把同一场景 $M=9$ 个视角拼成 3×3 网格做联合编辑;以 3D 基础模型 <strong>VGGT</strong> 为「裁判」,用其输出的深度/点图置信度与相对位姿误差构造几何奖励,外加一个 anchor 保真奖励,用 GRPO 对编辑器做 LoRA 微调。<strong>结果</strong>:训练仅 1 epoch(42 小时,单卡 RTX Pro 6000,70 条指令 / 1,319 样本),推理时单趟前向即可产出 9 视角一致编辑图,再经 AnySplat 初始化 + 3DGS 微调 3,000 步得到编辑后的 3D 场景,全流程约 <strong>1.5 分钟</strong>,VIEScore 5.48,显著优于 DGE / GaussCtrl / EditSplat 及其 FLUX 强化版。</p>
+  <div class="callout key"><b>一句话核心贡献</b>:首次把 RL 引入 3D 编辑(论文 §2.3 自述 "the first work to introduce RL into 3D editing")——不生成一致性、只验证一致性,用冻结的 VGGT 当奖励模型,把 2D 编辑先验「锚定」到三维一致流形上,全程无需任何 3D 一致配对数据。</div>
+  <div class="stat-row">
+    <div class="stat"><div class="v">1.5 min</div><div class="l">单场景端到端编辑耗时(RTX Pro 6000,Table 1)</div></div>
+    <div class="stat"><div class="v">5.48</div><div class="l">VIEScore(最强基线 3.23,Table 1)</div></div>
+    <div class="stat"><div class="v">0.076</div><div class="l">Ph-Loss 重投影误差(Table 1,全场最低)</div></div>
+    <div class="stat"><div class="v">42 h</div><div class="l">训练时长(1 epoch,单卡 RTX Pro 6000,§4.1)</div></div>
+    <div class="stat"><div class="v">1,319</div><div class="l">训练样本(8 场景 × 18~23 组 × 9 视角,§4.1)</div></div>
+  </div>
+  <div class="tag-row">
+    <span class="tag">3D 编辑</span><span class="tag">GRPO</span><span class="tag">VGGT 置信度奖励</span><span class="tag">FLUX-Kontext</span><span class="tag">LoRA r=32</span><span class="tag">3×3 多视角网格</span><span class="tag">AnySplat + 3DGS</span><span class="tag">单趟前向</span>
+  </div>
+  <div class="figure">
+    <img src="images/2603.03143/title.png" alt="RL3DEdit teaser" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图1</b>(论文 Figure 1)RL3DEdit 单趟 3D 编辑效果,覆盖五类场景:①运动编辑(抱臂)②主体替换(变绿巨人)③风格迁移(彩铅)④背景更换(沙滩)⑤挑战性的场景添加(爬满常春藤的砖墙)。注意①④⑤都涉及几何变化,是 depth-conditioned 方法的死穴。</div>
+  </div>
+</section>
+
+<section class="section" id="s2">
+  <h2><span class="num">2</span>研究背景与动机</h2>
+  <h3>2.1 现有三类方法的具体失败模式(§1)</h3>
+  <div class="grid-3">
+    <div class="card"><h4>① 几何条件引导型</h4><p>用源图深度图引导一致性(如 GaussCtrl、Tinker)。<strong>失败模式</strong>:无法处理涉及几何变化的编辑——深度先验把结果锁死在原几何上(§1: "failing to handle edits involving geometric changes")。</p></div>
+    <div class="card"><h4>② 迭代优化型</h4><p>以 IN2N 为代表,单视角编辑后迭代精炼 3D 表示。<strong>失败模式</strong>:编辑信号本身 3D 不一致 → 模糊伪影 + 效率极低(每场景数十分钟)。</p></div>
+    <div class="card"><h4>③ 注意力传播型</h4><p>跨视角重投影注意力特征(如 DGE)。<strong>失败模式</strong>:几何不连续区域对齐误差累积,细粒度一致性无保证;且注意力操纵在 2D 编辑史上已被证明是「最终被数据监督取代的次优解」(§1)。</p></div>
+  </div>
+  <p>§2.2 还点名了两个近邻:<strong>Tinker</strong>(2026,同样用 FLUX-Kontext)依赖深度图引导(只能做保几何编辑)、引入复杂的视频模型管线、且需要 <strong>~25K 成对样本</strong>;RL3DEdit 声称只用其 <strong>5% 的数据</strong>(1,319 样本)就达到更强泛化。高斯参数操纵类方法则「无法把『低头』这类动作指令翻译成显式高斯参数修改」。</p>
+  <h3>2.2 核心洞察:生成难,验证易</h3>
+  <div class="callout key"><b>关键观察(§1 原句)</b>:"while generating multi-view consistent 3D content is highly challenging, verifying 3D consistency is tractable"。验证只需识别几何矛盾(如鬼影),不需要跨视角生成能力,也不依赖稀缺的多视角配对数据——这个不对称性与 RL 范式完美对齐:一致性验证器天然就是奖励模型(§3.1)。</div>
+  <div class="callout tip"><b>SDS 类比(§3.3)</b>:正如 SDS 用冻结的 Stable Diffusion 监督图像质量——SD 在高质量大规模图像上训练,喂低质量图就给出大损失反馈;VGGT 在百万级真实 3D 多视角数据上训练,喂入 3D 不一致的编辑图同样会给出「有意义」的反馈(置信度下降、位姿估计错乱)。冻结基础模型当裁判,不需要它可导,只需要它打分。</div>
+  <p><strong>关键假设及其失效条件</strong>:(a) 假设 VGGT 的置信度对「跨视角不一致」足够敏感且单调——论文用 Figure 5 的渐进替换实验验证了近线性关系(见 §5);(b) 假设 2D 编辑器具备多图联合编辑能力,否则 RL 探索得到一致样本的概率为零、优化直接失败(§3.2 明言);(c) 假设编辑幅度可控——<strong>极端非刚性形变(如「让人物低头」)下动作幅度歧义导致细微跨视角差异,论文 §5 自承会失败,且所有基线同样失败</strong>。这三条假设边界直接决定了它能否迁移到「修复采集数据不一致」的场景(见 §14)。</p>
+</section>
+
+<section class="section" id="s3">
+  <h2><span class="num">3</span>算法总体框架</h2>
+  <h3>3.1 输入 / 输出定义</h3>
+  <ul>
+    <li><strong>输入</strong>:一个已有 3D 资产(如已重建的 3DGS)+ 一条文本编辑指令;从资产渲染 $M=9$ 个环绕均匀采样视角 $\{I_m\}_{m=1}^{M}$。</li>
+    <li><strong>输出</strong>:编辑后的 3DGS 场景——9 张一致编辑图经 AnySplat 前馈初始化 + 标准 3DGS 微调得到。</li>
+    <li><strong>训练产物</strong>:FLUX-Kontext-dev 上的 LoRA(rank 32, alpha 32),推理时<strong>无需任何逐场景优化</strong>,单趟前向出图。</li>
+  </ul>
+  <h3>3.2 符号表</h3>
+  <table>
+    <tr><th>符号</th><th>含义</th><th>形状 / 取值</th></tr>
+    <tr><td>$M$</td><td>每个样本的视角数</td><td>9(3×3 网格,§4.1)</td></tr>
+    <tr><td>$G$</td><td>GRPO 组大小(独立采样次数)</td><td>16(§4.1)</td></tr>
+    <tr><td>$I_m$ / $I'_m$ / $\tilde{I}_a$</td><td>源视角 / 编辑后视角 / 离线预编辑 anchor 图</td><td>RGB 图;网格约 1568×1568(源码 bucket,单格 ~512px)</td></tr>
+    <tr><td>$\pi_\theta$ / $\pi_{\text{ref}}$</td><td>微调中 / 原始(冻结参考)2D 编辑器</td><td>LoRA 参数 θ</td></tr>
+    <tr><td>$\mathrm{conf}_D$ / $\mathrm{conf}_P$</td><td>VGGT 深度 / 点图置信度图</td><td>逐像素 [0,1]</td></tr>
+    <tr><td>$T_m=[R_m|t_m]$</td><td>VGGT 预测的第 $m$ 视角外参</td><td>$R\in\mathbb{R}^{3\times3}, t\in\mathbb{R}^3$</td></tr>
+    <tr><td>$r^D,r^P,r^T,r^a$</td><td>深度置信 / 点置信 / 相对位姿 / anchor 保真奖励</td><td>标量</td></tr>
+    <tr><td>$w_D{=}w_P{=}w_T{=}w_a$</td><td>奖励权重</td><td>各 0.25(§4.1)</td></tr>
+    <tr><td>$\sigma_t$</td><td>SDE 噪声强度</td><td>0.8(§4.1)</td></tr>
+    <tr><td>$\beta,\epsilon,\lambda$</td><td>KL 系数 / clip 范围 / anchor 奖励温度</td><td><span class="uncertain">⚠️【待核实】 论文未给数值(训练代码未开源,无法回查)</span></td></tr>
+  </table>
+  <h3>3.3 总体数据流</h3>
+  <div class="mermaid">
+flowchart TD
+    ASSET["已有 3D 资产<br/>(已重建 3DGS)"] --> RENDER["渲染 M=9 环绕视角<br/>I_1...I_9"]
+    RENDER --> GRID["拼 3x3 网格图<br/>(row-major)"]
+    GRID --> EDITOR["FLUX-Kontext + LoRA<br/>联合编辑(单趟前向)"]
+    INSTR["文本指令<br/>(经 enhance 改写)"] --> EDITOR
+    EDITOR --> EDITED["9 张一致编辑图 I'_1...I'_9"]
+    EDITED --> ANYSPLAT["AnySplat 前馈初始化<br/>(&lt;1s)"]
+    ANYSPLAT --> GS["标准 3DGS 微调 3000 步<br/>(~40s, 用原始 GT 位姿)"]
+    GS --> OUT["编辑后 3DGS 场景"]
+    style ASSET fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style EDITOR fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+  </div>
+  <p><strong>阶段划分</strong>:①渲染多视角 → ②2D 联合编辑(唯一被 RL 训练的模块)→ ③前馈初始化 + 轻量 3DGS 微调。训练时阶段②外面套 GRPO 循环(采样 G=16 组 → VGGT 打分 → 组内优势 → LoRA 更新),推理时 ②③ 各跑一遍即结束。</p>
+  <div class="figure">
+    <img src="images/2603.03143/pipeline.png" alt="RL3DEdit pipeline" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图2</b>(论文 Figure 2)RL3DEdit 训练管线:上半为 FLUX-Kontext 分支(GRPO 采样 G 组编辑结果),下半为 VGGT 奖励模型(anchor 替换后送入,输出 $r^D,r^P,r^T$ 与 $r^a$)。</div>
+  </div>
+</section>
+
+<section class="section" id="s4">
+  <h2><span class="num">4</span>模块一:多图联合编辑(DiT 跨图注意力)</h2>
+  <h3>4.1 为什么必须联合编辑(机制解释)</h3>
+  <p>§3.2 给出了一条硬性推理:RL 靠「探索多样输出 + 强化高分样本」工作。若编辑器逐图独立处理,$M$ 张图「碰巧」全部一致的概率实际为零——组内没有任何可强化的成功样本,优化直接失败。因此<strong>多图联合编辑能力是 RL 生效的必要前提</strong>。老一代 3D 编辑方法用 InstructPix2Pix 当 backbone:处理分辨率低 + 卷积局部性导致无法跨图交互。DiT 架构(FLUX-Kontext / Qwen-Image-Edit)把 $K$ 张图 tokenize 后沿序列维拼接 $X=\mathrm{Concat}(x^1,\dots,x^K)$,self-attention 权重天然跨图分布,跨视角交互「免费」获得。</p>
+  <div class="callout warn"><b>论文叙述 vs 发布实现的差异(源码复核发现)</b>:论文 §3.2 描述的是「$K$ 张图 token 序列拼接」的多图输入;而实际发布的 checkpoint(`exander/RL3DEdit`)是<strong>单图输入</strong>——把 9 个视角拼成一张 3×3 网格图喂给 FluxKontextPipeline(见 <code>rl3dedit/grid.py:12-28</code> 的 <code>tile_3x3</code> 与 <code>rl3dedit/pipeline.py:91-98</code>)。两种实现都成立(网格图内部同样靠全局 attention 交互),但意味着发布权重绑定 3×3 网格形态:输入必须恰好 9 视角、等尺寸、row-major 排列(<code>grid.py:18-19</code> 硬校验 9 张)。</div>
+  <h3>4.2 结构与前向流程</h3>
+  <table>
+    <tr><th>步骤</th><th>操作</th><th>张量形状</th><th>出处</th></tr>
+    <tr><td>1</td><td>9 视角拼成 3×3 网格(等尺寸 resize, LANCZOS)</td><td>$[3{\times}3{\times}512]$ ≈ 1536~1568 px 见方</td><td>grid.py:12-28</td></tr>
+    <tr><td>2</td><td>按 Kontext 分辨率桶吸附(17 个 bucket,长边 ≤1568)</td><td>$(W,H)\in$ KONTEXT_RESOLUTIONS</td><td>pipeline.py:15-20</td></tr>
+    <tr><td>3</td><td>VAE 编码 → DiT(含 LoRA)去噪</td><td>latent $[1, C, H/16, W/16]$,C=16(FLUX 规格)</td><td>pipeline.py:91-98</td></tr>
+    <tr><td>4</td><td>指令经 enhance 改写为「3×3 网格 + 3D 一致」表述</td><td>文本 token</td><td>prompt_enhance.py:26-30</td></tr>
+    <tr><td>5</td><td>VAE 解码 → 3×3 网格 → 切回 9 视角</td><td>9 × $[512{\times}512{\times}3]$</td><td>grid.py:31-42</td></tr>
+  </table>
+  <div class="figure">
+    <img src="images/2603.03143/swap.png" alt="multi-image joint editing" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图3</b>(论文 Figure 4)多图联合编辑对比:指令「交换两只猫的毛色」,FLUX-Kontext 与 Qwen-Image-Edit 成功互换,InstructPix2Pix 因无跨图交互随机变色,且须把输入缩到低分辨率造成细节丢失。</div>
+  </div>
+  <p><strong>该模块的监督信号</strong>:无直接监督——编辑器只通过 §7 的 GRPO 目标间接优化(LoRA),其 2D 编辑能力完全继承自预训练权重并由 KL 正则保护。</p>
+</section>
+
+<section class="section" id="s5">
+  <h2><span class="num">5</span>模块二:VGGT 一致性验证器(核心创新)</h2>
+  <h3>5.1 VGGT 接口与置信度来源</h3>
+  <p>VGGT 是前馈 3D 基础模型(库内精读见 <a href="3D-20250314-VGGT.html">VGGT 笔记</a>):$f\big((I_i)_{i=1}^{N}\big)=(g_i,D_i,P_i,\tau_i)_{i=1}^{N}$,输出相机参数 $g$、深度图 $D$、点图 $P$、tracking 特征 $\tau$(§3.3)。其训练时对深度/点图预测带<strong>不确定性感知置信度</strong>:</p>
+  <div class="equation">$$\mathcal{L}_{\text{geo}}=\|\mathrm{conf}_{\text{geo}}\odot(\hat{\mathrm{geo}}-\mathrm{geo})\|_{1}+\|\mathrm{conf}_{\text{geo}}\odot(\nabla\hat{\mathrm{geo}}-\nabla\mathrm{geo})\|_{1}-\alpha\,\|\log\mathrm{conf}_{\text{geo}}\|_{1}$$<span class="tag">VGGT 原文式,引自论文 §3.3</span></div>
+  <p>其中 $\mathrm{conf}_{\text{geo}}$ 含 $\mathrm{conf}_D$(深度)与 $\mathrm{conf}_P$(点图)。最后一项 $-\alpha\|\log\mathrm{conf}\|_1$ 是正则,防止置信度无脑坍缩到 0——这让置信度成为「模型自评把握」的可信读数。RL3DEdit 只用了 $g$(位姿)、$\mathrm{conf}_D$、$\mathrm{conf}_P$ 三个头,<strong>tracking 特征未用</strong>。</p>
+  <h3>5.2 置信度退化实验:为什么置信度能当一致性量尺</h3>
+  <p>论文 §3.3 做了一个「受控破坏」实验:从 3D 资产渲染 9 张一致视图,逐张替换成独立编辑(彼此不一致)的版本,观察 VGGT 深度置信度变化(100 组 9 视角数据统计):</p>
+  <ol>
+    <li>全部一致 → 置信度普遍高;</li>
+    <li>替换 1 张的背景 → 该图背景区置信度显著下降,前景人物不受影响(<strong>局部化</strong>);</li>
+    <li>再在第 2 张加眼镜 → 眼部区域置信度下降;</li>
+    <li>第 3 张把人换成钢铁侠 → 前景背景都不一致,<strong>全局低置信</strong>;</li>
+    <li>8/9 张被替换 → 虽语义上是同一场景,置信度整体非常低。</li>
+  </ol>
+  <p>定量上,平均置信度随替换比例<strong>近线性下降</strong>(Figure 5⑥)。这证明置信度是「可靠且可解释」的一致性指标——这是整个奖励设计成立的实验地基。</p>
+  <div class="figure">
+    <img src="images/2603.03143/analysis.png" alt="VGGT confidence degradation analysis" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图4</b>(论文 Figure 5)VGGT 深度置信度随 3D 一致性退化的变化:①-⑤为渐进替换可视化,⑥为 100 组数据的「平均置信度 vs 替换比例」近线性曲线。</div>
+  </div>
+  <h3>5.3 为什么 VGGT 比传统验证器抗「奖励黑客」</h3>
+  <div class="grid-2">
+    <div class="card"><h4>SfM 验证器(消融 ④ 崩溃)</h4><p>依赖稀疏特征匹配;RL 很快学会生成<strong>无纹理图</strong>——关键点提不出来,重投影误差「平凡地小」,奖励虚高,编辑质量崩坏(VIEScore 0.97,Tab.2)。</p></div>
+    <div class="card"><h4>重投影 Ph-Loss 验证器(消融 ⑤ 崩溃)</h4><p>模糊/低频图像逐像素差异天然小 → 输出糊图反而拿最低 Ph-Loss(0.065)但 VIEScore 仅 1.41;且新编辑内容无 GT 深度,warping 误差累积(S2.2)。</p></div>
+  </div>
+  <div class="callout tip"><b>VGGT 的三重优势(S5.1)</b>:(a) <strong>隐式真实世界先验</strong>——百万级真实多视角数据训练;(b) <strong>保真度条件化置信</strong>——模糊/无纹理/畸变输入天然得到低置信(Figure S2 验证),reward hacking 路径(糊图)同时被惩罚;(c) <strong>双重约束协同</strong>——同时要求几何一致与图像自然。这就是「数据驱动先验」对手工指标的降维打击。</div>
+  <div class="figure">
+    <img src="images/2603.03143/sup-ana.png" alt="VGGT confidence map visualization" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图5</b>(论文 Figure S2)置信度图可视化:①② 模糊/畸变输入 → 低置信(暗);③ 高保真区域 → 高置信(墙面纹理因一致性难度天然略低)。保证奖励有效惩罚低质输出。</div>
+  </div>
+  <p><strong>该模块的监督信号</strong>:VGGT 全程<strong>冻结</strong>,只前向打分;它本身在 VGGT 原文的大规模真实 3D 数据上预训练,不在本方法中更新。</p>
+</section>
+
+<section class="section" id="s6">
+  <h2><span class="num">6</span>模块三:奖励设计(四件套)</h2>
+  <h3>6.1 几何奖励 $r^D$ / $r^P$(置信度均值)</h3>
+  <div class="equation">$$r^{D}=\frac{1}{M}\sum_{m=1}^{M}\mathrm{mean}\big(\mathrm{conf}_{D}^{m}\big),\qquad r^{P}=\frac{1}{M}\sum_{m=1}^{M}\mathrm{mean}\big(\mathrm{conf}_{P}^{m}\big)$$<span class="tag">式 (1)</span></div>
+  <p>逐图取置信度空间均值、再对 $M$ 视角平均。深度与点图两路冗余互补。注意:<strong>不设置信度阈值</strong>,直接用连续值做奖励,梯度信号(经 GRPO 优势)平滑。</p>
+  <h3>6.2 相对位姿奖励 $r^T$</h3>
+  <div class="equation">$$r^{T}=\exp\!\left(-\frac{1}{M-1}\sum_{m=1}^{M-1}\Big(\|R_{m}^{\mathrm{rel}}-(R_{m}^{\mathrm{rel}})^{\!*}\|_{F}^{2}+\|\tilde{t}_{m}^{\mathrm{rel}}-(\tilde{t}_{m}^{\mathrm{rel}})^{\!*}\|_{2}^{2}\Big)\right)$$<span class="tag">式 (2)</span></div>
+  <p>其中 $T_m^{\mathrm{rel}}=T_{m+1}T_m^{-1}$ 为相邻视角相对变换,平移做模长归一化 $\tilde{t}=t/\|t\|_2$(消除尺度歧义,只比方向),* 号为由源资产已知相机算出的参考(GT)相对位姿。<strong>机制解释</strong>:编辑可能整体漂移绝对视角,但视角间相对关系必须保持;置信度奖励管「图之间像不像同一场景」,位姿奖励管「相机阵列还是不是原来那个阵列」——消融证明缺了它会出现细微视角漂移(§4.3,墙面细节位移)。</p>
+  <h3>6.3 Anchor 保真奖励 $r^a$(防「过度平滑坍缩」的关键)</h3>
+  <div class="equation">$$r^{a}=\exp\big(-\lambda\,\mathcal{L}_{\text{LPIPS}}(I^{\prime}_{a},\tilde{I}_{a})\big)$$<span class="tag">式 (3)</span></div>
+  <p><strong>动机</strong>:纯几何一致性在「低频、平滑」方向上更容易拿分——没有质量锚点,RL 会滑向过平滑输出(消融③:去 $r^a$ 后输出 over-smoothed,VIEScore 4.34→更低,Ph-Loss 反而变差 0.091)。<strong>做法</strong>:离线用原始 FLUX-Kontext 对每个视角做单图编辑(经验上 &gt;98% 直接可用),这些单图彼此 3D 不一致、但都在 FLUX 的高质量分布内;训练时随机抽 anchor 下标 $a$(同一 GRPO 组共享下标保证公平比较),送 VGGT 时用 $\tilde{I}_a$ 替换 $I'_a$:$I'_a$ 本身用 LPIPS 对齐 anchor(保编辑质量),其余视角在「含一张高质量参考」的集合里被优化几何一致性。<span class="uncertain">⚠️【待核实】 温度系数 $\lambda$ 数值论文未给(训练代码未开源)</span>。</p>
+  <h3>6.4 组合奖励</h3>
+  <div class="equation">$$R^{i}=w_{D}r^{D}+w_{P}r^{P}+w_{T}r^{T}+w_{a}r^{a},\quad w_D{=}w_P{=}w_T{=}w_a{=}0.25$$<span class="tag">式 (4) + §4.1</span></div>
+  <p>等权是消融后的最优折中(表 S5):几何重(0.4/0.4/0.1/0.1)→ VIEScore 掉到 4.31;质量重($w_a{=}0.7$)→ 一致性崩(Ph-Loss 0.091)。</p>
+  <div class="figure">
+    <img src="images/2603.03143/origin.png" alt="2D editing capability preservation" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图6</b>(论文 Figure 3)RL 微调前后 2D 编辑能力对比:左为可视化,右为 GEdit-Bench-EN 上的 VIEScore 定量评估——RL3DEdit 保住了 FLUX-Kontext 原有 2D 编辑保真度,说明方法「只做 3D 一致化增强,不重塑 2D 先验」。</div>
+  </div>
+</section>
+
+<section class="section" id="s7">
+  <h2><span class="num">7</span>模块四:GRPO 训练(SDE 探索)</h2>
+  <h3>7.1 从确定性 ODE 到可探索的 SDE</h3>
+  <p>FLUX 是 flow-matching 模型,推理走确定性 ODE $\mathrm{d}x_t=v_\theta(x_t,t,c)\mathrm{d}t$(式 S2),没有随机性就无法做 GRPO 组内探索。按 Flow-GRPO 的做法改写为等价 SDE:</p>
+  <div class="equation">$$\mathrm{d}x_{t}=\left(v_{\theta}(x_{t},t,c)+\frac{\sigma_{t}^{2}}{2t}\big(x_{t}+(1-t)v_{\theta}(x_{t},t,c)\big)\right)\mathrm{d}t+\sigma_{t}\,\mathrm{d}w_{t}$$<span class="tag">式 (S3)</span></div>
+  <p>噪声强度 $\sigma_t=0.8$。<strong>12 步去噪(而非前作的 6 步)</strong>:消融显示 6 步保真度不足,VGGT 无法准确评判一致性(VIEScore 3.91);20 步收益可忽略(5.28 vs 5.26)而训练推理成本大增(表 S5)。再用 MixGRPO(window size 4)加速收敛(§4.1)。</p>
+  <h3>7.2 组内相对优势与裁剪目标</h3>
+  <div class="equation">$$A^{i}=\frac{R^{i}-\mathrm{mean}(\{R^{j}\}_{j=1}^{G})}{\mathrm{std}(\{R^{j}\}_{j=1}^{G})}$$<span class="tag">式 (S4)</span></div>
+  <div class="equation">$$J(\theta)=J_{\text{clip}}(\theta)-\beta\,D_{\text{KL}}(\pi_{\theta}\|\pi_{\text{ref}})$$<span class="tag">式 (S5)</span></div>
+  <div class="equation">$$J_{\text{clip}}(\theta)=\mathbb{E}_{x}\!\left[\frac{1}{G}\sum_{i=1}^{G}\min\!\Big(\rho^{i}(\theta)\,A^{i},\;\mathrm{clip}\big(\rho^{i}(\theta),\,1{-}\epsilon,\,1{+}\epsilon\big)\,A^{i}\Big)\right],\quad \rho^{i}=\frac{\pi_{\theta}(y^{i}\mid x)}{\pi_{\text{old}}(y^{i}\mid x)}$$<span class="tag">式 (S6)</span></div>
+  <p><strong>机制解释</strong>:GRPO 不需要独立 Critic——组内 $G{=}16$ 个候选互为基线,高于组均分的被强化、低于的被抑制;clip 把单步更新幅度限制在 $[1{-}\epsilon,1{+}\epsilon]$ 防破坏性更新;KL 项把策略钉死在原始 FLUX-Kontext 附近,<strong>既防模式坍塌、又是「保住 2D 先验」的第二道保险</strong>(第一道是 anchor 奖励)。</p>
+  <h3>7.3 训练配置(§4.1 原值)</h3>
+  <table>
+    <tr><th>项</th><th>值</th><th>备注</th></tr>
+    <tr><td>基座 / 微调</td><td>FLUX.1-Kontext-dev + LoRA rank 32, alpha 32</td><td>§4.1</td></tr>
+    <tr><td>视角数 $M$ / 组大小 $G$</td><td>9 / 16</td><td>每样本探索 16 组 × 12 步推理</td></tr>
+    <tr><td>SDE 噪声 / 去噪步</td><td>0.8 / 12 步</td><td>MixGRPO window=4</td></tr>
+    <tr><td>训练数据</td><td>8 场景(IN2N/BlendedMVS/Mip-NeRF360)× 7~9 条 VLM 构造指令 = 70 prompts;每场景 18~23 组 9 视角 = 1,319 样本</td><td>9 视角环绕均匀采样保证重叠度</td></tr>
+    <tr><td>训练量 / 时长 / 硬件</td><td>1 epoch / 42 小时 / 单卡 NVIDIA RTX Pro 6000</td><td>§5 自称 "~2 days"</td></tr>
+  </table>
+  <p><strong>8 个训练场景含 Person 与 Face</strong>(表 S1):Person 场景指令含「让男子抱臂」「把陶瓷杯放进男子右手」等<strong>手部相关几何编辑</strong>;全部消融实验(Tab.2、Tab.S5)都在 200+ 样本的 face 数据集上做——人物/人脸在该方法的训练分布内,这对我们评估其人物场景适用性是加分项(见 §14)。</p>
+</section>
+
+<section class="section" id="s8">
+  <h2><span class="num">8</span>奖励函数总表(RL 方法无传统损失,奖励即损失)</h2>
+  <table>
+    <tr><th>奖励项</th><th>公式</th><th>权重</th><th>作用</th><th>消融证据</th></tr>
+    <tr><td>$r^D$ 深度置信</td><td>$\frac{1}{M}\sum_m \mathrm{mean}(\mathrm{conf}_D^m)$</td><td>0.25</td><td>多视角几何一致性(深度头)</td><td rowspan="2">去掉后 VIEScore 2.11 / Ph-Loss 0.193,严重鬼影(Tab.2①)</td></tr>
+    <tr><td>$r^P$ 点图置信</td><td>$\frac{1}{M}\sum_m \mathrm{mean}(\mathrm{conf}_P^m)$</td><td>0.25</td><td>多视角几何一致性(点图头,冗余互补)</td></tr>
+    <tr><td>$r^T$ 相对位姿</td><td>$\exp(-\frac{1}{M-1}\sum(\|R^{\mathrm{rel}}-R^{\mathrm{rel}*}\|_F^2+\|\tilde t^{\mathrm{rel}}-\tilde t^{\mathrm{rel}*}\|_2^2))$</td><td>0.25</td><td>保持相机阵列几何,防视角漂移</td><td>去掉后 4.77 / 0.131,墙面细节位移(Tab.2②)</td></tr>
+    <tr><td>$r^a$ anchor 保真</td><td>$\exp(-\lambda\,\mathcal{L}_{\text{LPIPS}}(I'_a,\tilde I_a))$</td><td>0.25</td><td>锚住 FLUX 编辑质量,防过平滑坍缩</td><td>去掉后 4.34 / 0.091,输出过平滑(Tab.2③)</td></tr>
+    <tr><td>KL 正则</td><td>$-\beta D_{\text{KL}}(\pi_\theta\|\pi_{\text{ref}})$</td><td>—</td><td>防模式坍塌,保 2D 先验</td><td>式(S5),β 未披露</td></tr>
+  </table>
+</section>
+
+<section class="section" id="s9">
+  <h2><span class="num">9</span>逻辑流程图</h2>
+  <h3>9.1 训练流程(GRPO 单步)</h3>
+  <div class="mermaid">
+flowchart TD
+    S["训练样本: 9 视角 + 指令"] --> SAMPLE["GRPO 采样: SDE(sigma=0.8, 12步)<br/>独立生成 G=16 组编辑结果"]
+    ANCHOR["离线 anchor 库:<br/>FLUX-Kontext 单图编辑(&gt;98%可用)"] --> REPLACE
+    SAMPLE --> REPLACE["随机抽 anchor 下标 a(组内共享)<br/>用 I~_a 替换 I'_a"]
+    REPLACE --> VGGT["冻结 VGGT 前向<br/>输出 conf_D / conf_P / 外参 T"]
+    VGGT --> RD["r^D 深度置信均值"]
+    VGGT --> RP["r^P 点图置信均值"]
+    VGGT --> RT["r^T 相对位姿奖励(对 GT)"]
+    REPLACE --> RA["r^a = exp(-lambda * LPIPS(I'_a, I~_a))"]
+    RD --> R["R^i = 0.25*(rD+rP+rT+ra)"]
+    RP --> R
+    RT --> R
+    RA --> R
+    R --> ADV["组内优势 A^i = (R^i - mean) / std"]
+    ADV --> UPD["J_clip + KL 正则<br/>更新 LoRA(r=32)"]
+    style VGGT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style UPD fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+  </div>
+  <h3>9.2 推理流程(单趟,~1.5 分钟)</h3>
+  <div class="mermaid">
+flowchart LR
+    A["3D 资产渲染 9 视角"] --> B["拼 3x3 网格<br/>bucket 吸附 ~1568px"]
+    C["指令 enhance 改写"] --> D
+    B --> D["RL3DEdit(FLUX-Kontext+LoRA)<br/>28 步采样, guidance 2.5(源码默认)"]
+    D --> E["切回 9 张一致编辑图"]
+    E --> F["AnySplat 前馈初始化 &lt;1s"]
+    F --> G["3DGS 微调 3000 步 ~40s<br/>(用原始 GT 位姿)"]
+    G --> H["编辑后 3D 场景 / 任意新视角渲染"]
+    style D fill:#ede9fe,stroke:#8b5cf6,color:#3b2a6d
+    style H fill:#d1fae5,stroke:#10b981,color:#064e3b
+  </div>
+  <div class="callout warn"><b>推理超参以源码为准</b>:论文未给推理采样步数;发布代码默认 <code>steps=28, guidance=2.5, seed=42</code>(<code>inference.py:47-49</code>),与训练时的 12 步 SDE 探索不同——28 步是高质量 ODE 采样。指令增强用 OpenAI 兼容 API(默认 gpt-4o-mini)或确定性模板兜底(<code>prompt_enhance.py:38-80</code>)。</div>
+</section>
+
+<section class="section" id="s10">
+  <h2><span class="num">10</span>⚙️ 工程实现细节(含源码复核)</h2>
+  <div class="callout warn"><b>开源范围声明</b>:GitHub 仓库(AMAP-ML/RL3DEdit,MIT License)2026-03-11 起只放出<strong>推理代码 + 模型权重</strong>(News: "Inference code and model weights released"),<strong>GRPO 训练代码未放出</strong>。因此训练侧超参(LoRA r=32、G=16、σ=0.8、12 步、w=0.25、42h/RTX Pro 6000)只能以论文 §4.1 为准,无法源码回查;$\beta,\epsilon,\lambda,\tau$ 四个系数论文与代码均无,标注【待核实】。本节推理侧内容均经源码逐行复核(2026-10-23, clone depth=1)。</div>
+  <h3>10.1 源码结构(全仓库仅 5 个 py 文件)</h3>
+  <table>
+    <tr><th>文件</th><th>职责</th><th>关键行</th></tr>
+    <tr><td><code>inference.py</code></td><td>CLI 入口:9 视角目录或预拼网格 → 编辑 → 切分保存</td><td>默认 <code>--steps 28 --guidance 2.5 --seed 42</code>(L47-49);9 视角按文件名排序加载(L9)</td></tr>
+    <tr><td><code>rl3dedit/pipeline.py</code></td><td>权重加载 + FluxKontextPipeline 封装</td><td>Kontext 17 个分辨率桶(L15-20);<code>from_single_file</code> 加载 BFL 单文件权重(L61-62);CPU offload 标注 "~24-32GB VRAM"(L51)</td></tr>
+    <tr><td><code>rl3dedit/grid.py</code></td><td>3×3 网格拼/切</td><td>硬校验恰好 9 张(L18-19);统一 resize 到首图尺寸(L21-23);row-major(L26-27)</td></tr>
+    <tr><td><code>rl3dedit/prompt_enhance.py</code></td><td>指令改写为「3×3 网格 + 3D 一致」表述</td><td>LLM(OpenAI 兼容, 默认 gpt-4o-mini, temperature 0.3)或模板兜底(L26-30)</td></tr>
+    <tr><td><code>requirements.txt</code></td><td>依赖:torch≥2.4, diffusers≥0.37.1, transformers≥4.44</td><td>Python 3.10 + CUDA 12.x(注释)</td></tr>
+  </table>
+  <h3>10.2 权重与依赖的落地坑</h3>
+  <ul>
+    <li><strong>权重形态</strong>:`rl3dedit-flux-kontext.safetensors` 是 BFL 单文件格式的<strong>完整 transformer</strong>(非 LoRA 外挂),VAE 与文本编码器从 `black-forest-labs/FLUX.1-Kontext-dev` 拉取(<code>pipeline.py:22-24</code>)——<strong>该仓库是 gated 的,必须先在 HF 接受协议并 login</strong>(readme L66),这是第一个落地坑。</li>
+    <li><strong>显存</strong>:readme 与代码注释给出 CPU offload 下 ~24-32GB VRAM(<code>pipeline.py:51</code>);关掉 offload(<code>--no_cpu_offload</code>)更快但更吃显存。<strong>我们的 RTX 3090(24GB)处在下限边缘,offload 下可用但速度打折</strong>。</li>
+    <li><strong>指令必须「网格化」</strong>:直接给「remove X」效果打折,需改写成 "... in the 3x3 grid ... 3D-consistent across all nine views ..."(训练分布如此,readme L103-114);不改写可用 <code>--enhance</code> 自动补。</li>
+    <li><strong>视角数硬约束</strong>:9 视角、等尺寸;少视角(如 4)官方建议复制填充到 9(S4.2),更多视角需 streaming 管线(论文列为 future work)。</li>
+  </ul>
+  <h3>10.3 资源账(论文原值汇总)</h3>
+  <table>
+    <tr><th>阶段</th><th>耗时 / 资源</th><th>出处</th></tr>
+    <tr><td>RL 训练</td><td>42 小时,单卡 RTX Pro 6000(96GB),1 epoch</td><td>§4.1</td></tr>
+    <tr><td>推理编辑(9 视角)</td><td>含在全流程 1.5 min 内;GPU 为 RTX Pro 6000</td><td>Table 1</td></tr>
+    <tr><td>AnySplat 前馈初始化</td><td>&lt;1 秒</td><td>S2.3</td></tr>
+    <tr><td>3DGS 微调</td><td>3,000 迭代,约 40 秒(默认 lr schedule)</td><td>S2.3</td></tr>
+    <tr><td>对比基线耗时</td><td>DGE 4min / GaussCtrl 12min / EditSplat 3.5min / EditSplat+FLUX 40min</td><td>Table 1</td></tr>
+  </table>
+  <h3>10.4 3DGS 重建细节(S2.3)</h3>
+  <p>9 张稀疏视角直接迭代重建极易过拟合/几何退化,故<strong>不做随机初始化</strong>:先用 AnySplat(前馈 3DGS)从 9 张编辑图一次前向得到可靠初始高斯(&lt;1s),再用官方 3DGS codebase 以传统光度损失微调 3,000 步(~40s)。相机参数用<strong>原始 GT 位姿</strong>(源资产已知,不重估)——这也是 $r^T$ 要对齐 GT 相对位姿的原因:保证编辑图的"有效相机"仍与 GT 阵列兼容,重建才能直接复用旧位姿。</p>
+</section>
+
+<section class="section" id="s11">
+  <h2><span class="num">11</span>实验结果</h2>
+  <h3>11.1 评测设置(§4.2)</h3>
+  <ul>
+    <li><strong>指标</strong>:VIEScore(GPT-4.1 打分的 VLM 指标,联合评估指令遵循与视觉质量,本文首次引入 3D 编辑);CLIP 方向相似度;Ph-Loss(相邻视角光度重投影误差,式 S7-S9,用 VGGT 深度 + GT 位姿 warp);平均编辑耗时。</li>
+    <li><strong>测试集</strong>:100 例 = 70 新视角(in-distribution)+ 16 未见指令(zero-shot 指令)+ 14 新场景(room/stump/fangzhou/kitchen,zero-shot 场景)。</li>
+    <li><strong>公平性声明</strong>:所有对比方法都需逐场景优化,70 例协议对其反而有利;后 30 例只有 RL3DEdit 是真零样本(§4.2)。</li>
+  </ul>
+  <h3>11.2 定量主表(Table 1,RTX Pro 6000 计时)</h3>
+  <table>
+    <tr><th>方法</th><th>VIEScore ↑</th><th>CLIP-dir ↑</th><th>Ph-Loss ↓</th><th>平均编辑耗时 ↓</th></tr>
+    <tr><td>DGE</td><td>2.81</td><td>0.116</td><td>0.086</td><td>4 min</td></tr>
+    <tr><td>GaussCtrl</td><td>2.37</td><td>0.096</td><td><strong>0.077</strong></td><td>12 min</td></tr>
+    <tr><td>EditSplat</td><td>2.72</td><td>0.121</td><td>0.081</td><td>3.5 min</td></tr>
+    <tr><td>EditSplat w/ FLUX-Kontext(论文复现)</td><td>3.23</td><td>0.125</td><td>0.082</td><td>40 min</td></tr>
+    <tr class="best"><td>RL3DEdit(本文)</td><td><strong>5.48</strong></td><td><strong>0.147</strong></td><td><strong>0.076</strong></td><td><strong>1.5 min</strong></td></tr>
+  </table>
+  <div class="note"><strong>数字复核</strong>:论文称 "over 2× faster than traditional pipelines"——按表值 4/1.5≈2.67×(DGE)、3.5/1.5≈2.33×(EditSplat),成立;"over 20× faster than the other FLUX-based baseline"——40/1.5≈26.7×,成立。VIEScore "5.48 vs 3.23" 与表一致。Ph-Loss 一列 GaussCtrl(0.077)与 RL3DEdit(0.076)几乎打平,论文原文把自家加粗为 best,差距仅 0.001,解读时应注意。</div>
+  <h3>11.3 分片指标与人工偏好(Table S4,25 人 user study)</h3>
+  <table>
+    <tr><th>方法</th><th>In-dist. VIEScore ↑</th><th>In-dist. 偏好率 ↑</th><th>In-dist. Ph-Loss ↓</th><th>Zero-shot VIEScore ↑</th><th>Zero-shot 偏好率 ↑</th><th>Zero-shot Ph-Loss ↓</th></tr>
+    <tr><td>DGE</td><td>2.76</td><td>8.6%</td><td>0.086</td><td>2.92</td><td>10.0%</td><td>0.085</td></tr>
+    <tr><td>GaussCtrl</td><td>2.40</td><td>4.3%</td><td><strong>0.077</strong></td><td>2.30</td><td>6.7%</td><td><strong>0.078</strong></td></tr>
+    <tr><td>EditSplat</td><td>2.62</td><td>5.7%</td><td>0.082</td><td>2.94</td><td>6.7%</td><td>0.080</td></tr>
+    <tr><td>EditSplat w/ FLUX-Kontext</td><td>3.22</td><td>10.0%</td><td>0.083</td><td>3.26</td><td>16.6%</td><td>0.079</td></tr>
+    <tr class="best"><td>RL3DEdit(本文)</td><td><strong>5.52</strong></td><td><strong>71.4%</strong></td><td><strong>0.075</strong></td><td><strong>5.40</strong></td><td><strong>60.0%</strong></td><td><strong>0.078</strong></td></tr>
+  </table>
+  <div class="figure">
+    <img src="images/2603.03143/result.png" alt="qualitative comparison" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图7</b>(论文 Figure 6)定性对比,四行依次为 添加/替换/运动/风格 编辑。Row3 运动编辑中 DGE 与 EditSplat 嘴部出伪影、GaussCtrl 改变主体身份,只有 RL3DEdit 正确;Row4 冬景转换中 EditSplat 因多视角不一致出现鬼影。</div>
+  </div>
+  <div class="figure">
+    <img src="images/2603.03143/zeroshot.png" alt="zero-shot results" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图8</b>(论文 Figure 8)零样本编辑:①②③ 为未见指令,④⑤ 为新场景。得益于 FLUX 先验被 KL 与 anchor 双重保护,泛化不掉队。</div>
+  </div>
+  <div class="figure">
+    <img src="images/2603.03143/result-supp.png" alt="additional results" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图9</b>(论文 Figure S1)更多定性对比(建议放大查看)。</div>
+  </div>
+</section>
+
+<section class="section" id="s12">
+  <h2><span class="num">12</span>消融实验</h2>
+  <h3>12.1 奖励组件与替代验证器(Table 2,均在 face 数据集 200+ 样本上训练评测)</h3>
+  <table>
+    <tr><th>配置</th><th>VIEScore ↑</th><th>Ph-Loss ↓</th><th>解读</th></tr>
+    <tr class="fail"><td>① 去掉 $(r^D,r^P)$</td><td>2.11</td><td>0.193</td><td>一致性奖励是命门:严重鬼影</td></tr>
+    <tr><td>② 去掉 $r^T$</td><td>4.77</td><td>0.131</td><td>视角阵列漂移(墙面细节位移)</td></tr>
+    <tr><td>③ 去掉 $r^a$</td><td>4.34</td><td>0.091</td><td>滑向过平滑,编辑质量掉</td></tr>
+    <tr class="fail"><td>④ 换成 SfM 奖励</td><td>0.97</td><td>0.201</td><td>reward hacking:学会输出无纹理图</td></tr>
+    <tr class="fail"><td>⑤ 换成 warping(Ph-Loss)奖励</td><td>1.41</td><td>0.065</td><td>reward hacking:糊图拿最低 Ph-Loss 但质量崩</td></tr>
+    <tr><td>⑥ backbone 换 Qwen-Image-Edit</td><td>5.43</td><td>0.079</td><td>框架可迁移,更强编辑器→更好结果</td></tr>
+    <tr class="best"><td>⑦ RL3DEdit*(face-only 训练)</td><td>5.26</td><td>0.077</td><td>参考配置</td></tr>
+  </table>
+  <p><strong>⑤ 的重要启示</strong>:把评估指标(Ph-Loss)直接当奖励会被 hack(0.065 是全场最低 Ph-Loss 却最糊)——<strong>「可微的手工指标」不等于「好的训练信号」,这正是用学习型验证器的根本动机</strong>;论文因此只在评测时用 Ph-Loss(模糊由 VIEScore 兜底),训练时用 VGGT 置信度。</p>
+  <div class="figure">
+    <img src="images/2603.03143/ablation.png" alt="ablation qualitative" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+    <div class="caption"><b>图10</b>(论文 Figure 7)消融定性:除 w/o $(r^D,r^P)$(用新渲染视角)外各变体用同一视角;w/o $r^T$ 红虚线标出相对原图的细微视角漂移。</div>
+  </div>
+  <h3>12.2 设计细节消融(Table S5,face 数据集)</h3>
+  <table>
+    <tr><th>维度</th><th>配置</th><th>VIEScore ↑</th><th>Ph-Loss ↓</th><th>结论</th></tr>
+    <tr><td rowspan="2">anchor 选择</td><td>固定第 1 视角</td><td>4.54</td><td>0.087</td><td rowspan="2">随机 anchor 让所有视角均匀学到编辑先验</td></tr>
+    <tr class="best"><td>随机(默认)</td><td>5.26</td><td>0.077</td></tr>
+    <tr><td rowspan="3">去噪步数</td><td>6 步</td><td>3.91</td><td>0.093</td><td rowspan="3">6 步保真度不足,VGGT 判不准;20 步收益可忽略</td></tr>
+    <tr class="best"><td>12 步(默认)</td><td>5.26</td><td>0.077</td></tr>
+    <tr><td>20 步</td><td>5.28</td><td>0.078</td></tr>
+    <tr><td rowspan="3">奖励权重</td><td>几何重($w_{D,P}{=}0.4$)</td><td>4.31</td><td>0.076</td><td rowspan="3">几何过重损细节,质量过重崩一致性;等权最优</td></tr>
+    <tr><td>质量重($w_a{=}0.7$)</td><td>3.97</td><td>0.091</td></tr>
+    <tr class="best"><td>等权 0.25(默认)</td><td>5.26</td><td>0.077</td></tr>
+  </table>
+</section>
+
+<section class="section" id="s13">
+  <h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+  <h3>13.1 横向对比表(缺项标 —,非论文来源的标注)</h3>
+  <table>
+    <tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>关键指标</th><th>开源</th></tr>
+    <tr><td>DGE</td><td>2024<span class="uncertain">【待核实】</span></td><td>多视角 + 指令</td><td>3DGS</td><td>跨视角注意力传播 + 逐场景优化</td><td>—(免训练,逐场景优化)</td><td>—(每场景优化)</td><td>4 min</td><td>VIEScore 2.81 / Ph-Loss 0.086</td><td>是</td></tr>
+    <tr><td>GaussCtrl</td><td>2024<span class="uncertain">【待核实】</span></td><td>多视角 + 深度条件</td><td>3DGS</td><td>深度引导注意力 + ControlNet</td><td>—(逐场景)</td><td>—</td><td>12 min</td><td>2.37 / 0.077</td><td>是</td></tr>
+    <tr><td>EditSplat</td><td>2025<span class="uncertain">【待核实】</span></td><td>多视角 + 指令</td><td>3DGS</td><td>Multi-view Fusion Guidance(顺序融合)</td><td>—(逐场景)</td><td>—</td><td>3.5 min(原 backbone)/ 40 min(换 FLUX)</td><td>2.72 / 0.081(原);3.23 / 0.082(FLUX 版)</td><td>是</td></tr>
+    <tr><td>Tinker</td><td>2026</td><td>少视角(1-2 张)+ 指令</td><td>多视角图 / 3D</td><td>深度图引导 + 视频模型管线(SFT)</td><td>~25K 成对样本(§2.2)</td><td>—</td><td>—</td><td>论文未直接比;被指「只能保几何编辑」</td><td>—<span class="uncertain">【待核实】</span></td></tr>
+    <tr class="best"><td>RL3DEdit</td><td>2026</td><td>9 视角(3×3 网格)+ 指令</td><td>3DGS(AnySplat 初始化)</td><td>RL(GRPO)+ VGGT 验证器,无配对数据</td><td>70 指令 / 1,319 样本</td><td>42h(RTX Pro 6000)</td><td><strong>1.5 min</strong>(零逐场景优化)</td><td><strong>5.48 / 0.076</strong></td><td>推理代码+权重(训练代码未放)</td></tr>
+  </table>
+  <h3>13.2 对比结论(机制层面,非罗列数字)</h3>
+  <ul>
+    <li><strong>为什么 DGE(注意力传播)弱</strong>:注意力重投影在几何不连续处累积对齐误差,且注意力操纵在 2D 编辑史上已被数据监督路线淘汰——RL3DEdit 用「学习型验证器 + RL」等于把「数据监督」这条路在 3D 侧打通了,这是代际差。</li>
+    <li><strong>为什么 GaussCtrl(深度条件)Ph-Loss 低但 VIEScore 差</strong>:深度锁死几何 → 一致性天然好(0.077),但做不了几何变化编辑,指令遵循崩(2.37)。说明 Ph-Loss 单指标会误导,必须联合质量指标看。</li>
+    <li><strong>为什么 EditSplat 换 FLUX 后质量升(3.23)但耗时爆到 40min</strong>:顺序 MFG 每视角都要跑完整扩散引导,backbone 越强越慢;RL3DEdit 把「逐场景优化」变成「训练一次、推理单趟」,是 26.7× 加速的来源。</li>
+    <li><strong>为什么比 Tinker 省 95% 数据</strong>:SFT 需要「输入-一致输出」配对;RL 只需要可打分的验证器。数据稀缺场景的范式解法。</li>
+  </ul>
+  <h3>13.3 演进定位</h3>
+  <table>
+    <tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+    <tr><td>SDS / 迭代优化</td><td>IN2N 系</td><td>2D 扩散先验</td><td>模糊、过平滑、慢</td></tr>
+    <tr><td>几何条件引导</td><td>GaussCtrl、Tinker</td><td>源深度</td><td>锁死几何,不能做形变编辑</td></tr>
+    <tr><td>注意力传播</td><td>DGE</td><td>跨视角注意力</td><td>细粒度一致性无保证</td></tr>
+    <tr><td>多视角融合引导</td><td>EditSplat</td><td>深度融合 + CFG 推广</td><td>顺序优化慢;指令难量化时出伪影</td></tr>
+    <tr class="best"><td>RL + 基础模型验证器</td><td><strong>RL3DEdit</strong></td><td>VGGT 3D 先验(验证侧)</td><td>视角数/分辨率受 backbone token 预算约束;极端非刚性形变失败</td></tr>
+  </table>
+  <p>库内相关笔记:验证器本体 <a href="3D-20250314-VGGT.html">VGGT</a> 与其加速版 <a href="3D-20260514-VGGT-Omega.html">VGGT-Omega</a>;初始化器 AnySplat 所属的前馈 3DGS 脉络见 <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a> 与 <a href="3D-20250630-GaVS.html">GaVS</a>;3DGS 基础见 <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a>。与 EVA-Gaussian(<a href="3D-20241002-EVA-Gaussian.html">笔记</a>)的差异:EVA 是「前馈生成高斯」解决重建效率,RL3DEdit 是「RL 微调编辑器」解决编辑一致性,两者都把「难生成、易验证/易初始化」的不对称性换成了工程收益。</p>
+</section>
+
+<section class="section" id="s14">
+  <h2><span class="num">14</span>🎯 应用场景与落地适配性(含手部微动问题)</h2>
+  <h3>14.1 它解决的是哪一类问题</h3>
+  <p>RL3DEdit 的作用域是「<strong>已有一致的 3D 资产 → 文本驱动编辑 → 得到一致的新资产</strong>」。适用:AR/VR 场景换风格/换材质/增删物体、数字人外观编辑(换衣服/加眼镜/换发型)、主体替换。不适用:从带噪采集数据做重建——<strong>它假设输入多视角天然一致(从资产渲染),不处理输入本身不一致的情形</strong>。</p>
+  <h3>14.2 正面回答:能否搞定人物手部微动导致的虚影?</h3>
+  <div class="callout red"><b>结论:不能直接解决。</b>手部微动虚影是<strong>采集阶段</strong>问题——同一个人在手部姿势不同的时刻被多机位/多帧拍下,输入视角天然互不一致,3DGS 把这种不一致拟合成漂浮物与鬼影(机制详见库内 <a href="3D-20261012-手部微动重建解决方案.html">《手部微动重建解决方案》</a> §1)。RL3DEdit 是编辑工具,其全部一致性能力建立在「输入已一致」的前提上,对采集不一致没有任何直接作用。</div>
+  <p>但这篇论文有三点可迁移价值,按可用性排序:</p>
+  <div class="grid-3">
+    <div class="card"><h4>① VGGT 置信度 = 现成的不一致诊断器(可直接用)</h4><p>论文 Figure 5 证明置信度对跨视角不一致近线性敏感、且能局部化到区域。我们的 vggt_human 链路本就有 VGGT(-Omega)——把采集帧直接喂进去,<strong>手部区域置信度低的帧就是微动重灾区</strong>,可做数据体检量化指标与掩码降权依据。零训练成本,与《手部微动》笔记 Phase 0「数据与基线体检」直接对上。</p></div>
+    <div class="card"><h4>② 「编辑归一化」补救思路(激进,【推测】)</h4><p><span class="uncertain">⚠️【推测】 理论上可用其 motion-edit 能力(训练集含「抱臂」「把杯子放进右手」等手部几何指令)把不同手势的视角统一编辑到 canonical 手势再重建</span>。三重障碍:发布权重只支持 9 视角 × ~512px;论文 §5 自认大幅非刚性形变失败;且编辑会改写真实手部内容,数字人场景下保真受损。只适合作为坏数据的兜底实验,不是正路。</p></div>
+    <div class="card"><h4>③ GRPO+VGGT 奖励框架(中期借鉴)</h4><p>若要训练「修复不一致采集数据」的专用模型,这套奖励设计(置信度 + 相对位姿 + anchor)可直接复用,训练成本单卡 42h 量级可接受。但属自研训练,与当前 S4 主线(运动基/形变建模)相比优先级低。</p></div>
+  </div>
+  <h3>14.3 与我们 pipeline 的适配判断</h3>
+  <table>
+    <tr><th>维度</th><th>判断</th></tr>
+    <tr><td>能否进 vggt_human 主线</td><td>否(编辑工具,非重建模块);其验证器思路可进「数据体检」环节</td></tr>
+    <tr><td>显存门槛</td><td>推理 CPU offload ~24-32GB(readme/pipeline.py:51),3090 在下限可用;训练 RTX Pro 6000 96GB × 42h,本地不可复现训练</td></tr>
+    <tr><td>数据成本</td><td>推理零成本;自训练需 8 场景级 3D 资产 + VLM 造指令</td></tr>
+    <tr><td>直接可用产出</td><td>VGGT 置信度诊断(复用现有 VGGT-Omega 即可);数字人资产的文本编辑 demo</td></tr>
+  </table>
+</section>
+
+<section class="section" id="s15">
+  <h2><span class="num">15</span>可改进方向分析</h2>
+  <h3>15.1 方法层面</h3>
+  <div class="grid-3">
+    <div class="card"><h4>[高优先级] 9 视角硬编码</h4><p>源码 <code>grid.py:9</code> <code>GRID = 3</code> 写死,权重绑定 3×3 网格形态;论文也把「更多视角需 streaming 管线」列为 future work。<strong>建议</strong>:训练时随机网格布局(2×2/3×3/4×4 混合)或改用 token 拼接式多图输入,解耦网格先验。</p></div>
+    <div class="card"><h4>[中优先级] $r^T$ 依赖 GT 位姿</h4><p>相对位姿奖励的参考 $(T^{\mathrm{rel}})^*$ 来自源资产 GT 相机——对无 GT 位姿的 in-the-wild 编辑(如随手拍照片组),该奖励项无法计算,只剩置信度奖励。<strong>建议</strong>:用源图自身的 VGGT 位姿估计当伪 GT(论文未讨论此退化路径)。</p></div>
+    <div class="card"><h4>[中优先级] anchor 单点依赖</h4><p>每个样本只锚 1 个视角,anchor 质量完全依赖离线 FLUX 单图编辑(&gt;98% 可用意味着 ~2% 坏 anchor 无过滤指标兜底)。<strong>建议</strong>:多 anchor 或对 anchor 本身加 VLM 质检分。</p></div>
+  </div>
+  <h3>15.2 数据与评估</h3>
+  <div class="grid-3">
+    <div class="card"><h4>[中优先级] 训练规模小</h4><p>仅 8 场景 / 70 指令;消融甚至只在 face 单场景 200+ 样本上做——组件结论的外推性有限(论文自承 "due to computational constraints")。</p></div>
+    <div class="card"><h4>[中优先级] 评估无方差报告</h4><p>Ph-Loss 与 GaussCtrl 差距仅 0.001(0.076 vs 0.077),未给多次运行方差或显著性检验;VIEScore 依赖 GPT-4.1,存在 VLM 偏置。</p></div>
+    <div class="card"><h4>[低优先级] 无动态/时序评估</h4><p>只做静态场景编辑;编辑后场景做动画/形变的时序一致性完全未涉及。</p></div>
+  </div>
+  <h3>15.3 工程实用性</h3>
+  <div class="grid-3">
+    <div class="card"><h4>[高优先级] 训练代码未开源</h4><p>只放出推理代码 + 权重(2026-03-11 News);$\beta,\epsilon,\lambda,\tau$ 四个关键系数无从查起,论文结论不可完整复现。</p></div>
+    <div class="card"><h4>[中优先级] 单视角分辨率天花板 ~512px</h4><p>Kontext bucket 长边 ≤1568,3×3 分格后每视角 ~512px——人脸/手部等细节敏感场景直接受限,这也是为什么它当前更适合「场景级」而非「特写级」编辑。</p></div>
+    <div class="card"><h4>[低优先级] gated 依赖</h4><p>VAE/文本编码器依赖 FLUX.1-Kontext-dev(gated),商业使用受 FLUX dev 许可约束。</p></div>
+  </div>
+  <div class="callout key"><b>个人认为最关键的三点</b>:① 训练代码与四个系数不开源,复现与二次训练被卡死;② 9×512px 的输入规格决定它现阶段进不了人脸/手部特写级管线;③ $r^T$ 对 GT 位姿的依赖限制了它向「无位姿野数据」场景的推广——这三点恰好也是把该框架迁移到「采集数据修复」时必须先行解决的问题。</div>
+</section>
+
+<section class="section" id="s16">
+  <h2><span class="num">16</span>总结与演进定位 + 研究团队</h2>
+  <h3>16.1 总结</h3>
+  <p>RL3DEdit 的核心贡献不在某个模块的新颖性,而在一个<strong>范式判断</strong>:3D 一致性「验证易、生成难」,因此与其苦等配对数据做 SFT,不如用冻结的 3D 基础模型(VGGT)当裁判、用 GRPO 把 2D 编辑器先验锚定到一致流形上。四件套奖励(深度/点图置信 + 相对位姿 + anchor 保真)里,anchor 与 KL 负责「不变蠢」,VGGT 置信度负责「变一致」,消融证明缺一不可;而 SfM/warping 两组对照实验则给全领域上了一课:<strong>手工一致性指标在 RL 下必被 reward-hack,学习型验证器才是正解</strong>。对工程界的直接礼物是「VGGT 置信度作为现成多视角一致性量尺」这一可独立拆用的工具。</p>
+  <h3>16.2 研究团队</h3>
+  <ul>
+    <li><strong>Jiyuan Wang</strong>(一作,BJTU,实习于高德/NTU 期间完成)——同作者一作方向含 VGGT 系工作;<strong>Chunyu Lin</strong>(通讯,BJTU)、<strong>Guosheng Lin</strong>(通讯,NTU);<strong>Lei Sun</strong>(项目负责,高德)。</li>
+    <li>机构:北京交通大学 / 高德地图·阿里巴巴集团 / 南洋理工大学 / 重庆邮电大学。基金:NSFC 62573039、U2441242。</li>
+  </ul>
+  <h3>16.3 资源链接</h3>
+  <div class="links">
+    <a href="https://arxiv.org/abs/2603.03143" target="_blank">📄 arXiv 2603.03143(v2)</a>
+    <a href="https://amap-ml.github.io/RL3DEdit/" target="_blank">🌐 项目主页</a>
+    <a href="https://github.com/AMAP-ML/RL3DEdit" target="_blank">💻 GitHub(推理代码+权重,MIT)</a>
+    <a href="https://huggingface.co/exander/RL3DEdit" target="_blank">🤗 exander/RL3DEdit</a>
+  </div>
+  <p class="refs" style="margin-top:14px">库内交叉引用:<a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20260514-VGGT-Omega.html">VGGT-Omega</a> · <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建调研(AnySplat 脉络)</a> · <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础综述</a> · <a href="3D-20250630-GaVS.html">GaVS</a> · <a href="3D-20241002-EVA-Gaussian.html">EVA-Gaussian</a> · <a href="3D-20261012-手部微动重建解决方案.html">手部微动重建解决方案</a></p>
+</section>
+
+<div class="footer">
+  <p>RL3DEdit(arXiv 2603.03143v2)深度调研笔记 · 生成于 2026-10-23 · 遵循 media_paper 知识库统一格式</p>
+  <p>正文与附录全文经一手通读核对;推理代码经源码复核(训练代码未开源,相关超参以论文 §4.1 为准并注明);所有数字均标注原文出处</p>
+</div>
+
+</div>
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

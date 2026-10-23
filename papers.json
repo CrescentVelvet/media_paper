@@ -4740,6 +4740,71 @@
           "text": "🏠 项目主页"
         }
       ]
+    },
+    {
+      "title": "RL3DEdit:用 VGGT 当 RL 裁判,把 2D 编辑器锚定到三维一致流形",
+      "meta": [
+        "📄 arXiv: 2603.03143",
+        "📅 2026-03-03 (v2 2026-06-28)",
+        "🏢 BJTU / 高德·阿里 / NTU / CQUPT",
+        "🎓 ECCV 2026",
+        "📑 cs.CV"
+      ],
+      "tags": [
+        "3D 编辑",
+        "GRPO",
+        "VGGT 置信度奖励",
+        "FLUX-Kontext",
+        "LoRA",
+        "多视角一致性",
+        "3DGS"
+      ],
+      "summary": "把「生成多视角一致难、验证一致易」的不对称性变成范式:冻结 VGGT 当 RL 裁判(深度/点图置信度 + 相对位姿 + anchor 保真四件套奖励),用 GRPO 在 FLUX-Kontext 上做 LoRA 微调,仅用 70 指令 / 1,319 样本(为 Tinker 的 5%)让 2D 编辑器单趟输出 9 视角一致编辑图,再经 AnySplat 初始化 + 3DGS 微调 3000 步得到编辑后场景,全流程 <strong>1.5 分钟</strong>,VIEScore <strong>5.48</strong>(最强基线 3.23)。SfM/warping 对照实验证明手工一致性指标必被 reward-hack。笔记含源码复核(仅推理代码开源)与「手部微动虚影」适配分析:不能直接解决,但 VGGT 置信度可零成本迁移为采集数据不一致诊断器。",
+      "links": [
+        {
+          "href": "3D-20260303-RL3DEdit.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2603.03143",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://amap-ml.github.io/RL3DEdit/",
+          "text": "🏠 项目页"
+        },
+        {
+          "href": "https://github.com/AMAP-ML/RL3DEdit",
+          "text": "💻 GitHub(仅推理)"
+        }
+      ],
+      "file": "3D-20260303-RL3DEdit.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "几何与时序一致性",
+        "3D 生成",
+        "人脸手部细节与增强"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16"
+      ]
     }
   ]
 }
