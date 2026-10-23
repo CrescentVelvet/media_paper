@@ -5054,6 +5054,71 @@
         "s17",
         "s18"
       ]
+    },
+    {
+      "title": "InfiniSplat v2: 冻结几何分支+GT位姿对齐+大角度监督的前馈 3DGS",
+      "meta": [
+        "📄 arXiv: 2610.20341",
+        "📅 2026-10-14",
+        "🏢 浙江大学 / Hello TransTech / 深圳大学 / Causa Robotics",
+        "✅ 开源(推理代码+权重;训练未开源)"
+      ],
+      "tags": [
+        "3DGS",
+        "前馈重建",
+        "Depth Anything 3",
+        "冻结几何分支",
+        "大角度监督",
+        "渲染反馈精修",
+        "pose-free"
+      ],
+      "summary": "分析前馈 3DGS 属性学习的退化机制并给三剂药:冻结 DA3 几何分支(阻断位置补偿属性的旁路)、训练用 Umeyama 尺度对齐的 GT 相机反投影、大角度目标视角监督(最小光轴角均值 12.34°→17.97°)。六数据集均值下 pose-conditioned LPIPS 较最强 baseline(ReSplat)降 <strong>25.8%</strong>、DISTS 较 WorldMirror 2.0 降 <strong>32.9%</strong>(均经手算复核);发现纯重建监督的 opacity 自学会抑制几何不一致点(0.01 剪枝命中 51.8% 坏点仅伤 7.5% 总点)。笔记含推理源码级验证(file:line)、发布包无训练代码/无 refiner 的宣称-实现差异清单,以及 PSNR 并非全面 SOTA 的边界复核。",
+      "links": [
+        {
+          "href": "3D-20261014-InfiniSplat-v2.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2610.20341",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://zju3dv.github.io/InfiniSplat2/",
+          "text": "🌐 项目主页"
+        },
+        {
+          "href": "https://github.com/zju3dv/InfiniSplat",
+          "text": "💻 GitHub"
+        }
+      ],
+      "file": "3D-20261014-InfiniSplat-v2.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "前馈式大重建模型",
+        "稀疏与少视角重建"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18"
+      ]
     }
   ]
 }

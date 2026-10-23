@@ -419,7 +419,7 @@ flowchart LR
 <div class="callout">
 <h4>结果与局限</h4>
 <p>六数据集均值（Tab.1/3/4）：pose-conditioned 下 LPIPS 较最强基线降 <strong>25.8%</strong>、DISTS 降 <strong>32.9%</strong>；pose-free 下较 WorldMirror 2.0 降 19.5% / 30.7%。消融显示<strong>冻结几何分支</strong>优于微调（DTU LPIPS 降 23.2%）、GT 相机反投影优于预测相机（DTU LPIPS 降 36.1%）。<br>
-局限（原文附录 C）：固定中心无法纠正严重几何错误；像素对齐预测仍产生冗余；输入覆盖有限时未观测区域出现空洞。<strong>代码/权重链接原文未给出</strong>，仅项目页 <a href="https://zju3dv.github.io/InfiniSplat2/" target="_blank">zju3dv.github.io/InfiniSplat2</a>。</p>
+局限（原文附录 C）：固定中心无法纠正严重几何错误；像素对齐预测仍产生冗余；输入覆盖有限时未观测区域出现空洞。<strong>代码与权重已放出</strong>(2026-10-23 核实:推理包 <a href="https://github.com/zju3dv/InfiniSplat" target="_blank">zju3dv/InfiniSplat</a> 的 <code>InfiniSplat_v2/</code> 目录 + HF 权重 Edisoneh/InfiniSplat-v2;<strong>但训练代码未开源</strong>,且发布包不含三步 refinement 的实现);项目页 <a href="https://zju3dv.github.io/InfiniSplat2/" target="_blank">zju3dv.github.io/InfiniSplat2</a>。精读见 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2 笔记</a>。</p>
 </div>
 
 <h3>4.2 迭代精修:DeltaSplat</h3>
@@ -903,7 +903,7 @@ flowchart LR
 <h3>9.1 资源账（Reality）</h3>
 <table>
   <tr><th>方法</th><th>训练侧</th><th>推理侧</th><th>代码 / 权重</th><th>落地难度</th></tr>
-  <tr><td><strong>InfiniSplat v2</strong></td><td>大规模多视数据，两阶段训练</td><td>前馈，实时级</td><td>—</td><td>难以复现（数据未开源）</td></tr>
+  <tr><td><strong>InfiniSplat v2</strong></td><td>大规模多视数据，两阶段训练</td><td>前馈，实时级</td><td>推理代码+权重（训练闭源）</td><td>推理可用；难以复现训练（代码与 Raw3D 数据均未开源）</td></tr>
   <tr><td><strong>DeltaSplat</strong></td><td>视频序列增量训练</td><td>增量前向，省算力</td><td>—</td><td>中</td></tr>
   <tr><td><strong>DensiTok</strong></td><td>tokenizer 预训练 + 下游生成</td><td>插件式，接生成模型</td><td>—</td><td>中（作为组件用）</td></tr>
   <tr><td><strong>Tele360</strong></td><td>DNA-Rendering（3,126 scans + ~1,000 多视视频）· 8×A100 · 300K 步</td><td class="best">~35 ms/帧 · ~20 GB</td><td>未声明</td><td>高（需 4~6 路 2K 同步相机）</td></tr>

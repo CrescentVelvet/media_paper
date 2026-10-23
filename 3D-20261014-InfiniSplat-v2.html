@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InfiniSplat v2:冻结几何分支 + GT 位姿对齐 + 大角度监督,前馈 3DGS 感知误差再降 25.8%/32.9%</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2610.20341 · 2026-10-14 · 📊 deep</span>
+    <h1>InfiniSplat v2:冻结几何分支 + GT 位姿对齐 + 大角度监督,前馈 3DGS 感知误差再降 25.8%/32.9%</h1>
+    <div class="subtitle">InfiniSplat v2: Analyzing and Improving Feed-Forward 3DGS from Any Views</div>
+    <div class="authors">Yongzhen Hu* · Hao Yu* · Jiawei Wang · Xianming Zeng · Jianyun Xu · Xingliang Liu · Ruizhen Hu · Xiaowei Zhou · Hujun Bao · Sida Peng(通讯)</div>
+    <div class="org">浙江大学 · Hello TransTech · 深圳大学 · Causa Robotics</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2610.20341" target="_blank">📄 arXiv</a>
+      <a href="https://zju3dv.github.io/InfiniSplat2/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/zju3dv/InfiniSplat" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/spaces/Edisoneh/InfiniSplat2" target="_blank">🤗 HF Demo</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 comments 仅为 "21 pages. Project page: ...",<b>未标注会议</b>,按库规范不加会议 badge。代码与 v1 同仓(<code>zju3dv/InfiniSplat</code> 的 <code>InfiniSplat_v2/</code> 目录),已开源——注意库内综述 <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a> 写作时(2026-10-15)代码尚未放出,其"代码/权重链接原文未给出"的记述已被本笔记过时化。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:双分支架构(冻结几何分支)</a></li>
+    <li><a href="#s5">模块二:Scale-aligned GT 相机反投影</a></li>
+    <li><a href="#s6">模块三:大角度目标视角监督</a></li>
+    <li><a href="#s7">模块四:渲染反馈精修 Refiner</a></li>
+    <li><a href="#s8">关键发现:opacity 几何一致性诊断</a></li>
+    <li><a href="#s9">损失函数总表</a></li>
+    <li><a href="#s10">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>前馈式 3DGS 直接从输入图像构建可渲染场景,但在预测几何之上学习 Gaussian 属性、并在大视角变化下保持渲染质量仍然困难。InfiniSplat v2 把它拆成三个可独立验证的问题并各给一剂药:<b>① 冻结几何分支</b>(DA3 权重,几何与属性预测解耦,阻断"移动点位置补偿属性误差"的退化通路);<b>② 训练时用尺度对齐的 GT 相机位姿反投影</b>(Umeyama 只取尺度),消除预测位姿误差引入的相机诱导残差;<b>③ 大角度目标视角监督</b>(按目标光轴与输入光轴最小夹角排序分池,0.7/0.3 概率采样),让 Gaussian 形状在多方向投影下被充分约束。同一训练模型同时覆盖 pose-conditioned 与 pose-free 两种设置。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>在 DA3 系前馈重建范式上做了"冻结几何 + GT 位姿对齐 + 大角度监督"三项架构/训练改进,六数据集均值下 pose-conditioned 的 mean LPIPS 较最强 baseline(ReSplat)降 <b>25.8%</b>、mean DISTS 较最强 baseline(WorldMirror 2.0)降 <b>32.9%</b>(均经本笔记按表 1 原始值手算复核一致);并发现<b>仅靠图像重建监督学到的 opacity 会选择性抑制跨视角几何不一致点</b>——0.01 阈值剪枝可移除 51.8% 的不一致点而只伤 7.5% 的总点数、保住 93.3% 的表面一致点。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">-25.8%</div><div class="l">pose-conditioned mean LPIPS vs ReSplat(0.2472 vs 0.3333,表 1,手算 25.83%)</div></div>
+  <div class="stat"><div class="v">-32.9%</div><div class="l">pose-conditioned mean DISTS vs WorldMirror 2.0(0.1163 vs 0.1734,表 1,手算 32.93%)</div></div>
+  <div class="stat"><div class="v">6 数据集</div><div class="l">DL3DV / ETH3D / NRGBD / Mip-NeRF 360 / RE10K / DTU,N=4/8/16 输入视角</div></div>
+  <div class="stat"><div class="v">0.564 s</div><div class="l">前馈延迟下限(378×280、8 视角、单 H20,表 9);1022×756 为 5.619 s</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2610.20341/teaser_srgb.png" loading="lazy" alt="InfiniSplat v2 teaser:从点云到高斯场景">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>从点云到 Gaussian 场景。</b>InfiniSplat v2 保留几何基础模型预测的点位置,只学习 Gaussian 属性。左:输入视角、点云与对应 Gaussian 渲染(橙框为放大区域);右:更多点云→Gaussian 场景对比。注意论文自己承认点云存在跨视角不一致的漂浮簇(§1),本文的应对是"位置不动、属性吸收"。</div>
+</div>
+
+<h3>论文自述的三条贡献(§1)</h3>
+<ol>
+  <li><b>方法</b>:面向任意输入视角的前馈 Gaussian 重建——冻结几何分支解耦几何/属性预测,训练用 GT 相机位姿对齐预测 Gaussians,采用大角度目标视角监督。</li>
+  <li><b>实验</b>:六数据集、pose-conditioned 与 pose-free 双设置评测,同一训练模型的前馈输出在两种设置下均取得受评方法中最低的 mean LPIPS 与 DISTS。</li>
+  <li><b>发现</b>:仅以图像重建监督学习的 opacity 会选择性抑制跨视角几何不一致点的渲染贡献(§4.3 + §B.4 的 Hypersim GT 深度诊断)。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ SOTA 宣称的边界(本笔记复核):</b>论文的 "state-of-the-art" <b>仅指 LPIPS / DISTS 两项感知指标</b>。PSNR 上 pose-conditioned 的 ReSplat(20.9139 dB)仍高于 Ours(20.2824 dB),只有加三步 refinement 的 Ours*(20.9334 dB)才以 0.02 dB 反超(附录表 4)。即:v2 用感知质量换了一点点像素级保真,选型时要看下游在意哪个。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>前馈 Gaussian 重建(pixelSplat → MVSplat → GS-LRM → NoPoSplat → DA3-GS / AnySplat / WorldMirror 一脉)已经能从若干张图直接吐出 3DGS 场景。几何基础模型(DUSt3R / MASt3R / VGGT / DA3)提供的深度+相机预测,经反投影就是一个"整体几何连贯、但含跨视角不一致漂浮簇"的点云(图 1)。<b>问题不在几何够不够好的绝对水平,而在:属性学习环节会反过来被几何噪声带歪,或反过来去"修"几何、越修越坏。</b></p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>失败模式 ①:几何与属性联合优化导致几何退化</h4>
+    <p>DA3-GS 这类方法让几何 backbone 与 Gaussian head 一起被渲染损失驱动。作者的分析(§3.2、消融表 2 w/o G)发现:联合优化时,<b>网络会移动点位置去补偿属性误差</b>——渲染指标短期变好,几何却退化(深度畸变、结构漂移)。冻结几何分支后 ETH3D LPIPS 从 0.5204 降到 0.4339(-16.6%)、DTU 从 0.2695 降到 0.2070(-23.2%)。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ②:预测位姿的"相机诱导残差"</h4>
+    <p>若训练时用预测相机反投影建点、却用 GT 目标视角监督渲染,位姿误差会直接变成监督信号里的系统性错位(§3.2)。消融 w/o C(训练改用预测相机)在 DTU 上 LPIPS 从 0.2070 恶化到 0.3237(-36.1% 的差距)。这是"同一模型既要 pose-free 又要 pose-conditioned"时最容易踩的坑。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ③:近输入视角监督约束不足</h4>
+    <p>若目标视角总在输入视角附近(local sampling,最小夹角均值仅 12.34°),Gaussian 的 scale/rotation 只在一个方向被投影约束,大角度外推时形状露馅(模糊、拖影)。换大角度监督(均值 17.97°)后,消融显示 ETH3D/DTU 双指标同步改善(§4.3, w/o V 对照)。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>几何基础模型的点云"位置可以信、逐点可靠性不能全信"。那就把两者解耦:<b>位置全程固定(不预测 offset、不微调几何)</b>,把全部学习能力集中到属性上;再借助一个副产物发现——纯重建监督下的 opacity 本身就学会了给几何不一致点打低分——用一把 0.01 的剪枝刀把"信不过的点"静默掉。几何缺陷靠 opacity 吸收而不是靠位置修补,这是 v2 相对 v1(表面对齐 support 采样 + 隐式解码)与 DA3-GS(联合优化)的路线分歧点。
+</div>
+
+<h3>与 v1(InfiniSplat, arXiv 2608.02437, SIGGRAPH Asia 2026 Journal Track)的关系</h3>
+<p>v1 是<b>单图</b>前馈 3DGS:几何引导的 support 采样 + query 条件隐式 Gaussian 解码,主打大基线单目新视角合成。v2 转为<b>任意多视角</b>(N=4~16 评测,训练中 N∈{4,...,12}),放弃了 v1 的隐式解码路线,改为"DA3 冻结几何 + DPT 属性头 + 学习式 refinement"——两者共享"让 Gaussian 排布贴合几何而非像素网格"的思想,但 v2 更激进:<b>位置直接锁死为几何模型输出,只做属性学习</b>。v2 作者与 v1 高度重合(前三作者 Yongzhen Hu / Hao Yu / Jiawei Wang 均为 v1 作者,机构从 UDeer.ai 换成 Hello TransTech)。</p>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>3.1 输入 / 输出定义</h3>
+<ul>
+  <li><b>输入</b>:$N$ 张 RGB 图像 $\mathcal{I}_{\mathcal{C}}=\{\mathbf{I}_{i}\}_{i\in\mathcal{C}}$,可选位姿条件 $\mathbf{Q}_{\mathcal{C}}$(pose-free 时 $\mathbf{Q}_{\mathcal{C}}=\emptyset$)。</li>
+  <li><b>输出</b>:$M$ 个 Gaussians 的场景 $\mathcal{G}=\{(\bm{\mu}_{m},\bm{\xi}_{m})\}_{m=1}^{M}$;中心 $\bm{\mu}_m\in\mathbb{R}^{3}$ 全程固定,属性 $\bm{\xi}_{m}=(\alpha_{m},\mathbf{s}_{m},\mathbf{q}_{m},\mathbf{c}_{m})$ 可学习/可精修(opacity、三轴 scale、rotation、零阶 SH 颜色)。</li>
+  <li><b>渲染</b>:标准 3DGS 光栅化 $\widehat{\mathbf{I}}=\mathcal{R}(\mathcal{G};\bm{\Pi})$,相机 $\bm{\Pi}=(\mathbf{K},\mathbf{P})$,代码用 gsplat(eps2d $=10^{-2}$,§A.2)。</li>
+</ul>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状/取值</th></tr>
+<tr><td>$\mathcal{C}$ / $\mathcal{T}$</td><td>输入视角集合 / 采样目标视角集合</td><td>$|\mathcal{T}|=4$(训练)</td></tr>
+<tr><td>$\bm{\mu}_m$ / $\bm{\xi}_m$</td><td>Gaussian 中心 / 属性包</td><td>$\mathbb{R}^3$ / $(\alpha,\mathbf{s},\mathbf{q},\mathbf{c})$</td></tr>
+<tr><td>$\Phi_{\mathrm{geo}}$ / $\Phi_{\mathrm{attr}}$</td><td>冻结几何分支 / 可训属性分支(同以 DA3NESTED-GIANT-LARGE-1.1 初始化)</td><td>属性分支只微调最后 $K{=}10$ 个 Transformer block</td></tr>
+<tr><td>$\widehat{D}_i$, $\widehat{\bm{\Pi}}_i$</td><td>预测深度与相机(几何分支输出,式 2)</td><td>逐像素深度图;$(\mathbf{K},\mathbf{P})$</td></tr>
+<tr><td>$s_{\mathrm{norm}}$</td><td>Mean Radial Distance 归一化尺度(式 3)</td><td>标量,全部反投影点的径向距离均值</td></tr>
+<tr><td>$s_{\mathcal{C}}$</td><td>Umeyama 从 GT 输入相机中心到归一化预测相机中心拟合出的尺度</td><td>标量;旋转保持 GT,平移 $\widetilde{\mathbf{t}}^{\star}=s_{\mathcal{C}}\mathbf{t}^{\star}$</td></tr>
+<tr><td>$\bar{D}_i$</td><td>尺度归一化深度 $\widehat{D}_i/s_{\mathrm{norm}}$</td><td>同 $\widehat{D}_i$</td></tr>
+<tr><td>$a(v,\mathcal{C})$</td><td>候选目标 $v$ 与输入集的最小光轴夹角(式 5)</td><td>$\min_i \arccos(\mathbf{f}_v^\top\mathbf{f}_i)$</td></tr>
+<tr><td>$\mathcal{G}^0$ / $\mathcal{G}^{\mathrm{ref}}$</td><td>体素合并+opacity 剪枝后的初始场景 / refinement 后场景</td><td>体素边长 0.004;$\tau_\alpha=0.01$</td></tr>
+<tr><td>$E$, $U$</td><td>refiner 的反馈编码器 / 共享循环 KNN Transformer 更新器</td><td>8 邻域单头注意力 ×4 block;隐藏态 16 维</td></tr>
+<tr><td>$K_{\mathrm{r}}$</td><td>refinement 步数</td><td>训练均匀采样 $\{1,2,3\}$,推理 3 步</td></tr>
+</table>
+
+<h3>3.3 总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: N 张 RGB 图像<br/>(+ 可选位姿条件 Q)"] --> GEO
+    subgraph GEO["冻结几何分支 Φ_geo(DA3NESTED-GIANT-LARGE-1.1)"]
+        G1["深度 D̂ + 相机 Π̂<br/>(depth/camera heads 全程冻结)"]
+    end
+    IN --> ATTR
+    subgraph ATTR["可训属性分支 Φ_attr(同权重初始化,只训最后 K=10 块)"]
+        A1["多层 patch 特征 F"] --> A2["DPT Gaussian decoder<br/>→ 逐像素属性 (α, s, q, c)"]
+    end
+    GEO --> BP["尺度对齐反投影(式 3-4)<br/>s_norm 归一化 + Umeyama 尺度 s_C<br/>GT 相机反投影预测深度"]
+    BP --> VOX["体素合并(边长 0.004)<br/>+ opacity&lt;0.01 剪枝 → G⁰"]
+    A2 --> VOX
+    VOX --> SUP["大角度目标监督<br/>a(v,C) 分池,0.7/0.3 采样 4 目标视角<br/>GT-depth warp mask 的 L1+LPIPS"]
+    SUP -->|Stage II| REF
+    subgraph REF["渲染反馈精修(3 步,中心固定)"]
+        R1["RenderGrad: 输入视角重建梯度(sg)"] --> R2["E 编码 → KNN Transformer U<br/>预测属性残差 Δξ"]
+        R2 --> R3["Apply 更新 ξ<br/>μ 不变 → G^ref"]
+    end
+    REF --> OUT["输出: M 个 Gaussians<br/>(前馈 Ours / 精修 Ours*)"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GEO fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+    style ATTR fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style REF fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style OUT fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+
+<div class="figure">
+  <img src="images/2610.20341/pipelines.png" loading="lazy" alt="InfiniSplat v2 训练 pipeline 原图">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>训练 pipeline 原图。</b>冻结几何分支预测深度与相机;可训分支产生多层特征并经 DPT decoder 预测 Gaussian 属性;scale-aligned GT 相机做反投影;渲染反馈驱动学习式 refinement。与上图(Mermaid 重述)对照阅读。</div>
+</div>
+
+<p><b>与前作范式的差异一句话</b>:DA3-GS 是"一个网络联合出几何+属性",v2 是"<b>几何全信(但冻结、且位置钉死)、属性全学(含一个显式吃渲染梯度的循环精修器)</b>";AnySplat/WorldMirror 2.0 借走体素合并策略,但 v2 的 GT 位姿尺度对齐与大角度监督是它独有的训练侧设计。</p>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:双分支架构(冻结几何分支)</h2>
+
+<h3>4.1 网络结构表(源码验证)</h3>
+<table>
+<tr><th>组件</th><th>结构</th><th>输入 → 输出</th><th>出处</th></tr>
+<tr><td>几何分支 $\Phi_{\mathrm{geo}}$</td><td>DA3 backbone(ByteDance-Seed Depth-Anything-3,git 钉死 commit <code>41736238</code>)+ depth/camera heads</td><td>图像 $[B,3,H,W]$ → 深度 $\widehat{D}$、相机 $\widehat{\bm{\Pi}}$</td><td><code>model.py:27-28</code>,<code>INSTALL.md:34</code></td></tr>
+<tr><td>属性分支 $\Phi_{\mathrm{attr}}$</td><td>同一 DA3 权重独立初始化的第二个 backbone(<code>self.appearance</code>);论文:只微调最后 $K{=}10$ 个 Transformer block</td><td>图像 → 第 [19,27,33,39] 层 token,各经 <code>Linear(1536,2048)</code></td><td><code>model.py:41,125</code></td></tr>
+<tr><td>GSFeatHead(DPT 风格)</td><td><code>dim_in=2048</code>,features=256,四级通道 [256,512,1024,1024] + 4 个 refinenet;<code>output_conv1</code> 降到 128 通道;RGB 经 3 层 Conv(3→32→64→128)+GELU 的 <code>input_merger</code> 与 DPT 特征相加;UV 正余弦位置编码强度 0.1</td><td>patch token → 128 通道稠密特征图</td><td><code>decoder.py:172-268</code>,<code>model.py:13-16</code></td></tr>
+<tr><td>GaussianHead</td><td><code>Conv2d(128,256,3) → ReLU → Conv2d(256,11,1)</code></td><td>128 通道特征 → 每像素 <b>11 通道</b>:rotation(4) / scale(3) / opacity(1) / SH0 颜色残差(3)</td><td><code>gaussians.py:10-11,17</code></td></tr>
+</table>
+
+<div class="callout tip">
+<b>论文没写、代码补齐的属性参数化(<code>gaussians.py:19-21</code>):</b>rotation 做 L2 归一化成单位四元数;scale 为 <code>exp().clamp_max(0.3)</code>(RDNorm 归一化空间硬上限 0.3);opacity 过 sigmoid;颜色是<b>以输入 RGB 为基底、网络只预测残差</b>的 SH0 直流项 <code>((rgb-0.5)/SH_C0) + sh_residual</code>。另外确认:<b>位置通道不存在</b>——11 通道里没有 offset,中心 100% 来自深度反投影(<code>model.py:203-206</code> → <code>geometry.py:25-33</code>),与论文 "without predicted positional offsets" 一致。
+</div>
+
+<h3>4.2 数学形式化</h3>
+<div class="equation">$$(\widehat{D}_{\mathcal{C}},\widehat{\bm{\Pi}}_{\mathcal{C}})=\Phi_{\mathrm{geo}}(\mathcal{I}_{\mathcal{C}};\mathbf{Q}_{\mathcal{C}}),\qquad \mathbf{F}_{\mathcal{C}}=\Phi_{\mathrm{attr}}(\mathcal{I}_{\mathcal{C}};\mathbf{Q}_{\mathcal{C}})$$<span class="tag">(式 2)</span></div>
+<div class="equation">$$\mathcal{G}=\{(\bm{\mu}_{m},\bm{\xi}_{m})\}_{m=1}^{M},\qquad\bm{\xi}_{m}=(\alpha_{m},\mathbf{s}_{m},\mathbf{q}_{m},\mathbf{c}_{m})$$<span class="tag">(式 1)</span></div>
+
+<h3>4.3 前向流程(逐视图分块,源码时序)</h3>
+<ol>
+  <li>两分支 backbone 共享同一预训练权重初始化;推理期若两分支 backbone 权重逐 tensor 相同,则直接共享模块引用避免双份显存(<code>model.py:60-67</code>);若只共享前若干 block,geometry 分支用 <code>prefix_resume</code> 从 appearance 写入的 <code>prefix_cache</code> 续跑(<code>model.py:68-86,126-143</code>)。</li>
+  <li>backbone 走 BF16 autocast;depth/camera heads 在 FP32(相机数值精度敏感,<code>model.py:93,99,129,145</code>)。</li>
+  <li>逐视图调用 <code>gs_feature_head.forward_chunk(..., i, i+1)</code> 再过 GaussianHead——注释明示是为了"避免为每个视图驻留 128 通道稠密特征"的显存优化(<code>model.py:195-200</code>)。</li>
+  <li>深度反投影得到中心,与属性组装后体素合并、剪枝(见模块二)。</li>
+</ol>
+
+<h3>4.4 监督信号</h3>
+<p>几何分支<b>无监督</b>(冻结)。属性分支由 Stage-I 的 masked L1 + LPIPS 重建损失监督(见 §9),只更新最后 $K{=}10$ 块与 Gaussian decoder(§A.3)。</p>
+
+<div class="callout warn">
+<b>为什么冻结是"设计"而不是"省钱":</b>消融 w/o G(以 $10^{-6}$ 学习率微调几何 backbone)在 ETH3D/DTU 全面变差(表 2)。作者的机制解释:联合优化时位置更新在<b>补偿属性误差</b>——渲染误差被"挪动点"吸收掉,几何被带坏;冻结后这条路被堵死,属性头只能老老实实学"在这个固定点上该长什么样"。这也解释了为什么 w/ O(加 positional offset)同样变差:offset 重新打开了位置补偿的旁路。
+</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:Scale-aligned GT 相机反投影</h2>
+
+<h3>5.1 要解决的问题</h3>
+<p>训练时用预测相机反投影建点、用 GT 目标视角监督,位姿误差会成为<b>相机诱导的系统性残差</b>混进属性学习目标。v2 的做法:反投影与监督<b>都用 GT 相机</b>,但 GT 与预测坐标的尺度不一致,于是一边把预测深度归一化,一边把 GT 相机平移缩放到同一尺度(只做尺度对齐,不做完整 Sim(3))。</p>
+
+<h3>5.2 数学形式化</h3>
+<div class="equation">$$s_{\mathrm{norm}}=\frac{1}{|\mathcal{V}_{\mathrm{pts}}|}\sum_{j\in\mathcal{V}_{\mathrm{pts}}}\|\mathbf{x}_{j}\|_{2},\qquad \bar{D}_{i}=\frac{\widehat{D}_{i}}{s_{\mathrm{norm}}}$$<span class="tag">(式 3)</span></div>
+<p>预测深度与相机平移同除 $s_{\mathrm{norm}}$(Mean Radial Distance Normalization)。再用 Umeyama 从 GT 输入相机中心拟合到归一化预测相机中心,只保留尺度 $s_{\mathcal{C}}$,GT 旋转不动、平移缩放:</p>
+<div class="equation">$$\widetilde{\mathbf{R}}_{v}^{\star}=\mathbf{R}_{v}^{\star},\qquad \widetilde{\mathbf{t}}_{v}^{\star}=s_{\mathcal{C}}\,\mathbf{t}_{v}^{\star}$$<span class="tag">(式 9)</span></div>
+<div class="equation">$$\bm{\mu}_{i,\mathbf{u}}^{\mathrm{cand}}=\bar{D}_{i}(\mathbf{u})\,\widetilde{\mathbf{R}}_{i}^{\star}(\mathbf{K}_{i}^{\star})^{-1}\mathbf{u}+\widetilde{\mathbf{t}}_{i}^{\star}$$<span class="tag">(式 4)</span></div>
+<p>记号:星号为 GT 量,波浪号为尺度对齐量;Umeyama 拟合只用<b>输入</b>相机中心,同一尺度施加到输入与目标相机(§A.2)。参考系为排序后第一个输入视角。</p>
+
+<h3>5.3 推理侧源码对照</h3>
+<ul>
+  <li>RDNorm 归一化:<code>geometry.py:127-170</code>("第一相机相对坐标系下全部反投影点半径均值")。</li>
+  <li>GT 相机对齐:<code>align_rdnorm_gt_via_legacy_da3</code>(<code>geometry.py:172-185</code>,调用处 <code>model.py:163-177</code>),内部 umeyama 尺度对齐失败时回退 <code>fallback_pose_scale</code>(<code>geometry.py:86-126</code>)——用了 evo 库的 umeyama 实现(依赖 <code>evo&gt;=1.30,&lt;2</code>,<code>pyproject.toml:16</code>)。</li>
+  <li><b>宣称 vs 实现差异</b>:论文 §A.2 写体素合并边长固定 0.004(尺度归一化坐标系);代码推理契约是 <code>voxel = median_scale × 1.4</code>(<code>gaussians.py:34-35</code>,<code>pipeline.py:82-84</code> 的 <code>'voxel_multiplier':1.4</code>)——即<b>自适应边长</b>。两者是否数值等价(训练用固定 0.004、推理发布版改为自适应)仓库无训练代码可证,<span class="uncertain">⚠️【待核实】</span>。</li>
+</ul>
+
+<h3>5.4 监督信号</h3>
+<p>本模块不产生新损失,它决定<b>用哪套相机算渲染损失</b>。消融 w/o C(退回预测相机反投影)在 DTU 上 LPIPS 恶化 36.1%(0.2070→0.3237,表 2),是五个消融项里单点破坏力最大的之一,说明位姿-监督一致性是硬约束。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:大角度目标视角监督</h2>
+
+<h3>6.1 角度打分与采样</h3>
+<div class="equation">$$a(v,\mathcal{C})=\min_{i\in\mathcal{C}}\arccos\!\big(\mathbf{f}_{v}^{\top}\mathbf{f}_{i}\big),\qquad \mathbf{f}_{v}=\mathbf{R}_{v}^{\star}(0,0,1)^{\top}$$<span class="tag">(式 5)</span></div>
+<ol>
+  <li>对全部非输入视角算 $a(v,\mathcal{C})$(目标光轴与最近输入光轴的夹角),降序排序;</li>
+  <li>上下两半分为 large-angle 池与 small-angle 池;</li>
+  <li>每个训练样本以概率 <b>0.7</b> 选 large-angle 池、<b>0.3</b> 选 small-angle 池,从所选池中无放回均匀抽 <b>4 个</b>目标视角(池中至少 4 候选)(§A.1)。</li>
+</ol>
+
+<h3>6.2 效果量化(原文 Figure 8 为矢量图,此处文字重述)</h3>
+<p>目标视角到输入视角的最小夹角均值:local sampling <b>12.34°</b> → 本文策略 <b>17.97°</b>(图注原文)。<span class="uncertain">⚠️【待核实】图 8 原图为 LaTeXML 未导出的矢量图,无位图可下载;分布的方差、统计数据集与样本数原文未给。0.7/0.3 的概率配比没有消融依据(消融只对比了"局部插值"整体替换)。</span></p>
+
+<h3>6.3 监督掩码(式 8)</h3>
+<p>目标像素须 GT 深度 $&gt;10^{-6}$ 且通过有效性掩码;反投影回输入视角后,须落在至少一个输入相机前方与图像界内,并满足深度一致 $|z_{\mathrm{proj}}-d_{\mathrm{src}}|\leq\max(\tau_{\mathrm{abs}},\tau_{\mathrm{rel}}d_{\mathrm{src}})$,默认 $\tau_{\mathrm{abs}}=0.03$、$\tau_{\mathrm{rel}}=0.01$(§A.1)。即大角度目标只在其"被输入视角真正看到"的区域贡献监督,防止网络为不可见区域乱编。</p>
+
+<div class="callout key">
+<b>机制解释(为什么大角度有用):</b>Gaussian 的 scale/rotation 决定它在不同方向的投影形状。监督视角挤在输入附近时,每个 Gaussian 只从窄角度被"看",扁长、错向的 Gaussian 在近视角下也能蒙混过关;换大角度目标后,同一个 Gaussian 被迫在差异更大的投影方向上同时正确,形状参数被真正钉死。代价是遮挡区域变大——由 §6.3 的 warp mask 兜住。
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:渲染反馈精修 Refiner(Stage II)</h2>
+
+<h3>7.1 设计</h3>
+<p>前馈输出 $\mathcal{G}^{0}$ 之上,挂一个学习型 refiner:<b>把渲染损失的梯度本身当作特征</b>喂给循环网络,学"看到这种梯度模式该怎么调属性",而不是直接做梯度下降。中心与点数全程固定($\bm{\mu}_{m}^{t+1}=\bm{\mu}_{m}^{0}$),空间 KNN 图跨步复用。</p>
+
+<div class="equation">$$\mathbf{g}^{t}=\operatorname{RenderGrad}(\mathcal{G}^{t};\mathcal{I}_{\mathcal{F}},\bm{\Pi}_{\mathcal{F}}^{\mathrm{fb}}),\qquad \mathbf{h}^{t}=E\big(\mathcal{G}^{t},\operatorname{sg}(\mathbf{g}^{t}),\mathbf{f}\big)$$<span class="tag">(式 6)</span></div>
+<div class="equation">$$(\Delta\bm{\xi}_{m}^{t},\mathbf{b}_{m}^{t+1})=U(\bm{\xi}_{m}^{t},\mathbf{h}_{m}^{t},\mathbf{b}_{m}^{t}),\qquad \bm{\xi}_{m}^{t+1}=\operatorname{Apply}(\bm{\xi}_{m}^{t},\Delta\bm{\xi}_{m}^{t})$$<span class="tag">(式 7)</span></div>
+
+<h3>7.2 架构细节(附录 A.5)</h3>
+<ul>
+  <li>DPT 特征经可学习 $1\times1$ 卷积投影到 <b>8 通道</b>,按与 Gaussian 相同的体素分组与权重合并为 $\mathbf{f}$,跨步复用;线性投影初始化 <b>16 维</b>隐藏状态。</li>
+  <li>拼接(图像特征、当前属性、归一化并 detach 的梯度反馈、邻居距离、隐藏状态)→ 投影到 <b>64 维</b> → <b>4 个 KNN Transformer block</b>(8 邻居单头注意力 + LayerNorm + MLP + 残差)→ MLP 预测属性与隐藏态增量。</li>
+  <li>训练展开 $K_{\mathrm{r}}\sim\mathrm{Uniform}\{1,2,3\}$,推理固定 3 步;反馈梯度与跨步属性路径 detach,隐藏态残差更新保持可微做循环反传。</li>
+  <li>大场景分块:沿最长体素轴稳定排序,core set 至多 200,000 点 + 四跳邻域;超 300,000 点的 chunk 递归二分;训练用 gradient checkpointing。</li>
+  <li>反馈损失 $\ell_{\mathrm{fb}}=0.8L_1+0.2L_{\mathrm{DSSIM}}$(式 13),只用输入视角;更新后的场景由输入+目标视角共同监督(式 14)。</li>
+</ul>
+
+<h3>7.3 与 Adam 精修的对照(附录表 8,ETH3D)</h3>
+<table>
+<tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>DISTS↓</th></tr>
+<tr><td>Ours(前馈)</td><td>16.9643</td><td>0.5836</td><td>0.4339</td><td>0.1661</td></tr>
+<tr><td>Ours + Adam(3 步, lr 0.01)</td><td>16.9890</td><td>0.5864</td><td>0.4312</td><td>0.1656</td></tr>
+<tr class="best"><td>Ours*(learned refiner,3 步)</td><td>17.6074</td><td>0.6067</td><td>0.4176</td><td>0.1631</td></tr>
+</table>
+<p>learned refiner 比 Adam 三步多拿 <b>0.62 dB</b> PSNR(0.64 vs 0.02)——"学出来的更新方向"远好于"现场下山"。<span class="uncertain">⚠️【待核实】推理侧代码未见 refiner 模块(发布包只含前馈权重导出 PLY),Ours* 权重如何交付未在仓库中体现,见 §11。</span></p>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>关键发现:opacity 几何一致性诊断</h2>
+<p>论文最有"分析味"的一段(§4.3 + §B.4):在 held-out Hypersim 验证场景上,用 GT 深度给每个点打<b>独立于 opacity 的</b>几何标签——"在至少两个视角违反自由空间(free space)且不贴合任何观测表面"为<b>几何不一致点</b>(共 36,125 个,容差 $\max(0.03\,\mathrm{m},0.01d)$,排除深度边缘);"与至少两视角一致且无自由空间违反"为表面一致点;其余 uncertain。</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">51.8%</div><div class="l">阈值 0.01 剪枝移除的几何不一致点占比</div></div>
+  <div class="stat"><div class="v">7.5%</div><div class="l">同一剪枝移除的总点数占比</div></div>
+  <div class="stat"><div class="v">93.3%</div><div class="l">被保留的表面一致点占比</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2610.20341/opacity_diagnostic.png" loading="lazy" alt="opacity 分布与剪枝诊断">
+  <div class="caption"><b>图3</b>(论文 Figure 7)<b>opacity 分布与剪枝对几何不一致点的选择性打击。</b>GT 深度独立定义的不一致点子集,其 learned opacity 分布显著低于表面一致点;0.01 阈值(训练/推理的同款剪枝)恰好落在两类分布之间。</div>
+</div>
+
+<div class="callout tip">
+<b>为什么这发现重要(机制解释):</b>几何不一致点(跨视图漂浮点)在任何单一输入视角里都没有稳定证据,重建损失会系统性惩罚"让它显眼"的渲染——于是网络学会压低它们的 opacity。这意味着<b>纯光度监督下,opacity 本身就变成了一个自监督的几何可靠性探针</b>,0.01 剪枝刀几乎"免费"地做了离群点清理,而不需要显式的几何一致性损失。这把"固定中心"策略的最后一块短板(几何噪声不可修)用属性侧的软删除补上了。<span class="uncertain">⚠️【待核实】该统计只在合成室内集 Hypersim 上验证,36,125 点相对总点数比例未报;能否迁移到真实室外数据未证。</span>
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>损失函数总表</h2>
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(真值)</th><th>作用</th><th>出处</th></tr>
+<tr><td>Stage-I 重建损失 $\mathcal{L}_{\mathrm{I}}$</td><td>$\dfrac{\sum_{v}\sum_{p}M_v(p)[e_v(p)+d_v(p)]}{\max(1,\sum_{v}\sum_{p}M_v(p))}$,$e_v$ 为 masked L1,$d_v$ 为 masked LPIPS(VGG)</td><td>L1 与 LPIPS 等权</td><td>监督输入+大角度目标视角渲染,驱动属性分支</td><td>式 10-12,§A.4</td></tr>
+<tr><td>Stage-II 反馈损失 $\ell_{\mathrm{fb}}$</td><td>$0.8L_1+0.2L_{\mathrm{DSSIM}}$,$L_{\mathrm{DSSIM}}=(1-\mathrm{SSIM})/2$</td><td>0.8 / 0.2</td><td>产生 RenderGrad 反馈信号(只用输入视角),梯度归一化+detach 后送入 updater</td><td>式 13,§A.5</td></tr>
+<tr><td>Stage-II 外层监督 $\ell_{\mathrm{out}}$</td><td>$0.8L_1+0.2L_{\mathrm{DSSIM}}+0.5L_{\mathrm{LPIPS}}$,输入组/目标组各 0.5 组内等权</td><td>0.8 / 0.2 / 0.5</td><td>监督更新后场景的最终渲染质量</td><td>式 14</td></tr>
+<tr><td>多步目标 $\mathcal{L}_{\mathrm{II}}$</td><td>$\sum_{k=1}^{K_r}0.9^{K_r-k}\mathcal{L}_{\mathrm{render}}^{k}+0.1\mathcal{L}_{\mathrm{opacity}}$</td><td>步衰减 0.9(不归一化);opacity 正则 0.1</td><td>鼓励每步都改进而非只改最后一步;防 opacity 漂移</td><td>式 15-16</td></tr>
+<tr><td>一阶替代损失 $\mathcal{L}_{\mathrm{proxy}}$</td><td>$\operatorname{sg}(\mathcal{L}_{\mathrm{render}}(z^k))+\langle x^k-\operatorname{sg}(x^k),r^k\rangle$,$r^k=\operatorname{sg}(\nabla_z\mathcal{L}_{\mathrm{render}}(z^k))$</td><td>—</td><td>数值等于渲染损失但只产生一阶梯度,避开穿过渲染器的二阶微分</td><td>式 17-18</td></tr>
+</table>
+<div class="note"><b>属性更新参数化(§A.5,refiner Apply):</b>scale 走 $s_{\mathrm{new}}=s_{\mathrm{old}}\exp(\Delta\log s)$ 不裁剪;opacity-logit / local rotation-vector / RGB-logit 增量分别限幅 $0.1\tanh$ / $0.25\tanh$ / $1.0\tanh$;隐藏态增量 $0.1\tanh$;logit 输入截断 $[10^{-6},1-10^{-6}]$;两阶段均零阶 SH,refiner 在 RGB-logit 空间更新后转回 SH 系数。<b>以上训练侧细节全部来自论文附录,发布仓库无训练代码可验证</b>(见 §11)。</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(训练 / 推理)</h2>
+<h3>10.1 训练流程(论文 §3.4 / §A,训练代码未开源)</h3>
+<div class="mermaid">
+flowchart TD
+    D["数据: Hypersim 60% / Raw3D 10% / ScanNet++ 30%<br/>每样本 N∈4..12 输入 + 4 目标视角"] --> S1
+    subgraph S1["Stage I(25,000 步,约 48h,16×H20)"]
+        S1A["双分支前向: Φ_geo 冻结出深度/相机<br/>Φ_attr 最后 K=10 块 + DPT decoder 可训"] --> S1B["GT 相机尺度对齐反投影 → 体素合并 → 剪枝 → G⁰"]
+        S1B --> S1C["大角度采样 4 目标视角<br/>masked L1 + LPIPS 等权监督"]
+    end
+    S1 --> S2
+    subgraph S2["Stage II(5,000 步,约 13h)"]
+        S2A["冻结 reconstructor<br/>训 feature projection + refiner"] --> S2B["输入视角 RenderGrad 反馈<br/>K_r~U{1,2,3} 步展开"]
+        S2B --> S2C["外层损失(输入+目标)+ 0.1×opacity 正则"]
+    end
+    S2 --> CKPT["同一权重<br/>支持 pose-conditioned / pose-free 双模式"]
+    style D fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S1 fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style S2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style CKPT fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+<h3>10.2 推理流程(源码验证)</h3>
+<div class="mermaid">
+flowchart TD
+    IN["2~50 张图(CLI 默认 ≤32, API 默认 12)<br/>长边默认 518,对齐 14 的倍数"] --> MODE{"三种模式<br/>provided(GT 相机) / colmap / da3-pose"}
+    MODE --> FE["DA3 双分支前向<br/>BF16 backbone + FP32 heads<br/>prefix cache 去重"]
+    FE --> GS["GSFeatHead → GaussianHead(11 通道)<br/>逐视图分块解码"]
+    GS --> MG["体素合并(median_scale×1.4 均匀平均)<br/>+ opacity≥0.01 剪枝"]
+    MG --> OUT["导出 scene.ply(SH0)+ cameras.npz<br/>(可选 HTML 查看器,外部 splat-transform)"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#fce7f3,stroke:#ec4899,color:#831843
+</div>
+<div class="callout warn"><b>发布包与论文推理描述的差异:</b>论文 §3.4 写推理时 refiner 也用输入视角反馈更新场景(Ours*);但发布仓库(v2.0.0)只导出<b>前馈</b> PLY,无任何 refiner/渲染器代码(无 gsplat 依赖,<code>INSTALL.md:3-4</code>)。即<b>公开权重只能复现表 1 的 "Ours" 行,"Ours*" 的三步精修不在发布物内</b>。</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节</h2>
+
+<div class="callout red">
+<b>⚠️ 发布形态:纯推理包,训练代码未开源。</b><code>zju3dv/InfiniSplat</code> 的 <code>InfiniSplat_v2/</code>(pyproject 版本 2.0.0)全目录无任何训练入口、损失、优化器、评估脚本或训练配置;<code>result.json</code> 元数据自述 <i>"Interactive reconstruction; not a formal benchmark acceptance record."</i>(<code>pipeline.py:137-138</code>)。因此:<b>训练侧超参(学习率/步数/损失权重/采样概率等)只能引论文附录 §A,无法源码验证</b>;推理侧结构均有 <code>file:line</code> 佐证。
+</div>
+
+<h3>11.1 训练配置(仅论文 §A.3 来源,代码不可验证)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>备注</th></tr>
+<tr><td>硬件 / 优化器</td><td>16 × H20,AdamW, $\beta=(0.9,0.95)$,global batch 16,梯度裁剪 1.0</td><td>两阶段相同</td></tr>
+<tr><td>Stage I</td><td>25,000 步;属性 backbone 峰值 lr $10^{-6}$、Gaussian head lr $2\times10^{-4}$;2,000 步线性 warmup + cosine 衰减到 0.1×;约 48 小时</td><td>只训最后 10 块 + head</td></tr>
+<tr><td>Stage II</td><td>5,000 步;lr $2\times10^{-4}$ 无 warmup,cosine 到 0.1×;约 13 小时</td><td>冻结 reconstructor</td></tr>
+<tr><td>训练数据</td><td>Hypersim / Raw3D / ScanNet++ = 60% / 10% / 30%</td><td>Raw3D 为 Rawmantic 公司数据,公开性<span class="uncertain">【待核实】</span></td></tr>
+<tr><td>输入规格</td><td>$N\in\{4,...,12\}$,长边 1022(N≤8)/756(N=9,10)/518(N=11,12)</td><td>每样本 4 目标视角</td></tr>
+</table>
+
+<h3>11.2 推理侧真值(源码 <code>file:line</code>)</h3>
+<ul>
+  <li><b>几何骨干</b>:Depth-Anything-3,git 依赖钉死 commit <code>41736238f5bced4debf3f2a12375d2466874866d</code>("this release uses its network internals",<code>INSTALL.md:34,39-40</code>);THIRD_PARTY.md 主动澄清<b>无 VGGT/Mirror 骨干</b>。</li>
+  <li><b>属性头</b>:11 通道 = rot(4)+scale(3)+opacity(1)+SH0 残差(3),<code>gaussians.py:10-21</code>;scale <code>exp().clamp_max(0.3)</code>;颜色以输入 RGB 为基底预测残差。</li>
+  <li><b>位置</b>:无 offset,深度反投影 <code>depth_to_world_coords_points</code>(<code>model.py:203-206</code>,<code>geometry.py:25-33</code>)。</li>
+  <li><b>融合契约</b>(<code>pipeline.py:82-85</code> 硬校验):<code>normalization=mean_predicted_point_radius</code>、<code>merge=uniform_mean</code>、<code>voxel_multiplier=1.4</code>、<code>opacity_threshold=0.01</code>、<code>eps2d=0.01</code>。</li>
+  <li><b>输入规格</b>:长边默认 518、范围 112–2044、宽高对齐 14 的倍数(DA3 patch=14),bicubic 中心裁剪缩放(<code>cli.py:16,21-22</code>;<code>pipeline.py:28-35,48-55</code>);视角数 2–50(CLI 默认 32 / API 默认 12,<code>cli.py:17</code>;<code>pipeline.py:24-27,99</code>)。</li>
+  <li><b>精度策略</b>:backbone BF16 autocast,depth/camera heads FP32(<code>model.py:93,99,129,145</code>);逐视图分块解码省显存(<code>model.py:195-200</code>)。</li>
+  <li><b>省显存</b>:两分支 backbone 权重相同则共享引用;否则共享前缀 block + prefix cache 续跑(<code>model.py:43-86,126-143</code>;<code>da3_order.py:64-66</code>);权重文件内 tensor 别名无损去重(<code>weights.py:1-12</code>)。</li>
+  <li><b>三种 pose 模式</b>:<code>provided</code>(自带 GT 相机)/ <code>colmap</code>(scripts/prepare_colmap.py 跑 COLMAP,只收 PINHOLE/SIMPLE_PINHOLE)/ <code>da3-pose</code>(DA3 相机头先测相机并预检正焦距,<code>model.py:88-106</code>;<code>pipeline.py:121-126</code>);另有全景 CLI 切 24 视(3 pitch × 8 yaw,FOV 60°)。</li>
+  <li><b>输出</b>:SH0 高斯 PLY(scale 存 log、opacity 存 logit,<code>export.py:21-30</code>)+ cameras.npz;可视化靠外部 <code>@playcanvas/splat-transform@2.6.0</code> 转 HTML,仓库内无渲染器。</li>
+</ul>
+
+<h3>11.3 资源账</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>前馈延迟(单 H20,8 视角)</td><td>1022×756:5.619 s;756×560:2.533 s;504×378:1.032 s;378×280:0.564 s</td><td>论文表 9(1 warmup + 5 次 CUDA-event 计时)</td></tr>
+<tr><td>训练时长</td><td>Stage I 约 48h + Stage II 约 13h(16×H20)</td><td>论文 §A.3</td></tr>
+<tr><td>环境</td><td>Python 3.10–3.12;实测组合 torch 2.7.1(cu128)+ H20 + 驱动 570</td><td><code>INSTALL.md:22-28</code>,<code>pyproject.toml:11</code></td></tr>
+<tr><td>权重</td><td>HF <code>Edisoneh/InfiniSplat-v2</code>(公开免登录,含 DA3 backbone,SHA256 校验);<b>v1 权重与 v2 不兼容</b></td><td><code>INSTALL.md:52-61,83-86</code></td></tr>
+<tr><td>DA3 backbone 规模</td><td>DA3NESTED-GIANT-LARGE-1.1(token 维 1536,由 <code>Linear(1536,2048)</code> 投影反推)</td><td>论文 §A.2 + <code>model.py:41</code></td></tr>
+</table>
+
+<h3>11.4 落地坑</h3>
+<ul>
+  <li><b>训练不可复现</b>:无训练代码,Raw3D 数据私有,DA3NESTED-GIANT-LARGE-1.1 权重获取途径未在论文给出——复现者只能基于公开 DA3 权重自行对齐。</li>
+  <li><b>无渲染器依赖</b>:发布包刻意不带 gsplat(<code>INSTALL.md:3-4</code>),要渲染/评测需自接光栅化器;论文训练用 gsplat(eps2d=$10^{-2}$)与此一致但代码未含。</li>
+  <li><b>Ours* 不可得</b>:三步 learned refinement 无发布实现,公开权重只能出前馈结果(见 §10)。</li>
+  <li><b>DA3 钉死 commit</b>:用了 DA3 网络内部结构(中层特征导出),DA3 升级即破坏兼容(<code>INSTALL.md:39-40</code>);代码对 DA3 打了两处 monkey-patch(SwiGLU 去 xformers、中层导出支持 prefix cache)。</li>
+  <li><b>相机要求</b>:provided/colmap 模式只接受 PINHOLE/SIMPLE_PINHOLE 去畸变模型并做正交性校验(<code>cameras.py:30-36,67-73</code>)——鱼眼/广角需先自行去畸变。</li>
+</ul>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+<p>协议:六数据集(DL3DV / ETH3D / NRGBD / Mip-NeRF 360 / RE10K / DTU),$N\in\{4,8,16\}$ 输入视角,每例 4 个 held-out 目标视角,所有方法同一划分;逐级等权平均(目标视角→样本→场景→视角配置→数据集)。Ours = 前馈输出,Ours* = 加三步 learned refinement。主指标 LPIPS/DISTS(沿袭 <a href="3D-20251211-SHARP.html">SHARP</a> 协议),PSNR/SSIM 见附录表 3/4。</p>
+
+<h3>12.1 主表(论文表 1,LPIPS↓ / DISTS↓,N=4/8/16 等权)</h3>
+<h4>Pose-conditioned</h4>
+<table>
+<tr><th>方法</th><th>DL3DV</th><th>ETH3D</th><th>NRGBD</th><th>Mip360</th><th>RE10K</th><th>DTU</th><th>Mean</th></tr>
+<tr><td>tttLRM</td><td>0.4955/0.2574</td><td>0.4984/0.2296</td><td>0.2857/0.1979</td><td>0.3835/0.2036</td><td>0.2193/0.1404</td><td>0.3933/0.2662</td><td>0.3793/0.2159</td></tr>
+<tr><td>DA3-GS</td><td>0.5235/0.2138</td><td>0.5776/0.2443</td><td>0.3593/0.1557</td><td>0.4965/0.2390</td><td>0.2315/0.1263</td><td>0.3536/0.2000</td><td>0.4237/0.1965</td></tr>
+<tr><td>DepthSplat</td><td>0.5766/0.2707</td><td>0.5615/0.2874</td><td>0.0867/0.0673</td><td>0.4504/0.2448</td><td>0.1297/0.0840</td><td>0.4263/0.2413</td><td>0.3718/0.1993</td></tr>
+<tr><td>ReSplat</td><td>0.4198/0.2123</td><td>0.5266/0.2309</td><td>0.1204/0.0962</td><td>0.3655/0.1747</td><td>0.1191/0.0842</td><td>0.4485/0.2781</td><td>0.3333/0.1794</td></tr>
+<tr><td>TokenGS</td><td>0.6911/0.3239</td><td>0.6704/0.2913</td><td>0.5589/0.3025</td><td>0.6456/0.3095</td><td>0.3955/0.2094</td><td>0.5057/0.3221</td><td>0.5779/0.2931</td></tr>
+<tr><td>VolSplat</td><td>0.7049/0.3539</td><td>0.6715/0.3149</td><td>0.2342/0.1911</td><td>0.5071/0.2585</td><td>0.3552/0.1985</td><td>0.6424/0.3370</td><td>0.5192/0.2756</td></tr>
+<tr><td>WorldMirror 2.0</td><td>0.4673/0.2126</td><td>0.5201/0.2079</td><td>0.1056/0.0717</td><td>0.4689/0.2194</td><td>0.2174/0.1359</td><td>0.3306/0.1930</td><td>0.3517/0.1734</td></tr>
+<tr class="best"><td>Ours</td><td>0.3363/0.1209</td><td>0.4339/0.1661</td><td>0.0653/0.0535</td><td>0.3206/0.1405</td><td>0.1202/0.0798</td><td>0.2070/0.1368</td><td>0.2472/0.1163</td></tr>
+<tr class="best"><td>Ours*</td><td>0.3276/0.1197</td><td>0.4176/0.1631</td><td>0.0612/0.0524</td><td>0.3099/0.1380</td><td>0.1176/0.0802</td><td>0.2014/0.1422</td><td>0.2392/0.1159</td></tr>
+</table>
+<h4>Pose-free</h4>
+<table>
+<tr><th>方法</th><th>DL3DV</th><th>ETH3D</th><th>NRGBD</th><th>Mip360</th><th>RE10K</th><th>DTU</th><th>Mean</th></tr>
+<tr><td>AnySplat</td><td>0.5985/0.2490</td><td>0.5473/0.2297</td><td>0.1895/0.1131</td><td>0.5512/0.2259</td><td>0.2454/0.1113</td><td>0.4800/0.2345</td><td>0.4353/0.1939</td></tr>
+<tr><td>C3G</td><td>0.7503/0.3694</td><td>0.6722/0.3471</td><td>0.5393/0.2708</td><td>0.7390/0.3878</td><td>0.4600/0.2145</td><td>0.7115/0.3704</td><td>0.6454/0.3267</td></tr>
+<tr><td>QuerySplat</td><td>0.5601/0.2260</td><td>0.5805/0.2750</td><td>0.2586/0.1405</td><td>0.6076/0.2678</td><td>0.2158/0.1113</td><td>0.5199/0.2722</td><td>0.4571/0.2155</td></tr>
+<tr><td>DA3-GS</td><td>0.5146/0.2179</td><td>0.4950/0.2435</td><td>0.3456/0.1777</td><td>0.4738/0.2303</td><td>0.2526/0.1434</td><td>0.4108/0.2336</td><td>0.4154/0.2077</td></tr>
+<tr><td>WorldMirror 2.0</td><td>0.4800/0.2148</td><td>0.4917/0.2310</td><td>0.2099/0.1556</td><td>0.4701/0.2169</td><td>0.2210/0.1323</td><td>0.3812/0.2106</td><td>0.3757/0.1935</td></tr>
+<tr class="best"><td>Ours</td><td>0.3773/0.1293</td><td>0.4145/0.1710</td><td>0.1096/0.0788</td><td>0.3784/0.1504</td><td>0.1459/0.0819</td><td>0.3898/0.1932</td><td>0.3026/0.1341</td></tr>
+<tr class="best"><td>Ours*</td><td>0.3698/0.1306</td><td>0.4020/0.1738</td><td>0.1033/0.0776</td><td>0.3788/0.1595</td><td>0.1445/0.0808</td><td>0.3835/0.2048</td><td>0.2970/0.1379</td></tr>
+</table>
+
+<div class="callout key">
+<b>25.8% / 32.9% 复核(本笔记按表 1 原始值手算):</b>pose-conditioned LPIPS:Ours 0.2472 vs 最强 baseline ReSplat 0.3333 → $(0.3333-0.2472)/0.3333=25.83\%$ ✓;DISTS:Ours 0.1163 vs WorldMirror 2.0 0.1734 → $32.93\%$ ✓。pose-free vs WorldMirror 2.0:LPIPS $19.46\%\approx19.5\%$ ✓、DISTS $30.70\%\approx30.7\%$ ✓。<b>注意两个百分比的对比对象不同</b>(LPIPS 对 ReSplat、DISTS 对 WorldMirror 2.0)——论文摘要写 "the strongest evaluated baselines" 是逐指标取最优,表述严谨但易误读为同一 baseline。
+</div>
+
+<h3>12.2 PSNR/SSIM 均值(附录表 3/4)</h3>
+<table>
+<tr><th>设置</th><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>DISTS↓</th></tr>
+<tr><td rowspan="4">pose-free</td><td>WorldMirror 2.0(感知指标最强 baseline)</td><td>17.0031</td><td>0.6089</td><td>0.3757</td><td>0.1935</td></tr>
+<tr><td>DA3-GS(PSNR/SSIM 最高 baseline)</td><td>17.7144</td><td>0.6463</td><td>0.4154</td><td>0.2077</td></tr>
+<tr class="best"><td>Ours</td><td>18.4002</td><td>0.6423</td><td>0.3026</td><td>0.1341</td></tr>
+<tr class="best"><td>Ours*</td><td>18.8483</td><td>0.6523</td><td>0.2970</td><td>0.1379</td></tr>
+<tr><td rowspan="3">pose-conditioned</td><td>ReSplat(PSNR/SSIM 最高 baseline)</td><td>20.9139</td><td>0.7117</td><td>0.3333</td><td>0.1794</td></tr>
+<tr class="best"><td>Ours</td><td>20.2824</td><td>0.6988</td><td>0.2472</td><td>0.1163</td></tr>
+<tr class="best"><td>Ours*</td><td>20.9334</td><td>0.7131</td><td>0.2392</td><td>0.1159</td></tr>
+</table>
+<p><b>读法:</b>pose-conditioned 下前馈 Ours 的 PSNR(20.28)仍输 ReSplat(20.91)0.63 dB,加精修才以 20.93 vs 20.91 反超 0.02 dB;LPIPS/DISTS 两项感知指标则前馈即大幅领先。pose-free 下 Ours 四项里三项第一(仅 SSIM 0.6423 略输 DA3-GS 0.6463)。<b>SOTA 宣称仅适用于感知指标</b>。</p>
+
+<h3>12.3 延迟(附录表 9,单 H20,8 输入视角)</h3>
+<table>
+<tr><th>输入分辨率</th><th>Mean (s)</th><th>Min–Max (s)</th></tr>
+<tr><td>1022 × 756</td><td>5.619</td><td>5.617–5.621</td></tr>
+<tr><td>756 × 560</td><td>2.533</td><td>2.532–2.535</td></tr>
+<tr><td>504 × 378</td><td>1.032</td><td>1.031–1.034</td></tr>
+<tr><td>378 × 280</td><td>0.564</td><td>0.563–0.564</td></tr>
+</table>
+<p class="note">只测前馈网络;<b>Ours* 三步 refinement 的延迟未报告</b>——落地评估的缺口。计时为同一 ETH3D 场景 1 warmup + 5 次 CUDA-event,min–max 极窄说明稳定但场景单一。</p>
+
+<div class="figure">
+  <img src="images/2610.20341/qualitative_objects.png" loading="lazy" alt="物体级定性对比">
+  <div class="caption"><b>图4</b>(论文 Figure 3)<b>物体级定性对比(多视角输入)。</b>大角度目标下 baseline 出现模糊与鬼影,v2 保留细节。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.20341/qualitative_scenes.png" loading="lazy" alt="场景级定性对比">
+  <div class="caption"><b>图5</b>(论文 Figure 4)<b>场景级定性对比。</b>场景级大视角变化下,v2 的结构一致性优势更明显。</div>
+</div>
+<div class="figure">
+  <div class="grid-3" style="margin:8px 0">
+    <img src="images/2610.20341/terrace_worldmirror.png" loading="lazy" alt="terrace WorldMirror">
+    <img src="images/2610.20341/terrace_anysplat.png" loading="lazy" alt="terrace AnySplat">
+    <img src="images/2610.20341/terrace_querysplat.png" loading="lazy" alt="terrace QuerySplat">
+    <img src="images/2610.20341/terrace_da3.png" loading="lazy" alt="terrace DA3-GS">
+    <img src="images/2610.20341/terrace_ours.png" loading="lazy" alt="terrace Ours">
+    <img src="images/2610.20341/terrace_gt.png" loading="lazy" alt="terrace GT">
+  </div>
+  <div class="grid-3" style="margin:8px 0">
+    <img src="images/2610.20341/relief_2_worldmirror.png" loading="lazy" alt="relief WorldMirror">
+    <img src="images/2610.20341/relief_2_anysplat.png" loading="lazy" alt="relief AnySplat">
+    <img src="images/2610.20341/relief_2_querysplat.png" loading="lazy" alt="relief QuerySplat">
+    <img src="images/2610.20341/relief_2_da3.png" loading="lazy" alt="relief DA3-GS">
+    <img src="images/2610.20341/relief_2_ours.png" loading="lazy" alt="relief Ours">
+    <img src="images/2610.20341/relief_2_gt.png" loading="lazy" alt="relief GT">
+  </div>
+  <div class="caption"><b>图6</b>(论文 Figure 11)<b>pose-free ETH3D 定性对比。</b>上两行:terrace 场景(草地纹理);下两行:relief_2 场景(浮雕细节)。每行从左到右:WorldMirror 2.0 / AnySplat / QuerySplat / DA3-GS / Ours / GT。baseline 出现重复条纹伪影,v2 的浮雕结构保持更好(§B.6 原文描述)。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+<p>论文表 2(ETH3D / DTU,前馈输出,对 N=4/8/16 平均)。变体:A=属性 backbone 微调(Ours $K{=}10$ vs w/o A $K{=}0$,冻结属性 backbone、跨分支共享特征、仅训 Gaussian head);G=几何冻结(w/o G 以 $10^{-6}$ lr 微调几何 backbone,head lr $2\times10^{-4}$);C=GT 相机反投影(w/o C 训练用预测相机);V=大角度监督(w/o V 用输入视角间局部插值视角,保留目标监督与相同掩码);O=positional offsets(几何冻结下由 Gaussian head 预测加到反投影中心上的 3D 偏移)。</p>
+<table>
+<tr><th>变体</th><th>ETH3D LPIPS↓</th><th>ETH3D DISTS↓</th><th>DTU LPIPS↓</th><th>DTU DISTS↓</th><th>解读(手算 Δ)</th></tr>
+<tr class="best"><td>Ours(完整)</td><td>0.4339</td><td>0.1661</td><td>0.2070</td><td>0.1368</td><td>—</td></tr>
+<tr><td>w/o A($K{=}0$)</td><td>0.4388</td><td>0.2019</td><td>0.2612</td><td>0.1663</td><td>DTU LPIPS 退化 20.8%——属性 backbone 微调在域外物体集(DTU)收益最大,ETH3D 仅 1.1%</td></tr>
+<tr class="fail"><td>w/o G(微调几何)</td><td>0.5204</td><td>0.1938</td><td>0.2695</td><td>0.1841</td><td>冻结 vs 微调:ETH3D LPIPS -16.6%、DTU -23.2%(论文原文数字,手算 16.65%/23.19% ✓)</td></tr>
+<tr class="fail"><td>w/ O(加 offset)</td><td>0.4998</td><td>0.2082</td><td>0.2826</td><td>0.1887</td><td>重开位置补偿旁路,全面变差;DISTS 损失为六项最大</td></tr>
+<tr class="fail"><td>w/o C(预测相机反投影)</td><td>0.5017</td><td>0.1863</td><td>0.3237</td><td>0.1758</td><td>DTU LPIPS 恶化 36.1%(0.2070→0.3237,论文原文数字 ✓)——位姿-监督一致性是硬约束</td></tr>
+<tr><td>w/o V(局部视角监督)</td><td>0.4533</td><td>0.1763</td><td>0.2295</td><td>0.1508</td><td>双数据集 LPIPS/DISTS 同步退化,幅度小于前三者</td></tr>
+</table>
+<div class="note">⚠️ 原文笔误:§4.3 正文引用消融表写作 "(Table 5)",实为 Table 2;§B.1 "Tables 7, 7, and 7" 应为 Tables 5/6/7(LaTeXML 交叉引用损坏)。读原文时注意。</div>
+
+<div class="figure">
+  <div class="grid-3" style="margin:8px 0">
+    <img src="images/2610.20341/offset_kitchen_gt.png" loading="lazy" alt="kitchen GT RGB">
+    <img src="images/2610.20341/offset_kitchen_ours.png" loading="lazy" alt="kitchen Ours RGB">
+    <img src="images/2610.20341/offset_kitchen_offset.png" loading="lazy" alt="kitchen offset RGB">
+    <img src="images/2610.20341/offset_kitchen_gt_depth.png" loading="lazy" alt="kitchen GT depth">
+    <img src="images/2610.20341/offset_kitchen_ours_depth.png" loading="lazy" alt="kitchen Ours depth">
+    <img src="images/2610.20341/offset_kitchen_offset_depth.png" loading="lazy" alt="kitchen offset depth">
+  </div>
+  <div class="caption"><b>图7</b>(论文 Figure 5)<b>NRGBD kitchen:positional offset 的破坏力。</b>上排 RGB / 下排渲染深度(alpha 归一化期望深度),从左到右:GT / Ours(完整模型)/ w/ O(offset 变体)。offset 变体出现局部模糊与深度畸变——位置自由度被滥用的直接证据。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.20341/ablation_figure.png" loading="lazy" alt="消融定性对比">
+  <div class="caption"><b>图8</b>(论文 Figure 6)<b>消融定性对比。</b>上行:w/o A 与 w/o V 在桌面产生明显裂缝,w/o G / w/ O / w/o C 裂缝较轻;下行:w/o G 与 w/o C 使门框模糊,完整模型更清晰(§4.3 原文描述)。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.20341/refiner_delivery_highres.png" loading="lazy" alt="三步精修对比">
+  <div class="caption"><b>图9</b>(论文 Figure 10)<b>三步 refinement 对比(ETH3D,8 输入视角)。</b>红框标出对比的地板区域:learned refiner(Ours*)相对前馈与 Adam 精修保留更多高频细节(对应附录表 8:PSNR 17.61 vs 16.99/16.96)。</div>
+</div>
+<div class="figure">
+  <div class="grid-3" style="margin:8px 0">
+    <img src="images/2610.20341/offset_staircase_gt.png" loading="lazy" alt="staircase GT RGB">
+    <img src="images/2610.20341/offset_staircase_ours.png" loading="lazy" alt="staircase Ours RGB">
+    <img src="images/2610.20341/offset_staircase_offset.png" loading="lazy" alt="staircase offset RGB">
+    <img src="images/2610.20341/offset_staircase_gt_depth.png" loading="lazy" alt="staircase GT depth">
+    <img src="images/2610.20341/offset_staircase_ours_depth.png" loading="lazy" alt="staircase Ours depth">
+    <img src="images/2610.20341/offset_staircase_offset_depth.png" loading="lazy" alt="staircase offset depth">
+  </div>
+  <div class="caption"><b>图10</b>(论文 Figure 9)<b>NRGBD staircase 八视角 offset 对比。</b>上排 RGB / 下排渲染深度,从左到右:GT / Ours / w/ O。offset 变体表面伪影与深度偏差更强(§B.2 原文描述)——与图 7 的 kitchen 例子互证:positional offset 重新打开"移动点补偿属性误差"的旁路。</div>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+
+<h3>14.1 横向对比表(固定维度;缺失写 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td><b>InfiniSplat v2</b></td><td>2026.10</td><td>任意 N 视角,位姿可选(双模式)</td><td>位置钉死的 3DGS(SH0)</td><td>masked L1+LPIPS(+DSSIM),GT 深度 warp mask</td><td>Hypersim+Raw3D(私有)+ScanNet++</td><td>约 61h @16×H20</td><td>0.56–5.6 s @H20(表 9)</td><td>—(逐视图分块+prefix cache 优化)</td><td>pose-cond LPIPS 0.2472 / DISTS 0.1163(6 集均值)</td><td>推理代码+权重;训练闭源</td></tr>
+<tr><td>DA3-GS</td><td>2025</td><td>任意视角,DA3 几何</td><td>像素对齐 3DGS</td><td>渲染监督(几何+属性联合)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>pose-free LPIPS 0.4154</td><td>✅(DA3 系)</td></tr>
+<tr><td>AnySplat</td><td>2025</td><td>无位姿任意视角</td><td>前馈 3DGS</td><td>渲染监督</td><td>大规模多数据集</td><td>—</td><td>—</td><td>—</td><td>pose-free LPIPS 0.4353</td><td>✅</td></tr>
+<tr><td>WorldMirror 2.0(Hy-World 2.0)</td><td>2026</td><td>any-prior prompting,位姿可选</td><td>前馈 3DGS</td><td>渲染监督</td><td>—</td><td>—</td><td>—</td><td>—</td><td>pose-free LPIPS 0.3757 / DISTS 0.1935</td><td>部分</td></tr>
+<tr><td>ReSplat</td><td>2025</td><td>稀疏位姿视角</td><td>前馈 3DGS</td><td>特征空间渲染误差驱动循环精修</td><td>—</td><td>—</td><td>—</td><td>—</td><td>pose-cond LPIPS 0.3333;PSNR 20.9139(全场最高)</td><td>✅</td></tr>
+<tr><td>DepthSplat</td><td>2025</td><td>稀疏位姿视角</td><td>像素对齐 3DGS</td><td>单目深度先验+渲染监督</td><td>ScanNet/RE10K 等</td><td>—</td><td>—</td><td>—</td><td>pose-cond LPIPS 0.3718</td><td>✅</td></tr>
+<tr><td><a href="3D-20251211-SHARP.html">SHARP</a></td><td>2025.12</td><td><b>单图</b></td><td>前馈 3DGS</td><td>渲染监督</td><td>—</td><td>—</td><td>单图秒级</td><td>—</td><td>单图 NVS 基准制定者(LPIPS/DISTS 协议来源)</td><td>✅</td></tr>
+<tr><td>InfiniSplat v1</td><td>2026.08</td><td><b>单图</b></td><td>表面对齐 support + 隐式解码 3DGS</td><td>渲染监督</td><td>Hypersim(零样本泛化到开放场景)</td><td>—</td><td>—</td><td>—</td><td>大基线单目 NVS SOTA(SIGGRAPH Asia 2026)</td><td>✅(同仓 v1 目录)</td></tr>
+</table>
+<p class="note">baseline 列的"训练时长/推理耗时/显存"原文未报告,按规范写 —;关键指标列取论文表 1/3/4 的六数据集均值(与本文同协议,可直接比)。库内兄弟笔记:<a href="3D-20251009-ReSplat.html">ReSplat</a>、<a href="3D-20251211-SHARP.html">SHARP</a>、<a href="3D-20250314-VGGT.html">VGGT</a>(几何骨干谱系)、<a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a>(谱系全景)。</p>
+
+<h3>14.2 逐条对比结论(机制层面)</h3>
+<ul>
+  <li><b>vs DA3-GS(直接前身)</b>:同一几何基座,差别全在"属性怎么学"。DA3-GS 联合优化几何+属性,v2 证明这会退化几何(w/o G 消融);v2 冻结后 pose-free LPIPS 从 0.4154 降到 0.3026(-27.2%,手算)。<b>结论:在强几何基座上,"不学几何"比"继续学几何"更优。</b></li>
+  <li><b>vs AnySplat / WorldMirror 2.0</b>:二者也把像素对齐做到了无位姿设置,v2 借其体素合并策略,但多出 GT 尺度对齐(训练侧)与大角度监督——pose-free 下对 WorldMirror 2.0 的 LPIPS -19.5%/DISTS -30.7%。<b>注意</b>:v2 训练两阶段都用 GT 位姿条件(§A.3),pose-free 只是推理侧能力,严格说与"训练即无位姿"的 AnySplat 不完全同赛道。</li>
+  <li><b>vs ReSplat(循环精修同族)</b>:ReSplat 用特征空间渲染误差做循环更新,v2 的 refiner 直接吃<b>渲染梯度</b>(更接近 G3R/Flux4D 一脉)且带隐藏状态与 KNN 空间上下文。表 4 上 ReSplat PSNR 仍最高(20.9139),v2 赢在感知指标——ReSplat 的逐像素保真更好,v2 的感知真实性更好,目标函数选择差异的直接体现。</li>
+  <li><b>vs v1(自家前作)</b>:v1 隐式解码 + 表面对齐 support 解决"单图大基线";v2 把问题换成"任意多视角下属性学习退化",答案从"改表示"变成"改训练协议"。v1 的表面对齐思想在 v2 中被更激进的"位置全锁死"取代。</li>
+</ul>
+
+<h3>14.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>像素对齐回归</td><td>pixelSplat → MVSplat → DepthSplat</td><td>极线几何 / 代价体</td><td>绑定像素网格,大角度外推碎裂</td></tr>
+<tr><td>大模型前馈</td><td>GS-LRM → NoPoSplat → AnySplat</td><td>海量数据学的隐式几何</td><td>感知指标落后于专用协议</td></tr>
+<tr><td>几何基座 + 属性头</td><td>DA3-GS → <b>InfiniSplat v2</b></td><td>冻结的几何基础模型(DA3)</td><td>几何错误不可修,靠 opacity 吸收</td></tr>
+<tr><td>生成式/循环精修</td><td>ReSplat、G3R、Flux4D、<b>v2 Stage II</b></td><td>渲染反馈作为可学习信号</td><td>精修延迟与收益未充分解耦报告</td></tr>
+<tr><td>单图大基线</td><td>Flash3D → <a href="3D-20251211-SHARP.html">SHARP</a> → InfiniSplat v1</td><td>单目几何先验 + 表面对齐</td><td>单图信息瓶颈,难覆盖遮挡区</td></tr>
+</table>
+<p><b>定位一句话</b>:v2 是"几何基座 + 属性头"范式的<b>训练协议极化版</b>——它证明了在这条线上,剩余提升空间主要不在更大的模型,而在<b>切断错误梯度通路(冻结)、对齐监督坐标系(GT 位姿)、加密监督视角分布(大角度)</b>这三件"不要钱"的事,外加一个"把渲染梯度当特征"的精修器作为可选增益。</p>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性</h2>
+
+<h3>15.1 与我们 pipeline(vggt_human)的相关性</h3>
+<ul>
+  <li><b>直接可用件</b>:发布包是纯推理 CLI(<code>infinisplat</code>),输入 2–50 张图 + 可选 COLMAP/GT 相机,输出 SH0 PLY——与我们 COLMAP → 3DGS 链路的接口完全对齐,<b>可作为稀疏视角下的 scene_gs 初始化方案</b>做 A/B 对比(对比现行 COLMAP 点云初始化)。</li>
+  <li><b>硬件门槛</b>:单卡 3090(24GB)可跑——发布包为交互式重建设计,backbone BF16 + 逐视图分块 + prefix cache 都是省显存设计;官方最低示例建议 "2–4 张图 + 长边 224" 起步(README.md:71-72)。8 视角 1022×756 在 H20 上 5.6 s,3090 上预计更慢【待实测】。</li>
+  <li><b>对人体场景的局限</b>:训练数据是 Hypersim(室内合成)/Raw3D/ScanNet++,无人体专项;<b>冻结几何意味着 MHR/3DMM 对齐这类需要"改几何"的环节无法借助它</b>——它适合背景/场景重建,不适合 head_gs 的 3DMM 拟合。</li>
+  <li><b>相机约束</b>:只收 PINHOLE/SIMPLE_PINHOLE 去畸变模型(cameras.py:67-73);我们的采集若是广角/鱼眼需先去畸变。</li>
+  <li><b>渲染器缺失</b>:发布包不渲染(无 gsplat),要出图需自接光栅化——但我们 pipeline 本来就有 3DGS 渲染栈,PLY 可直接喂入。</li>
+</ul>
+
+<h3>15.2 论文展示的应用</h3>
+<div class="figure">
+  <img src="images/2610.20341/application.png" loading="lazy" alt="KITTI 大规模重建">
+  <div class="caption"><b>图11</b>(论文 Figure 13)<b>KITTI 大场景重建。</b>超 1,000 帧街道序列滑窗构建 Gaussian 场景,insets 为 A–F 位置的高处视角渲染。<span class="uncertain">⚠️【待核实】12–64 输入视角超出训练分布 N∈{4,...,12},仅定性展示、无定量证据(附录 C 亦承认覆盖不足)。</span></div>
+</div>
+<div class="figure">
+  <img src="images/2610.20341/appendix_compressed.png" loading="lazy" alt="多数据集 12-64 视角前馈重建">
+  <div class="caption"><b>图12</b>(论文 Figure 12)<b>12–64 输入视角的前馈重建。</b>覆盖 DDAD、Waymo、ETH3D、Hypersim、DTU、Mip-NeRF 360、Mill19(Mega-NeRF)。</div>
+</div>
+
+<h3>15.3 落地成本账</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>说明</th></tr>
+<tr><td>推理</td><td>0.5–6 s/场景(分辨率相关)</td><td>论文表 9;refinement 成本未报告</td></tr>
+<tr><td>复现训练</td><td><b>不可行</b></td><td>无训练代码 + Raw3D 私有 + DA3 具体权重版本获取途径未给</td></tr>
+<tr><td>微调/二次开发</td><td>高</td><td>只有推理包,改动空间限于后处理(PLY 清洗/压缩)</td></tr>
+<tr><td>商用许可</td><td>见仓库 LICENSE【待核实】</td><td>HF 权重许可需单独确认</td></tr>
+</table>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] ① 固定中心对几何硬伤无能为力(方法层面)</h4>
+<p><b>问题</b>:附录 C 自认——opacity 吸收只能压低不可靠点的贡献,不能纠正严重几何错误;预测深度错得离谱的区域(薄结构、反光、无纹理)在渲染中仍表现为缺洞/雾团。代码佐证:位置 100% 来自深度反投影(<code>model.py:203-206</code>),11 通道头里没有任何位置自由度(<code>gaussians.py:10-21</code>)。<b>改进建议</b>:在"完全冻结"与"自由 offset"之间找中间态——例如只允许沿视线方向的 1 自由度深度残差、或给 offset 加置信门控(w/ O 消融证明全开 offset 有害,但零自由度同样锁死了上限);更根本的是接更强几何先验(论文 C 节亦指向此)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] ② 像素对齐冗余与表示效率(方法层面)</h4>
+<p><b>问题</b>:逐像素预测 + 体素合并(推理契约 voxel=median_scale×1.4,<code>gaussians.py:34-35</code>)仍残留冗余(附录 C),Gaussian 数量随输入视角数线性膨胀;SH 只有零阶(代码确认 <code>export.py:21-30</code> 只导 f_dc),视角相关外观(高光)无表达能力。<b>改进建议</b>:合并后做重要度驱动的二次剪枝/聚类;或借鉴 v1 的表面对齐 support 思路做自适应密度;升级到 1–2 阶 SH 评估代价收益。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] ③ 评测与训练视角数错配(数据与评估)</h4>
+<p><b>问题</b>:训练 $N\in\{4,...,12\}$(§A.1),评测却含 $N=16$(§4.1),超出训练分布;Fig.12/13 的 12–64 视角、KITTI 1000+ 帧更只有定性展示。<b>改进建议</b>:补 N=16 的分布外泛化分析;大场景给出定量(哪怕是自一致的 re-rendering 指标)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] ④ refinement 成本黑盒(工程实用性)</h4>
+<p><b>问题</b>:表 9 只报前馈延迟;Ours* 的三步 refinement(含每步 RenderGrad 重算 + KNN 图查询)延迟、显存均未报,而表 1 中 Ours* 才是多项指标的最优行。<b>改进建议</b>:补 refinement 的耗时/显存表;公开 refiner 权重与代码(当前发布包完全没有,见 §10/§11)。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] ⑤ opacity 诊断结论的泛化性存疑(数据与评估)</h4>
+<p><b>问题</b>:51.8%/7.5%/93.3% 的漂亮数字只在 Hypersim(合成室内)验证集上统计,且 $\tau_\alpha=0.01$ 恰好等于训练剪枝阈值,有循环论证嫌疑(§7 清单第 7/8 条)。<b>改进建议</b>:在真实数据集(ETH3D/DTU 的 GT 深度)上重跑该诊断;扫阈值敏感性曲线而非单点。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[低优先级] ⑥ 训练/推理条件不一致(方法层面)</h4>
+<p><b>问题</b>:两阶段训练都用 GT 位姿条件(§A.3),pose-free 推理却用预测相机——train/test 条件错配未单独消融;同时 Stage I 两个学习率差三个数量级($10^{-6}$ vs $2\times10^{-4}$)依据未说明。<b>改进建议</b>:补 pose-free 条件下的训练消融;公开超参选取过程。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>预期收益</th></tr>
+<tr><td>高</td><td>① 几何硬伤的修复通路(受限位置自由度)</td><td>补齐固定中心策略的上限</td></tr>
+<tr><td>高</td><td>② 表示效率(剪枝/SH 升阶)</td><td>降存储与渲染成本</td></tr>
+<tr><td>中</td><td>③ 评测分布对齐 ④ refinement 成本透明化 ⑤ 诊断泛化验证</td><td>结论可信度与可落地性</td></tr>
+<tr><td>低</td><td>⑥ 训练协议一致性消融</td><td>理解双模式差距来源</td></tr>
+</table>
+<div class="callout key"><b>个人认为最关键的三点:</b>①(固定中心 vs 几何硬伤是这条路线的天花板)、④(没有成本数字,Ours* 的优势无法进入工程决策)、⑤(opacity 诊断是论文最有传播力的发现,但目前只建立在合成数据上,最值得独立复验)。</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+<p>InfiniSplat v2 用三个"训练侧手术"把 DA3 系前馈 3DGS 的感知指标推了一大步:<b>冻结几何分支</b>(阻断位置补偿属性的退化通路,单此项带来 16.6–23.2% LPIPS 改善)、<b>GT 位姿尺度对齐</b>(消除相机诱导残差,DTU 上避免 36.1% 的退化)、<b>大角度目标监督</b>(最小光轴角均值 12.34°→17.97°,形状参数被多方向钉死)。配套的 opacity 诊断发现——纯重建监督下 opacity 自学会抑制几何不一致点(0.01 剪枝命中 51.8% 坏点、仅伤 7.5% 总点)——为"位置钉死"策略提供了自洽的闭环。</p>
+<p>它的代价与边界同样清晰:<b>PSNR 上并非全面 SOTA</b>(前馈输 ReSplat 0.63 dB);三步 learned refinement(Ours*)的收益真实但<b>代码与延迟均未公开</b>;训练完全不可复现(无代码、数据含私有 Raw3D、16×H20 × 61h)。在"几何基座 + 属性头"这条范式线上,v2 的角色是把训练协议做到极致;下一步的空间在受限几何自由度(§16-①)与表示效率(§16-②),而不是更大的 backbone。</p>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>18.1 团队</h3>
+<ul>
+  <li><b>Yongzhen Hu</b>(共同一作,浙大 / Hello TransTech)、<b>Hao Yu</b>(共同一作,浙大)、<b>Jiawei Wang</b>(浙大)——三人均为 v1(arXiv 2608.02437)作者。</li>
+  <li><b>Sida Peng</b>(通讯,浙大 / Causa Robotics)、Xiaowei Zhou、Hujun Bao(浙大 CAD&CG);Ruizhen Hu(深圳大学);Xianming Zeng、Jianyun Xu、Xingliang Liu(Hello TransTech)。</li>
+  <li>团队谱系:浙大 3DV(ZJU3DV)——pixelSplat 之后的系列前馈重建工作、<a href="3D-20250923-Lyra.html">Lyra</a>(视频生成先验)同组。</li>
+</ul>
+<h3>18.2 资源链接</h3>
+<div class="links">
+  <a href="https://arxiv.org/abs/2610.20341" target="_blank">📄 arXiv(2610.20341)</a>
+  <a href="https://zju3dv.github.io/InfiniSplat2/" target="_blank">🌐 项目主页</a>
+  <a href="https://github.com/zju3dv/InfiniSplat" target="_blank">💻 GitHub(推理代码,InfiniSplat_v2/)</a>
+  <a href="https://huggingface.co/spaces/Edisoneh/InfiniSplat2" target="_blank">🤗 HF Demo</a>
+  <a href="https://huggingface.co/Edisoneh/InfiniSplat-v2" target="_blank">🤗 HF 权重</a>
+</div>
+<div class="callout warn" style="margin-top:16px"><b>资源可用性(截至 2026-10-23):</b>代码为<b>纯推理包</b>(训练代码未开源);权重公开(HF,含 DA3 backbone,v1/v2 不兼容);项目页 Demo 可交互。<b>无会议信息</b>(abs 页 comments 仅 "21 pages. Project page: ..."),v1 为 SIGGRAPH Asia 2026(Journal Track)。</div>
+</section>
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-23 · 领域: 3D 重建 / 前馈式 3DGS(冻结几何分支 + GT 位姿对齐 + 大角度监督)</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

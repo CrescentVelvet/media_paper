@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 83</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 49</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 84</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 50</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -2842,6 +2842,33 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://openaccess.thecvf.com/content/CVPR2026/supplemental/Ma_CoRoGS_Contextual_Gaussian_CVPR_2026_supplemental.zip" target="_blank">📎 Supplementary</a>
         </div>
 
+        <div class="note-card" data-file="3D-20261014-InfiniSplat-v2.html" data-kind="note" data-depth="deep"
+              data-topics="前馈式大重建模型|稀疏与少视角重建" data-search="InfiniSplat v2: 冻结几何分支+GT位姿对齐+大角度监督的前馈 3DGS 3DGS 前馈重建 Depth Anything 3 冻结几何分支 大角度监督 渲染反馈精修 pose-free 分析前馈 3DGS 属性学习的退化机制并给三剂药:冻结 DA3 几何分支(阻断位置补偿属性的旁路)、训练用 Umeyama 尺度对齐的 GT 相机反投影、大角度目标视角监督(最小光轴角均值 12.34°→17.97°)。六数据集均值下 pose-conditioned LPIPS 较最强 baseline(ReSplat)降 25.8%、DISTS 较 WorldMirror 2.0 降 32.9%(均经手算复核);发现纯重建监督的 opacity 自学会抑制几何不一致点(0.01 剪枝命中 51.8% 坏点仅伤 7.5% 总点)。笔记含推理源码级验证(file:line)、发布包无训练代码/无 refiner 的宣称-实现差异清单,以及 PSNR 并非全面 SOTA 的边界复核。">
+            <h3>98. InfiniSplat v2: 冻结几何分支+GT位姿对齐+大角度监督的前馈 3DGS</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2610.20341</span>
+                <span>📅 2026-10-14</span>
+                <span>🏢 浙江大学 / Hello TransTech / 深圳大学 / Causa Robotics</span>
+                <span>✅ 开源(推理代码+权重;训练未开源)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">前馈重建</span>
+                <span class="tag">Depth Anything 3</span>
+                <span class="tag">冻结几何分支</span>
+                <span class="tag">大角度监督</span>
+                <span class="tag">渲染反馈精修</span>
+                <span class="tag">pose-free</span>
+            </div>
+            <p>分析前馈 3DGS 属性学习的退化机制并给三剂药:冻结 DA3 几何分支(阻断位置补偿属性的旁路)、训练用 Umeyama 尺度对齐的 GT 相机反投影、大角度目标视角监督(最小光轴角均值 12.34°→17.97°)。六数据集均值下 pose-conditioned LPIPS 较最强 baseline(ReSplat)降 <strong>25.8%</strong>、DISTS 较 WorldMirror 2.0 降 <strong>32.9%</strong>(均经手算复核);发现纯重建监督的 opacity 自学会抑制几何不一致点(0.01 剪枝命中 51.8% 坏点仅伤 7.5% 总点)。笔记含推理源码级验证(file:line)、发布包无训练代码/无 refiner 的宣称-实现差异清单,以及 PSNR 并非全面 SOTA 的边界复核。</p>
+            <a href="3D-20261014-InfiniSplat-v2.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2610.20341" target="_blank">📄 arXiv</a>
+            <a href="https://zju3dv.github.io/InfiniSplat2/" target="_blank">🌐 项目主页</a>
+            <a href="https://github.com/zju3dv/InfiniSplat" target="_blank">💻 GitHub</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -2920,7 +2947,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>98. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>99. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2943,7 +2970,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>99. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>100. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -2966,7 +2993,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>100. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>101. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -2992,7 +3019,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>101. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>102. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -3035,7 +3062,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-10-23 · 涵盖 101 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-10-23 · 涵盖 102 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
