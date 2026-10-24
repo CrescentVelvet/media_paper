@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Splannequin:双检测时间锚定正则,把随手拍的 Mannequin-Challenge 视频冻成高保真静态时刻</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2512.05113v2 · 2025-12-04 · WACV 2026 · 📊 deep</span>
+    <h1>Splannequin:双检测时间锚定正则,把随手拍的 Mannequin-Challenge 视频冻成高保真静态时刻</h1>
+    <div class="subtitle">Splannequin: Freezing Monocular Mannequin-Challenge Footage with Dual-Detection Splatting</div>
+    <div class="authors">Hao-Jen Chien · Yi-Chuan Huang · Chung-Ho Wu · Wei-Lun Chao · Yu-Lun Liu</div>
+    <div class="org">National Yang Ming Chiao Tung University(台湾阳明交通大学)· The Ohio State University</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2512.05113" target="_blank">📄 arXiv</a>
+      <a href="https://chien90190.github.io/splannequin/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/chien90190/splannequin-gs" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/datasets/chien90190/Splannequin" target="_blank">🤗 数据集</a>
+    </div>
+    <div class="note" style="margin-top:16px">✅ abs 页 comments 明确标注 <b>WACV 2026</b>,badge 有据。代码已开源(<code>chien90190/splannequin-gs</code>,基于 4DGaussians/HexPlane 代码库),数据集挂 HuggingFace(帧需按脚本从 YouTube 重新下载 + 自跑 COLMAP)。本笔记全部超参与实现细节经源码逐行核对,发现的「论文宣称 vs 代码实现」差异集中在 <a href="#s11" style="color:var(--accent)">§11</a>。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">问题定义与监督缺口分析</a></li>
+    <li><a href="#s4">算法总体框架与符号表</a></li>
+    <li><a href="#s5">模块一:Hidden Gaussian 检测与过去锚定</a></li>
+    <li><a href="#s6">模块二:Defective Gaussian 检测与未来锚定</a></li>
+    <li><a href="#s7">模块三:置信度加权与总目标函数</a></li>
+    <li><a href="#s8">固定时刻渲染(Fixed-Time Rendering)</a></li>
+    <li><a href="#s9">损失函数总表</a></li>
+    <li><a href="#s10">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节(源码核对)</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概要</b>:Splannequin 把「带轻微人体微动的单目 Mannequin-Challenge 视频」变成「用户可任选冻结时刻 $t^\star$ 的高保真静态时刻视频」——做法是<b>不改任何网络架构</b>,在现有动态高斯(D-3DGS / 4DGaussians / SC-GS)训练里加两个正则损失:检测出<b>隐藏(hidden,相机已走过、脱离视锥)</b>与<b>缺陷(defective,在视锥内但梯度≈0)</b>两类欠监督 Gaussian,分别把它们锚定到「过去被充分监督的状态」与「未来将被充分监督的状态」。</p>
+<div class="callout key"><b>核心贡献(与标准动态重建的本质区别)</b>:标准动态高斯的目标是<b>保真地建模运动</b>;本文目标是<b>消除运动、冻结场景</b>,但又不能退化成静态 3DGS——因为它要保留「用户可选任意 $t^\star$」的能力。这是一个此前无人形式化的新问题,作者同时给出了配套 benchmark(10 条真实 MC 视频 + 10 个 Blender 合成场景)与评测协议(全套无参考 IQA/VQA 指标,因为 GT 帧本身就带着要消除的运动,全参考指标不可用)。</div>
+<div class="stat-row">
+  <div class="stat"><div class="v">96%</div><div class="l">用户研究偏好率(23 人,§6.5)</div></div>
+  <div class="stat"><div class="v">+339.85%</div><div class="l">COVER Technical(D-3DGS+,表 2)</div></div>
+  <div class="stat"><div class="v">+243.8%</div><div class="l">CQA 平均提升(D-3DGS+,表 2)</div></div>
+  <div class="stat"><div class="v">&gt;280 FPS</div><div class="l">RTX 4090 推理(§6.4,形变每时刻只跑一次)</div></div>
+  <div class="stat"><div class="v">0</div><div class="l">推理开销 / 架构改动(纯损失项)</div></div>
+</div>
+<p><b>论文自述的三点贡献</b>(§1):① 新问题形式化 + 新 benchmark——首次把「单目 MC 视频 → 高保真冻结时刻视频」作为独立任务提出;② 针对性正则框架——识别 hidden / defective 两类制造时序伪影的 Gaussian 并做时间锚定;③ 零推理开销的 SOTA——以纯损失项接入现有动态高斯管线,形变网络对每个目标时刻只需前向一次,推理 &gt;280 FPS(RTX 4090)。</p>
+<div class="figure"><img src="images/2512.05113/teaser.jpg" alt="teaser" loading="lazy"><div class="caption"><b>图1(论文 Figure 1)</b> Splannequin 把不完美的 MC 素材转成真正的冻结时刻视频。上:单目 MC 视频连续帧的红色裁切框中可见轻微身体移动;下:处理后同一相机位姿序列的所有裁切(绿框)完全静止。<span style="color:var(--yellow)">注:arXiv HTML v2 中该 Figure 无位图导出,本图取自项目主页同名 teaser。</span></div></div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 任务背景:从 $750k 的子弹时间到随手拍</h3>
+<p>「冻结时刻(freeze-time / bullet-time)」效果传统上靠多相机阵列拍摄 + 重度后期,论文称单个镜头成本超 <b>$750k</b>(§1)。2016 年病毒式传播的 <b>Mannequin Challenge</b> 提供了低成本替代:所有人保持静止,手持单相机穿行拍摄。Google 的 Mannequin-Challenge 数据集(Li et al.)随后成为「冻结人体」深度估计的经典基准。但真实 MC 拍摄里人<b>不可能完全静止</b>——呼吸、眨眼、重心晃动等微动必然存在,直接拿来做单目动态重建就会出问题。</p>
+<h3>2.2 现有方法的具体失败模式</h3>
+<div class="grid-3">
+  <div class="card"><h4>动态高斯(D-3DGS / 4DGaussians / SC-GS)</h4><p>原则上固定时间参数 $t=t^\star$ 就能渲染静态场景;实践中冻结渲染出现<b>鬼影(ghosting)与模糊</b>(论文图 2:人脸周围双重轮廓)。根因不是网络不够强,而是<b>单目前向运动下大量 Gaussian 在某些时刻完全收不到监督</b>。</p></div>
+  <div class="card"><h4>静态 3DGS 系</h4><p>假设场景完全刚性,MC 视频的轻微人体微动直接违反该假设;且静态管线<b>彻底丢失时间维</b>,无法实现「任选冻结瞬间」的艺术控制(表 4 显示 4DGaussians+Splannequin 已能与静态 3DGS 打平,但 3DGS 做不到逐时刻视频)。</p></div>
+  <div class="card"><h4>运动感知 IBR / 前馈子弹时间(DynIBaR、BTimer 等)</h4><p>面向任意相机路径泛化,但<b>保留微动</b>而非消除微动;扩散类 4D 生成(4Real、CAT4D 等)幻觉出逼真几何,建模的是子帧级动态,同样不解决「冻结」。</p></div>
+</div>
+<h3>2.3 核心洞察(insight)</h3>
+<div class="callout tip"><b>伪影的真正来源是「监督缺口」而非「运动建模能力不足」。</b>动态高斯里,Gaussian 只有在对某帧图像有渲染贡献时才收到重建损失的梯度;在单目前向运动(相机一路向前)下,位于相机身后(hidden→已出视锥)或远处/被遮挡/近乎透明(defective→在视锥内但贡献≈0)的 Gaussian 在相应时刻处于「自由漂移」状态。渲染固定时刻 $t^\star$ 时,这些无约束 Gaussian 的状态是未定的,直接表现为鬼影与模糊。<b>对策</b>:不改架构,用两个可微检测器把这两类 Gaussian 找出来,再把它们的参数「锚定」到同一 Gaussian 在其它时刻被充分监督的状态——隐藏者锚向过去,缺陷者锚向未来(因为前向运动下「未来帧会走近它」)。</div>
+<div class="callout warn"><b>关键假设及其失效条件</b>(论文 §7 Limitations 自述):① 场景<b>近似静态</b>,快速非刚体运动下失效——此时找不到可靠的时间锚;② 快速移动的阴影、光照突变同样破坏锚的可靠性;③ 「hidden 锚过去、defective 锚未来」的方向性暗含<b>相机以前向运动为主</b>的前提。运动阈值与帧位置依赖的定量分析被作者留作未来工作。</div>
+<div class="figure"><img src="images/2512.05113/Motivation_new.png" alt="motivation" loading="lazy"><div class="caption"><b>图2(论文 Figure 2)</b> 现有高斯泼溅框架无法从随手拍 MC 视频给出合理结果:SC-GS / 4DGaussians / D-3DGS 的冻结渲染在人物面部留下明显模糊与双重轮廓(蓝框);Splannequin 重建(红框)锐利、时序一致,发丝与面部细节清晰无鬼影。</div></div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>问题定义与监督缺口分析</h2>
+<h3>3.1 形式化定义</h3>
+<p><b>输入</b>:单目 MC 视频,$N$ 帧 $\{(I_n, \mathbf{R}_n, \mathbf{b}_n, t_n)\}_{n=1}^{N}$(图像、相机旋转/平移、时间戳,位姿由 COLMAP 提供)。<b>输出</b>:用户选定冻结时刻 $t^\star$ 后,对任意输入相机视角 $(\mathbf{R}, \mathbf{b})$ 渲染高保真静态图像 $\hat{I}(\mathbf{R}, \mathbf{b}, t^\star)$——把所有运动冻结,同时保留「换一个 $t^\star$ 就换一瞬间」的选择自由。</p>
+<p>场景用一组静态(canonical)3D Gaussian $\{G_k\}_{k=1}^{K}$ 表示,每个有静态均值 $\bm{\mu}_k$ 与协方差 $\bm{\Sigma}_k$;形变网络 $f_\theta$(通常是 MLP)预测每个 Gaussian 随时间的演化:</p>
+<div class="equation">$$(\Delta\bm{\mu}_{k,t},\ \Delta\bm{\Sigma}_{k,t}) = f_\theta(\bm{\mu}_k, t)$$<span class="tag">(式 1,论文式 1)</span></div>
+<p>时刻 $t$ 的状态为 $G_k(t) = (\bm{\mu}_k + \Delta\bm{\mu}_{k,t},\ \bm{\Sigma}_k + \Delta\bm{\Sigma}_{k,t})$,用标准重建损失优化:</p>
+<div class="equation">$$\mathcal{L}_{\text{recon}} = \sum_{n=1}^{N} \ell\big(\hat{I}(\mathbf{R}_n, \mathbf{b}_n, t_n),\ I_n\big)$$<span class="tag">(式 2,论文式 2)</span></div>
+<h3>3.2 监督缺口:为什么固定 $t^\star$ 会出鬼影</h3>
+<p>式 2 只在 Gaussian $G_k$ <b>于 $t_n$ 可见且对图像有贡献</b>时提供梯度;若它在 $t_n$ 被遮挡或离开视锥,则 $f_\theta(\bm{\mu}_k, t_n)$ 完全无监督,状态估计在这些时刻不稳定。论文用一张<b>时间-相机图</b>(图 3)说明:常规动态渲染沿「时间×相机路径」的对角线走,而冻结渲染沿 $t^\star$ 水平线走——水平线上大量 Gaussian 恰好落在从未被监督的时间位置。</p>
+<div class="figure"><img src="images/2512.05113/time-plane.png" alt="time-plane" loading="lazy"><div class="caption"><b>图3(论文 Figure 3)</b> 时间-相机概念图。对角虚线 = 标准动态渲染轨迹;水平线 = $t^\star$ 冻结渲染。水平线上欠监督的 Gaussian 分两类:hidden(红点,相机已越过)与 defective(蓝点,尚未被充分观测)。本文把 hidden 锚向过去、defective 锚向未来。右图为走廊鸟瞰,示意相机路径如何制造 defective 与 hidden 区域。</div></div>
+<h3>3.3 两类欠监督 Gaussian 的判定(论文 §4.1)</h3>
+<ul>
+  <li><b>Hidden Gaussian</b>:$s_{\text{hidden}}(k,t)=1$ 当且仅当 Gaussian 中心投影在相机视锥<b>之外</b>(可见性为 0),典型发生于相机走过它之后——完全不可观测、零监督。</li>
+  <li><b>Defective Gaussian</b>:$s_{\text{defective}}(k,t)=1$ 当且仅当中心在视锥<b>之内</b>(可见性为 1)但渲染贡献可忽略,得到零梯度更新(判据:梯度 $\le 10^{-9}$)——常见于远处、高透明、被遮挡的图元。</li>
+</ul>
+<p>只有 $s_{\text{hidden}}=0$ 且 $s_{\text{defective}}=0$ 时 Gaussian 才算「被充分监督」。可见性直接取自可微光栅化器的输出(论文引 diff-gaussian-rasterization)。</p>
+<div class="figure"><img src="images/2512.05113/Hidden-Visible.jpg" alt="hidden-visible" loading="lazy"><div class="caption"><b>图4(论文 Figure 4)</b> Hidden Gaussian 示意:给定时刻,视锥外的 hidden Gaussian(左)收不到任何监督;视锥内的 visible Gaussian(右)被光栅化成图像。本文专门针对欠监督的 hidden Gaussian 防止伪影。</div></div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>算法总体框架与符号表</h2>
+<h3>4.1 三阶段流水线</h3>
+<div class="mermaid">
+flowchart TD
+    A["输入: 单目 MC 视频 N 帧<br/>(含轻微人体微动)"] --> B["COLMAP<br/>相机位姿 (R_n, b_n) + 稀疏点云"]
+    B --> C["动态高斯底座<br/>canonical 3DGS + HexPlane 形变场 f_theta"]
+    C --> D["双检测器(每 10 iter)<br/>随机采 2 个视角-时刻对"]
+    D --> E{"逐 Gaussian 判定"}
+    E -->|"视锥外(可见性=0)"| F["Hidden<br/>锚向过去被监督状态"]
+    E -->|"视锥内但梯度&lt;=1e-9"| G["Defective<br/>锚向未来被监督状态"]
+    E -->|"两态皆无监督且时距&lt;阈值"| H["等式约束<br/>两状态互等(源码独有)"]
+    F --> I["总损失 L = L_recon + 10*L_hidden + 10*L_defective"]
+    G --> I
+    H --> I
+    I --> J["训练 30k iter<br/>(10k 起加正则, 20k 由 L2 切 L1)"]
+    J --> K["固定时刻渲染:<br/>全部 N 个位姿统一取 t = t*"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#e0e7ff,stroke:#6366f1,color:#1e1b4b
+    style F fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style G fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    style H fill:#f3e8ff,stroke:#a855f7,color:#581c87
+    style K fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+<div class="figure"><img src="images/2512.05113/pipeline.png" alt="pipeline" loading="lazy"><div class="caption"><b>图5(论文 Figure 5)</b> Splannequin 流水线总览:(1) 从输入视频提取点云;(2) 动态高斯 + 双检测损失,hidden 锚向更早帧($t'&lt;t$)、defective 锚向更晚帧($t&lt;t'$);(3) 在任意 $t^\star$ 渲染冻结时刻视频。基于时间距离的置信度加权让更近的参考帧提供更强锚定。<span style="color:var(--yellow)">注:arXiv HTML v2 中该 Figure 无位图导出,本图取自项目主页 pipeline.png。</span></div></div>
+<h3>4.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状/取值</th></tr>
+<tr><td>$N,\ K$</td><td>输入帧数;canonical Gaussian 数量</td><td>标量;数据集实测 $N$ 约 287 帧/视频(2869 帧 / 10 视频)</td></tr>
+<tr><td>$(\mathbf{R}_n, \mathbf{b}_n, t_n)$</td><td>第 $n$ 帧相机旋转、平移、时间戳</td><td>$\mathbf{R}_n\in\mathbb{R}^{3\times 3}$;时间戳归一化到 $[0,1]$【待核实:沿用 4DGaussians 约定】</td></tr>
+<tr><td>$\bm{\mu}_k,\ \bm{\Sigma}_k$</td><td>第 $k$ 个 canonical Gaussian 的静态均值与协方差</td><td>$\bm{\mu}_k\in\mathbb{R}^{3}$</td></tr>
+<tr><td>$f_\theta$</td><td>形变网络(论文称 "typically an MLP";官方实现为 HexPlane + 0 层 MLP,见 §11)</td><td>输入 $(\bm{\mu}_k, t)$,输出位置/协方差增量</td></tr>
+<tr><td>$\bm{\theta}_k(t)$</td><td>$G_k$ 在时刻 $t$ 的被锚定参数集:位置 $\bm{\mu}_k(t)$、协方差 $\bm{\Sigma}_k(t)$、不透明度 $\alpha_k(t)$、球谐系数 $\mathbf{c}_k(t)$</td><td>⚠️ 代码实现里<b>不含 $\alpha$</b>,见 §11 差异清单</td></tr>
+<tr><td>$t^\star$</td><td>用户选定的冻结时刻</td><td>评测时取输入视频每第 8 帧</td></tr>
+<tr><td>$s_{\text{hidden}}(k,t)$</td><td>hidden 判定:1 = 中心投影在视锥外</td><td>$\{0,1\}$,取自光栅化器可见性</td></tr>
+<tr><td>$s_{\text{defective}}(k,t)$</td><td>defective 判定:1 = 视锥内但梯度 $\le 10^{-9}$</td><td>$\{0,1\}$</td></tr>
+<tr><td>$t_{\text{ref}}$</td><td>锚定参考时刻(hidden 要求 $t_{\text{ref}}&lt;t$;defective 要求 $t_{\text{ref}}&gt;t$)</td><td>随机采样(实现细节见 §5/§11)</td></tr>
+<tr><td>$\phi(t,t_{\text{ref}})=e^{-\tau|t-t_{\text{ref}}|}$</td><td>时间距离置信度(指数衰减)</td><td>论文 $\tau=5$;<b>代码 steepness=3</b>(§11 差异)</td></tr>
+<tr><td>$\lambda_{\text{hidden}},\ \lambda_{\text{defective}}$</td><td>两项正则权重</td><td>均 = 10(论文 §6.1 与代码一致)</td></tr>
+<tr><td>$\mathcal{D}(\cdot,\cdot)$</td><td>差异度量</td><td>前 10k–20k iter 用 $L_2^2$,20k 后切 $L_1$</td></tr>
+</table>
+<div class="callout key"><b>架构无关性(architecture-agnostic)的含义</b>:Splannequin 只需要宿主动态高斯管线提供两样东西——① 每个 Gaussian 在每个渲染视角的<b>可见性</b>(光栅化器 radii&gt;0 位掩码)与<b>屏幕空间梯度</b>;② 每个 Gaussian 在每个时刻的<b>变形后参数</b>。两者在所有主流动态高斯实现(D-3DGS / 4DGaussians / SC-GS)中都现成存在,因此可以纯损失项形式即插即用,零架构改动、零推理开销。</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块一:Hidden Gaussian 检测与过去锚定</h2>
+<h3>5.1 网络结构表(数据流维度)</h3>
+<p>本模块不含新网络层,是加在「随机采样的视角对」上的正则。单次触发的张量流(按源码 <code>train.py:186-270</code> 与 <code>utils/dual_loss_utils.py</code> 复原):</p>
+<table>
+<tr><th>步骤</th><th>输入</th><th>操作</th><th>输出</th></tr>
+<tr><td>采样</td><td>训练相机序列($N$ 个视角)</td><td>每 10 iter 触发一次;取 batch=2 个视角-时刻对(50% 概率取与前一帧 ±5 帧内的近邻,否则全序列随机,见 §11)</td><td>2 个 $(\mathbf{R},\mathbf{b},t)$</td></tr>
+<tr><td>双渲染</td><td>2 个视角</td><td>各自经 $f_\theta$ 变形 + 可微光栅化,<code>retain_graph</code> 反传重建损失</td><td>每视角:deform 参数、可见性掩码、屏幕梯度</td></tr>
+<tr><td>按时间排序</td><td><code>times [2]</code></td><td><code>argsort</code>(早→晚),所有张量按此重排</td><td><code>deforms [2, K, C]</code>、<code>visi [2, K]</code>、<code>grads [2, K]</code>、<code>times [2]</code></td></tr>
+<tr><td>hidden 判定</td><td><code>visi</code></td><td><code>hidden = (visi[1] == False)</code>:晚帧不可见(<code>dual_loss_utils.py:96</code>)</td><td>布尔掩码 $[K]$</td></tr>
+<tr><td>锚定损失</td><td>掩码 + deforms</td><td>Case 1(早可见/晚隐藏):晚帧状态 → 早帧 detach 状态,加权 $\phi$</td><td>标量 $\mathcal{L}_{\text{hidden}}$</td></tr>
+</table>
+<h3>5.2 数学形式化</h3>
+<p>对被判定为 hidden 的 Gaussian $k$(时刻 $t$),随机采样的参考时刻 $t_{\text{ref}}$ 是合法锚当且仅当 $t_{\text{ref}} &lt; t$ 且 $G_k$ 在 $t_{\text{ref}}$ 被充分监督。满足时施加一致性损失:</p>
+<div class="equation">$$\mathcal{L}_{\text{consistency}}(k,t) = \phi(t, t_{\text{ref}})\cdot \mathcal{D}\big(\bm{\theta}_k(t),\ \bm{\theta}_k(t_{\text{ref}})\big)$$<span class="tag">(式 3,论文式 3)</span></div>
+<div class="equation">$$\mathcal{D}(\bm{\theta}_A, \bm{\theta}_B) = \begin{cases} \|\bm{\theta}_A - \bm{\theta}_B\|_1, & L_1 \\ \|\bm{\theta}_A - \bm{\theta}_B\|_2^2, & L_2 \end{cases}$$<span class="tag">(式 4,论文式 4)</span></div>
+<h3>5.3 前向流程(机制解释)</h3>
+<ol>
+  <li><b>为什么锚向过去</b>:前向运动下,相机「已经路过」的 Gaussian 在未来帧永远不会回来,它最后被充分监督的时刻在过去;把后续无监督时刻的参数拉向「最近一次看清楚的样子」,等价于把「不可见时段」的形变外推钳制为常数。</li>
+  <li><b>为什么 detach 参考端</b>(<code>dual_loss_utils.py:146</code> <code>ref_data = data[0][target_mask].detach()</code>):被监督状态已由 GT 重建损失约束,若允许正则梯度回流,欠监督状态会反过来污染好状态;detach 保证信息只单向流动。</li>
+  <li><b>为什么 50% 概率采 ±5 帧近邻</b>(源码独有,论文未提):近邻时刻形变小、锚更可信,与指数置信度 $\phi$ 的设计意图一致(近距离强约束),避免远距锚把真实微动抹平成伪静态。</li>
+  <li><b>为什么 $L_2 \to L_1$ 切换</b>(20k iter 处):训练早期需要平滑的大步长收敛,后期 $L_1$ 对异常值更鲁棒、允许残留小偏差(源码注释:「L1 is more robust in later training」)。</li>
+</ol>
+<h3>5.4 模块内部逻辑图</h3>
+<div class="mermaid">
+flowchart TD
+    P["采样视角对 (t0 &lt; t1)"] --> Q{"G_k 在 t0 可见?"}
+    Q -->|是| R{"G_k 在 t1 可见?"}
+    Q -->|否| S["本模块不处理<br/>(交给 defective / equality 分支)"]
+    R -->|是| T["两帧皆有监督<br/>无需锚定"]
+    R -->|否| U["Hidden 命中: [可见, 隐藏]<br/>L = phi * D(theta_k(t1), detach(theta_k(t0)))"]
+    style U fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style T fill:#d1fae5,stroke:#10b981,color:#064e3b
+    style P fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<h3>5.5 监督信号</h3>
+<p>本模块<b>不引入外部监督</b>,是自参考(self-referential)正则:锚来自同一 Gaussian 在其它时刻被重建损失监督好的参数。触发频率每 10 iter 一次,命中比例 <code>h_percent</code> 实时打印到进度条(<code>train.py:289</code>);<code>hidden_percentage=0.0</code> 表示只要存在 hidden Gaussian 就启用(<code>arguments/__init__.py</code>)。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块二:Defective Gaussian 检测与未来锚定</h2>
+<h3>6.1 检测逻辑(与 hidden 的对偶)</h3>
+<p>Defective 覆盖 hidden 漏掉的另一半监督缺口:Gaussian 在视锥内(radii&gt;0)但对渲染结果<b>贡献可忽略</b>——被遮挡、极远、接近全透明——于是重建损失对它同样零梯度。论文判据:可见性为 1 且梯度 $\le 10^{-9}$。源码实现(<code>train.py:264</code> 与 <code>dual_loss_utils.py:117</code>):</p>
+<ul>
+  <li><code>grad_counts[i] = (viewspace_point_tensor.grad.sum(dim=1) &gt; 1e-9)</code>:第 $i$ 个视角下每个 Gaussian 屏幕空间梯度是否非零(先对重建损失 <code>backward(retain_graph=True)</code> 抓取梯度);</li>
+  <li><code>occluded = (visi.sum(dim=0) &gt; 1) &amp; (grad_counts[0] == False)</code>:<b>两帧都可见</b>、但<b>较早帧无梯度</b>的 Gaussian 命中 defective——代码里命名为 "occlusion(遮挡)"。</li>
+</ul>
+<h3>6.2 锚定方向:为什么锚向未来</h3>
+<p>前向运动下,一个「现在还没看清」的 Gaussian(远处/被遮挡),随着相机推进会在<b>未来</b>时刻走近、变得充分可见。因此方向与 hidden 相反:$t_{\text{ref}} &gt; t$,且要求 $G_k$ 在 $t_{\text{ref}}$ 被充分监督。损失形式与式 3/式 4 完全相同,仅掩码与参考方向不同(源码 <code>_occluded_loss</code>:<code>ref = data[1]</code>(晚帧,detach),<code>target = data[0]</code>(早帧))。</p>
+<div class="callout warn"><b>方向性假设的脆弱性</b>:hidden→过去、defective→未来 的不对称设计<b>硬编码了「相机主要前向运动」的假设</b>(论文图 3 即以此开篇)。若相机后退或往复运动,「过去」不一定是该 Gaussian 最近被看清的时刻。论文把「更自适应的锚定策略」列为未来工作(§7)。</div>
+<h3>6.3 两类判定的互补性</h3>
+<table>
+<tr><th></th><th>Hidden</th><th>Defective(代码名 occlusion)</th></tr>
+<tr><td>判定依据</td><td>视锥外(可见性 = 0)</td><td>视锥内但梯度 $\le 10^{-9}$</td></tr>
+<tr><td>物理成因</td><td>相机已走过该图元</td><td>遮挡 / 距离远 / 高透明</td></tr>
+<tr><td>锚定方向</td><td>过去($t_{\text{ref}} &lt; t$)</td><td>未来($t_{\text{ref}} &gt; t$)</td></tr>
+<tr><td>消融角色(§6.5 解读)</td><td>维持整体场景稳定性</td><td>重建场景初始几何与构图</td></tr>
+<tr><td>代码入口</td><td><code>compute_hidden_loss</code>(dual_loss_utils.py:92)</td><td><code>compute_occlusion_loss</code>(dual_loss_utils.py:109)</td></tr>
+</table>
+<p><b>该模块的监督信号</b>:与模块一相同,自参考正则,无外部监督;每 10 iter 与 hidden 分支同帧触发(同一对采样视角)。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块三:置信度加权与总目标函数</h2>
+<h3>7.1 时间距离置信度 $\phi$</h3>
+<p>对合法锚,用时间距离的指数衰减加权:<b>越近的参考时刻,锚越强</b>——既尊重真实微动(近距离内场景近似不动),又抑制远处锚把伪影搬过来。论文定义(§5.1.1):</p>
+<div class="equation">$$\phi(t, t_{\text{ref}}) = e^{-\tau\,|t - t_{\text{ref}}|},\qquad \tau = 5\ (\text{论文 §6.1})$$<span class="tag">(式 5,论文 §5.1.1)</span></div>
+<div class="callout red"><b>宣称 vs 实现差异 ①(衰减系数)</b>:源码中置信度实现为 <code>exp(steepness * (t - max(times)))</code>(<code>dual_loss_utils.py:213-216</code>,对采样对内「距较晚帧的距离」取指数),且配置值 <code>hidden_steepness = occlusion_steepness = 3</code>(<code>arguments/splannequin.py</code>),<b>与论文 $\tau=5$ 不符</b>。因时间戳按 4DGaussians 惯例归一化,数值 3 与 5 对应的实际衰减速率差异是量级可见的(归一化时距 0.1 时,$e^{-0.5}$ vs $e^{-0.3}$)。笔记以源码为准:实际生效的衰减系数是 <b>3</b>。</div>
+<h3>7.2 总目标函数</h3>
+<div class="equation">$$\mathcal{L} = \mathcal{L}_{\text{recon}} + \lambda_{\text{hidden}}\sum \mathcal{L}_{\text{hidden}}(k,t) + \lambda_{\text{defective}}\sum \mathcal{L}_{\text{defective}}(k,t)$$<span class="tag">(式 6,论文式 5–6)</span></div>
+<p>求和遍历所有「找到合法锚」的实例;$\lambda_{\text{hidden}} = \lambda_{\text{defective}} = 10$(论文 §6.1,与代码 <code>l1_hidden_weight = l2_hidden_weight = l1_occlusion_weight = l2_occlusion_weight = 10</code> 一致)。</p>
+<h3>7.3 论文未写的第三个分支:Equality 约束(源码独有)</h3>
+<div class="callout warn"><b>宣称 vs 实现差异 ②</b>:论文只描述了「一向一有监督」的锚定,但源码 <code>DualLoss2View</code> 还有一个 <b>Case 2 等式约束</b>(<code>dual_loss_utils.py:148-160, 196-209</code>):当采样对里某 Gaussian 在<b>两个时刻都无监督</b>([hidden, hidden] 或 [occluded, occluded])且两时刻距离小于 <code>equality_threshold = 10 / num_frames</code>(归一化时间)时,强制两时刻参数相等(晚帧锚向早帧的 detach 值)。该分支默认开启(<code>use_equality=True</code>),作用是为「全程无监督」的 Gaussian 提供时序平滑先验——没有它,这些图元的参数在任意时刻都是自由变量。这是阅读论文时完全无法得知的隐式第三损失。</div>
+<h3>7.4 双 backward 的实现巧思</h3>
+<p>defective 判定需要「每个 Gaussian 是否拿到梯度」这一信息,源码用两次反向传播实现(<code>train.py:244-276</code>):① 对重建损失 <code>backward(retain_graph=True)</code>,读取每个 <code>viewspace_point_tensor.grad</code> 构造 <code>grad_counts</code>;② <code>optimizer.zero_grad()</code> 清零后,把 hidden/defective 正则加进 loss 再 <code>backward()</code> 第二次。代价是每 10 个 iter 多做一次反向图遍历——这就是「训练有开销、推理零开销」的具体来源。</p>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>固定时刻渲染(Fixed-Time Rendering)</h2>
+<p>训练完成后,主应用是<b>固定时刻渲染</b>:取全部 $N$ 个训练位姿 $\{(\mathbf{R}_n, \mathbf{b}_n)\}$,统一把形变网络的时间输入固定为用户选定的 $t^\star$,逐位姿渲染即得「沿原相机轨迹的冻结时刻视频」。源码实现(<code>render.py:198-271</code> <code>render_fixed_time</code>)极其直白:<code>fixed_time = views[time_index].time</code>,然后 <code>view.time = fixed_time</code> 赋给每个视角。</p>
+<p>README 提供 4 种渲染模式:<code>normal</code>(时间正常流动)、<code>fixed-time-view</code>(整场景冻结在单一时刻)、<code>time-sweeping-view</code>(固定视角扫时间)、<code>fixed-time-smooth</code>(冻结时刻 + 插值平滑后的相机轨迹)。评测协议取输入视频<b>每第 8 帧</b>的时间戳作为 $t^\star$ 候选(§6.2),10 条真实视频共生成 361 段冻结渲染。</p>
+<p>效率(论文 §1/§6.4):固定 $t^\star$ 后形变网络对整段视频<b>只需前向一次</b>(结果可缓存),渲染即纯 3DGS 光栅化,RTX 4090 上 &gt;280 FPS——这是「保留动态模型」相对「直接重建静态场景」几乎不付出推理代价的关键。</p>
+<div class="figure"><img src="images/2512.05113/user-selection.png" alt="user-selection" loading="lazy"><div class="caption"><b>图6(论文 Figure 7)</b> 用户可选冻结时刻:同一段输入序列,上排冻结在时刻 0(人物低头),下排冻结在时刻 80(人物已转头)。两个瞬间都被清晰稳定地重建,支持按姿态/表情做艺术选择。</div></div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>损失函数总表</h2>
+<table>
+<tr><th>损失项</th><th>公式 / 形式</th><th>权重(真值)</th><th>生效区间</th><th>作用</th><th>出处</th></tr>
+<tr><td>$\mathcal{L}_{\text{recon}}$:L1 光度</td><td>$\| \hat{I} - I \|_1$(batch=2 视角)</td><td>1</td><td>全程</td><td>重建主监督</td><td><code>train.py:223</code></td></tr>
+<tr><td>D-SSIM</td><td>$1 - \text{SSIM}(\hat{I}, I)$</td><td>$\lambda_{\text{dssim}} = 0.1$</td><td>全程</td><td>结构相似性</td><td><code>arguments/__init__.py</code>(<code>lambda_dssim=0.1</code>)</td></tr>
+<tr><td>HexPlane 正则组</td><td>plane TV + 时间平滑 + 时间平面 L1</td><td>0.0002 / 0.001 / 0.0001</td><td>fine 阶段</td><td>形变场平滑先验(4DGaussians 继承)</td><td><code>arguments/splannequin.py</code>;论文未提</td></tr>
+<tr><td>$\mathcal{L}_{\text{hidden}}$</td><td>$\phi \cdot \mathcal{D}(\bm{\theta}_k(t), \bm{\theta}_k(t_{\text{ref}}))$,$t_{\text{ref}}&lt;t$</td><td>10(L2 与 L1 阶段均为 10)</td><td>10k iter 起,每 10 iter;20k 起 $L_2 \to L_1$</td><td>隐藏图元锚向过去</td><td>论文 §6.1;<code>arguments/splannequin.py</code></td></tr>
+<tr><td>$\mathcal{L}_{\text{defective}}$(代码名 occlusion)</td><td>同上,$t_{\text{ref}}&gt;t$</td><td>10</td><td>同上</td><td>缺陷图元锚向未来</td><td>论文 §6.1;<code>dual_loss_utils.py:109</code></td></tr>
+<tr><td>Equality 约束(论文未提)</td><td>双无监督且 $|\Delta t| &lt; 10/N$ 时 $\mathcal{D}(\bm{\theta}_k(t_1), \bm{\theta}_k(t_0))$</td><td>含于上述两项权重内</td><td>同上</td><td>全程无监督图元的时序平滑</td><td><code>dual_loss_utils.py:148-160</code></td></tr>
+</table>
+<p class="note">训练分两阶段(4DGaussians 惯例):coarse 3,000 iter(只学静态 canonical 场,无形变)+ fine 30,000 iter。论文 §6.1 只写「train each model for 30,000 iterations」,未提 coarse 阶段与 HexPlane 正则组——均属代码可见、论文未写明的细节。</p>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(训练 / 推理)</h2>
+<h3>10.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    S0["数据准备<br/>YouTube 帧下载 → COLMAP 位姿/点云"] --> S1["Coarse 阶段 3000 iter<br/>只学 canonical 3DGS(静态)"]
+    S1 --> S2["Fine 阶段 30000 iter"]
+    S2 --> S3{"iter % 10 == 0<br/>且 iter &gt;= 10000 ?"}
+    S3 -->|否| S4["普通迭代: L1 + 0.1*DSSIM<br/>(+HexPlane TV 正则)"]
+    S3 -->|是| S5["采 2 个视角-时刻对<br/>50% 取 ±5 帧近邻"]
+    S5 --> S6["双渲染 + backward(retain_graph)<br/>抓取每 Gaussian 可见性/梯度"]
+    S6 --> S7["zero_grad → 计算 hidden / defective<br/>正则(L2, 20000 起切 L1)"]
+    S7 --> S8["loss += 10*L_hidden + 10*L_defective<br/>第二次 backward"]
+    S4 --> S9["Adam 更新 + 致密化(至 15000 iter)"]
+    S8 --> S9
+    S9 --> S2
+    style S5 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S7 fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style S8 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+<h3>10.2 推理(冻结时刻渲染)流程</h3>
+<div class="mermaid">
+flowchart LR
+    R0["加载训练好的<br/>canonical 3DGS + 形变场"] --> R1["用户选定 t*"]
+    R1 --> R2["对全部 N 个训练位姿<br/>统一赋 time = t*"]
+    R2 --> R3["形变网络前向一次<br/>(结果可整段缓存)"]
+    R3 --> R4["3DGS 光栅化逐位姿渲染<br/>RTX 4090 &gt; 280 FPS"]
+    R4 --> R5["输出冻结时刻视频<br/>4 种渲染模式可选"]
+    style R1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style R5 fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节(源码核对)</h2>
+<p>以下全部来自对官方仓库 <code>chien90190/splannequin-gs</code>(2026-10-24 浅克隆)的逐文件核对。仓库基于 <b>4DGaussians</b>(hustvl/4DGaussians)代码库改造,保留其 HexPlane 形变场、K-planes 正则与训练骨架。</p>
+<h3>11.1 关键配置真值(<code>arguments/splannequin.py</code>)</h3>
+<table>
+<tr><th>参数</th><th>真值</th><th>论文对应</th></tr>
+<tr><td>迭代数</td><td>coarse 3,000 + fine 30,000;<code>densify_until_iter=15,000</code>,<code>pruning_interval=500</code></td><td>§6.1 只写 30,000,未提 coarse</td></tr>
+<tr><td>batch_size</td><td><b>2</b>(splannequin 配置;baseline 配置为 4)</td><td>§6.1「two random view-timestamp pairs」一致</td></tr>
+<tr><td>正则开启</td><td><code>hidden_from_iter = occlusion_from_iter = 10,000</code>;<code>interval = 10</code></td><td>与 §6.1 一致</td></tr>
+<tr><td>L2→L1 切换</td><td><code>l1_hidden_from_iter = l1_occlusion_from_iter = 20,000</code></td><td>与 §6.1 一致</td></tr>
+<tr><td>正则权重</td><td><code>l1/l2_hidden_weight = l1/l2_occlusion_weight = 10</code></td><td>与 §6.1「λ=10」一致</td></tr>
+<tr><td>置信度衰减</td><td><code>hidden_steepness = occlusion_steepness = 3</code></td><td><b>≠ 论文 τ=5(差异 ①)</b></td></tr>
+<tr><td>HexPlane 形变场</td><td>分辨率 <code>[64,64,64,150]</code>(时间维 150),<code>output_coordinate_dim=16</code>,<code>multires=[1,2]</code>,<code>net_width=128</code>,<b><code>defor_depth=0</code></b>(无隐藏层,HexPlane 特征直接线性读出形变量)</td><td>论文 §3 只写「typically an MLP」,未给结构</td></tr>
+<tr><td>采样阈值</td><td><code>hidden_percentage = occlusion_percentage = 0.0</code>(有即启用);<code>equality_threshold = 10/num_frames</code></td><td>论文未提</td></tr>
+</table>
+<h3>11.2 「论文宣称 vs 代码实现」差异清单(本笔记核心发现)</h3>
+<div class="callout red"><b>差异 ③(锚定参数集)</b>:论文 §5.1 声称锚定「位置 $\bm{\mu}_k(t)$、协方差 $\bm{\Sigma}_k(t)$、<b>不透明度 $\alpha_k(t)$</b>、球谐系数 $\mathbf{c}$」。但源码中被打包进 <code>deforms</code> 的只有 4 项:<code>[means3D_final, scales_final, rotations_final, shs_final]</code>(<code>gaussian_renderer/__init__.py:147</code>),<b>opacity 不在锚定集合里</b>。协方差以「缩放 + 旋转」参数化锚定(激活函数之后取值),与论文 $\bm{\Sigma}$ 的写法等价;但不透明度漂移(半透明鬼影的重要来源)实际不受约束——见 §16 改进方向。</div>
+<div class="callout warn"><b>差异 ④(参考时刻采样)</b>:论文 §5.1 称「randomly select a timestamp $t_{\text{ref}}$ from the set of all timestamps」;源码在内存加载分支下,采样对的第二帧有 <b>50% 概率取与第一帧 ±5 帧范围内的近邻</b>(<code>train.py:154-160</code>),仅 50% 全序列均匀随机。即实现是「近邻偏置采样」而非论文暗示的全局均匀采样——这与置信度近强远弱的设计自洽,但论文未写明。</div>
+<p>其余两条差异(① τ=5 vs steepness=3;② 论文未提 equality 分支)见 §7。另:baseline 复现开关做得很干净——<code>arguments/baseline.py</code> 把 <code>hidden_from_iter / occlusion_from_iter</code> 设为 500,000(&gt; 总迭代数,等效关闭),消融与 baseline 数字的可信度因此有代码保障。</p>
+<h3>11.3 资源账与运行环境</h3>
+<table>
+<tr><th>条目</th><th>数值</th><th>出处</th></tr>
+<tr><td>推理速度</td><td>&gt; 280 FPS(RTX 4090,固定 $t^\star$ 后形变只前向一次)</td><td>论文 §1 / §6.4</td></tr>
+<tr><td>训练硬件</td><td>单卡 RTX 4090(论文 §6.1「all experiments run on a single NVIDIA RTX 4090」)</td><td>论文 §6.1</td></tr>
+<tr><td>训练时长 / 显存</td><td>论文与 README 均未给出;<code>train.py</code> 会写 <code>training_summary.json</code>(含总时长/GPU),但仓库未附实测值 <span class="uncertain">⚠️【待核实】 需自行复现测得</span></td><td>—</td></tr>
+<tr><td>环境</td><td>Python 3.8 + CUDA 11.7(gcc-10);<code>depth-diff-gaussian-rasterization</code>(ingra14m fork)+ <code>simple-knn</code> 以 <code>pip install -e</code> 装子模块</td><td>README</td></tr>
+<tr><td>数据依赖</td><td><b>必须 COLMAP 位姿</b>;官方 benchmark 帧需 <code>scripts/download.py</code> 从 YouTube 重下(HF 只存元数据 dataset.csv),且 README 明确「YouTube 重编码会带来轻微时序抖动,强烈建议自跑 COLMAP 重新对齐位姿」</td><td>README</td></tr>
+</table>
+<h3>11.4 评估栈(工程视角)</h3>
+<ul>
+<li><b>CQA</b>:复现 ViewEvaluationNet(VEN)的构图质量网络,<code>nets/FullVggCompositionNet.py</code>,需另行下载 <code>EvaluationNet.pth.tar</code> 放 <code>./models/</code>(README);</li>
+<li><b>TOPIQ-NR / MUSIQ / HyperIQA / CLIP-IQA</b>:<code>assessment/</code> 目录统一封装;</li>
+<li><b>COVER</b>:需外部仓库(taco-group/COVER)单独跑视频质量评估;</li>
+<li><b>渲染脚本</b>:<code>scripts/render.sh</code> 默认输出 <code>normal</code> + <code>fixed-time-view</code> 两种模式,时间索引缺省「每第 8 帧」与论文评测协议一致。</li>
+</ul>
+<h3>11.5 落地坑(使用前必读)</h3>
+<ul>
+<li><b>Python 3.8 + CUDA 11.7 的老栈</b>,与现代 3DGS 环境(torch 2.x / CUDA 12)不在一个世界,建议独立 conda env;</li>
+<li><b>位姿强依赖 COLMAP</b>:MC 视频里人动、相机也动,COLMAP 本就易飘;官方都要你重跑 COLMAP 而不是用现成元数据,说明位姿质量是该管线的实际瓶颈之一;</li>
+<li><b>双 backward + retain_graph</b> 使训练显存与耗时高于宿主 baseline(每 10 iter 多一次反传遍历),幅度论文未报 <span class="uncertain">⚠️【待核实】</span>;</li>
+<li>时间戳按 4DGaussians 惯例归一化,HexPlane 时间维固定 150——超长视频(&gt;150 帧量级)的时间分辨率会被稀释,论文 benchmark 平均 287 帧/视频,更长素材未验证 <span class="uncertain">⚠️【推测】</span>。</li>
+</ul>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+<h3>12.1 评测设置(为什么全是 NR 指标)</h3>
+<p>真实 MC 视频的 GT 帧本身就含有要消除的微动,全参考指标(PSNR 等)在真实集上<b>无意义</b>,故主评测用 6 个无参考(NR)指标:CQA(构图,VEN 改造)、TOPIQ-NR、CLIP-IQA、MUSIQ、HyperIQA(图像质量)+ COVER(视频质量,含 Semantic/Technical/Aesthetic/Overall 四维)。所有表格数字为<b>相对 baseline 的增益</b> $(x - \text{baseline})/\text{baseline} \times 100\%$。真实 benchmark:10 条 640×360 MC 视频、2,869 帧、361 段冻结渲染,<b>全视频平均可见性一致率 &lt;10%</b>(监督极稀疏)。合成 benchmark:10 个 Blender 场景、2,400 帧、300 段渲染,有静态 GT 可算全参考指标。对比载体:D-3DGS、SC-GS、4DGaussians 三个 SOTA 动态高斯,均以默认超参同条件训练;MoDGS(依赖预计算深度、混淆相机与物体运动)与 STG(需多相机)被有理由地排除。</p>
+<h3>12.2 合成集验证(表 1,有 GT)</h3>
+<table>
+<tr><th>方法</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th><th>FVD ↓</th></tr>
+<tr><td>4DGaussians</td><td>28.03</td><td>0.81</td><td>0.09</td><td>98.93</td></tr>
+<tr class="best"><td>4DGaussians + Splannequin</td><td>28.85</td><td>0.83</td><td>0.08</td><td>82.73</td></tr>
+</table>
+<p>NR 指标平均增益:CQA +26.43%、TOPIQ-NR +2.08%、CLIP-IQA +1.18%、MUSIQ +1.74%、HyperIQA +2.13%;COVER 四维:Semantic +1.29%、Technical +3.11%、Aesthetic +95.60%、Overall +6.56%。<b>解读</b>:有 GT 时全参考指标也一致变好(FVD 98.93→82.73,降 16.4%),排除了「NR 指标被平滑化讨好」的最强质疑——正则确实把重建推向真实静态几何。</p>
+<div class="figure"><img src="images/2512.05113/Exp_blender_new.png" alt="blender" loading="lazy"><div class="caption"><b>图7(论文 Figure 8)</b> 合成集定性对比:4DGaussians(左)vs 加 Splannequin(右),后者几何细节保持更好、伪影被抑制(对照静态参考帧验证)。</div></div>
+<h3>12.3 真实集主结果(表 2,相对增益 %)</h3>
+<table>
+<tr><th>COVER(VQA)</th><th>Semantic</th><th>Technical</th><th>Aesthetic</th><th>Overall</th></tr>
+<tr><td>(1) 4DGaussians+</td><td>2.23</td><td>73.03</td><td>20.53</td><td>68.25</td></tr>
+<tr class="best"><td>(2) D-3DGS+</td><td>2.97</td><td>339.85</td><td>75.24</td><td>183.68</td></tr>
+<tr><td>(3) SC-GS+</td><td>1.84</td><td>81.53</td><td>30.46</td><td>121.70</td></tr>
+</table>
+<table>
+<tr><th>IQA(平均 / Bottom 75% / 50% / 25% / 最差帧)</th><th>CQA</th><th>TOPIQ-NR</th><th>CLIP-IQA</th><th>MUSIQ</th><th>HyperIQA</th></tr>
+<tr><td>(1) 4DGaussians+</td><td>121.33 / 60.97 / 51.54 / 101.44 / 18.48</td><td>2.53 / 3.61 / 4.98 / 6.76 / 13.65</td><td>2.42 / 3.70 / 5.27 / 7.44 / 15.99</td><td>1.29 / 1.82 / 2.49 / 3.51 / 8.75</td><td>4.60 / 5.79 / 7.23 / 9.01 / 12.12</td></tr>
+<tr class="best"><td>(2) D-3DGS+</td><td>243.80 / 65.94 / 103.11 / 98.64 / 17.39</td><td>7.10 / 9.78 / 13.40 / 17.82 / 28.35</td><td>6.96 / 8.99 / 11.51 / 14.46 / 24.21</td><td>6.62 / 9.23 / 13.10 / 18.60 / 30.45</td><td>7.14 / 9.53 / 12.04 / 15.60 / 21.33</td></tr>
+<tr><td>(3) SC-GS+</td><td>48.88 / 38.45 / 404.08 / 36.31 / 26.11</td><td>8.26 / 11.87 / 16.20 / 22.62 / 47.81</td><td>8.72 / 12.61 / 16.37 / 20.19 / 34.43</td><td>6.43 / 9.22 / 12.92 / 18.50 / 35.75</td><td>5.90 / 8.30 / 10.88 / 14.82 / 30.50</td></tr>
+</table>
+<p><b>读表要点</b>:① <b>越差的帧受益越大</b>——所有 IQA 指标从 Average → Bottom 25% → 最差帧单调递增(如 TOPIQ-NR 最差帧 +47.81%,SC-GS+),证明正则精确命中「低质帧=欠监督伪影」的设计目标;② Technical/artifact 类指标(COVER Technical +73%~340%)提升远大于 Semantic(+2% 上下),符合「抑制伪影而非改变内容」的机制;③ CQA 的平均增益(48%~244%)显著大于其它 IQA,作者解释为构图质量对「冻结失败导致的重影」最敏感(§6.4);④ SC-GS+ 的 CQA Bottom-50% +404.08% 是全表最大单值。以上百分比均按论文「(x−baseline)/baseline」定义直接照抄,未二次加工。</p>
+<div class="figure"><img src="images/2512.05113/Exp_eval-1+2_new.png" alt="real-world" loading="lazy"><div class="caption"><b>图8(论文 Figure 6)</b> 真实 benchmark 定性对比:每列一个冻结渲染视角,三行分别对 4DGaussians / D-3DGS / SC-GS;加 Splannequin 后鬼影与伪影一致减少。</div></div>
+<h3>12.4 与静态 3DGS 的对照(表 4)与用户研究</h3>
+<p>把场景当静态跑 3DGS 是「冻结」的最朴素基线。4DGaussians+ 与之对比:CQA 平均 +23.18%,但 <b>TOPIQ-NR 平均 −0.11%、CLIP-IQA −2.17%、MUSIQ −0.59%</b>(均值微负,Bottom 分位与最差帧为正,如 TOPIQ-NR 最差帧 +20.68%)——即整体打平、在困难帧上更好,同时保留「任选时刻」能力。用户研究(23 人):<b>96%</b> 偏好本方法(视觉吸引力与伪影更少),<b>80%</b> 认为其结果比原始拍摄「更完美地冻结」。</p>
+<div class="figure"><img src="images/2512.05113/userstudy_new.png" alt="userstudy" loading="lazy"><div class="caption"><b>图9(论文 Figure 10)</b> 用户研究结果:96% 对比中偏好本方法;80% 结果被感知为比原始拍摄「更完美冻结」。</div></div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+<h3>13.1 双损失的互补性(表 3,移除单项后的性能退化 %)</h3>
+<table>
+<tr><th>变体</th><th>COVER Semantic</th><th>COVER Technical</th><th>COVER Aesthetic</th><th>COVER Overall</th><th>CQA</th><th>TOPIQ-NR</th><th>CLIP-IQA</th><th>MUSIQ</th><th>HyperIQA</th></tr>
+<tr class="fail"><td>去 hidden 损失</td><td>−2.27</td><td>−94.22</td><td>−42.45</td><td>−1072.41</td><td>−162.23</td><td>−3.02</td><td>−2.65</td><td>−2.33</td><td>−4.31</td></tr>
+<tr class="fail"><td>去 defective 损失</td><td>−4.79</td><td>−197.87</td><td>−56.25</td><td>−1027.33</td><td>−779.13</td><td>−12.52</td><td>−4.05</td><td>−13.32</td><td>−10.21</td></tr>
+</table>
+<p><b>解读</b>:① 两项都关键,且 defective 损失对 IQA 影响更大(CQA −779% vs −162%),作者归因于 defective 锚定负责「重建场景初始几何与构图」,hidden 锚定负责「整体稳定性」;② 退化幅度超 −100% 是因为表 2 的基数是「相对 baseline 的增益」——去掉正则后指标不仅回吐增益,还跌到比纯 baseline 更差(相对增益变号),说明<b>半吊子的正则(只锚一类)比不正则更糟</b>,两类欠监督会互相转化。<span class="uncertain">⚠️【推测】 对超 −100% 数字的读法为按论文指标定义的自然推论,论文未逐字解释。</span></p>
+<h3>13.2 置信度加权的作用</h3>
+<div class="figure"><img src="images/2512.05113/no_confidence.png" alt="no-confidence" loading="lazy"><div class="caption"><b>图10(论文 Figure 9)</b> 置信度加权的效果:去掉加权(左)会过度正则化、把帧抹得过度平滑;保留加权(右)在抑制伪影的同时保住整体保真度。</div></div>
+<p>该消融只有定性图,未给定量数字——与 §7 差异 ①(论文 τ=5 / 代码 3)合并看,置信度这项的「数值面」是全文最薄弱的一环,复现时建议直接以源码 steepness=3 为准。</p>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+<h3>14.1 横向对比表(固定维度,缺值写 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr class="best"><td><b>Splannequin</b></td><td>2025-12(WACV 2026)</td><td>单目 MC 视频 + COLMAP 位姿;近静态、前向相机</td><td>canonical 3DGS + HexPlane 形变(宿主无关)</td><td>光度重建 + hidden/defective 时间锚定正则</td><td>自建 10 真实 + 10 合成 MC 场景</td><td>30k iter(+3k coarse),时长未报【待核实】</td><td>&gt;280 FPS(RTX 4090)</td><td>未报【待核实】</td><td>COVER Technical +73%~340%;96% 用户偏好</td><td>✅ 代码+数据(HF)</td></tr>
+<tr><td>D-3DGS(<a href="3D-20230922-Deformable-3DGS.html">库内笔记</a>)</td><td>2023-09</td><td>单目动态视频 + 位姿</td><td>3DGS + 逐帧形变场</td><td>光度重建(+刚体正则)</td><td>HyperNeRF / D-NeRF 系数据集</td><td>—</td><td>实时(30+ FPS 级)</td><td>—</td><td>动态新视角合成 PSNR 见原论文</td><td>✅</td></tr>
+<tr><td>4DGaussians</td><td>2023-10(CVPR 2024)</td><td>单目/多目动态视频 + 位姿</td><td>3DGS + HexPlane 多分辨率形变</td><td>光度重建 + 平面正则</td><td>Plenoptic / HyperNeRF 等</td><td>30k iter 级(本仓库配置)</td><td>实时(论文称 82 FPS@800×800 量级)【待核实:以原论文为准】</td><td>—</td><td>动态场景实时渲染</td><td>✅</td></tr>
+<tr><td>SC-GS</td><td>2023-12(CVPR 2024)</td><td>单目动态视频 + 位姿</td><td>稀疏控制点驱动的可编辑动态高斯</td><td>光度重建 + 控制点约束</td><td>自采集 + 公开动态数据集</td><td>—</td><td>实时级</td><td>—</td><td>可编辑动态重建</td><td>✅</td></tr>
+<tr><td>Shape-of-Motion(<a href="3D-20240718-Shape-of-Motion.html">库内笔记</a>)</td><td>2024-07(ECCV 2024)</td><td>单目随意视频,含快速运动与遮挡</td><td>显式运动基 + 逐帧高斯</td><td>光度 + 深度/光流先验</td><td>iPhone 实拍等</td><td>—</td><td>非实时优化</td><td>—</td><td>单目 4D 重建质量</td><td>✅</td></tr>
+<tr><td>BTimer</td><td>2025【待核实:以原论文为准】</td><td>单目随意视频</td><td>前馈 3DGS(首个用 3DGS 做运动感子弹时间)</td><td>前馈推理,无逐场景优化</td><td>大规模视频训练集</td><td>—</td><td>前馈(快)</td><td>—</td><td>泛化到任意相机路径,但保留微动</td><td>【待核实】</td></tr>
+<tr><td>MoDGS</td><td>2024【待核实:以原论文为准】</td><td>单目随意视频</td><td>动态高斯 + 深度先验</td><td>光度 + 预计算深度</td><td>—</td><td>—</td><td>—</td><td>—</td><td>随意拍摄动态重建</td><td>✅</td></tr>
+<tr><td>静态 3DGS(<a href="3D-20230808-3DGS基础与改进综述.html">库内综述</a>)</td><td>2023-08</td><td>静态场景多视角</td><td>3DGS</td><td>光度重建</td><td>Mip-NeRF360 等</td><td>30k iter 级</td><td>实时(100+ FPS)</td><td>—</td><td>静态 NVS 基准(本文表 4 对照)</td><td>✅</td></tr>
+</table>
+<p class="note">「—」= 原文/本库未核实到可靠值,宁缺毋编。BTimer、MoDGS 的若干字段本文 Related Work 只有定性描述,标注【待核实】。</p>
+<h3>14.2 对比结论(机制层面的为什么)</h3>
+<ul>
+<li><b>Splannequin vs 三个动态高斯宿主(D-3DGS / 4DGaussians / SC-GS)</b>:不是竞争而是<b>寄生/增强</b>关系——它以插件身份同时提升三者,收益幅度与宿主的欠监督程度正相关(D-3DGS 增益最大,因其逐帧形变对无监督时刻最不约束;SC-GS 有稀疏控制点托底,平均增益最小但最差帧仍 +404%)。这解释了为什么作者只做「加法」而非自研底座。</li>
+<li><b>Splannequin vs Shape-of-Motion</b>:SoM 追求<b>保留并建模</b>快速运动与遮挡,与本任务的「消除微动」目标相反;但 SoM 的运动基思想正是本文 hidden/defective 之外的另一条路(用显式运动参数化把微动管起来)。两者是同一「单目随意视频」输入下的<b>目的论分叉</b>。</li>
+<li><b>Splannequin vs BTimer</b>:BTimer 是前馈子弹时间,速度快、泛化好,但「运动感知」意味着它<b>保留微动</b>——子弹时间镜头里人还在轻微动;Splannequin 产出的是「真冻结」。若只要艺术效果选 BTimer 更快,若要「冻结干净到可当伪 GT 用」选 Splannequin。</li>
+<li><b>Splannequin vs 静态 3DGS</b>:表 4 显示质量基本打平(部分 IQA 均值微负),但 3DGS 完全丢失时间维,无法「选时刻」。结论:若场景真静态且不需要选时刻,直接 3DGS 更省;Splannequin 的价值在「微动场景 + 时刻选择权」。</li>
+<li><b>与库内微动主线的关系</b>:库内 <a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a> 与 <a href="3D-20260810-微动人体三维重建思路辨析.html">思路辨析</a> 系统梳理了「人体微动破坏重建」的各条技术路线;Splannequin 可视为其中「<b>先容忍微动建模、再在渲染端冻结</b>」路线在 MC 任务上的最新实例,且是目前唯一把「欠监督图元检测」显式形式化的工作。</li>
+</ul>
+<h3>14.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>静态 NVS</td><td>NeRF → 3DGS(<a href="3D-20230808-3DGS基础与改进综述.html">库内综述</a>)</td><td>场景刚性</td><td>微动直接违背假设;无时间维</td></tr>
+<tr><td>动态形变场</td><td>D-NeRF / Nerfies → D-3DGS(<a href="3D-20230922-Deformable-3DGS.html">库内笔记</a>)</td><td>形变场平滑</td><td>欠监督时刻自由漂移 → 冻结渲染鬼影</td></tr>
+<tr><td>显式时空分解</td><td>HexPlane / K-Planes → 4DGaussians(<a href="3D-20230818-4D动态高斯综述.html">库内综述</a>)</td><td>时空低秩分解</td><td>同上,时间维网格插值不创造监督</td></tr>
+<tr><td>运动感知子弹时间</td><td>DynIBaR → BTimer</td><td>保留运动、任意相机路径</td><td>微动被保留,得不到「真冻结」</td></tr>
+<tr><td>扩散先验 4D 生成</td><td>4Real / CAT4D(<a href="3D-20260820-4DAnyone.html">库内 4DAnyone 同族</a>)</td><td>生成模型幻觉缺失观测</td><td>子帧动态幻觉 ≠ 冻结;忠实性无保证</td></tr>
+<tr class="best"><td><b>欠监督检测 + 时间锚定(本文)</b></td><td><b>Splannequin</b></td><td>「伪影 = 监督缺口」,hidden→过去 / defective→未来</td><td>近静态 + 前向相机假设;锚是启发式而非搜索</td></tr>
+</table>
+<p><b>领域脉络一句话</b>:动态高斯三年(2023→2025)的主线一直是「把运动建得更准」,Splannequin 第一次反向提问——「如何借动态表示的壳,得到比静态更干净的冻结场景」,把动态模型的容量从「目标」降格为「工具」。库内定位上,它与 <a href="3D-20260323-4DGS360.html">4DGS360</a>(动态高斯的全景扩展)、<a href="3D-20250923-Lyra.html">Lyra</a>(生成式 4D 重建)共享「动态高斯表示」底座,但任务设定正交。</p>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性</h2>
+<h3>15.1 能否进我们的 pipeline(vggt_human 视角)</h3>
+<div class="callout tip"><b>最相关的用法:微动人体素材的「静态监督清洗器」。</b>人体重建 pipeline 里,手持绕拍的人体视频普遍存在呼吸/晃动级微动,直接进 COLMAP→3DGS 会把微动烘进几何。Splannequin 提供了一条「先按动态建、再冻结出任意 $t^\star$ 的干净静态帧序列」的路径,产出可作为:① 静态重建的干净监督;② 论文自述的「动态模型伪 GT」;③ 挑选最佳姿态帧(表情/姿态择优)再进头模/身体建模。</div>
+<table>
+<tr><th>适配项</th><th>评估</th></tr>
+<tr><td>数据要求</td><td>⚠️ 强依赖 COLMAP 位姿,与我们 VGGT 系 pose-free 主线(<a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a>)方向相反;接入需先验证 VGGT 位姿能否替代 COLMAP(论文未实验)【待核实】</td></tr>
+<tr><td>运动假设</td><td>⚠️ 近静态 + 前向相机;人体绕拍弧线段基本满足「前向」,转身/往返段会违背后向锚假设(§7.2)</td></tr>
+<tr><td>成本</td><td>逐场景优化:30k iter(4DGaussians 量级,单卡 4090 论文实测);训练时长未报【待核实】,非前馈,不适合批量素材</td></tr>
+<tr><td>分辨率</td><td>benchmark 仅 640×360;高分辨率人脸应用未验证【待核实】</td></tr>
+<tr><td>代码成熟度</td><td>✅ 开源完整(训练/渲染/评估脚本 + HF 数据集 + baseline 开关);README 明示 "still under development"</td></tr>
+<tr><td>硬件</td><td>推理 &gt;280 FPS 于 RTX 4090;3090 单卡跑 4DGaussians 30k iter 属常规负载,可行【推测:按 4DGaussians 已知资源量级推断】</td></tr>
+</table>
+<h3>15.2 适用与不适用场景速查</h3>
+<div class="grid-2">
+<div class="card"><h4>✅ 适用</h4><ul><li>MC 式「人尽量不动」素材的冻结时刻生成(VFX、VR/AR 漫游);</li><li>微动素材的干净静态帧提取(伪 GT);</li><li>动态高斯管线的伪影抑制插件(零推理成本);</li><li>需要「同一轨迹、任选瞬间」的创作场景。</li></ul></div>
+<div class="card"><h4>❌ 不适用</h4><ul><li>快速非刚体运动(作者明示失效);</li><li>光照/阴影剧变场景(锚不可靠);</li><li>无位姿/位姿质量差的素材(COLMAP 是硬门槛);</li><li>需要前馈秒级出结果的批量生产。</li></ul></div>
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px"><h4>[高优先级] ① 前向相机假设硬编码在锚定方向里</h4>
+<p><b>问题</b>:hidden→过去、defective→未来 的不对称以「相机主要前向运动」为前提(论文图 3),但代码只按时间排序(<code>train.py:261</code> <code>argsort</code>),从不检验相机路径;旋转、回退、往复运动下「过去」不一定是最近被看清的时刻,锚可能取到比目标时刻状态更差的参考。<b>建议</b>:把「时间近」替换为「可见性质量 × 时空距离」的显式锚评分(如按各时刻的投影面积/梯度能量选 top-k 锚),或至少对相机路径做分段方向检测。</p></div>
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px"><h4>[高优先级] ② 不透明度 α 实际未被锚定(宣称-实现差异)</h4>
+<p><b>问题</b>:论文 §5.1 把 opacity $\alpha_k(t)$ 列入锚定参数集,但 <code>deforms</code> 只含 <code>[means3D, scales, rotations, shs]</code>(<code>gaussian_renderer/__init__.py:147</code>)。半透明鬼影恰恰是 MC 场景最常见的伪影形态,α 漂移无约束等于留了半个缺口。<b>建议</b>:把 <code>opacity_final</code> 并入 <code>deform_outputs</code>(实现上是一行改动),并补一组「含 α 锚定」的消融验证收益。</p></div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ③ 置信度数值口径混乱(τ=5 vs steepness=3)</h4>
+<p><b>问题</b>:论文写 $\tau=5$、代码用 3(<code>arguments/splannequin.py</code>),且代码的衰减基准是「采样对内较晚帧」而非论文写法 $\phi=e^{-\tau|t-t_{\text{ref}}|}$ 的全局语义;消融 §13.2 又只给定性图。三者叠加,置信度这项的实际贡献无法从论文复核。<b>建议</b>:修正论文数值或以代码为准补定量消融;复现者直接用源码值。</p></div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ④ 随机采样锚,质量无保证</h4>
+<p><b>问题</b>:每 10 iter 只采一对视角(<code>batch_size=2</code>),锚的命中完全靠随机性;<code>hidden_percentage=0</code> 意味着「有就全算」,长视频下大量 iter 可能采不到高价值锚对。论文承认「避免显式锚池与昂贵搜索」是刻意取舍,但没有给采样效率的量化。<b>建议</b>:维护轻量「每 Gaussian 最近被监督时刻」缓存(增量更新即可),把随机搜索变查表;或重要性采样(优先选欠监督率高的时刻对)。</p></div>
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ⑤ NR 指标体系的自证风险</h4>
+<p><b>问题</b>:真实集全靠 NR 指标,而 NR 指标对「过度平滑」普遍给高分——表 4 中 4DGaussians+ 对静态 3DGS 在 TOPIQ-NR/CLIP-IQA/MUSIQ 均值上反而是 −0.11%/−2.17%/−0.59%,提示这套指标组合对「冻结」与「变糊」的区分度有限。合成集(表 1)的全参考验证只覆盖 4DGaussians 一个宿主。<b>建议</b>:补「合成微动 + 静态 GT」协议覆盖全部三个宿主;或对 NR 指标做与冻结质量的系统相关性分析。</p></div>
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px"><h4>[低优先级] ⑥ Equality 分支与 ±5 帧近邻采样论文未写</h4>
+<p><b>问题</b>:<code>use_equality</code>(双无监督时互等)与 50% ±5 帧近邻采样都影响结果,却只存在于代码(<code>dual_loss_utils.py:148-160</code>、<code>train.py:154-160</code>)。复现者按论文实现会得到一个「无 equality、全局均匀采样」的变体,与官方数字对不上。<b>建议</b>:论文补实现附录;本笔记 §7.3/§11.2 已记录。</p></div>
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px"><h4>[低优先级] ⑦ 工程链路现代化</h4>
+<p><b>问题</b>:Python 3.8 + CUDA 11.7 老栈、强 COLMAP 依赖、640×360 低分辨率 benchmark、HexPlane 时间维固定 150。<b>建议</b>:迁移到 gsplat 等现代光栅化栈;接 pose-free 前端(VGGT/MASt3R 系)去除 COLMAP 门槛;高分辨率下的时间维分辨率自适应。</p></div>
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>一句话理由</th></tr>
+<tr><td>高</td><td>① 前向相机假设</td><td>决定方法失效边界,论文自己把它列为 limitation 首位</td></tr>
+<tr><td>高</td><td>② α 未锚定</td><td>宣称-实现差异,且 α 正是鬼影主因之一</td></tr>
+<tr><td>中</td><td>③ 置信度口径</td><td>影响可复现性与论文可信度</td></tr>
+<tr><td>中</td><td>④ 随机锚采样</td><td>效率与锚质量的直接瓶颈</td></tr>
+<tr><td>中</td><td>⑤ NR 指标自证</td><td>评测方法论层面的系统性风险</td></tr>
+<tr><td>低</td><td>⑥⑦ 文档完整性 / 工程现代化</td><td>不挡路,但抬高了复现与接入成本</td></tr>
+</table>
+<p><b>个人认为最关键的三点</b>:①(前向假设)决定了这套方法能否泛化到真实人体绕拍——而绕拍恰恰是我们 pipeline 的主用例;②(α 未锚定)是「论文说了但没做」的硬伤,补上几乎零成本、可能还有增益;⑤(NR 自证)关系到表 2 那些 +200%、+300% 数字该信几成——合成集全参考验证只做了一个宿主,是全文证据链最薄的一环。</p>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+<p><b>总结</b>:Splannequin 是「冻结时刻合成」这个新问题上的第一个形式化方案。它的技术贡献不在新表示、新网络,而在一个干净的<b>问题归因</b>(冻结渲染伪影 = 单目动态高斯的监督缺口)和一组<b>即插即用的正则</b>(hidden/defective 双检测 + 时间锚定 + 距离置信度)。作为纯损失项,它以零推理开销把三个主流动态高斯底座的冻结质量系统性拉高(最差帧受益最大),并以合成集全参考指标证明「拉高 NR 分数」的同时确实更接近真实静态几何。</p>
+<p><b>演进定位</b>:在「单目随意视频 → 可用 3D」的大图景里,2023–2025 的主线是把运动建准(D-3DGS→4DGaussians→SoM),2025 起出现任务化分叉——BTimer 走向「前馈子弹时间(保运动)」,Splannequin 走向「冻结合成(消运动)」。它与库内<a href="3D-20260810-微动人体三维重建调研.html">微动重建调研</a>的问题意识同源:微动不是噪声而是结构性监督缺口,区别在于该调研系面向「重建出干净人体」,本文面向「渲染出干净瞬间」。方法论上,「检测欠监督图元 + 跨时刻借监督」的范式可迁移到任何「观测稀疏的时空重建」问题(如 360° 视频、长走廊巡检、事件相机间隙补全),这可能是本文超出 MC 任务本身的最大价值。</p>
+<p><b>局限再声明</b>(作者 §7):近静态假设,快速非刚体运动/光照剧变失效;运动阈值与帧位置依赖的定量分析未做;更自适应的锚定策略留作未来工作。</p>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>团队</h3>
+<ul>
+<li><b>Hao-Jen Chien</b>(第一作者)、<b>Yi-Chuan Huang</b>、<b>Chung-Ho Wu</b>、<b>Yu-Lun Liu</b>(通讯/末作)—— National Yang Ming Chiao Tung University(台湾阳明交通大学);Yu-Lun Liu 组长期做视频处理与计算摄影(视频去模糊/插帧/编辑),本文是其组把视频问题「3D 高斯化」的延续。</li>
+<li><b>Wei-Lun Chao</b> —— The Ohio State University,视觉学习方向。</li>
+<li>致谢:NSTC(台湾)项目资助;Google、NVIDIA、MediaTek 捐赠;Yu-Lun Liu 获玉山青年学者计划支持。</li>
+</ul>
+<h3>资源链接</h3>
+<ul class="refs">
+<li>📄 arXiv:<a href="https://arxiv.org/abs/2512.05113" target="_blank">https://arxiv.org/abs/2512.05113</a>(v2,2025-12-08;WACV 2026)</li>
+<li>🌐 项目主页:<a href="https://chien90190.github.io/splannequin/" target="_blank">https://chien90190.github.io/splannequin/</a>(含交互式对比查看器;演示视频标记 Coming soon)</li>
+<li>💻 代码:<a href="https://github.com/chien90190/splannequin-gs" target="_blank">chien90190/splannequin-gs</a>(基于 4DGaussians;含训练/渲染/评估脚本)</li>
+<li>🤗 数据集:<a href="https://huggingface.co/datasets/chien90190/Splannequin" target="_blank">chien90190/Splannequin</a>(元数据 + 下载脚本;帧从 YouTube 重下)</li>
+</ul>
+<h3>库内兄弟笔记</h3>
+<ul class="refs">
+<li><a href="3D-20230922-Deformable-3DGS.html">Deformable 3DGS(D-3DGS)</a> —— 本文 baseline(2) 与增益最大载体</li>
+<li><a href="3D-20230818-4D动态高斯综述.html">4D 动态高斯综述</a> —— 4DGaussians / 时空分解谱系背景</li>
+<li><a href="3D-20230808-3DGS基础与改进综述.html">3DGS 基础与改进综述</a> —— 静态底座(本文表 4 对照)</li>
+<li><a href="3D-20240718-Shape-of-Motion.html">Shape of Motion</a> —— 「保运动」路线的对照系</li>
+<li><a href="3D-20260810-微动人体三维重建调研.html">微动人体三维重建调研</a> / <a href="3D-20260810-微动人体三维重建思路辨析.html">思路辨析</a> —— 微动问题意识同源的应用主线</li>
+<li><a href="3D-20260820-4DAnyone.html">4DAnyone</a> / <a href="3D-20260323-4DGS360.html">4DGS360</a> / <a href="3D-20250923-Lyra.html">Lyra</a> —— 共享动态高斯底座的近邻工作</li>
+</ul>
+</section>
+
+<div class="footer">
+  本笔记由 AI 辅助生成,所有数字、公式、代码引用均可回溯至论文原文(arXiv 2512.05113v2)与官方源码(chien90190/splannequin-gs)。<br>
+  不确定内容已按库规范以【存疑】/【推测】/【待核实】标出。媒体论文调研知识库 · 生成于 2026-10-24
+</div>
+
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});
+</script>
+</body>
+</html>

@@ -5119,6 +5119,76 @@
         "s17",
         "s18"
       ]
+    },
+    {
+      "title": "Splannequin: 双检测时间锚定正则,把 Mannequin-Challenge 视频冻成高保真静态时刻",
+      "meta": [
+        "📄 arXiv: 2512.05113",
+        "📅 2025-12-04",
+        "🏢 阳明交通大学 / Ohio State University",
+        "🎓 WACV 2026",
+        "✅ 开源(训练/渲染/评估全链 + HF 数据集)"
+      ],
+      "tags": [
+        "动态高斯",
+        "冻结时刻",
+        "Mannequin Challenge",
+        "时间锚定",
+        "正则化",
+        "微动抑制",
+        "WACV 2026"
+      ],
+      "summary": "首个把「单目 Mannequin-Challenge 视频→用户可选冻结时刻视频」形式化的工作(WACV 2026)。不改架构,在 D-3DGS / 4DGaussians / SC-GS 上加双检测正则:视锥外的 hidden 高斯锚向过去被监督状态、视锥内零梯度的 defective 高斯锚向未来,配时间距离置信度加权。真实 benchmark 上 COVER Technical 最高 <strong>+339.85%</strong>、CQA 平均最高 <strong>+243.8%</strong>(D-3DGS 载体),96% 用户偏好;RTX 4090 推理 <strong>&gt;280 FPS</strong>、零推理开销。笔记含官方源码逐文件核对,发现 4 处宣称-实现差异(论文 τ=5 vs 代码 steepness=3、opacity 实际未锚定、未文档化的 equality 约束、±5 帧近邻采样),并给出与库内微动重建调研 / D-3DGS / Shape-of-Motion 的谱系定位。",
+      "links": [
+        {
+          "href": "3D-20251204-Splannequin.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2512.05113",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://chien90190.github.io/splannequin/",
+          "text": "🌐 项目主页"
+        },
+        {
+          "href": "https://github.com/chien90190/splannequin-gs",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://huggingface.co/datasets/chien90190/Splannequin",
+          "text": "🤗 数据集"
+        }
+      ],
+      "file": "3D-20251204-Splannequin.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "微动与非刚性人体重建",
+        "几何与时序一致性"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18"
+      ]
     }
   ]
 }
