@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多视角光度不一致校正方法矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:24px;font-weight:800;color:var(--accent);line-height:1.25}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6;vertical-align:top}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+.tblwrap{overflow-x:auto}
+.tblwrap table{min-width:860px}
+@media(max-width:760px){.grid-2{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">矩阵式对比调研 · 多视角光度不一致校正 · 2024-06 ~ 2026-02 · 4 篇</span>
+    <h1>3D 重建的光度一致性校正:从双边网格到物理 ISP —— BiLaRF / bilateral-driving / PPISP / Luminance-GS++ 系统对比</h1>
+    <div class="subtitle">同一条问题线(多视角光度/色度不一致破坏 photometric consistency)上的四种参数化路线:局部仿射网格 → 多尺度金字塔网格 → 物理 ISP 模块 + controller → 曲线蒸馏进高斯属性</div>
+    <div class="authors">对比对象:BiLaRF(SIGGRAPH/TOG 2024)· Unifying AC &amp; Bilateral Grids for Driving Scene GS(NeurIPS 2025)· PPISP(NVIDIA, 2026-01)· Luminance-GS++(2026-02, CVPR 2025 会议版期刊扩展)</div>
+    <div class="org">CUHK / BAAI·AIR-THU / NVIDIA / 东京大学·东北大学·UC Merced·RIKEN</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2406.00448" target="_blank">📄 BiLaRF 2406.00448</a>
+      <a href="https://arxiv.org/abs/2506.05280" target="_blank">📄 bilateral-driving 2506.05280</a>
+      <a href="https://arxiv.org/abs/2601.18336" target="_blank">📄 PPISP 2601.18336</a>
+      <a href="https://arxiv.org/abs/2602.18322" target="_blank">📄 Luminance-GS++ 2602.18322</a>
+      <a href="3D-20240601-BiLaRF.html">📖 库内 BiLaRF 深度笔记</a>
+      <a href="https://github.com/nv-tlabs/ppisp" target="_blank">💻 PPISP 代码</a>
+      <a href="https://github.com/BigCiLeng/bilateral-driving" target="_blank">💻 bilateral-driving 代码</a>
+      <a href="https://github.com/yuehaowang/bilarf" target="_blank">💻 BiLaRF 代码</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">报告概要与核心结论</a></li>
+    <li><a href="#s2">共同问题:光度不一致如何毁掉重建</a></li>
+    <li><a href="#s3">演进脉络与范式定位</a></li>
+    <li><a href="#s4">四篇论文速览卡</a></li>
+    <li><a href="#s5">矩阵式系统对比(主矩阵)</a></li>
+    <li><a href="#s6">机制对比一:校正模型的数学形式</a></li>
+    <li><a href="#s7">机制对比二:新颖视角参数的四种答案</a></li>
+    <li><a href="#s8">机制对比三:容量-泛化权衡</a></li>
+    <li><a href="#s9">实验数字汇总(分区呈现)</a></li>
+    <li><a href="#s10">工程实现对比</a></li>
+    <li><a href="#s11">对 vggt_human pipeline 的选型建议</a></li>
+    <li><a href="#s12">局限与开放问题汇总</a></li>
+    <li><a href="#s13">总结</a></li>
+    <li><a href="#s14">资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- ============================== s1 ============================== -->
+<div class="section" id="s1">
+  <h2><span class="num">1</span>报告概要与核心结论</h2>
+  <p><b>一句话结论:四篇论文解决同一个问题 —— 多视角输入存在光度/色度不一致时如何重建出干净、可泛化到新颖视角的 3D 场景;它们的分歧不在目标,而在"校正变换用什么参数化、挂在管线哪个位置、新视角的校正参数从哪来"三个设计点上,且存在明确的容量-泛化-可解释性三角权衡。</b></p>
+  <div class="stat-row">
+    <div class="stat"><div class="v">4 种</div><div class="l">校正参数化路线<br>网格 / 多尺度网格 / 物理 ISP / 曲线蒸馏</div></div>
+    <div class="stat"><div class="v">4 种</div><div class="l">新颖视角参数来源<br>丢弃 / 时序插值 / controller / 蒸馏进属性</div></div>
+    <div class="stat"><div class="v">−28.2%</div><div class="l">bilateral-driving 在 Waymo 的 Chamfer Distance<br>(0.989 vs AC 1.378,Tab.1)—— 光度校正修好几何的直接证据</div></div>
+    <div class="stat"><div class="v">24.62</div><div class="l">PPISP 在 Tanks&amp;Temples 的 NV PSNR<br>vs BilaRF 19.78(同基座 3DGUT,Table 1/5)</div></div>
+  </div>
+  <div class="callout key">
+    <b>核心判断(先给结论):</b>
+    <ul style="margin-top:6px">
+      <li><b>要泛化到新颖视角 + 可解释可控 → PPISP 是当前最优解</b>:物理约束等于把归纳偏置做对,容量刚好覆盖真实 ISP 自由度;Tanks&amp;Temples 上训练/新视角 PSNR 差仅 1.23 dB(25.85/24.62),而 BilaRF 差 7.09 dB(26.87/19.78,Table 5);且它是唯一正面回答"新视角校正参数从哪来"的(controller,类比相机 AE/AWB)。</li>
+      <li><b>自动驾驶大场景(多相机×时序) → bilateral-driving</b>:多尺度金字塔是"appearance code 与双边网格的中间点",收益主要体现在几何指标(Waymo CD −28.2%);但插值方案依赖时序近邻,静态多视角场景不适用。</li>
+      <li><b>要 3D 编辑/修图能力 → BiLaRF 仍是唯一</b>:低秩 4D 网格把单张 2D 修图升维到全场景,其余三篇都不做编辑;且 nerfstudio 官方集成使其工程接入成本最低。</li>
+      <li><b>低光/过曝/色温极端退化 → Luminance-GS++</b>:唯一针对亮度+色度联合退化设计,训练仅 0.23 GPUh;但校正被"烤进"高斯属性、不可逆、不可解释,且未开源。</li>
+    </ul>
+  </div>
+  <div class="callout warn">
+    <b>⚠️ 阅读本报告数字前必看:</b>四篇论文<b>没有统一评测</b> —— 数据集(BilaRF 自采夜景 / 驾驶四数据集 / MipNeRF-360+T&amp;T+Waymo+HDR-NeRF / LOM+合成退化 MipNeRF-360)、基座(ZipNeRF / OmniRe / 3DGUT·GSplat / 3DGS)、评估协议(是否仿射对齐 CC)两两不同,<b>跨论文直接比 PSNR 没有意义</b>。§9 按"各自论文内部 vs 各自 baseline"分区呈现;唯二的同基座直接对撞是:PPISP vs BilaRF(3DGUT 基座,PPISP Table 1/5)、多尺度网格 vs 单大双边网格(OmniRe 基座,bilateral-driving Tab.1)。
+  </div>
+</div>
+
+<!-- ============================== s2 ============================== -->
+<div class="section" id="s2">
+  <h2><span class="num">2</span>共同问题:光度不一致如何毁掉重建</h2>
+  <p>NeRF/3DGS 的优化目标是让同一 3D 点在所有视角渲染出一致颜色。但真实采集中,相机 ISP(自动曝光、自动白平衡、局部色调映射)对<b>每张图独立</b>处理;多相机 rig 之间、同一相机不同时刻之间,传感器响应与 ISP 决策都在漂移。光度矛盾无法被"颜色一致"满足,优化器就把它<b>解释成几何</b> —— 在空中造出薄纱状密度(floaters)来分别讨好各视角。</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>四篇共同承认的失败链</h4>
+      <p>输入图光度不一致 → photometric consistency 假设被破坏 → 辐射场/高斯把 ISP 残差建成几何或烘进外观 → floaters / 重影 / 色调漂移 → NVS 指标与几何精度(CD / Depth)同时受损。</p>
+    </div>
+    <div class="card">
+      <h4>既有朴素方案为何不够(四篇共同批评)</h4>
+      <p>① per-frame 全局嵌入(GLO / appearance code):一个 code 管整图,表达不了局部变化(BiLaRF 附录 D:高光被烘进场景;bilateral-driving Fig.1a:栅栏被抹糊);② 全局逐通道曲线(HDRNeRF):表达不了局部色调映射(BiLaRF Table 1 SSIM 0.6451 断崖);③ 单张大双边网格:容量过大难优化(bilateral-driving Tab.1:w/BG 在 Waymo NVS 反掉到 21.51 vs 基座 26.40;PPISP Table 5:TV 26.87 / NV 19.78 严重过拟合);④ RAW 路线(RawNeRF):多数设备拿不到 raw。</p>
+    </div>
+  </div>
+  <div class="callout tip">
+    <b>一个被 PPISP 点破的评估陷阱(全报告最重要的方法论提醒):</b>RawNeRF / mip-NeRF 360 以来,这类方法的评测常对渲染图与 GT 做<b>逐通道仿射对齐(-CC)再算指标</b>。PPISP(§1/§2/§5)指出该协议 ① 现实中拿不到 GT 新视角,根本做不了对齐;② 对齐本身会补偿掉方法间差异,"mask differences between methods"。BiLaRF 与 Luminance-GS++ 的主指标都依赖对齐类协议;bilateral-driving 不做对齐但只报驾驶数据集;<b>PPISP 是唯一把"未对齐 PSNR 也能打"作为核心卖点并正面设计评估的</b>(其未对齐 PSNR 甚至超过 BilaRF 的 PSNR-CC,§5.1)。
+  </div>
+</div>
+<!-- ============================== s3 ============================== -->
+<div class="section" id="s3">
+  <h2><span class="num">3</span>演进脉络与范式定位</h2>
+  <div class="mermaid">
+timeline
+    title 多视角光度校正的范式演进
+    2020 : NeRF-W (GLO 全局嵌入) : 全局调制,无结构,不可解释
+    2022 : ADOP : 逐帧可学相机参数(曝光/白平衡/CRF 插值表)
+    2024-06 : BiLaRF (TOG) : per-view 3D 双边网格 + 低秩 4D 网格做 3D 修图
+    2025-04 : Luminance-GS (CVPR 2025) : 视角自适应曲线生成伪增强标签
+    2025-06 : bilateral-driving (NeurIPS 2025) : 多尺度双边网格金字塔,统一 AC 与 BG
+    2026-01 : PPISP (NVIDIA) : 物理 ISP 四模块解耦 + controller 预测新视角参数
+    2026-02 : Luminance-GS++ : 加局部残差精修,校正蒸馏进 per-Gaussian 属性
+  </div>
+  <div class="tblwrap">
+  <table>
+    <tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+    <tr><td>全局调制</td><td>NeRF-W (GLO) / appearance code</td><td>不一致性是全局低频的</td><td>表达不了局部变化;参数不可解释</td></tr>
+    <tr><td>局部仿射网格</td><td>BiLaRF</td><td>ISP 残差 = 位置+亮度索引的局部仿射</td><td>容量过大易过拟合;新视角无参数(训练后丢弃);参数不可解释</td></tr>
+    <tr><td>多尺度网格</td><td>bilateral-driving</td><td>不一致性 = 全局分量 + 局部分量的由粗到细复合</td><td>细层不可插值;新时刻参数靠时序近邻,静态场景不适用</td></tr>
+    <tr><td>物理 ISP 参数化</td><td>PPISP(ADOP 为先驱)</td><td>不一致性严格服从相机成像物理(曝光/暗角/色彩/CRF)</td><td>表达不了局部色调映射、镜头眩光等空间自适应效应(作者自述 §6)</td></tr>
+    <tr><td>伪标签蒸馏</td><td>Luminance-GS / Luminance-GS++</td><td>2D 增强先验(曲线+残差)生成伪标签,再蒸馏进 3D</td><td>校正不可逆、不可解释;上限取决于伪标签质量</td></tr>
+  </table>
+  </div>
+  <p class="note">谱系上的两条支流:① BiLaRF → bilateral-driving 是"双边网格"家族内部演进(后者作者含 BiLaRF 通讯作者 Tianfan Xue,guidance+slice 范式直接继承,其 §3.3.2 明确 "following ... Wang et al. (2024)");② ADOP → PPISP 是"物理相机参数"家族(PPISP 以 ADOP 为主要对照并修正其 CRF/白平衡参数化,附录 A.1)。Luminance-GS++ 与两家不同源,来自低光增强(Zero-DCE / Aleth-NeRF)一脉。</p>
+</div>
+
+<!-- ============================== s4 ============================== -->
+<div class="section" id="s4">
+  <h2><span class="num">4</span>四篇论文速览卡</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h4>① BiLaRF(2406.00448,SIGGRAPH/TOG 2024,CUHK)</h4>
+      <p><b>问题</b>:手机 ISP 逐张增强毁多视角一致性 → floaters。<br>
+      <b>方法</b>:每训练视角挂一个 3D 双边网格(16×16×8×12,每格 3×4 仿射,恒等初始化,TV×10)吸收 ISP 残差,辐射场只学干净场景;训完网格丢弃、推理零开销。另用 CP 低秩 4D 网格(秩 5/8)把单视角 2D 修图升维 3D。<br>
+      <b>关键数字</b>:自采 7 夜景,CC-PSNR 27.53 / SSIM 0.8696 / LPIPS 0.1336,vs GLO 26.54、ZipNeRF 25.17(Table 1);训练 ≈2.25h@3090。<br>
+      <b>一句话</b>:双边网格范式开山与参照系;nerfstudio 已官方集成(<code>use_bilateral_grid</code>)。<a href="3D-20240601-BiLaRF.html">→ 库内深度笔记</a></p>
+    </div>
+    <div class="card">
+      <h4>② bilateral-driving(2506.05280,NeurIPS 2025,BAAI/AIR-THU)</h4>
+      <p><b>问题</b>:驾驶场景多相机×时序不一致;AC 太粗(栅栏糊)、单大网格不收敛(Waymo NVS 21.51 vs 基座 26.40)。<br>
+      <b>方法</b>:三级金字塔 2×2×1 / 4×4×2 / 8×8×4(每格 12 维仿射),粗层≈AC、细层≈BG、中间实现 patch-wise;adaptive TV + circle 正则;新时刻只对粗/中层做时序线性插值,细层不插值。<br>
+      <b>关键数字</b>:Waymo CD 0.989(vs AC 1.378,−28.2%);参数 3.969M vs 单网格 27.843M;训练 2.10h@L40(+9%);推理 54→42 FPS(Tab.1/4)。<br>
+      <b>一句话</b>:用"尺度分解"而不是"更强约束"解决网格难优化;收益主要在几何。</p>
+    </div>
+    <div class="card">
+      <h4>③ PPISP(2601.18336,NVIDIA,2026-01)</h4>
+      <p><b>问题</b>:GLO/BilaRF 无物理约束 → 过拟合、不可解释、新视角没参数;CC 对齐评估协议失真。<br>
+      <b>方法</b>:物理 ISP 四模块按序作用于渲染 radiance(线性域):曝光(per-frame,$2^{\Delta t}$)/ 暗角(per-camera 多项式)/ 色彩 homography(per-frame,8 参)/ CRF(per-camera 分段幂函数);再训 controller 从渲染图预测新视角的 9 个 per-frame 参数(类比 AE/AWB),可融合 EXIF metadata。两阶段训练 30k + 5k 迭代。<br>
+      <b>关键数字</b>:五数据集 PSNR 全超 BilaRF/ADOP;T&amp;T NV 24.62 vs BilaRF 19.78;渲染 +0.84ms(+26%,RTX 5090);metadata 加持下 HDR-NeRF 集 PSNR 34.30(Table 1/3/4/5)。<br>
+      <b>一句话</b>:物理归纳偏置 = 容量-泛化甜区;已开源(nv-tlabs/ppisp)。</p>
+    </div>
+    <div class="card">
+      <h4>④ Luminance-GS++(2602.18322,2026-02,东大/东北大/UC Merced)</h4>
+      <p><b>问题</b>:低光/过曝/色温极端退化下 3DGS 崩坏;前作 Luminance-GS 只有全局曲线、缺局部精修。<br>
+      <b>方法</b>:不改表征,给每高斯加可学习线性修正 $c_i^{out}=a_i c_i+b_i$;伪增强标签 = 视角自适应曲线(共享 256-LUT + 相机矩阵作 query 的注意力偏置)+ 3×ConvNeXt 局部残差(clip ±0.1/±0.5);双路渲染把增强蒸馏进 $c_i^{out}$,推理零额外开销。<br>
+      <b>关键数字</b>:LOM 低光 20.74/0.823/0.272 vs 前作 18.34(+13.1%);MipNeRF-360 混合退化 17.86 vs 3DGS 15.87;训练 0.23 GPUh(Aleth-NeRF 14.08)(Tab.I/III/IV)。<br>
+      <b>一句话</b>:极端退化场景的增强路线;未开源、校正不可逆。</p>
+    </div>
+  </div>
+</div>
+<!-- ============================== s5 ============================== -->
+<div class="section" id="s5">
+  <h2><span class="num">5</span>矩阵式系统对比(主矩阵)</h2>
+  <p>固定维度横向曝光,缺失写 —,无法核实处标 <span class="uncertain">⚠️【待核实】</span>。</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th style="min-width:110px">维度</th><th>BiLaRF</th><th>bilateral-driving</th><th>PPISP</th><th>Luminance-GS++</th></tr>
+    <tr><td><b>发表</b></td><td>SIGGRAPH/ACM TOG 2024(2024-06)</td><td>NeurIPS 2025(v1 2025-06,v4 2026-01)</td><td>arXiv 2026-01(abs comments 无会议信息)</td><td>arXiv 2026-02(CVPR 2025 会议版的期刊扩展)</td></tr>
+    <tr><td><b>机构</b></td><td>CUHK + 上海 AI Lab</td><td>BAAI / AIR-THU / CUHK / LeddarTech 等</td><td>NVIDIA</td><td>东京大学 / 东北大学 / UC Merced·Google DeepMind / RIKEN</td></tr>
+    <tr><td><b>目标场景</b></td><td>静态场景多视角 sRGB(自采夜间长曝光为主)</td><td>自动驾驶:多相机×时序,动态解耦大场景</td><td>通用静态场景(含多相机 rig、Waymo 驾驶)</td><td>静态场景极端亮度/色温退化(低光、过曝、混合)</td></tr>
+    <tr><td><b>基座表示</b></td><td>ZipNeRF(官方)/ splatfacto-3DGS(nerfstudio)</td><td>OmniRe(主)/ ChatSim / StreetGS</td><td>3DGUT / GSplat(3DGS)</td><td>3DGS</td></tr>
+    <tr><td><b>校正参数化</b></td><td>per-view 3D 双边网格(16×16×8,每格 3×4 仿射)</td><td>三级金字塔 2×2×1 / 4×4×2 / 8×8×4 ×12,由粗到细复合</td><td>物理四模块:曝光 $2^{\Delta t}$ / 暗角多项式 / 色彩 homography(8 参)/ 分段幂 CRF</td><td>视角自适应曲线(256-LUT + 注意力偏置)+ ConvNeXt 残差 → 蒸馏为 per-Gaussian $a_i,b_i$</td></tr>
+    <tr><td><b>容量(参数量级)</b></td><td>24,576 / 视角</td><td>3.969M(单大网格 27.843M 的 1/7)</td><td>极低:per-frame 9 参 + per-camera 若干(暗角/CRF 每通道数参);精确总数论文未给 <span class="uncertain">⚠️【待核实】</span></td><td>per-Gaussian 2 组系数 + 曲线/残差网络</td></tr>
+    <tr><td><b>作用环节</b></td><td>体渲染之后的 2D 像素(训练期);finishing 的 4D 网格作用于体渲染采样点</td><td>渲染图后处理(训练 + 推理时序插值)</td><td>渲染 radiance 后处理(线性域),与重建方法解耦</td><td>训练输入图(生成伪标签)→ 蒸馏进高斯属性,推理零开销</td></tr>
+    <tr><td><b>新颖视角参数来源</b></td><td>不需要:网格训完丢弃,辐射场本身干净(但色调是各视角 ISP 的折中,不可控)</td><td>时序近邻线性插值(仅粗/中层)</td><td>controller 从渲染图预测(类比 AE/AWB),可融合 EXIF</td><td>不需要:已蒸馏进 per-Gaussian 属性</td></tr>
+    <tr><td><b>可解释/可控性</b></td><td>网格参数不可解释;finishing 支持用户修图驱动</td><td>不可解释</td><td><b>最强</b>:EV、白平衡色度偏移、CRF 曲线均有物理意义,可手动调</td><td>不可解释、不可逆(烤进属性)</td></tr>
+    <tr><td><b>3D 编辑能力</b></td><td><b>有</b>(低秩 4D 网格,单图修图升维全场景)</td><td>无</td><td>无(但物理参数手动可控,等价"相机级"调节)</td><td>无(输出即增强后场景)</td></tr>
+    <tr><td><b>评估协议立场</b></td><td>用 CC 仿射对齐(沿用 RawNeRF 协议)</td><td>不对齐;报 Recon/NVS/几何三类指标</td><td><b>明确批评 CC 协议</b>,以未对齐 PSNR 为主指标</td><td>低光增强协议(正常光图作 GT),未涉 CC 讨论</td></tr>
+    <tr><td><b>关键正则</b></td><td>网格 TV ×10;恒等初始化;低分辨率防塌缩</td><td>adaptive TV(网格越大权重越大)+ circle 正则(防过度校正)+ guidance 下采样 (2,2,1)</td><td>亮度/色彩均值正则 + 跨通道方差 + 暗角物理约束;CRF 单调光滑参数化</td><td>L_spa(自适应空间一致性)+ L_curve(曲线先验 ×10)+ L_cc(白平衡)+ L_tv(曲线平滑)</td></tr>
+    <tr><td><b>训练开销</b></td><td>≈2.25h @ RTX 3090;finishing +15min</td><td>2.10h @ L40(vs AC 基线 1.93h,+9%)</td><td>30k + 5k 迭代;绝对时长未给 <span class="uncertain">⚠️【待核实】</span></td><td>0.23 GPUh(LOM)/ 0.28 GPUh(MipNeRF-360),vs Aleth-NeRF 14.08</td></tr>
+    <tr><td><b>推理开销</b></td><td>0(网格丢弃)</td><td>54→42 FPS(开网格处理,−22%)</td><td>+0.10ms(无 controller,+3%)/ +0.84ms(带 controller,+26%)@ RTX 5090</td><td>0(蒸馏进属性,原生 3DGS 速度)</td></tr>
+    <tr><td><b>几何收益</b></td><td>floaters 消除(定性 + CC 指标)</td><td><b>显式几何指标</b>:Waymo CD −28.2%,四数据集 CD/RMSE/Depth 全改善</td><td>未直接报几何指标;Table 5 证明不过拟合</td><td>未报几何指标</td></tr>
+    <tr><td><b>开源</b></td><td>✓ Apache 2.0 + nerfstudio 官方集成</td><td>✓(BigCiLeng/bilateral-driving,协议未注明)</td><td>✓(nv-tlabs/ppisp)</td><td>✗ 论文未给代码链接</td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ============================== s6 ============================== -->
+<div class="section" id="s6">
+  <h2><span class="num">6</span>机制对比一:校正模型的数学形式</h2>
+  <p>四种参数化决定了"能表达什么、不能表达什么"。按表达力从强到弱(也即归纳偏置从弱到强)排列:</p>
+
+  <h3>① BiLaRF:亮度索引的局部仿射(表达力最强,约束最弱)</h3>
+  <div class="equation">
+    <span class="tag">(式 1,BiLaRF 式 3)</span>
+    $$C_e = \mathcal{A}(u,v,g)\,[C \mid 1]^{\top},\qquad \mathcal{A} = \text{trilerp}\big(A \in \mathbb{R}^{16\times16\times8\times12},\ (u,v,g(\widehat{C}))\big)$$
+  </div>
+  <p>每个网格 cell 存一个 $3\times4$ 仿射颜色矩阵,按像素位置 $(u,v)$ 与引导灰度 $g$ 三线性插值取出。$g$ 使等亮度区域共享变换(边缘感知),这是它超越纯空间网格的关键。约束只有恒等初始化 + TV($\lambda=10$)+ 刻意低分辨率 —— 都是软约束,所以它<b>能建模光度以外的东西</b>(这正是 PPISP Table 5 攻击的点)。</p>
+
+  <h3>② bilateral-driving:由粗到细的网格复合(表达力分级)</h3>
+  <div class="equation">
+    <span class="tag">(式 2,bilateral-driving 式 8)</span>
+    $$I^{e} = T^{(2)} \circ T^{(1)} \circ T^{(0)}(I^{r}),\qquad T^{(l)}(x) = \bar{M}^{(l)}(u,v,d)\,x + \bar{t}^{(l)}(u,v,d)$$
+  </div>
+  <p>三个尺度 $2{\times}2{\times}1$ / $4{\times}4{\times}2$ / $8{\times}8{\times}4$ 各自在下采样 guidance map 上 slice,再函数复合 —— 粗层学全局基线(等价 appearance code),细层只学残差。关键工程发现:<b>全分辨率 guidance 会过拟合噪声</b>(Tab.5a,(1,1,1) 反而掉点),最佳下采样为 (2,2,1);<b>去掉最粗层 CD 从 1.161 恶化到 1.94+</b>(Tab.5b),证明全局分量对几何一致性必不可少。</p>
+
+  <h3>③ PPISP:相机成像物理的显式分解(表达力最受限,约束最强)</h3>
+  <div class="equation">
+    <span class="tag">(式 3,PPISP 式 3-16 合写)</span>
+    $$I^{out} = \underbrace{G\Big(\underbrace{h\big(\underbrace{I^{exp}\cdot v(r;\alpha)}_{\text{暗角(每相机)}};\ H(\Delta c)\big)}_{\text{色彩 homography(每帧,8 参)}};\ \tau,\eta,\xi,\gamma\Big)}_{\text{CRF(每相机)}},\qquad I^{exp} = L \cdot 2^{\Delta t}\ \text{(每帧)}$$
+  </div>
+  <p>每个模块只被允许做物理上成立的事:曝光只能整体缩放亮度($2^{\Delta t}$,EV 语义);暗角是径向六次多项式(每相机、每通道);色彩校正是在 RG 色度 + 强度上施加由 4 个色度偏移(8 标量)构造的 homography,且做强度归一化以<b>解耦曝光与白平衡</b>(附录 A.1 的 PCC 实验证明其耦合显著低于 ADOP 的逐通道增益);CRF 是 $C^1$ 连续的分段幂函数(每通道 4 参),单调光滑 —— 对比 ADOP 的 25 节点插值 CRF 需要额外光滑正则仍可能非单调。<b>参数全部有物理意义</b>,可手动调节,附录 A.2 还证明同相机的暗角/CRF 曲线跨序列重合(在线标定性质)。</p>
+
+  <h3>④ Luminance-GS++:曲线伪标签 + 蒸馏(表达力转移到伪标签生成器)</h3>
+  <div class="equation">
+    <span class="tag">(式 4,Luminance-GS++ 式 4/7)</span>
+    $$c_i^{out} = a_i \cdot c_i + b_i,\qquad C_k^{out} = \mathbb{L}_k\big(C_k^{in} \cdot \mathcal{M}_k\big) \cdot \mathcal{M}_k^{-1} + \mathbb{R}(C_k^{in}),\quad \mathbb{L}_k = \mathbb{L}^{g} + \mathbb{L}_k^{b}$$
+  </div>
+  <p>校正分两层:伪标签侧(视角自适应曲线 $\mathbb{L}_k$ = 共享 256-LUT + 相机矩阵作 query 的 cross-attention 偏置,外加 3×ConvNeXt 残差,clip 到 ±0.1/±0.5)决定"想要什么效果";3D 侧每高斯只学一个线性修正 $(a_i, b_i)$,双路渲染把伪标签蒸馏进 $c_i^{out}$。<b>3D 侧的容量被刻意压到线性</b>,表达力全在 2D 伪标签生成器里 —— 这也是它推理零开销但不可逆的原因。</p>
+
+  <div class="callout key">
+    <b>对比结论:</b>四种形式恰好构成"表达力 vs 约束"的光谱 —— BiLaRF(每 cell 12 参自由仿射)&gt; bilateral-driving(同仿射但粗到细分解,细层只学残差)&gt; Luminance-GS++(per-Gaussian 线性 + 2D 曲线/残差)&gt; PPISP(物理允许的最低维变换)。§8 将看到,这个光谱与新视角泛化能力几乎负相关。
+  </div>
+</div>
+<!-- ============================== s7 ============================== -->
+<div class="section" id="s7">
+  <h2><span class="num">7</span>机制对比二:新颖视角参数的四种答案</h2>
+  <p>"训练时给每张输入图学一套校正参数,那渲染<b>没见过的视角</b>时参数从哪来?" —— 这是这类方法最尖锐的问题(PPISP §1 把它列为三大动机之一),四篇给出了四种完全不同的答案,直接决定了各自的适用场景:</p>
+  <div class="mermaid">
+flowchart TD
+    subgraph A["① BiLaRF:训练后丢弃"]
+        A1["训练:渲染图 → per-view 网格 → 对齐输入图"] --> A2["推理:网格丢弃<br/>直接渲染干净辐射场"]
+    end
+    subgraph B["② bilateral-driving:时序插值"]
+        B1["训练:每时刻 t 一套三级网格"] --> B2["新时刻:近邻 t1,t2 的粗/中层<br/>线性插值(细层不动)"]
+    end
+    subgraph C["③ PPISP:controller 预测"]
+        C1["阶段一:重建 + ISP 模块联合优化 30k"] --> C2["阶段二:冻结其余<br/>训 controller 5k"]
+        C2 --> C3["新视角:渲染 radiance → controller<br/>→ 9 个 per-frame 参数(可融合 EXIF)"]
+    end
+    subgraph D["④ Luminance-GS++:蒸馏进属性"]
+        D1["训练:伪标签监督 c_out 分支"] --> D2["推理:原生 3DGS 渲染<br/>校正已在 a_i,b_i 里"]
+    end
+    style A fill:#fef3c7,stroke:#d97706,color:#451a03
+    style B fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style C fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style D fill:#f3e8ff,stroke:#9333ea,color:#3b0764
+  </div>
+  <table>
+    <tr><th>答案</th><th>论文</th><th>优点</th><th>代价 / 适用边界</th></tr>
+    <tr><td>丢弃网格</td><td>BiLaRF</td><td>推理零开销;辐射场"干净"</td><td>辐射场色调是各视角 ISP 的折中,<b>渲染色调不可控</b>;评估仍需 CC 对齐对齐回 GT 色调</td></tr>
+    <tr><td>时序插值</td><td>bilateral-driving</td><td>简单;驾驶序列天然有时序邻域</td><td>只插值粗/中层(细层编码场景细节,插值会糊);<b>静态多视角集合没有时序,不可用</b></td></tr>
+    <tr><td>controller 预测</td><td>PPISP</td><td>真正泛化到任意新视角;类比 AE/AWB,有物理语义;可融合 EXIF</td><td>依赖数据中存在可学的曝光/颜色规律;手动覆盖相机设置时(controller 看不到 metadata)会失效(§5.1 BilaRF 数据集上 w/ctrl 与 -CC 差距偏大的原因)</td></tr>
+    <tr><td>蒸馏进属性</td><td>Luminance-GS++</td><td>推理零开销;3DGS 管线不动</td><td>校正是"一次性"的,不可逆、不可调;伪标签质量决定上限</td></tr>
+  </table>
+  <div class="callout warn">
+    <b>注意一个表述陷阱:</b>PPISP 批评 BilaRF"新视角没参数",严格说是批评"per-frame 校正参数无法赋给新视角" —— BiLaRF 的应对是让辐射场不需要校正(网格丢弃),代价是渲染色调不可控;PPISP 的应对是让校正可预测,代价是多一个 controller 的训练与推理环节(+26% 渲染耗时)。两者不是对错,是"干净重建"与"可控渲染"之间的取舍。
+  </div>
+</div>
+
+<!-- ============================== s8 ============================== -->
+<div class="section" id="s8">
+  <h2><span class="num">8</span>机制对比三:容量-泛化权衡(全报告最关键的一组数字)</h2>
+  <p>PPISP Table 5(Tanks &amp; Temples,同基座 3DGUT)直接测量了"训练视角 PSNR(TV)与新视角 PSNR(NV)的差距",这是四篇论文里唯一把<b>校正模块容量与过拟合</b>做成可控实验的:</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>校正模块(3DGUT 基座)</th><th>TV PSNR↑</th><th>NV PSNR↑</th><th>TV−NV 差距(过拟合度)</th><th>读法</th></tr>
+    <tr class="fail"><td>BilaRF(per-frame 大双边网格)</td><td>26.87</td><td>19.78</td><td><b>7.09 dB</b></td><td>容量最大,过拟合最严重:网格学走了不止 ISP 的内容</td></tr>
+    <tr><td>BilaRF + PC(加 per-camera 网格)</td><td>26.83</td><td>21.80</td><td>5.03 dB</td><td>per-camera 分量跨视角共享,泛化略好</td></tr>
+    <tr><td>ADOP(物理参数,老一代)</td><td>26.08</td><td>20.28</td><td>5.80 dB</td><td>物理约束但参数化有缺陷(CRF/白平衡耦合)</td></tr>
+    <tr><td>PPISP + BilaRF(PPISP 上加 per-frame 网格)</td><td>26.66</td><td>23.52</td><td>3.14 dB</td><td>加容量立即损害泛化(原文:"boosts TV but noticeably degrades NV")</td></tr>
+    <tr class="best"><td>PPISP(物理四模块)</td><td>25.85</td><td><b>24.62</b></td><td><b>1.23 dB</b></td><td>TV 最低但 NV 最高:容量刚好匹配真实 ISP 自由度</td></tr>
+  </table>
+  </div>
+  <div class="callout key">
+    <b>机制解释(为什么容量小反而赢):</b>训练视角的 PSNR 可以通过"把非 ISP 内容也吸收进校正模块"来虚高 —— 比如把某视角特有的高光、甚至部分纹理变化学进网格;这些参数对新视角无意义,于是 NV 崩。物理参数化等于把假设空间裁剪到"相机真的能做的操作",优化器无处可藏,只能让 3D 重建本身变干净。<b>这是"归纳偏置胜过表达力"的教科书案例</b>,也解释了 bilateral-driving 的现象:它没减仿射表达力,但把网格拆成"粗层管全局、细层管残差",细层学不到全局变化就不敢乱动 —— 用结构实现类似的容量裁剪(其 Tab.5b 去掉粗层后 CD 恶化 67% 是同一原理的镜像:全局光度无处安放就会污染几何)。
+  </div>
+  <div class="callout warn">
+    <b>对 BiLaRF 的公平性说明:</b>Table 5 的 BilaRF 是 PPISP 作者移植到 3DGUT 的版本,且 BilaRF 的原设计是"训练后丢弃网格、渲染干净辐射场",其论文主指标是 CC 对齐后的(27.53,自己的 ZipNeRF 基座+自采数据集);NV 19.78 是未对齐指标,部分差距来自色调不可控而非几何损坏。两组数字都真实,但衡量的东西不同 —— 这本身又印证了 §2 的评估协议之争。
+  </div>
+</div>
+<!-- ============================== s9 ============================== -->
+<div class="section" id="s9">
+  <h2><span class="num">9</span>实验数字汇总(分区呈现,不可跨区横比)</h2>
+
+  <h3>9.1 BiLaRF 内部对比(自采 7 夜景,ZipNeRF 基座,Table 1)</h3>
+  <table>
+    <tr><th>方法</th><th>PSNR(sRGB)↑</th><th>PSNR(CC 对齐)↑</th><th>SSIM(CC)↑</th><th>LPIPS(CC)↓</th></tr>
+    <tr><td>ZipNeRF</td><td>23.07</td><td>25.17</td><td>0.8224</td><td>0.1823</td></tr>
+    <tr><td>ZipNeRF w/GLO</td><td>23.15</td><td>26.54</td><td>0.8521</td><td>0.1439</td></tr>
+    <tr><td>HDRNeRF</td><td>22.56</td><td>24.03</td><td>0.6451</td><td>0.3951</td></tr>
+    <tr><td>LLNeRF</td><td>18.37</td><td>21.71</td><td>0.6602</td><td>0.4466</td></tr>
+    <tr class="best"><td>BiLaRF</td><td>23.83</td><td>27.53</td><td>0.8696</td><td>0.1336</td></tr>
+  </table>
+
+  <h3>9.2 bilateral-driving 内部对比(OmniRe 基座,Tab.1 摘录)</h3>
+  <table>
+    <tr><th>数据集</th><th>方法</th><th>Recon PSNR↑</th><th>NVS PSNR↑</th><th>CD↓</th><th>Depth↓</th></tr>
+    <tr><td rowspan="4">Waymo</td><td>OmniRe</td><td>28.92</td><td>26.40</td><td>1.482</td><td>0.540</td></tr>
+    <tr><td>w/AC</td><td>28.95</td><td>26.44</td><td>1.378</td><td>0.519</td></tr>
+    <tr class="fail"><td>w/BG(单大网格)</td><td>28.19</td><td>21.51</td><td>1.523</td><td>0.492</td></tr>
+    <tr class="best"><td>多尺度网格(本文)</td><td>29.23</td><td>26.55</td><td>0.989</td><td>0.477</td></tr>
+    <tr><td rowspan="2">NuScenes</td><td>OmniRe</td><td>26.37</td><td>23.74</td><td>1.458</td><td>0.110</td></tr>
+    <tr class="best"><td>多尺度网格(本文)</td><td>27.69</td><td>24.64</td><td>1.161</td><td>0.059</td></tr>
+  </table>
+  <p class="note">单大双边网格(w/BG)在驾驶大场景上 NVS 反而比基座低 4.9 dB —— "网格难优化"不是修辞,是可复现的定量现象。几何指标(CD)是本论文独有维度:光度校正减少 floaters 直接改善了几何。</p>
+
+  <h3>9.3 PPISP 内部对比(3DGUT 基座,Table 1 摘录,未对齐 PSNR 为主指标)</h3>
+  <table>
+    <tr><th>数据集</th><th>3DGUT</th><th>+BilaRF</th><th>+ADOP</th><th>+PPISP(w/o ctrl)</th><th>+PPISP(w/ ctrl)</th></tr>
+    <tr><td>Mip-NeRF 360</td><td>27.74</td><td>24.97</td><td>26.42</td><td>27.55</td><td class="best"><b>28.15</b></td></tr>
+    <tr><td>Tanks &amp; Temples</td><td>22.86</td><td>19.78</td><td>20.28</td><td>21.52</td><td class="best"><b>24.62</b></td></tr>
+    <tr><td>Waymo(9 序列)</td><td>25.56</td><td>21.83</td><td>24.28</td><td>25.03</td><td class="best"><b>25.69</b></td></tr>
+    <tr><td>BilaRF 数据集</td><td>22.60</td><td>21.41</td><td>22.95</td><td>24.08</td><td>24.12(3DGS 基座 24.86)</td></tr>
+    <tr><td>PPISP-Auto(自采)</td><td>22.05</td><td>20.81</td><td>19.94</td><td>21.07</td><td class="best"><b>22.87</b></td></tr>
+  </table>
+  <p class="note">值得注意:BilaRF/ADOP 移植到 3DGUT 后在多数数据集<b>低于不加校正的裸 3DGUT</b>(未对齐协议下) —— 说明在"不做 CC 对齐"的真实评估里,高容量校正模块是负资产;只有 PPISP 稳定正收益。metadata 实验(Table 3):喂 EXIF 曝光后 PPISP 在 HDR-NeRF 集 PSNR 从 17.86 跳到 34.30(ADOP 同样受益于初始化,31.27),说明 metadata 价值巨大。</p>
+
+  <h3>9.4 Luminance-GS++ 内部对比(Tab.I/IV 摘录)</h3>
+  <table>
+    <tr><th>设置</th><th>3DGS</th><th>最强 baseline</th><th>Luminance-GS(前作)</th><th>Luminance-GS++</th></tr>
+    <tr><td>LOM 低光(PSNR/SSIM/LPIPS)</td><td>6.88/0.157/0.662</td><td>Aleth-NeRF 19.87/0.754/0.417</td><td>18.34/0.799/0.294</td><td class="best"><b>20.74/0.823/0.272</b></td></tr>
+    <tr><td>LOM 过曝</td><td>9.64/0.726/0.392</td><td>MSLT+3DGS 20.25/0.824/0.262</td><td>20.71/0.835/0.222</td><td class="best"><b>21.41/0.854/0.223</b></td></tr>
+    <tr><td>MipNeRF-360 曝光扰动</td><td>16.95/0.571/0.345</td><td>GS-W 17.52/0.629/0.334</td><td>18.12/0.664/0.304</td><td class="best"><b>18.93/0.696/0.268</b></td></tr>
+    <tr><td>MipNeRF-360 混合退化</td><td>15.87/0.561/0.402</td><td>GS-W 15.37/0.453/0.575</td><td>16.12/0.613/0.350</td><td class="best"><b>17.86/0.658/0.352</b></td></tr>
+  </table>
+  <p class="note">注意颜色退化设置下前作 Luminance-GS(13.38)反而低于裸 3DGS(17.97) —— 白色环境光假设在色温漂移时失败,++ 的局部残差 + L_cc 正是修这个。另注意它<b>没有与 PPISP/BiLaRF 做任何定量对比</b>(BilaRF 只在相关工作里被提及),两条路线的强弱目前是空白。</p>
+
+  <h3>9.5 消融精选(各自论文内最有信息量的)</h3>
+  <table>
+    <tr><th>论文</th><th>消融</th><th>数字</th><th>结论</th></tr>
+    <tr><td>PPISP(Table 2,T&amp;T NV PSNR)</td><td>去 exposure / vignetting / color / CRF</td><td>24.62 → 23.33 / 24.08 / 24.27 / 24.36</td><td>四模块全有贡献,曝光(−1.29)与暗角(−0.54)最关键</td></tr>
+    <tr><td>bilateral-driving(Tab.5b)</td><td>去掉最粗层 (2,2,1)</td><td>CD 1.161 → 1.94~1.96</td><td>全局分量是几何一致性的关键</td></tr>
+    <tr><td>bilateral-driving(Tab.5a)</td><td>guidance 全分辨率 (1,1,1)</td><td>NVS 24.64 → 24.34</td><td>过拟合噪声;patch-wise(2,2,1)最佳</td></tr>
+    <tr><td>Luminance-GS++(Tab.VI,LOM 低光 buu)</td><td>w/o L_spa / w/o L_curve</td><td>24.75 → 13.05 / 14.48</td><td>空间一致性损失贡献最大;仅残差分支单独使用会崩(10.86,Tab.V)</td></tr>
+    <tr><td>BiLaRF(Fig 9/10)</td><td>TV 权重 0/0.1/10;随机初始化</td><td>—(定性:ghost / 编辑污染背景)</td><td>TV×10 与恒等初始化是防"网格编码图像内容"的命门</td></tr>
+  </table>
+</div>
+
+<!-- ============================== s10 ============================== -->
+<div class="section" id="s10">
+  <h2><span class="num">10</span>工程实现对比</h2>
+  <div class="tblwrap">
+  <table>
+    <tr><th>维度</th><th>BiLaRF</th><th>bilateral-driving</th><th>PPISP</th><th>Luminance-GS++</th></tr>
+    <tr><td>代码</td><td>github.com/yuehaowang/bilarf(Apache 2.0);nerfstudio v1.1.4 splatfacto 官方集成(<code>use_bilateral_grid</code>,TV×10 硬编码;4D finishing 未移植)</td><td>github.com/BigCiLeng/bilateral-driving(声明开源,协议未注明)</td><td>github.com/nv-tlabs/ppisp(2026-10-26 验证仓库存在)</td><td>✗ 未提供</td></tr>
+    <tr><td>训练硬件/时长</td><td>单卡 RTX 3090,≈2.25h;finishing 2500 步 ≈15min</td><td>单卡 L40,2.10h(vs AC 1.93h)</td><td>30k+5k 迭代(3DGUT/GSplat 默认 MCMC);时长未给 <span class="uncertain">⚠️【待核实】</span></td><td>0.23 / 0.28 GPUh(Tab.III)</td></tr>
+    <tr><td>推理开销</td><td>0(网格训练后丢弃)</td><td>54→42 FPS(开网格,−22%)</td><td>3DGUT 渲染 3.24ms;+0.10ms(无 ctrl)/ +0.84ms(带 ctrl)(Table 4,RTX 5090,MipNeRF-360)</td><td>0(蒸馏进属性)</td></tr>
+    <tr><td>核心落地坑</td><td>不处理瞬态物体(云/行人);in-the-wild 需联合 GLO;finishing 无法升维模糊/锐化类非点算子</td><td>单大网格不收敛(必须多尺度);guidance 不能全分辨率;细层不可时序插值;损失权重正文未给、需查代码 <span class="uncertain">⚠️【待核实】</span></td><td>表达不了局部色调映射/镜头眩光;手动覆盖相机设置时 controller 失效,需喂 metadata;评估时不要再用 CC 对齐自欺</td><td>伪标签质量是上限;未开源无法即插即用;clip 范围(±0.1/±0.5)需按退化类型手工选</td></tr>
+    <tr><td>数据要求</td><td>普通 sRGB 多视角(COLMAP 位姿)</td><td>多相机+LiDAR 深度(L_d 监督)+ 时序连续采集</td><td>普通多视角;有 EXIF 更佳;输入最长边 ≤2000px;无位姿时需 COLMAP/GLOMAP</td><td>普通多视角;按退化类型构造(LOM 实拍三档光照 / MipNeRF-360 合成扰动)</td></tr>
+  </table>
+  </div>
+</div>
+<!-- ============================== s11 ============================== -->
+<div class="section" id="s11">
+  <h2><span class="num">11</span>对 vggt_human pipeline 的选型建议</h2>
+  <p>我们的链路(COLMAP → 3DGS → HYPIR → SAM3)在人脸/人体多视角采集上同样面临光度不一致:多相机 rig 的传感器差异、单相机环绕拍摄时自动曝光/白平衡漂移,会在 head_gs 纹理上产生 floaters 与 albedo 不一致,并可能污染后续 3DMM 对齐(纹理不干净时 657 点 landmarks 的光度监督会带偏 id/exp 系数)<span class="uncertain">⚠️【推测】关于对 3DMM 阶段的传导效应,未实验验证</span>。</p>
+  <div class="tblwrap">
+  <table>
+    <tr><th>我们的场景</th><th>推荐</th><th>理由与接入方式</th></tr>
+    <tr><td>静态人体/人脸多视角重建(默认情形)</td><td><b>PPISP(首选)</b></td><td>与 3DGS/GSplat 管线直接兼容、有官方代码;新视角泛化最好(§8);物理参数可解释,排查问题时能直接看 EV/白平衡曲线;推理 +0.84ms 可忽略</td></tr>
+    <tr><td>快速验证、已在用 nerfstudio</td><td><b>BiLaRF(nerfstudio 集成)</b></td><td>splatfacto 打开 <code>use_bilateral_grid</code> 即可,零接入成本;注意其 TV 权重 10 是硬编码,网格参数训后丢弃,渲染色调不可控</td></tr>
+    <tr><td>需要后期统一修肤色/风格</td><td><b>BiLaRF 4D finishing</b></td><td>唯一支持"修一张图 → 全场景生效"的方案;15min/场景,可作为交付前的调色环节</td></tr>
+    <tr><td>车内/车载环视等多相机时序数据</td><td><b>bilateral-driving</b></td><td>依赖时序插值与 LiDAR 深度监督,非驾驶场景不建议</td></tr>
+    <tr><td>低光/逆光等极端退化采集</td><td>Luminance-GS++(暂缓)</td><td>数字最强但未开源;复现成本高,且校正不可逆,与"纹理要可编辑"的需求冲突</td></tr>
+  </table>
+  </div>
+  <div class="callout tip">
+    <b>采集侧比算法侧更便宜的三件事(源自 PPISP 的 metadata 实验,Table 3):</b>① 能锁死相机 AE/AWB 就锁死(消除问题本身);② 不能锁就<b>保留 EXIF</b>(喂给 controller,HDR-NeRF 集 PSNR 17.86→34.30);③ 多相机 rig 尽量同型号同设置(PPISP 的 per-camera 暗角/CRF 跨序列可共享,等于白送在线标定)。
+  </div>
+</div>
+
+<!-- ============================== s12 ============================== -->
+<div class="section" id="s12">
+  <h2><span class="num">12</span>局限与开放问题汇总</h2>
+  <ul>
+    <li><b>四家没有同场竞技</b>:PPISP 只在 3DGUT/GSplat 上比了 BilaRF/ADOP;bilateral-driving 只在 OmniRe 系上比了 AC/BG;Luminance-GS++ 与前三家零定量交集。<b>同一数据集、同一基座、同一协议(尤其统一是否 CC)的四方对比至今不存在</b>,是本领域最显眼的空白。</li>
+    <li><b>评估协议分裂</b>:CC 对齐派(BiLaRF、Luminance-GS++)vs 未对齐派(PPISP)。PPISP 的批评在逻辑上成立,但 CC 指标对"只关心几何/结构"的下游仍有用 —— 需要分场景看。</li>
+    <li><b>动态场景的光度校正无人做好</b>:bilateral-driving 处理"动态场景里的静态背景+运动体",但其网格仍是 per-frame 的;BiLaRF 明说处理不了瞬态物体;4D 动态重建(我们关注的方向之一)里的时变 ISP 校正基本空白。</li>
+    <li><b>编辑与校正的统一</b>:BiLaRF 有编辑但网格不可解释;PPISP 可解释但无编辑框架。"物理参数化的 3D 修图"(比如直接调 EV/白平衡曲线重打光整个场景)是 PPISP 留了接口但没做的事。</li>
+    <li><b>伪标签路线的上限</b>:Luminance-GS++ 自述伪标签质量是瓶颈;把扩散先验引入伪增强是开放方向(其 §VI)。</li>
+  </ul>
+</div>
+
+<!-- ============================== s13 ============================== -->
+<div class="section" id="s13">
+  <h2><span class="num">13</span>总结</h2>
+  <p>这条 2024→2026 的演进线讲了一个清晰的故事:<b>校正模型的表达力越做越克制,泛化与可控性越做越强</b>。BiLaRF 证明局部仿射网格足以吸收 ISP 残差(并附带打开 3D 编辑的大门);bilateral-driving 证明网格的难优化可以用尺度分解驯服,并首次把收益量化到几何;bilateral grid 的两个软肋(过拟合、新视角无参数)最终被 PPISP 用物理参数化 + controller 同时解决;Luminance-GS++ 则从另一个极端(极端退化增强)证明,当问题从"轻微不一致"变成"严重退化"时,蒸馏伪标签比建模 ISP 更直接。对我们的 pipeline:<b>默认 PPISP,快速验证用 nerfstudio 的 BiLaRF 开关,修图需求用 BiLaRF finishing,采集端尽量锁 AE/AWB 并保留 EXIF。</b></p>
+</div>
+
+<!-- ============================== s14 ============================== -->
+<div class="section" id="s14">
+  <h2><span class="num">14</span>资源链接</h2>
+  <table>
+    <tr><th>论文</th><th>arXiv</th><th>代码 / 项目页</th><th>库内笔记</th></tr>
+    <tr><td>BiLaRF(TOG 2024)</td><td><a href="https://arxiv.org/abs/2406.00448">2406.00448</a></td><td><a href="https://github.com/yuehaowang/bilarf">yuehaowang/bilarf</a> · <a href="https://bilarfpro.github.io/">项目页</a></td><td><a href="3D-20240601-BiLaRF.html">3D-20240601-BiLaRF.html</a></td></tr>
+    <tr><td>bilateral-driving(NeurIPS 2025)</td><td><a href="https://arxiv.org/abs/2506.05280">2506.05280</a></td><td><a href="https://github.com/BigCiLeng/bilateral-driving">BigCiLeng/bilateral-driving</a> · <a href="https://bigcileng.github.io/bilateral-driving">项目页</a></td><td>—</td></tr>
+    <tr><td>PPISP(2026-01)</td><td><a href="https://arxiv.org/abs/2601.18336">2601.18336</a></td><td><a href="https://github.com/nv-tlabs/ppisp">nv-tlabs/ppisp</a> · <a href="https://research.nvidia.com/labs/sil/projects/ppisp">项目页</a></td><td>—</td></tr>
+    <tr><td>Luminance-GS++(2026-02)</td><td><a href="https://arxiv.org/abs/2602.18322">2602.18322</a></td><td>未开源(前作 Luminance-GS:<a href="https://arxiv.org/abs/2504.01503">2504.01503</a>)</td><td>—</td></tr>
+  </table>
+  <p class="note">数字溯源:BiLaRF 全部数字来自库内深度笔记(已对 arXiv v2 原文与官方源码回核);bilateral-driving / PPISP / Luminance-GS++ 数字提取自 arXiv HTML 全文(v4 / v1 / v1),关键表格数字已抽样回原文核对(2026-10-26)。</p>
+</div>
+
+<div class="footer">
+  <p>矩阵式对比调研 · BiLaRF / bilateral-driving / PPISP / Luminance-GS++ · 生成于 2026-10-26</p>
+</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

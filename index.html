@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 85</span><span class="chip" data-k="kind" data-v="survey">调研综述 13</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 51</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 85</span><span class="chip" data-k="kind" data-v="survey">调研综述 14</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 52</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -2898,6 +2898,36 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://huggingface.co/datasets/chien90190/Splannequin" target="_blank">🤗 数据集</a>
         </div>
 
+        <div class="note-card" data-file="3D-20261026-光度校正方法矩阵对比.html" data-kind="survey" data-depth="deep"
+              data-topics="鲁棒性与干扰过滤" data-search="光度一致性校正矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++ Photometric Consistency Bilateral Grid ISP 3DGS NeRF Novel View Synthesis 自动驾驶 对比调研 多视角光度/色度不一致会破坏 photometric consistency、产生 floaters 并污染几何。本报告对同一问题线上的四篇方法做矩阵式对比:BiLaRF(per-view 3D 双边网格,TOG 2024)、bilateral-driving(三级多尺度网格统一 AC 与 BG,NeurIPS 2025,Waymo CD −28.2%)、PPISP(NVIDIA 物理 ISP 四模块 + controller,Tanks&amp;Temples NV 24.62 vs BilaRF 19.78,容量-泛化甜区)、Luminance-GS++(视角自适应曲线+残差蒸馏进 per-Gaussian 属性,LOM 低光 20.74,未开源)。核心结论:校正表示的容量与新视角泛化几乎负相关,物理归纳偏置是当前最优;并对 vggt_human pipeline 给出选型建议(默认 PPISP、快速验证用 nerfstudio BiLaRF 开关、修图用 4D finishing、采集端锁 AE/AWB 并保留 EXIF)。">
+            <h3>100. 光度一致性校正矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2406.00448 / 2506.05280 / 2601.18336 / 2602.18322</span>
+                <span>📅 2024-06 ~ 2026-02</span>
+                <span>🏢 CUHK / BAAI·AIR-THU / NVIDIA / 东京大学·东北大学·UC Merced</span>
+                <span>🏆 SIGGRAPH(TOG) 2024 / NeurIPS 2025</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">调研综述</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">Photometric Consistency</span>
+                <span class="tag">Bilateral Grid</span>
+                <span class="tag">ISP</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">NeRF</span>
+                <span class="tag">Novel View Synthesis</span>
+                <span class="tag">自动驾驶</span>
+                <span class="tag">对比调研</span>
+            </div>
+            <p>多视角光度/色度不一致会破坏 photometric consistency、产生 floaters 并污染几何。本报告对同一问题线上的四篇方法做矩阵式对比:<strong>BiLaRF</strong>(per-view 3D 双边网格,TOG 2024)、<strong>bilateral-driving</strong>(三级多尺度网格统一 AC 与 BG,NeurIPS 2025,Waymo CD −28.2%)、<strong>PPISP</strong>(NVIDIA 物理 ISP 四模块 + controller,Tanks&Temples NV 24.62 vs BilaRF 19.78,容量-泛化甜区)、<strong>Luminance-GS++</strong>(视角自适应曲线+残差蒸馏进 per-Gaussian 属性,LOM 低光 20.74,未开源)。核心结论:校正表示的容量与新视角泛化几乎负相关,物理归纳偏置是当前最优;并对 vggt_human pipeline 给出选型建议(默认 PPISP、快速验证用 nerfstudio BiLaRF 开关、修图用 4D finishing、采集端锁 AE/AWB 并保留 EXIF)。</p>
+            <a href="3D-20261026-光度校正方法矩阵对比.html">📖 阅读报告</a>
+            <a href="https://arxiv.org/abs/2406.00448" target="_blank">📄 BiLaRF</a>
+            <a href="https://arxiv.org/abs/2506.05280" target="_blank">📄 bilateral-driving</a>
+            <a href="https://arxiv.org/abs/2601.18336" target="_blank">📄 PPISP</a>
+            <a href="https://arxiv.org/abs/2602.18322" target="_blank">📄 Luminance-GS++</a>
+            <a href="https://github.com/nv-tlabs/ppisp" target="_blank">💻 PPISP 代码</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -2976,7 +3006,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>100. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>101. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -2999,7 +3029,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>101. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>102. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -3022,7 +3052,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>102. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>103. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -3048,7 +3078,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>103. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>104. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -3091,7 +3121,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-10-24 · 涵盖 103 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-10-26 · 涵盖 104 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){

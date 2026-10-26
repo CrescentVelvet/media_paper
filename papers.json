@@ -5189,6 +5189,75 @@
         "s17",
         "s18"
       ]
+    },
+    {
+      "title": "光度一致性校正矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++",
+      "meta": [
+        "📄 arXiv: 2406.00448 / 2506.05280 / 2601.18336 / 2602.18322",
+        "📅 2024-06 ~ 2026-02",
+        "🏢 CUHK / BAAI·AIR-THU / NVIDIA / 东京大学·东北大学·UC Merced",
+        "🏆 SIGGRAPH(TOG) 2024 / NeurIPS 2025"
+      ],
+      "tags": [
+        "Photometric Consistency",
+        "Bilateral Grid",
+        "ISP",
+        "3DGS",
+        "NeRF",
+        "Novel View Synthesis",
+        "自动驾驶",
+        "对比调研"
+      ],
+      "summary": "多视角光度/色度不一致会破坏 photometric consistency、产生 floaters 并污染几何。本报告对同一问题线上的四篇方法做矩阵式对比:<strong>BiLaRF</strong>(per-view 3D 双边网格,TOG 2024)、<strong>bilateral-driving</strong>(三级多尺度网格统一 AC 与 BG,NeurIPS 2025,Waymo CD −28.2%)、<strong>PPISP</strong>(NVIDIA 物理 ISP 四模块 + controller,Tanks&Temples NV 24.62 vs BilaRF 19.78,容量-泛化甜区)、<strong>Luminance-GS++</strong>(视角自适应曲线+残差蒸馏进 per-Gaussian 属性,LOM 低光 20.74,未开源)。核心结论:校正表示的容量与新视角泛化几乎负相关,物理归纳偏置是当前最优;并对 vggt_human pipeline 给出选型建议(默认 PPISP、快速验证用 nerfstudio BiLaRF 开关、修图用 4D finishing、采集端锁 AE/AWB 并保留 EXIF)。",
+      "links": [
+        {
+          "href": "3D-20261026-光度校正方法矩阵对比.html",
+          "text": "📖 阅读报告"
+        },
+        {
+          "href": "https://arxiv.org/abs/2406.00448",
+          "text": "📄 BiLaRF"
+        },
+        {
+          "href": "https://arxiv.org/abs/2506.05280",
+          "text": "📄 bilateral-driving"
+        },
+        {
+          "href": "https://arxiv.org/abs/2601.18336",
+          "text": "📄 PPISP"
+        },
+        {
+          "href": "https://arxiv.org/abs/2602.18322",
+          "text": "📄 Luminance-GS++"
+        },
+        {
+          "href": "https://github.com/nv-tlabs/ppisp",
+          "text": "💻 PPISP 代码"
+        }
+      ],
+      "file": "3D-20261026-光度校正方法矩阵对比.html",
+      "section": "3d",
+      "kind": "survey",
+      "depth": "deep",
+      "topics": [
+        "鲁棒性与干扰过滤"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14"
+      ]
     }
   ]
 }
