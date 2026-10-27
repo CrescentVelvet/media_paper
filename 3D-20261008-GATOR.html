@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATOR: 生成+智能体双引擎的随手拍 3D 物体重建 | 论文笔记</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2610.11215 · 2026-10-08 · 📊 deep</span>
+    <h1>GATOR:生成式初始化 + 智能体闭环精炼,随手拍照片重建带位姿的完整 3D 物体资产</h1>
+    <div class="subtitle">GATOR: Generative and Agentic 3D Object Reconstruction From Casual Images</div>
+    <div class="authors">Qirui Wu · Stan Birchfield · Hesam Rabeti · Angel X. Chang · Bowen Wen</div>
+    <div class="org">NVIDIA(Learning and Perception Research) · Simon Fraser University</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2610.11215" target="_blank">📄 arXiv</a>
+      <a href="https://research.nvidia.com/labs/lpr/gator/" target="_blank">🌐 项目主页</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 <b>comments 为空</b>,按库规范<b>不加会议 badge</b>。项目主页<b>无任何代码链接</b>(2026-10-27 实测,页面 publication-links 仅 arXiv 一项),codeofpaper 亦未收录实现 → 本笔记「工程实现细节」章节可信度低于有源码笔记,数值均来自论文附录 A.5 的自述。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:多模态观测编码(共享 patch 网格)</a></li>
+    <li><a href="#s5">模块二:局部模态混合器 Modality Mixer</a></li>
+    <li><a href="#s6">模块三:稀疏结构生成(rectified flow)</a></li>
+    <li><a href="#s7">模块四:投影条件的几何与外观生成</a></li>
+    <li><a href="#s8">模块五:场景放置精修(平移+尺度)</a></li>
+    <li><a href="#s9">模块六:智能体精炼(edit-render-review)</a></li>
+    <li><a href="#s10">损失函数与训练目标总表</a></li>
+    <li><a href="#s11">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s12">⚙️ 工程实现细节(无源码,基于附录 A)</a></li>
+    <li><a href="#s13">实验结果(Toys4K / 桌面 / ScanNet++)</a></li>
+    <li><a href="#s14">消融实验与效率分析</a></li>
+    <li><a href="#s15">🔄 同类方法对比分析</a></li>
+    <li><a href="#s16">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s17">可改进方向分析</a></li>
+    <li><a href="#s18">总结与演进定位</a></li>
+    <li><a href="#s19">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>GATOR 把"随手拍的一张/几张照片(物体可埋在杂物堆里、可被遮挡)"变成<b>带场景相对位姿的完整 PBR 网格资产</b>。做法是双引擎:先在 TRELLIS.2 的「结构→几何→外观」三级 rectified-flow 级联里引入<b>局部模态混合器</b>(把 patch 对齐的 RGB/目标掩码/点图三种 token 在跨视角推理之前先就地混合)与<b>分阶段文本条件</b>(SigLIP2 类别调制结构生成、T5Gemma2 描述 token 引导几何与外观),生成一个已经"摆对位置"的初始资产;再用这个资产去<b>初始化一个多模态智能体</b>(GPT-6-Astra + Blender),在"编辑—渲染—审查"闭环里做针对性的结构补全与纹理修复,而不必从零建模。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把"局部跨模态融合"与"全局跨视角推理"解耦(模态混合器),把"生成先验"与"智能体先验"串成接力(生成给智能体一个带位姿的高质量初始资产,智能体只做局部修复),在 Toys4K 与三个真实桌面/室内数据集上几何与外观全面领先开源 baseline;生成-only 输出约 0.5 分钟即超过 GPT-6-Astra 从零建模 20 分钟预算的质量(论文 §4.4,10 个采样 Toys4K 物体)。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">0.009 vs 0.011</div><div class="l">Toys4K 四视角 CD(归一化,表 1),优于最强 baseline Pixal3D-MV;论文称降 19.7%(按表中舍入值手算为 18.2%,差异应来自未舍入原始值,<span class="uncertain">【待核实】</span>)</div></div>
+  <div class="stat"><div class="v">≈½ CD</div><div class="l">真实桌面(LM-O/HB/HANDAL 汇总)CD 0.009 vs Pixal3D 0.018(表 2),大致减半</div></div>
+  <div class="stat"><div class="v">98.47% / 95.63%</div><div class="l">ADD-SB@0.1 位姿+形状联合召回率:桌面三数据集 / ScanNet++(表 2/表 3),物体直接"摆回"场景</div></div>
+  <div class="stat"><div class="v">~32 s</div><div class="l">单物体生成阶段耗时(论文 §4.4 的估计值,未含网格导出与智能体时间;硬件未披露)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2610.11215/teaser.png" loading="lazy" alt="GATOR teaser:生成+智能体精炼与场景组合" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>生成式 + 智能体式重建对比。</b>左:纯生成模型把滤网的镂空碗填成实心;从零建模的 GPT-6-Astra 把滤网耳的位置搞错、把手和耳简化;GATOR 先生成再精炼,保住了形状与镂空结构。右:GATOR 从真实桌面照片与房间扫描重建出完整、带纹理、带位姿的物体,直接按预测位姿组合回场景。</div>
+</div>
+
+<h3>论文自述的四条贡献(§1)</h3>
+<ol>
+  <li><b>位姿感知生成的局部模态混合</b>:在稀疏结构生成之前,将 patch 对齐的 RGB、点图、目标掩码特征先融合,再接跨视角注意力;几何与外观阶段用投影图像特征条件。支持杂乱场景中的目标特异性补全与场景相对位姿恢复。</li>
+  <li><b>文本引导的语义条件</b>:类别名与物体描述经分阶段适配器注入结构/几何/外观三级生成,在观测稀疏或遮挡时提供类别一致的补全先验。</li>
+  <li><b>智能体几何与外观精炼</b>:以生成资产初始化"观测 grounded"的编辑-渲染-审查闭环,智能体做人造物体结构先验与纹理(含文字/logo 可读性)修复,无需重训生成模型。</li>
+  <li><b>跨真实场景评测</b>:Toys4K(525 物体 × 105 类)+ LM-O / HB / HANDAL / ScanNet++,覆盖合成、杂乱桌面、室内扫描,含估计掩码/相机/深度的不确定输入。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ 阅读前须知(本笔记复核):</b>① "GATOR 领先所有指标"的表述均<b>排除了完全闭源的 GPT-6-Astra baseline</b>——桌面汇总上 GPT-6-Astra 的 ADD-SB@0.1 是 100.00%,高于 GATOR 的 98.47%(表 2),作者因此把 GPT-6 单独标注为 "fully proprietary" 排除在 best 标注之外;但在 ScanNet++ 上 GATOR 确实逐项超过 GPT-6(§13 详列)。② 论文 v1 存在图表编号错位:§4.4 正文两处 "Table 5" 实指 Table 4(消融表),"Fig. 5 中重开的孔洞"实指 Table 5(定性消融图)——本笔记引用时已按真实编号修正。③ 第三方报道(如 aicoder)出现 "遮挡伪影减少 73.5%" 的说法,<b>论文全文无此数字</b>,本笔记不予采用。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>把日常照片变成仿真/场景编辑可用的 3D 资产,需要同时拿到<b>完整几何与外观</b>和<b>把物体摆回原场景的位姿</b>。GATOR 瞄准的 "casual images" 设定是:一张或几张照片,物体不隔离、不标定、相机轨迹任意,目标可能埋在杂乱桌面或房间里被部分遮挡;相机内参/位姿/深度都允许用估计值(§3.1)。这个设定下,已有三条路线各有明确的失败模式:</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>失败模式 ①:单视角生成的背面幻觉</h4>
+    <p>LRM / TRELLIS.2 / SAM 3D 这类单图重建,背面只能靠学到的先验"编",视觉上合理但与真实物体不符(§1)。要利用更多观测,就得把这些单图公式改造成多视角版本,而改造的核心难点是<b>条件信息的关联</b>:RGB、掩码、几何(点图)作为独立条件流喂进去时,去噪器必须自己推断"哪个像素、哪块深度、哪个掩码区域属于同一个 patch 上的同一目标",在杂乱场景里这很容易错位(§1、§3.2)。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ②:多视角生成丢了场景上下文或位姿</h4>
+    <p>TRELLIS.2 / Pixal3D / ReconViaGen 统一用<b>抠掉背景</b>的图像做条件(§3.4),遮挡物的上下文被丢弃,被遮挡物体补全变差;Pixal3D 还隐含假设"目标在 anchor 视角完整可见",对遮挡/部分观测脆弱(§3.3)。ReconViaGen 和 Pixal3D 干脆不预测场景放置,输出是规范空间的物体,ADD-SB 联合指标直接无法评测(表 2/3 的 "—")。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ③:纯智能体从零建模又慢又粗</h4>
+    <p>GPT-6-Astra 这类多模态智能体可以通过图形程序与视觉反馈直接控制结构和材质,但<b>从零建一个精细资产要反复调用模型、执行代码、渲染</b>,商业 API 下又慢又贵;细粒度几何仍是短板——能恢复可辨认的结构,却把部件简化成几何 primitive(§1,图 1 的滤网耳)。效率实验里它 1 分钟预算 0/10 产出有效资产,2 分钟 5/10(§4.4)。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>生成模型与智能体各有对方补不了的短板——<b>生成快、有几何先验,但对表面规整性/部件连接/文字纹理没有显式控制;智能体有精确控制力,但从零起步太贵</b>。那就让生成模型干它擅长的(几秒内给出完整、带位姿、八九不离十的资产),让智能体只在"实例特定的几何/外观/位姿"锚点上做局部修复(§1)。这个"资产初始化智能体"的接力设计,是 GATOR 相对"纯生成"和"纯 agent"两条线的差异化定位。机制层面的第二个洞察是:<b>跨模态关联应该编码进融合架构,而不是留给去噪器去学</b>——三种模态在同一 patch 网格上天然对齐,就地做 attention 融合(式 1)比各自编码后到 denoiser 里再汇合更省归纳负担(§3.2)。
+</div>
+
+<h3>与最相近工作的差异(§2、§3.2)</h3>
+<ul>
+  <li><b>vs ShapeR</b>(Siddiqui et al., 2026):输入相似(图像+点+文本),但 ShapeR 依赖<b>预分割好的 SLAM 稀疏点</b>(纯图像无法提供),且多模态 token 到 denoiser 内部才汇合、文本只进 shape denoiser;GATOR 用稠密点图(深度估计即可)、patch 级先混合、文本分阶段注入三级。</li>
+  <li><b>vs RecGen</b>(Zadaianchuk et al., 2026):RecGen 融合更早但只是把掩码/点图 embedding <b>加到</b>图像 token 上;且最多接受 2 视角,view 数不可扩展(§3.1 明确对比:GATOR 任意视角数且随视角增多变好,§4.4 表 8)。</li>
+  <li><b>vs Pixal3D</b>(Li et al., 2026b):几何/外观阶段的投影特征条件(式 2)直接沿用 Pixal3D;差别在于 GATOR 的稀疏结构本身由全视角混合 token 生成(而非从 anchor 视角推出)、加了文本引导、并预测场景放置(§3.4)。</li>
+</ul>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<p>GATOR 沿 TRELLIS.2 的「稀疏结构 → 几何 → PBR 外观」三级条件流(conditional flow)级联,在每级前后做了四处关键改造:输入侧的多模态编码与模态混合(§3.2/3.3)、几何/外观阶段的投影特征与文本条件(§3.4)、输出侧的场景放置精修(§3.4/附录 A.3)、以及生成之后的智能体精炼(§3.5)。</p>
+
+<div class="figure">
+  <img src="images/2610.11215/model_overview.png" loading="lazy" alt="GATOR 架构总览" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>GATOR 架构。</b>(A) 位姿感知生成重建:RGB 与深度反投影的点图保留场景上下文,掩码标识目标;三种模态 token 共享 patch 网格,带共同的 2D 位置与 Plücker 射线编码,局部混合器在视角内逐 patch 交换信息(§3.2/3.3);跨视角注意力 + SigLIP2 类别条件引导结构生成;在激活坐标上投影目标掩码图像的 DINOv3 与 NAF 上采样特征(跨有效视角平均)注入每个几何/外观去噪块;全局图像 token 与 T5Gemma2 描述 token 提供交叉注意力;形状 latents 条件 PBR 材质生成(§3.4)。❄ 为冻结编码器。(B) 智能体精炼:以完整、场景对齐的资产初始化,智能体用输入图像与结构先验补部件、修拓扑、改 UV/材质,编辑-渲染-审查闭环决定保留或回滚(§3.5)。</div>
+</div>
+
+<h3>3.1 输入输出定义(§3.1)</h3>
+<ul>
+  <li><b>输入</b>:$N$ 张 casual 图像,每视角 $v$ 提供 RGB $I_v$、目标掩码 $M_v$、内参 $K_v$、位姿 $T_v$、深度 $D_v$——<b>全部允许是估计值</b>而非 GT;外加文本 $c$(类别名或 VLM 描述)。条件集 $\mathcal{C}=(\{I_v,M_v,K_v,T_v,D_v\}_{v=1}^{N},c)$。视角数 $N$ 任意(对比 RecGen 最多 2 视角)。</li>
+  <li><b>输出</b>:共享重建坐标系下的完整几何(网格)+ PBR 材质 + 场景相对位姿(方向在生成中保持,平移与各向同性尺度由观测初始化、可微渲染精修)。</li>
+  <li><b>观测锚点</b>:掩码内深度反投影点的中心与范围定义锚点平移 $\mathbf{t}_g$ 与各向同性尺度 $s_g$;归一化只做平移缩放<b>不旋转</b>,$\mathbf{x}=s_g\mathbf{q}+\mathbf{t}_g$,因此输出保留观测的场景朝向(式 3,附录 A.1)。<b>要恢复公制尺寸,输入深度必须是公制尺度</b>(A.1)。</li>
+</ul>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>出处</th></tr>
+<tr><td>$I_v,M_v,K_v,T_v,D_v$</td><td>第 $v$ 视角的 RGB / 目标掩码 / 内参 / 外参 / 深度</td><td>§3.1</td></tr>
+<tr><td>$c$</td><td>文本条件:类别名(短)或 VLM 描述(长),训练时从短到长混合</td><td>§3.1、§3.4</td></tr>
+<tr><td>$\mathbf{t}_g,s_g$</td><td>观测锚点:掩码深度点云的中心与各向同性尺度</td><td>§3.1、式(3)</td></tr>
+<tr><td>$\mathbf{q}$ / $\mathbf{x}$</td><td>归一化坐标 / 世界坐标,$\mathbf{q}=(\mathbf{x}-\mathbf{t}_g)/s_g$</td><td>式(3)</td></tr>
+<tr><td>$\mathbf{h}^m_{vp}$</td><td>视角 $v$、patch $p$、模态 $m\in\{I,M,P\}$(图像/掩码/点图)的 token</td><td>§3.3</td></tr>
+<tr><td>$\mathbf{a}_{vp}=A(\gamma(\mathbf{u}_p),\mathbf{r}_{vp})$</td><td>对应编码:Fourier 编码的 patch 坐标 $\mathbf{u}_p$ + patch 平均 Plücker 射线 $\mathbf{r}_{vp}$</td><td>§3.3</td></tr>
+<tr><td>$\mathcal{B}$</td><td>全部视角混合后 token 组成的记忆库,供结构 latents 交叉查询</td><td>§3.3</td></tr>
+<tr><td>$\widehat{\mathcal{S}}$</td><td>生成的稀疏结构(占用 latents 经冻结解码器解码)</td><td>§3.3</td></tr>
+<tr><td>$\mathbf{q}_j,\ \mathcal{V}_j,\ \mathbf{f}_j$</td><td>第 $j$ 个激活坐标;其可见视角集合;投影平均特征(式 2)</td><td>§3.4</td></tr>
+<tr><td>$\pi_v$</td><td>到裁剪视角 $v$ 的投影算子</td><td>式(2)</td></tr>
+<tr><td>$F^D_v,F^N_v$</td><td>冻结 DINOv3 特征与其 NAF 上采样版本(Chambon et al., 2026)</td><td>式(2)</td></tr>
+<tr><td>$\mathcal{G}$</td><td>全局 token:5 个视角平均的 DINOv3 class/register token + 适配后的 T5Gemma2 文本 token</td><td>式(6)</td></tr>
+<tr><td>$\mathbf{z}_t,\mathbf{u}_t,\sigma_{\min}{=}10^{-5}$</td><td>rectified flow 的插值 latent、目标速度、最小噪声偏移</td><td>式(4)</td></tr>
+<tr><td>$D$(分母)</td><td>参考直径:LM-O/HB/HANDAL 用 CAD 直径,ScanNet++ 用观测网格凸包直径,Toys4K 用鲁棒表面范围;所有距离先除以它再平均</td><td>附录 C</td></tr>
+</table>
+
+<h3>3.3 总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["N 张 casual 图像<br/>RGB + 掩码 + 估计相机/深度 + 文本 c"] --> ENC
+    subgraph ENC["① 多模态观测编码(§3.2, 附录A.1)"]
+        E1["冻结 DINOv3<br/>编码 RGB 与掩码<br/>(各自投影+模态嵌入)"]
+        E2["可训练点图编码器<br/>(SAM 3D 式 point-patch embedding)"]
+        E3["对应编码 a_vp:<br/>Fourier patch 坐标 + Plücker 射线"]
+    end
+    ENC --> MIX["② 模态混合器(§3.3)<br/>每 patch 内 3 个模态 token 做残差注意力<br/>输出仍保持模态身份"]
+    MIX --> SS["③ 稀疏结构生成(§3.3)<br/>dense latents 交叉注意 token 库 B<br/>+ SigLIP2 类别调制(adaLN)<br/>rectified flow, 12 步, CFG=3"]
+    SS --> ANCHOR["锚点归一化 x=s_g·q+t_g<br/>(只平移缩放不旋转)"]
+    ANCHOR --> GA
+    subgraph GA["④ 几何与外观生成(§3.4, 附录A.3)"]
+        G1["投影条件:激活坐标上平均<br/>DINOv3+NAF 特征(式2)"] --> G2["几何 flow → 形状 latents<br/>(交叉注意全局 token G + W·f_j 注入, 式6)"]
+        G2 --> G3["外观 flow → PBR 材质 latents<br/>(以形状 latents 为条件)"]
+    end
+    GA --> PLACE["⑤ 放置精修(§3.4/A.3)<br/>可微渲染轮廓+深度、点对齐<br/>只优化平移与各向同性尺度"]
+    PLACE --> ASSET["完整带位姿 PBR 资产"]
+    ASSET --> AGENT["⑥ 智能体精炼(§3.5/A.4)<br/>GPT-6-Astra + Blender<br/>编辑-渲染-审查闭环, 10min 预算"]
+    AGENT --> OUT["最终资产(可进 Isaac Sim/PyBullet)"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style ASSET fill:#ede9fe,stroke:#a78bfa,color:#3b2f6b
+    style OUT fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<p>级联的顺序依赖:稀疏结构决定了几何/外观生成的<b>激活坐标集合</b>(投影特征就挂在这些坐标上);几何的形状 latents 又作为外观 flow 的条件(§3.4:"the appearance flow generates PBR material latents at the same sparse coordinates, conditioned on those shape latents")。放置精修放在最后且<b>只动 7 个自由度</b>(平移 3 + 各向同性尺度 1,实际是 4 自由度+朝向固定的约束),保证已生成的形状与朝向不被破坏(A.3)。</p>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:多模态观测编码(共享 patch 网格)</h2>
+<p>三种模态在<b>一致裁剪的视角</b>上共享同一 patch 网格编码(§3.2、附录 A.1)。设计要点是"先对齐、后融合":所有模态 token 天然落在同一空间网格上,为模块二的就地混合铺路。</p>
+
+<h3>4.1 网络结构表</h3>
+<table>
+<tr><th>输入</th><th>编码器</th><th>输出 / 备注</th><th>出处</th></tr>
+<tr><td>RGB 图像 $I_v$(384px 上下文裁剪,crop margin 1.1,含遮挡物与支撑面)</td><td>冻结 DINOv3(Siméoni et al., 2025)+ 独立投影 + 模态嵌入</td><td>图像 token $\mathbf{h}^I_{vp}$,保留场景上下文</td><td>§3.2、A.1、A.5</td></tr>
+<tr><td>目标掩码 $M_v$</td><td>同一冻结 DINOv3(对掩码图编码)+ 独立投影 + 模态嵌入</td><td>掩码 token $\mathbf{h}^M_{vp}$,标识目标</td><td>§3.2、A.1</td></tr>
+<tr><td>归一化点图(深度反投影,深度有限且为正处有定义)</td><td><b>可训练</b>点图编码器,沿用 SAM 3D(Chen et al., 2026)的 point-patch embedding:逐像素 3D 坐标线性投影 → 无有效深度的像素分配学习 token → 每 patch 一个 transformer block 汇总成单 token</td><td>点图 token $\mathbf{h}^P_{vp}$</td><td>A.1</td></tr>
+<tr><td>patch 坐标 $\mathbf{u}_p$ + patch 平均 Plücker 射线 $\mathbf{r}_{vp}$</td><td>Fourier 编码 + 嵌入 $A(\cdot,\cdot)$,门控零初始化</td><td>对应编码 $\mathbf{a}_{vp}$,供混合器使用</td><td>§3.3、A.1</td></tr>
+</table>
+
+<h3>4.2 关键设计点(机制解释)</h3>
+<ul>
+  <li><b>坐标归一化只平移缩放不旋转</b>(式 3):$\mathbf{q}=(\mathbf{x}-\mathbf{t}_g)/s_g$,$\mathbf{x}=s_g\mathbf{q}+\mathbf{t}_g$。旋转不做,因此生成结果的朝向直接继承观测朝向——这是"场景相对位姿"能白捡的关键。代价:恢复公制尺寸要求公制深度(A.1)。</li>
+  <li><b>单位立方体内 $64^3$ 体素化</b>,经冻结稀疏结构编码器编成 $8\times16\times16\times16$ latents(A.1)——这是 TRELLIS.2 的标准 latent 形状。</li>
+  <li><b>可扩展视角数</b>:padding 视角被 mask 掉、<b>不用任何学习的视角序号嵌入</b>,所以同一模型接受 1~N 视角(A.1);表 8 证实 2→8 视角误差单调下降。</li>
+  <li><b>掩码在三个阶段的角色不同</b>(§3.4 末段,容易误读的设计):结构 flow 看<b>完整裁剪图</b>(含遮挡物/支撑面),掩码只作独立 token——让模型在补全时"知道"遮挡的存在;几何/外观 flow 则从<b>目标掩码后</b>的图像投影特征——遮挡物与背景不会漏进表面细节与纹理。TRELLIS.2 / Pixal3D / ReconViaGen 全程用抠图图像,丢掉了对遮挡补全有用的上下文。</li>
+</ul>
+
+<h3>4.3 前向流程</h3>
+<ol>
+  <li>掩码内深度反投影 → 计算锚点 $(\mathbf{t}_g,s_g)$ → 全部观测归一化(不旋转);</li>
+  <li>每个视角以 crop margin 1.1 一致裁剪(384px,结构 flow 用);</li>
+  <li>DINOv3 分别编码 RGB 与掩码(冻结),点图走可训练编码器;三种 token 落在同一 patch 网格;</li>
+  <li>每个 patch 计算对应编码 $\mathbf{a}_{vp}$(Fourier 坐标 + Plücker 射线,门控零初始化,初始等价于不加);</li>
+  <li>文本:冻结归一化的 SigLIP2 pooled 特征(短类别描述)留待结构 flow 的 adaLN 调制;缺 prompt 时贡献为零(A.1)。</li>
+</ol>
+
+<h3>4.4 模块内部数据流</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph V["视角 v(共享 patch 网格)"]
+        RGB["RGB I_v"] --> D1["冻结 DINOv3 + 投影"] --> HI["h^I_vp"]
+        MSK["掩码 M_v"] --> D2["冻结 DINOv3 + 投影"] --> HM["h^M_vp"]
+        PTM["点图(深度反投影)"] --> PE["可训练点图编码器<br/>线性投影+缺深 token+1×Transformer"] --> HP["h^P_vp"]
+        POS["patch 坐标 + Plücker 射线"] --> F["Fourier + 嵌入 A(门控零初始化)"] --> AV["a_vp"]
+    end
+    style RGB fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style MSK fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    style PTM fill:#ede9fe,stroke:#a78bfa,color:#3b2f6b
+</div>
+
+<h3>4.5 监督信号</h3>
+<p>本模块<b>无直接监督</b>:DINOv3 冻结,点图编码器与投影层随结构 flow 的 rectified-flow 损失(式 5)端到端训练;门控零初始化保证训练初期等价于无新增组件(A.1)。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:局部模态混合器 Modality Mixer</h2>
+<p>模态混合器是全文最核心的架构改动(§3.3):<b>在跨视角推理之前</b>,先在每个 patch 内部对三个模态 token 做一次残差注意力。动机是"已知的空间对应关系应该编码进融合架构,而不是留给结构 denoiser 去推断"(§3.2)——RGB、掩码、点图在同一 patch 上天然对齐,就地混合后每个输出 token 仍保持模态身份、但已按 patch 内容加权融合了外观/几何/掩码三种证据。</p>
+
+<h3>5.1 数学形式化</h3>
+<div class="equation">
+$$\{\widetilde{\mathbf{h}}^{m}_{vp}\}_{m\in\{I,M,P\}}=\operatorname{ModalityMixer}\!\left(\{\mathbf{h}^{m}_{vp}+\mathbf{a}_{vp}\}_{m\in\{I,M,P\}}\right) \tag{1}$$
+</div>
+<p>对视角 $v$ 的 patch $p$,三个模态 token 加上对应编码 $\mathbf{a}_{vp}$ 后做<b>跨模态(而非跨 patch)的残差注意力</b>;混合器门控同样零初始化(A.1),训练初期等价恒等映射。</p>
+
+<h3>5.2 前向流程</h3>
+<ol>
+  <li>收集视角 $v$ 内 patch $p$ 的三个 token $\{\mathbf{h}^I,\mathbf{h}^M,\mathbf{h}^P\}$,各加 $\mathbf{a}_{vp}$;</li>
+  <li>三者做注意力(每个 token 都可 attend 另两个),残差加回,输出 $\widetilde{\mathbf{h}}^m_{vp}$;</li>
+  <li>对每个 patch、每个视角重复,得到混合 token 库 $\mathcal{B}$(每 patch 仍 3 个 token,模态身份保留);</li>
+  <li>同一 patch 的三个线索同时可见,模型可交叉核验估计深度与外观/掩码的一致性——论文特别指出这带来<b>对上游估计误差的容忍</b>(边界噪声深度、不精确掩码边缘),消融表 4 中混合器把 ADD-SB 从 0.057 降到 0.037 被归因为此(§4.4)。</li>
+</ol>
+
+<h3>5.3 与替代方案的对照(§3.2)</h3>
+<table>
+<tr><th>方案</th><th>融合时机与方式</th><th>问题</th></tr>
+<tr><td>独立条件流(TRELLIS.2 式)</td><td>各模态独立编码,到 denoiser 内才汇合</td><td>跨模态局部关联要 denoiser 自学,杂乱场景易错位</td></tr>
+<tr><td>RecGen</td><td>更早融合,但掩码/点图 embedding 直接<b>加</b>到图像 token 上</td><td>模态身份消失,无法按 patch 内容加权</td></tr>
+<tr><td>ShapeR</td><td>SLAM 稀疏点(预分割)+ 图像 + 文本,denoiser 内汇合</td><td>依赖预分割点云;文本只进 shape denoiser</td></tr>
+<tr><td class="best"><b>GATOR</b></td><td class="best">patch 内三模态就地注意力,输出保持模态身份,再进跨视角注意力</td><td class="best">关联结构显式编码进架构;零初始化门控不扰动预训练</td></tr>
+</table>
+
+<h3>5.4 模块内部数据流</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph P["每个 patch p × 每个视角 v"]
+        HI["h^I + a"] --> AT["3-token<br/>残差注意力"]
+        HM["h^M + a"] --> AT
+        HP["h^P + a"] --> AT
+        AT --> O1["h̃^I(仍图像身份)"]
+        AT --> O2["h̃^M(仍掩码身份)"]
+        AT --> O3["h̃^P(仍点图身份)"]
+    end
+    O1 --> BANK["混合 token 库 B<br/>(全视角全 patch)"]
+    O2 --> BANK
+    O3 --> BANK
+    BANK --> XA["结构 latents 交叉查询(模块三)"]
+    style AT fill:#ede9fe,stroke:#a78bfa,color:#3b2f6b
+</div>
+
+<h3>5.5 监督信号</h3>
+<p>无独立损失,随结构 flow 的 $\mathcal{L}_{\mathrm{SS}}$(式 5)端到端训练;零初始化门控保证不破坏 TRELLIS.2 1.3B 预训练权重(A.1、A.5)。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:稀疏结构生成(rectified flow)</h2>
+<p>稀疏结构生成是三级级联的第一级:denoiser 以 rectified flow 学"完整、位姿感知的占用 latents",由冻结解码器转成稀疏结构 $\widehat{\mathcal{S}}$(§3.3)。结构上初始化自 TRELLIS.2 的 1.3B 结构模型(A.5)。</p>
+
+<h3>6.1 训练目标(rectified flow,式 4–5)</h3>
+<div class="equation">
+$$\mathbf{z}_t=(1-t)\mathbf{z}_0+[\sigma_{\min}+(1-\sigma_{\min})t]\,\bm{\epsilon},\qquad \mathbf{u}_t=(1-\sigma_{\min})\bm{\epsilon}-\mathbf{z}_0,\quad t\in[0,1],\ \sigma_{\min}=10^{-5} \tag{4}$$
+</div>
+<div class="equation">
+$$\mathcal{L}_{\mathrm{SS}}=\mathbb{E}\!\left[\|v_{\theta}(\mathbf{z}_t,t;\mathcal{B},\mathbf{g}(c))-\mathbf{u}_t\|_2^{2}\right] \tag{5}$$
+</div>
+<p>$\mathcal{B}$ 是混合观测 token 库,$\mathbf{g}(c)$ 是文本调制(SigLIP2 pooled 类别嵌入经学习适配器,通过 timestep embedding + adaLN 调制每个 block,§3.3)。推理时从 $t{=}1$ 到 $t{=}0$ 积分学得的速度场,带 classifier-free guidance(A.2)。</p>
+
+<h3>6.2 前向流程</h3>
+<ol>
+  <li>dense 结构 latents(含噪声初始化)作为 query,对全视角混合 token 库 $\mathcal{B}$ 做<b>交叉注意力</b>;</li>
+  <li>此时稀疏结构尚未生成,无法用投影做局部条件——因此用全局注意力让每个 latent 访问所有视角及其上下文,这是它能在有限覆盖/遮挡下补全的原因(§3.3);论文在此点名 Pixal3D 隐含"目标在 anchor 视角完整可见"的假设,对遮挡更脆;</li>
+  <li>每个 block 由 SigLIP2 类别嵌入经 adaLN 调制(语义先验);</li>
+  <li>12 步采样、guidance scale 3(A.5),输出经冻结解码器得稀疏结构 $\widehat{\mathcal{S}}$。</li>
+</ol>
+
+<h3>6.3 模块内部数据流</h3>
+<div class="mermaid">
+flowchart TD
+    Z["噪声 latents z_t"] --> DENOISE["结构 denoiser(TRELLIS.2 1.3B 初始化)"]
+    BANK["混合 token 库 B"] -->|交叉注意力| DENOISE
+    TXT["类别文本 c"] --> SIG["冻结 SigLIP2 pooled"] --> ADP["学习适配器<br/>(输出投影零初始化)"] -->|adaLN 调制| DENOISE
+    DENOISE --> Z0["z_0:完整位姿感知占用 latents"]
+    Z0 --> DEC["冻结稀疏结构解码器"] --> S["稀疏结构 Ŝ(激活坐标集合)"]
+    style DENOISE fill:#ede9fe,stroke:#a78bfa,color:#3b2f6b
+    style S fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>6.4 训练配置(A.5)</h3>
+<table>
+<tr><th>项</th><th>值</th></tr>
+<tr><td>初始化</td><td>TRELLIS.2 structure model(1.3B 参数)</td></tr>
+<tr><td>训练视角数</td><td>1–4 视角</td></tr>
+<tr><td>输入分辨率</td><td>384px 上下文裁剪(crop margin 1.1)</td></tr>
+<tr><td>优化器</td><td>AdamW(weight decay 0.01),bfloat16 混合精度,自适应梯度裁剪</td></tr>
+<tr><td>学习率</td><td>$10^{-4}$(结构 flow;几何/外观为 $2\times10^{-5}$)</td></tr>
+<tr><td>时间步采样</td><td>logit-normal(结构;几何/外观为 uniform)</td></tr>
+<tr><td>条件 dropout</td><td>0.1(CFG 用;几何/外观的文本 token 同样 0.1)</td></tr>
+<tr><td>有效 batch</td><td>128</td></tr>
+<tr><td>推理采样</td><td>每个 flow 12 步,guidance scale 3</td></tr>
+</table>
+
+<h3>6.5 监督信号</h3>
+<p>仅 rectified-flow 回归损失 $\mathcal{L}_{\mathrm{SS}}$(式 5),目标是 GT 完整物体体素化后的占用 latents(S3 数据管线保证"再残缺的观测也配对完整、正确朝向的几何与外观",B.1)。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:投影条件的几何与外观生成</h2>
+<p>拿到稀疏结构后,几何与外观两级 flow 改用<b>投影条件</b>(§3.4、附录 A.3):图像特征被提升到结构的激活坐标上。这两级 flow 的 block 初始化自 Pixal3D,用 512 分辨率的几何与 PBR codec(A.5)。</p>
+
+<h3>7.1 数学形式化</h3>
+<div class="equation">
+$$\mathbf{f}_{j}=\frac{1}{|\mathcal{V}_{j}|}\sum_{v\in\mathcal{V}_{j}}\big[F_{v}^{D}(\pi_{v}(s_{g}\mathbf{q}_{j}+\mathbf{t}_{g}));\,F_{v}^{N}(\pi_{v}(s_{g}\mathbf{q}_{j}+\mathbf{t}_{g}))\big] \tag{2}$$
+</div>
+<p>$\pi_v$ 投影到裁剪视角 $v$;$\mathcal{V}_j$ 是坐标 $\mathbf{q}_j$ "在相机前方且投影落在裁剪内"的视角集合,为空则 $\mathbf{f}_j=\mathbf{0}$。注意:<b>不做遮挡测试</b>(A.3)——与 Pixal3D 一样,沿相机射线的所有坐标都拿到同一像素特征,靠掩码把遮挡物挡在特征之外。这是已知的近似(见 §17 改进方向)。</p>
+<div class="equation">
+$$\Delta\mathbf{h}^{(\ell)}_{j}=\operatorname{CrossAttn}_{\ell}(\operatorname{LN}_{\ell}(\mathbf{h}^{(\ell)}_{j}),\mathcal{G})+W_{\ell}\mathbf{f}_{j}+\mathbf{b}_{\ell} \tag{6}$$
+</div>
+<p>每个 block $\ell$ 中,坐标 $j$ 的 token 在自注意力与前馈层之间接收两级条件:对全局 token $\mathcal{G}$ 的交叉注意力(引导未观测区域)+ 投影特征 $W_\ell\mathbf{f}_j$ 的逐点注入(提供局部细节)。$\mathcal{G}$ = 5 个视角平均的 DINOv3 class/register token + 适配后的 T5Gemma2 文本 token(式 6 说明,A.3)。T5Gemma2 适配器 = LayerNorm + 线性投影 + 1 层 16 头 transformer;drop 掉的 prompt 用空 prompt 编码替代(A.3)。</p>
+
+<h3>7.2 前向流程</h3>
+<ol>
+  <li>对每个激活坐标 $\mathbf{q}_j$,反归一化到世界系 $s_g\mathbf{q}_j+\mathbf{t}_g$,投影进各视角,采样冻结 DINOv3 特征与其 NAF 上采样(Chambon et al., 2026)版本,跨 $\mathcal{V}_j$ 平均;</li>
+  <li>观测有限时,先把生成结构与观测对齐、重算归一化,消除投影前的坐标错位;训练时混入扰动/估计相机使 flow 对残余错位鲁棒(A.3);</li>
+  <li>几何 flow 生成形状 latents(12 步、CFG 3);外观 flow 在相同稀疏坐标上生成 PBR 材质 latents,<b>以形状 latents 为条件</b>;</li>
+  <li>两级训练都用 GT 稀疏结构,推理用预测结构(§3.4);</li>
+  <li>文本条件全程存在:结构级是 SigLIP2 短类别调制;几何/外观级是 T5Gemma2 token,训练文本从"简短类别名到详细长描述"混合(§3.4)。</li>
+</ol>
+
+<h3>7.3 与 Pixal3D 的关系(§3.4 原文对照)</h3>
+<p>投影特征的设计直接沿用 Pixal3D;差异有三:① 稀疏结构本身由"全视角混合 RGB/掩码/点图 token"生成(Pixal3D 从 anchor 视角出发);② 增加文本引导;③ 预测场景放置(平移+尺度)。</p>
+
+<h3>7.4 监督信号</h3>
+<p>几何/外观 flow 分别用与式 5 相同的 rectified-flow 目标,作用于归一化的形状 latents 与 PBR latents(A.2)。</p>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>模块五:场景放置精修(平移+尺度)</h2>
+<p>"位姿感知"是 GATOR 与多数生成式重建拉开距离的能力,它由两个轻量设计拼出来,而不是一个重型位姿网络:</p>
+
+<h3>8.1 两阶段位姿恢复</h3>
+<table>
+<tr><th>阶段</th><th>恢复什么</th><th>怎么来</th><th>出处</th></tr>
+<tr><td>生成中</td><td>朝向(旋转)</td><td>归一化<b>不旋转</b>(式 3),占用 latents 天然带观测朝向;训练数据保证观测与"正确朝向的完整监督"配对(B.1)</td><td>§3.1、A.1</td></tr>
+<tr><td>初始化</td><td>平移 $\mathbf{t}_g$ + 各向同性尺度 $s_g$</td><td>掩码深度反投影点云的中心与范围</td><td>§3.1</td></tr>
+<tr><td>精修</td><td>平移 + 各向同性尺度(微调)</td><td><b>可微渲染</b>:轮廓与深度的渲染损失 + 与观测点的对齐;考虑前景遮挡,朝向与局部几何冻结</td><td>§3.4、A.3</td></tr>
+</table>
+
+<h3>8.2 设计含义</h3>
+<ul>
+  <li>放置精修只有 4 个自由度(平移 3 + 尺度 1),不会破坏已生成的形状与朝向(A.3:"keeping the predicted orientation and shape");</li>
+  <li>多个物体各自重建后,因共享同一观测坐标系,<b>可直接按预测位姿组合回场景</b>(图 1 右、图 11 的会议室);</li>
+  <li>评测用 ADD-SB(带位姿的表面双向距离,式 8)而非对齐后的 CD——位姿错了直接罚;这也是 ReconViaGen/Pixal3D 在表 2/3 的 ADD-SB 栏为 "—" 的原因(它们不输出放置)。</li>
+  <li>局限:各向同性尺度假设意味着非均匀形变(如被压扁的物体)无法被精修吸收;朝向完全信任生成结果,没有旋转微调——见 §17。</li>
+</ul>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>模块六:智能体精炼(edit-render-review)</h2>
+<p>生成资产仍可能有缺件、封死的开口、纹理污染(§3.5)。GATOR 把它交给 <b>GPT-6-Astra</b>(OpenAI, 2026)多模态智能体:输入是生成网格 + 输入观测(图像/掩码/相机/深度),工具是 Blender,任务定义是"<b>有目标的修复</b>"而非重新建模——保留可靠区域、保持资产坐标系与尺度(§3.5、A.4)。</p>
+
+<h3>9.1 编辑-渲染-审查(edit-render-review)闭环</h3>
+<div class="mermaid">
+flowchart TD
+    A0["生成资产(GLB)+ 输入观测"] --> INSP["智能体检视图像与资产渲染<br/>识别最高价值的几何/纹理/材质修复点"]
+    INSP --> EDIT["写 Blender 脚本做局部编辑<br/>补缺失部件 / 修拓扑 / 修 UV 与材质"]
+    EDIT --> RENDER["审查工具:原始 vs 候选<br/>匹配相机与光照下渲染对比图"]
+    RENDER --> JUDGE{"与观测一致?"}
+    JUDGE -->|"退化"| REVERT["回滚,保留先前审查通过的候选"]
+    JUDGE -->|"改善"| KEEP["接受为候选(checkpoint)"]
+    REVERT --> NEXT{"还有有证据支持的<br/>高价值修复?"}
+    KEEP --> NEXT
+    NEXT -->|"是,且预算内"| EDIT
+    NEXT -->|"否 / 证据不足"| FINISH["finish:交付最优候选 + 简短理由<br/>+ 至多 3 条限制(可 needs_review)"]
+    style A0 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style FINISH fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+
+<h3>9.2 运行配置(A.4)</h3>
+<ul>
+  <li>通过 Codex 命令行 agent <b>非交互运行</b>,extra-high reasoning effort;</li>
+  <li>主实验每物体 <b>10 分钟工作预算</b>,不限修改轮数;效率实验(图 5)变动预算;</li>
+  <li>预算计推理、建模、审查渲染与检视;<b>网格导出/导入在预算外</b>,自动重导入只校验 GLB 合法;</li>
+  <li>智能体<b>无法访问</b>参考网格、held-out 观测、benchmark 分数(A.4);</li>
+  <li>所有交付资产不经质量过滤直接评分(含截止时抢救回来的与未改动 fallback);</li>
+  <li>from-scratch baseline 用完全相同的配置与输入,唯一差别是不给初始网格(A.4)——对照设计干净。</li>
+</ul>
+
+<h3>9.3 Prompt 工程的两个细节(附录 Prompt 1/2,值得抄)</h3>
+<ul>
+  <li><b>预算是"紧急上限"不是目标时长</b>:"The recorded deadline is authoritative. It is an emergency ceiling, not a target duration... Unused allowance is not a reason to find more defects"(Prompt 1)——防止 agent 为了花满预算而过度修改、引入幻觉细节;同时禁止"为省时间降低质量目标"。</li>
+  <li><b>每步先 checkpoint 再冒险</b>:"Before another revision, call checkpoint... If the worker is interrupted, the controller will retain a valid checkpoint rather than lose the object"(Prompt 1)——中断安全;无有效编辑候选时,未改原件只能算"带标注的 fallback",不算成功精炼。</li>
+  <li>结构先验写死在 prompt 里:如"滤网/打蛋器/篮子需要真实的丝网缝隙与穿孔,不能在实心壳上画 alpha 贴图"(Prompt 1)——用自然语言注入人造物体结构先验,这正是纯生成模型缺的东西。</li>
+  <li>坐标系纪律:"Blender's glTF axis conversion must be applied exactly once";from-scratch prompt 详细规定深度约定(光轴深度 z 反投影 $p_{cam}=zK^{-1}[u,v,1]^T$ 再经 w2c 逆变换;射线距离先归一化射线)——把视觉估计的"噪声证据"属性显式告知 agent(Prompt 2)。</li>
+</ul>
+
+<h3>9.4 监督信号</h3>
+<p>无训练。闭环的"损失"是智能体自己渲染对比图的 VLM 判断;不反向传播任何东西到生成模型(§3.5:"requires no retraining of the generative model")。</p>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>损失函数与训练目标总表</h2>
+<p>全模型的训练目标只有一类——rectified-flow 速度回归,三级各训各的;智能体阶段无任何训练。</p>
+<table>
+<tr><th>损失项</th><th>公式</th><th>作用对象</th><th>权重</th><th>出处</th></tr>
+<tr><td>$\mathcal{L}_{\mathrm{SS}}$</td><td>$\mathbb{E}\|v_\theta(\mathbf{z}_t,t;\mathcal{B},\mathbf{g}(c))-\mathbf{u}_t\|_2^2$</td><td>稀疏结构 flow(占用 latents)</td><td>1(唯一项)</td><td>式(5),A.2</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{geo}}$</td><td>同式(5),作用于归一化形状 latents</td><td>几何 flow(512 分辨率 codec)</td><td>1(唯一项)</td><td>A.2、A.5</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{app}}$</td><td>同式(5),作用于 PBR 材质 latents</td><td>外观 flow(以形状 latents 为条件)</td><td>1(唯一项)</td><td>A.2、A.5</td></tr>
+<tr><td>放置精修目标</td><td>可微渲染的轮廓 + 深度损失 + 观测点对齐(论文未给显式公式)</td><td>推理期优化平移与各向同性尺度</td><td>—(推理期优化,非训练损失)</td><td>§3.4、A.3</td></tr>
+</table>
+<div class="callout warn"><b>⚠️ 无法核验项:</b>论文未给出放置精修损失的具体形式与各分项权重(只说 "differentiable rendering of silhouettes and depth and by point alignment",A.3);无源码可核对,<span class="uncertain">【待核实】</span>。</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>逻辑流程图(训练 / 推理)</h2>
+<h3>11.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    subgraph DATA["S3 合成数据管线(附录B.1)"]
+        POOL["~980K 资产池<br/>(Objaverse-XL/TexVerse/ABO/GSO 等 17 源)"] --> SCENE["每场景采样 8-16 资产<br/>log-uniform 尺度 [0.6,3.0]<br/>刚体沉降或碰撞检查摆放"]
+        SCENE --> RENDER["Blender Cycles 渲染<br/>随机环境贴图/光照/相机轨迹"]
+        RENDER --> PAIR["观测(含扰动/估计相机深度增广)<br/>配对 完整位姿化几何+外观 latents"]
+    end
+    PAIR --> T1["训结构 flow<br/>(TRELLIS.2 1.3B 初始化, lr 1e-4<br/>1-4 视角, 384px, logit-normal t)"]
+    T1 --> T2["训几何 flow<br/>(Pixal3D 初始化, lr 2e-5<br/>GT 结构, 512px, uniform t)"]
+    T2 --> T3["训外观 flow<br/>(同上, 以形状 latents 为条件)"]
+    style POOL fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+
+<h3>11.2 推理流程</h3>
+<div class="mermaid">
+flowchart TD
+    IN["N 张图像 + 掩码 + 估计相机/深度 + 文本"] --> ENC["多模态编码 + 模态混合"]
+    ENC --> S1["结构 flow:12 步 CFG=3<br/>→ 稀疏结构 Ŝ"]
+    S1 --> S2["投影特征 + 全局/文本 token<br/>几何 flow:12 步 → 形状 latents"]
+    S2 --> S3["外观 flow:12 步 → PBR latents"]
+    S3 --> DEC["冻结 codec 解码 → 网格+材质"]
+    DEC --> PL["放置精修(可微渲染,只动平移+尺度)"]
+    PL --> AG{"需要智能体精炼?"}
+    AG -->|"生成-only 模式<br/>~0.5 min/物体"| OUT1["交付资产"]
+    AG -->|"完整管线"| LOOP["GPT-6-Astra 编辑-渲染-审查<br/>≤10 min/物体"]
+    LOOP --> OUT1
+    OUT1 --> COMPOSE["按预测位姿组合进场景<br/>(可进 Isaac Sim / PyBullet)"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT1 fill:#d1fae5,stroke:#10b981,color:#064e3b
+</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>⚙️ 工程实现细节(无源码,基于附录 A)</h2>
+<div class="callout red"><b>⛔ 无源码声明:</b>截至 2026-10-27,项目主页(research.nvidia.com/labs/lpr/gator/)<b>没有任何代码/权重链接</b>,arXiv 页与 codeofpaper 亦无实现记录。本章节所有数值<b>仅来自论文附录 A/B/D 的自述</b>,无法以源码核对;本节可信度按库规范<b>低于有源码笔记</b>。所有 "未披露" 项均为论文未写,非疏漏。</div>
+
+<h3>12.1 模型与训练超参(A.5,论文自述)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>备注</th></tr>
+<tr><td>结构 denoiser</td><td>初始化自 TRELLIS.2 structure model,<b>1.3B 参数</b></td><td>A.5</td></tr>
+<tr><td>几何/外观 codec</td><td>512 分辨率 geometry / PBR codecs</td><td>A.5</td></tr>
+<tr><td>几何/外观 flow 初始化</td><td>Pixal3D 的 block 初始化</td><td>A.3</td></tr>
+<tr><td>图像编码器</td><td>冻结 DINOv3(RGB/掩码共用 backbone、独立投影);NAF 上采样特征</td><td>§3.2/3.4</td></tr>
+<tr><td>文本编码器</td><td>冻结 SigLIP2(结构级,短类别文本)+ 冻结 T5Gemma2(几何/外观级,长短描述混合)</td><td>§3.3/3.4、A.3</td></tr>
+<tr><td>优化器</td><td>AdamW(wd 0.01),bf16,自适应梯度裁剪</td><td>A.5</td></tr>
+<tr><td>学习率</td><td>结构 $10^{-4}$;几何/外观 $2\times10^{-5}$</td><td>A.5</td></tr>
+<tr><td>时间步分布</td><td>结构 logit-normal;几何/外观 uniform</td><td>A.5</td></tr>
+<tr><td>条件 dropout</td><td>0.1(CFG;几何/外观文本 token 同)</td><td>A.5</td></tr>
+<tr><td>有效 batch</td><td>128</td><td>A.5</td></tr>
+<tr><td>推理采样</td><td>每 flow 12 步,guidance scale 3</td><td>A.5</td></tr>
+<tr><td>训练视角数 / 分辨率</td><td>1–4 视角;结构 384px、几何/外观 512px,crop margin 1.1</td><td>A.5</td></tr>
+</table>
+
+<h3>12.2 资源账(论文披露有限)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>来源与置信度</th></tr>
+<tr><td>生成阶段耗时</td><td>约 32 s/物体(三级 flow 合计)</td><td>§4.4 明示为 "estimated 32 s";<b>硬件型号未披露</b><span class="uncertain">【待核实】</span></td></tr>
+<tr><td>生成-only 端到端</td><td>约 0.5 min/物体</td><td>§4.4 / 图 5(10 个采样 Toys4K 物体的均值,不含网格导出)</td></tr>
+<tr><td>智能体精炼</td><td>≤10 min/物体(预算制,可提前结束)</td><td>A.4;GPT-6-Astra 商业 API,<b>成本未披露</b></td></tr>
+<tr><td>训练时长 / 硬件 / 显存</td><td>未披露</td><td>—</td></tr>
+<tr><td>模型总参数量</td><td>未汇总披露(仅结构模型 1.3B)</td><td>—</td></tr>
+</table>
+
+<h3>12.3 训练数据:S3 合成场景管线(B.1)</h3>
+<p>GATOR <b>只在合成数据上训练</b>(§4.1)。S3(Scalable Synthetic Scenes)把约 980K 个孤立资产变成"带杂乱、遮挡、完整监督"的多视角重建样本:</p>
+<ul>
+  <li><b>资产池</b>:17 个来源(Objaverse-XL、TexVerse、MolmoSpaces、3D-FUTURE、HSSD、Articraft、GRScenes-100、ABO、OmniObject3D、InternScenes、Artiverse、PartNet-Mobility、DTC、GSO、NVIDIA SimReady、RoboCasa、ArtVIP),统一转成一种表示(B.1);</li>
+  <li><b>场景构成</b>:每场景 8–16 个资产,log-uniform 缩放 $[0.6,3.0]$,直立与任意旋转混合;部分场景做刚体沉降,部分做碰撞检查的自由摆放;</li>
+  <li><b>渲染</b>:Blender Cycles,随机环境贴图/光照强度与方向/偶发阳光/带纹理地面;保留资产原生材质使其与缓存的 PBR 目标一致;</li>
+  <li><b>监督</b>:物体级单独 pass 记录深度与实例掩码(透明材质不污染),opacity-aware 渲染保持 alpha-cutout 资产的可见开口;完整物体在场景放置后体素化、带放置变换缓存为 latents——"再残缺的观测也配对完整、朝向正确的几何外观";</li>
+  <li><b>增广</b>:训练混合干净观测、扰动观测(相机/内参/深度/掩码/画质)与图像估计的相机深度;模态 dropout 改变可用证据;</li>
+  <li><b>与既有场景数据混合</b>:3D-FRONT、InternScenes、SceneSmith、SAGE 通过统一接口并入。</li>
+</ul>
+
+<h4>表 6:结构模型合成训练语料统计(B.1)</h4>
+<table>
+<tr><th>场景来源</th><th>场景数</th><th>epoch items</th><th>独立资产</th><th>占比</th><th>复用率</th></tr>
+<tr><td>S3</td><td>199,106</td><td>2,287,840</td><td>949,212</td><td>68.44%</td><td>2.41×</td></tr>
+<tr><td>3D-FRONT</td><td>10,506</td><td>63,624</td><td>9,454</td><td>1.90%</td><td>6.73×</td></tr>
+<tr><td>InternScenes</td><td>23,402</td><td>248,302</td><td>83,915</td><td>7.43%</td><td>2.96×</td></tr>
+<tr><td>SceneSmith</td><td>541</td><td>19,993</td><td>9,947</td><td>0.60%</td><td>2.01×</td></tr>
+<tr><td>SAGE</td><td>9,999</td><td>723,117</td><td>492,743</td><td>21.63%</td><td>1.47×</td></tr>
+<tr class="best"><td>合计</td><td>243,554</td><td>3,342,876</td><td>1,545,271</td><td>100%</td><td>2.16×</td></tr>
+</table>
+
+<div class="figure">
+  <img src="images/2610.11215/s3_scenes.png" loading="lazy" alt="S3 合成场景示例" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图3</b>(论文 Figure 6)<b>S3 场景示例。</b>相邻两张为同一场景的两个视角;程序化布局与多变采集条件制造遮挡、尺度、背景、光照变化,同时保留完整物体监督。</div>
+</div>
+
+<h3>12.4 落地坑(论文明示 + 推断)</h3>
+<ul>
+  <li><b>依赖链长</b>:需要目标掩码(LM-O/HB/HANDAL 用数据集掩码,ScanNet++ 用 SAM3 推理)+ 相机与深度估计(Toys4K 用 Pi3X,HANDAL/ScanNet++ 用 VGGT-$\Omega$,LM-O/HB 用传感器深度+标定/配准)。论文承认分割缺失或深度灾难性错误仍会伤害重建(D.7)。</li>
+  <li><b>公制尺度依赖</b>:输出要公制尺寸,输入深度必须公制(A.1)——单目估计深度只有相对尺度时,物体尺寸是错的。</li>
+  <li><b>智能体环节是闭源商业 API</b>(GPT-6-Astra + Codex CLI),成本与可用性不可控;论文把 "open agents" 列为未来方向(D.7)。</li>
+  <li><b>评测协议注意</b>:消融模型与主模型分开训练,消融表(表 4)分数与主表(表 2/7)<b>不直接可比</b>(D.5);表 8 的 GATOR 数字无智能体精炼且每目标两种视角选择,与表 7 四视角行也不可比。</li>
+</ul>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>实验结果(Toys4K / 桌面 / ScanNet++)</h2>
+<h3>13.1 评测设置(§4.1、附录 C/D)</h3>
+<ul>
+  <li><b>数据</b>:Toys4K 525 物体(105 类 × 5,四视角渲染输入 + 6 个 held-out 评测视角);真实数据 LM-O / HB(传感器深度 + 恢复位姿)、HANDAL / ScanNet++(估计相机与深度,分别用 VGGT-$\Omega$;掩码:HANDAL 用数据集标注,ScanNet++ 用 SAM3 推理)。</li>
+  <li><b>指标</b>:联合位姿+形状用 ADD-SB(带位姿的双向表面距离,式 8)与 ADD-SB@0.1(10% 直径内召回);对齐后几何用 CD / NC / F1(阈值 0.01D Toys4K、0.02D 真实)/ 2D 轮廓 IoU;外观用共享相机与影棚光照下 $1024^2$ 渲染的 PSNR/SSIM/LPIPS(附录 C)。所有距离按参考直径 $D$ 归一。</li>
+  <li><b>输入对齐公平性</b>:所有方法共享同一组输入;GATOR/Pixal3D/GPT-6 在 Toys4K 上用 Pi3X 的相机与深度估计;RecGen 受限于 2 视角(从 4 张里选最佳 2 张)、SimFoundry 限 1 张(§4.3)——baseline 吃了输入上限的亏,解读差距时应注意。</li>
+</ul>
+
+<h3>13.2 表 1:Toys4K 四视角重建(§4.2)</h3>
+<table>
+<tr><th>方法</th><th>CD↓</th><th>NC↑</th><th>F1↑</th><th>IoU₂D↑</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>GPT-6-Astra(从零)</td><td>0.013</td><td>0.754</td><td>0.614</td><td>0.774</td><td>17.11</td><td>0.865</td><td>0.214</td></tr>
+<tr><td>TRELLIS.2†(MultiDiffusion)</td><td>0.014</td><td>0.751</td><td>0.628</td><td>0.747</td><td>15.73</td><td>0.855</td><td>0.231</td></tr>
+<tr><td>ReconViaGen</td><td>0.014</td><td>0.767</td><td>0.579</td><td>0.764</td><td>14.39</td><td>0.825</td><td>0.228</td></tr>
+<tr><td>Pixal3D-SV</td><td>0.027</td><td>0.681</td><td>0.433</td><td>0.629</td><td>14.22</td><td>0.844</td><td>0.287</td></tr>
+<tr><td>Pixal3D-MV</td><td>0.011</td><td>0.783</td><td>0.701</td><td>0.798</td><td>17.18</td><td>0.871</td><td>0.203</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td><b>0.009</b></td><td><b>0.801</b></td><td><b>0.757</b></td><td><b>0.819</b></td><td><b>17.60</b></td><td><b>0.873</b></td><td><b>0.191</b></td></tr>
+</table>
+<p>GATOR 七项全优。论文称 CD 较最强 baseline Pixal3D-MV 降 19.7%、F1 从 0.701 升到 0.757(§4.2)。<b>复核</b>:按表中舍入值手算 CD 降幅为 $(0.011{-}0.009)/0.011=18.2\%$,与 19.7% 有出入——考虑到表中仅 3 位小数,19.7% 应基于未舍入原始值(如 0.0112→0.0090),<span class="uncertain">【待核实】</span>;F1 提升 $(0.757{-}0.701)/0.701=8.0\%$ 与论文一致。</p>
+
+<div class="figure">
+  <img src="images/2610.11215/toys4k_mv4_fullpage.png" loading="lazy" alt="Toys4K 四视角定性对比" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图4</b>(论文 Figure 7)<b>Toys4K 四视角重建。</b>每例左侧为 4 个输入,右侧为各方法在共享新视角下的几何(上)与外观(下);GATOR 展示智能体精炼前后两版。</div>
+</div>
+
+<h3>13.3 表 2:真实桌面重建(LM-O + HB + HANDAL 汇总,§4.3)</h3>
+<table>
+<tr><th>方法</th><th>ADD-SB↓</th><th>@0.1↑</th><th>CD↓</th><th>NC↑</th><th>F1↑</th><th>IoU₂D↑</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>GPT-6-Astra(从零)</td><td>0.027</td><td><b>100.00</b></td><td>0.016</td><td>0.799</td><td>0.773</td><td>0.791</td><td>17.16</td><td>0.886</td><td>0.160</td></tr>
+<tr><td>SimFoundry(单视角)</td><td>0.183</td><td>63.36</td><td>0.040</td><td>0.716</td><td>0.533</td><td>0.626</td><td>14.90</td><td>0.875</td><td>0.200</td></tr>
+<tr><td>RecGen(最佳 2 视角)</td><td>0.057</td><td>85.50</td><td>0.021</td><td>0.791</td><td>0.666</td><td>0.757</td><td>16.00</td><td>0.885</td><td>0.178</td></tr>
+<tr><td>ReconViaGen</td><td>—</td><td>—</td><td>0.027</td><td>0.750</td><td>0.608</td><td>0.730</td><td>14.48</td><td>0.858</td><td>0.181</td></tr>
+<tr><td>ShapeR(无纹理输出)</td><td>0.057</td><td>87.02</td><td>0.028</td><td>0.709</td><td>0.606</td><td>0.700</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>MV-SAM3D</td><td>0.044</td><td>91.60</td><td>0.019</td><td>0.778</td><td>0.687</td><td>0.757</td><td>15.51</td><td>0.883</td><td>0.168</td></tr>
+<tr><td>Pixal3D</td><td>—</td><td>—</td><td>0.018</td><td>0.784</td><td>0.780</td><td>0.813</td><td>16.94</td><td>0.890</td><td>0.163</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td><b>0.022</b></td><td>98.47</td><td><b>0.009</b></td><td><b>0.859</b></td><td><b>0.904</b></td><td><b>0.841</b></td><td><b>17.97</b></td><td>0.890</td><td><b>0.140</b></td></tr>
+</table>
+<div class="callout warn"><b>⚠️ 本笔记复核发现:</b>① GPT-6-Astra 的 ADD-SB@0.1=<b>100.00</b> 与 Pixal3D 的 SSIM=<b>0.890</b>(与 GATOR 并列)说明 "GATOR leads all metrics among the remaining methods"(表 2 原文)中的 "all" 是在<b>排除 GPT-6</b> 且对 SSIM 允许并列的意义下成立——表述基本诚实但需细读。② CD 0.009 vs Pixal3D 0.018 确为约一半("roughly halving",✓)。③ 桌面三数据集分数据集数字(表 7)显示 GATOR 的优势在 LM-O(CD 0.022 vs Pixal3D 0.052,降 58%)比 HB(0.009 vs 0.017)更夸张。</div>
+
+<div class="figure">
+  <img src="images/2610.11215/real_tabletop.png" loading="lazy" alt="真实桌面重建对比" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图5</b>(论文 Figure 3)<b>真实桌面重建(HB / LM-O / HANDAL,四视角;RecGen 两视角;GPT-6 从零)。</b>GATOR 恢复完整形状与细节纹理(印刷纸盒、打蛋器的钢丝),baseline 出现截断、模糊或失败。</div>
+</div>
+
+<h3>13.4 表 3:ScanNet++ 室内场景重建(229 目标 × 49 场景,§4.3)</h3>
+<table>
+<tr><th>方法</th><th>ADD-SB↓</th><th>@0.1↑</th><th>CD↓</th><th>NC↑</th><th>F1↑</th><th>IoU₂D↑</th></tr>
+<tr><td>GPT-6-Astra(从零)</td><td>0.049</td><td>90.83</td><td>0.033</td><td>0.716</td><td>0.581</td><td>0.716</td></tr>
+<tr><td>SimFoundry</td><td>0.125</td><td>72.49</td><td>0.104</td><td>0.664</td><td>0.426</td><td>0.614</td></tr>
+<tr><td>RecGen</td><td>0.067</td><td>90.83</td><td>0.041</td><td>0.703</td><td>0.540</td><td>0.682</td></tr>
+<tr><td>ReconViaGen</td><td>—</td><td>—</td><td>0.161</td><td>0.676</td><td>0.423</td><td>0.498</td></tr>
+<tr><td>ShapeR</td><td>0.071</td><td>81.66</td><td>0.060</td><td>0.684</td><td>0.458</td><td>0.610</td></tr>
+<tr><td>MV-SAM3D</td><td>0.057</td><td>90.83</td><td>0.042</td><td>0.699</td><td>0.493</td><td>0.648</td></tr>
+<tr><td>Pixal3D</td><td>—</td><td>—</td><td>0.052</td><td>0.679</td><td>0.475</td><td>0.623</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td><b>0.041</b></td><td><b>95.63</b></td><td><b>0.031</b></td><td><b>0.726</b></td><td><b>0.603</b></td><td><b>0.733</b></td></tr>
+</table>
+<p>该基准把 DP-Recon/ShapeR/JRM 的 ScanNet++ 协议从 6 场景 69 物体扩到 49 场景 229 目标,每目标 1–10 视角(D.4)。论文称 CD 较亚军 RecGen 降 23%——按表中值手算 $(0.041{-}0.031)/0.041=24.4\%$,同样应为未舍入值,<span class="uncertain">【待核实】</span>;F1 0.540→0.603、IoU 0.682→0.733 与原文一致。<b>此表上 GATOR 逐项超过 GPT-6-Astra(含 ADD-SB@0.1 95.63 vs 90.83)</b>,即优势从桌面延伸到房间级杂乱场景(§4.3 原文结论成立)。</p>
+
+<div class="figure">
+  <img src="images/2610.11215/real_scannetpp.png" loading="lazy" alt="ScanNet++ 重建对比" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图6</b>(论文 Figure 4)<b>ScanNet++ 真实图像重建。</b>绿框标出输入视角中的目标;GATOR 恢复出细结构(单个餐具、风扇叶片、推车上的显示器)。</div>
+</div>
+
+<h3>13.5 表 8:视角数扩展性(LM-O + HB,2/4/8 视角,GATOR 无精炼,D.3)</h3>
+<table>
+<tr><th>视角数</th><th>方法</th><th>ADD-SB↓</th><th>@0.1↑</th><th>CD↓</th><th>NC↑</th><th>F1↑</th><th>IoU₂D↑</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td rowspan="3">2</td><td>RecGen</td><td>0.041</td><td>98.03</td><td>0.021</td><td>0.796</td><td>0.643</td><td>0.845</td><td>15.16</td><td>0.867</td><td>0.203</td></tr>
+<tr><td>Pixal3D</td><td>—</td><td>—</td><td>0.027</td><td>0.757</td><td>0.648</td><td>0.840</td><td>15.32</td><td>0.865</td><td>0.209</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td><b>0.015</b></td><td><b>98.03</b></td><td><b>0.011</b></td><td><b>0.865</b></td><td><b>0.863</b></td><td><b>0.897</b></td><td><b>15.75</b></td><td><b>0.866</b></td><td><b>0.183</b></td></tr>
+<tr><td rowspan="2">4</td><td>Pixal3D</td><td>—</td><td>—</td><td>0.021</td><td>0.799</td><td>0.745</td><td>0.875</td><td>16.29</td><td>0.872</td><td>0.190</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td><b>0.014</b></td><td><b>98.03</b></td><td><b>0.010</b></td><td><b>0.874</b></td><td><b>0.891</b></td><td><b>0.902</b></td><td>15.86</td><td>0.866</td><td><b>0.179</b></td></tr>
+<tr><td rowspan="2">8</td><td>Pixal3D</td><td>—</td><td>—</td><td>0.020</td><td>0.813</td><td>0.774</td><td>0.886</td><td>16.74</td><td>0.875</td><td>0.185</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td><b>0.013</b></td><td><b>98.03</b></td><td><b>0.010</b></td><td><b>0.880</b></td><td><b>0.901</b></td><td><b>0.900</b></td><td>15.85</td><td><b>0.867</b></td><td><b>0.174</b></td></tr>
+</table>
+<p>论文原文给出的未舍入值:ADD-SB 0.0148→0.0134、CD 0.0109→0.0096(2→8 视角),ADD-SB@0.1 恒为 98.03%(D.3)。<b>"2 视角的 GATOR 的 CD 约为 8 视角 Pixal3D 的一半"(0.011 vs 0.020)经本笔记复核成立</b>。注意 4 视角行与表 7 数值不同——协议不同(每目标两种视角选择、无精炼、recall 计每次尝试),D.3 已声明。</p>
+
+<h3>13.6 更多定性对比</h3>
+<div class="figure">
+  <img src="images/2610.11215/bop_additional.png" loading="lazy" alt="LM-O 与 HB 扩展对比" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图7</b>(论文 Figure 8)<b>LM-O / HB 扩展对比。</b>每物体展示 4 输入中的 2 个与各方法的几何(上)/外观(下);ShapeR 只能输出无纹理网格(红叉)。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.11215/real_scannetpp_additional.png" loading="lazy" alt="ScanNet++ 扩展对比" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图8</b>(论文 Figure 9)<b>ScanNet++ 扩展对比。</b>GT 为部分扫描(非完整网格),因此对称距离会惩罚"扫描没拍到"的补全面——GATOR 的高 CD 优势是在这个对补全不利的协议下取得的。</div>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>消融实验与效率分析</h2>
+<h3>14.1 表 4:逐组件消融(55 个 HANDAL 物体,四视角,§4.4)</h3>
+<p>每行在上一行基础上加一个组件;所有变体用相同合成数据、相同预训练图像编码器、相同观测与采样设置训练(D.5)。<b>注意:消融模型与主模型分开训练,与表 2/7 不直接可比。</b></p>
+<table>
+<tr><th>配置</th><th>ADD-SB↓</th><th>@0.1↑</th><th>CD↓</th><th>NC↑</th><th>F1↑</th><th>IoU₂D↑</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>Base model</td><td>0.057</td><td>94.55</td><td>0.010</td><td>0.813</td><td>0.877</td><td>0.688</td><td>18.20</td><td>0.922</td><td>0.116</td></tr>
+<tr><td>+ 模态混合器</td><td><b>0.037</b></td><td>94.55</td><td>0.011</td><td>0.811</td><td>0.872</td><td>0.700</td><td>18.16</td><td>0.922</td><td>0.114</td></tr>
+<tr><td>+ 文本条件</td><td>0.032</td><td>98.18</td><td>0.008</td><td>0.828</td><td>0.930</td><td><b>0.739</b></td><td>18.93</td><td><b>0.925</b></td><td>0.102</td></tr>
+<tr class="best"><td>+ 智能体精炼</td><td>0.032</td><td>98.18</td><td><b>0.007</b></td><td><b>0.829</b></td><td><b>0.936</b></td><td>0.717</td><td><b>19.60</b></td><td>0.918</td><td><b>0.097</b></td></tr>
+</table>
+<ul>
+  <li><b>模态混合器的主要收益在"放置"</b>:ADD-SB 0.057→0.037(降 35%),但 CD 反而 0.010→0.011 微降——论文解释为它主要改善几何+位姿估计的联合质量,归因于对上游估计误差(相机/深度由外部模型推断)的鲁棒性(§4.4)。<b>混合器不是"免费午餐"</b>,它用一点点对齐后几何指标换了放置鲁棒性。</li>
+  <li><b>文本条件是九项指标里提升最一致的组件</b>(ADD-SB 0.037→0.032、@0.1 94.55→98.18、F1 0.872→0.930、PSNR 18.16→18.93),支撑"类别语义在稀疏/遮挡观测下引导补全"的论点。</li>
+  <li><b>智能体精炼改善外观与局部拓扑</b>(CD 0.008→0.007、PSNR 18.93→19.60、LPIPS 0.102→0.097),但 IoU(0.739→0.717)与 SSIM(0.925→0.918)微降——编辑是局部的(重开孔洞、修把手),平均几何变动小;论文诚实报告了 HANDAL 上 CD/F1/IoU 的微幅变差(§4.4、表 7 HANDAL 行:CD 0.008→0.009、F1 0.936→0.923)。其收益主要体现在下游可用性(D.6 仿真)。</li>
+</ul>
+
+<h3>14.2 定性消融(论文 Table 5 的原始子图)</h3>
+<div class="figure">
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+    <img src="images/2610.11215/abl_handal_scene_000001_obj34_input0.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_handal_scene_000001_obj34_input1.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000001_obj34_a01.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000001_obj34_a11.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000001_obj34_a2.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000001_obj34_a2ao.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000001_obj34_gt.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_handal_scene_000009_obj10_input0.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_handal_scene_000009_obj10_input1.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000009_obj10_a01.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000009_obj10_a11.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000009_obj10_a2.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000009_obj10_a2ao.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+    <img src="images/2610.11215/abl_gt_oriented_handal_scene_000009_obj10_gt.png" loading="lazy" style="max-width:100%;border-radius:4px;">
+  </div>
+  <div class="caption"><b>图9</b>(论文 Table 5,两个 HANDAL 对象)<b>定性消融。</b>列序为:输入 × 2 → Base → +Mixer → +Text → +Agent → GT(列名未在 HTML 中标注,按表 4 配置顺序与文件命名推断,<span class="uncertain">【推测】</span>)。预测已刚体对齐到 GT 以便形状比较;智能体精炼恢复了生成变体中不规则或缺失的规则孔洞与槽位。</div>
+</div>
+
+<h3>14.3 效率分析:生成初始化 vs 从零智能体(§4.4,图 5)</h3>
+<div class="figure">
+  <img src="images/2610.11215/efficiency_merged.png" loading="lazy" alt="质量-时间曲线" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图10</b>(论文 Figure 5)<b>重建质量 vs 时间。</b>(a) 10 个采样 Toys4K 物体上有效输出的平均 CD/D 与 LPIPS;GATOR 各点为"约 32 s 生成 + 智能体预算",首点是生成-only(约 0.5 min),已优于 20 分钟预算的从零 GPT-6-Astra;(b) 同一相机下的一例渲染,首列为 GATOR 无精炼,其余列为不同 agent 预算;GPT-6 在 2 min 内超时(0/10 有效),20 min 仍粗糙。</div>
+</div>
+<ul>
+  <li>从零智能体的有效率:1 min → 0/10,2 min → 5/10,5 min 起 10/10(§4.4)——<b>资产初始化把"能否产出"的门槛从 5 分钟降到 0.5 分钟</b>。</li>
+  <li>项目主页补充了同口径结论:"GATOR without refinement takes about 30 seconds and already outperforms the from-scratch agent with a twenty-minute budget"(与本段一致);项目页还给出 46 物体会议室在 Isaac Sim 中沉降的演示(论文 D.6 的 PyBullet 实验为 15 物体,两者是不同演示,勿混淆)。</li>
+</ul>
+
+<h3>14.4 智能体精炼的六类典型行为(D.5,图 10)</h3>
+<div class="figure">
+  <img src="images/2610.11215/refinement_cases.png" loading="lazy" alt="智能体精炼前后对比" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图11</b>(论文 Figure 10)<b>智能体精炼前后。</b>(a) 补上生成模型抹平的细节(巴士的格栅栏杆);(b) 修正纹理错误(包装盒上乱码的印字);(c) 补缺失部件(椅子腿);(d) 移除融合进桌面的其他物体几何;(e) 修复断裂的伞柄;(f) 资产已准确时基本不动。</div>
+</div>
+
+<h3>14.5 场景级刚体仿真(D.6,图 11)</h3>
+<div class="figure">
+  <img src="images/2610.11215/sim_readiness.png" loading="lazy" alt="会议室刚体仿真" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+  <div class="caption"><b>图12</b>(论文 Figure 11)<b>场景级刚体仿真。</b>上两行为 10 个输入视角;下两行为 ScanNet++ 会议室(15 个重建物体)在 PyBullet 中的静止状态——精炼前三把椅子倾斜/翻倒 40–79°,精炼后与竖直方向偏差 ≤1.3°;会议桌原本歪斜不一的桌腿也被修直(D.6)。</div>
+</div>
+<p>这是"智能体编辑"最独特的证据形式:<b>小几何缺陷(支撑件)在渲染指标里几乎不可见,但在物理仿真里直接决定可用性</b>。仿真条件:相同竖直放置、相同假设质量与物理参数、凸包碰撞近似(D.6)。</p>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🔄 同类方法对比分析</h2>
+<p>对比对象选取论文主表 baseline 加上上游依赖与库内已有笔记的方法。固定维度如下;论文未披露的信息标 "—",不臆造。</p>
+
+<h3>15.1 横向对比表</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>推理耗时</th><th>场景位姿输出</th><th>关键指标(来源表)</th><th>开源</th></tr>
+<tr><td>TRELLIS.2(MultiDiffusion 适配)</td><td>2026</td><td>图像(抠图);多视角靠 MultiDiffusion 融合</td><td>结构化 3D latents → 网格+PBR</td><td>rectified flow,合成数据</td><td>未列</td><td>—</td><td>✗(规范空间)</td><td>Toys4K CD 0.014(表1)</td><td>是(基础模型)</td></tr>
+<tr><td>Pixal3D(-SV/-MV)</td><td>2026</td><td>多视角图像+相机;anchor 视角需完整可见(§3.3)</td><td>网格</td><td>flow,投影特征条件</td><td>—</td><td>—</td><td>✗</td><td>Toys4K CD 0.011;桌面 0.018(表1/2)</td><td>是(论文用了其 released checkpoint,D.2)</td></tr>
+<tr><td>ReconViaGen</td><td>2026</td><td>多视角抠图 RGB+自带几何估计</td><td>网格</td><td>生成式,重建特征注入</td><td>—</td><td>—</td><td>✗</td><td>桌面 CD 0.027(表2)</td><td>是(D.2 同)</td></tr>
+<tr><td>ShapeR</td><td>2026</td><td>灰度图 + <b>预分割 SLAM 点</b> + caption</td><td>无纹理网格</td><td>生成式</td><td>—</td><td>—</td><td>✓(弱)</td><td>桌面 ADD-SB 0.057 / CD 0.028(表2)</td><td>是(D.2 同)</td></tr>
+<tr><td>MV-SAM3D</td><td>2026</td><td>多视角,免训练适配 SAM 3D</td><td>网格+纹理</td><td>—(test-time 优化)</td><td>不训练</td><td>—</td><td>✓</td><td>桌面 ADD-SB 0.044(表2)</td><td>是(D.2 同)</td></tr>
+<tr><td>RecGen</td><td>2026</td><td><b>最多 2 视角</b>,内部对齐观测</td><td>网格+纹理</td><td>生成式</td><td>—</td><td>—</td><td>✓</td><td>桌面 ADD-SB 0.057;ScanNet++ CD 0.041(表2/3)</td><td>是(D.2 同)</td></tr>
+<tr><td>SimFoundry(Hunyuan3D-2.1+FoundationPose)</td><td>2026</td><td><b>单视角</b></td><td>网格+纹理</td><td>生成式+位姿估计串联</td><td>—</td><td>—</td><td>✓</td><td>桌面 ADD-SB 0.183(表2)</td><td>组件开源</td></tr>
+<tr><td>GPT-6-Astra(从零智能体)</td><td>2026</td><td>同 GATOR 的观测输入</td><td>GLB 网格+PBR</td><td>无训练(智能体)</td><td>—</td><td>5–20 min/物体;1min 预算 0/10 有效</td><td>✓</td><td>桌面 @0.1=100 但 ScanNet++ 全面落后(表2/3)</td><td>✗(闭源 API)</td></tr>
+<tr class="best"><td><b>GATOR</b></td><td>2026</td><td>任意 N 视角;掩码+估计相机/深度均可;文本可选</td><td>网格+PBR,场景对齐</td><td>三级 rectified flow;智能体免训练精炼</td><td>纯合成 S3 等,3.34M epoch items</td><td>生成 ~32 s(+精炼 ≤10 min)</td><td><b>✓(朝向继承+平移尺度精修)</b></td><td>Toys4K CD 0.009;桌面 ADD-SB 0.022;ScanNet++ CD 0.031</td><td><b>✗(无代码)</b></td></tr>
+</table>
+
+<h3>15.2 对比结论(机制层面的"为什么")</h3>
+<ol>
+  <li><b>为什么几何赢 Pixal3D 一倍</b>:差距主要来自稀疏结构的生成方式——Pixal3D 从 anchor 视角出发、隐含完整可见假设;GATOR 的结构由全视角混合 token 经全局交叉注意力生成,遮挡面也能被其他视角的证据补全(§3.3)。HANDAL(估计深度、遮挡重)上 CD 0.009 vs 0.014(表 7),LM-O(传感器深度)上 0.022 vs 0.052,差距随观测质量下降而放大,与"混合器抗估计噪声"的机制一致。</li>
+  <li><b>为什么 ADD-SB 大幅赢 ShapeR/RecGen/MV-SAM3D</b>:这三家的放置靠各自的对齐/优化后处理,而 GATOR 的朝向在生成中就被锚点归一化"钉死",只剩 4 自由度交给可微渲染精修——搜索空间小一个量级,桌上 ADD-SB 0.022 vs 0.044–0.057 的差距主要出自这里(§8)。</li>
+  <li><b>为什么 GPT-6-Astra 桌面 @0.1=100% 却仍输均值</b>:从零智能体在"大方向摆对"上很强(recall 满分),但逐物体均值(0.027 vs 0.022)与 ScanNet++ 全面落后——从零搭建的累积误差(几何简化、尺度漂移)在杂乱场景被放大;且 20 分钟预算的产出质量还不如 GATOR 0.5 分钟的生成输出(§4.4)。<b>智能体的正确用法是局部修复,不是从零建造</b>——这是全文最有迁移价值的结论。</li>
+  <li><b>文本条件的收益位置</b>:消融里它改善全部九项(表 4),且收益集中在"观测不足时补全的合理性"(@0.1 +3.63pt),印证了"语义先验补空间证据之不足"的设计动机(§3.4)。</li>
+</ol>
+
+<h3>15.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>前馈回归(非生成)</td><td>LRM → TripoSR → MeshLRM / LSRM</td><td>大数据回归的均值解</td><td>背面幻觉无法表达;遮挡下退化</td></tr>
+<tr><td>新视角合成中介</td><td>Zero-1-to-3 / SyncDreamer / One-2-3-45++</td><td>2D 扩散先验</td><td>多视角一致性弱,需二次重建</td></tr>
+<tr><td>原生 3D 生成</td><td>TRELLIS / TRELLIS.2 / Hunyuan3D</td><td>结构化 3D latent 的生成先验</td><td>观测对齐弱;规范空间输出无场景位姿</td></tr>
+<tr><td>观测对齐的生成重建</td><td>Pixal3D / ReconViaGen / RecGen / ShapeR</td><td>投影特征/稀疏点把生成锚到观测</td><td>多模态关联弱;多数无场景放置;视角数受限</td></tr>
+<tr><td>智能体建模</td><td>GPT-6-Astra 等 VLM agent</td><td>代码+渲染反馈的显式控制</td><td>慢、贵;细粒度几何差;从零搭建不稳定</td></tr>
+<tr class="best"><td><b>生成 × 智能体接力(本文)</b></td><td><b>GATOR</b></td><td>生成给"带位姿的强初始化解",智能体做观测引导的局部修复</td><td>依赖外部估计链 + 闭源 agent API;无开源</td></tr>
+</table>
+
+<h3>15.4 库内兄弟笔记交叉引用</h3>
+<ul>
+  <li><a href="3D-20241202-TRELLIS.html">TRELLIS</a>:GATOR 的三级「结构-几何-外观」级联与 latent 表示直接继承自 TRELLIS.2(库内为 1.0 笔记);差异在于 GATOR 把条件从"抠图图像"换成了"场景内多模态观测 + 分阶段文本"。</li>
+  <li><a href="3D-20250314-VGGT.html">VGGT</a> 与 <a href="3D-20250717-Pi3.html">Pi3</a>:GATOR 的相机/深度估计依赖这条前馈几何链(实验用 VGGT-$\Omega$ 与 Pi3X,均为 VGGT/Pi3 的后继);库内笔记覆盖其架构基础。</li>
+  <li><a href="3D-20250813-DINOv3.html">DINOv3</a>:GATOR 的 RGB/掩码编码与投影特征全部来自冻结 DINOv3(+NAF 上采样),是"冻结通用特征 + 轻量可训头"范式的又一例证。</li>
+  <li><a href="3D-20260217-SAM-3D-Body.html">SAM-3D-Body</a>:同属 SAM 3D 家族(人体分支);GATOR 的点图编码器沿用 SAM 3D(物体分支,Chen et al. 2026)的 point-patch embedding 设计,掩码则直接由 SAM3 在 ScanNet++ 上推理产生。</li>
+</ul>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>🎯 应用场景与落地适配性</h2>
+<h3>16.1 能否进我们的 pipeline(vggt_human 视角)</h3>
+<table>
+<tr><th>维度</th><th>评估</th></tr>
+<tr><td>直接可用性</td><td><b>低</b>——无代码、无权重,且精炼环节绑定闭源 GPT-6-Astra(经 Codex CLI 调用)。短期只能当"路线参照",不能当依赖。</td></tr>
+<tr><td>场景级价值</td><td>对 vggt_human 的 <b>scene_gs</b> 侧有启发:GATOR 证明"场景对齐的物体级资产生成"可行(ADD-SB@0.1 95–98%),输出直接进 Isaac Sim/PyBullet。若未来开源,可作为场景物体资产化模块,与人体(head_gs/body_gs)分离重建后按位姿组合。</td></tr>
+<tr><td>输入依赖匹配度</td><td>与我们现有栈高度同构:掩码(SAM3)✓、相机/深度(VGGT 系)✓、多视角图像 ✓——GATOR 的全部外部依赖我们都已有对应组件。</td></tr>
+<tr><td>显存/耗时</td><td>生成 ~32 s/物体(硬件未披露,<span class="uncertain">【待核实】</span>);智能体 ≤10 min/物体且按 token 计费。批量场景(几十物体)下 agent 成本是主要瓶颈。</td></tr>
+<tr><td>数据成本</td><td>训练需自建 S3 级管线(980K 资产 + Blender Cycles 渲染 + 完整监督缓存),复现门槛高。</td></tr>
+</table>
+
+<h3>16.2 可借鉴的设计模式</h3>
+<ul>
+  <li><b>"生成初始化 + agent 修复"的接力范式</b>可直接迁移到人脸/人体资产修复:用现有重建(如 MHR 拟合结果)初始化一个多模态 agent,做局部纹理/拓扑修复(如耳后、指缝),而不是让 agent 从零建模。论文的效率实验(0.5 min 初始化 > 20 min 从零)是这个范式的量化依据。</li>
+  <li><b>edit-render-review 闭环的工程化</b>:匹配相机/光照的 A/B 渲染对比 + 回滚 + checkpoint 的 prompt 设计(§9.3)是现成的 agentic 修复脚手架,不依赖特定模型。</li>
+  <li><b>锚点归一化(不旋转)</b>:用掩码深度点云的中心/范围做只含平移尺度的归一化,让"朝向"零成本继承观测系——任何需要"重建后放回原场景"的模块都可照抄(式 3)。</li>
+  <li><b>模态混合器的"就地融合"原则</b>:多模态条件(RGB/mask/depth)先在同一空间网格上混合再做全局推理——我们 pipeline 里凡是有多模态条件注入的地方(如 mask + depth + RGB 进 transformer)都适用。</li>
+</ul>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>可改进方向分析</h2>
+<h3>17.1 方法层面</h3>
+<div class="grid-3">
+  <div class="card">
+    <h4>① [高优先级] 投影特征无遮挡测试</h4>
+    <p><b>问题</b>:式(2)的特征投影"不做遮挡测试"(A.3 明写),沿相机射线上的所有激活坐标都拿到同一像素特征——遮挡边界后的错误表面会被注入正确但不该属于它的外观,薄结构/镂空处尤其危险。<b>改进</b>:投影前用已生成的稀疏结构做深度缓冲遮挡剔除,或用多条射线的特征投票抑制离群。</p>
+  </div>
+  <div class="card">
+    <h4>② [高优先级] 外部估计链的失败传播</h4>
+    <p><b>问题</b>:掩码(SAM3)、相机与深度(VGGT-Ω/Pi3X)全是外部估计,D.7 承认"分割缺失或深度灾难性错误仍会伤害重建";模态混合器只能缓解不能免疫(消融里它正是靠抗噪赢的,表 4 ADD-SB 0.057→0.037)。<b>改进</b>:把分割/几何估计与重建做成联合迭代(重建结果反哺掩码修正),论文 D.7 也列了"tighter integration with segmentation and geometry estimation"。</p>
+  </div>
+  <div class="card">
+    <h4>③ [中优先级] 位姿精修只有 4 自由度</h4>
+    <p><b>问题</b>:放置精修只优化平移+各向同性尺度,朝向完全继承生成结果(A.3)。生成朝向系统性偏转时没有纠偏通道;非均匀尺度(压扁的盒子)也无法表达。<b>改进</b>:精修阶段放开到相似变换(7 自由度,含旋转)或全仿射的前几主成分,渲染损失对旋转的梯度在低学习率下应仍稳定。</p>
+  </div>
+  <div class="card">
+    <h4>④ [中优先级] 智能体编辑无自动几何验证</h4>
+    <p><b>问题</b>:审查环节是"VLM 看渲染图"的软判断(A.4),论文自己把 "automatic geometric verification of agent edits" 列为未来方向(D.7)。渲染图上看着对的编辑可能引入物理不可用结构。<b>改进</b>:把 §14.5 的仿真沉降测试做成自动验收门禁(编辑后倾倒角阈值),把"仿真就绪"从展示品变成回归测试。</p>
+  </div>
+  <div class="card">
+    <h4>⑤ [中优先级] 纯合成训练的 sim2real 缺口</h4>
+    <p><b>问题</b>:训练只用合成数据(§4.1),靠观测扰动增广模拟估计误差;没有真实数据消融证明"增广覆盖了真实估计误差的分布"。HANDAL 上精炼反而微降 CD/F1/IoU(表 7)提示真实分布里仍有模型没学到的残余。<b>改进</b>:混入少量真实扫描(如 ScanNet++ 训练切分)做领域微调的消融,量化 sim2real 差距。</p>
+  </div>
+  <div class="card">
+    <h4>⑥ [低优先级] 各向同性尺度假设的失败案例未展示</h4>
+    <p><b>问题</b>:论文所有展示物体都接近"自然朝向",未给锚点初始化失败(掩码严重遮挡、深度大片缺失时 $\mathbf{t}_g/s_g$ 本身不准)的失败案例集。<b>改进</b>:补一组"锚点被遮挡污染"的应力测试,评估精修能否拉回。</p>
+  </div>
+</div>
+
+<h3>17.2 数据与评估</h3>
+<ul>
+  <li><b>[中] Toys4K 的 "casual" 仍偏温和</b>:4 输入视角 + 6 评测视角都是受控渲染(D.1),真实手机拍摄的运动模糊/滚动快门/自动曝光未建模。</li>
+  <li><b>[中] 外观指标的参考系问题</b>:PSNR/SSIM/LPIPS 在"形状对齐 + 共享影棚光照"下渲染(C.3),衡量的是与参考渲染的一致性而非材质标定精度——论文自己承认(Appendix C.3 末);跨方法比较公平,但数字绝对值不代表真实材质质量。</li>
+  <li><b>[低] 效率实验只有 10 个物体</b>(图 5 采样 Toys4K),"0.5 min 打赢 20 min"的结论样本量小。</li>
+</ul>
+
+<h3>17.3 工程实用性</h3>
+<ul>
+  <li><b>[高] 完全无开源</b>:无代码无权重,32 s 生成耗时无硬件上下文,复现不可能(§12 红框)。对工程选型而言目前只能"看方向、抄设计"。</li>
+  <li><b>[中] 闭源 agent 依赖</b>:精炼绑定 GPT-6-Astra + Codex CLI(A.4),成本/速率/可用性不受控;换开源 VLM agent 是否保得住表 4 末行的增益是开放的。</li>
+  <li><b>[低] 依赖版本不透明</b>:TRELLIS.2、DINOv3、Pi3X、VGGT-Ω、SAM3、T5Gemma2 一长串外部模型版本未固定,结果可复现性弱。</li>
+</ul>
+
+<h3>17.4 优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>预期收益</th></tr>
+<tr><td>高</td><td>① 投影特征加遮挡剔除</td><td>消除遮挡边界的外观污染,薄结构质量</td></tr>
+<tr><td>高</td><td>② 分割/几何/重建联合迭代</td><td>降低对单次估计的脆弱性</td></tr>
+<tr><td>高</td><td>(工程)开源代码与权重</td><td>一切二次开发的前提</td></tr>
+<tr><td>中</td><td>③ 位姿精修放开旋转</td><td>纠正生成朝向的系统性偏转</td></tr>
+<tr><td>中</td><td>④ agent 编辑的自动几何验证</td><td>把仿真就绪变成回归门禁</td></tr>
+<tr><td>中</td><td>⑤ 真实数据微调消融</td><td>量化并缩小 sim2real 差距</td></tr>
+<tr><td>低</td><td>⑥ 锚点失败应力测试</td><td>补全鲁棒性画像</td></tr>
+</table>
+<div class="callout key"><b>个人认为最关键的三点:</b>②(整个方法的准确度天花板在外部估计链手里,混合器只是缓冲)、④(agent 闭环目前靠"看一眼渲染图"验收,没有硬指标门禁,离生产线还差这一层)、工程开源(没有代码,以上所有改进都只能是别人家的 roadmap)。</div>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>总结与演进定位</h2>
+<p>GATOR 的核心论点可以压缩成一句话:<b>生成模型与多模态智能体在 3D 资产生产上是互补的——前者给"快而粗、带位姿"的初始化,后者做"慢而准、有依据"的局部修复</b>。围绕这个论点,方法侧的三个组件各管一段:模态混合器把跨模态关联编码进架构(主要买放置鲁棒性,ADD-SB 0.057→0.037);分阶段文本条件补观测不足时的语义先验(九项指标全面改善);观测锚点 + 4 自由度可微渲染精修把"场景相对位姿"变成几乎免费的副产品。</p>
+<p>在领域脉络里,GATOR 是"观测对齐的生成重建"(Pixal3D/ReconViaGen/RecGen/ShapeR 一脉)与"VLM 智能体建模"两条线的第一次系统性合流,并且用时间预算实验(图 5)把"为什么要接力"量化成了结论:资产初始化把有效产出的时间门槛从 5 分钟降到 0.5 分钟。它的局限同样清晰:无开源、精炼依赖闭源 API、外部估计链是精度天花板。对工程选型而言,当前价值在<b>范式与 prompt/协议设计</b>(§9.3、§16.2),而非可直接部署的组件。</p>
+</section>
+
+<!-- =================== 19 =================== -->
+<section class="section" id="s19">
+<h2><span class="num">19</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>19.1 团队</h3>
+<ul>
+  <li><b>Qirui Wu</b>(一作,NVIDIA / Simon Fraser University 双重隶属)、<b>Stan Birchfield</b>(NVIDIA)、<b>Hesam Rabeti</b>(NVIDIA)、<b>Angel X. Chang</b>(Simon Fraser University)、<b>Bowen Wen</b>(NVIDIA,通讯风格末位)。</li>
+  <li>团队背景:NVIDIA Learning and Perception Research(LPR)。Bowen Wen 是 FoundationPose 的一作(本文 SimFoundry baseline 即用到);Angel X. Chang 长期做 3D 场景理解(ScanNet 系)。致谢名单含 Yuke Zhu、Ajay Mandlekar 等 NVIDIA 机器人/仿真方向核心成员(附录 E)。</li>
+</ul>
+<h3>19.2 资源链接</h3>
+<div class="links">
+  <a href="https://arxiv.org/abs/2610.11215" target="_blank">📄 arXiv(2610.11215,仅 v1)</a>
+  <a href="https://research.nvidia.com/labs/lpr/gator/" target="_blank">🌐 项目主页(含交互 viewer 与演示视频)</a>
+  <a href="https://arxiv.org/html/2610.11215v1" target="_blank">📄 HTML 全文</a>
+</div>
+<div class="callout warn" style="margin-top:16px"><b>资源可用性(截至 2026-10-27):</b><b>无代码、无权重</b>——项目页 publication 区仅 arXiv 一项(已核对全部链接 href);abs 页 comments 为空,<b>无会议信息</b>。项目页含三段演示视频(overview / 46 物体会议室 Isaac Sim 沉降 / 三人形机器人交互),库内未镜像。</div>
+</section>
+
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-27 · 领域: 3D 物体重建 / 生成式重建 + 智能体精炼(TRELLIS.2 级联 + GPT-6-Astra)</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

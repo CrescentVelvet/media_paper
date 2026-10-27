@@ -1,0 +1,139 @@
+[
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/teaser.png"
+  ],
+  "caption": "Fig. 1: Generative and agentic 3D object reconstruction from casual images. Left: Generative model inaccurately fills the strainer’s mesh bowl. GPT-6-Astra struggles with strainer ear position, and simplifies the handle and ear shapes. Our GATOR generates and refines the asset, preserving its shape "
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/model_overview.png"
+  ],
+  "caption": "Fig. 2: GATOR architecture. (A) Pose-aware generative reconstruction. Following TRELLIS.2 ( Xiang et al., 2026 ) , GATOR uses conditional flows for sparse structure, geometry, and appearance. RGB images and depth-derived pointmaps retain scene context, while masks identify the target. Tokens from al"
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Table 1: Four-view reconstruction on Toys4K. † Run with MultiDiffusion ( Bar-Tal et al., 2023 ) . Dark/light green mark best/second-best values (excluding the fully proprietary GPT-6-Astra baseline)."
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Table 2: Real-world tabletop reconstruction on LM-O, HB, and HANDAL. ReconViaGen and Pixal3D lack scene placement, so joint ADD-SB is unavailable. ShapeR can only output untextured object meshes, so appearance scores are unavailable. Dark/light green mark best/second-best scores, excluding the fully"
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/real_tabletop.png"
+  ],
+  "caption": "Fig. 3: Real-world tabletop reconstruction on HB, LM-O, and HANDAL from four input views (two for RecGen); GPT-6 reconstructs from scratch. GATOR recovers complete shapes and detailed textures, such as the printed box and the whisk’s wires, where baselines truncate, blur, or fail."
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Table 3: Real-world indoor-scene reconstruction on ScanNet++. ReconViaGen and Pixal3D predict no pose placement and thus have no joint (ADD-SB) result. Dark/light green mark best/second-best values (excluding the fully proprietary GPT-6-Astra baseline)."
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/real_scannetpp.png"
+  ],
+  "caption": "Fig. 4: Reconstruction from real-world ScanNet++ images. Green outlines mark targets in a subset of the input views, and meshes are shown in comparable orientations; GPT-6 reconstructs from scratch. Our GATOR recovers fine structures, including individual utensils, fan blades, and the cart-mounted d"
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/figures/ablation_variants/assets/handal_scene_000001_obj34/input0.png",
+   "2610.11215v1/figures/ablation_variants/assets/handal_scene_000001_obj34/input1.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000001_obj34/a01.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000001_obj34/a11.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000001_obj34/a2.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000001_obj34/a2ao.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000001_obj34/gt.png",
+   "2610.11215v1/figures/ablation_variants/assets/handal_scene_000009_obj10/input0.png",
+   "2610.11215v1/figures/ablation_variants/assets/handal_scene_000009_obj10/input1.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000009_obj10/a01.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000009_obj10/a11.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000009_obj10/a2.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000009_obj10/a2ao.png",
+   "2610.11215v1/figures/ablation_variants/assets/gt_oriented/handal_scene_000009_obj10/gt.png"
+  ],
+  "caption": "Table 4: Ablation on 55 HANDAL objects with four input views. Each row adds one component to the row above. The modality mixer lowers ADD-SB, text conditioning improves all nine metrics, and agentic refinement further improves CD, NC, F1, PSNR, and LPIPS."
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/efficiency_merged.png"
+  ],
+  "caption": "Fig. 5: Reconstruction quality versus time. (a) Mean CD/ D D and LPIPS ( ↓ \\downarrow ) over valid outputs on sampled Toys4K objects. Time is the mean recorded full pipeline time, with an estimated 32 s of generation per object for GATOR, and excludes mesh export. The first GATOR point is generation"
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Prompt 1: Refinement prompt."
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Prompt 2: From-scratch reconstruction prompt."
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Table 6: Statistics of synthetic training corpus of the structure model. Epoch items are scene–object instances, share is their fraction per source, and reuse is the number of items per asset. Assets are counted within each source, so the total is not deduplicated across sources."
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/s3_scenes.png"
+  ],
+  "caption": "Fig. 6: S3 scene examples. Each adjacent image pair shows two viewpoints of one synthetic scene. Procedural layouts and varied capture conditions produce changes in occlusion, object scale, background, and lighting while retaining complete object supervision."
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/toys4k_mv4_fullpage.png"
+  ],
+  "caption": "Fig. 7: Four-view reconstruction on Toys4K. Each example shows its four inputs at left and each method’s geometry (top) and appearance (bottom) in a shared novel view after shape alignment."
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Table 7: Real-world tabletop reconstruction per dataset. The generative model alone (GATOR w/o agent) already outperforms every baseline on every geometry metric, and refinement improves PSNR and LPIPS on every dataset. Dashes mark unavailable scores, including appearance scores for ShapeR, which ca"
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/bop_additional.png"
+  ],
+  "caption": "Fig. 8: Extended LM-O and HB comparisons. Each object shows two of its four input views and each method’s geometry (top) and appearance (bottom) from a shared camera. ShapeR can only output untextured object meshes (red crosses)."
+ },
+ {
+  "id": "",
+  "imgs": [],
+  "caption": "Table 8: Multiview tabletop reconstruction on LM-O and HB. Unlike Table 7 , each target is evaluated with two different view selections, recall counts every attempt, and GATOR is reported without agentic refinement, so its four-view scores differ between the two tables. GATOR leads every joint and g"
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/real_scannetpp_additional.png"
+  ],
+  "caption": "Fig. 9: Extended ScanNet++ comparisons. Each object shows up to two input views with the target outlined in green and each method’s geometry (top) and appearance (bottom) from a shared camera. ShapeR can only output untextured object meshes (red crosses). GT is the observed partial scan."
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/refinement_cases.png"
+  ],
+  "caption": "Fig. 10: Agentic reconstruction refinement. Before-and-after examples illustrate six refinement behaviors. Up to four input views are shown, with real-world targets outlined in green. Boxes and matched zooms highlight reconstruction details. Each pair shares the same camera, diffuse shading, and dis"
+ },
+ {
+  "id": "",
+  "imgs": [
+   "2610.11215v1/sim_readiness.png"
+  ],
+  "caption": "Fig. 11: Scene-level rigid-body simulation. All ten input views (top two rows) and simulated resting states of a ScanNet++ meeting room, shown from overview (third row) and side (bottom) cameras. Three chairs that lean or topple before refinement become able to stand upright steadily after refinemen"
+ }
+]

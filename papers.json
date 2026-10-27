@@ -5258,6 +5258,48 @@
         "s13",
         "s14"
       ]
+    },
+    {
+      "file": "3D-20261008-GATOR.html",
+      "title": "GATOR: 生成式初始化 + 智能体闭环精炼的随手拍 3D 物体重建",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "3D 生成",
+        "稀疏与少视角重建",
+        "质量速度权衡与实时"
+      ],
+      "meta": [
+        "📄 arXiv: 2610.11215",
+        "📅 2026-10-08",
+        "🏢 NVIDIA · Simon Fraser University"
+      ],
+      "tags": [
+        "3D 物体重建",
+        "Generative+Agentic",
+        "TRELLIS.2",
+        "Rectified Flow",
+        "模态混合",
+        "PBR 材质",
+        "场景相对位姿",
+        "仿真就绪"
+      ],
+      "summary": "NVIDIA LPR 的 GATOR 把「生成式重建」与「多模态智能体」接成双引擎:生成侧在 TRELLIS.2 结构-几何-外观级联上引入<strong>局部模态混合器</strong>(patch 对齐的 RGB/掩码/点图 token 就地融合后再跨视角推理)与<strong>分阶段文本条件</strong>(SigLIP2 调制结构、T5Gemma2 引导几何外观),输出带场景相对位姿的完整 PBR 资产;再以该资产初始化 GPT-6-Astra 智能体做编辑-渲染-审查闭环的局部修复。Toys4K 四视角 CD 0.009(vs Pixal3D-MV 0.011),真实桌面 CD 较 Pixal3D 减半,ScanNet++ ADD-SB@0.1 95.63%;生成-only 约 0.5 分钟即优于从零智能体 20 分钟预算。无代码,超参仅附录自述。",
+      "links": [
+        {
+          "href": "3D-20261008-GATOR.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2610.11215",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://research.nvidia.com/labs/lpr/gator/",
+          "text": "🌐 项目主页"
+        }
+      ]
     }
   ]
 }
