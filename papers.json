@@ -5300,6 +5300,87 @@
           "text": "🌐 项目主页"
         }
       ]
+    },
+    {
+      "file": "3D-20260929-TaoFlowForge.html",
+      "title": "TaoFlowForge: 顶点流+拓扑流三级级联的渐进式原生网格生成",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "3D 生成",
+        "表面与几何重建",
+        "质量速度权衡与实时"
+      ],
+      "meta": [
+        "📄 arXiv: 2609.37139",
+        "📅 2026-09-29",
+        "🏢 Taobao3D Team, Alibaba Group"
+      ],
+      "tags": [
+        "原生网格生成",
+        "Flow Matching",
+        "Level-MoE",
+        "拓扑生成",
+        "TRELLIS.2",
+        "电商3D资产",
+        "开源代码+权重"
+      ],
+      "summary": "淘天 Taobao3D 的图生原生网格基础模型(已开源推理代码+权重):把网格生成解耦为顶点生成与拓扑预测——Stage 1 借 TRELLIS.2 先验生成 64³ 粗占据(30层 DiT,≈1.3B);Stage 2 用 <strong>Bernoulli 白化 + 三个参数独立的 Level-MoE 专家</strong>把顶点渐进细化到 512³,配 soft-OR 边/面共占据损失保护高连接度结构;Stage 3 逐顶点挂 latent,用 <strong>source/destination 双子空间双线性打分</strong>消传递性误连接、法向头直接定面朝向。Toys4K CD 0.0655(较 LATO.2 降 57.8%),训练数据约 80 万清洗网格。本笔记源码核实发现:论文 Stage 编号与代码错一位、论文称 Stage 3 为 32 层而发布权重实为 28 层、补洞/法向后处理对拓扑质量有实质贡献。",
+      "links": [
+        {
+          "href": "3D-20260929-TaoFlowForge.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2609.37139",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/alibaba/Taobao3D",
+          "text": "💻 GitHub"
+        }
+      ]
+    },
+    {
+      "file": "3D-20260928-TaoTex.html",
+      "title": "TaoTex: 高频纹理保真的原生 3D 材质生成(数据 agent + MLFF + 像素空间损失)",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "3D 生成"
+      ],
+      "meta": [
+        "📄 arXiv: 2609.34934",
+        "📅 2026-09-28",
+        "🏢 Alibaba Group · Taobao3D Team"
+      ],
+      "tags": [
+        "原生3D材质",
+        "PBR 纹理生成",
+        "高频文字纹理",
+        "MLFF",
+        "数据合成agent",
+        "TRELLIS.2",
+        "电商3D资产",
+        "未开源"
+      ],
+      "summary": "淘天 Taobao3D 的原生 3D 材质模型(未开源):在 TRELLIS.2 的 o-voxel + 材质 SC-VAE 上做扩散,专攻<strong>「几何平坦但纹理高频」</strong>区域(罐身文字、包装 logo)——① MLLM(Qwen-3.8)写 Blender 脚本造简单几何 + IGM 合成高频纹理 + MLLM 质检的数据 agent,产出 50K HFT 资产;② <strong>MLFF</strong> 融合 DINOv2 第 4/11/17/23 层特征替代单一深层语义条件;③ 训练后期从 latent 空间切换到<strong>像素空间 L1/SSIM/LPIPS 监督</strong>突破 VAE 精度上界;④ learnable viewpoint embeddings 支持至多四视图。单视图 Albedo PSNR 25.15(TRELLIS.2 21.92),消融四组件全部正贡献。本笔记发现:正文引用的 Table 4/5 在 v1 全文中不存在。",
+      "links": [
+        {
+          "href": "3D-20260928-TaoTex.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2609.34934",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://xchaowu.github.io/papers/taotex/index.html",
+          "text": "🌐 项目主页"
+        }
+      ]
     }
   ]
 }

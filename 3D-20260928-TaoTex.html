@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaoTex: 高频纹理保真的原生 3D 材质生成(淘宝 Taobao3D) | 论文笔记</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2609.34934 · 2026-09-28 · 📊 deep</span>
+    <h1>TaoTex:数据 agent + 多层特征融合 + 像素空间损失,让原生 3D 材质看清"字"</h1>
+    <div class="subtitle">TaoTex: Boosting Texture Detail Fidelity for Native 3D Material Generation</div>
+    <div class="authors">Xiuchao Wu* · Shuichang Lai* · Jiangjing Lyu† · Chengfei Lyu†(*共同一作,†通讯)</div>
+    <div class="org">Alibaba Group · Taobao3D Team(淘天集团 Meta 技术团队)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2609.34934" target="_blank">📄 arXiv</a>
+      <a href="https://arxiv.org/html/2609.34934v1" target="_blank">📄 HTML 全文</a>
+      <a href="https://xchaowu.github.io/papers/taotex/index.html" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/alibaba/Taobao3D" target="_blank">💻 团队 GitHub(无本模型代码)</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 <b>comments 为空</b>(2026-10-28 核实),按库规范<b>不加会议 badge</b>。<b>代码与权重未开源</b>:项目页全部链接已解 href 核实——仅 arXiv PDF 与团队主页两项,无任何代码链接;GitHub <code>alibaba/Taobao3D</code> 仓库(2026-10-28 拉取)只有 Dens3R / HRM2Avatar / TaoFlowForge 三个目录,<b>无 TaoTex</b>。因此「⚙️ 工程实现细节」章节可信度低于有源码笔记,数值均为论文自述、无法验证。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:HFT 数据构造 agent</a></li>
+    <li><a href="#s5">模块二:MLFF 多层特征融合</a></li>
+    <li><a href="#s6">模块三:latent→pixel 损失切换</a></li>
+    <li><a href="#s7">模块四:多视图扩展(视角嵌入)</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(数据 / 训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(无源码)</a></li>
+    <li><a href="#s11">实验结果(单视图 / 多视图)</a></li>
+    <li><a href="#s12">消融实验与缺失表格发现</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向 / 总结 / 团队资源</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>TaoTex 是淘天 Taobao3D 团队的<b>原生 3D 材质生成模型</b>:在 TRELLIS.2 的 o-voxel 表征与材质 SC-VAE 之上做扩散生成,输入"几何 + 一到四张图像",直接输出 albedo / roughness / metallic 三通道 PBR 材质。它要解决的痛点非常具体——<b>几何平坦但纹理高频</b>的表面(饮料罐上的文字、包装盒上的 logo、印刷图案),此前所有原生 3D 方案在这里都会糊掉。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>三管齐下的细节保真方案——① 用 MLLM + 图像生成模型组成 <b>数据 agent</b>,批量合成"简单几何 + 高频纹理"的 HFT 训练资产(50K),补上公开数据集的分布缺口;② <b>MLFF</b> 融合 DINOv2 第 4/11/17/23 层特征替代单一深层语义特征,给扩散模型更完整的细节线索;③ 训练后期从 latent 空间<b>切换到像素空间监督</b>(渲染回 albedo/roughness/metallic 图算 L1/SSIM/LPIPS),突破 3D VAE 的重建精度上界;再配 learnable viewpoint embeddings 支持最多四视图输入。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">25.15</div><div class="l">单视图 Albedo PSNR↑(TRELLIS.2 为 21.92,+3.23dB,Tab.1)</div></div>
+  <div class="stat"><div class="v">0.049</div><div class="l">单视图 Albedo LPIPS↓(TRELLIS.2 为 0.096,降 49%)</div></div>
+  <div class="stat"><div class="v">850K</div><div class="l">训练资产:500K Objaverse-XL + 300K TexVerse + 50K 自建 HFT</div></div>
+  <div class="stat"><div class="v">16×H20</div><div class="l">VAE 微调训练规模(batch 64;DiT batch 16)</div></div>
+  <div class="stat"><div class="v">≤4 视图</div><div class="l">多视图输入支持(learnable viewpoint embedding)</div></div>
+</div>
+
+<div class="figure"><img src="images/2609.34934/figures_teaser.png" alt="TaoTex teaser" loading="lazy">
+<div class="caption"><b>图1(原文 Figure 1)</b> TaoTex 生成的原生 3D 材质:覆盖多品类,含文字与 logo 等挑战性细节;图中几何由 TRELLIS.2 生成(原文 caption)。</div></div>
+
+<h3>主要贡献点(论文 §1)</h3>
+<ol>
+<li><b>数据构造 agent</b>:MLLM 写 Blender 脚本造简单几何 → 自动 UV 展开 → IGM 以 UV layout 为空间条件合成高频纹理 → MLLM 质检(图案锐度、边界对齐)→ 绑定 PBR 参数,产出 HFT(High-Frequency Textured)资产。</li>
+<li><b>MLFF(Multi-level Feature Fusion)</b>:跨浅/深层聚合 DINOv2 多层特征,替代"语义偏置、丢细节"的单层特征。</li>
+<li><b>Latent-to-pixel 损失切换</b>:训练后期把预测 $\hat{\mathbf{v}}$ 映回 $\mathbf{x}_0$、解码成 PBR mesh、渲染成像素空间材质图做光度监督。</li>
+<li><b>多视图扩展</b>:learnable viewpoint embeddings 消除多视图 token 拼接的方位歧义;logit-normal low-SNR 时间步采样配合。</li>
+</ol>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+
+<div class="grid-2">
+  <div class="card"><h4>路线一:多视图投影(view-space)</h4><p>先用 2D 生成模型出多视图纹理,再反投影回网格表面。<b>三项结构性缺陷</b>(论文 §1):"texture baking may produce ghosting in overlapping regions, self-occluded areas require additional UV-space inpainting, and texture-geometry misalignment can cause projection artifacts"——重叠区<b>鬼影</b>、自遮挡区要额外 inpaint、几何-纹理错位导致<b>投影伪影</b>。§2.1 再补一刀:高频区域跨视图不一致、深度边界处伪影。</p></div>
+  <div class="card"><h4>路线二:原生 3D(native)</h4><p>直接在 3D 表征上生成,机理上免疫投影问题。<b>但现有方案在"几何平坦但纹理高频"区域失效</b>(§1):"These regions lack distinctive geometric cues for the model to match with the conditional images, leading to incorrect or fragmented textures"——平坦表面没有几何线索帮模型把图像纹理"对号入座",文字糊成碎片(论文图 2 红框)。</p></div>
+</div>
+
+<div class="figure"><img src="images/2609.34934/problem.png" alt="几何线索与纹理" loading="lazy">
+<div class="caption"><b>图2(原文 Figure 2)</b> 纹理生成与几何线索的关系:绿框区域几何变化与纹理变化对齐,几何可有效引导外观;红框的平坦表面几乎不提供合成图案/文字的引导——这是 TaoTex 要攻的核心场景。</div></div>
+
+<h3>作者归因的三个失败因素(§1)与对应解法</h3>
+<table>
+<tr><th>失败因素(原文归因)</th><th>对应解法</th></tr>
+<tr><td>① 公开 3D 数据集中高频纹理不足,"复杂图案→简单表面"的映射从未被模型见过</td><td>HFT 数据 agent(§4)</td></tr>
+<tr><td>② 条件图像特征语义偏置、缺细节信息</td><td>MLFF 多层特征融合(§5)</td></tr>
+<tr><td>③ latent 空间训练受限于 3D VAE 的重建精度上界</td><td>latent→pixel 损失切换(§6)</td></tr>
+<tr><td>(附加)多视图支持缺失或效果差</td><td>viewpoint embeddings + low-SNR 采样(§7)</td></tr>
+</table>
+
+<div class="callout warn"><b>假设的失效条件:</b>① HFT 由 IGM 合成,论文自己承认"纹理与 UV layout 的对齐并非完美"(§3.1)——合成数据的系统性偏差(风格、透视)会灌进模型;② viewpoint embeddings 对应<b>规范化的 front/back/left/right 四方位</b>,非规范化视角输入的泛化未验证;③ 结论自承"受限于体素分辨率,微小文字重建仍有瓶颈"(§5 Conclusion)。</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<p><b>输入</b>:几何 $\mathcal{G}$(o-voxel 表征)+ 一到四张条件图像 $C$(渲染分辨率 1024×1024);<b>输出</b>:PBR 材质(albedo / roughness / metallic 三通道),直接附着在输入几何上。<b>backbone</b>:TRELLIS.2 系(Xiang et al., 2026)——o-voxel 表征 + 材质 SC-VAE(在自家数据上微调)+ DiT 去噪网络 $\mathcal{F}_\theta$;条件是 DINOv2 特征(经 MLFF 融合)+ 几何 latent $\mathbf{z}_{\mathcal{G}}$。</p>
+
+<div class="mermaid">
+flowchart TD
+    GEO["输入几何 G(o-voxel)"] --> GE["TRELLIS.2 预训练 encoder<br/>→ 几何 latent z_G"]
+    IMG["1~4 张条件图像(1024²)"] --> DINO["DINOv2 多层特征<br/>第 4/11/17/23 层"]
+    DINO --> MLFF["MLFF: 逐层 2 层 MLP → 通道拼接<br/>→ SE 通道注意力 → 3 层融合 MLP<br/>+ 可学习 patch 位置嵌入"]
+    MLFF --> COND["条件 token(替代单一 z_c)"]
+    VP["learnable viewpoint embeddings<br/>(front/back/left/right)"] --> COND
+    GE --> DIT
+    COND --> DIT
+    subgraph DIT["DiT 去噪网络 F_θ(v-预测)"]
+        X["x_t(material SC-VAE latent)"] --> OUT["预测 v̂ → 映回 x_0"]
+    end
+    OUT --> DEC["微调的 material SC-VAE 解码<br/>→ PBR mesh(albedo/roughness/metallic)"]
+    DEC -.训练后期.-> PIX["渲染回像素空间材质图<br/>L1+SSIM+LPIPS 监督(式3)"]
+    style GEO fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style MLFF fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style DEC fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style PIX fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<div class="figure"><img src="images/2609.34934/pipeline.png" alt="TaoTex pipeline" loading="lazy">
+<div class="caption"><b>图3(原文 Figure 3)</b> 方法总览:三条主线——数据 agent 构造高频资产、MLFF 融合多尺度特征、pixel-space loss 对抗 latent 压缩;配合 learnable viewpoint embeddings 支持单/多视图输入。</div></div>
+
+<h3>符号表(与论文 §3 一致)</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>维度 / 出处</th></tr>
+<tr><td>$\mathcal{F}_{\theta}$</td><td>DiT 去噪网络(材质生成主干)</td><td>维度原文未给(式 1)</td></tr>
+<tr><td>$\mathcal{M}_{\phi}$</td><td>MLFF 特征聚合模块</td><td>与 $\mathcal{F}_\theta$ 联合训练(式 2)</td></tr>
+<tr><td>$\mathbf{x}_t$</td><td>step $t$ 的 material SC-VAE latent</td><td>维度原文未给</td></tr>
+<tr><td>$\mathbf{z}_{\mathcal{G}}$</td><td>几何 latent,TRELLIS.2 预训练 encoder 产出</td><td>式 1</td></tr>
+<tr><td>$\mathbf{z}_c=\mathcal{E}(C)$</td><td>条件图像的 DINOv2 深层语义特征(基线方案)</td><td>§3.2</td></tr>
+<tr><td>$\{\mathcal{E}^{(l)}(C)\}_{l=1}^{L}$</td><td>DINOv2 多层特征,<b>$L=4$:第 4、11、17、23 层</b></td><td>§3.2 "empirically suffices"</td></tr>
+<tr><td>$\mathbf{v},\hat{\mathbf{v}}$</td><td>v-parameterization 目标速度 / 网络预测值</td><td>式 1;Salimans &amp; Ho, 2022</td></tr>
+<tr><td>$K$</td><td>pixel-space 损失监督的视角数(条件视角 + 2 个 novel 视角)</td><td>式 3,$K$ 具体值原文未给</td></tr>
+<tr><td>$\lambda_1,\lambda_2,\lambda_3$</td><td>L1 / SSIM / LPIPS 权重</td><td>条件视角 $(1.0,0.2,0.2)$;novel 视角 $(0.2,0.2,1.0)$(§3.2)</td></tr>
+</table>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:HFT 数据构造 agent(§3.1)</h2>
+
+<h3>4.1 思路</h3>
+<p>论文的核心判断:"复杂图案 → 简单表面"这个映射在公开数据集里<b>几乎不存在</b>,模型自然学不会。那就自己造——而且不用人工,用一个两级 agent 流水线批量合成 HFT(High-Frequency Textured)资产:几何故意选简单拓扑(罐、杯、盒),把所有难度压在纹理上。</p>
+
+<h3>4.2 流水线(逐步,§3.1)</h3>
+<ol>
+<li><b>MLLM 驱动程序化几何合成</b>:prompt 一个多模态大模型(实际用 <b>Qwen-3.8</b>)产出 Blender 脚本生成目标网格;渲染后由 MLLM 视觉检查并迭代改代码(<b>设迭代上限控制耗时</b>);通过后自动 UV 展开。</li>
+<li><b>UV 引导的纹理合成</b>:UV layout mask 作为空间条件,由图像生成模型(实际用 <b>Qwen-Image-3.0-Pro</b>)在 UV 域合成"带详细文字与图案"的纹理。</li>
+<li><b>MLLM 质检</b>:检查图案锐度(sharpness)与边界对齐(boundary alignment),防止感知伪影。</li>
+<li><b>PBR 绑定</b>:质检通过的纹理与 MLLM 给出的 roughness / metallic 参数一起绑定到几何,得到 HFT 资产。</li>
+</ol>
+
+<div class="callout tip"><b>工程取舍(原文 Notes,§3.1):</b>"agent 原生支持端到端构造,但实践中我们优先效率:<b>先造一批固定的品类几何,再在它们的 UV layout 上批量合成大量纹理</b>"——因为任务对纹理多样性的需求远大于几何多样性。作者也坦承:"受限于当前 IGM 能力,合成纹理与 UV layout 的对齐并非完美,但这不影响 TaoTex 的训练"。</div>
+
+<h3>4.3 数据规模(§3.4 Dataset)</h3>
+<table>
+<tr><th>来源</th><th>规模</th><th>说明</th></tr>
+<tr><td>Objaverse-XL (Deitke et al., 2023)</td><td>500K</td><td>高质量过滤后的 PBR 资产</td></tr>
+<tr><td>TexVerse (Zhang et al., 2025)</td><td>300K</td><td>同上</td></tr>
+<tr><td>自建 HFT</td><td><b>50K</b></td><td>数据 agent 合成,含大量对称几何(圆柱、盒)——为 §7 的视角嵌入训练服务</td></tr>
+</table>
+<p>每个资产在 <b>16 个视角</b>、<b>1024×1024</b> 分辨率下渲染,随机视场角与环境光照(§3.4)。</p>
+
+<div class="callout warn"><b>本模块无传统意义的网络结构/损失</b>(它是数据侧组件);其"监督信号"体现在训练数据分布上。消融(§12)显示去掉 HFT 数据是<b>伤害最大的单组件</b>:Albedo PSNR 掉 2.58dB。</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:MLFF 多层特征融合(§3.2)</h2>
+
+<h3>5.1 思路</h3>
+<p>基线做法是用 DINOv2 的<b>单一深层</b>语义特征 $\mathbf{z}_c=\mathcal{E}(C)$ 做条件——语义强但细节被"抽象掉"了("fail to retain details",§3.2,论文图 4 有对照)。文字、logo 这类高频信息恰恰活在中浅层特征里。MLFF 的做法:同时取 <b>$L=4$ 层(第 4、11、17、23 层)</b>的特征,融合后替代 $\mathbf{z}_c$。</p>
+
+<h3>5.2 数学形式化</h3>
+<p>基线(v-预测,用单一语义特征):</p>
+<div class="equation">$$\mathcal{L}_{\theta}=\mathbb{E}\left\|\mathcal{F}_{\theta}\Bigl(\mathbf{x}_{t},t,\mathbf{z}_{c},\mathbf{z}_{\mathcal{G}}\Bigr)-\mathbf{v}\right\|_{2}^{2}$$<span class="tag">(式 1)</span></div>
+<p>引入 MLFF 后(条件换成融合特征,MLFF 与 DiT 联合优化):</p>
+<div class="equation">$$\mathcal{L}_{\theta,\phi}=\mathbb{E}\left\|\mathcal{F}_{\theta}\Bigl(\mathbf{x}_{t},t,\mathcal{M}_{\phi}\bigl(\{\mathcal{E}^{(l)}(C)\}_{l=1}^{L}\bigr),\mathbf{z}_{\mathcal{G}}\Bigr)-\mathbf{v}\right\|_{2}^{2}$$<span class="tag">(式 2)</span></div>
+
+<h3>5.3 网络结构(§3.4 MLFF Architecture,逐组件)</h3>
+<ol>
+<li>每层特征各经一个<b>两层 MLP</b> 投影;</li>
+<li>沿<b>通道维拼接</b>;</li>
+<li><b>SE 式通道注意力门</b>(Hu et al., 2018):全局池化 + 两层 gated excitation MLP(Sigmoid 收尾)自适应重加权通道;</li>
+<li><b>三层融合 MLP</b> 沿通道维压缩;</li>
+<li><b>加上所有投影层的均值残差</b>,再 LayerNorm;</li>
+<li>全部 MLP 隐藏层用 GELU;另加<b>可学习 patch 级位置嵌入</b>增强空间感知。</li>
+</ol>
+<p>融合后的特征替代 $\mathbf{z}_c$ 作为条件 token 进入 DiT(cross-attention 位)。</p>
+
+<div class="callout warn"><b>需要诚实指出的证据缺口:</b>① 选第 4/11/17/23 层的依据只有一句 "empirically suffices",<b>没有层选择消融</b>;② 维度(各层特征通道、融合后维度)全文未给;③ 代码未开源,无法验证实现。<span class="uncertain">⚠️【待核实】以上均以论文自述为准</span>。</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:latent→pixel 损失切换(§3.2)</h2>
+
+<h3>6.1 思路</h3>
+<p>latent 空间训练的天花板是 3D VAE 的重建精度——latent 里丢掉的细节,监督信号再强也回不来("latent-space training inevitably incurs fidelity loss from compression artifacts")。解法是一条 <b>coarse-to-fine 的监督切换</b>:前期纯 latent 损失打底,后期把预测解码回像素空间做光度监督。</p>
+
+<h3>6.2 数学形式化</h3>
+<p>预测 $\hat{\mathbf{v}}$ 映回 $\mathbf{x}_0$、经(冻结的)微调材质 SC-VAE 解码成 PBR mesh,再渲染成像素空间的 albedo / roughness / metallic 图,在 $K$ 个视角上算:</p>
+<div class="equation">$$\mathcal{L}_{\theta,\phi}^{*}=\frac{1}{K}\sum_{i=1}^{K}\left(\lambda_{1}\mathcal{L}_{\text{L1}}^{(i)}+\lambda_{2}\mathcal{L}_{\text{SSIM}}^{(i)}+\lambda_{3}\mathcal{L}_{\text{LPIPS}}^{(i)}\right)$$<span class="tag">(式 3)</span></div>
+<p><b>两类视角权重不对称</b>(§3.2):</p>
+<table>
+<tr><th>视角类型</th><th>$(\lambda_1,\lambda_2,\lambda_3)$</th><th>意图</th></tr>
+<tr><td>条件视角(与输入图同视角)</td><td>$(1.0, 0.2, 0.2)$</td><td>偏重逐像素保真(L1 主导)——重建任务</td></tr>
+<tr><td>2 个 novel 视角</td><td>$(0.2, 0.2, 1.0)$</td><td>LPIPS 主导,重感知真实感而非像素对齐——生成任务</td></tr>
+</table>
+<p><b>切换时机</b>(§3.4 Optimization):训练共<b>两个 100K 步阶段</b>——第一阶段纯 latent 损失,第二阶段加入 pixel-space 损失;全程单视图/多视图输入交替训练。</p>
+
+<div class="callout key"><b>机制理解:</b>这组权重设计相当于把"重建"与"生成"显式解耦:能看见的视角按重建标准严要求(L1),看不见的视角按生成标准宽要求(LPIPS)。这也是它敢在 novel 视角报 FID/CLIP-FID(分布指标)而在条件视角报 PSNR/LPIPS(保真指标)的原因。</div>
+
+<h3>6.3 消融证据(论文图 4 定性 + Tab.3 定量)</h3>
+<p>去掉 pixel-space loss:多视图设置下 Albedo PSNR 25.48→24.61(−0.87dB)、Rendering PSNR 27.30→26.22(−1.08dB);"tiny text exhibits noticeable distortion"(§4.2,小字明显变形)。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:多视图扩展(§3.3)</h2>
+
+<h3>7.1 思路</h3>
+<p>朴素的多视图做法是把所有视图的视觉 token 直接拼接喂给 $\mathcal{F}_\theta$——token 序列变长后,<b>图像-几何对齐难度剧增</b>,结果是纹理碎裂、张冠李戴("left-view textures are erroneously mapped to the back",图 5 红框)。TaoTex 的解法很轻:给每个视图的特征加一个<b>可学习 viewpoint embedding</b>。</p>
+
+<h3>7.2 设计要点(§3.3,原文要点)</h3>
+<ul>
+<li><b>数量与语义</b>:最多 <b>4 个输入视图</b>,embedding 对应规范化的 front / back / left / right 四方位("covering a 90-degree horizontal range and a 180-degree vertical elevation range")。</li>
+<li><b>训练方式</b>:与 $\mathcal{F}_\theta$、$\mathcal{M}_{\phi}$ 联合优化,推理时固定。</li>
+<li><b>为什么 embedding 不会被绕过(巧妙处)</b>:HFT 数据集故意含大量<b>对称几何</b>(圆柱、盒),从形状上几乎无法区分视角——"This structural ambiguity prevents the model from deducing viewpoints solely from shape cues, ensuring that the viewpoint embeddings are not bypassed"。模型想偷懒看形状猜视角?这条路被数据设计堵死了。</li>
+<li><b>Low-SNR 时间步采样</b>:多视图重建的关键在去噪早期($t$ 接近 1 的低 SNR 区段)建立纹理粗定位;因此时间步从<b>偏向低 SNR 的 logit-normal 分布采样,mean=2、std=1</b>。</li>
+</ul>
+
+<div class="figure"><img src="images/2609.34934/ablation_pe.png" alt="viewpoint embedding 消融" loading="lazy">
+<div class="caption"><b>图4(原文 Figure 5)</b> viewpoint embeddings 消融:去掉后,近对称物体(花瓶)上出现纹理错位(左视图纹理被映到背面,红框)与严重碎裂(箭头)。</div></div>
+
+<h3>7.3 消融证据(Tab.3)</h3>
+<p>去掉 viewpoint embeddings:Albedo PSNR 25.48→24.47(−1.01dB)、Rendering PSNR 27.30→26.47(−0.83dB)。</p>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<table>
+<tr><th>损失</th><th>公式</th><th>权重 / 超参(原文值)</th><th>阶段</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_{\theta}$</td><td>式 1,latent v-预测 MSE(单一语义特征条件)</td><td>—</td><td>基线形式</td><td>基线训练目标</td></tr>
+<tr><td>$\mathcal{L}_{\theta,\phi}$</td><td>式 2,latent v-预测 MSE(MLFF 融合特征条件)</td><td>—</td><td>阶段一(前 100K 步)唯一损失;阶段二保留</td><td>材质 latent 的扩散训练主项</td></tr>
+<tr><td>$\mathcal{L}_{\theta,\phi}^{*}$</td><td>式 3,pixel-space L1+SSIM+LPIPS 多视角光度监督</td><td>条件视角 $(1.0,0.2,0.2)$;2 个 novel 视角 $(0.2,0.2,1.0)$;$K$=条件视角数+2</td><td>阶段二(后 100K 步)加入</td><td>突破 VAE 重建精度上界,锐化小文字</td></tr>
+</table>
+<p class="note">⚠️ 原文未给式 2 与式 3 在阶段二的<b>组合系数</b>(仅描述两阶段顺序切换);VAE 微调阶段与 DiT 阶段的超参细节见 §10。代码未开源,以上均无法独立验证。</p>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(数据 / 训练 / 推理)</h2>
+
+<h3>9.1 数据 agent 流程</h3>
+<div class="mermaid">
+flowchart LR
+    A["MLLM(Qwen-3.8)"] -->|"写 Blender 脚本"| B["候选网格<br/>(罐/杯/盒等简单拓扑)"]
+    B --> C{"MLLM 视觉质检<br/>(迭代改代码,设上限)"}
+    C -->|"通过"| D["自动 UV 展开"]
+    D --> E["IGM(Qwen-Image-3.0-Pro)<br/>以 UV layout mask 为条件合成纹理"]
+    E --> F{"MLLM 质检:<br/>图案锐度 + 边界对齐"}
+    F -->|"通过"| G["绑定 MLLM 给出的<br/>roughness/metallic 参数"]
+    G --> H["HFT 资产(50K)"]
+    style A fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style H fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+
+<h3>9.2 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    V["阶段0: 微调 material SC-VAE<br/>16×H20, batch 64<br/>(Objaverse-XL 500K + TexVerse 300K + HFT 50K, 16视角 1024² 渲染)"] --> F["冻结 VAE"]
+    F --> P1["阶段1(100K 步): 训练 DiT + MLFF<br/>纯 latent v-预测损失(式2)<br/>batch 16, AdamW lr 1e-4"]
+    P1 --> P2["阶段2(100K 步): 加入 pixel-space 损失(式3)<br/>条件视角(1.0,0.2,0.2) / novel视角(0.2,0.2,1.0)"]
+    P2 --> NOTE["全程单/多视图交替;<br/>时间步按 low-SNR logit-normal(mean=2,std=1)采样"]
+    style V fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style P2 fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<h3>9.3 推理流程</h3>
+<div class="mermaid">
+flowchart LR
+    IN["几何 G + 1~4 张图像"] --> ENC["DINOv2 四层特征 → MLFF 融合<br/>(+ viewpoint embeddings)"]
+    GEO["TRELLIS.2 encoder → z_G"] --> DIT
+    ENC --> DIT["DiT 去噪(v-预测)"]
+    DIT --> DEC["微调的 material SC-VAE 解码"]
+    DEC --> OUT["PBR mesh(albedo/roughness/metallic)"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<p class="note">推理步数、采样器类型、是否用 CFG 等细节<b>原文均未给出</b>,代码未开源无法补充。</p>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(无源码,可信度声明)</h2>
+
+<div class="callout red"><b>本章可信度等级低于有源码笔记:</b>截至 2026-10-28,TaoTex <b>代码与权重均未发布</b>(项目页仅 arXiv 与团队主页两个链接,已解 href 核实;<code>alibaba/Taobao3D</code> 仓库无 TaoTex 目录)。以下所有数值均摘自论文 §3.4,<b>无法独立验证</b>;论文未给的项目不猜测。</div>
+
+<h3>10.1 训练配置(论文 §3.4 自述)</h3>
+<table>
+<tr><th>项</th><th>论文值</th><th>出处</th></tr>
+<tr><td>VAE 微调</td><td>material SC-VAE(TRELLIS.2 系)在自建数据上微调;<b>16 × NVIDIA H20,total batch 64</b></td><td>§3.4</td></tr>
+<tr><td>DiT 训练</td><td>冻结 VAE 后训 DiT + 其余模块,<b>batch 16,AdamW,lr = $1\times10^{-4}$</b></td><td>§3.4</td></tr>
+<tr><td>训练阶段</td><td><b>两个 100K 步阶段</b>:先纯 latent 损失,再加入 pixel-space 损失;全程单/多视图交替</td><td>§3.4 Optimization</td></tr>
+<tr><td>时间步采样</td><td>logit-normal,mean=2,std=1(偏 low-SNR)</td><td>§3.3</td></tr>
+<tr><td>渲染</td><td>每资产 16 视角、1024×1024、随机 FOV 与环境光</td><td>§3.4 Dataset</td></tr>
+<tr><td>MLFF 层选择</td><td>DINOv2 第 4 / 11 / 17 / 23 层</td><td>§3.2</td></tr>
+<tr><td>最大输入视图数</td><td>4(front/back/left/right 规范化方位)</td><td>§3.3</td></tr>
+</table>
+
+<h3>10.2 资源账(论文未给项,明确列缺)</h3>
+<ul>
+<li>推理耗时、显存占用、模型参数量:<b>论文均未报告</b>。</li>
+<li>训练总时长(100K×2 步在 16×H20 上的实际天数):未报告。</li>
+<li>HFT 数据 agent 的生成成本(每资产 MLLM 迭代轮数、IGM 调用量):未报告,仅有"设迭代上限控制耗时"一句。</li>
+</ul>
+
+<h3>10.3 落地坑(基于论文文本)</h3>
+<ul>
+<li><b>需要 GT 几何输入</b>:TaoTex 只做材质,不管几何——输入几何要自己先备好(论文实验中除 ReconViaGen 外所有方法都用 GT 几何,§4)。要落地,几何来源(扫描重建 / TRELLIS.2 / <a href="3D-20260929-TaoFlowForge.html">TaoFlowForge</a>)是前置依赖。</li>
+<li><b>视角规范化假设</b>:viewpoint embeddings 对应 front/back/left/right,论文未讨论非规范化视角的处理。</li>
+<li><b>分辨率天花板</b>:作者自承"受限于体素分辨率,微小文字重建仍有瓶颈"(§5)。</li>
+<li><b>数据偏差</b>:HFT 由 Qwen-Image-3.0-Pro 合成,合成纹理的风格/对齐偏差会进入模型(§3.1 原文承认对齐"并非完美")。</li>
+</ul>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果(单视图 / 多视图)</h2>
+
+<h3>11.1 设置(§4)</h3>
+<ul>
+<li><b>评测集</b>:从 TexVerse 选 <b>30 个纹理丰富的物体</b>。</li>
+<li><b>指标</b>:条件视角报 PSNR / SSIM / LPIPS;novel 视角报 FID / CLIP-FID / CLIP-I。</li>
+<li><b>公平性设置</b>:除 ReconViaGen(无法接收几何输入,只做定性)外,<b>所有方法使用 GT 几何</b>;TRELLIS.2 的多视图模式由作者自行实现("switching the conditioning view during denoising, following TRELLIS")。</li>
+</ul>
+
+<h3>11.2 Table 1:单视图定量对比(逐格摘自论文)</h3>
+<table>
+<tr><th>方法</th><th>Alb. PSNR↑</th><th>Alb. SSIM↑</th><th>Alb. LPIPS↓</th><th>Rend. PSNR↑</th><th>Rend. SSIM↑</th><th>Rend. LPIPS↓</th><th>NV-Alb. FID↓</th><th>NV-Alb. CLIP-FID↓</th><th>NV-Alb. CLIP-I↑</th><th>NV-Rend. FID↓</th><th>NV-Rend. CLIP-FID↓</th><th>NV-Rend. CLIP-I↑</th></tr>
+<tr><td>MaterialMVP</td><td>18.90</td><td>0.830</td><td>0.160</td><td>20.84</td><td>0.866</td><td>0.150</td><td>124.10</td><td>17.12</td><td>0.8777</td><td>102.88</td><td>13.19</td><td>0.9037</td></tr>
+<tr><td>UniTEX</td><td>21.84</td><td>0.873</td><td>0.101</td><td>22.81</td><td>0.896</td><td>0.097</td><td>111.82</td><td>16.33</td><td>0.8896</td><td>104.33</td><td>13.88</td><td>0.9074</td></tr>
+<tr><td>Ink3D</td><td>19.39</td><td>0.837</td><td>0.155</td><td>21.24</td><td>0.873</td><td>0.134</td><td>143.89</td><td>21.08</td><td>0.8633</td><td>112.94</td><td>14.88</td><td>0.9023</td></tr>
+<tr><td>TRELLIS.2</td><td>21.92</td><td>0.879</td><td>0.096</td><td>23.46</td><td>0.907</td><td>0.090</td><td>113.86</td><td>15.21</td><td>0.9063</td><td>87.69</td><td>13.21</td><td>0.9150</td></tr>
+<tr class="best"><td><b>TaoTex (Ours)</b></td><td>25.15</td><td>0.914</td><td>0.049</td><td>26.52</td><td>0.938</td><td>0.044</td><td>96.90</td><td>14.53</td><td>0.9096</td><td>77.66</td><td>12.11</td><td>0.9219</td></tr>
+</table>
+<p class="note">原文 caption 注明"Bold: best, underlined: second best";纯文本丢失了加粗/下划线信息,表中仅按数值最优标出 Ours 行。second best 请以 PDF 为准。</p>
+
+<h4>相对最强 baseline(TRELLIS.2)的改进(按原值手算)</h4>
+<table>
+<tr><th>指标</th><th>Δ</th></tr>
+<tr><td>Albedo PSNR</td><td>21.92 → 25.15, <b>+3.23 dB</b></td></tr>
+<tr><td>Albedo LPIPS</td><td>0.096 → 0.049, <b>降 49.0%</b></td></tr>
+<tr><td>Rendering PSNR</td><td>23.46 → 26.52, +3.06 dB</td></tr>
+<tr><td>NV-Rendering FID</td><td>87.69 → 77.66, 降 11.4%</td></tr>
+</table>
+
+<h3>11.3 Table 2:多视图(四视图输入)定量对比</h3>
+<table>
+<tr><th>方法</th><th>Alb. PSNR↑</th><th>Alb. SSIM↑</th><th>Alb. LPIPS↓</th><th>Rend. PSNR↑</th><th>Rend. SSIM↑</th><th>Rend. LPIPS↓</th></tr>
+<tr><td>MaterialMVP</td><td>20.18</td><td>0.873</td><td>0.117</td><td>22.40</td><td>0.900</td><td>0.103</td></tr>
+<tr><td>TRELLIS.2</td><td>19.91</td><td>0.852</td><td>0.162</td><td>21.76</td><td>0.883</td><td>0.153</td></tr>
+<tr class="best"><td><b>TaoTex (Ours)</b></td><td>25.48</td><td>0.919</td><td>0.051</td><td>27.30</td><td>0.941</td><td>0.045</td></tr>
+</table>
+<p>值得注意:TRELLIS.2 在"作者实现的多视图模式"下成绩反而<b>低于</b>其单视图(19.91 &lt; 21.92)——佐证了 §7 的"多视图 token 拼接反而引入歧义"判断;TaoTex 多视图略高于单视图(25.48 &gt; 25.15),方向相反。</p>
+
+<h3>11.4 定性对比(图 6/7/8)</h3>
+<div class="figure"><img src="images/2609.34934/compare_texverse.png" alt="单视图对比" loading="lazy">
+<div class="caption"><b>图5(原文 Figure 6)</b> 单视图对比:TRELLIS.2 纹理连贯但缺高频;UniTEX(微调 FLUX 出多视图)不稳且碎裂;Ink3D 有几何-外观错位;MaterialMVP 细节丢失。TaoTex 在文字/图案上保真度更优,未观测区域纹理连贯。</div></div>
+<div class="figure"><img src="images/2609.34934/compare_texverse_multi.png" alt="多视图对比" loading="lazy">
+<div class="caption"><b>图6(原文 Figure 7)</b> 多视图(四视图)对比:TRELLIS.2 与 MaterialMVP 出现模糊与错误纹理,"在圆柱罐上尤其无法把纹理放到正确位置";ReconViaGen(用 <a href="3D-20250314-VGGT.html">VGGT</a> 特征)大致准确但模糊。</div></div>
+<div class="figure"><img src="images/2609.34934/com_sota.png" alt="商业模型对比" loading="lazy">
+<div class="caption"><b>图7(原文 Figure 8)</b> 与商业模型对比:⚠️ 注意实验设计——<b>TaoTex 用 Rodin Gen2.5 生成的几何做输入,其他商业模型用各自的几何</b>(原文明确说明)。商业模型在对称物体(药瓶、花瓶)上常出现纹理错位与鬼影;TaoTex 过渡无缝。此设置下"胜出"的结论需谨慎解读(几何输入不一致)。</div></div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验与缺失表格发现</h2>
+
+<h3>12.1 Table 3:组件消融(全部在四视图多视图设置下评测)</h3>
+<table>
+<tr><th>变体</th><th>Alb. PSNR↑</th><th>Alb. SSIM↑</th><th>Alb. LPIPS↓</th><th>Rend. PSNR↑</th><th>Rend. SSIM↑</th><th>Rend. LPIPS↓</th></tr>
+<tr><td>W/o HFT data</td><td>22.90</td><td>0.896</td><td>0.087</td><td>24.86</td><td>0.923</td><td>0.077</td></tr>
+<tr><td>W/o MLFF</td><td>23.40</td><td>0.905</td><td>0.072</td><td>25.34</td><td>0.928</td><td>0.065</td></tr>
+<tr><td>W/o viewpoint embeddings</td><td>24.47</td><td>0.911</td><td>0.062</td><td>26.47</td><td>0.935</td><td>0.054</td></tr>
+<tr><td>W/o pixel-space loss</td><td>24.61</td><td>0.913</td><td>0.064</td><td>26.22</td><td>0.935</td><td>0.057</td></tr>
+<tr class="best"><td><b>Ours</b></td><td>25.48</td><td>0.919</td><td>0.051</td><td>27.30</td><td>0.941</td><td>0.045</td></tr>
+</table>
+
+<h4>Δ(去掉该组件后的恶化量,按原值手算)</h4>
+<table>
+<tr><th>组件</th><th>Alb. PSNR Δ</th><th>Rend. PSNR Δ</th><th>Alb. LPIPS 恶化</th><th>伤害排序</th></tr>
+<tr><td>HFT 数据</td><td>−2.58 dB</td><td>−2.44 dB</td><td>+0.036</td><td>🥇 最大</td></tr>
+<tr><td>MLFF</td><td>−2.08 dB</td><td>−1.96 dB</td><td>+0.021</td><td>🥈</td></tr>
+<tr><td>viewpoint embeddings</td><td>−1.01 dB</td><td>−0.83 dB</td><td>+0.011</td><td>🥉</td></tr>
+<tr><td>pixel-space loss</td><td>−0.87 dB</td><td>−1.08 dB</td><td>+0.013</td><td>第四</td></tr>
+</table>
+<p><b>读表结论:</b>四个组件贡献全部为正且量级清晰——<b>数据(HFT)比架构(MLFF)更重要,架构又比训练策略(pixel loss)更重要</b>,符合"数据缺口是首要失败因素"的叙事。定性对照:无 HFT 时"模型无法合成可辨认文字"(图 4);无 MLFF 时纹理碎裂、块状、扭曲;无 pixel loss 时整体可辨但小字明显变形。</p>
+
+<div class="figure"><img src="images/2609.34934/ablation.png" alt="组件消融" loading="lazy">
+<div class="caption"><b>图8(原文 Figure 4)</b> HFT 数据、MLFF、pixel-space loss 的消融可视化(自左至右逐步加回组件):无 HFT 文字不可读;MLFF 恢复图案结构;pixel loss 锐化小字。</div></div>
+
+<h3>12.2 🔍 本笔记的原创发现:正文引用的 Table 4 / Table 5 在 v1 全文中不存在</h3>
+<div class="callout red"><b>论文内部一致性问题(已回原文逐字核实):</b>§4.2 消融分析中,Pixel-space Loss 一段写 "Both <b>Tabs. 3 and 4</b> demonstrate...",Viewpoint Embeddings 一段写 "The ablation results in <b>Tabs. 3 and 5</b> validate..." —— 但 <b>v1 全文(HTML 与 PDF 结构一致)只有 Table 1/2/3,不存在 Table 4 与 Table 5</b>。最可能的解释:作者写作时引用了附录表格,而附录未随 v1 提交。影响:消融结论中只有 Tab.3 可复核,"and 4/5"声称的额外证据当前<b>不可见</b>,等 v2 或附录发布后核对。</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+
+<h3>13.1 横向对比表(固定维度;不可得写 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td><b>TaoTex</b></td><td>2026</td><td>GT 几何 + 1~4 图</td><td>o-voxel + SC-VAE latent(native)</td><td>v-预测 + pixel-space L1/SSIM/LPIPS</td><td>850K(500K+300K+50K HFT)</td><td>200K 步(16×H20)</td><td>—</td><td>—</td><td>单视图 Alb. PSNR 25.15</td><td>❌(仅论文)</td></tr>
+<tr><td>TRELLIS.2</td><td>2026</td><td>单图(几何+材质联合)</td><td>o-voxel / SLAT</td><td>flow matching</td><td>大规模多源</td><td>—</td><td>—</td><td>—</td><td>21.92(单视图 Alb. PSNR)</td><td>✅</td></tr>
+<tr><td>UniTEX</td><td>2026</td><td>几何 + 单图</td><td>view-space(微调 FLUX 多视图)</td><td>扩散</td><td>—</td><td>—</td><td>—</td><td>—</td><td>21.84</td><td>—</td></tr>
+<tr><td>Ink3D</td><td>2026</td><td>几何 + 单图</td><td>view-space(视频扩散轨道扫描)</td><td>扩散</td><td>—</td><td>—</td><td>—</td><td>—</td><td>19.39</td><td>—</td></tr>
+<tr><td>MaterialMVP</td><td>2025</td><td>几何 + 图像</td><td>view-space PBR 扩展</td><td>扩散</td><td>—</td><td>—</td><td>—</td><td>—</td><td>18.90</td><td>—</td></tr>
+<tr><td>ReconViaGen</td><td>2026</td><td>多视图图像(无几何输入)</td><td><a href="3D-20250314-VGGT.html">VGGT</a> 特征重建</td><td>重建式</td><td>—</td><td>—</td><td>—</td><td>—</td><td>仅定性对比</td><td>—</td></tr>
+<tr><td>NaTex</td><td>2026</td><td>固定形状 + 条件</td><td>双流 autoencoder,几何/颜色解耦</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—(未进 TFF/TaoTex 评测)</td><td>—</td></tr>
+</table>
+<p class="note">⚠️ "—" = 论文未报告且本笔记不猜测。商业模型(Tripo、Meshy、Rodin、Hunyuan3D v 系)在正文未具名,仅图 8 对比,无法列表。</p>
+
+<h3>13.2 对比结论(机制层面)</h3>
+<ol>
+<li><b>为什么 native 赢 view-space(本任务上)</b>:view-space 的根本约束是"2D 先验 → 3D 表面"的对齐问题——重叠区鬼影、遮挡区 inpaint、深度边界伪影都是投影的几何后果,无法用更强的 2D 模型根治(UniTEX 用上 FLUX 仍然碎裂)。native 在 3D latent 上一次性生成,全局一致性由表征保证。</li>
+<li><b>为什么 TaoTex 赢 TRELLIS.2(同 backbone)</b>:差距不来自 backbone 而来自三件事——数据补了"简单几何+高频纹理"分布(消融 −2.58dB)、条件特征从单层语义换成多层融合(−2.08dB)、监督从纯 latent 换成 latent+pixel(−0.87dB)。换言之 TRELLIS.2 的生成框架本身没输给谁,是数据与监督配置输了。</li>
+<li><b>多视图为什么别人越做越差、它越做越好</b>:TRELLIS.2 的"逐视图轮换条件"在分视图间没有方位概念,信息相互干扰(19.91 &lt; 21.92);TaoTex 用 viewpoint embedding 把方位变成显式变量,多视图信息是净增(25.48 &gt; 25.15)。</li>
+<li><b>结论的边界</b>:评测仅 30 个 TexVerse 物体;novel 视角的 FID 类指标对"小文字是否清晰"不敏感,与论文主卖点(文字保真)的关联弱——主证据其实是条件视角 PSNR/LPIPS + 定性图。</li>
+</ol>
+
+<h3>13.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>SDS 逐物体优化</td><td>DreamFusion 系</td><td>2D 扩散先验</td><td>慢、过饱和、Janus 多头</td></tr>
+<tr><td>逐视图投影</td><td>TEXTure、Text2Tex</td><td>2D 生成质量高</td><td>跨视图不一致累积</td></tr>
+<tr><td>多视图扩散投影</td><td>MVD 系、UniTEX、Ink3D、MaterialMVP</td><td>同步去噪改善一致性</td><td>投影伪影/遮挡/对齐的结构性问题仍在</td></tr>
+<tr><td>原生 3D(联合几何+纹理)</td><td>SLAT/TRELLIS 系、<a href="3D-20250121-Hunyuan3D.html">Hunyuan3D</a></td><td>统一 latent 联合参数化</td><td>几何-纹理耦合,纹理受几何质量牵连</td></tr>
+<tr><td><b>原生 3D(纹理专用,GT 几何)</b></td><td><b>TaoTex</b>、NaTex</td><td>几何已知,全力做材质保真</td><td>依赖外部几何来源;体素分辨率天花板</td></tr>
+</table>
+
+<h3>13.4 库内交叉链接</h3>
+<ul>
+<li><a href="3D-20241202-TRELLIS.html">TRELLIS 笔记</a>:TaoTex 的 backbone(o-voxel + SC-VAE)即 TRELLIS.2;差异在数据/条件/监督三层改造。</li>
+<li><a href="3D-20260929-TaoFlowForge.html">TaoFlowForge 笔记</a>:同团队的几何侧模型——TFF 产网格、TaoTex 上材质,构成电商 3D 资产的完整链路;两者都建立在 TRELLIS 血统上。</li>
+<li><a href="3D-20250121-Hunyuan3D.html">Hunyuan3D 笔记</a>:工业界另一条"几何+纹理联合生成"路线(腾讯),与 TaoTex 的"纹理专用"定位互补对照。</li>
+<li><a href="3D-20250314-VGGT.html">VGGT 笔记</a>:对比方法 ReconViaGen 的几何特征来源。</li>
+</ul>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+
+<h3>14.1 它的目标场景</h3>
+<p>与 <a href="3D-20260929-TaoFlowForge.html">TaoFlowForge</a> 配套:TFF 负责几何(轻量、拓扑干净、可 UV 展开的网格),TaoTex 负责材质(albedo/roughness/metallic)。官方解读(公众号,2026-09-30)给出的生产约束是资产 &lt;5MB、秒级加载、40fps 端侧渲染。公众号对比图(非论文内容)中还出现了与 Tripo、Meshy、Rodin、Hunyuan3D 商用版本的定性对比。</p>
+
+<h3>14.2 对我们 pipeline 的适配性</h3>
+<table>
+<tr><th>项</th><th>评估</th></tr>
+<tr><td>可用性</td><td>❌ <b>当前不可用</b>——代码与权重均未发布,只能等官方放出;无任何第三方复现</td></tr>
+<tr><td>输入依赖</td><td>需要 <b>GT 质量的几何</b>(o-voxel 兼容);我们 3DGS 系输出需要先网格化(如 GOF/<a href="3D-20240326-2DGS.html">2DGS</a> 提取)才能用</td></tr>
+<tr><td>与数字人主线的关系</td><td>间接价值:① 给重建好的人体/道具网格做材质重生成;② HFT 数据 agent 的思路(MLLM 造几何 + IGM 造纹理 + MLLM 质检)可直接借用到其他数据稀缺任务;③ MLFF"多层特征融合"对任何用 DINO 系特征做条件的任务都有参考价值</td></tr>
+<tr><td>替代方案</td><td>开源侧目前以 TRELLIS.2 自带材质 / Hunyuan3D 系为可用基线;TaoTex 的 +3.2dB Albedo PSNR 差距是否值得等待,取决于对"文字级纹理"的需求强度</td></tr>
+</table>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析 / 总结 / 团队与资源</h2>
+
+<h3>15.1 可改进方向</h3>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px"><h4>[高优先级] ① 零开放资产:论文当前不可复现、不可验证</h4>
+<p><b>问题</b>:无代码、无权重、无 HFT 数据、无评测用的 30 物体清单——四个组件的全部消融数字都只能信纸面。同团队的 TaoFlowForge 已开源推理代码与权重,说明团队具备开放意愿;TaoTex 更应至少开放评测集与推理权重。<b>佐证</b>:项目页仅 arXiv 与团队主页两链接(2026-10-28 解 href 核实)。<b>建议</b>:发布 30 评测物体清单与渲染协议;开源推理权重。</p></div>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px"><h4>[高优先级] ② 内部一致性缺陷:正文引用的 Table 4/5 不存在</h4>
+<p><b>问题</b>:§4.2 两处引用 "Tabs. 3 and 4"、"Tabs. 3 and 5",但 v1 全文只有 Tab.1/2/3(本笔记已逐字核实,见 §12.2)。消融的定量证据链因此不完整。<b>建议</b>:v2 补齐附录表,或修正引用。</p></div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ③ 评测面偏窄:30 物体、单一数据集、无用户研究</h4>
+<p><b>问题</b>:全部定量结论建立在 30 个 TexVerse 物体上,且 TexVerse 同时是训练数据来源之一(300K 训练资产来自 TexVerse)——虽然评测物体应是留出集,但<b>分布同源</b>会系统性偏袒;无 user study 支撑"文字可读性"这类感知宣称;与商业模型的对比几何输入不一致(自己用 Rodin 几何,别人用各自几何)。<b>建议</b>:补充跨数据集(如 Google Scanned Objects)评测与用户研究;商业对比统一几何输入。</p></div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ④ 视角覆盖硬约束在四方位</h4>
+<p><b>问题</b>:viewpoint embeddings 绑定 front/back/left/right 四个规范化方位(90° 水平 × 180° 垂直)。顶视图/底视图、任意角度输入的支持方式未讨论;电商实拍图恰恰常有俯拍角。<b>建议</b>:把离散 embedding 升级为连续视角条件(如相机位姿编码)。</p></div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px"><h4>[低优先级] ⑤ 体素分辨率天花板与小字重建</h4>
+<p><b>问题</b>:作者自承"受限于体素分辨率,微小文字重建仍有瓶颈",更高分辨率带来显存爆炸(§5)。<b>建议</b>:参考稀疏/分层表征,或 latent 上采样后接轻量细化头。</p></div>
+
+<h4>优先级总览</h4>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>一句话</th></tr>
+<tr><td>高</td><td>① 零开放资产</td><td>当前完全不可验证</td></tr>
+<tr><td>高</td><td>② Table 4/5 缺失</td><td>消融证据链不完整</td></tr>
+<tr><td>中</td><td>③ 评测面窄</td><td>30 物体 + 训练/评测同源</td></tr>
+<tr><td>中</td><td>④ 四方位视角约束</td><td>任意视角未支持</td></tr>
+<tr><td>低</td><td>⑤ 分辨率天花板</td><td>作者自承的小字瓶颈</td></tr>
+</table>
+<div class="callout key"><b>个人认为最关键的三点:</b>①(开放)决定这篇论文能不能从"宣称"变成"工具";③(评测面)决定数字的可信半径;④(视角约束)决定它在真实电商拍照条件下的可用性。</div>
+
+<h3>15.2 总结与演进定位</h3>
+<p><b>总结:</b>TaoTex 是一篇"工程组合拳"风格的工业技术报告:不发明新范式,而是把<b>数据(agent 造 HFT)、条件(MLFF 多层融合)、监督(latent→pixel 切换)、输入(视角嵌入)</b>四个层面各补一刀,消融显示四刀全部有效(合计贡献约 6.5dB Albedo PSNR 的组件增益)。数字漂亮,但全部建立在未开放、窄评测的纸面上。</p>
+<p><b>演进定位:</b>它标志着原生 3D 材质生成从"联合几何纹理一起生成"分化出<b>纹理专用</b>分支(几何已知、全力做材质),与 TaoFlowForge(几何专用)配套构成 Taobao3D 的"几何/材质分离"资产管线——这条"分离再组合"的路线与 Hunyuan3D 系"一体化生成"形成工业界两条对照路线。方法论上最值得借鉴的是 <b>HFT 数据 agent</b>:当公开数据缺某类映射时,用 MLLM+生成模型合成针对性数据,再用 MLLM 质检闭环,这套范式与具体任务无关。</p>
+
+<h3>15.3 👥 研究团队与 🔗 资源链接</h3>
+<ul>
+<li><b>Taobao3D Team, Alibaba Group</b>(淘天集团 Meta 技术团队)。一作 Xiuchao Wu 同为 <a href="3D-20260929-TaoFlowForge.html">TaoFlowForge</a> 作者;通讯 Jiangjing Lyu、Chengfei Lyu。</li>
+<li>团队其他开源:MNN(端侧推理引擎)、Object Drawer、TaoAvatar、Dens3R、HRM²Avatar。</li>
+</ul>
+<div class="links">
+  <a href="https://arxiv.org/abs/2609.34934" target="_blank">📄 arXiv(2609.34934,仅 v1)</a>
+  <a href="https://arxiv.org/html/2609.34934v1" target="_blank">📄 HTML 全文</a>
+  <a href="https://xchaowu.github.io/papers/taotex/index.html" target="_blank">🌐 项目主页</a>
+  <a href="https://github.com/alibaba/Taobao3D" target="_blank">💻 团队 GitHub(本模型未开源)</a>
+  <a href="3D-20260929-TaoFlowForge.html">🧊 兄弟笔记:TaoFlowForge(同团队几何模型)</a>
+</div>
+<div class="callout warn" style="margin-top:16px"><b>资源可用性(截至 2026-10-28,已逐链接实测):</b>arXiv abs/HTML、项目主页均存活,仅 v1;<b>无代码、无权重、无数据发布</b>;项目页有视频与对比图展示。后续若开源,本笔记「⚙️ 工程实现细节」章节需按源码重写。</div>
+</section>
+
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-28 · 领域: 3D 生成 / 原生 3D 材质与纹理生成(o-voxel + 扩散)</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

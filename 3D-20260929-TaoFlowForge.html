@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaoFlowForge: 级联流匹配的渐进式原生网格生成(淘宝 TaoFlowForge 开源) | 论文笔记</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2609.37139 · 2026-09-29 · 📊 deep</span>
+    <h1>TaoFlowForge:顶点流 + 拓扑流三级级联,直接生成"生产级"轻量原生网格</h1>
+    <div class="subtitle">TaoFlowForge: Progressive Native Mesh Generation via Cascaded Flow Matching</div>
+    <div class="authors">Xianze Fang* · Qiyuan Feng* · Dongfang Sun · Yan Zhang · Xiuchao Wu · Jingnan Gao · Jiangjing Lyu† · Chengfei Lyu† · Gang Yu(*共同一作,†Project Leaders)</div>
+    <div class="org">Taobao3D Team, Alibaba Group(淘天集团 Meta 技术团队)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2609.37139" target="_blank">📄 arXiv</a>
+      <a href="https://arxiv.org/html/2609.37139v1" target="_blank">📄 HTML 全文</a>
+      <a href="https://alibaba.github.io/Taobao3D/blog/taoflowforge/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/alibaba/Taobao3D" target="_blank">💻 GitHub</a>
+      <a href="https://www.modelscope.cn/models/Taobao3D/TaoFlowForge/files" target="_blank">🤗 ModelScope 权重</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 <b>comments 为空</b>(2026-10-28 核实),按库规范<b>不加会议 badge</b>,论文自述为 Technical Report。<b>代码与权重已开源</b>(GitHub Apache-2.0 + ModelScope,2026-09-30 发布、10-21 更新权重),但<b>仅含推理管线</b>,训练代码与数据清洗 pipeline 未发布——「工程实现细节」章节的训练侧超参无法验证。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">Stage 1:粗结构生成(VAE + flow DiT)</a></li>
+    <li><a href="#s5">Stage 2:Level-MoE 渐进顶点细化</a></li>
+    <li><a href="#s6">Stage 3:逐顶点拓扑生成(边 + 法向)</a></li>
+    <li><a href="#s7">损失函数总表</a></li>
+    <li><a href="#s8">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s9">⚙️ 工程实现细节(源码已验证)</a></li>
+    <li><a href="#s10">实验结果(Toys4K / TE-388)</a></li>
+    <li><a href="#s11">消融实验</a></li>
+    <li><a href="#s12">🔄 同类方法对比分析</a></li>
+    <li><a href="#s13">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s14">可改进方向分析</a></li>
+    <li><a href="#s15">总结与演进定位</a></li>
+    <li><a href="#s16">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>TaoFlowForge 是淘天 Meta 技术团队(Taobao3D Team)的<b>图生原生网格基础模型</b>:不走"隐式场 + Marching Cubes"的弯路,而是把网格生成分解为<b>顶点生成</b>(先 64³ 粗量化顶点、再三专家渐进细化到 512³)与<b>连接关系预测</b>(逐顶点 latent + 双线性亲和度打分出边、法向量定面朝向)两段,全部用 flow matching 实现,直接产出<b>轻量、可编辑、拓扑干净、面朝向正确</b>的三角网格——面向手淘"资产 &lt;5MB、秒级加载、40fps 实时渲染"的生产约束。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把原生网格生成重构成「顶点流(两阶段 coarse-to-fine)+ 拓扑流(逐顶点 latent 同步出边与法向)」的三级级联 flow matching,配合 Bernoulli 白化缩小二值占据目标与高斯源之间的差距、source/destination 双子空间投影消除传递性误连接、以及 80 万规模的高质量拓扑数据集,在 Toys4K 与自建 TE-388 上以显著优势超过开源自回归(EdgeRunner)与扩散(LATO.2) baseline,<b>并已开源推理代码与模型权重</b>。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">0.0655</div><div class="l">Toys4K CD↓(LATO.2 为 0.1553,降 57.8%)</div></div>
+  <div class="stat"><div class="v">≈800K</div><div class="l">清洗后训练网格规模(§3.4)</div></div>
+  <div class="stat"><div class="v">512³</div><div class="l">最终顶点量化分辨率(≤2 万顶点)</div></div>
+  <div class="stat"><div class="v">1.3B</div><div class="l">Stage 1 flow DiT 参数量(30 层)</div></div>
+  <div class="stat"><div class="v">代码+权重</div><div class="l">Apache-2.0,推理管线已开源(2026-09-30)</div></div>
+</div>
+
+<div class="figure"><img src="images/2609.37139/teaser.png" alt="TaoFlowForge teaser" loading="lazy">
+<div class="caption"><b>图1(原文 Figure 1)</b> TaoFlowForge 跨品类(家具、角色、道具)生成的原生网格及其拓扑渲染图;方框内为部分网格的 UV 展开,展示拓扑质量。⚠️ 该图在 arXiv HTML 中无位图导出,本图取自官方 GitHub 仓库 <code>TaoFlowForge/assets/teaser.png</code>。</div></div>
+
+<h3>主要贡献点(论文 §1)</h3>
+<ol>
+<li><b>渐进式原生网格生成框架</b>:网格生成被分解为顶点生成与连接预测;顶点生成再分为"64³ 粗结构"与"64³→512³ 逐层细化"两阶段,缓解八叉树式连续上采样的误差累积。</li>
+<li><b>归一化原始空间细化(Normalized Raw-Space Refinement)</b>:对每层二值占据目标做 Bernoulli 白化(式 3),使其前两阶矩与高斯 FM 源匹配;按分辨率配 3 个参数独立的专家(Level-MoE)。</li>
+<li><b>拓扑感知的共占据损失</b>:soft-OR 的边/面先验(式 7/8 + 面版本),仅在相连顶点被联合预测为空时激活,强化高度数关键顶点。</li>
+<li><b>拓扑流</b>:拓扑 VAE 给每个顶点挂一个 latent(数量恒等于顶点数),双线性亲和度头预测边、法向头直接输出朝向,免后处理矫正。</li>
+<li><b>数据</b>:自建 + 手工 + 公开(Objaverse、TexVerse)三类来源,经"面数分桶均衡采样 → 拓扑统计过滤 → VLM agent 视觉检查"三级清洗,保留约 80 万高质量拓扑网格。</li>
+</ol>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>电商 3D 化的硬性生产约束(论文 §1 与公众号技术解读):手淘/Vision Pro 淘宝/AR 试摆场景要求 3D 资产<b>体积小、拓扑规则、可直接 UV 展开与绑定</b>。SDF 系方法产出的网格"面数过高且拓扑不规则"(excessively high face counts and topologically irregular structures),导致 UV 展开瓶颈、端侧渲染存储开销大、绑定/动画困难。原生网格生成直接对 $(\mathcal{V},\mathcal{F})$ 建模,绕开这些痛点,但已有两条路线各有死穴:</p>
+
+<div class="grid-3">
+  <div class="card"><h4>① 自回归(AR)路线</h4><p>把网格序列化成 1D token 流逐 token 生成(MeshAnything、EdgeRunner、BPT 等)。<b>失败模式</b>:序列降维丢失 3D 空间结构,模型只能"死记硬背";面数上升时"序列爆炸"带来高延迟与不稳定。论文定性指出 EdgeRunner"倾向输出平滑凸包、丢掉细薄或拓扑孤立的结构——四肢消失、头发塌成一整块、五官糊成一团"(§4.2)。</p></div>
+  <div class="card"><h4>② 扩散路线</h4><p>在原生 3D 空间扩散,保留空间信息,但<b>顶点生成不稳定</b>,且大多不显式预测面朝向:LATO.2 缺乏显式面朝向预测、法向不一致需后处理矫正;Nexus 用八叉树层级扩散生成顶点,<b>误差逐层累积</b>导致整体结构不稳(§1、§2)。</p></div>
+  <div class="card"><h4>③ 数据瓶颈</h4><p>"3D 数据天然有限且分散,只有较小比例满足干净拓扑的质量要求"(§1)。干净拓扑数据是指连 ML 训练都"够格"的规则连接资产,需要从公开数据海里筛。</p></div>
+</div>
+
+<div class="callout key"><b>核心洞察(insight):</b>顶点与拓扑的学习难度不对称——顶点位置本质是"带空间结构的占据预测",适合粗到细的体素化生成;连接关系是"逐顶点的局部组合问题",适合在固定顶点上做一次性并行预测。把两者解耦后,每一段的归纳偏置都可以单独设计:顶点段借 TRELLIS.2 的结构先验稳住全局、用 Level-MoE 抗误差累积;拓扑段用双线性 src/dst 打分消除传递性误连接,用法向头把"面朝向"从后处理变成可学习的前向输出。</div>
+
+<div class="callout warn"><b>假设的失效条件:</b>① 顶点量化到格点中心意味着<b>几何精度上限 = 512³ 格分辨率</b>,亚体素细节(刀刃级锐边)天然被量化吃掉;② Stage 2 逐级条件于上级输出,若 Stage 1 粗结构出错(如把两个部件粘连),细化阶段只能在这个错误 support 内补救;③ 面恢复依赖"闭合三环"(式 12),<b>非三角形面片(四边形主导的工业模型)与非流形结构不在表示能力内</b>。这些在 §14 展开。</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<div class="callout warn"><b>⚠️ 命名映射(读代码前必看):</b>论文把三级流水线叫 <b>Stage 1 / 2 / 3</b>(粗顶点 → 细化 → 拓扑);开源代码与 README 叫 <b>Stage 0 / 1 / 2</b>(README.md:18-22)。<b>本笔记统一用论文编号</b>,引用代码时在括号里标注对应文件。对应关系:论文 Stage 1 = 代码 <code>stage0.py</code>(64³ 占据)、论文 Stage 2 = 代码 <code>stage1.py</code>(Level-MoE 细化到 512³)、论文 Stage 3 = 代码 <code>stage2.py</code>(拓扑)。</div>
+
+<p><b>输入</b>:单张 RGB 图像(可选 RGBA);<b>输出</b>:带朝向的三角网格 $\hat{\mathcal{M}}=(\hat{\mathcal{V}},\hat{\mathcal{E}},\hat{\mathcal{F}})$ + 逐顶点法向。三个阶段全部以冻结 DINOv3 提取的图像特征 $c_{img}$ 为条件(§3 原文:"All three stages are conditioned on image features $c_{\mathrm{img}}$ extracted by DINOv3"):</p>
+
+<div class="mermaid">
+flowchart TD
+    IMG["输入图像(1024×1024,可选 RMBG-2.0 抠图)"] --> DINO["冻结 DINOv3-L/16<br/>提取 patch token 特征 c_img"]
+    DINO --> S1
+    subgraph S1["Stage 1 粗结构生成(64³)"]
+        S1A["占据 VAE:64³ ↔ 16³×8 latent"] --> S1B["30 层 flow DiT(≈1.3B)<br/>cross-attn 到 DINOv3 token"]
+        S1B --> S1C["64³ 二值占据 = 粗量化顶点"]
+    end
+    S1 --> S2
+    subgraph S2["Stage 2 Level-MoE 顶点细化(64³→512³)"]
+        S2A["专家A: 64³→128³"] --> S2B["专家B: 128³→256³"] --> S2C["专家C: 256³→512³"]
+        S2D["Bernoulli 白化 +<br/>加权BCE/边/面共占据损失"] -.训练.-> S2A
+    end
+    S2 -->|"被占据 cell 中心 = 顶点 V(≤20000)"| S3
+    subgraph S3["Stage 3 拓扑流(逐顶点)"]
+        S3A["32 层 latent flow DiT<br/>+ 3D voxel RoPE 注入顶点坐标"] --> S3B["拓扑解码器:src/dst 双投影<br/>bilinear 亲和度 → V×V 边 logit"]
+        S3B --> S3C["闭合三环 → 面;法向头 → 定朝向"]
+    end
+    S3 --> POST["后处理: Liepa 补洞 +<br/>最小割法向校正 → mesh.obj/glb"]
+    style IMG fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style DINO fill:#e0e7ff,stroke:#6366f1,color:#312e81
+    style S1C fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style S3C fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style POST fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+
+<div class="figure"><img src="images/2609.37139/pipeline_v2.png" alt="TaoFlowForge pipeline" loading="lazy">
+<div class="caption"><b>图2(原文 Figure 2)</b> 官方总览图。E/D 为各阶段编/解码器,F 为 flow matching 模型:Stage 1 在 64³ 生成粗量化顶点;Stage 2 从 64³ 渐进细化到 512³;Stage 3 基于顶点预测连接关系与法向,一步式解码出带朝向的三角面。</div></div>
+
+<h3>符号表(与论文 §3 一致)</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>维度 / 取值</th></tr>
+<tr><td>$\mathcal{V},\mathcal{E},\mathcal{F}$</td><td>顶点 / 边 / 面集合;$\hat{}$ 表示生成结果</td><td>$V=|\hat{\mathcal{V}}|$,推理上限 20,000(代码 <code>max_vertices</code>)</td></tr>
+<tr><td>$c_{img}$</td><td>DINOv3-L/16 图像 patch token 特征(三阶段共用,分辨率各为 512/768/1024)</td><td>$(1,1024/2304/4096,1024)$(源码推得)</td></tr>
+<tr><td>$\mathbf{O}_{64}$</td><td>Stage 1 输出的粗占据体素</td><td>$\{0,1\}^{1\times64\times64\times64}$</td></tr>
+<tr><td>$\mathbf{z}_1$</td><td>Stage 1 占据 VAE 隐变量</td><td>$\mathbb{R}^{8\times16\times16\times16}$($d_1=8$,§4.1)</td></tr>
+<tr><td>$\mathbf{y}^{(g)}$</td><td>Stage 2 父 cell $g$ 的 8 个子 cell 占据标签</td><td>$\{0,1\}^8$</td></tr>
+<tr><td>$\rho_R$</td><td>分辨率 $R$ 的占据率(训练集上估计一次,随 $R$ 单调下降)</td><td>$\in(0,1)$</td></tr>
+<tr><td>$\widetilde{\mathbf{y}}^R$</td><td>Bernoulli 白化后的细化目标</td><td>零均值单位方差</td></tr>
+<tr><td>$f_R$</td><td>分辨率 $R$ 的 Level-MoE 专家(28 层 transformer)</td><td>输出 $\mathbb{R}^8$ logits</td></tr>
+<tr><td>$w_c,\alpha$</td><td>Stage 2 加权 BCE:空间权重(occupied=1、近邻 $w_{near}$、远 $w_{far}$)与正类权重 $\alpha&gt;1$</td><td>数值原文未给</td></tr>
+<tr><td>$\mathbf{h}_i,\mathbf{f}_i$</td><td>Stage 3 顶点输入特征 / 共享 edge MLP 输出</td><td>$\mathbb{R}^d \to \mathbb{R}^{d_e}$</td></tr>
+<tr><td>$\mathbf{s}_i,\mathbf{d}_i$</td><td>source / destination 嵌入($W_s,W_d$ 无偏置投影)</td><td>$\mathbb{R}^{d_e}$</td></tr>
+<tr><td>$a_{ij}$</td><td>对称化边 logit,$\hat{\mathcal{E}}$ 由 $\sigma(a_{ij})$ 阈值化</td><td>$V\times V$ 矩阵</td></tr>
+<tr><td>$\hat{\mathbf{n}}_i$</td><td>预测的逐顶点单位法向(决定面绕序)</td><td>$\mathbb{R}^3$</td></tr>
+<tr><td>$\mathbf{z}_3$</td><td>Stage 3 逐顶点 latent(数量恒等于 $V$,不重编码坐标)</td><td>代码:<code>latent_dim=32</code>(stage2.py:21)</td></tr>
+<tr><td>$v_\theta,v_\psi$</td><td>Stage 1 / Stage 3 的速度场(flow DiT)</td><td>—</td></tr>
+</table>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>Stage 1:粗结构生成(64³ 占据,代码 <code>stage0.py</code>)</h2>
+
+<h3>4.1 思路</h3>
+<p>低分辨率下先把"大形"稳住。论文明确说 Stage 1 与 TRELLIS.2 的第一阶段<b>同构</b>,直接从其预训练 checkpoint 初始化再微调("initialize it from the corresponding pretrained checkpoint and fine-tune it directly",§3.1)——用成熟开源模型的图像→结构先验兜底全局正确性,把学习压力转移给后续细化阶段。</p>
+
+<h3>4.2 网络结构表(论文 §3.1/§4.1 + 源码核实)</h3>
+<table>
+<tr><th>组件</th><th>输入 → 输出</th><th>关键配置</th><th>出处</th></tr>
+<tr><td>DINOv3-L/16 条件器</td><td>图像 512×512 → $(1,1024,1024)$ patch token</td><td>冻结;丢 CLS + 4 register token;bf16</td><td><code>dino.py:21-47,89-90</code>;<code>stage0.py:35</code></td></tr>
+<tr><td>占据 VAE(3D 卷积)</td><td>$\{0,1\}^{64^3}$ ↔ latent $(8,16^3)$</td><td>解码器通道 (512,128,32),两次 pixel_shuffle_3d 上采样 16→32→64;fp16 权重</td><td>论文 §4.1;<code>ss_vae.py:143,150,179-194</code></td></tr>
+<tr><td>Latent flow DiT</td><td>$(1,8,16,16,16)$ 噪声 → 速度场</td><td>30 层、宽 1536、12 头、MLP ratio 5.3334;3D RoPE;share_mod adaLN;QK-RMSNorm;≈1.3B 参数</td><td>论文 §4.1;<code>ss_flow.py:390-397</code></td></tr>
+<tr><td>采样器</td><td>积分 50 步 → latent</td><td>Euler velocity ODE;CFG=7.5(负条件=全零 token);t_shift=2.718(≈e);start_time=0.013</td><td><code>flow.py:86-103</code>;<code>config.py:18-20</code></td></tr>
+<tr><td>后处理</td><td>logits → 顶点坐标 $(N_0,3)$</td><td>阈值 0.5 + "mid" 1D 游程滤波(keep=2)+ 确定性 FPS 截断到 ≤15,000 cell</td><td><code>stage0.py:137-229</code>;<code>config.py:21-24</code></td></tr>
+</table>
+
+<h3>4.3 数学形式化</h3>
+<p>占据 VAE 的编码器产出对角高斯近似后验:</p>
+<div class="equation">$$(\bm{\mu}_{1},\bm{\sigma}_{1})=E_{1}(\mathbf{O}_{64}),\qquad q_{1}(\mathbf{z_{1}}\mid\mathbf{O}_{64})=\mathcal{N}\!\left(\bm{\mu}_{1},\operatorname{diag}(\bm{\sigma}_{1}^{2})\right)$$<span class="tag">(式 1)</span></div>
+<p>flow DiT 以 $\mathbf{z}_1^0\sim\mathcal{N}(0,I)$、$t\in(0,1)$、线性插值 $\mathbf{z}_1^t=(1-t)\mathbf{z}_1^0+t\mathbf{z}_1$ 训练条件速度场:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{S1\_DiT}}=\mathbb{E}\!\left[\left\|v_{\theta}(\mathbf{z}_{1}^{t},t,c_{\mathrm{img}})-(\mathbf{z}_{1}-\mathbf{z}_{1}^{0})\right\|_{2}^{2}\right]$$<span class="tag">(式 2)</span></div>
+
+<h3>4.4 前向流程(推理,逐步)</h3>
+<ol>
+<li>图像预处理:RGBA 白底合成 →(可选)RMBG-2.0 抠图 → 方形 padding → LANCZOS resize 1024²(<code>image.py:84-98</code>)。</li>
+<li>DINOv3 提特征(Stage 1 用 512² 输入 → 1024 token)。</li>
+<li>50 步 Euler 积分速度场,CFG 每步两次前向(uncond=全零条件)后线性组合(<code>flow.py:86-96</code>)。</li>
+<li>latent 反归一化(checkpoint 内置 channel mean/std)→ VAE 解码 → sigmoid 占据概率。</li>
+<li>阈值 0.5 二值化 → "mid" 滤波(沿轴游程的边界保护 2 格 + 中线保留,实际不是 3D local-max,见 §9 差异清单)→ 确定性 FPS 截到 ≤15,000 cell。</li>
+</ol>
+
+<h3>4.5 监督信号</h3>
+<p>VAE 重建项 + KL(论文未单列展开);DiT 端为式 2 的速度匹配损失。<b>本阶段图像条件只通过 cross-attention 注入,时间步通过 adaLN 注入</b>(源码:<code>ss_flow.py:285-292,314-325</code>)。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>Stage 2:Level-MoE 渐进顶点细化(64³→512³,代码 <code>stage1.py</code>)</h2>
+
+<h3>5.1 思路</h3>
+<p>这是全文最核心的设计决策:<b>不做一步到位的连续顶点生成</b>,而是在原始占据空间里做三次 2× 上采样($64^3\to128^3\to256^3\to512^3$),每级由一个<b>参数独立</b>的 28 层 transformer 专家负责(§4.1)。为什么不用一个统一模型?论文的机制解释:随分辨率升高,占据率 $\rho_R$ 单调下降,各级占据分布"逐渐稀疏且统计特性不同"(progressively sparser and statistically distinct),单一模型要在差异巨大的条件分布间折中;分专家 = 解耦"整体骨架"与"微观细节"的控制,缓解八叉树"一步错步步错"的误差累积(§3.2 Level-MoE)。</p>
+
+<h3>5.2 数学形式化:Bernoulli 白化 + 端点诱导速度</h3>
+<p>二值目标 $\mathbf{y}^R$ 的统计随分辨率剧烈变化,与高斯 FM 源尺度差异大。定义占据率 $\rho_R=\mathbb{E}[y^{(g)}]$(训练集估计一次),做白化:</p>
+<div class="equation">$$\widetilde{\mathbf{y}}^{R}=\frac{\mathbf{y}^{R}-\rho_{R}}{\sqrt{\rho_{R}(1-\rho_{R})}}$$<span class="tag">(式 3)</span></div>
+<p>使目标零均值单位方差、与标准高斯源前两阶矩匹配。FM 路径与专家前向:</p>
+<div class="equation">$$\mathbf{x}_{t}^{R}=(1-t)\bm{\epsilon}+t\widetilde{\mathbf{y}}^{R},\quad \bm{\epsilon}\sim\mathcal{N}(0,I);\qquad \mathbf{a}_R=f_R(\mathbf{x}_t^R,t,c_{\mathrm{img}})\in\mathbb{R}^{8},\quad \hat{\mathbf{y}}^R=\sigma(\mathbf{a}_R)$$<span class="tag">(式 4)</span></div>
+<p>推理时把预测白化回归一化空间,用<b>端点诱导速度</b>积分($t&lt;1$ 防端点奇异),再映回占据空间阈值化:</p>
+<div class="equation">$$v_{\theta_{R}}(\mathbf{x}_{t}^{R},t)=\frac{\widetilde{\hat{\mathbf{y}}}^{R}-\mathbf{x}_{t}^{R}}{1-t},\qquad t<1$$<span class="tag">(式 5)</span></div>
+
+<h3>5.3 拓扑感知共占据损失(论文图 3)</h3>
+<p>主项是带空间加权的 BCE($\alpha&gt;1$ 提升稀有占据 cell 召回;$w_c$:占据=1、半径 $r$ 内近邻=$w_{near}$、远空 cell=$w_{far}$,$w_{near}&gt;w_{far}$):</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{bce}}=\frac{\sum_{c}w_{c}\,\mathrm{ce}_{c}}{\sum_{c}w_{c}},\qquad\mathrm{ce}_{c}=-\big[\alpha\,y_{c}\log p_{c}+(1-y_{c})\log(1-p_{c})\big]$$<span class="tag">(式 6)</span></div>
+<p><b>边先验(soft-OR 共占据)</b>:仅当真实边的两端点被<b>联合</b>预测为空时惩罚;按顶点聚合后,<b>度数高的顶点自动获得更大权重</b>——结构上重要的连接点被重点保护:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{edge}}=\frac{1}{|\mathcal{E}|}\sum_{(i,j)\in\mathcal{E}}(1-p_{i})(1-p_{j})=\frac{1}{|\mathcal{E}|}\sum_{i\in\mathcal{V}}\Big(\sum_{j\in N(i)}(1-p_{j})\Big)(1-p_{i})$$<span class="tag">(式 7/8)</span></div>
+<p><b>面先验</b>:三元版 soft-OR,$\mathcal{L}_{\mathrm{face}}=\frac{1}{|\mathcal{F}|}\sum_{(i,j,k)\in\mathcal{F}}(1-p_i)(1-p_j)(1-p_k)$(原文未编号)。Stage 2 总目标:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{S2}}=\mathbb{E}_{R,t}\!\left[\mathcal{L}_{\mathrm{bce}}+\lambda_{\mathrm{e}}\mathcal{L}_{\mathrm{edge}}+\lambda_{\mathrm{f}}\mathcal{L}_{\mathrm{face}}\right]$$<span class="tag">(式 9)</span></div>
+
+<div class="figure"><img src="images/2609.37139/loss_diagrams_update.png" alt="topology-aware losses" loading="lazy">
+<div class="caption"><b>图3(原文 Figure 3)</b> Stage 2 的拓扑感知共占据先验:边/面先验只在相连顶点被联合预测为空时激活,通过累积约束强化高度数关键顶点(论文 §3.2)。</div></div>
+
+<h3>5.4 网络结构与推理流程(源码核实)</h3>
+<table>
+<tr><th>组件</th><th>配置</th><th>出处</th></tr>
+<tr><td>专家数 / 分工</td><td>3 个 <code>RawOctreeDenoiser</code>,负责 level 6/7/8(即 64³→128³→256³→512³);<b>硬路由</b>(按 level 精确匹配,非学习门控)</td><td><code>stage1.py:20,52-59</code></td></tr>
+<tr><td>每个专家</td><td>28 层、宽 1536、12 头、MLP 5.3334;输入 <code>Linear(8,1536)</code>(8 维八叉子占据为 token);输出 <code>Linear(1536,8)</code></td><td><code>octree_dit.py:243-282</code></td></tr>
+<tr><td>条件注入</td><td>时间 + 层深 embedding 拼接进共享 adaLN(<code>cond_fusion_mode="concat"</code>);图像 cross-attn;归一化坐标 3D RoPE</td><td><code>octree_dit.py:38-39,269,327-329</code></td></tr>
+<tr><td>采样</td><td>30 步、CFG=7.0、t_shift=1.0;对 x1 预测的 rectified-flow 欧拉步(<code>coefficient=(t_next−t)/max(1−t,1e−3)</code>)</td><td><code>config.py:33-37</code>;<code>stage1.py:239-244</code></td></tr>
+<tr><td>训练侧线索</td><td>checkpoint 元数据:<code>prediction_target="occupancy", supervision_mode="x1_logit_bce"</code></td><td><code>stage1.py:351-356</code></td></tr>
+<tr><td>顶点落地</td><td>cell 中心 $(coord+0.5)/2^{level}\times2-1$;FPS 截 ≤20,000;归一化后 snap 回 512 格点</td><td><code>octree_dit.py:14-17</code>;<code>stage1.py:270-308</code></td></tr>
+</table>
+<p><b>显存分页细节</b>:三个专家推理时逐个上 GPU、其余放回 CPU(<code>stage1.py:61-96</code>)——"Level-MoE"在工程上是分页机制而非并行 MoE。</p>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>Stage 3:逐顶点拓扑生成(代码 <code>stage2.py</code>)</h2>
+
+<h3>6.1 思路</h3>
+<p>顶点位置 $\hat{\mathcal{V}}$ 在 Stage 2 已确定,Stage 3 的核心是<b>"保持 V 不变的一步式拓扑推理"</b>:拓扑 VAE 不做空间压缩,给每个顶点挂 exactly 一个 latent code(latent 数恒等于顶点数),每个 latent 同时编码"该顶点如何与他人连接"与"该点处表面法向";顶点坐标不再重编码,而是通过 3D voxel RoPE 注入 DiT("each token is assigned the coordinate of its corresponding vertex",§3.3)。</p>
+
+<div class="callout key"><b>为什么用 src/dst 双子空间打分?</b>朴素做法是对两端点特征在单一共享投影下做对称内积 $\langle W\mathbf{f}_i,W\mathbf{f}_j\rangle$,但论文指出这<b>偏爱传递性连接</b>:"A 与 B 相似、B 与 C 相似会把 (A,C) 的分数也推高",产生大量误连接(§3.3)。改成把特征分别投影到 source / destination 两个独立子空间再交叉点积,再对称化,从机制上拆掉传递性捷径。</div>
+
+<h3>6.2 数学形式化</h3>
+<p>共享 edge MLP $g_e$ 把顶点特征 $\mathbf{h}_i\in\mathbb{R}^d$ 映到 $\mathbf{f}_i$,两个独立无偏置投影:</p>
+<div class="equation">$$\mathbf{s}_{i}=W_{s}\mathbf{f}_{i},\qquad\mathbf{d}_{i}=W_{d}\mathbf{f}_{i},\qquad W_{s},W_{d}\in\mathbb{R}^{d_{e}\times d_{e}}$$<span class="tag">(式 10)</span></div>
+<p>边无向,对称化后得到 $V\times V$ logit 矩阵(批量矩阵乘法一次并行产出全部顶点对):</p>
+<div class="equation">$$a_{ij}=\frac{Q_{ij}+Q_{ji}}{2}=\frac{\mathbf{s}_{i}^{\top}\mathbf{d}_{j}+\mathbf{s}_{j}^{\top}\mathbf{d}_{i}}{2}+b$$<span class="tag">(式 11)</span></div>
+<p>面 = 边图中的<b>闭合三环</b>:</p>
+<div class="equation">$$\hat{\mathcal{F}}=\{(i,j,k):i<j<k,\ (i,j),(j,k),(k,i)\in\hat{\mathcal{E}}\}$$<span class="tag">(式 12)</span></div>
+<p>面朝向由预测的逐顶点法向直接决定(对比 LATO.2 的事后矫正):</p>
+<div class="equation">$$(i,j,k)\mapsto\begin{cases}(i,j,k),&\mathbf{g}_{ijk}\cdot(\hat{\mathbf{n}}_i+\hat{\mathbf{n}}_j+\hat{\mathbf{n}}_k)\geq 0\\(i,k,j),&\text{otherwise}\end{cases},\quad \mathbf{g}_{ijk}=(\mathbf{v}_j-\mathbf{v}_i)\times(\mathbf{v}_k-\mathbf{v}_i)$$<span class="tag">(式 13)</span></div>
+<p>拓扑 VAE 目标(连接项为合法上三角 logit 上的类别均衡 BCE,法向为 cosine 损失,KL 约束逐顶点后验):</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{S3\_VAE}}=\mathcal{L}_{\mathrm{edge}}+\lambda_{n}\mathcal{L}_{\mathrm{normal}}+\lambda_{r}\mathcal{L}_{\mathrm{KL}}$$<span class="tag">(式 14)</span></div>
+<p>逐顶点 latent 的 flow DiT(position-aware,坐标经 voxel RoPE 注入每个 block):</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{S3\_DiT}}=\mathbb{E}\!\left[\left\|v_{\psi}(\mathbf{z}^{t}_{3},t,\hat{\mathcal{V}},c_{\mathrm{img}})-(\mathbf{z}_{3}-\mathbf{z}^{0}_{3})\right\|_{2}^{2}\right],\qquad\mathbf{z}^{t}_{3}=(1-t)\mathbf{z}^{0}_{3}+t\mathbf{z}_{3}$$<span class="tag">(式 15)</span></div>
+
+<h3>6.3 网络结构与推理流程(源码核实)</h3>
+<table>
+<tr><th>组件</th><th>配置</th><th>出处</th></tr>
+<tr><td>逐顶点 latent</td><td>维度 32;数据集统计归一化(std clamp 下限 0.1)</td><td><code>stage2.py:21-22,46-48</code></td></tr>
+<tr><td>Latent flow DiT(RefineDiT)</td><td><b>28 层</b>、宽 1536、24 头;adaLN-Zero;voxel RoPE;输入 1024² 图像 → 4096 条件 token</td><td><code>dit.py:263-285</code>;<code>stage2.py:26</code></td></tr>
+<tr><td>拓扑解码器</td><td>latent 32 → 投影到 hidden 1024 → 6 层 pre-norm self-attn(8 头);边特征取 hidden[512:768],MLP 256→1024→512 后 src/dst 双投影,<code>bmm</code> + bias 再对称化,对角置 −1e9</td><td><code>topology_decoder.py:59-114</code></td></tr>
+<tr><td>法向头</td><td>1024→256→3 MLP + L2 归一化</td><td><code>topology_decoder.py:84-88,115</code></td></tr>
+<tr><td>取面</td><td>$\sigma(logits)&gt;0.5$ 得布尔边矩阵 → 枚举共同邻居组三角形;上限 100,000 面,边过密时按度数 topk 稀疏化;过滤面积 &lt;1e−10 退化面</td><td><code>topology_decoder.py:129-189</code>;<code>stage2.py:198-205</code></td></tr>
+<tr><td>采样</td><td>50 步 Euler、CFG=3.0、t_shift=1.0</td><td><code>config.py:46-48</code></td></tr>
+</table>
+
+<div class="callout red"><b>⚠️ 论文 vs 代码差异(本笔记发现):</b>论文 §4.1 写 Stage 3 是 <b>"32-layer latent flow DiT"</b>,但发布代码 <code>RefineDiT</code> 的默认深度为 <b>depth=28</b>(<code>dit.py:272</code>),且 checkpoint 加载是严格校验(model keys/shape/architecture metadata 必须匹配,README.md:59)。即<b>论文所述的 32 层与发布权重实际结构(28 层)不一致</b>——要么论文写的是内部更新版、要么笔误,按发布代码为准并标记 <span class="uncertain">⚠️【待核实】论文 32 层 vs 代码 28 层</span>。</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>损失函数总表</h2>
+<table>
+<tr><th>阶段</th><th>损失</th><th>公式</th><th>权重 / 超参(真值)</th><th>作用</th></tr>
+<tr><td>Stage 1</td><td>$\mathcal{L}_{\mathrm{S1\_DiT}}$</td><td>式 2,速度场 MSE</td><td>无显式权重</td><td>64³ 粗占据 latent 的 flow matching</td></tr>
+<tr><td>Stage 2</td><td>$\mathcal{L}_{\mathrm{bce}}$</td><td>式 6,空间加权 BCE</td><td>$\alpha&gt;1$,$w_{near}&gt;w_{far}$,半径 $r$ —— <b>数值原文与代码均不可得</b>(训练代码未发布)</td><td>处理占据/空白类别不均衡,近邻带重点防伪阴性</td></tr>
+<tr><td>Stage 2</td><td>$\mathcal{L}_{\mathrm{edge}}$</td><td>式 7/8,soft-OR 共占据</td><td>$\lambda_e$,按分辨率设置,数值未给</td><td>保护 GT 边端点,强化高度数顶点</td></tr>
+<tr><td>Stage 2</td><td>$\mathcal{L}_{\mathrm{face}}$</td><td>未编号,三元 soft-OR</td><td>$\lambda_f$,数值未给</td><td>保护 GT 面的三个顶点</td></tr>
+<tr><td>Stage 3</td><td>$\mathcal{L}_{\mathrm{edge}}$(VAE)</td><td>合法上三角 logit 的类别均衡 BCE</td><td>式 14 主项</td><td>逐顶点对连接关系监督</td></tr>
+<tr><td>Stage 3</td><td>$\mathcal{L}_{\mathrm{normal}}$</td><td>顶点法向 cosine 损失</td><td>$\lambda_n$,数值未给</td><td>法向头监督 → 决定面朝向</td></tr>
+<tr><td>Stage 3</td><td>$\mathcal{L}_{\mathrm{KL}}$</td><td>逐顶点后验高斯正则</td><td>$\lambda_r$,数值未给</td><td>VAE 正则</td></tr>
+<tr><td>Stage 3</td><td>$\mathcal{L}_{\mathrm{S3\_DiT}}$</td><td>式 15,速度场 MSE</td><td>无显式权重</td><td>逐顶点拓扑 latent 的 flow matching</td></tr>
+</table>
+<p class="note">⚠️ 所有损失权重($\lambda_e,\lambda_f,\lambda_n,\lambda_r$)与 BCE 内部超参($\alpha,w_{near},w_{far},r$)<b>论文未给数值、训练代码未发布</b>,无法验证,此处不做任何"合理估计"(按库规范禁止编造)。训练侧仅能从 checkpoint 元数据窥见 Stage 2 用 <code>x1_logit_bce</code> 监督模式(<code>stage1.py:351-356</code>)。</p>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>8.1 训练流程(按论文 §3 重构;训练代码未开源,标注处为推断)</h3>
+<div class="mermaid">
+flowchart TD
+    DATA["三类数据源:淘宝内部资产 + 手工补品类 +<br/>Objaverse / TexVerse"] --> CLEAN["三级清洗:<br/>①面数分桶均衡采样 ②拓扑统计过滤<br/>(non-manifold 比例/度数分布/空间均匀性) ③VLM agent 视觉检查"]
+    CLEAN --> D800["≈80 万高质量拓扑网格"]
+    D800 --> REN["PBR 渲染器 360° 环视多视图<br/>(图像-网格配对监督)"]
+    REN --> T1["训练 Stage 1:<br/>占据 VAE(式1) + flow DiT(式2)<br/>从 TRELLIS.2 一阶段 checkpoint 初始化微调"]
+    REN --> T2["训练 Stage 2:<br/>逐分辨率估计 ρ_R → Bernoulli 白化(式3)<br/>加权BCE + 边/面共占据(式6-9)"]
+    REN --> T3["训练 Stage 3:<br/>拓扑 VAE(式14:边BCE+法向cos+KL)<br/>再训 latent flow DiT(式15, voxel RoPE)"]
+    T1 -.冻结 DINOv3 提供 c_img.-> T2
+    style DATA fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style D800 fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<p class="note">训练超参(学习率 / batch / 步数 / EMA)<b>论文未给、训练代码未发布</b>。仅知:Stage 1 从 TRELLIS.2 一阶段 checkpoint 初始化(§3.1);Stage 2 各分辨率损失权重"per resolution"设置(§3.2);Stage 0 的 checkpoint 内含 EMA 权重副本(<code>stage0.py:299,314-329</code>),说明训练用了 EMA。</p>
+
+<h3>8.2 推理流程(源码已验证,<code>pipeline.py:369-528</code>)</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入图像"] --> PRE["预处理: RGBA白底合成 → RMBG-2.0 抠图(可选)<br/>→ 方形padding → LANCZOS 1024²"]
+    PRE --> ST0["Stage 0(论文Stage1): DINOv3@512² → 1024 token<br/>50步Euler, CFG 7.5, t_shift 2.718<br/>VAE解码 → 阈值0.5 → mid滤波 → FPS≤15000"]
+    ST0 -->|"stage0.npz: 64³ 占据坐标 (N0,3)"| ST1["Stage 1(论文Stage2): DINOv3@768² → 2304 token<br/>专家逐层 6→7→8(每层30步, CFG 7.0)<br/>专家分页上下GPU<br/>→ 512³ 顶点, FPS≤20000, snap 回格点"]
+    ST1 -->|"stage1.npz: 顶点 (N1,3), N1≤20000"| ST2["Stage 2(论文Stage3): DINOv3@1024² → 4096 token<br/>50步, CFG 3.0 → 逐顶点latent (N,32)<br/>拓扑解码: 边logit (N,N) 阈值0.5<br/>→ 闭合三环取面 + 法向定绕序"]
+    ST2 --> RAW["mesh_raw.obj(≤100000面)"]
+    RAW --> POST["后处理: 边环补面 → Liepa 最小权三角化补洞<br/>→ 射线投票+最小割法向校正<br/>→ mesh.obj / 归一化 mesh.glb"]
+    style IN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style POST fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+<p class="note">工程细节:默认 <code>--offload auto</code>,逐 stage 把不活动模型移回 CPU 降峰值显存(<code>pipeline.py:222-238</code>);每个 stage 边界落盘 NPZ(含 NumPy/CPU/CUDA RNG 状态),支持 <code>--resume-from</code> 断点续跑;全程固定 seed=42 可复现。</p>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>⚙️ 工程实现细节(源码已验证)</h2>
+
+<p>本章数字全部来自 <code>github.com/alibaba/Taobao3D</code> 的 <code>TaoFlowForge/</code> 目录(2026-10-28 拉取 main 分支 zip,README 最后更新 2026-10-21)。<b>发布内容 = 推理管线 + CLI + Gradio demo + Python API;训练代码、数据清洗 pipeline、测试集均未随仓库发布</b>(论文 Abstract 承诺 "release all the code and weights together with a portion of our test dataset",当前兑现的是推理代码 + ModelScope 权重,测试集论文 §4.1 称 "will release later")。</p>
+
+<h3>9.1 推理真实超参(config.py,全部带行号)</h3>
+<table>
+<tr><th>参数</th><th>值</th><th>出处</th></tr>
+<tr><td>Stage 0 采样步数 / CFG / t_shift / 阈值 / max_cells</td><td>50 / 7.5 / 2.718 / 0.5 / 15,000</td><td><code>config.py:18-24</code></td></tr>
+<tr><td>Stage 1 步数 / CFG / vc_cfg / t_shift / max_vertices</td><td>30 / 7.0 / 1.0(未接线,见 9.4) / 1.0 / 20,000</td><td><code>config.py:33-38</code></td></tr>
+<tr><td>Stage 2 步数 / CFG / t_shift / 边阈值</td><td>50 / 3.0 / 1.0 / 0.5</td><td><code>config.py:46-49</code></td></tr>
+<tr><td>图像尺寸 / seed / 补洞开关</td><td>1024 / 42 / 默认开</td><td><code>config.py:60-66</code></td></tr>
+<tr><td>DINOv3 变体</td><td>DINOv3-L/16(24 层、1024 宽、16 头、4 register),三阶段输入分辨率 512/768/1024 → 1024/2304/4096 条件 token</td><td><code>dino.py:21-47,89-90</code>;<code>stage0.py:35</code>;<code>stage1.py:31</code>;<code>stage2.py:26</code></td></tr>
+<tr><td>推理精度</td><td>各阶段 autocast bf16;attention 固定 bf16;VAE decoder fp16;RMBG 与图像处理 fp32</td><td><code>stage0.py:56-60</code>;<code>attention.py:49</code>;<code>ss_vae.py:188-194</code></td></tr>
+<tr><td>依赖</td><td>torch 2.5.1 / transformers 4.57.3 / trimesh 4.4.7 / open3d 0.19.0 / embreex 4.4.0;flash-attn 不在 requirements(可选导入,优先级 fa3&gt;fa2&gt;sdpa)</td><td><code>requirements.txt:1-14</code>;<code>attention.py:15-49</code></td></tr>
+</table>
+
+<h3>9.2 资源账</h3>
+<ul>
+<li><b>权重</b>:3 个 checkpoint(<code>stage0.pt / stage1.pt / stage2.pt</code>),托管于 ModelScope;加载为严格校验(键、形状、架构元数据)。⚠️ README.md:48 写 "Prepare the <b>five</b> released checkpoint files",但目录树只有 3 个——README 内部矛盾,<b>实际只需 3 个</b>。</li>
+<li><b>显存</b>:论文与 README 均未给显存数字。工程上有两级降峰值措施:stage 级 offload(不活动模型回 CPU,<code>pipeline.py:222-238</code>)+ Stage 1 三专家逐个分页(<code>stage1.py:61-96</code>)。<span class="uncertain">⚠️【待核实】实际峰值显存,需在目标卡上实测</span>。</li>
+<li><b>耗时</b>:论文未报告推理耗时;代码把各 stage 秒数写入 <code>metadata.json</code>(<code>pipeline.py:438-518</code>),无官方基准数字。</li>
+<li><b>参数量</b>:论文只给 Stage 1 DiT ≈1.3B;Stage 2(3×28 层专家,宽 1536)与 Stage 3(28 层 DiT 宽 1536 + 解码器)参数量论文未给。<span class="uncertain">⚠️【推测】按 28 层 × 宽 1536 × MLP 5.33 估算每专家/每 DiT 约 0.6-0.8B 量级,全模型合计约 4B+;以实际权重文件为准</span>。</li>
+</ul>
+
+<h3>9.3 后处理链(论文只字未提,源码独有)</h3>
+<ol>
+<li><b>边环补面</b>:meshflow 风格的边界边环直接三角化(≤4 边环),<code>tools/mesh_hole_fill.py:1783</code>,调用参数 <code>fill_quad_rings=True, ring_max_n=4</code>(<code>postprocess.py:85-90</code>)。</li>
+<li><b>Liepa 最小权三角化补洞</b>:去重面 → 裂缝拉链缝合 → ≤6 边多边形填充 + Liepa 补洞(不移动原始顶点),<code>tools/mesh_hole_fill.py:879,1554</code>。</li>
+<li><b>法向全局校正</b>:射线可见性投票 + 外壳视角投票生成朝向证据,建面对偶图做 gauge 固定 + 最小割翻转(<code>tools/normal_correct.py:254,283,457,515</code>);面数 &gt;100,000 直接跳过,可见正面比例下降 &gt;0.02 则整体回退(<code>postprocess.py:21-22,33-45</code>)。</li>
+<li>导出 <code>mesh.obj</code> 与归一化到 $[-0.5,0.5]^3$ 的 <code>mesh.glb</code>(<code>postprocess.py:146-175</code>)。</li>
+</ol>
+<div class="callout warn"><b>对论文结论的影响:</b>论文图 4/5 的"干净拓扑"是<b>拓扑生成 + 补洞/法向校正后处理</b>的共同结果;<code>--no-fill-holes</code> 可保留 Stage 2 直出的原始拓扑(<code>mesh_raw.obj</code>)。论文未说明评测指标(Table 1)用的是 raw 还是修复后网格 <span class="uncertain">⚠️【待核实】</span>。</div>
+
+<h3>9.4 论文宣称 vs 实现差异清单(本笔记逐条核实)</h3>
+<table>
+<tr><th>#</th><th>差异</th><th>证据</th></tr>
+<tr><td>1</td><td>论文称 Stage 3 DiT <b>32 层</b>,发布代码 <b>28 层</b></td><td>论文 §4.1 vs <code>dit.py:272</code></td></tr>
+<tr><td>2</td><td>README badge 写 arXiv:<b>2507.16290</b>,链接与正文均为 <b>2609.37139</b></td><td><code>README.md:6</code> vs <code>README.md:24,211</code></td></tr>
+<tr><td>3</td><td>README 写 "five checkpoint files",实际 3 个</td><td><code>README.md:48</code> vs <code>README.md:52-57</code></td></tr>
+<tr><td>4</td><td><code>vc_cfg_scale</code>(顶点数条件 guidance)在 config 声明但<b>全仓无使用点</b>,checkpoint 强制 <code>use_vert_count_cond=False</code> → 死配置;论文亦未提顶点数条件</td><td><code>config.py:36</code>;<code>stage1.py:333</code></td></tr>
+<tr><td>5</td><td><code>target_num_vertices=3000</code> 同为死配置(无任何代码读取),实际上限是 Stage 1 的 20,000</td><td><code>config.py:61,71-72</code>;<code>stage1.py:290</code></td></tr>
+<tr><td>6</td><td>配置名 <code>local_max_neighbors</code> 实现实为"1D 游程边界保护 + 中线保留"的 mid 滤波,非 3D local-max</td><td><code>config.py:22</code> vs <code>stage0.py:137-187</code></td></tr>
+<tr><td>7</td><td>论文 Abstract 承诺 "release <b>all</b> the code",实际仅推理代码;训练代码、数据 pipeline、TE-388 测试集未发布(§4.1 "will release later")</td><td>仓库结构;论文 Abstract/§4.1</td></tr>
+<tr><td>8</td><td>代码血统:ss_flow 文件头自称 "Inference-only <b>TRELLIS.2</b> sparse-structure flow transformer",artifacts 保留 legacy 前缀 <code>__swifttopo_</code>(项目前身疑名 SwiftTopo)</td><td><code>ss_flow.py:1</code>;<code>artifacts.py:14</code></td></tr>
+<tr><td>9</td><td>背景移除(RMBG-2.0)是可选组件;不提供模型目录时仅警告、保留原背景。RMBG-2.0 本身是 CC BY-NC 4.0(商用需单独授权)</td><td><code>image.py:14-18</code>;<code>README.md:91</code></td></tr>
+</table>
+
+<h3>9.5 落地坑</h3>
+<ul>
+<li><b>权重分发渠道</b>:只上 ModelScope(国内友好,海外用户需注意);未同步 HuggingFace。</li>
+<li><b>RMBG-2.0 是 gated model</b>:需 HF 登录并接受条款,且其 CC BY-NC 许可与 TaoFlowForge 的 Apache-2.0 独立——商用管线要自己掂量(README.md:91)。</li>
+<li><b>flash-attn 不在 requirements</b>:想用 FA3 加速要自己装;默认回退 sdpa。</li>
+<li><b>断点续跑的限制</b>:恢复 CUDA artifact 要求与创建时相同数量的可见 CUDA 设备(README.md:144)。</li>
+<li><b>Python 3.10 + torch 2.5.1 + CUDA 12.1</b> 为官方测试组合(README.md:30-34)。</li>
+</ul>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>实验结果(Toys4K / TE-388)</h2>
+
+<h3>10.1 设置</h3>
+<ul>
+<li><b>测试集</b>:公开 Toys4K test split + 自建 TE-388(手工制作,覆盖室内/室外/角色)。<span class="uncertain">⚠️【待核实】论文两处样本数自相矛盾:§4.1 写 "TE-388, a dataset of <b>388</b> manually crafted examples",§4.2 写 "our proposed test set of <b>338</b> manually crafted meshes" —— 一处笔误,以将来发布的数据为准</span>。</li>
+<li><b>Baseline</b>:LATO.2(扩散路线开源代表)与 EdgeRunner(自回归路线开源代表),均用公开 checkpoint + 官方推荐推理协议,同样单图输入(§4.2)。</li>
+<li><b>指标</b>:CD(Chamfer)↓、HD(Hausdorff)↓、ULIP-I↑、Uni3D-I↑、FD-Inception↓、FD-DINOv2↓(§4.1)。</li>
+</ul>
+
+<h3>10.2 Table 1:单图条件量化对比(逐格摘自论文)</h3>
+<table>
+<tr><th>数据集</th><th>方法</th><th>CD ↓</th><th>HD ↓</th><th>ULIP-I ↑</th><th>Uni3D-I ↑</th><th>FD-Incep. ↓</th><th>FD-DINOv2 ↓</th></tr>
+<tr><td>Toys4K</td><td>LATO.2</td><td>0.1553</td><td>0.3663</td><td>0.1674</td><td>0.3330</td><td>78.9649</td><td>616.4222</td></tr>
+<tr><td>Toys4K</td><td>EdgeRunner</td><td>0.3264</td><td>0.6145</td><td>0.1514</td><td>0.2347</td><td>30.9466</td><td>339.7754</td></tr>
+<tr class="best"><td>Toys4K</td><td><b>TaoFlowForge</b></td><td>0.0655</td><td>0.2451</td><td>0.1923</td><td>0.3509</td><td>18.1812</td><td>197.7314</td></tr>
+<tr><td>TE-388</td><td>LATO.2</td><td>0.0991</td><td>0.2990</td><td>0.1509</td><td>0.2978</td><td>119.9100</td><td>931.6500</td></tr>
+<tr><td>TE-388</td><td>EdgeRunner</td><td>0.3990</td><td>0.7102</td><td>0.1261</td><td>0.1878</td><td>67.0844</td><td>651.5899</td></tr>
+<tr class="best"><td>TE-388</td><td><b>TaoFlowForge</b></td><td>0.0415</td><td>0.2075</td><td>0.1829</td><td>0.3106</td><td>43.2544</td><td>363.7326</td></tr>
+</table>
+
+<h4>相对改进幅度(本笔记按表格原始值手算,供复核)</h4>
+<table>
+<tr><th>对比</th><th>CD 降幅</th><th>HD 降幅</th><th>FD-DINOv2 降幅</th></tr>
+<tr><td>Toys4K:Ours vs LATO.2</td><td>(0.1553−0.0655)/0.1553 = <b>57.8%</b></td><td>33.1%</td><td>67.9%</td></tr>
+<tr><td>Toys4K:Ours vs EdgeRunner</td><td>79.9%</td><td>60.1%</td><td>41.8%</td></tr>
+<tr><td>TE-388:Ours vs LATO.2</td><td>58.1%</td><td>30.6%</td><td>61.0%</td></tr>
+<tr><td>TE-388:Ours vs EdgeRunner</td><td>89.6%</td><td>70.8%</td><td>44.2%</td></tr>
+</table>
+<p class="note">论文正文未给这些百分比,以上为本笔记按 Table 1 原始值计算。</p>
+
+<h3>10.3 定性对比(论文图 4/5)</h3>
+<div class="figure"><img src="images/2609.37139/main_compare_02.png" alt="与开源方法对比" loading="lazy">
+<div class="caption"><b>图4(原文 Figure 4)</b> 与开源原生网格生成模型(LATO.2、EdgeRunner)的定性对比:输入同一图像,TaoFlowForge 生成最精细完整的网格。EdgeRunner 丢四肢/头发塌缩/五官糊化;LATO.2 全局形状尚可但局部三角化粗糙。</div></div>
+<div class="figure"><img src="images/2609.37139/second_compare.png" alt="与商业模型对比" loading="lazy">
+<div class="caption"><b>图5(原文 Figure 5)</b> 与两个未具名商业模型的定性对比("remains highly competitive",§4.2)。⚠️ 商业模型不具名、无量化指标,无法复核。</div></div>
+<div class="figure"><img src="images/2609.37139/gallery.png" alt="gallery" loading="lazy">
+<div class="caption"><b>图6(原文 Figure 7)</b> 更多图生网格结果:全局结构稳定 + 局部高保真细节(论文建议放大查看)。</div></div>
+
+<div class="callout warn"><b>评估面覆盖不足:</b>① 论文未报告<b>推理耗时、面数分布、模型体积</b>——而这恰是它声称面向的"生产级 <5MB 资产"场景的关键数字;② 未报告拓扑质量量化指标(non-manifold 率、边界边数量、watertight 率),拓扑优势只有定性图;③ 与商业模型只有定性对比。</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>消融实验</h2>
+
+<h3>11.1 Stage 2 归一化与几何感知损失(Table 2,TE-388)</h3>
+<table>
+<tr><th>Stage 2 变体</th><th>CD ↓</th><th>HD ↓</th><th>ULIP-I ↑</th><th>Uni3D-I ↑</th><th>FD-Incep. ↓</th><th>FD-DINOv2 ↓</th></tr>
+<tr><td>w/o Geometry-aware Losses(仅加权 BCE)</td><td>0.0771</td><td>0.2734</td><td>0.1515</td><td>0.2501</td><td>52.6284</td><td>423.8286</td></tr>
+<tr><td>w/o Normalised Target(不归一化 + 有几何损失)</td><td>0.0576</td><td>0.2529</td><td>0.1647</td><td>0.2897</td><td>47.2389</td><td>390.2450</td></tr>
+<tr class="best"><td><b>Ours(归一化 + 全部几何项)</b></td><td>0.0415</td><td>0.2075</td><td>0.1829</td><td>0.3106</td><td>43.2544</td><td>363.7326</td></tr>
+</table>
+<p><b>读表结论(Δ 按原值手算)</b>:去掉几何感知损失,CD 恶化 +86%(0.0415→0.0771),是所有消融里伤得最深的组件;去掉归一化,CD 恶化 +39%。两者叠加贡献了 Stage 2 的几乎全部增益——<b>"把二值占据目标白化到高斯源的矩"与"把网格连接性写进损失"是互补的两半</b>:前者解决优化地形,后者解决目标定义。</p>
+
+<h3>11.2 渐进细化 vs 单阶段(仅定性,论文图 6)</h3>
+<div class="figure"><img src="images/2609.37139/ablation_v2.png" alt="渐进细化消融" loading="lazy">
+<div class="caption"><b>图7(原文 Figure 6)</b> late-stage refinement 的定性消融:完整级联 vs 匹配的单阶段变体(直接生成最终 512³ 顶点 support)。论文结论:"replacing the late-stage refinement strategy with direct continuous upsampling degrades both the overall skateboard geometry and the fidelity of the wheel details"(§4.3)。⚠️ 此消融<b>无量化指标</b>。</div></div>
+
+<div class="callout warn"><b>消融覆盖缺口:</b>未消融 Stage 3 的关键设计(src/dst 双投影 vs 单投影、法向头有无)、Level-MoE 专家数(1/2/3 个)、DINOv3 条件层选择,以及 Stage 1 的 TRELLIS.2 初始化贡献。这使得"每个设计各值多少"无法完整归因。</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>🔄 同类方法对比分析</h2>
+
+<h3>12.1 横向对比表(固定维度;不可得写 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景/形状表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td><b>TaoFlowForge</b></td><td>2026</td><td>单图(DINOv3 特征)</td><td>原生 (V,E,F),512³ 量化顶点 ≤20K</td><td>flow matching + 拓扑感知 BCE/边/面损失</td><td>≈80 万清洗网格(自建+手工+Objaverse+TexVerse)</td><td>未公布</td><td>未公布</td><td>未公布(stage 级 offload)</td><td>Toys4K CD 0.0655</td><td>✅ 推理代码+权重(Apache-2.0)</td></tr>
+<tr><td>LATO.2</td><td>2026</td><td>单图</td><td>原生网格(扩散式拓扑 latent)</td><td>扩散 + 连接头</td><td>未公布</td><td>—</td><td>—</td><td>—</td><td>Toys4K CD 0.1553</td><td>✅(TFF 论文 baseline)</td></tr>
+<tr><td>EdgeRunner</td><td>2024</td><td>点云条件</td><td>自回归 token 序列(半边结构压缩)</td><td>下一个 token 分类</td><td>Objaverse 系</td><td>—</td><td>随面数线性增长(序列解码)</td><td>—</td><td>Toys4K CD 0.3264</td><td>✅</td></tr>
+<tr><td>Nexus</td><td>2025<span class="uncertain">【推测】年份按引用序</span></td><td>单图</td><td>八叉树层级扩散顶点 + 逐顶点拓扑 latent</td><td>扩散</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—(论文未给对比数)</td><td>❌ 未见</td></tr>
+<tr><td>MeshAnything 系</td><td>2024</td><td>点云</td><td>自回归面序列</td><td>下一个 token</td><td>Objaverse</td><td>—</td><td>序列长度瓶颈(≤数千面)</td><td>—</td><td>—</td><td>✅</td></tr>
+<tr><td>BPT</td><td>2024</td><td>点云/图像</td><td>块状补丁 token 化 + AR</td><td>下一个 token</td><td>Objaverse 系</td><td>—</td><td>较 MeshAnything 降(序列压缩)</td><td>—</td><td>—</td><td>✅</td></tr>
+<tr><td>TRELLIS.2(场方法对照)</td><td>2026</td><td>单图</td><td>稀疏体素结构 + 隐式场 → 提网格</td><td>flow matching</td><td>大规模多源</td><td>—</td><td>—</td><td>—</td><td>几何质量强但拓扑无结构(需后提取)</td><td>✅</td></tr>
+</table>
+<p class="note">⚠️ 除论文 Table 1 出现的数字外,其余方法的耗时/显存/数据规模多未见公开一致口径,按库规范留 "—" 不编造。Nexus 年份据 TFF 参考文献排序推断,已标注。</p>
+
+<h3>12.2 对比结论(机制层面,逐条说"为什么")</h3>
+<ol>
+<li><b>为什么赢 EdgeRunner(AR)</b>:AR 把 3D 结构压成 1D 序列,空间归纳偏置全靠数据硬学;面数一高序列爆炸、采样误差沿序列累积。TFF 全程在 3D 体素/点集上操作(3D RoPE 注入位置),结构先验内建于表示;拓扑靠一次性 $V\times V$ 并行打分,推理延迟不随面数线性增长。</li>
+<li><b>为什么赢 LATO.2(扩散)</b>:LATO.2 顶点生成缺少分阶段保护,且面朝向靠后处理矫正;TFF 的 Stage 2 把"全局骨架/局部细节"分给三个专家,单步误差被限制在 2× 上采样的小步子内;Stage 3 的法向头把朝向变成可学习输出,式 13 的对齐是直接前向结果。</li>
+<li><b>为什么对细薄结构(四肢、支架)更稳</b>:论文 §4.2 自己给的两条机制解释——级联占据顶点阶段"稀疏但非各向同性",天然容纳细薄挤出结构;闭式连接头<b>不施加流形假设</b>,两个细部件共享单顶点仍是合法 latent 边结构。AR 方法在这类结构上则因序列截断/罕见 token 直接丢弃。</li>
+<li><b>但注意样本选择偏差</b>:Toys4K/TE-388 是"适合干净拓扑"的物体集;对强非流形、开放表面、内部结构(如可拆装的空心壳)没有任何评估。</li>
+</ol>
+
+<h3>12.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>场表示 + 表面提取</td><td>SDF 系、<a href="3D-20241202-TRELLIS.html">TRELLIS</a>/TRELLIS.2、<a href="3D-20250121-Hunyuan3D.html">Hunyuan3D</a></td><td>连续隐式场表达能力强</td><td>提取网格密集、拓扑无结构、UV/绑定困难</td></tr>
+<tr><td>自回归原生网格</td><td>MeshAnything、EdgeRunner、BPT、DeepMesh</td><td>复用 LLM 序列建模</td><td>序列爆炸、空间信息丢失、推理随面数变慢</td></tr>
+<tr><td>扩散原生网格(整体式)</td><td>LATO/LATO.2、Nexus</td><td>3D 空间内扩散保结构</td><td>顶点不稳、无面朝向、八叉树误差累积</td></tr>
+<tr><td><b>级联 flow + 顶点/拓扑解耦</b></td><td><b>TaoFlowForge</b></td><td>顶点=分分辨率占据预测;拓扑=逐顶点并行打分</td><td>512³ 量化上限;仅三角面;训练代码未开</td></tr>
+</table>
+
+<h3>12.4 库内交叉链接</h3>
+<ul>
+<li><a href="3D-20241202-TRELLIS.html">TRELLIS 笔记</a>:TFF Stage 1 直接初始化自 TRELLIS.2 一阶段 checkpoint,ss_flow 代码亦声明血统(<code>ss_flow.py:1</code>);差异在于 TRELLIS 系走"场→提网格",TFF 把后两级换成原生顶点/拓扑生成。</li>
+<li><a href="3D-20250121-Hunyuan3D.html">Hunyuan3D 笔记</a>:同为工业界(腾讯)图生 3D 资产路线,Hunyuan3D 走场表示 + 纹理生成,与 TFF 的"原生网格"定位形成直接路线对照。</li>
+<li><a href="3D-20250813-DINOv3.html">DINOv3 笔记</a>:TFF 三阶段唯一条件特征来源(DINOv3-L/16),条件 token 数 1024/2304/4096 的选取与 DINOv3 patch 网格直接相关。</li>
+<li><a href="3D-20260928-TaoTex.html">TaoTex 笔记</a>:同一团队(Taobao3D)的<b>原生 3D 材质模型</b>,与 TFF 构成"几何(TFF)+ 材质(TaoTex)"的电商 3D 资产双引擎;TaoTex 的 backbone 同样是 TRELLIS.2 系。</li>
+</ul>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>🎯 应用场景与落地适配性</h2>
+
+<h3>13.1 它的目标场景(电商 3D 资产)</h3>
+<p>论文与官方解读(公众号,2026-09-30)明确手淘生产约束:资产 <b>&lt;5MB、秒级加载、&gt;40fps</b> 端侧渲染,且要"准确还原材质类型与纹理细节"。TFF 负责几何半边(轻量拓扑干净网格,≤20K 顶点 ≈ 数十 KB 级顶点数据),材质半边由 <a href="3D-20260928-TaoTex.html">TaoTex</a> 负责。对我们(3D 重建/数字人方向)的直接价值:</p>
+<ul>
+<li><b>道具/场景资产生成器</b>:数字人 demo 里需要的周边物体(椅子、桌子、商品),单图 → 干净网格,比 3DGS 更适合需要编辑/UV/绑定的场合。</li>
+<li><b>网格先验</b>:Stage 1 的 64³ 占据可作为粗几何初始化,喂给任何需要 occupancy/点云先验的 pipeline。</li>
+<li><b>不适合直接用于人体</b>:训练数据以"日常室内商品 + 角色模型"为主(§3.4),≤20K 顶点对高精度人脸远远不够;且输出无骨骼/语义分区。</li>
+</ul>
+
+<h3>13.2 部署成本</h3>
+<table>
+<tr><th>项</th><th>情况</th></tr>
+<tr><td>依赖</td><td>Python 3.10 + torch 2.5.1 + CUDA 12.1;DINOv3-L(自带或外挂);可选 RMBG-2.0(注意其 CC BY-NC 许可)</td></tr>
+<tr><td>权重获取</td><td>仅 ModelScope(3 个 .pt);国内网络友好</td></tr>
+<tr><td>显存</td><td>未公布;有 stage 级 offload + 专家分页,<span class="uncertain">⚠️【待核实】消费级卡(如 3090 24G)能否开 offload 跑通需实测</span></td></tr>
+<tr><td>耗时</td><td>未公布;三阶段合计 50+30×3+50 = 约 190 次网络前向(CFG 双倍)+ DINO 三次编码 + 补洞,<span class="uncertain">⚠️【推测】分钟级以内,需实测</span></td></tr>
+<tr><td>可复现性</td><td>固定 seed + 确定性 FPS + 严格 checkpoint 校验,工程可复现性好</td></tr>
+<tr><td>商用</td><td>代码 Apache-2.0;权重许可未单独声明(随仓库 Apache-2.0),RMBG 组件单独受限</td></tr>
+</table>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>可改进方向分析</h2>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px"><h4>[高优先级] ① 拓扑质量无量化评估,生产宣称缺硬证据</h4>
+<p><b>问题</b>:全文以"拓扑干净"为核心卖点,但 Table 1 全是几何/感知指标(CD/HD/ULIP/FD),<b>没有一个拓扑指标</b>(non-manifold 率、watertight 率、边界边数量、度数分布)。且评测网格是否经过 §9.3 的补洞/法向后处理未说明(<code>mesh_raw.obj</code> vs <code>mesh.obj</code>)。<b>佐证</b>:论文 §4.1 指标定义;代码 <code>pipeline.py:490-528</code> 的后处理链。<b>建议</b>:补一组拓扑统计表(raw / repaired 两列);评测脚本随测试集发布。</p></div>
+
+<div class="card" style="border-left:4px solid var(--red);margin-bottom:14px"><h4>[高优先级] ② 闭合三环取面排除了非流形与开放结构,表示能力有硬边界</h4>
+<p><b>问题</b>:面只能从"三边互连"恢复(式 12),意味着:四边形主导的艺术网格会被强行三角化(论文宣称"可编辑"恰依赖四边主导拓扑);线框/薄片(纸张、树叶单面)等非封闭结构无法表示。<b>佐证</b>:式 12;代码 <code>topology_decoder.py:168-189</code> 枚举共同邻居组三角形。<b>建议</b>:扩展为"边 + 面"两级预测(边图之上再预测面片成员),或对开放边界引入虚拟闭合 token。</p></div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ③ 20K 顶点上限 + 512³ 量化,高精度硬表面/文字级细节先天受限</h4>
+<p><b>问题</b>:FPS 截断到 20,000 顶点(<code>stage1.py:290</code>),且顶点坐标被 snap 到 512 格点(<code>stage1.py:270-282</code>)——亚体素锐边被量化圆角化,复杂机械件/带浮雕的物体细节上限明确。<b>建议</b>:参考 2DGS/GOF 的"粗网格 + 局部位移场"做法,在网格面上回归连续 offset;或对高曲率区域做自适应细分预算分配。</p></div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ④ 消融不完整:关键设计未归因</h4>
+<p><b>问题</b>:只消融了 Stage 2 的归一化与几何损失;<b>src/dst 双投影(式 10-11)、法向头、Level-MoE 专家数、TRELLIS.2 初始化</b>这四个"论文叙事里最重"的设计全部没有量化消融。<b>建议</b>:至少补 src/dst vs 单投影对称内积的对照——这是论文专门论述过动机的机制。</p></div>
+
+<div class="card" style="border-left:4px solid var(--orange);margin-bottom:14px"><h4>[中优先级] ⑤ 训练侧完全黑盒:无法复现、无法验证数据宣称</h4>
+<p><b>问题</b>:训练代码、80 万数据集的构成比例、清洗 pipeline、损失权重($\lambda_e,\lambda_f,\lambda_n,\lambda_r$ 及 $\alpha,w_{near},w_{far},r$)均未发布;"release all the code"未完全兑现。<b>建议</b>:至少发布训练配置 yaml 与数据统计;VLM 清洗 agent 的 prompt 与阈值。</p></div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px"><h4>[低优先级] ⑥ Level-MoE 硬路由可升级为软路由/共享底座</h4>
+<p><b>问题</b>:三个专家参数完全独立、按 level 硬路由(<code>stage1.py:52-59</code>),低层专家学到的几何特征无法被高层复用;推理时专家分页上下 GPU 也增加调度开销。<b>建议</b>:探索共享 trunk + 轻量 level head,或软路由混合,观察参数效率与跨层一致性。</p></div>
+
+<div class="card" style="border-left:4px solid var(--yellow);margin-bottom:14px"><h4>[低优先级] ⑦ 单图条件的天花板:不可见区域全靠先验</h4>
+<p><b>问题</b>:背面几何完全由生成先验脑补,商品场景(要求与实物一致)天然风险。兄弟模型 TaoTex 已支持多视图,TFF 目前是纯单图。<b>建议</b>:多视图条件(共享 DINO 特征 + 视角 embedding)是自然延伸。</p></div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>一句话</th></tr>
+<tr><td>高</td><td>① 拓扑量化评估</td><td>卖点没有硬指标支撑</td></tr>
+<tr><td>高</td><td>② 闭合三环的表示边界</td><td>非流形/开放结构/四边网格全部出局</td></tr>
+<tr><td>中</td><td>③ 20K 顶点与 512³ 量化上限</td><td>细节天花板明确</td></tr>
+<tr><td>中</td><td>④ 消融不完整</td><td>核心机制未归因</td></tr>
+<tr><td>中</td><td>⑤ 训练黑盒</td><td>"release all the code" 未兑现</td></tr>
+<tr><td>低</td><td>⑥ MoE 硬路由</td><td>参数效率可优化</td></tr>
+<tr><td>低</td><td>⑦ 单图先验瓶颈</td><td>多视图是必由之路</td></tr>
+</table>
+
+<div class="callout key"><b>个人认为最关键的三点:</b>①(评估缺失)和 ②(表示边界)决定了"生产级"宣称在多大程度上可信;⑤(训练黑盒)决定社区能否在其上迭代——对一篇同时肩负"技术报告 + 开源发布"双重身份的工作,这三点比再涨 0.01 的 CD 重要得多。</div>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>总结与演进定位</h2>
+<p><b>总结:</b>TaoFlowForge 把"原生网格生成"重新组织成一条工程化程度很高的级联流水线——TRELLIS.2 先验稳全局(Stage 1)、Bernoulli 白化 + Level-MoE 做抗误差累积的渐进细化(Stage 2)、逐顶点 latent + 双线性打分 + 法向头做一步式拓扑推理(Stage 3),辅以 80 万级清洗数据和补洞/法向校正后处理。在 Toys4K/TE-388 上对开源 AR 与扩散 baseline 的 CD 优势达 58-90%,且<b>推理代码与权重真实可用</b>。</p>
+<p><b>演进定位:</b>它不代表全新范式,而是把两条路线的优点缝合——用场方法(TRELLIS.2)的结构先验解决扩散原生网格"全局不稳"的问题,用并行拓扑打分解决 AR"序列爆炸"的问题。<b>真正的范式信号在 Stage 2/3 的两个机制</b>:把生成目标白化到与噪声源同矩(可归因的 39% CD 改善)、把"边"建模为逐顶点对的并行亲和度而非序列/隐式解码。后续的合理演进:多视图条件、四边形/混合面片支持、训练侧开放。</p>
+<div class="callout warn"><b>使用时的三句提醒:</b>① 论文 Stage 编号与代码错一位(1/2/3 vs 0/1/2),读代码前先建立映射(§3);② 论文写 Stage 3 是 32 层,发布权重实为 28 层(§6);③ 后处理链(补洞 + 法向校正)对"干净拓扑"有实质贡献,做公平对比时用 <code>--no-fill-holes</code> 的 raw 输出才是模型的真实拓扑能力。</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>16.1 团队</h3>
+<ul>
+<li><b>Taobao3D Team, Alibaba Group</b>(淘天集团 Meta 技术团队)。团队公开出品还包括:端侧推理引擎 MNN、商品三维重建工具 Object Drawer、3D 真人数字人 TaoAvatar、端云协同系统 Walle(据官方公众号团队介绍)。</li>
+<li>同仓项目:<b>Dens3R</b>(3D 几何预测基础模型,README 标注 ICLR 2026)、<b>HRM²Avatar</b>(单目手机扫描实时移动端 Avatar,README 标注 SIGGRAPH Asia 2025)——会议信息来自 GitHub README,未经 arXiv abs comments 核实。</li>
+<li>作者:Xianze Fang、Qiyuan Feng(共同一作)、Dongfang Sun、Yan Zhang、Xiuchao Wu、Jingnan Gao、Jiangjing Lyu、Chengfei Lyu(Project Leaders)、Gang Yu(末位)。Xiuchao Wu 同为 <a href="3D-20260928-TaoTex.html">TaoTex</a> 一作。</li>
+</ul>
+<h3>16.2 资源链接</h3>
+<div class="links">
+  <a href="https://arxiv.org/abs/2609.37139" target="_blank">📄 arXiv(2609.37139,仅 v1)</a>
+  <a href="https://arxiv.org/html/2609.37139v1" target="_blank">📄 HTML 全文</a>
+  <a href="https://alibaba.github.io/Taobao3D/blog/taoflowforge/" target="_blank">🌐 项目主页</a>
+  <a href="https://github.com/alibaba/Taobao3D" target="_blank">💻 GitHub(Apache-2.0,推理代码)</a>
+  <a href="https://www.modelscope.cn/models/Taobao3D/TaoFlowForge/files" target="_blank">🤗 ModelScope 权重</a>
+  <a href="3D-20260928-TaoTex.html">🎨 兄弟笔记:TaoTex(同团队材质模型)</a>
+</div>
+<div class="callout tip" style="margin-top:16px"><b>资源可用性(截至 2026-10-28,已逐链接实测):</b>arXiv abs/HTML 均存活,仅 v1;GitHub 仓库存活且活跃(2026-10-21 更新权重与 Rembg);ModelScope 权重页存活;项目主页存活。训练代码与 TE-388 测试集未发布(论文称 "will release later")。</div>
+</section>
+
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-10-28 · 领域: 3D 生成 / 原生网格生成(顶点流 + 拓扑流级联 flow matching)</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
