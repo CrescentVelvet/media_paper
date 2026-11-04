@@ -188,7 +188,90 @@ li{margin-bottom:6px}
 </div>
 
 <h3>与 v1(InfiniSplat, arXiv 2608.02437, SIGGRAPH Asia 2026 Journal Track)的关系</h3>
-<p>v1 是<b>单图</b>前馈 3DGS:几何引导的 support 采样 + query 条件隐式 Gaussian 解码,主打大基线单目新视角合成。v2 转为<b>任意多视角</b>(N=4~16 评测,训练中 N∈{4,...,12}),放弃了 v1 的隐式解码路线,改为"DA3 冻结几何 + DPT 属性头 + 学习式 refinement"——两者共享"让 Gaussian 排布贴合几何而非像素网格"的思想,但 v2 更激进:<b>位置直接锁死为几何模型输出,只做属性学习</b>。v2 作者与 v1 高度重合(前三作者 Yongzhen Hu / Hao Yu / Jiawei Wang 均为 v1 作者,机构从 UDeer.ai 换成 Hello TransTech)。</p>
+<p>v1 是<b>单图</b>前馈 3DGS:几何引导的 support 采样 + query 条件隐式 Gaussian 解码,主打大基线单目新视角合成。v2 转为<b>任意多视角</b>(N=4~16 评测,训练中 N∈{4,...,12}),放弃了 v1 的隐式解码路线,改为"DA3 冻结几何 + DPT 属性头 + 学习式 refinement"——两者共享"让 Gaussian 排布贴合几何而非像素网格"的思想,但 v2 更激进:<b>位置直接锁死为几何模型输出,只做属性学习</b>。v2 作者与 v1 高度重合(Yongzhen Hu / Hao Yu / Jiawei Wang 均为 v1 作者,机构从 UDeer.ai 换成 Hello TransTech)。</p>
+
+<div class="callout key">
+<b>v1 → v2 一句话:</b>v1 把"pixel-aligned"抬成"surface-aligned"(用单目深度引导采样 + 隐式解码),v2 把这条路再往前推一步——既然几何基础模型已经够强,<b>干脆把几何分支冻住、位置钉死,全部学习能力只给属性</b>,再用 GT 位姿对齐 + 大角度监督把训练协议拉满。
+</div>
+
+<h4>v1 方法框架一句话</h4>
+<p>单张图像 → 冻结 DepthPro 出深度与内参 → 反投影把相邻像素构成局部三角形、按 3D 面积比例在对应 2D 区域撒 support → 每个 support 初始化 base Gaussian(位置 = 深度反投影、颜色 = 图像颜色)→ DINOv3 ViT-L/16 + 128 通道 CNN 双分支特征在 support 处双线性查询、门控融合 → 共享 MLP 预测<b>有界更新</b>(位置为图像平面 + 深度方向位移再反投影,scale/rotation/color/opacity 在激活函数无约束空间加性更新)。输出约 1.5M 个高斯,颜色为 RGB 3 维(不用 SH)。</p>
+
+<div class="figure">
+  <img src="images/2608.02437/teaser_final.png" loading="lazy" alt="InfiniSplat v1 teaser:单图表面贴合重建">
+  <div class="caption"><b>图 1-A</b>(v1 论文 Figure 1)<b>单图 surface-aligned 重建。</b>v1 从单张输入图生成表面贴合的 3D 场景表示,大视角变化下保持连贯结构(此图为 v1 论文原图,作为对照帮助理解 v2 的路线变化)。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.02437/pipeline_final.png" loading="lazy" alt="InfiniSplat v1 pipeline">
+  <div class="caption"><b>图 1-B</b>(v1 论文 Figure 2)<b>v1 pipeline。</b>单图 → 冻结 DepthPro 几何先验 → geometry-guided support 采样(深度反投影三角形按 3D 面积比例撒点)→ DINO/CNN 双分支特征查询 + 门控融合 → 共享 MLP 预测有界更新。v2 与此完全不同:几何位置直接钉死、属性走 DPT head + 体素合并。</div>
+</div>
+
+<h4>v1 关键设计与超参(原文 §3.2–§4.1)</h4>
+<table>
+<tr><th>维度</th><th>v1 (2608.02437)</th><th>v2 (2610.20341)</th><th>差异点</th></tr>
+<tr><td><b>输入</b></td><td>单张 RGB(可选 1,500 稀疏深度 prompt)</td><td>任意 N 张 RGB(N=4~16 评测;训练 4–12)</td><td>单目 → 多目</td></tr>
+<tr><td><b>几何来源</b></td><td>DepthPro(冻结);LiDAR 变体用 InfiniDepth-Metric</td><td>DA3 backbone(冻结)出深度 + 相机</td><td>单目深度 → 多目几何基座 + 相机头</td></tr>
+<tr><td><b>Gaussian 位置</b></td><td>base 位置 + decoder 预测的有界更新($\Delta u,\Delta z$ 反投影)</td><td><b>位置全程锁死</b>,只有属性可学</td><td>更激进:几何错误不可修,靠 opacity 吸收</td></tr>
+<tr><td><b>外观解码</b></td><td>DINOv3 ViT-L/16 + 128ch CNN,门控融合,共享 MLP 出 $\Delta g$</td><td>DA3 属性分支(最后 10 层微调)+ DPT head 出 11 通道 SH0 属性</td><td>隐式解码 MLP → 显式 DPT 属性头</td></tr>
+<tr><td><b>训练数据</b></td><td>Hypersim(合成室内,zero-shot 泛化)</td><td>Hypersim + Raw3D(私有)+ ScanNet++</td><td>真实数据比例大幅上升</td></tr>
+<tr><td><b>高斯数</b></td><td>1.5M(固定)</td><td>体素合并后变长(0.004 边长),$\tau_\alpha=0.01$ 剪枝</td><td>v2 引入显式剪枝 + refinement</td></tr>
+<tr><td><b>训练硬件</b></td><td>8×H20,约 100K 步</td><td>16×H20,约 61h</td><td>—</td></tr>
+<tr><td><b>主打指标</b></td><td>PSNR/SSIM/LPIPS(ETH3D/ScanNet++/T&amp;T/DL3DV)</td><td>LPIPS/DISTS 为主(六数据集双设置)</td><td>v2 继承 v1 的 LPIPS/DISTS 协议并扩到六集</td></tr>
+</table>
+
+<h4>v1 关键数字(Table 1 / Table 3,均经本笔记复核)</h4>
+<ul>
+  <li><b>RGB-only 四集均值:</b>20.394 / 0.806 / 0.277(PSNR / SSIM / LPIPS),较最强 baseline SHARP(18.475/0.758/0.299)<b>+1.919 PSNR / +0.048 SSIM / −0.022 LPIPS</b>;其中 DL3DV 提升最大(+3.380 dB)。</li>
+  <li><b>LiDAR 变体三集均值:</b>22.548 / 0.851 / 0.225,较 ADGaussian(12.249/0.639/0.418)+10.299 dB;DL3DV 无源深度未评。</li>
+  <li><b>推理耗时</b>(ScanNet++,Table 3):1.5M 高斯时 inference 0.598 s + rendering 0.009 s;0.5M 0.444 s、2.0M 0.772 s——收益递减、默认 1.5M。</li>
+</ul>
+
+<h4>v2 相对 v1 的三处主要改动(作者思路演进)</h4>
+<ol>
+  <li><b>输入维度扩展:单图 → 任意多视角。</b>v1 的"表面贴合"在单图成立,但单图信息瓶颈意味着遮挡区域天然无解;v2 直接吃任意视角集合,把问题从"怎么从一张图猜 3D"换成"怎么在多视角下不被几何噪声带歪"。</li>
+  <li><b>几何处理策略:从"用深度引导采样"到"把几何位置钉死"。</b>v1 还在用深度引导 support 采样 + 隐式解码去"修"几何;v2 干脆放弃修几何——DA3 出点云,位置不动,只学属性,再用 opacity 吸收几何不一致点(§4.3 诊断:0.01 剪枝命中 51.8% 坏点、仅伤 7.5% 总点)。</li>
+  <li><b>训练协议补丁:GT 位姿对齐 + 大角度监督。</b>v1 没有这两条;v2 把"同一模型既要 pose-free 又要 pose-conditioned"的相机诱导残差(w/o C 消融:DTU LPIPS −36.1%)与"近输入视角监督约束不足"(w/o V:最小光轴角 12.34°→17.97°)分别用 GT 位姿对齐(Umeyama 只取尺度)与按角度排序分池采样补上。</li>
+</ol>
+<div class="callout warn">
+<b>⚠️ 读者提示:</b>v1 的"隐式 Gaussian 解码"在 v2 里<b>整个被放弃</b>,不要误以为 v2 还保留了 query-conditioned decoder——v2 的外观解码是 DPT head,属性在像素网格上回归,再经体素合并;v1 的"surface-aligned support"思想只在"位置贴合几何、不贴合像素网格"这层意义上延续下来。
+</div>
+
+<div class="callout key">
+<b>v1 → v2 一句话:</b>v1 把"pixel-aligned"抬成"surface-aligned"(用单目深度引导采样 + 隐式解码),v2 把这条路再往前推一步——既然几何基础模型已经够强,<b>干脆把几何分支冻住、位置钉死,全部学习能力只给属性</b>,再用 GT 位姿对齐 + 大角度监督把训练协议拉满。
+</div>
+
+<h4>v1 方法框架一句话</h4>
+<p>单张图像 → 冻结 DepthPro 出深度与内参 → 反投影把相邻像素构成局部三角形、按 3D 面积比例在对应 2D 区域撒 support → 每个 support 初始化 base Gaussian(位置 = 深度反投影、颜色 = 图像颜色)→ DINOv3 ViT-L/16 + 128 通道 CNN 双分支特征在 support 处双线性查询、门控融合 → 共享 MLP 预测<b>有界更新</b>(位置为图像平面 + 深度方向位移再反投影,scale/rotation/color/opacity 在激活函数无约束空间加性更新)。输出约 1.5M 个高斯,颜色为 RGB 3 维(不用 SH)。</p>
+
+<h4>v1 关键设计与超参(原文 §3.2–§4.1)</h4>
+<table>
+<tr><th>维度</th><th>v1 (2608.02437)</th><th>v2 (2610.20341)</th><th>差异点</th></tr>
+<tr><td><b>输入</b></td><td>单张 RGB(可选 1,500 稀疏深度 prompt)</td><td>任意 N 张 RGB(N=4~16 评测;训练 4–12)</td><td>单目 → 多目</td></tr>
+<tr><td><b>几何来源</b></td><td>DepthPro(冻结);LiDAR 变体用 InfiniDepth-Metric</td><td>DA3 backbone(冻结)出深度 + 相机</td><td>单目深度 → 多目几何基座 + 相机头</td></tr>
+<tr><td><b>Gaussian 位置</b></td><td>base 位置 + decoder 预测的有界更新($\Delta u,\Delta z$ 反投影)</td><td><b>位置全程锁死</b>,只有属性可学</td><td>更激进:几何错误不可修,靠 opacity 吸收</td></tr>
+<tr><td><b>外观解码</b></td><td>DINOv3 ViT-L/16 + 128ch CNN,门控融合,共享 MLP 出 $\Delta g$</td><td>DA3 属性分支(最后 10 层微调)+ DPT head 出 11 通道 SH0 属性</td><td>隐式解码 MLP → 显式 DPT 属性头</td></tr>
+<tr><td><b>训练数据</b></td><td>Hypersim(合成室内,zero-shot 泛化)</td><td>Hypersim + Raw3D(私有)+ ScanNet++</td><td>真实数据比例大幅上升</td></tr>
+<tr><td><b>高斯数</b></td><td>1.5M(固定)</td><td>体素合并后变长(0.004 边长),$\tau_\alpha=0.01$ 剪枝</td><td>v2 引入显式剪枝 + refinement</td></tr>
+<tr><td><b>训练硬件</b></td><td>8×H20,约 100K 步</td><td>16×H20,约 61h</td><td>—</td></tr>
+<tr><td><b>主打指标</b></td><td>PSNR/SSIM/LPIPS(ETH3D/ScanNet++/T&amp;T/DL3DV)</td><td>LPIPS/DISTS 为主(六数据集双设置)</td><td>v2 继承 v1 的 LPIPS/DISTS 协议并扩到六集</td></tr>
+</table>
+
+<h4>v1 关键数字(Table 1 / Table 3,均经本笔记复核)</h4>
+<ul>
+  <li><b>RGB-only 四集均值:</b>20.394 / 0.806 / 0.277(PSNR / SSIM / LPIPS),较最强 baseline SHARP(18.475/0.758/0.299)<b>+1.919 PSNR / +0.048 SSIM / −0.022 LPIPS</b>;其中 DL3DV 提升最大(+3.380 dB)。</li>
+  <li><b>LiDAR 变体三集均值:</b>22.548 / 0.851 / 0.225,较 ADGaussian(12.249/0.639/0.418)+10.299 dB;DL3DV 无源深度未评。</li>
+  <li><b>推理耗时</b>(ScanNet++,Table 3):1.5M 高斯时 inference 0.598 s + rendering 0.009 s;0.5M 0.444 s、2.0M 0.772 s——收益递减、默认 1.5M。</li>
+</ul>
+
+<h4>v2 相对 v1 的三处主要改动(作者思路演进)</h4>
+<ol>
+  <li><b>输入维度扩展:单图 → 任意多视角。</b>v1 的"表面贴合"在单图成立,但单图信息瓶颈意味着遮挡区域天然无解;v2 直接吃任意视角集合,把问题从"怎么从一张图猜 3D"换成"怎么在多视角下不被几何噪声带歪"。</li>
+  <li><b>几何处理策略:从"用深度引导采样"到"把几何位置钉死"。</b>v1 还在用深度引导 support 采样 + 隐式解码去"修"几何;v2 干脆放弃修几何——DA3 出点云,位置不动,只学属性,再用 opacity 吸收几何不一致点(§4.3 诊断:0.01 剪枝命中 51.8% 坏点、仅伤 7.5% 总点)。</li>
+  <li><b>训练协议补丁:GT 位姿对齐 + 大角度监督。</b>v1 没有这两条;v2 把"同一模型既要 pose-free 又要 pose-conditioned"的相机诱导残差(w/o C 消融:DTU LPIPS −36.1%)与"近输入视角监督约束不足"(w/o V:最小光轴角 12.34°→17.97°)分别用 GT 位姿对齐(Umeyama 只取尺度)与按角度排序分池采样补上。</li>
+</ol>
+<div class="callout warn">
+<b>⚠️ 读者提示:</b>v1 的"隐式 Gaussian 解码"在 v2 里<b>整个被放弃</b>,不要误以为 v2 还保留了 query-conditioned decoder——v2 的外观解码是 DPT head,属性在像素网格上回归,再经体素合并;v1 的"surface-aligned support"思想只在"位置贴合几何、不贴合像素网格"这层意义上延续下来。
+</div>
 </section>
 
 <!-- =================== 3 =================== -->
