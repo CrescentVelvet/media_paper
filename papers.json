@@ -1634,6 +1634,69 @@
       "anchors": []
     },
     {
+      "title": "DA3: Depth Anything 3 — 单 plain transformer + depth-ray 单目标,从任意视角恢复视觉空间",
+      "meta": [
+        "📄 arXiv: 2511.10647",
+        "📅 2025-11-13",
+        "🏢 ByteDance Seed",
+        "🏆 ICLR 2026 Oral(项目页口径)"
+      ],
+      "tags": [
+        "Feed-Forward 3D",
+        "Geometry Foundation Model",
+        "Camera Pose",
+        "Depth-Ray",
+        "Teacher-Student"
+      ],
+      "summary": "原版 DINOv2 预训练权重 + depth-ray 单预测目标(深度图+每像素 6 维光线)+ local/global 交替注意力,统一单目/多目几何与位姿;teacher-student(合成 teacher + RANSAC 对齐稀疏 GT)统一 22 源训练数据。位姿超 VGGT 35.7%、几何超 23.6%,单目深度超 DA2;冻结 backbone 接 DPT 头即得 DA3-GS。是 InfiniSplat v2 的几何基座。注意:Large/Giant 权重为 CC BY-NC 禁商用。",
+      "links": [
+        {
+          "href": "3D-20251113-Depth-Anything-3.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2511.10647",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/ByteDance-Seed/Depth-Anything-3",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://depth-anything-3.github.io/",
+          "text": "🌐 项目主页"
+        }
+      ],
+      "file": "3D-20251113-Depth-Anything-3.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "前馈式大重建模型",
+        "稀疏与少视角重建"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18"
+      ]
+    },
+    {
       "title": "3D Gaussian Splatting: 基础技术与改进综述 (2023-2026)",
       "meta": [
         "📄 arXiv: 2308.04079 及后续",

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DA3:单 plain transformer + depth-ray 单目标,从任意视角恢复视觉空间(位姿超 VGGT 35.7%,几何超 23.6%)</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2511.10647 · 2025-11-13 · 📊 deep · ICLR 2026 Oral(项目页口径)</span>
+    <h1>DA3:单 plain transformer + depth-ray 单目标,从任意视角恢复视觉空间</h1>
+    <div class="subtitle">Depth Anything 3: Recovering the Visual Space from Any Views — 位姿精度超 VGGT 35.7%,几何精度超 23.6%,单目深度超 DA2</div>
+    <div class="authors">Haotong Lin* · Sili Chen* · Jun Hao Liew* · Donny Y. Chen* · Zhenyu Li · Guang Shi · Jiashi Feng · Bingyi Kang(†Project Lead,*Equal Contribution;†/* 与作者的对应关系在 HTML 转换中丢失【待核实】)</div>
+    <div class="org">ByteDance Seed</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2511.10647" target="_blank">📄 arXiv</a>
+      <a href="https://depth-anything-3.github.io/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/ByteDance-Seed/Depth-Anything-3" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/depth-anything" target="_blank">🤗 HF 权重</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ <b>会议信息按库规范核实:</b>arXiv abs 页 comments 仅含项目页链接,无会议标注;<b>ICLR 2026 Oral 为项目页口径</b>,badge 按此标注并在此声明来源。截至抓取(2026-11-04)arXiv 仅 v1 一个版本(2025-11-13)。<b>对库内的意义:</b>DA3 是 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 冻结几何分支的基座 backbone(DA3NESTED-GIANT-LARGE-1.1),也是 DA3-GS / AnySplat 一脉的几何来源;想读懂 v2 的"位置钉死"为什么敢做,必须先理解 DA3 的"几何已经足够好"从哪来。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块一:depth-ray 表示与相机解参</a></li>
+    <li><a href="#s5">模块二:单一 transformer + 跨视图注意力</a></li>
+    <li><a href="#s6">模块三:Dual-DPT 双分支头</a></li>
+    <li><a href="#s7">模块四:teacher-student 训练范式</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节</a></li>
+    <li><a href="#s11">应用:前馈 3DGS(DA3-GS)</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>3D 视觉各任务(单目深度、SfM、MVS、SLAM)概念上只差"输入视角数"一个变量,却长期各立专用模型。DA3 回到更根本的目标——<b>从任意数量、位姿可选的视觉输入恢复 3D 视觉空间</b>——并用极简建模给出肯定答案:① <b>一个未经架构特化的 plain transformer</b>(原版 DINOv2 预训练权重直接接入)足够;② <b>depth-ray 这一个预测目标</b>(深度图 + 每像素 6 维光线)足够,不需要 DUSt3R 式 point map、也不需要 VGGT 式 pose+point+depth 多任务。配套 teacher-student 训练(合成数据训单目 teacher → RANSAC 对齐稀疏 GT → 教多视图学生),在自建 Visual Geometry Benchmark 上 pose 精度超 VGGT 35.7%、几何精度超 23.6%,单目深度还反超 DA2。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把"统一几何基础模型"从 VGGT 的"复杂定制架构 + 多任务联合优化"路线,收敛为"<b>预训练 DINOv2 权重 + depth-ray 密集预测 + 交替注意力</b>"的最小方案;消融证明该最小方案在 5 数据集 20 项设置里 18 项 SOTA,且 teacher 蒸馏是把"真实数据噪声 GT"变成"高细节监督"的关键一环。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">+35.7%</div><div class="l">相机位姿精度超 VGGT(全文 HTML 摘要口径;正文 §7.1 pose 为 25.1% 平均,口径差异见下方 warn)</div></div>
+  <div class="stat"><div class="v">+23.6%</div><div class="l">几何精度超 VGGT(摘要口径;正文 §7.1 为 25.1% / 超 Pi3 21.5%)</div></div>
+  <div class="stat"><div class="v">18/20</div><div class="l">Visual Geometry Benchmark 20 项设置中的 SOTA 项数</div></div>
+  <div class="stat"><div class="v">0.08B–1.40B</div><div class="l">规格族 Small → Nested-Giant-Large(HF 权重公开)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2511.10647/x1.png" loading="lazy" alt="DA3 teaser:单目深度/位姿/重建三轴对比">
+  <div class="caption"><b>图1</b>(论文 teaser)<b>三轴对比一览。</b>左:单目深度(KITTI δ1,DA3 92.4 超 DA2 的 90.3,Teacher 94.6);中:位姿精度(Auc,五数据集雷达图,DA3 全面外扩);右:几何重建精度(同样全面领先 Pi3/VGGT)。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2511.10647/x2.png" loading="lazy" alt="DA3 总体效果示意">
+  <div class="caption"><b>图2</b>(论文 Figure 1)<b>任意输入 → 视觉空间。</b>任意数量图像 + 可选位姿,DA3 输出一致的深度图与 ray map,融合为点云后可进一步得到高保真 3D Gaussians 与几何。多视角几何与位姿显著超 <a href="3D-20250314-VGGT.html">VGGT</a>;单目输入超 Depth Anything 2。</div>
+</div>
+
+<h3>论文自述贡献(§1)</h3>
+<ol>
+  <li><b>方法</b>:DA3——单一 plain transformer,以 depth-ray 表示统一任意视角几何与位姿估计;input-adaptive 跨视图自注意力;可选 camera token 注入已知位姿。</li>
+  <li><b>训练</b>:teacher-student 范式统一异质真实/合成训练数据(20 个合成数据集训 teacher,22 个数据源训主模型,14 个训 metric 模型)。</li>
+  <li><b>评测</b>:Visual Geometry Benchmark——覆盖位姿估计、任意视角几何、视觉渲染三类任务,5 数据集 89+ 场景;另建 160+ 场景的 NVS 基准。</li>
+  <li><b>应用</b>:冻结 backbone 接 DPT head 即得前馈 3DGS(DA3-GS),NVS 显著优于专用模型与"换 backbone"基线。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ 数字口径提示(本笔记复核发现):</b>论文 abs 页摘要称超 VGGT "<b>44.3%(pose)与 25.1%(geometry)</b>",全文 HTML 摘要写 "<b>35.7% 与 23.6%</b>",正文 §7.1 又是"相对 VGGT 平均 25.1%(pose)/21.5%(geometry,超 Pi3)"。三个口径互相不一致,本笔记以摘要 35.7%/23.6% 为主口径、表格处给原始值,引用建议直接引表 2/表 3。<span class="uncertain">⚠️【待核实】44.3% 可能对应 pose-free 设定或后续修订,当前 arXiv 仅 v1。</span>
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>单目深度、SfM、MVS、SLAM 本质共享"从视觉恢复 3D"这一目标,此前统一模型的尝试(如 <a href="3D-20250314-VGGT.html">VGGT</a> / DUSt3R / MASt3R / Fast3R)有两个系统性问题:<b>架构高度定制</b>(双流 transformer、专门的几何 token 设计)导致吃不满大规模预训练视觉模型的红利;<b>多任务目标堆叠</b>(pose + point map + depth + 置信度……)让损失设计变成经验艺术,且不同来源 GT 的精度差异(真实 LiDAR 稀疏、合成数据有偏差)进一步拖累联合优化。</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>失败模式 ①:定制架构吃不到预训练红利</h4>
+    <p>VGGT 式双 transformer 设计在公平参数对比下仅达 DA3 方案的 <b>79.8%</b> 性能(消融表 7-b),作者归因:VGGT 三分之二 block 未预训练,而 DA3 整个 backbone 都是 DINOv2 预训练权重。架构越定制,预训练迁移越差。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ②:多任务目标冗余且互相干扰</h4>
+    <p>消融表 6:DUSt3R 式 "depth+pcd+cam" 与 "depth+cam" 在 5 个数据集上稳定输给最小 "depth+ray" 组合(HiRoom Auc3 48.7 vs 10.8,近 4 倍差距)。pose 作为辅助监督反而拖累几何。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ③:真实数据 GT 噪声大、不完整</h4>
+    <p>真实深度来源(LiDAR/COLMAP)稀疏且有噪声(论文图 4 示例),直接在混合数据上训统一模型会被标签质量拖死。DA3 的答案是 teacher 伪标签 + RANSAC 对齐原始稀疏 GT,兼顾细节与几何正确性。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(insight):</b>① 相机位姿不是必须显式预测的量——把每像素表示为"<b>光线原点 + 方向</b>",pose 就成了可从 ray map 用标准单应分解(DLT + RQ)解析恢复的中间量,网络只需回归几何本身;② 预训练 ViT 的表征已足够强,<b>跨视图信息交换用"重排 token + 交替注意力"即可表达</b>,不需要专门模块;③ 尺度歧义用"深度 + 光线"天然分解:深度管相对尺度,光线(含原点)管相机,二者正交、互不污染。
+</div>
+
+<div class="callout warn">
+<b>关键假设及其失效条件:</b>"单 plain transformer 足够"假设 DINOv2 预训练特征已包含足够几何/语义先验——跨域极端场景(强非朗伯、透明、动态)可能失效;"depth-ray 足够"假设场景静态刚性——动态场景直接不适用(§8 把 dynamic scenes 列为未来工作);teacher 伪标签假设合成 teacher 能泛化到真实数据——Fig. 4 那类"真实 GT 本身很差"的数据上,teacher 质量决定学生上限【推测】。
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<h3>3.1 输入 / 输出定义</h3>
+<ul>
+  <li><b>输入</b>:$N_v$ 张 RGB 图像 $\mathcal{I}=\{\mathbf{I}_i\}_{i=1}^{N_v}$($N_v=1$ 即单目),可选已知相机 $\{(K_i, R_i, t_i)\}$。</li>
+  <li><b>输出</b>:每图深度图 $\widehat{D}_i\in\mathbb{R}^{H\times W}$ + 置信度、ray map $\widehat{M}_i\in\mathbb{R}^{H\times W\times 6}$ + 置信度;相机两条路恢复——camera head 直接回归 9 维 $(t,q,f)$,或从 ray map DLT 单应分解;点云 $\mathbf{P}=\mathbf{t}+\widehat{D}\cdot\mathbf{d}$(逐像素,无需匹配)。</li>
+  <li><b>渲染应用</b>:冻结 backbone + GS-DPT head 输出像素对齐 3DGS(见 §11)。</li>
+</ul>
+
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状/取值</th></tr>
+<tr><td>$N_v$</td><td>输入视角数(单目=1,训练采样 [2,18])</td><td>int</td></tr>
+<tr><td>$D_i$ / $M_i$</td><td>GT 深度图 / GT ray map($M=(t,d)$,原点+方向)</td><td>$H{\times}W$ / $H{\times}W{\times}6$</td></tr>
+<tr><td>$\mathbf{r}=(\mathbf{t},\mathbf{d})$</td><td>每像素光线;$\mathbf{d}=R K^{-1}p$ 不归一化,保留投影尺度</td><td>$\mathbb{R}^3\times\mathbb{R}^3$</td></tr>
+<tr><td>$v_i$</td><td>相机 9 维向量(平移 3、四元数 4、FOV 宽高 2)</td><td>$\mathbb{R}^{9}$</td></tr>
+<tr><td>$E_c$</td><td>camera token 编码 MLP + 4 层 transformer</td><td>源码 9→dim/2→dim(<code>cam_enc.py:44-54</code>)</td></tr>
+<tr><td>alt_start</td><td>开始交替注意力的层索引(其后奇数层为 global)</td><td>small/base=4,large=8,giant=13</td></tr>
+<tr><td>$H=KR$</td><td>ray map 解相机的单应(标准相机光线→相机光线)</td><td>DLT + RQ 分解</td></tr>
+<tr><td>$D_c$</td><td>深度置信度(expp1 激活 ≥1,源码)</td><td>与深度同尺寸</td></tr>
+<tr><td>$\widetilde D$ / $D^{T\to M}$</td><td>teacher 相对深度 / RANSAC scale-shift 对齐后的监督</td><td>$(\hat s,\hat t)=\arg\min\sum m_p(s\widetilde D_p+t-D_p)^2$</td></tr>
+</table>
+
+<h3>3.3 总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    IN["输入: Nv 张 RGB 图像<br/>+ 可选已知位姿"] --> TOK["DINOv2 patch embed<br/>每视图 + camera token<br/>已知位姿→Ec 编码 / 未知→可学习 token"]
+    subgraph BB["单一 plain transformer(DINOv2 预训练权重)"]
+        TOK --> LS["前段: within-view 自注意力<br/>每视图独立"]
+        LS --> LG["后段: 交替注意力<br/>local(视图内) / global(全视图 full attention)<br/>+ 参考视图选择重排"]
+    end
+    LG --> HEAD["Dual-DPT 双分支头<br/>共享 reassembly + 独立 fusion"]
+    HEAD --> DEP["depth 头: 1 维深度(exp)<br/>+ 1 维置信度"]
+    HEAD --> RAY["ray 头: 6 维光线 + 1 维置信度"]
+    DEP --> PC["点云: P = t + D·d"]
+    RAY --> POSE1["pose 路 1: DLT 求 H=KR<br/>RQ 分解 → K, R<br/>平移 = 原点加权均值"]
+    LG --> POSE2["pose 路 2: cam_dec<br/>camera token → 9 维 t, q, f"]
+    PC --> OUT["输出: 深度 / 相机 / 点云<br/>+ 可选 3DGS(GS-DPT)"]
+</div>
+
+<div class="figure">
+  <img src="images/2511.10647/pipeline.png" loading="lazy" alt="DA3 pipeline 原图">
+  <div class="caption"><b>图3</b>(论文 Figure 2)<b>DA3 pipeline 原图。</b>单 transformer(原版 DINOv2,无架构修改)+ input-adaptive 跨视图自注意力 + Dual-DPT 双头;已知相机时编码为 camera token 与 patch token 拼接参与全部注意力。</div>
+</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:depth-ray 表示与相机解参</h2>
+
+<h3>4.1 网络结构表</h3>
+<table>
+<tr><th>输入</th><th>算子</th><th>输出</th></tr>
+<tr><td>像素 $p=(u,v,1)$、深度 $D(p)$、内参 $K$、外参 $(R,t)$</td><td>$\mathbf{X}(p)=R\big(D(p)K^{-1}p\big)+t$</td><td>世界系 3D 点 $\mathbb{R}^3$</td></tr>
+<tr><td>像素 $p$</td><td>$\mathbf{d}=R K^{-1}p$(不归一化)</td><td>光线方向,模长保留投影尺度</td></tr>
+<tr><td>逐像素光线</td><td>$\mathbf{r}=(\mathbf{t},\mathbf{d})$ 堆叠</td><td>ray map $M\in\mathbb{R}^{H\times W\times 6}$</td></tr>
+<tr><td>预测的 $\widehat D$、$\widehat M$</td><td>$\mathbf{P}=\mathbf{t}+\widehat D\cdot\mathbf{d}$</td><td>点云(逐元素,无需任何匹配)</td></tr>
+</table>
+
+<h3>4.2 数学形式化:从 ray map 解析恢复相机</h3>
+<div class="equation">
+$$\mathbf{t}_c=\mathrm{mean}_{(h,w)}\,M(h,w,:3) \tag{式1}$$
+<span class="tag">相机中心 = 全部像素光线原点的均值</span></div>
+<div class="equation">
+$$H^{\star}=\arg\min_{\|H\|=1}\;\textstyle\sum_{h,w}\big\|H\,p_{h,w}\times M(h,w,3:)\big\|^{2}\quad\xrightarrow{\;\text{RQ 分解}\;}\;K,\;R \tag{式2}$$
+<span class="tag">DLT 求单应 $H=KR$,RQ 唯一分解出内参与旋转</span></div>
+<p><b>机制解释:</b>标准相机($K_I=I$)的光线就是像素坐标 $p$ 本身,相机系光线与标准光线相差单应 $H=KR$——"估计相机"于是变成"两组光线之间的单应估计",标准最小二乘问题。<b>平移由光线原点(深度通道)直接给出</b>,这是 depth-ray 表示最妙之处:位姿的平移分量与几何深度共享监督信号,网络学深度时被迫把相机位置也学对。源码该路径做了<b>置信度加权 RANSAC</b>(<code>utils/ray_utils.py:435-523</code>)。</p>
+
+<h3>4.3 前向流程(推理时相机恢复)</h3>
+<ol>
+  <li>Dual-DPT aux 头输出 6 维 ray map + 1 维置信度(<code>dualdpt.py:146,249-258</code>)。</li>
+  <li>平移 = 光线原点的置信度加权平均(<code>ray_utils.py:495-498</code>)。</li>
+  <li>方向:与单位焦距相机平面做置信度加权 RANSAC 单应估计,QL 分解得 $R$、焦距、主点(<code>ray_utils.py:21-91</code>);内参按"图像宽=2"归一化约定还原(<code>da3.py:195-198</code>)。</li>
+  <li>若 <code>use_ray_pose=False</code>,走 camera head:最后一层 camera token → 2 层 MLP → 三分支回归 $t$(3)/$q$(4)/$fov$(2)(<code>cam_dec.py:29-31</code>)。<b>主点硬编码图像中心</b>(<code>transform.py:55-56</code>)【论文未写】。</li>
+</ol>
+
+<h3>4.4 监督信号</h3>
+<p>ray map 由 GT 相机解析生成(式 1 的逆过程),监督为 $L_M$(ray map ℓ1,见 §8);pose 本身不再是独立回归目标——这正是"depth-ray 单目标"的含义。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:单一 transformer + 跨视图注意力</h2>
+
+<h3>5.1 网络结构表</h3>
+<table>
+<tr><th>组件</th><th>结构(源码)</th><th>出处</th></tr>
+<tr><td>backbone</td><td>原版 DINOv2 vision transformer(vits/vitb/vitl/vitg),patch=14 硬编码,预训练 img_size=518</td><td><code>dinov2.py:22-64</code>,<code>da3.py:64</code></td></tr>
+<tr><td>local/global 交替</td><td>层索引 ≥ alt_start 且为奇数 → global(全部视图 token 拼成一条序列做标准 full attention,无 mask);否则 local(每视图独立)</td><td><code>vision_transformer.py:333-339,351-370</code></td></tr>
+<tr><td>camera token</td><td>可学习参数 $(1,2,E)$(ref/src 两个);第 alt_start 层替换每视图 0 号位;已知位姿时换成 cam_enc 输出</td><td><code>vision_transformer.py:163,323-331</code></td></tr>
+<tr><td>参考视图选择</td><td>视图数 ≥3 且无外部 cam token 时,基于 cls 特征选参考视图排到第 0 位(默认 saddle_balanced;评测固定 first)</td><td><code>vision_transformer.py:314-321</code>,<code>reference_view_selector.py:29-112</code></td></tr>
+<tr><td>双流拼接(cat_token)</td><td>输出特征 = local 流与 global 流通道维拼接 → head dim_in = 2×embed</td><td><code>vision_transformer.py:342,383-398</code></td></tr>
+<tr><td>RoPE 双坐标</td><td>local 层用各视图真实坐标;global 层用全视图共享坐标(pos_nodiff,不注入视图序号差异)</td><td><code>vision_transformer.py:282-298,308-312</code></td></tr>
+</table>
+
+<h3>5.2 前向流程</h3>
+<ol>
+  <li>每视图图像 patch embed,第 0 位放 cls、第 1 位放 camera token(已知位姿→cam_enc MLP 编码 9 维 $(t,q,f)$;未知→可学习 token)。</li>
+  <li>前段 within-view 层:每视图独立自注意力,建模视图内结构。</li>
+  <li>第 alt_start-1 层:视图数 ≥3 时选参考视图重排到第 0 位。</li>
+  <li>后段交替:local 层(视图内)→ global 层(全视图 token 拼一条长序列标准 full attention)→ local → global……<b>跨视图信息交换完全靠 reshape 表达,没有专门注意力算子</b>。</li>
+  <li>输出 4 个中间层特征([5,7,9,11]/[11,15,19,23]/[19,27,33,39],按规格),local/global 双流通道拼接后送 Dual-DPT。</li>
+</ol>
+
+<h3>5.3 模块内部 Mermaid 图</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph V1["视图 i 的 token 序列"]
+        CLS["cls"] --> CT["camera token<br/>(已知→Ec(f,q,t) / 未知→可学习)"] --> PT["patch tokens<br/>(RoPE: local 层用本视图坐标)"]
+    end
+    subgraph LS2["within-view 层(前段)"]
+        L1["每视图独立<br/>self-attention"]
+    end
+    subgraph LG2["交替层(后段, alt_start 起)"]
+        GL["global 层: 全部视图 token<br/>拼一条序列 full attention<br/>(共享坐标 pos_nodiff)"]
+        LL["local 层: 视图内 attention"]
+        GL <--> LL
+    end
+    V1 --> LS2 --> LG2 --> OUT2["4 个中间层特征<br/>local‖global 通道拼接<br/>→ Dual-DPT"]
+</div>
+
+<h3>5.4 监督信号</h3>
+<p>该模块无直接监督——由 Dual-DPT 头的 depth/ray 损失经反向传播端到端驱动;预训练 DINOv2 权重提供初始化先验。</p>
+
+<div class="callout warn">
+<b>⚠️ 论文宣称 vs 源码实况:</b>论文/README 强调 "single plain transformer, <b>no architectural specialization</b>"。严格说 <b>ViT block 本身确实零修改</b>(标准 pre-norm + LayerScale + DropPath),但调度层改动不少:local/global 交替、camera token 注入、参考视图选择、cat_token 双流拼接、qk_norm、RoPE 双坐标(<code>vision_transformer.py</code> 全文)。<b>"no architectural modification"应理解为"block 级无新算子"</b>,token 调度层面的工程含量不低——复现或改造时别被这句话误导。
+</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:Dual-DPT 双分支头</h2>
+
+<h3>6.1 网络结构表</h3>
+<table>
+<tr><th>级</th><th>算子</th><th>输出形状</th><th>出处</th></tr>
+<tr><td>输入</td><td>backbone 4 个中间层特征(双流拼接后 dim_in = 2×embed)</td><td>4 × $[B,N_v,\cdot,H/14,W/14]$</td><td><code>dualdpt.py:76</code></td></tr>
+<tr><td>投影</td><td>LayerNorm → 1×1 conv → 空间重采样(×4/×2/×1/÷2)</td><td>对齐到统一分辨率</td><td><code>dualdpt.py:86-97</code></td></tr>
+<tr><td>depth 分支</td><td>独立 fusion 链 refineNet1-4(注释明确 no sharing)→ conv 逐级降维 → exp 激活</td><td><b>2 通道:深度 + 置信度</b>(conf = expp1 ≥ 1)</td><td><code>dualdpt.py:103-118,244-247,341-364</code></td></tr>
+<tr><td>ray 分支</td><td>独立 fusion 链 + 4 级金字塔(各级独立 5 层 conv neck),只返回末级</td><td><b>7 通道:6 维光线 + 1 维置信度</b></td><td><code>dualdpt.py:121-124,146,249-258,321-330</code></td></tr>
+</table>
+
+<h3>6.2 数学形式化</h3>
+<p>与论文"两分支共享 reassembly 模块、仅最终 fusion 不同"(图 3)对应:源码中两分支的 projection/重采样结构相同,但 <b>refinenet 链完全独立</b>。深度为 <b>exp 激活直接回归深度</b>(非 disparity)(<code>dualdpt.py:50,349-350</code>)。</p>
+
+<h3>6.3 前向流程与监督</h3>
+<ol>
+  <li>4 层特征逐级上采样 + refineNet 融合(main/aux 两条独立链)。</li>
+  <li>depth 头输出 $\widehat D$ 与 $D_c$;ray 头输出 $\widehat M$(6 维)与 ray 置信度。</li>
+  <li>支持沿帧维度分块(<code>chunk_size=8</code>)省显存。</li>
+  <li>监督:$L_D$(带置信度尺度不变 ℓ1)+ $L_M$(ray ℓ1)+ $L_{grad}$(深度梯度)。</li>
+</ol>
+
+<div class="figure">
+  <img src="images/2511.10647/x3.png" loading="lazy" alt="Dual-DPT 头结构">
+  <div class="caption"><b>图4</b>(论文 Figure 3)<b>Dual-DPT 头。</b>两分支共享 reassembly 模块以更好对齐输出,融合层分离;depth 分支输出深度+置信度,ray 分支输出 6 维光线+置信度。</div>
+</div>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:teacher-student 训练范式</h2>
+
+<h3>7.1 动机</h3>
+<p>统一几何模型的训练数据横跨合成(Hypersim、TartanAir、Objaverse……)与真实(ARKitScenes、ScanNet++、WildRGBD……),真实深度噪声大、不完整(论文图 4)。直接用混合 GT 训练,标签质量差异会把多视图一致性学坏。</p>
+
+<h3>7.2 Teacher 构建(§4.1)</h3>
+<ul>
+  <li>基于 <b>DA2 扩展</b>,backbone 与 DA3 框架对齐(纯 DINOv2 ViT + DPT decoder,无专门修改);<b>仅合成数据</b>(20 个数据集:Hypersim、TartanAir、IRS、vKITTI2、BlendedMVS、SPRING、MVSSynth、UnrealStereo4K、GTA-SfM、TauAgent、KenBurns、MatrixCity、EDEN、ReplicaGSO、UrbanSyn、PointOdyssey、Structured3D、Objaverse、Trellis、OmniObject)训单目相对深度。</li>
+  <li>与 DA2 的 scale-shift-invariant <b>disparity</b> 不同,teacher 输出 scale-shift-invariant <b>depth</b>(补偿 depth 在近处敏感度低,预测 exponential depth)。</li>
+  <li>损失:深度梯度损失 + ROE 对齐 global-local 损失 + 距离加权表面法线损失 + sky/object mask 联合预测;$L_T=\alpha L_{grad}+L_{gl}+L_N+L_{sky}+L_{obj}$,$\alpha=0.5$(式 4-7)。</li>
+</ul>
+
+<h3>7.3 教 DA3(§4.2):RANSAC 对齐</h3>
+<div class="equation">
+$$(\hat s,\hat t)=\arg\min_{s,t}\;\textstyle\sum_{p} m_p\,(s\,\widetilde D_p+t-D_p)^2 \tag{式3}$$
+<span class="tag">RANSAC scale-shift 对齐;内点阈值为残差中位数的 MAD;$D^{T\to M}=\hat s\widetilde D+\hat t$ 作为尺度一致监督</span></div>
+<p>teacher 相对深度 $\widetilde D$ 与可用的稀疏/噪声 GT(COLMAP 或主动传感器深度)对齐后作为监督——<b>细节与完整性来自 teacher,几何正确性由稀疏 GT 锚定</b>。训练前 120k 步用 GT 监督,之后切换 teacher 标签(§3.4)。</p>
+
+<h3>7.4 教单目 / metric 学生(§4.3 / §4.4)</h3>
+<ul>
+  <li><b>Mono 学生</b>:沿用 DA2 框架,无标注图像 + teacher 伪标签;关键区别——学生预测 <b>depth</b>(DA2 预测 disparity)。</li>
+  <li><b>Metric 学生</b>:沿用 Metric3Dv2 的 canonical camera space 变换(按 $f^c/f$ 缩放消除焦距歧义,$f^c=300$),teacher 预测与 GT metric 深度对齐 scale/shift 后监督;14 个训练数据集(Taskonomy、DIML、DDAD、Argoverse、Lyft、PandaSet、Waymo、ScanNet++、ARKitScenes、Map-free、DSEC、Driving Stereo、Cityscapes;stereo 数据集用 FoundationStereo 预测作标签)。</li>
+</ul>
+
+<h3>7.5 监督信号小结</h3>
+<p>主模型监督链:GT 深度(前 120k 步)→ teacher 对齐伪深度(之后);metric/mono 变体走各自蒸馏链。消融(表 7-e)显示 teacher 在合成占优的 HiRoom 上几乎必要(39.2→11.2 Auc3),真实数据上 gains 不一——teacher 不是免费的午餐。</p>
+
+<div class="figure">
+  <img src="images/2511.10647/x6.png" loading="lazy" alt="teacher 标签监督对比">
+  <div class="caption"><b>图5</b>(论文 Figure 8)<b>teacher 标签监督的定性收益。</b>teacher 生成的标签监督出的深度图细节更丰富、结构更精细;定量上对应表 7-e(w/o Teacher)的显著下降。</div>
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<p>总损失(§3.3):所有 GT 信号先用公共尺度因子归一化(有效重投影 point map 的均值 ℓ2 范数);所有项基于 ℓ1。</p>
+<div class="equation">
+$$\mathcal{L}=\mathcal{L}_D(\widehat D,D)+\mathcal{L}_M(\widehat M,M)+\mathcal{L}_P(\widehat D\odot\mathbf{d}+\mathbf{t},\,\mathbf{P})+\beta\,\mathcal{L}_C(\widehat{\mathbf{c}},\mathbf{v})+\alpha\,\mathcal{L}_{grad}(\widehat D,D) \tag{式4}$$
+<span class="tag">$\alpha=1$,$\beta=1$(原文显式给出)</span></div>
+<table>
+<tr><th>损失项</th><th>公式/形式</th><th>权重</th><th>作用</th></tr>
+<tr><td>$\mathcal{L}_D$ 深度</td><td>带置信度的尺度不变 ℓ1:$\frac{1}{Z_\Omega}\sum_{p\in\Omega} m_p\,(D_{c,p}|\widehat D_p-D_p|-\lambda_c\log D_{c,p})$</td><td>1</td><td>主深度监督(前 120k 步 GT,之后 teacher 标签)</td></tr>
+<tr><td>$\mathcal{L}_M$ ray map</td><td>ℓ1($\widehat M$, $M$)</td><td>1</td><td>光线监督;同时隐式监督相机(平移+旋转+内参)</td></tr>
+<tr><td>$\mathcal{L}_P$ 重投影一致性</td><td>ℓ1($\widehat D\odot\mathbf{d}+\mathbf{t}$, GT point map $\mathbf{P}$)</td><td>1</td><td>深度×光线组合出的点云与 GT 对齐,钉死跨视图一致性</td></tr>
+<tr><td>$\mathcal{L}_C$ 相机</td><td>ℓ1(camera head 输出 $\widehat{\mathbf{c}}$, GT 相机 9 维向量)</td><td>$\beta=1$</td><td>轻量 camera head 的直接监督(可选输出)</td></tr>
+<tr><td>$\mathcal{L}_{grad}$ 深度梯度</td><td>$\|\nabla_x\widehat D-\nabla_x D\|_1+\|\nabla_y\widehat D-\nabla_y D\|_1$(水平/垂直有限差分)</td><td>$\alpha=1$</td><td>保持锐利边缘与平面平滑</td></tr>
+</table>
+<div class="callout warn">
+<b>⚠️ 复核注记:</b>式 4 的 $\mathcal{L}_P$ 用"预测深度 × 预测光线 + 预测原点"组合监督,意味着 <b>深度与光线必须联合正确才能同时满足 $\mathcal{L}_D$/$\mathcal{L}_M$/$\mathcal{L}_P$</b>——三个视角下的一致性是被同一个点云重投影损失钉死的,这是"单目标 depth-ray 却能学跨视图一致性"的损失层面机制【本笔记分析】。
+</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>逻辑流程图(训练 / 推理)</h2>
+
+<h3>9.1 训练流程</h3>
+<div class="mermaid">
+flowchart TD
+    T0["初始化: DINOv2 预训练权重<br/>Dual-DPT / cam_enc / cam_dec 随机初始化"] --> T1["前 120k 步: GT 深度/ray 监督<br/>随机采样视角数 Nv∈[2,18]<br/>随机采样 8 种分辨率"]
+    T1 --> T2["120k 步后: 切换 teacher 对齐伪深度<br/>(RANSAC scale-shift 锚定稀疏 GT)"]
+    T2 --> T3["200k 步停止<br/>128×H100, 8k warmup<br/>peak lr 2e-4"]
+    T3 --> T4{"派生变体"}
+    T4 --> M1["DA3Mono-Large<br/>无标注图像 + teacher 伪标签"]
+    T4 --> M2["DA3Metric-Large<br/>canonical camera space<br/>14 个 metric 数据集"]
+    T4 --> M3["DA3-GS(§11)<br/>冻结 backbone<br/>只训 GS-DPT head"]
+</div>
+
+<h3>9.2 推理流程</h3>
+<div class="mermaid">
+flowchart TD
+    I0["输入 Nv 张图像"] --> I1{"已知相机?"}
+    I1 -- 是 --> I2["cam_enc 编码 camera token<br/>注入 backbone"]
+    I1 -- 否 --> I3["可学习 camera token"]
+    I2 --> I4["单一 transformer 前向<br/>local/global 交替注意力"]
+    I3 --> I4
+    I4 --> I5["Dual-DPT: 深度+置信度 / 光线+置信度"]
+    I5 --> I6["点云 P = t + D·d"]
+    I5 --> I7{"pose 来源"}
+    I7 -- 默认 --> I8["ray map → RANSAC 单应<br/>DLT + RQ → K, R; 原点均值 → t"]
+    I7 -- 可选 --> I9["cam_dec → 9 维 t, q, f"]
+    I6 --> I10{"需要位姿对齐?"}
+    I8 --> I10
+    I9 --> I10
+    I10 -- "≥10 视图且有输入位姿" --> I11["Umeyama 对齐回输入位姿系<br/>(api.py:341-365)"]
+    I10 -- 否则 --> I12["输出 depth/conf/poses<br/>+ 可选 3DGS / PLY / GLB"]
+    I11 --> I12
+</div>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节</h2>
+
+<h3>10.1 规格族与配置(源码 configs/,README)</h3>
+<table>
+<tr><th>配置</th><th>backbone</th><th>out_layers</th><th>alt_start</th><th>head dim_in</th><th>README 参数量</th><th>HF 许可</th></tr>
+<tr><td>DA3-Small</td><td>vits(E=384,L=12,H=6)</td><td>[5,7,9,11]</td><td>4</td><td>768</td><td>0.08B</td><td>Apache 2.0</td></tr>
+<tr><td>DA3-Base</td><td>vitb(E=768,L=12,H=12)</td><td>[5,7,9,11]</td><td>4</td><td>1536</td><td>0.12B</td><td>Apache 2.0</td></tr>
+<tr><td>DA3-Large(-1.1)</td><td>vitl(E=1024,L=24,H=16)</td><td>[11,15,19,23]</td><td>8</td><td>2048</td><td>0.35B</td><td>CC BY-NC 4.0</td></tr>
+<tr><td>DA3-Giant(-1.1)</td><td>vitg(E=1536,L=40,H=24,SwiGLU)</td><td>[19,27,33,39]</td><td>13</td><td>3072</td><td>1.15B</td><td>CC BY-NC 4.0</td></tr>
+<tr><td>DA3Metric-Large</td><td>vitl(alt_start=-1,cat_token 关)</td><td>[4,11,17,23]</td><td>-1</td><td>1024</td><td>0.35B</td><td>Apache 2.0</td></tr>
+<tr><td>DA3Mono-Large</td><td>vitl(同关)</td><td>[4,11,17,23]</td><td>-1</td><td>1024</td><td>0.35B</td><td>Apache 2.0</td></tr>
+<tr><td>DA3NESTED-GIANT-LARGE(-1.1)</td><td>NestedDepthAnything3Net<br/>(anyview=giant + metric=large)</td><td>—</td><td>—</td><td>—</td><td>1.40B</td><td>CC BY-NC 4.0</td></tr>
+</table>
+<p><b>mono/metric 变体的实现方式印证"单模型覆盖"</b>:配置开关把 alt_start/qknorm_start/rope_start 全设 -1、cat_token=False,backbone 即退回原版 DINOv2 行为(无 camera token、无跨视图注意力),head 换单头 DPT + sky 头——同一份代码、同一个权重族,只是配置不同。<b>-1.1 后缀为修复训练 bug 后重训版,官方推荐</b>(README.md:211)。</p>
+
+<h3>10.2 训练超参(§3.4;metric 模型 §4.4)</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>主模型训练</td><td><b>128×H100,200k 步,8k warmup,peak lr 2×10⁻⁴</b>;消融设定 ViT-L/≤10 视图/32×H100/约 4 天,全量 Giant 约 10 天</td><td>§3.4,§7.2</td></tr>
+<tr><td>base resolution</td><td>504×504(可被 2,3,4,6,9,14 整除,兼容多种长宽比);8 种分辨率随机采样(504×504/504×378/504×336/504×280/336×504/896×504/756×504/672×504)</td><td>§3.4</td></tr>
+<tr><td>视角数/batch</td><td>504×504 时视角数 [2,18] 均匀采样;batch 动态调整使每步 token 数近似恒定</td><td>§3.4</td></tr>
+<tr><td>监督切换</td><td>120k 步 GT → teacher 标签;pose conditioning 以 0.2 概率随机激活</td><td>§3.4</td></tr>
+<tr><td>metric 模型</td><td>AdamW,encoder lr 5e-6,decoder lr 5e-5;batch 64,160K 迭代;5% 概率随机旋转 90/270°;canonical focal f^c=300;20% 概率用原始 GT 标签</td><td>§4.4</td></tr>
+<tr><td>训练数据</td><td>22 个数据源(表 1):合成 8 个(AriaDigitalTwin 237、AriaSyntheticENV 99,950、HyperSim 344、MegaSynth 6,049、MvsSynth 121、Objaverse 505,557、OmniObject 5,885、OmniWorld 1,039、PointOdyssey 44、ReplicaVMAP 17、SceneNetRGBD 16,866、TartanAir 355、vKitti2 50、Trellis 557,408——合计以合成占绝对多数);LiDAR 3 个(ArkitScenes 4,388、ScanNet++ 230、WildRGBD 23,050);COLMAP 4 个(BlendedMVS 503、Co3dv2 30,616、DL3DV 6,379、MapFree 921、MegaDepth 268)</td><td>表 1</td></tr>
+</table>
+
+<h3>10.3 推理与资源账</h3>
+<ul>
+  <li><b>输入处理</b>:边界 resize(保长宽比)→ 14 整对齐;默认 process_res=504(<code>api.py:145</code>,<code>input_processor.py:44-57</code>);外参先归一化到"第 0 帧参考系 + 平移按中位距离缩放"(<code>api.py:327-339</code>)。</li>
+  <li><b>速度</b>(表 8,A100 80GB,504×336,32 图场景平均每图 FPS):Giant 37.6 / Large 78.4 / Base 126.5 / Small 160.5 FPS;单卡最大图像数 Giant 900-1000、Small 4000-4100。</li>
+  <li><b>流式推理</b>(da3_streaming/,不改模型):滑窗 chunk=120/overlap=60 + 重叠区置信度加权 Sim3 对齐 + SALAD 回环检索 + 逐块落盘清理;README 实测 KITTI 504×154 chunk 30 → <b>峰值 11.5GB</b>(即"<12GB"口径对应小 chunk+窄分辨率;chunk 120 → 15.9GB);A100 约 8.51 FPS。</li>
+  <li><b>dtype 双轨</b>:backbone autocast(bf16/fp16),cam_enc、depth head、相机解码全程强制 fp32(<code>da3.py:127,139</code>,<code>cam_dec.py:37-40</code>)——几何量对精度敏感。</li>
+  <li><b>天空后处理</b>:mono 模型 sky 头置信阈值 0.3,天空像素深度设为非天空深度 0.99 分位数(nested 封顶 200m)(<code>da3.py:155-179,418-442</code>)【论文未写】。</li>
+</ul>
+
+<h3>10.4 依赖与落地坑</h3>
+<ul>
+  <li>依赖:torch≥2、xformers、numpy<2、e3nn、evo、plyfile、pycolmap、gsplat(钉死 commit 0b4dddf)<b>仅 GS extra 需要</b>;Python 3.9–3.13。</li>
+  <li><b>纯推理仓库,无训练代码</b>;评测基准在 bench/(数据托管 depth-anything/DA3-BENCH)。</li>
+  <li><b>许可分裂</b>:Small/Base/Metric/Mono 为 Apache 2.0,<b>Large/Giant/Nested 为 CC BY-NC 4.0(商用禁)</b>——落地选型时 Large 起步的性能档不能商用,商用只能 Small/Base 或谈授权【重要坑】。</li>
+  <li>HF 镜像:<code>HF_ENDPOINT=https://hf-mirror.com</code>(README 明示,国内可用)。</li>
+  <li>导出格式齐全:npz/glb/ply/gs/gs_video/colmap/feat_vis;CLI 子命令 auto/image/images/colmap/video/backend/gradio。</li>
+</ul>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>应用:前馈 3DGS(DA3-GS)</h2>
+<p>本节即 InfiniSplat v2 反复提到的 "DA3-GS" 基线出处——它是 DA3 论文 §5 的官方应用,<b>冻结 backbone + 加一个 DPT head</b> 即得前馈 3DGS。</p>
+
+<h3>11.1 两档配置(§5.1 / §5.2)</h3>
+<table>
+<tr><th>维度</th><th>Pose-Conditioned(§5.1)</th><th>Pose-Adaptive(§5.2)</th></tr>
+<tr><td>输入设定</td><td>12 个 context views + GT 位姿</td><td>任意视角数、可选位姿、可变分辨率(in-the-wild)</td></tr>
+<tr><td>GS 输出</td><td>每像素 camera 空间 $\{\sigma,q,s,c\}$(RGB 颜色)</td><td>所有参数在局部 camera 空间预测 + 额外 depth offset;<b>颜色改球谐(view-dependent)</b></td></tr>
+<tr><td>位姿利用</td><td>给定 pose 直接光栅化</td><td>有 pose → Umeyama 尺度对齐 + unproject 到世界系;无 pose → 直接用预测 pose</td></tr>
+<tr><td>训练</td><td>渲染 photometric(MSE + LPIPS)+ 观察视图深度 scale-shift-invariant L_D;沿用 teacher-student</td><td>冻结 backbone、只训 GS-DPT;可变分辨率 × 可变视图数(高分辨率配少视图)稳定训练</td></tr>
+</table>
+
+<h3>11.2 NVS 主表(表 5,pose-conditioned;12 输入 / 270×480)</h3>
+<table>
+<tr><th>方法</th><th>DL3DV (140)</th><th>Tanks&amp;Temples (6)</th><th>MegaDepth (19)</th></tr>
+<tr><td>pixelSplat</td><td>16.55 / 0.456 / 0.480</td><td>13.81 / 0.347 / 0.558</td><td>13.87 / 0.367 / 0.561</td></tr>
+<tr><td>MVSplat</td><td>18.13 / 0.559 / 0.393</td><td>14.81 / 0.391 / 0.508</td><td>14.67 / 0.398 / 0.533</td></tr>
+<tr><td>DepthSplat</td><td>19.24 / 0.620 / 0.322</td><td>15.80 / 0.474 / 0.418</td><td>15.90 / 0.471 / 0.450</td></tr>
+<tr><td>Fast3R(换 backbone)</td><td>19.30 / 0.604 / 0.320</td><td>16.24 / 0.478 / 0.409</td><td>16.43 / 0.493 / 0.421</td></tr>
+<tr><td>MV-DUSt3R(换 backbone)</td><td>20.01 / 0.645 / 0.294</td><td>17.04 / 0.529 / 0.370</td><td>16.20 / 0.484 / 0.437</td></tr>
+<tr><td>VGGT(换 backbone)</td><td>20.96 / 0.697 / 0.253</td><td>17.18 / 0.550 / 0.347</td><td>16.45 / 0.500 / 0.417</td></tr>
+<tr class="best"><td>DA3-GS(原文行名 DAv3)</td><td><b>21.33 / 0.711 / 0.241</b></td><td><b>18.10 / 0.578 / 0.311</b></td><td><b>17.89 / 0.561 / 0.351</b></td></tr>
+</table>
+<p><b>两个关键发现(§7.5):</b>① 为 NVS 微调几何基础模型显著优于高度专用的任务特定模型;② <b>几何重建能力与 NVS 性能直接正相关</b>——这是"选几何 backbone 比设计 NVS 网络更重要"的实证,也是 InfiniSplat v2 "冻结几何只做属性"路线的前提论据。所有对比模型按统一协议重训(DL3DV-10K,8×A100,200K 步,batch 1,pixelSplat 100K)。</p>
+
+<h3>11.3 与 InfiniSplat v2 的关系</h3>
+<p>v2 的消融表 2(w/o G)证明:<b>DA3-GS 式"几何+属性联合优化"会让网络移动点位置去补偿属性误差,渲染指标短期变好、几何退化</b>(ETH3D LPIPS 0.5204→0.4339,冻结后 -16.6%)。v2 的"冻结几何分支 + 位置钉死"正是对 DA3-GS 这一缺陷的直接回应——几何基座用同一 DA3,差别全在"属性怎么学"。详见 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2 笔记</a> §14.2。</p>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+<p>自建 <b>Visual Geometry Benchmark</b>:5 数据集 89 场景(HiRoom 29 / ETH3D 11 / DTU 22 / 7Scenes 7 / ScanNet++ 20);位姿指标为 AUC(由 RRA/RTA 的 min 在阈值 3°/30° 下积分),重建指标 DTU 报 CD(mm)、其余报 F1;渲染为 PSNR/SSIM/LPIPS(见 §11.2)。</p>
+
+<h3>12.1 位姿精度(表 2,Auc3↑/Auc30↑)</h3>
+<table>
+<tr><th>方法</th><th>参数</th><th>HiRoom</th><th>ETH3D</th><th>DTU</th><th>7Scenes</th><th>ScanNet++</th></tr>
+<tr><td>DUSt3R</td><td>0.57B</td><td>17.6 / 54.3</td><td>4.30 / 27.3</td><td>4.00 / 74.3</td><td>6.90 / 61.6</td><td>8.10 / 33.9</td></tr>
+<tr><td>Fast3R</td><td>0.65B</td><td>25.9 / 77.0</td><td>8.10 / 44.4</td><td>9.50 / 79.1</td><td>19.0 / 78.6</td><td>17.9 / 72.5</td></tr>
+<tr><td>MapAnything</td><td>0.56B</td><td>17.9 / 82.8</td><td>19.2 / 77.4</td><td>6.50 / 72.7</td><td>12.6 / 79.7</td><td>20.2 / 84.1</td></tr>
+<tr><td>Pi3</td><td>0.96B</td><td>67.0 / 94.8</td><td>35.2 / 87.3</td><td>62.5 / 94.9</td><td>25.5 / 86.3</td><td>50.7 / 92.1</td></tr>
+<tr><td><a href="3D-20250314-VGGT.html">VGGT</a></td><td>1.19B</td><td>49.1 / 88.0</td><td>26.3 / 80.8</td><td>79.2 / 99.8</td><td>23.9 / 85.0</td><td>62.6 / 95.1</td></tr>
+<tr class="best"><td>DA3-Giant</td><td>1.10B</td><td><b>80.3 / 95.9</b></td><td><b>48.4 / 91.2</b></td><td><b>94.1 / 99.4</b></td><td><b>28.5 / 86.8</b></td><td><b>85.0 / 98.1</b></td></tr>
+<tr><td>DA3-Large</td><td>0.36B</td><td>58.7 / 94.2</td><td>32.2 / 86.9</td><td>70.2 / 96.7</td><td>29.2 / 86.6</td><td>60.2 / 94.7</td></tr>
+<tr><td>DA3-Base</td><td>0.11B</td><td>19.0 / 83.2</td><td>15.1 / 74.6</td><td>60.1 / 95.9</td><td>20.1 / 82.9</td><td>25.1 / 83.4</td></tr>
+<tr><td>DA3-Small</td><td>0.03B</td><td>9.49 / 75.2</td><td>8.59 / 62.1</td><td>30.6 / 91.2</td><td>14.0 / 78.7</td><td>10.9 / 71.9</td></tr>
+</table>
+<p><b>读法:</b>DA3-Giant 几乎全项最佳,唯一例外 DTU 的 Auc30(VGGT 99.8 > 99.4);Auc3 相对所有对手至少 +8%;ScanNet++ Auc3 相对第二名 VGGT 提升 33%。<b>0.36B 的 DA3-Large 在 10 项设置里的 5 项超过 1.19B 的 VGGT</b>(ETH3D 尤其突出)——小模型打大模型的效率收益。</p>
+
+<h3>12.2 几何重建精度(表 3,除 DTU 报 F1↑;DTU 报 CD↓mm;w/o p./w/ p.=是否给 GT 位姿)</h3>
+<table>
+<tr><th>方法</th><th>参数</th><th>HiRoom w/o/w</th><th>ETH3D w/o/w</th><th>DTU w/o/w</th><th>7Scenes w/o/w</th><th>ScanNet++ w/o/w</th></tr>
+<tr><td>DUSt3R</td><td>0.57B</td><td>30.1 / 39.5</td><td>19.7 / 18.8</td><td>7.60 / 7.97</td><td>26.6 / 39.8</td><td>18.9 / 27.3</td></tr>
+<tr><td>Fast3R</td><td>0.65B</td><td>40.7 / 48.2</td><td>38.5 / 50.3</td><td>6.88 / 8.20</td><td>41.0 / 49.8</td><td>37.1 / 53.7</td></tr>
+<tr><td>MapAnything</td><td>0.56B</td><td>32.4 / 69.2</td><td>54.8 / 71.9</td><td>7.91 / 3.97</td><td>44.8 / 55.2</td><td>39.4 / 71.3</td></tr>
+<tr><td>Pi3</td><td>0.96B</td><td>75.8 / 85.0</td><td>72.7 / 80.6</td><td>3.28 / 1.72</td><td>44.2 / 57.5</td><td>63.1 / 73.3</td></tr>
+<tr><td>VGGT</td><td>1.19B</td><td>56.7 / 70.2</td><td>57.2 / 66.7</td><td>2.05 / 1.44</td><td>47.9 / 51.4</td><td>66.4 / 70.7</td></tr>
+<tr class="best"><td>DA3-Giant</td><td>1.10B</td><td><b>85.1 / 95.6</b></td><td><b>79.0 / 87.1</b></td><td><b>1.85 / 1.85</b></td><td><b>53.5 / 56.5</b></td><td><b>77.0 / 79.3</b></td></tr>
+<tr><td>DA3-Large</td><td>0.36B</td><td>69.5 / 87.1</td><td>65.8 / 75.2</td><td>2.08 / 1.23</td><td>56.3 / 49.2</td><td>67.9 / 75.7</td></tr>
+<tr><td>DA3-Base</td><td>0.11B</td><td>25.9 / 71.4</td><td>49.5 / 66.7</td><td>2.87 / 2.36</td><td>49.9 / 50.6</td><td>47.2 / 67.8</td></tr>
+<tr><td>DA3-Small</td><td>0.03B</td><td>18.3 / 52.2</td><td>41.6 / 63.4</td><td>5.83 / 2.49</td><td>41.0 / 46.8</td><td>32.3 / 53.8</td></tr>
+</table>
+<p><b>读法:</b>DA3-Giant 全部 5 个 pose-free 设定 SOTA;有 pose 时多数数据集仍有增益,<b>7Scenes 例外(视频设定已饱和)</b>;pose-conditioned 下模型尺寸带来的增益小于 pose-free——说明 <b>pose 估计比深度估计更需要大模型</b>。</p>
+
+<h3>12.3 单目深度(表 4,δ1↑)</h3>
+<table>
+<tr><th>方法</th><th>KITTI</th><th>NYU</th><th>SINTEL</th><th>ETH3D</th><th>DIODE</th><th>Rank</th></tr>
+<tr><td>DA2</td><td>94.6</td><td>97.9</td><td>77.2</td><td>86.5</td><td>95.2</td><td>2.60</td></tr>
+<tr><td>VGGT</td><td>91.7</td><td>97.9</td><td>67.9</td><td>97.5</td><td>95.3</td><td>3.75</td></tr>
+<tr><td>DA3</td><td>95.3</td><td>97.4</td><td>75.5</td><td>98.6</td><td>95.4</td><td>2.20</td></tr>
+<tr class="best"><td>Teacher</td><td><b>97.2</b></td><td><b>97.9</b></td><td><b>81.4</b></td><td><b>99.8</b></td><td><b>96.6</b></td><td><b>1.00</b></td></tr>
+</table>
+<p>单目学生(表 10)全面超 DA2(ETH3D +10% 以上);metric 学生(表 11)ETH3D δ1=0.917 远超 UniDepthv2 的 0.863、SUN-RGBD AbsRel 0.105 最佳。</p>
+
+<div class="figure">
+  <img src="images/2511.10647/x5.png" loading="lazy" alt="点云质量对比">
+  <div class="caption"><b>图6</b>(论文 Figure 6)<b>点云质量对比。</b>DA3 的点云几何更规则、噪声显著少于其他方法。</div>
+</div>
+<div class="figure">
+  <img src="images/2511.10647/vis_depth.png" loading="lazy" alt="深度质量对比">
+  <div class="caption"><b>图7</b>(论文 Figure 7)<b>深度质量对比。</b>DA3 深度图在多样场景下结构细节更细、语义正确性更高。</div>
+</div>
+<div class="figure">
+  <img src="images/2511.10647/x7.png" loading="lazy" alt="in-the-wild 位姿与深度估计可视化">
+  <div class="caption"><b>图8</b>(论文 Figure 9)<b>in-the-wild 场景的相机位姿与深度估计可视化。</b>展示 DA3 在开放场景下的位姿轨迹与深度质量。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+
+<h3>13.1 预测目标组合(表 6,ViT-L / ≤10 视图;Auc3↑/F1↑,DTU 为 Auc3/CD↓)</h3>
+<table>
+<tr><th>预测目标</th><th>HiRoom</th><th>ETH3D</th><th>DTU</th><th>7Scenes</th><th>ScanNet++</th></tr>
+<tr><td>depth + pcd + cam</td><td>9.1 / 12.8</td><td>19.0 / 60.4</td><td>42.3 / 4.918</td><td>20.8 / 43.4</td><td>22.0 / 43.0</td></tr>
+<tr><td>depth + cam</td><td>10.8 / 16.5</td><td>9.9 / 48.0</td><td>23.3 / 5.316</td><td>13.0 / 38.5</td><td>13.3 / 41.0</td></tr>
+<tr class="best"><td>depth + ray</td><td><b>48.7 / 60.3</b></td><td><b>25.5 / 65.4</b></td><td>46.5 / 3.919</td><td>24.0 / 46.5</td><td><b>35.5 / 53.4</b></td></tr>
+<tr><td>depth + ray + cam(最终)</td><td>37.2 / 45.4</td><td>22.3 / 59.4</td><td><b>56.3 / 3.066</b></td><td><b>25.7 / 45.6</b></td><td>34.1 / 56.5</td></tr>
+</table>
+<p><b>读法:</b>最小 depth+ray 在所有数据集与指标上稳定优于 depth+pcd+cam 与 depth+cam;HiRoom Auc3 48.7 vs 10.8 近 4 倍差距。加 cam head 无进一步增益但开销可忽略(约 backbone 计算量 0.1%),最终采用 depth+ray+cam。<b>这一表是"单目标"论断的核心证据。</b></p>
+
+<h3>13.2 架构消融(表 7)</h3>
+<table>
+<tr><th>变体</th><th>HiRoom</th><th>ETH3D</th><th>DTU</th><th>7Scenes</th><th>ScanNet++</th></tr>
+<tr class="best"><td>a. 本文架构(交替)</td><td><b>39.2 / 47.0</b></td><td><b>21.0 / 55.4</b></td><td><b>45.8 / 3.82</b></td><td><b>26.2 / 47.6</b></td><td><b>30.3 / 51.1</b></td></tr>
+<tr class="fail"><td>b. VGGT 式双 transformer</td><td>3.72 / 14.5</td><td>2.31 / 27.4</td><td>1.38 / 6.93</td><td>0.97 / 21.4</td><td>2.03 / 12.2</td></tr>
+<tr><td>c. Full Alt.(全交替)</td><td>24.7 / 29.3</td><td>13.1 / 51.9</td><td>44.6 / 4.23</td><td>21.1 / 48.6</td><td>27.7 / 47.5</td></tr>
+<tr class="fail"><td>d. w/o Dual DPT(两独立 DPT)</td><td>5.59 / 11.5</td><td>13.6 / 33.4</td><td>21.7 / 5.14</td><td>14.2 / 49.4</td><td>26.5 / 46.6</td></tr>
+<tr class="fail"><td>e. w/o Teacher</td><td>11.2 / 16.0</td><td>16.2 / 57.6</td><td>52.5 / 3.29</td><td>23.3 / 40.3</td><td>26.2 / 47.7</td></tr>
+<tr><td>f. w/o Pose Cond.*</td><td>65.8</td><td>63.2</td><td>3.65</td><td>58.4</td><td>62.8</td></tr>
+<tr><td>g. w/ Pose Cond.*</td><td><b>73.8</b></td><td><b>70.9</b></td><td><b>2.14</b></td><td class="fail">46.0</td><td><b>65.7</b></td></tr>
+</table>
+<p><b>读法:</b>① b 全面崩(仅达 a 的 79.8%)——"定制架构 + 三分之二 block 未预训练"的代价;② 交替比全交替优(partial alternation 更优);③ Dual-DPT 不可拆;④ teacher 对 HiRoom(合成 GT 细节丰富)几乎必要,真实数据集 gains 不一;⑤ <b>pose conditioning 在 7Scenes 反而更差(46.0 vs 58.4),与正文"各配置一致优于"的说法矛盾</b>——这是本笔记复核发现的一处原文数字与结论不一致<span class="uncertain">⚠️【待核实】可能对应不同评测协议,原文未解释</span>。</p>
+
+<h3>13.3 Teacher 消融(表 9)与 NVS 消融</h3>
+<p>V3 数据 + 多分辨率策略最佳(δ1 0.938 / AbsRel 0.072 / SqRel 0.452);depth 几何表示最优(优于 disparity/pointmap);full teacher loss 最优。</p>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+
+<h3>14.1 横向对比表</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td>DUSt3R</td><td>2023</td><td>图像对</td><td>point map</td><td>GT point map</td><td>混合</td><td>—</td><td>—</td><td>—</td><td>ETH3D Auc3 4.30</td><td>✅</td></tr>
+<tr><td>Fast3R</td><td>2025</td><td>任意视角</td><td>point map</td><td>DUSt3R 蒸馏</td><td>—</td><td>—</td><td>—</td><td>—</td><td>ETH3D Auc3 8.10</td><td>✅</td></tr>
+<tr><td>MapAnything</td><td>2025</td><td>任意视角(全景为主)</td><td>depth + pose</td><td>多任务</td><td>—</td><td>—</td><td>—</td><td>—</td><td>ETH3D Auc3 19.2</td><td>✅</td></tr>
+<tr><td><a href="3D-20250717-Pi3.html">Pi3</a></td><td>2025</td><td>单/多视角</td><td>depth + pose</td><td>多任务</td><td>—</td><td>—</td><td>—</td><td>—</td><td>ETH3D Auc3 35.2</td><td>✅</td></tr>
+<tr><td><a href="3D-20250314-VGGT.html">VGGT</a></td><td>2024</td><td>任意视角</td><td>depth + point map + pose + 置信度</td><td>多任务联合</td><td>混合(2/3 block 未预训练)</td><td>—</td><td>34.1 FPS(32 图,A100)</td><td>单卡 400-500 图</td><td>ETH3D Auc3 26.3;ScanNet++ F1 66.4</td><td>✅</td></tr>
+<tr class="best"><td><b>DA3-Giant</b></td><td>2025.11</td><td>任意视角,位姿可选</td><td><b>depth + ray(单目标)</b></td><td>GT + teacher 伪深度</td><td>22 数据源(合成为主)</td><td>128×H100,200k 步(约 10 天级)</td><td>37.6 FPS(32 图,A100)</td><td>单卡 900-1000 图;流式可 &lt;12GB</td><td>ETH3D Auc3 48.4;ScanNet++ F1 77.0</td><td>✅(权重+推理代码;训练闭源)</td></tr>
+</table>
+<p class="refs">注:DUSt3R/Fast3R/MapAnything/Pi3 的"训练数据/时长/显存"论文未逐项报告,标 —;对比数值均引自 DA3 论文表 2/表 3/表 8 同一协议。</p>
+
+<h3>14.2 逐条对比结论(机制层面)</h3>
+<ul>
+  <li><b>vs VGGT(最直接前身):</b>同一"统一几何"目标,差别在三处——① 表示:VGGT 预测 point map(相机系点云,隐式含 pose),DA3 预测 depth+ray(显式分解);② 架构:VGGT 是双 transformer + 专门 attention 算子,DA3 是原版 DINOv2 + reshape 交替;③ 预训练利用:VGGT 三分之二 block 未预训练,DA3 全量预训练——消融 b 证明这是 79.8% 差距的主因。<b>结论:在强预训练权重面前,架构特化是负资产。</b></li>
+  <li><b>vs DUSt3R/Fast3R(point map 系):</b>point map 把深度与相机耦合在一个张量里,跨视图监督只能靠点云对齐损失;DA3 的 depth-ray 把两者正交分解,ray 监督直接钉相机、深度监督直接钉几何,表 6 证明这种分解显著优于 point map 目标。</li>
+  <li><b>vs <a href="3D-20250717-Pi3.html">Pi3</a>(单/多目几何系):</b>Pi3 用多任务(depth + pose 分开监督),DA3 用单目标 + 解析解 pose;表 2 中 DA3-Giant 在全部 5 数据集 pose 超 Pi3,7Scenes 上例外(两者都受视频设定饱和影响)。</li>
+  <li><b>vs <a href="3D-20260720-MoGe-3.html">MoGe-3</a>(单目几何系):</b>MoGe-3 专精单目几何(自引导稀疏体素精炼),DA3 单目档(DA3Mono/Teacher)在标准 δ1 协议反超 DA2/MoGe 系——但 MoGe-3 的单目点云质量与 DA3 多视图档不在同一输入设定,不宜直接比数。<b>选型:单目选 MoGe-3/DA3Mono,多目几何统一选 DA3。</b></li>
+</ul>
+
+<h3>14.3 演进定位</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>point map 统一</td><td>DUSt3R → MASt3R → Fast3R</td><td>两图点云回归</td><td>深度与相机耦合,监督信号互相污染</td></tr>
+<tr><td>多任务统一</td><td>VGGT → Pi3 → MapAnything</td><td>pose+depth+置信度联合</td><td>架构定制、预训练利用率低</td></tr>
+<tr><td>极简统一</td><td><b>DA3</b></td><td>预训练 ViT + depth-ray 单目标</td><td>静态场景;大规格许可非商用</td></tr>
+<tr><td>几何基座 + 属性头</td><td>DA3-GS → AnySplat → <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a></td><td>冻结 DA3 几何、只学渲染属性</td><td>几何错误不可修(见 v2 笔记 §16)</td></tr>
+</table>
+<p><b>定位一句话:</b>DA3 是"几何基础模型"这一定位的<b>当前正典</b>——它把 VGGT 开辟的路线收敛到最简形态,并以"NVS 性能与几何精度直接正相关"的实证(表 5 + §7.5)奠定了后续"冻结几何、专学属性"整条范式线的合法性。</p>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 应用场景与落地适配性</h2>
+
+<h3>15.1 与我们 pipeline(vggt_human)的相关性</h3>
+<ul>
+  <li><b>最直接相关:它正在替换/补强 VGGT 的生态位。</b>我们 pipeline 的 COLMAP 环节可考虑 DA3-GS 或 DA3 点云作为稀疏视角初始化(对比现行 COLMAP 点云);DA3 相机头 + ray map 解析解可作为 COLMAP 失败场景的位姿先验【推测,需实测】。</li>
+  <li><b>硬件门槛</b>:流式推理 KITTI 窄分辨率 chunk 30 峰值 11.5GB——单卡 3090(24GB)可跑 Large 甚至 Giant(非流式 Giant 单卡 900-1000 图 @ A100 80GB,504×336 分辨率下 3090 预计也可行)【待实测】;Small/Base 更加轻松。</li>
+  <li><b>商用许可红线</b>:性能档 Large/Giant/Nested 是 <b>CC BY-NC 4.0</b>,商用项目只能 Small(0.08B)/Base(0.12B)/Metric/Mono(Apache 2.0)——选型时先定许可再定规格【重要】。</li>
+  <li><b>与 <a href="3D-20251109-MHR.html">MHR</a>/3DMM 对齐的关系</b>:DA3 给的是场景几何与相机,不直接产出 3DMM 系数;head_gs 的 MHR 拟合仍需独立环节;但 DA3 的深度+置信度可作为人体区域几何先验辅助 3DMM 对齐的初始化【推测】。</li>
+  <li><b>人体场景</b>:训练数据以室内/驾驶/物体合成数据为主,无人体专项;冻结几何对人体非刚性失效——只适合 scene_gs/背景重建,不适合 head_gs/body_gs 的几何来源。</li>
+</ul>
+
+<h3>15.2 论文展示的应用</h3>
+<ul>
+  <li>视频重建(困难视频的视觉空间恢复)、大规模 SLAM(DA3-Long 替换 VGGT-Long 中的 VGGT,漂移显著降低,甚至优于跑 48h+ 的 COLMAP——项目页口径)。</li>
+  <li>车载多相机空间感知(无重叠视角也能出稳定可融合深度);前馈 3DGS(§11)。</li>
+</ul>
+
+<h3>15.3 落地成本账</h3>
+<table>
+<tr><th>项</th><th>成本</th><th>说明</th></tr>
+<tr><td>推理</td><td>Large 78 FPS / Giant 38 FPS(32 图,A100)</td><td>表 8;流式 8.51 FPS @ A100</td></tr>
+<tr><td>复现训练</td><td><b>不可行</b></td><td>无训练代码;128×H100 200k 步</td></tr>
+<tr><td>微调</td><td>低(只训 head 可行,如 DA3-GS 冻结 backbone)</td><td>官方 DA3-GS 即此模式;参考 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 的"冻结几何 + 属性头"做法</td></tr>
+<tr><td>商用许可</td><td>Large/Giant/Nested 禁商用</td><td>Small/Base/Metric/Mono Apache 2.0</td></tr>
+</table>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] ① "无架构修改"的说法名不副实(方法/工程层面)</h4>
+<p><b>问题</b>:论文宣称 vanilla DINOv2 零修改,但源码里 local/global 交替、camera token 注入、参考视图选择、cat_token 双流拼接、qk_norm、RoPE 双坐标全在 <code>vision_transformer.py</code>。后果:① DA3 升级即破坏下游兼容——<a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 不得不把 DA3 钉死 commit 41736238 并打两处 monkey-patch(v2 笔记 §11);② 想"换个更强预训练 backbone"时,这些调度代码都要重做。<b>改进建议</b>:把 token 调度逻辑抽象成与 backbone 解耦的 adapter;论文措辞改为 "block-level zero modification"。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--red)">
+<h4>[高优先级] ② 许可分裂逼出"性能-商用"二选一(工程实用性)</h4>
+<p><b>问题</b>:Apache 2.0 的 Small/Base(0.08B/0.12B)性能与 CC BY-NC 的 Large/Giant(0.35B/1.15B)差距悬殊——表 2 中 ETH3D Auc3 Base 15.1 vs Large 32.2 vs Giant 48.4,商用可用档直接腰斩。<b>改进建议</b>:商用场景要么用 Base + 领域微调补回性能,要么走授权;学术/内部验证直接用 -1.1 版 Giant/Nested。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] ③ pose conditioning 消融数字与结论矛盾(数据与评估)</h4>
+<p><b>问题</b>:表 7-f/g 中 7Scenes 上 w/ Pose Cond(46.0)反而差于 w/o(58.4),正文却称"各配置均一致优于";pose-free 主表(表 3)里 7Scenes w/ p. 也只有 56.5 vs w/o 53.5 的微升。<b>改进建议</b>:论文应解释该数据集的特殊性(视频设定、运动模糊严重,GT 本身噪声大),否则"pose conditioning 总是有用"的结论不成立。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] ④ 数字口径三处不一致(数据与评估)</h4>
+<p><b>问题</b>:摘要 44.3%/25.1%、全文摘要 35.7%/23.6%、正文 25.1%/21.5% 三套相对提升口径并存;表 2/3 的 Params 列(1.10B/0.36B)与表 8 的 Backbone 列(1.130B/0.300B)也不一致;表 11 中 Metric3Dv2 的 DIODE δ1=0.018 疑似笔误。<b>改进建议</b>:统一相对提升的计算设定(pose-free 还是平均),参数表以 README 口径为准。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--orange)">
+<h4>[中优先级] ⑤ 训练完全闭源 + 无 intermediate 复现路径(工程实用性)</h4>
+<p><b>问题</b>:仓库纯推理,训练数据虽全部公开(表 1),但 teacher 训练细节、主模型 120k 步切换的 schedule、动态 batch 的 token 预算公式均未给出;第三方无法验证"128×H100 200k 步"的成本账。<b>改进建议</b>:至少开源训练配置(不开源权重也可),否则"全部公开学术数据训练"的宣称难以核验。</p>
+</div>
+
+<div class="card" style="border-left:4px solid var(--yellow)">
+<h4>[低优先级] ⑥ 动态场景与位姿漂移累积(方法层面)</h4>
+<p><b>问题</b>:静态刚性假设;滑窗流式靠块间 Sim3 对齐 + 回环闭合兜底,长序列累积误差未与真 SLAM 充分对比(项目页"优于 COLMAP 48h"为定性口径)。<b>改进建议</b>:接入关键帧 BA 或位姿图优化;动态掩码辅助。</p>
+</div>
+
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>预期收益</th></tr>
+<tr><td>高</td><td>① token 调度与 backbone 解耦;② 商用许可档性能补齐路径</td><td>生态兼容;商用可用性</td></tr>
+<tr><td>中</td><td>③ pose cond 矛盾解释;④ 数字口径统一;⑤ 训练配置开源</td><td>结论可信度;可复现性</td></tr>
+<tr><td>低</td><td>⑥ 动态/长序列漂移</td><td>向 world model 演进</td></tr>
+</table>
+<div class="callout key"><b>个人认为最关键的三点:</b>②(许可分裂是落地第一决策变量)、①(DA3 已是下游冻结依赖的事实标准,接口稳定性影响整条"几何基座 + 属性头"范式线)、⑤("公开数据训练"宣称与闭源训练代码之间的张力,决定社区能否真正复现)。</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+<p>DA3 的意义不在某个单项 SOTA,而在<b>方法论收敛</b>:统一几何基础模型不需要复杂架构,不需要多任务损失——一个预训练 DINOv2 + depth-ray 单目标 + 交替注意力就够了;且它用消融证明了两件事:① 预训练权重的利用效率比架构设计重要(VGGT 式定制 = 79.8%);② 几何精度与下游 NVS 性能直接正相关(表 5)——后者直接催生了 DA3-GS / AnySplat / <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 整条"几何基座 + 属性头"范式线。</p>
+<p>代价与边界:静态场景假设;训练闭源(128×H100);Large 以上禁商用;token 调度层工程含量高却被"无架构修改"的说法掩盖。在库内坐标系里,DA3 与 <a href="3D-20250314-VGGT.html">VGGT</a> 的关系类似"正典与先驱"——VGGT 开辟了统一几何的赛道,DA3 用极简方案重置了赛道标准;我们 pipeline 里凡是原来考虑 VGGT 的位置,都应该重新评估 DA3(及其流式版)的替换收益。</p>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+<h3>18.1 团队</h3>
+<ul>
+  <li>全员 <b>ByteDance Seed</b>:Haotong Lin / Sili Chen / Jun Hao Liew / Donny Y. Chen(共同一作,*对应关系 HTML 丢失【待核实】)、Zhenyu Li、Guang Shi、Jiashi Feng、Bingyi Kang(Project Lead,通讯)。</li>
+  <li>Haotong Lin 是 DUSt3R/MASt3R 系作者之一【待核实】,一脉相承的 point-map → depth-ray 路线转向。</li>
+</ul>
+<h3>18.2 资源链接</h3>
+<div class="links">
+  <a href="https://arxiv.org/abs/2511.10647" target="_blank">📄 arXiv(2511.10647)</a>
+  <a href="https://depth-anything-3.github.io/" target="_blank">🌐 项目主页</a>
+  <a href="https://github.com/ByteDance-Seed/Depth-Anything-3" target="_blank">💻 GitHub(6.6k★,纯推理)</a>
+  <a href="https://huggingface.co/depth-anything" target="_blank">🤗 HF 权重(7 个规格)</a>
+</div>
+<div class="callout warn" style="margin-top:16px"><b>资源可用性(截至 2026-11-04):</b>代码开源(Apache 2.0,纯推理 + bench);权重全部公开(HF);<b>无训练代码</b>;ICLR 2026 Oral 为项目页口径,abs 页 comments 仅项目页链接;HF 镜像 hf-mirror.com 可用。</div>
+</section>
+
+<div class="footer">📝 阅读笔记 · 生成于 2026-11-04 · 领域: 3D 重建 / 几何基础模型(单 plain transformer + depth-ray 单目标)</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
+</body>
+</html>
