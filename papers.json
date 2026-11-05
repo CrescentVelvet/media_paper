@@ -5201,7 +5201,7 @@
         "VGM 先验",
         "测试时优化"
       ],
-      "summary": "query-based 前馈 3DGS 的破糊方案:几何/外观双分支双查询解码器(几何查询只吃冻结 VGM 特征出位置/尺度/旋转,外观查询以几何 token 为基只出 α/SH),坐标系与相机全由 VGGT-Ω 自建(Sim(3) 对齐、双趟隔离防泄漏),VGM 深度做仅前 20K 步的瞬态 CD/不透明度地板正则。DL3DV interp 较最强 pose-free baseline +<strong>2.30 dB</strong>、较最强 pose-required +<strong>1.04 dB</strong>(均经手算复核);消融证明发糊主因是属性纠缠(去外观 -4.25 dB),VGM backbone 可替换(VGGT 与 VGGT-Ω 打平)。笔记含推理源码级验证(file:line)、SH0/SH1 双 checkpoint 口径差异、效率账(H200 4 视角 0.95s/9.4GiB),以及 DA3+2DGS+QuerySplat 三替换路线的证据分级分析。",
+      "summary": "query-based 前馈 3DGS 的破糊方案:几何/外观双分支双查询解码器(几何查询只吃冻结 VGM 特征出位置/尺度/旋转,外观查询以几何 token 为基只出 α/SH),坐标系与相机全由 VGGT-Ω 自建(Sim(3) 对齐、双趟隔离防泄漏),VGM 深度做仅前 20K 步的瞬态 CD/不透明度地板正则。DL3DV interp 较最强 pose-free baseline +<strong>2.30 dB</strong>、较最强 pose-required +<strong>1.04 dB</strong>(均经手算复核);消融证明发糊主因是属性纠缠(去外观 -4.25 dB),VGM backbone 可替换(VGGT 与 VGGT-Ω 打平)。笔记含推理源码级验证(file:line)、SH0/SH1 双 checkpoint 口径差异、效率账(H200 4 视角 0.95s/9.4GiB),以及 DA3+2DGS+QuerySplat 三替换路线的证据分级分析,及 2026-11 内部 DA3+2DGS 实证与 InfiniSplat v2 的三方证据闭环。",
       "links": [
         {
           "href": "3D-20261105-QuerySplat.html",

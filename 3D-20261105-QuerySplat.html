@@ -628,6 +628,36 @@ flowchart TD
 <p><b>建议落地顺序:</b>① 先换 VGM 插槽(DA3),冻结其余一切,复现 Table 4 级别的对比 —— 成本最低、证据最硬;② 再改几何 head 到 2DGS surfel,渲染损失与 TTO 直接复用(gsplat 原生支持 2DGS 光栅化);③ 合体后再谈大场景(query 预算固定是共同瓶颈,论文 Limitations 自己指向"分块重建+对齐合并")。</p>
 <p><b>对 vggt_human pipeline 的适配性:</b>pose-free 前馈 scene_gs 初始化可替代 COLMAP 的稀疏点云环节(24 视角内 11.5 GiB,单卡 3090 可行【推测】);T2V-生成视角重建(图 13)与 3D Scene Repair(图 12)两个应用演示与"生成辅助重建"主线直接相关。但 52 万 query-Gaussian 的表示与 3DMM/人体 Gaussian 拆分架构的耦合方式需要单独设计,不是即插即用。</p>
 
+<h3>④ 同事 DA3+2DGS 实证 × InfiniSplat v2 交叉印证(2026-11-05,内部实验)</h3>
+<p>同事实验观察与本文 ①② 的分析逐项吻合:<b>DA3 直接重建精细但有 floater/重影</b>(归因:跨视角位姿不一致 → 同一表面被不同视角重建到微错位位置、自由空间长出伪点);<b>QuerySplat 无 floater/重影但偏糊</b>(外观容量不足,SH0 + 低维查询)。同事方案:<b>冻结 DA3 几何骨干 + 低分辨率 2DGS 几何分支 + 高分辨率纹理分支</b>(纹理清晰度显著提升),另加<b>带范围约束的像素中心 offset 与深度 offset</b>(重影/floater 明显改善)。该方案本质是"手工版 QuerySplat 解耦",且与 InfiniSplat v2 的消融构成<b>三方证据闭环</b>。</p>
+<table>
+<tr><th>同事组件</th><th>对应 QuerySplat(本文)</th><th>对应 InfiniSplat v2(其笔记 §4/§13)</th><th>机制解释</th></tr>
+<tr><td>冻结 DA3 骨干 + 低分辨率 2DGS 几何分支</td><td>冻结 VGM + 几何查询分支(容量受控,§16)</td><td>冻结几何分支;w/o G 消融证明微调几何反而退化(ETH3D LPIPS -16.6%、DTU -23.2%)</td><td>阻断"移动点位置补偿属性误差"的退化通路;2DGS surfel 面元贴表面、无体积感,<b>低分辨率刻意限制几何自由度</b>——相当于给 DA3 点云套一个低通可变形层,点不能逐像素乱飞</td></tr>
+<tr><td>高分辨率纹理分支</td><td>外观查询分支(消融:去外观 -4.25 dB)</td><td>属性分支(微调最后 K=10 块 + DPT head)</td><td>属性解耦后纹理不再背几何包袱;且比两者更进一步——<b>分辨率维度也解耦</b>(几何低通、纹理高通)</td></tr>
+<tr><td>有界像素中心 offset + 深度 offset</td><td>瞬态 CD 正则是<b>软</b>约束,仅前 20K 步,全程施加反而失稳(其 Table 12a)</td><td>位置全锁死(zero-offset);w/ O 消融证明<b>全开</b> 3D offset 有害(重开旁路:ETH3D LPIPS 0.4339→0.4998、DTU 0.2070→0.2826)</td><td class="best">有界 offset = 硬信任域:全程稳定、可全程存在;跨视角位姿错位被吸收为<b>局部亚像素位移</b>而非各自生成双表面;超界的伪点没有生存空间,floater 结构性绝迹</td></tr>
+</table>
+<div class="callout key"><b>三方证据指向同一空白区间:</b>QuerySplat 证明"位置先验要用,但约束形态要选对"(软正则瞬态);InfiniSplat v2 证明"零自由度"与"全开自由度"两个端点都不优,其 §16-① 自己点名改进方向是"<b>沿视线 1 自由度深度残差 / 置信门控 offset</b>";同事的"有界像素中心 + 深度 offset"恰好落进这个空白并验证有效。同时该内部实验把 ③ 矩阵中"DA3 几何先验喂 Gaussian"与"2DGS 几何分支"两条的置信度由纯机制推断<b>升级为有内部实证</b>(注意:实证的是 DA3+2DGS 组合,未含 QuerySplat 查询解码器,不可直接外推到合体)。</div>
+
+<h4>可从 InfiniSplat v2 直接嫁接的四项(按成本排序)</h4>
+<table>
+<tr><th>嫁接件</th><th>成本</th><th>预期收益与依据</th></tr>
+<tr><td>opacity 0.01 剪枝后处理</td><td class="best">零成本(纯后处理)</td><td>InfiniSplat v2 诊断:纯重建监督下 opacity 自学会抑制几何不一致点,0.01 剪枝命中 51.8% 坏点、仅伤 7.5% 总点(其 §8)——对已冻结场景直接生效</td></tr>
+<tr><td>大角度目标视角监督</td><td>低(改采样器)</td><td>目标视角按与输入光轴最小夹角分池、0.7/0.3 采样(其 §6);只监督近输入视角时 Gaussian 形状单向约束、大角度外推露馅</td></tr>
+<tr><td>Scale-aligned 相机反投影(训练侧)</td><td>中(per-scene 有 GT/COLMAP 位姿才可用)</td><td>训练反投影与监督用同一套尺度对齐相机(Umeyama 只取尺度),消除相机诱导残差;其 w/o C 消融:DTU LPIPS 恶化 36.1% 的教训(其 §5)</td></tr>
+<tr><td>渲染反馈精修 Refiner</td><td>高(权重未发布,需自训)</td><td>吃渲染梯度学属性更新,中心固定前提与同事冻结方案天然兼容;3 步比 Adam 精修多 +0.62 dB(其 §7)。作可选项,非必做</td></tr>
+</table>
+<div class="callout warn"><b>反向外推警示:</b>InfiniSplat v2 的主指标是 LPIPS/DISTS(感知),其 PSNR 前馈仍输 ReSplat 0.63 dB;同事的"纹理清晰度提升"若以 LPIPS 评判需谨慎——高分辨率纹理分支 + LPIPS 损失的感知收益可能掩盖几何误差。复现评测时 <b>NVS 指标(PSNR/LPIPS)与几何指标(Chamfer/F-score)必须分开报</b>。</div>
+
+<h4>复现路线与已知坑</h4>
+<ul>
+<li><b>per-scene 版(推荐先行):</b>DA3 推理(深度+位姿)→ 反投影建 anchor 点云(降采样)→ 2DGS surfel 参数化 + 有界 offset → 光度损失优化。组件全开源(DA3 Apache 2.0 + diff-surfel-rasterization),无训练大模型环节,3090 可跑,约 2–4 周。</li>
+<li><b>前馈版:</b>需把 per-scene 结果蒸馏进网络(查询/像素头均可),训练成本对标工业级;InfiniSplat v2 亦训练闭源,无捷径。</li>
+<li><b>坑 1 — offset 界标定:</b>太松 floater 回来(InfiniSplat v2 w/ O 已示范),太紧重影修不动;建议按 DA3 深度不确定度或视差级(±0.5–1 像素 footprint)初始化。</li>
+<li><b>坑 2 — "糊"的主因在纹理分支:</b>2DGS 只稳几何不给清晰度(几何强化、纹理中性),若复现后仍糊,查高分辨率分支的容量/训练量/正则,别去动几何。</li>
+<li><b>坑 3 — 毒 anchor:</b>建 anchor 前做多视角一致性筛选(reprojection 误差剔除离群点),先拔毒再吸收。</li>
+</ul>
+<p><b>后续改进优先级:</b>① 显式 pose residual(SE(3) 小量)联合优化——floater/重影的根因是位姿不一致,三篇工作(QuerySplat VGM 双趟隔离 / InfiniSplat v2 GT 对齐 / 同事有界 offset 吸收)全是<b>症状级</b>处理,pose-free 场景下无人根治;② 置信度自适应 offset 界;③ 上表四项嫁接;④ 动态物体 visibility gating(per-view 瞬态不透明度)。</p>
+
 <div class="grid-2">
   <div class="figure">
     <img src="images/2608.01186/fix.png" loading="lazy" alt="3D scene repair">
@@ -655,6 +685,10 @@ flowchart TD
   <div class="card" style="border-left:4px solid var(--red)">
     <h4>[高] VGM 许可卡死商用</h4>
     <p>vendored VGGT-Ω/DINOv3 为 FAIR 非商用研究许可(NOTICE 直读)。<b>改进:</b>换 Apache 2.0 的 DA3(§15),一举解决许可 + 位姿 + metric 深度三问题。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h4>[高] 位姿根因未根治,floater/重影全是症状级处理</h4>
+    <p>内部实证(§15-④):DA3 重建的 floater/重影源于跨视角位姿不一致。三家的对策——本文 VGM 双趟输入/全景隔离、<a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 训练期 GT 位姿尺度对齐、同事有界 offset 吸收——没有一家修正预测位姿本身。<b>改进:</b>几何分支出 pose residual(SE(3) 小量)与 offset 联合优化,或在 VGM 坐标系内做可微 BA;这是 pose-free 路线的真天花板。</p>
   </div>
   <div class="card" style="border-left:4px solid var(--orange)">
     <h4>[中] 解耦不彻底:外观梯度仍回流几何</h4>
@@ -687,7 +721,7 @@ flowchart TD
 <!-- =================== 17 =================== -->
 <section class="section" id="s17">
 <h2><span class="num">17</span>总结与演进定位</h2>
-<p>QuerySplat 把 query-based 前馈 3DGS 的两个结构性缺陷(属性纠缠、无 3D 先验)用「双分支双查询 + 冻结 VGM 先验 + 瞬态早期正则」一并解决,在 DL3DV 上同时超过最强 pose-required(+1.04 dB)与 pose-free(+2.30 dB)baseline,并首次让 query-based 渲染锐度追平像素对齐方法。其对领域的真正贡献不在于 SOTA 数字,而在于三点方法论:① <b>属性应按梯度性质解耦建模</b>(消融 -1.98/-4.25 dB 的硬证据);② <b>VGM 是 Gaussian 头的通用几何插槽</b>(VGGT↔VGGT-Ω 打平);③ <b>早期正则必须是瞬态的</b>(全程施加反而失稳)。在演进脉络上,它与 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a>(冻结几何 + GT 位姿)从两端收敛到同一结论——<b>几何先验要冻结、属性要靠渲染反馈学、位姿要么外包给 VGM 要么用 GT 对齐</b>;query-based 与非像素对齐是前馈 3DGS 摆脱像素网格束缚的下一步。</p>
+<p>QuerySplat 把 query-based 前馈 3DGS 的两个结构性缺陷(属性纠缠、无 3D 先验)用「双分支双查询 + 冻结 VGM 先验 + 瞬态早期正则」一并解决,在 DL3DV 上同时超过最强 pose-required(+1.04 dB)与 pose-free(+2.30 dB)baseline,并首次让 query-based 渲染锐度追平像素对齐方法。其对领域的真正贡献不在于 SOTA 数字,而在于三点方法论:① <b>属性应按梯度性质解耦建模</b>(消融 -1.98/-4.25 dB 的硬证据);② <b>VGM 是 Gaussian 头的通用几何插槽</b>(VGGT↔VGGT-Ω 打平);③ <b>早期正则必须是瞬态的</b>(全程施加反而失稳)。在演进脉络上,它与 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a>(冻结几何 + GT 位姿)从两端收敛到同一结论——<b>几何先验要冻结、属性要靠渲染反馈学、位姿要么外包给 VGM 要么用 GT 对齐</b>;query-based 与非像素对齐是前馈 3DGS 摆脱像素网格束缚的下一步。2026-11 的内部 DA3+2DGS 实证(冻结骨干 + 双分支 + 有界 offset,§15-④)从工程侧再次独立验证了同一结论,并暴露了三家方法共同的盲区——<b>预测位姿本身的修正</b>。</p>
 </section>
 
 <!-- =================== 18 =================== -->
