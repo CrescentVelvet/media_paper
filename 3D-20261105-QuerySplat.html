@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuerySplat:几何/外观双查询解耦 + VGM 先验,pose-free 前馈 3DGS 在 DL3DV 较最强 baseline +2.30dB</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+.hdiag{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin:16px 0}
+.hbox{flex:1;min-width:150px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center}
+.hbox b{color:var(--accent);display:block;margin-bottom:4px;font-size:14px}
+.hbox small{color:var(--text-dim);font-size:12px}
+.harrow{align-self:center;color:var(--accent2);font-size:20px;font-weight:700}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2608.01186 · 2026-08-02 · 📊 deep · pose-free · query-based</span>
+    <h1>QuerySplat:几何/外观双查询解耦 + VGM 先验,pose-free 前馈 3DGS 在 DL3DV 较最强 baseline +2.30dB</h1>
+    <div class="subtitle">QuerySplat: Decoupling Geometry and Appearance Representations in 3DGS Prediction</div>
+    <div class="authors">Yinglong Li · Donghui Shen · Xiaoyu Zhang · Zhichao Ye · Hongyu Wu(通讯)· Aimin Hao · Guofeng Zhang(通讯)· Haomin Liu</div>
+    <div class="org">北京航空航天大学 虚拟现实技术与系统国家重点实验室 · InSpatio Research · 浙江大学 CAD&CG 国家重点实验室</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2608.01186" target="_blank">📄 arXiv</a>
+      <a href="https://inspatio.github.io/querysplat" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/inspatio/QuerySplat" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/inspatio/querysplat" target="_blank">🤗 HF 权重</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 <b>无 comments 字段、仅 v1</b>(2026-08-02 提交),按库规范<b>不加会议 badge</b>。GitHub 已开源并放出推理代码 + 双 checkpoint,但<b>仅推理实现</b>(README 原话 "official inference implementation"),训练代码未放出;vendored VGGT-Ω/DINOv3 为 <b>FAIR 非商用研究许可</b>,商用需注意(见 §11)。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块①:冻结 VGM 特征提取</a></li>
+    <li><a href="#s5">模块②:自校准坐标系</a></li>
+    <li><a href="#s6">模块③:几何查询解码器</a></li>
+    <li><a href="#s7">模块④:外观查询解码器</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">可选测试时优化(TTO)</a></li>
+    <li><a href="#s10">逻辑流程图(训练 / 推理)</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 落地适配:DA3+2DGS+QuerySplat 结合分析</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>前馈式 3DGS 的像素对齐(parcel-aligned)范式把 Gaussian 绑死在相机射线上,空间自由度受限、怕深度误差与位姿扰动;而 query-based 前辈 TokenGS 虽然解开了像素网格,却把几何属性(依赖全局空间推理)与外观属性(依赖局部高频纹理)塞进同一组查询里联合回归,导致属性纠缠、渲染发糊,且只靠 2D 光度监督从零学结构、没有 3D 先验和正则坐标系,离不开精确位姿。QuerySplat 的解法是<b>属性解耦的双分支双查询解码器 + 冻结的预训练视觉几何模型(VGM)先验</b>:几何查询只从 VGM 几何特征解码位置/尺度/旋转,外观查询以几何 token 为基、只从 RGB+Plücker 内存解码不透明度/SH 颜色;坐标系、相机全部来自 VGM 自建(self-calibrated),因此原生 pose-free。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>用「属性解耦查询 + VGM 先验 + 早期瞬态正则」把 query-based 前馈 3DGS 从"发糊、依赖位姿"拉到 DL3DV NVS 全面 SOTA——pose-free 设定下较最强 baseline 平均 <b>+2.30 dB PSNR</b>,较最强 pose-required baseline 平均 <b>+1.04 dB</b>(两组数字均经本笔记按 Table 1 原始值逐档手算复核,见 §12);消融显示发糊主因确实是属性纠缠(去掉外观分支 -4.25 dB,单分支融合 -1.98 dB),而 VGM backbone 可替换(VGGT 与 VGGT-Ω 打平,表 4)。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">+2.30 dB</div><div class="l">DL3DV interp PSNR 较最强 pose-free baseline(2/4/12 视图 +2.22/+2.61/+2.07 均值,Table 1 手算)</div></div>
+  <div class="stat"><div class="v">+1.04 dB</div><div class="l">较最强 pose-required baseline(+0.85/+1.31/+0.97 均值,Table 1 手算)</div></div>
+  <div class="stat"><div class="v">0.95 s</div><div class="l">4 视角前馈重建(H200,8192 查询,Table 14);12 视角 1.89 s</div></div>
+  <div class="stat"><div class="v">52.4 万</div><div class="l">8192 查询 × 64 primitive/query = 524,288 个 Gaussian(Appendix E)</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2608.01186/teaser.png" loading="lazy" alt="QuerySplat teaser">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>QuerySplat 总览。</b>给定位姿未知、视角数不定的非标定图像,QuerySplat 以 pose-free、前馈、非像素对齐方式重建干净高保真的 3D Gaussian 场景;相比已有方法场景结构连贯性显著更好,秒级支持 in-the-wild 输入。</div>
+</div>
+
+<h3>论文自述的三条贡献(§1)</h3>
+<ol>
+  <li><b>属性感知双查询框架</b>:为不同 Gaussian 属性设计专属查询与特征通路,使"定义良好的 3D 结构"与"高频外观"得以和谐联合建模。</li>
+  <li><b>VGM 引导的几何分支 + 早期正则</b>:用 VGM 深度做瞬态 Chamfer/不透明度地板正则,稳定非像素对齐的 3DGS 几何预测、降低学习不确定性,实现 pose-free 场景重建。</li>
+  <li><b>实验验证</b>:DL3DV 上视觉保真度与几何组织性一致提升,验证属性解耦查询范式对非像素对齐前馈 3DGS 的有效性。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ 宣称边界(本笔记复核):</b>① SOTA 数字全部来自 <b>DL3DV 单数据集</b>(训练也在 DL3DV-10K),跨域泛化无定量证据,只有 in-the-wild 定性图;② TTO 变体(+50 步)把 12 视图 interp PSNR 从 23.70 拉到 27.72(+4.02 dB),但论文把它排除在排名外——<b>前馈与 TTO 的口径要分清</b>;③ 推理显存/延迟是 H200 上测的,消费级 GPU 需按比例折算【推测】。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>前馈重建(FFR)一次性预测场景参数,免去了逐场景优化与密集采集(引言)。但两条技术路线各有<b>具体</b>的失败模式——QuerySplat 的动机不是"效果不好",而是以下四个可指认的缺陷:</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4>失败模式 ①:像素对齐的空间不灵活</h4>
+    <p>主流 FFR 把 Gaussian primitive 绑在相机射线上(像素对齐)。primitive 的空间自由度被 2D 观察空间锁死:<b>对深度误差与相机位姿扰动高度敏感</b>,多视角像素冲突累积成几何漂移与重影(引言原文)。primitive 数量也被输入分辨率绑死,无法向复杂区域灵活分配。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ②:query-based 的属性纠缠</h4>
+    <p>TokenGS 用可学习查询在连续空间解码 Gaussian,解开了像素网格,但<b>把全部属性塞进统一查询表示</b>:几何属性需要全局跨视角空间推理,外观属性依赖局部高频纹理,强制一起建模造成根本错配——外观变化干扰几何学习,输出过度平滑、发糊(引言原文,Related Work 称 "severe attribute entanglement")。</p>
+  </div>
+  <div class="card">
+    <h4>失败模式 ③:无 3D 先验、无正则坐标系</h4>
+    <p>只靠 2D 光度监督从零学结构,query-based 模型<b>没有显式 3D 先验、没有正则坐标系</b>,严格依赖精确相机位姿,无法用于未标定的 in-the-wild 输入(引言)。位姿错了没有先验可以兜底。</p>
+  </div>
+</div>
+
+<div class="callout key">
+<b>核心洞察(Why it works):</b>把「Gaussian 放哪」与「Gaussian 长什么样」拆成两个问题。① 几何特征强于相机一致的布局与场景级结构,但不为保留高频信息而优化;② 外观特征保留局部纹理与光线信息,但太早注入几何流会让外观梯度扰乱稳定的 Gaussian 摆放(§3 Decoupled Queries 原文)。因此:<b>几何解码保持纯空间驱动,外观建模推迟到独立分支</b>——这不是工程洁癖,而是对两类属性梯度性质不同的承认。</p>
+<p style="margin-bottom:0"><b>关键假设及其失效条件</b>:「不同属性应各自聚合各自需要的证据」假设 Gaussian 各属性的监督信号在空间频率与感受野需求上可分——若某场景的外观强依赖几何(如强烈视角相关材质、镜面),两分支共享的 <span class="equation" style="padding:2px 8px;margin:0;display:inline-block">$\mathbf{Z}_{\mathrm{geo}}$</span> 基态仍会把外观梯度传回几何 token,解耦并不彻底【推测,代码 <code>post_detach_query=false</code> 默认不切断该通路,见 §11】。</p>
+</div>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+<h3>输入 / 输出定义</h3>
+<p>输入为 $N$ 张未标定 RGB 图像 $\mathcal{I}_{\mathrm{in}}=\{I_i\}_{i=1}^{N}$(视角数可变),网络单次前馈预测可渲染的 Gaussian 集合:</p>
+<div class="equation">$$\mathcal{G}=F_{\theta}(\mathcal{I}_{\mathrm{in}})=\{g_k\}_{k=1}^{K},\quad g_k=(\mathbf{r}_k,\mathbf{p}_k,\mathbf{s}_k,\alpha_k,\mathbf{c}_k)$$<span class="tag">(式 1)</span></div>
+<p>其中 $\mathbf{r}$ 旋转四元数、$\mathbf{p}$ 中心、$\mathbf{s}$ 各向异性尺度、$\alpha$ 不透明度、$\mathbf{c}$ 球谐系数。与像素对齐方法不同,模型用<b>可学习 Gaussian 查询作为场景级 slot</b>,每个查询解码为一组 Gaussian primitive,在 VGM 预测的相机下经可微渲染监督。</p>
+
+<h3>符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状 / 取值(源码核实,§11)</th></tr>
+<tr><td>$\mathbf{F}_{\mathrm{geo}}$</td><td>VGM 几何特征(VGGT-Ω patch token 第 4/11/17/23 层融合 + camera/scene token)</td><td>patch 32×32/视图 × $d$=2048</td></tr>
+<tr><td>$\mathbf{Q}_{\mathrm{geo}},\mathbf{Z}_{\mathrm{geo}}$</td><td>几何查询参数 / 解码后几何 token</td><td>base 1024 个,finetune 渐进至 8192 个</td></tr>
+<tr><td>$\mathbf{F}_{\mathrm{app}}$</td><td>外观特征 = RGB patch embedding + Plücker 光线 embedding(由输入视角 VGM 相机算得)</td><td>与几何同坐标系,6 通道光线</td></tr>
+<tr><td>$\mathbf{Q}_{\mathrm{app}},\mathbf{Z}_{\mathrm{app}}$</td><td>外观查询 / 外观 token(以 $\mathbf{Z}_{\mathrm{geo}}$ 为基态)</td><td>外观解码器 6 个 block</td></tr>
+<tr><td>$K$</td><td>Gaussian primitive 总数</td><td>查询数 × 64 = 65,536(1024)→ 524,288(8192)</td></tr>
+<tr><td>$\mathcal{P}$</td><td>VGM 深度反投影的伪点云(早期 CD 正则用)</td><td>仅训练前 20K 步使用</td></tr>
+<tr><td>$\alpha_{\min}$</td><td>不透明度地板</td><td>0.1(Appendix E)</td></tr>
+</table>
+
+<h3>阶段划分(总体数据流)</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: N 张未标定 RGB(视角数可变)"] --> VGM["冻结 VGGT-Ω(VGM)<br/>两趟处理: 输入视角 / 全视角"]
+    VGM --> GEO["几何特征 F_geo<br/>patch 4/11/17/23 层融合 + camera/scene token"]
+    VGM --> CAM["相机估计 + 自校准坐标系<br/>Sim(3) 对齐两趟坐标"]
+    VGM --> DEP["VGM 预测深度<br/>仅训练早期做 CD/不透明度正则"]
+    GEO --> GQ["几何查询解码器 D_geo<br/>12 blocks → 中心/尺度/旋转"]
+    GQ --> GA["外观查询解码器 D_app<br/>以 Z_geo 为基 + Q_app, 6 blocks<br/>attend RGB+Plücker → 不透明度/SH"]
+    CAM --> REN["可微 3DGS 渲染(gsplat)<br/>VGM 坐标系下监督相机"]
+    GA --> GS["Gaussian 集合 G"]
+    GQ --> GS
+    GS --> REN
+    REN --> LOSS["光度 L1+SSIM+LPIPS<br/>+ 可见性 + 早期瞬态正则"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style VGM fill:#fef3c7,stroke:#d97706,color:#78350f
+    style GQ fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style GA fill:#e9d5ff,stroke:#9333ea,color:#581c87
+    style GS fill:#fce7f3,stroke:#db2777,color:#831843
+    style REN fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+</div>
+
+<div class="figure">
+  <img src="images/2608.01186/Overview.png" loading="lazy" alt="QuerySplat method overview">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>方法总览原图。</b>VGM 编码 geometry-aware memory 并定义相机;几何查询从 VGM 特征解码空间参数,外观查询读 RGB/Plücker memory 预测其余属性;渲染监督全部在 VGM 定义的坐标系下进行。与上图(Mermaid 重述)对照阅读。</div>
+</div>
+
+<div class="note">架构一句话:<b>「冻结 VGM 出几何与相机 → 几何查询摆点 → 外观查询上色 → gsplat 渲染闭环监督」</b>。四个模块(§4-§7)逐一拆解,每个模块给五件套:结构表 / 数学形式 / 前向流程 / 内部图 / 监督信号。</div>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块①:冻结 VGM 特征提取</h2>
+<h4>网络结构</h4>
+<table>
+<tr><th>输入</th><th>层/算子</th><th>输出</th></tr>
+<tr><td>RGB <code>[B,N,3,512,512]</code>(unnormalized)</td><td>VGGT-Ω aggregator(patch 16,1B 级 backbone)</td><td>camera/scene token + patch token <code>[B,N,32²,2048]</code></td></tr>
+<tr><td>patch token 第 4/11/17/23 层</td><td>可学习 layer mixer(逐层权重加权)</td><td>$\mathbf{F}_{\mathrm{geo}}$ <code>[B,N·1024,2048]</code></td></tr>
+<tr><td>camera head / depth head</td><td>均冻结并 eval(<code>vggt_encoder.py:143-145</code>)</td><td>相机(w2c,OpenCV 约定)、内参、深度</td></tr>
+</table>
+<h4>数学形式化</h4>
+<div class="equation">$$\mathbf{F}_{\mathrm{geo}}=\mathrm{Mixer}\big(\{\mathrm{VGGT}_{\Omega}^{(\ell)}(\mathcal{I}_{\mathrm{in}})\}_{\ell\in\{4,11,17,23\}}\big)\ \oplus\ \{\mathrm{camera},\mathrm{scene}\}_{\text{final layer}}$$<span class="tag">(式 2)</span></div>
+<h4>前向流程</h4>
+<ol>
+  <li>输入视角进 VGGT-Ω,取 4 个中间层 patch token 做可学习层混合,末层取 camera/scene token;</li>
+  <li>相机与内参用于:① 构造 Plücker 光线(§6)② 定义渲染监督相机(§5);</li>
+  <li>深度仅用于训练早期的伪点云正则(§8),推理时不参与;</li>
+  <li><b>全程冻结</b>:训练时 <code>requires_grad_(False)</code> + <code>eval()</code>(<code>vggt_encoder.py:128-129,143-145</code>),梯度不回流。</li>
+</ol>
+<h4>监督信号</h4>
+<p>该模块<b>无直接监督</b>——论文明确:联合 finetune 会损害 VGM 的相机与几何一致性,冻结把角色干净分开:VGM 做通用几何推理,可训练解码器负责把 $\mathbf{F}_{\mathrm{geo}}$ 翻译成 Gaussian 几何(§3.1 原文)。这与 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 冻结 DA3 几何分支(防"移点补偿属性误差")是<b>同一发现的两份独立证据</b>。</p>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块②:自校准坐标系</h2>
+<h4>流程与数据流</h4>
+<div class="hdiag">
+  <div class="hbox"><b>Pass 1(输入视角)</b>VGM 出 $\mathbf{F}_{\mathrm{geo}}$ + 输入相机,定重建坐标系</div>
+  <div class="harrow">⇢</div>
+  <div class="hbox"><b>Pass 2(输入+监督视角)</b>VGM 只出相机,不共享特征</div>
+  <div class="harrow">⇢</div>
+  <div class="hbox"><b>Sim(3) 对齐</b>用共享输入视角估计相似变换,把 Pass 2 相机对齐到 Pass 1 坐标系</div>
+</div>
+<p><b>防泄漏设计(关键):</b>两趟处理<b>严格隔离、无特征交换</b>——监督视角的图像信息绝不进入重建通路,防止目标视角泄漏(§3 Self-Calibrated Coordinate System 原文;评测时 pose-free baseline 也受此约束,§4 Comparisons)。对齐后 $\mathbf{F}_{\mathrm{geo}}$、Plücker 光线、Gaussian 中心、监督相机全部落在同一坐标系。相机以第一输入视角为参考归一化,渲染 near/far = 0.025/125.0(Appendix E)。</p>
+<div class="callout tip"><b>与 InfiniSplat v2 的互补:</b>v2 训练时直接用 scale-aligned <b>GT 位姿</b>反投影(消除预测位姿残差);QuerySplat 不用 GT 位姿、靠 VGM 自建坐标系 + Sim(3) 对齐,代价是训练分布被 VGM 的位姿误差分布绑定【推测】,换来完全 pose-free 的训练管线。</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块③:几何查询解码器</h2>
+<h4>网络结构表(源码核实)</h4>
+<table>
+<tr><th>输入</th><th>层/算子</th><th>输出</th></tr>
+<tr><td>$\mathbf{Q}_{\mathrm{geo}}$ <code>[B,K,2048]</code>(<code>gs_token_std=0.01</code> 初始化,<code>querysplat.py:100-102</code>)</td><td>prepend eye_token;12×DecoderBlock(d=2048, 16 heads, MLP ratio 4, qkv_bias, qk_norm, init_values=5e-3·std)</td><td>几何 token <code>[B,K,2048]</code>(弹出 eye_token)</td></tr>
+<tr><td>几何 token</td><td><code>PartialClipActivationHead</code>(每 token 出 10 维:xyz+sxyz+quat)</td><td>部分 Gaussian <code>[B,64K,10]</code>;<code>z += 1.0</code>(z_offset)、scale cap 0.075</td></tr>
+</table>
+<h4>数学形式化</h4>
+<div class="equation">$$\mathbf{Z}_{\mathrm{geo}}=D_{\mathrm{geo}}(\mathbf{Q}_{\mathrm{geo}},\mathbf{F}_{\mathrm{geo}})$$<span class="tag">(式 3)</span></div>
+<p>每个 block 含「对 $\mathbf{F}_{\mathrm{geo}}$ 的 cross-attention → 查询间 self-attention → MLP」;查询不绑像素,每个查询是<b>潜在场景 slot</b>,可从多个视角与特征位置收集证据后再展开为 Gaussian primitive(§3.4 原文)。</p>
+<h4>前向流程</h4>
+<ol>
+  <li>8192 个可学习查询(paper ckpt 配置)prepend 一个 VGM eye_token 进 12 层 decoder;</li>
+  <li>cross-attention 的 K/V 来自 $\mathbf{F}_{\mathrm{geo}}$(几何内存),查询侧做 self-attention 交换场景上下文;</li>
+  <li>activation head 把每个 token 映射为 64 组 (中心3, 尺度3, 四元数4),<b>中心整体加 z_offset=1.0</b>(把 Gaussian 推到相机前方、避免贴近平截面的数值问题【推测】,<code>querysplat.py:211</code>);</li>
+  <li>渐进扩容:finetune 时每阶段查询翻倍(1024→2048→…→8192),新查询由旧查询加小扰动初始化 $\mathbf{q}^{\mathrm{new}}_i=\mathbf{q}^{\mathrm{old}}_{i\bmod N_{\mathrm{old}}}+\boldsymbol{\xi}$($\xi$ 对应 <code>gs_token_std=0.01</code> 量级的扰动【推测】)。</li>
+</ol>
+<h4>模块内部图</h4>
+<div class="mermaid">
+flowchart LR
+    Q["Q_geo 8192×2048<br/>(可学习)"] --> D1["12× DecoderBlock<br/>cross-attn(F_geo) + self-attn + MLP"]
+    GEO["F_geo 几何内存<br/>[B,N·1024,2048]"] --> D1
+    D1 --> H["PartialClipActivationHead<br/>×64/token"]
+    H --> OUT["位置 xyz(±clip, z+1.0)<br/>尺度(≤0.075)<br/>旋转四元数"]
+    style Q fill:#dcfce7,stroke:#16a34a,color:#14532d
+    style OUT fill:#fce7f3,stroke:#db2777,color:#831843
+</div>
+<h4>监督信号</h4>
+<p>几何<b>无逐点直接 GT 监督</b>,三类间接约束:① 渲染光度损失经梯度回流位置/尺度/旋转;② 可见性正则 $\mathcal{L}_{\mathrm{vis}}$ 罚"落在所有相关相机视锥外或相机后方"的中心;③ 训练早期 CD 距离把中心拉向 VGM 伪点云(§8)。论文强调早期正则<b>只在瞬态</b>:全程施加会失稳,因为渲染最优的 Gaussian 构型本就偏离深度点云、位置与不透明度需要在图像空间监督下自由重组(§3.6 原文)。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块④:外观查询解码器</h2>
+<h4>网络结构表(源码核实)</h4>
+<table>
+<tr><th>输入</th><th>层/算子</th><th>输出</th></tr>
+<tr><td>$\mathbf{Z}_{\mathrm{geo}}$(几何 token 基态)+ 独立可学习外观 token 参数(<code>post_rgb_gs_tokens</code>,<code>querysplat.py:78-80</code>)</td><td>6×DecoderBlock(cross-attn 到外观内存)</td><td>color token</td></tr>
+<tr><td>color token</td><td><code>post_rgb_delta_head</code> 线性 → 每 token 64×(SH 系数+α)</td><td>原始输出 → 激活(<code>querysplat.py:225-237</code>)</td></tr>
+</table>
+<h4>外观内存构造(源码核实)</h4>
+<p>$\mathbf{F}_{\mathrm{app}}$ = RGB patch embed(patch 16)+ Plücker patch embed 相加(<code>querysplat.py:142-145</code>);Plücker 由<b>输入视角的 VGM 相机</b>计算(<code>querysplat.py:117-130</code>),因此外观流与几何流同坐标系。K/V 经 LayerNorm + 线性 + 逐头归一化(<code>querysplat.py:147-155</code>)。</p>
+<h4>数学形式化</h4>
+<div class="equation">$$\mathbf{Z}_{\mathrm{app}}=D_{\mathrm{app}}(\mathbf{Z}_{\mathrm{geo}},\mathbf{Q}_{\mathrm{app}},\mathbf{F}_{\mathrm{app}})$$<span class="tag">(式 4)</span></div>
+<h4>激活函数细节(代码硬编码,易踩坑)</h4>
+<ul>
+  <li>颜色:SH degree 0(paper ckpt)时 $\mathbf{c}=0.5\tanh(\cdot)+0.5$;SH degree 1(8192 ckpt)时 DC 项除以 $0.28209479$(SH 基常数)后接 tanh,高阶项乘 <code>sh_rest_scale=0.1</code>;</li>
+  <li><b>不透明度偏置 -2.0</b>:$\alpha=\mathrm{sigmoid}(\mathrm{raw}-2.0)$(<code>querysplat.py:236</code>)——初始预测整体偏透明,靠监督顶上去;</li>
+  <li>存盘过滤:<code>gaussian_save_opacity_threshold=0.005</code>,低于阈值不写入 PLY(yaml 配置)。</li>
+</ul>
+<h4>监督信号</h4>
+<p>外观属性(α、SH)直接由渲染光度损失 + LPIPS 监督;另有不透明度地板 $\mathcal{L}_{\alpha}$ 防训练早期 Gaussian 过早透明(§8)。</p>
+<div class="figure">
+  <img src="images/2608.01186/attention_map.png" loading="lazy" alt="query attention visualization">
+  <div class="caption"><b>图3</b>(论文 Figure 6)<b>查询注意力可视化。</b>(a) 几何注意力、(b) 外观注意力、(c) 该查询解码的 Gaussian 投影到图像。几何查询关注更宽的结构区域,外观分支聚焦预测 Gaussian 周围的局部证据——这正是解耦设计的预期行为(§4.3 原文佐证)。</div>
+</div>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<div class="equation">$$\mathcal{L}=\mathcal{L}_{\mathrm{photo}}+\lambda_{\mathrm{vis}}\mathcal{L}_{\mathrm{vis}}+\beta_{\mathrm{cd}}(t)\mathcal{L}_{\mathrm{cd}}+\beta_{\alpha}(t)\mathcal{L}_{\alpha}$$<span class="tag">(式 5)</span></div>
+<div class="equation">$$\mathcal{L}_{\mathrm{photo}}=\mathcal{L}_{1}+\lambda_{\mathrm{ssim}}\mathcal{L}_{\mathrm{ssim}}+\lambda_{\mathrm{lpips}}\mathcal{L}_{\mathrm{lpips}},\quad \mathcal{L}_{\mathrm{cd}}=d_{\mathrm{CD}}(\mathcal{G}_p,\mathcal{P})$$<span class="tag">(式 6)</span></div>
+<div class="equation">$$\mathcal{L}_{\alpha}=\mathbb{E}_{\alpha\in\mathcal{A}}\big[\max\big(0,\log\alpha_{\min}-\log(\max(\alpha,\epsilon))\big)\big]$$<span class="tag">(式 7)</span></div>
+
+<table>
+<tr><th>损失项</th><th>公式 / 形式</th><th>权重(真值)</th><th>作用</th><th>出处</th></tr>
+<tr><td>光度 $\mathcal{L}_1$</td><td>像素 L1</td><td>1.0</td><td>像素精度主信号</td><td>Appendix E</td></tr>
+<tr><td>结构 $\mathcal{L}_{\mathrm{ssim}}$</td><td>1−SSIM(实现用 fused-ssim)</td><td>$\lambda_{\mathrm{ssim}}$=0.2</td><td>稳定局部结构</td><td>Appendix E;代码 <code>querysplat.py:382</code>(TTO 同权重)</td></tr>
+<tr><td>感知 $\mathcal{L}_{\mathrm{lpips}}$</td><td>LPIPS(VGG16,FP32 求值)</td><td>$\lambda_{\mathrm{lpips}}$=0.05,<b>100K 步后渐进引入</b></td><td>纹理感知质量</td><td>Appendix E;代码 <code>querysplat.py:360-368</code></td></tr>
+<tr><td>可见性 $\mathcal{L}_{\mathrm{vis}}$</td><td>罚视锥外/相机后中心(沿用 TokenGS)</td><td>1.0</td><td>防查询产生收不到渲染梯度的漂浮 Gaussian</td><td>§3.6、Appendix E</td></tr>
+<tr><td>早期 CD $\mathcal{L}_{\mathrm{cd}}$</td><td>预测中心 ↔ VGM 伪点云双向 Chamfer</td><td>初始 1.0,<b>前 20K 步退火至 0</b></td><td>瞬态几何初始化先验</td><td>§3.6、Appendix E</td></tr>
+<tr><td>不透明度地板 $\mathcal{L}_{\alpha}$</td><td>式 7,$\alpha_{\min}$=0.1</td><td>初始 0.1,退火至 0</td><td>防早期 Gaussian 过早透明</td><td>§3.6、Appendix E</td></tr>
+<tr><td>loss-rank filtering</td><td>按历史重建损失保留 95% 样本</td><td>—</td><td>压制不稳定训练样本</td><td>Appendix E(训练后期)</td></tr>
+</table>
+<div class="callout warn"><b>⚠️ 权重核实边界:</b>上表数值全部来自 <b>Appendix E 文字</b>——开源仓为推理实现、<b>无训练代码</b>,CD/不透明度地板/loss-rank filtering 的权重与 schedule 无法在代码中复核【待核实:以论文为准】。可源码核实的仅 TTO 侧权重(L1+0.2·SSIM+0.05·LPIPS,<code>querysplat.py:382,390</code>)。</div>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>可选测试时优化(TTO)</h2>
+<p>主体是纯前馈;TTO 是可选的精度-耗时折衷:<b>冻结查询、解码器、输出头</b>,只在输入视角上用渲染损失优化"提取的特征内存"(代码默认优化 encoder latent 的 K/V + 外观内存 K/V,<code>querysplat.py:267-323</code> <code>optimization_target="kv"</code>)。因为是特征空间适配而非参数微调,结果仍被预训练查询→Gaussian 重建模型约束。</p>
+<table>
+<tr><th>项目</th><th>论文说法</th><th>代码实测值(源码核实)</th></tr>
+<tr><td>优化对象</td><td>the extracted features</td><td>K/V memory(或 features,<code>--tto_target</code> 可选)</td></tr>
+<tr><td>默认步数</td><td>20 / 50 步变体</td><td><code>--tto_n_steps</code> 默认 20(<code>infer.py:69</code>)</td></tr>
+<tr><td>学习率</td><td>未写</td><td><code>--tto_lr</code> 默认 <b>5e-3</b>(<code>infer.py:70</code>)</td></tr>
+<tr><td>LPIPS 权重</td><td>未写</td><td><code>--tto_lpips_weight</code> 默认 0.05</td></tr>
+</table>
+<p>收益(Appendix A):TTO 在输入视角收益最大,且增益迁移到 interp/extrap,说明它精化的是场景表示而非记忆观测;收益随输入视角数增长,多数收益在少量步数内获得。</p>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>逻辑流程图(训练 / 推理)</h2>
+<h3>训练流程(base 300K → 渐进 finetune)</h3>
+<div class="mermaid">
+flowchart TD
+    A["DL3DV 场景采样 4 输入视角<br/>512×512 center crop"] --> B["冻结 VGGT-Ω 双趟前向<br/>F_geo + 相机 + Sim(3) 对齐"]
+    B --> C["几何解码 → 部分 Gaussian<br/>外观解码 → α/SH<br/>组装 1024×64 个 Gaussian"]
+    C --> D["gsplat 渲染监督视角"]
+    D --> E{"训练阶段"}
+    E -->|"前 20K 步"| F["+ CD 到伪点云<br/>+ 不透明度地板<br/>(权重退火)"]
+    E -->|"全程"| G["L1 + 0.2 SSIM + 1.0 可见性"]
+    E -->|"100K 步后"| H["渐进加入 LPIPS 至 0.05"]
+    F --> I["AdamW lr 1e-4<br/>warmup 5% + cosine<br/>BF16, batch 64"]
+    G --> I
+    H --> I
+    I --> J["base 300K 完成"]
+    J --> K["渐进扩容: 1024→2048→4096→8192<br/>每阶段 30K 步 lr 1e-5<br/>2-12 随机视角, 新查询=旧+扰动"]
+    K --> L["8192 查询最终模型<br/>EMA 0.9995"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style L fill:#dcfce7,stroke:#16a34a,color:#14532d
+</div>
+<h3>推理流程(含可选 TTO)</h3>
+<div class="mermaid">
+flowchart TD
+    A["N 张未标定图像"] --> B["预处理: center crop 512×512<br/>(脚本自动)"]
+    B --> C["冻结 VGGT-Ω 前向<br/>相机 + F_geo + 深度"]
+    C --> D["双查询解码<br/>8192×64 = 52.4 万 Gaussian"]
+    D --> E{"--use_tto ?"}
+    E -->|"否"| F["直接输出 Gaussian"]
+    E -->|"是"| G["冻结模型, 优化 K/V memory<br/>默认 20 步 lr 5e-3<br/>L1+0.2SSIM+0.05LPIPS"]
+    G --> F
+    F --> H["渲染 / 导出 PLY<br/>(α<0.005 过滤)"]
+    style F fill:#e9d5ff,stroke:#9333ea,color:#581c87
+</div>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节(源码核实)</h2>
+<p>源码来源:<code>inspatio/QuerySplat</code> main 分支(<b>仅推理实现</b>,2026-08-04 发布)。凡标"论文附录"的条目<b>无训练代码可复核</b>,置信度低于源码直读项。</p>
+
+<h3>① 架构与权重(全部源码核实)</h3>
+<table>
+<tr><th>条目</th><th>真值</th><th>出处(file:line / yaml 键)</th></tr>
+<tr><td>VGM</td><td>vendored <code>vggt_omega</code>,全模块冻结+eval</td><td><code>vggt_encoder.py:128-129,143-145</code>;<code>vggt_checkpoint: checkpoints/vggt_omega_1b_512.pt</code></td></tr>
+<tr><td>特征层</td><td>第 4/11/17/23 层 + eye layer mixer</td><td><code>vggt_intermediate_layers: [4,11,17,23]</code>、<code>vggt_use_eye_layer_mixer: true</code></td></tr>
+<tr><td>解码器</td><td>d=2048、16 heads、MLP ratio 4;qkv_bias、qk_norm、init_values=5e-3·0.01</td><td>yaml <code>enc_embed_dim/enc_num_heads/mlp_ratio</code>;<code>querysplat.py:83-93</code></td></tr>
+<tr><td>几何解码深度</td><td>12 blocks</td><td>yaml <code>dec_depth: 12</code></td></tr>
+<tr><td>外观解码深度</td><td>6 blocks</td><td>yaml <code>vggt_original_encoder_post_decoder_depth: 6</code></td></tr>
+<tr><td>查询数</td><td>8192(paper ckpt 与 8192 ckpt 同),×64 primitive</td><td><code>num_gs_tokens: 8192</code>、<code>num_gaussians_per_token: 64</code></td></tr>
+<tr><td>渲染器</td><td><b>gsplat <code>rasterization</code>(标准 3D 各向异性 Gaussian,非 2DGS)</b></td><td><code>rendering/gs.py:8,46-58</code>(quats+3D scales)</td></tr>
+<tr><td>SH degree</td><td><b>paper ckpt = 0(DC only,指标更高);8192 ckpt = 1(视觉更好)</b>——Appendix E 写 "first-order SH",与 paper ckpt 的 degree 0 存在口径差异,README 明说按论文复现用 SH0 权重</td><td>两份 yaml <code>gaussian_sh_degree</code>;README "The paper uses ... SH degree 0"</td></tr>
+<tr><td>激活</td><td>α=sigmoid(raw−2.0)(初始偏透明);z 中心 +1.0;scale cap 0.075;保存阈值 α>0.005</td><td><code>querysplat.py:211,236</code>;yaml 键同名</td></tr>
+<tr><td>几何↔外观梯度</td><td>外观分支默认<b>不 detach 几何 token</b>(<code>post_detach_query: false</code>)→ 外观梯度仍回流几何解码器,解耦在特征/查询空间而非梯度路径</td><td>yaml;<code>querysplat.py:243-244</code></td></tr>
+</table>
+
+<h3>② 训练配置(论文 Appendix E,无源码可核)</h3>
+<ul>
+  <li>数据:仅 DL3DV;512×512 center crop;base 4 视角、finetune 2-12 随机视角。</li>
+  <li>迭代:base 300K(lr 1e-4)+ 渐进扩容 3 阶段 × 30K(lr 1e-5),合计约 390K 步;batch 64(每卡 1 样本 × 64 张 A800,DDP 无梯度累积);BF16(LPIPS 用 FP32);AdamW、warmup 5%+cosine、grad clip 1.0、EMA 0.9995。</li>
+  <li>相机以第一输入视角归一化;渲染 near/far=0.025/125.0;训练后期 loss-rank filtering 保 95% 样本。</li>
+</ul>
+<div class="callout warn"><b>资源账(论文 + 推测):</b>训练 64×A800 属工业级预算,单卡 RTX 3090 复训不现实【推测:按 0.3-0.8 s/step 估,base+finetune 约 1,800-8,700 GPU·时,量级仅供选型参考,未实测】。推理端友好:H200 上 8192 查询 4 视角 <b>0.95 s / 9.44 GiB</b>、12 视角 1.89 s / 10.06 GiB(Table 14)——24GB 消费卡可跑 ≤24 视角级别(48 视角 11.5 GiB,100 视角 22.6 GiB 接近上限【推测按 Table 14 线性外推】)。</div>
+
+<h3>③ 效率全表(Table 14,H200,8192 查询)</h3>
+<table>
+<tr><th>输入视角</th><th>VGGT-Ω 聚合 (s)</th><th>解码器 (s)</th><th>总推理 (s)</th><th>峰值显存 (GiB)</th></tr>
+<tr><td>1</td><td>0.071</td><td>0.621</td><td>0.703</td><td>9.276</td></tr>
+<tr><td>4</td><td>0.085</td><td>0.702</td><td>0.949</td><td>9.436</td></tr>
+<tr class="best"><td>12</td><td>0.125</td><td>0.943</td><td>1.890</td><td>10.064</td></tr>
+<tr><td>48</td><td>0.297</td><td>1.990</td><td>14.706</td><td>11.549</td></tr>
+<tr><td>100</td><td>0.545</td><td>3.499</td><td>33.645</td><td>22.588</td></tr>
+<tr><td>300</td><td>1.501</td><td>9.297</td><td>255.725</td><td>40.773</td></tr>
+</table>
+<p><b>结论:</b>查询数主要影响解码器耗时;<b>大视角集合的瓶颈是 VGGT-Ω 聚合路径</b>(300 视角时占 96%)。对 dense-capture 工作流,替代/裁减 VGM 输入或换轻量 backbone 是效率关键(论文原文 §C 结论一致)。</p>
+
+<h3>④ 落地坑(源码/README 直读)</h3>
+<ul>
+  <li><b>License 双重性:</b>QuerySplat 本体 Apache 2.0,但 vendored <b>VGGT-Ω/DINOv3 为 FAIR 非商用研究许可</b>(LICENSE/NOTICE 原文),商用部署需替换 backbone 或取得授权。</li>
+  <li><b>仅推理实现:</b>README 原话 "official inference implementation",无训练代码、无数据管线;损失权重等只能信论文【待核实】。</li>
+  <li><b>环境重:</b>Linux + CUDA,PyTorch 2.11/CUDA 12.8 测试;gsplat 与 fused-ssim 的 CUDA 扩展要与 PyTorch/CUDA 对齐;LPIPS 首次用会下载 VGG16。</li>
+  <li><b>预处理:</b>所有输入独立 center-crop+resize 到 512×512(Appendix B);非方形输入会损失边缘信息。</li>
+  <li><b>论文 ↔ 代码细节差:</b>Appendix E 的 "first-order SH" 与 paper ckpt SH0 不一致(见上);z_offset=1.0、α 偏置 -2.0 论文未提,复现者容易漏。</li>
+</ul>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+<h3>① 主表(Table 1):DL3DV-Evaluation interp,大/中/小三档均值</h3>
+<table>
+<tr><th>方法</th><th>Pose-free</th><th>2-view PSNR↑</th><th>2-view LPIPS↓</th><th>4-view PSNR↑</th><th>4-view LPIPS↓</th><th>12-view PSNR↑</th><th>12-view LPIPS↓</th></tr>
+<tr><td>DepthSplat(像素对齐)</td><td>✗</td><td>20.54</td><td>0.259</td><td>22.91</td><td>0.185</td><td>21.68</td><td>0.205</td></tr>
+<tr><td>TokenGS(query 前辈)</td><td>✗</td><td>20.43</td><td>0.378</td><td>23.27</td><td>0.303</td><td>21.81</td><td>0.370</td></tr>
+<tr><td>YoNoSplat</td><td>✗</td><td>19.84</td><td>0.291</td><td>22.85</td><td>0.199</td><td>22.73</td><td>0.196</td></tr>
+<tr><td>AnySplat</td><td>✓</td><td>14.07</td><td>0.448</td><td>17.39</td><td>0.342</td><td>19.63</td><td>0.299</td></tr>
+<tr><td>NoPoSplat</td><td>✓</td><td>19.07</td><td>0.316</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>SPFSplat</td><td>✓</td><td>19.12</td><td>0.305</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>SplatWeaver</td><td>✓</td><td>15.70</td><td>0.367</td><td>19.24</td><td>0.272</td><td>20.40</td><td>0.252</td></tr>
+<tr><td>YoNoSplat(pose-free)</td><td>✓</td><td>19.17</td><td>0.308</td><td>21.96</td><td>0.217</td><td>21.63</td><td>0.218</td></tr>
+<tr class="best"><td>QuerySplat</td><td>✓</td><td><b>21.39</b></td><td><b>0.259</b></td><td><b>24.58</b></td><td><b>0.184</b></td><td><b>23.70</b></td><td><b>0.230</b></td></tr>
+<tr><td>QuerySplat + TTO-20</td><td>✓</td><td>22.01</td><td>0.248</td><td>26.25</td><td>0.159</td><td>27.00</td><td>0.167</td></tr>
+<tr><td>QuerySplat + TTO-50</td><td>✓</td><td>21.94</td><td>0.246</td><td>26.38</td><td>0.154</td><td><b>27.72</b></td><td><b>0.146</b></td></tr>
+</table>
+<div class="note"><b>手算复核(摘要宣称 vs 表内原始值):</b>① "+2.30 dB vs 最强 pose-free":对 YoNoSplat-PF 逐档 21.39−19.17=+2.22、24.58−21.96=+2.61、23.70−21.63=+2.07,均值 <b>2.297≈2.30 ✓</b>;② "+1.04 dB vs 最强 pose-required":逐档取最强(DepthSplat/TokenGS/YoNoSplat)21.39−20.54=+0.85、24.58−23.27=+1.31、23.70−22.73=+0.97,均值 <b>1.043≈1.04 ✓</b>。两条宣称均成立,无对比对象错配。</div>
+
+<h3>② 关键趋势(Appendix A 全表,Tables 5-13)</h3>
+<ul>
+  <li><b>输入视角:</b>像素对齐方法天然占优,QuerySplat 仍强,说明场景级查询不绑单个观察也能保住输入保真;AnySplat 在 2-view input 达 28.27 但 interp 仅 11.75——<b>像素对齐"记观测"与"建场景"的割裂样本</b>。</li>
+  <li><b>外推(extrap):</b>12-view large split 上 QuerySplat 19.58/19.98/18.26 仍稳定领先;SplatWeaver/AnySplat 外推崩到 13-16 dB。</li>
+  <li><b>视角数:</b>2→4 提升明显(21.39→24.58 interp),4→12 反而略降(23.70)——视角多时监督/采样分布变化,论文未解释,标【待核实】。</li>
+</ul>
+
+<div class="figure">
+  <img src="images/2608.01186/qualitative_comp.png" loading="lazy" alt="qualitative comparison">
+  <div class="caption"><b>图4</b>(论文 Figure 3)<b>定性对比。</b>QuerySplat 保留更细纹理与更锐利边界,优于前代像素对齐与 query-based 方法。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.01186/in_the_wild.png" loading="lazy" alt="in-the-wild comparison">
+  <div class="caption"><b>图5</b>(论文 Figure 4)<b>in-the-wild 对比。</b>随手拍非标定图像上,QuerySplat 比其它 pose-free 方法几何更干净、细节更锐(注:pose-required 的 TokenGS 需外接 VGGT-Ω 相机管线才能跑,严格口径说明见本节后文图 7 图注)。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.01186/more_qualitative_comp.png" loading="lazy" alt="more qualitative">
+  <div class="caption"><b>图6</b>(论文 Figure 11)<b>补充定性对比(Appendix B)。</b>多室内外场景,红蓝框为放大区;QuerySplat 边界更锐、细结构更完整。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.01186/more_in_the_wild.png" loading="lazy" alt="more in the wild">
+  <div class="caption"><b>图7</b>(论文 Figure 12)<b>与 pose-required TokenGS 的 in-the-wild 对比(Appendix B)。</b>TokenGS 经外接 VGGT-Ω 相机管线 + DL3DV 相机分布校准后仍偏糊、细结构丢失;因相机管线非 TokenGS 原生,此图仅作补充证据,不计入严格 pose-free 评测。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+<p>消融均在 <b>base 150K 步</b>(非完整 390K 训练)、4-view interp、三档均值(论文 §4.3 明说:全量训练太贵;Appendix D 用训练曲线论证相对排序在 150K 内已稳定,见图 11)。</p>
+
+<h3>① 特征聚合方式(Table 2,核心消融)</h3>
+<table>
+<tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>ΔPSNR</th></tr>
+<tr class="best"><td>双分支(完整)</td><td>22.90</td><td>0.738</td><td>0.268</td><td>—</td></tr>
+<tr><td>单分支查询(外观特征融合进几何流)</td><td>20.92</td><td>0.659</td><td>0.344</td><td>-1.98</td></tr>
+<tr class="fail"><td>去掉外观流(仅几何)</td><td>18.64</td><td>0.578</td><td>0.425</td><td>-4.25</td></tr>
+</table>
+<p><b>论文的机制解释(§4.3,本笔记认可):</b>收益不来自"加了外观特征"本身——融合进单分支反而比去掉还差只在一半;而是<b>不同属性应各自聚合各自需要的证据</b>:空间参数要宽的跨视角上下文立起场景布局,其余属性要局部纹理与视向线索。注意力可视化(图 3)支持该行为。</p>
+
+<h3>② 早期正则(Table 3)</h3>
+<table>
+<tr><th>变体</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr class="best"><td>带早期正则</td><td>22.90</td><td>0.738</td><td>0.268</td></tr>
+<tr><td>无早期正则</td><td>22.61</td><td>0.723</td><td>0.288</td></tr>
+</table>
+<p>Δ=+0.29 dB,幅度小于属性解耦,但配套证据(图 9)显示早期正则让 Gaussian 结构更干净、不透明度分布更健康(红框处冗余无效 Gaussian 浓度更低)。</p>
+
+<h3>③ VGM backbone(Table 4)</h3>
+<table>
+<tr><th>backbone</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>VGGT-Ω(默认)</td><td>22.90</td><td>0.738</td><td>0.268</td></tr>
+<tr class="best"><td>VGGT(替换)</td><td>23.07</td><td>0.739</td><td>0.275</td></tr>
+</table>
+<p><b>对 DA3 替换的关键证据:</b>换 VGGT 不更差反而 PSNR 略高(+0.18,在消融噪声量级内),说明<b>效果主要来自"如何消费几何先验"而非特定 backbone 的特征表示</b>(论文 §4.3 原话)。这给 §15 的 DA3/2DGS 替换路线提供了直接依据。</p>
+
+<div class="figure">
+  <img src="images/2608.01186/ablation_structure_lyl.png" loading="lazy" alt="feature aggregation variants">
+  <div class="caption"><b>图8</b>(论文 Figure 5)<b>特征聚合变体示意。</b>(a) 双分支(本文)、(b) 单分支特征融合、(c) 仅几何无外观;三者层数参数量对齐,保证对比公平。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.01186/alpha_distribution.png" loading="lazy" alt="alpha distribution">
+  <div class="caption"><b>图9</b>(论文 Figure 7)<b>早期正则的效果。</b>相比 TokenGS 与无正则变体,完整模型 Gaussian 结构更干净、不透明度分布更健康;红框标出冗余无效 Gaussian 集中区。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.01186/pointcloud.png" loading="lazy" alt="geometry comparison">
+  <div class="caption"><b>图10</b>(论文 Figure 8)<b>几何对比。</b>左:VGGT-Ω 深度反投影点云(有明显漂浮点与噪声结构);右:QuerySplat 预测的 Gaussian 中心(更干净、组织更连贯)——查询解码器是在渲染监督下<b>重组</b> VGM 几何先验,而非照搬其原始预测(§4.3 原文)。</div>
+</div>
+<div class="figure">
+  <img src="images/2608.01186/ablation_loss.png" loading="lazy" alt="ablation loss curves">
+  <div class="caption"><b>图11</b>(论文 Figure 13)<b>消融训练损失曲线(Appendix D)。</b>四种变体收敛趋势一致、相对排序在训练早期即稳定;中段抬升是 LPIPS 按 schedule 引入,后段骤降是 loss-rank filtering(95%) 生效——两者均为公共 schedule,非某变体失稳。</div>
+</div>
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+<h3>横向对比表(固定维度;缺失写 —;训练时长/显存未公开的标 —)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>推理耗时</th><th>关键指标(DL3DV)</th><th>开源</th></tr>
+<tr class="best"><td><b>QuerySplat</b></td><td>2026</td><td>2-300 未标定视角</td><td>查询 slot→3DGS(非像素对齐)</td><td>光度+LPIPS+可见性+早期 CD/α</td><td>DL3DV</td><td>4v 0.95s / 12v 1.89s(H200)</td><td>interp 4v <b>24.58</b> / LPIPS 0.184</td><td>推理代码+权重(Apache 2.0,VGM 非商用)</td></tr>
+<tr><td>TokenGS</td><td>2026(CVPR)</td><td>标定视角(固定输入数)</td><td>统一查询→3DGS</td><td>光度+可见性</td><td>DL3DV</td><td>—</td><td>interp 4v 23.27 / LPIPS 0.303(发糊)</td><td>✓ 推理</td></tr>
+<tr><td>DepthSplat</td><td>2025(CVPR)</td><td>标定 2/多视角</td><td>像素对齐 3DGS(深度增强)</td><td>光度+深度</td><td>多数据集</td><td>—</td><td>interp 4v 22.91 / LPIPS 0.185</td><td>✓ 完整</td></tr>
+<tr><td>YoNoSplat</td><td>2025</td><td>标定/未标定(单模型)</td><td>像素对齐 3DGS</td><td>光度+位姿</td><td>多数据集</td><td>—</td><td>interp 4v 22.85(标定)/21.96(pose-free)</td><td>✓ 完整</td></tr>
+<tr><td>AnySplat</td><td>2025(TOG)</td><td>未标定任意视角</td><td>像素对齐 3DGS(体素合并)</td><td>光度+几何蒸馏</td><td>多数据集</td><td>—</td><td>interp 4v 17.39 / LPIPS 0.342(外推崩)</td><td>✓ 完整</td></tr>
+<tr><td>SplatWeaver</td><td>2026</td><td>未标定视角</td><td>自适应 primitive 分配</td><td>光度</td><td>多数据集</td><td>—</td><td>interp 4v 19.24 / LPIPS 0.272</td><td>—</td></tr>
+</table>
+<p class="refs">数字全部来自论文 Table 1(三档均值);推理耗时来自 Table 14(H200)。库内已有对应精读:<a href="3D-20240326-2DGS.html">2DGS</a>、<a href="3D-20250314-VGGT.html">VGGT</a>、<a href="3D-20250717-Pi3.html">π³</a>、<a href="3D-20251113-Depth-Anything-3.html">DA3</a>、<a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a>、<a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a>;路线层面见综述 <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a> 与 <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">质量-速度 Pareto 全谱调研</a>。</p>
+
+<h3>对比结论(机制级,非罗列数字)</h3>
+<ol>
+  <li><b>vs TokenGS(query 直系前辈):</b>QuerySplat 相对 TokenGS 的提升(4v interp 23.27→24.58,+1.31;LPIPS 0.303→0.184)几乎全部可归于<b>属性解耦</b>(消融去掉外观 -4.25 dB 的量级佐证)与 <b>VGM 先验</b>。TokenGS 的统一查询被迫同时服务全局布局与局部纹理,发糊是结构性的;QuerySplat 把"放哪"与"长什么样"分开后,两类梯度不再互踩。</li>
+  <li><b>vs 像素对齐(DepthSplat/YoNoSplat 标定版):</b>QuerySplat 不靠位姿仍超过最强标定方法(+1.04 dB 均值),说明 query slot 在<b>跨视角冲突区域</b>不被任何单条相机射线绑架,证据聚合更稳;代价是<b>输入视角保真</b>略逊于像素对齐(AnySplat 2v input 28.27 vs QuerySplat 26.26),query 表示天然偏向场景级组织而非逐像素贴合。</li>
+  <li><b>vs pose-free 像素对齐(AnySplat):</b>差距巨大(17.39 vs 24.58)。AnySplat 从 2D 观察学 3D 一致性,pose-free 下多视角冲突无处可去;QuerySplat 由 VGM 提供正则坐标系,把"位姿难题"外包给几何基础模型——<b>pose-free 的质量分水岭不在 Gaussian 头,而在有没有几何先验</b>。</li>
+  <li><b>同组论文内部证据:</b>VGGT↔VGGT-Ω 打平(表 4)说明 query 解码器对 backbone 不敏感,是"消费先验的方式"决定上限——这也是本笔记 §15 推荐 DA3 替换的依据。</li>
+</ol>
+
+<h3>演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>逐场景优化 3DGS</td><td>3DGS / 2DGS / GOF</td><td>逐场景光度监督</td><td>分钟级/场景,需密集视角</td></tr>
+<tr><td>像素对齐前馈</td><td>pixelSplat→DepthSplat→YoNoSplat/AnySplat</td><td>相机射线绑定 + 深度模型</td><td>空间不灵活、怕位姿误差、外推弱</td></tr>
+<tr><td>统一查询前馈</td><td>TokenGS</td><td>可学习查询解绑像素网格</td><td>属性纠缠发糊、无 3D 先验、依赖位姿</td></tr>
+<tr><td>解耦查询 + VGM 先验</td><td><b>QuerySplat(本文)</b></td><td>冻结 VGM 定坐标系+几何特征,双分支解耦</td><td>查询预算固定、训练数据单一、VGM 非商用</td></tr>
+<tr><td>几何冻结 + 渲染反馈精修</td><td><a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a></td><td>DA3 冻结几何 + GT 位姿对齐</td><td>训练依赖 GT 位姿,非纯 pose-free</td></tr>
+</table>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 落地适配:DA3+2DGS+QuerySplat 结合分析</h2>
+<p>用户问题:把 <b>DA3(几何 backbone)、2DGS(渲染 primitive)、QuerySplat(查询解码框架)</b> 三者结合可能带来什么提升?以下按「替换插槽 → 预期收益 → 风险」逐点分析,所有判断给出代码/论文依据与置信度。</p>
+
+<h3>① DA3 替换 VGM 插槽(证据最硬,建议先做)</h3>
+<div class="callout tip"><b>依据(论文内部):</b>Table 4 显示把 VGGT-Ω 换成 VGGT <b>不降级反而 PSNR +0.18</b>,论文原话"effectiveness primarily comes from how geometric priors are consumed, rather than from a model-specific feature representation"。VGM 在代码里就是可插拔模块:<code>VGGTEncoder</code> 独立封装(<code>querysplat.py:67</code>),特征层号、token 类型全是 yaml 配置键。</div>
+<table>
+<tr><th>维度</th><th>VGGT-Ω(现状)</th><th>DA3(替换后)</th></tr>
+<tr><td>License</td><td class="fail">FAIR 非商用(vendored)</td><td class="best">Apache 2.0(DA3 全系,<a href="3D-20251113-Depth-Anything-3.html">DA3 笔记</a>)</td></tr>
+<tr><td>位姿估计</td><td>baseline</td><td>库内笔记记录:位姿超 VGGT <b>35.7%</b>、几何超 23.6%(DA3 自评 VGBench)</td></tr>
+<tr><td>深度</td><td>相对尺度,相机归一化到第一视角</td><td><b>metric 变体</b>(Metric3D 系 canonical camera 变换,fc=300)——CD 正则可从"相对尺度先验"升级为"度量尺度先验"</td></tr>
+<tr><td>参数/速度</td><td>1B 级,Table 14 显示大视角集合下聚合占 96% 耗时</td><td>DA3-Small 0.08B 起,替换后大视角推理有望数倍提速【推测】</td></tr>
+<tr><td>特征接口</td><td>camera/scene/patch token,层 4/11/17/23</td><td>DA3 是 depth+ray 单目标输出、plain transformer,需写 adapter 把其中间层特征混成 F_geo;<b>接口成本是本替换的主要工作量</b>【推测】</td></tr>
+</table>
+<p><b>预期提升:</b>商用解禁(直接解锁部署)、位姿更稳 → pose-free 坐标系更准 → interp/extrap 受益;metric 深度让早期 CD 正则语义更实。参考平行证据:<a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 用 DA3 冻结几何分支已拿到 pose-conditioned LPIPS -25.8% 的 SOTA 级结果,说明 <b>DA3 系几何先验喂给 Gaussian 头这条路已被独立验证</b>;QuerySplat 的差异化在于查询解码 + 属性解耦,两者不冲突。</p>
+
+<h3>② 2DGS 替换渲染器(primitive 几何升级,风险中等)</h3>
+<div class="callout warn"><b>现状(源码核实):</b>QuerySplat 用 gsplat 标准 <b>3D 各向异性</b> rasterization(<code>rendering/gs.py:8,46-58</code>:quats + 3D scales)。换成 2DGS(surfel:2D 尺度 + 法线)是渲染层替换,不动查询框架。</div>
+<table>
+<tr><th>维度</th><th>3DGS(现状)</th><th>2DGS(替换后,见<a href="3D-20240326-2DGS.html">2DGS 笔记</a>)</th></tr>
+<tr><td>primitive 几何</td><td>3D 椭球,体积感强、易漂浮</td><td>面元盘,ray-splat 距离渲染,<b>几何面更贴表面、floater 更少</b></td></tr>
+<tr><td>几何头改动</td><td>中心3+尺度3+四元数4=10 维</td><td>中心3+2D 尺度2+法线3(→四元数)+?维;<b>几何解码器 head 需重训</b></td></tr>
+<tr><td>与查询解码的契合度</td><td>—</td><td class="best">高:query slot 本来就是"场景表面的一块证据",天然适合 surface-aligned 盘元;CD 到 VGM 伪点云的正则与 2DGS 的深度亲和损失同源</td></tr>
+<tr><td>NVS 保真</td><td class="best">DL3DV 24.58 dB 已验证</td><td class="fail">风险项:2DGS 优势在表面重建/网格导出,NVS 指标未必更高;无体积感primitive 在植被/毛发等"非表面"内容上可能掉点【推测】</td></tr>
+<tr><td>下游(数字人/仿真)</td><td>渲染好,网格差</td><td class="best">可提 mesh → 对接仿真/3D 资产管线</td></tr>
+</table>
+
+<h3>③ 三者合体的预期收益矩阵(本笔记判断,非论文结论)</h3>
+<table>
+<tr><th>组合</th><th>预期提升</th><th>置信度</th><th>主要风险</th></tr>
+<tr><td>QuerySplat + DA3</td><td>商用解禁 + 位姿/坐标系更稳 + 大视角推理提速</td><td>高(Table 4 + DA3 系独立证据)</td><td>特征 adapter 工程量;DA3 特征层级与 VGGT-Ω 不同需重调 mixer</td></tr>
+<tr><td>QuerySplat + 2DGS</td><td>表面几何质量、floater 减少、mesh 可导出</td><td>中(机制合理,无直接实验)</td><td>NVS 指标可能回落;非表面内容(植被/毛发)退化;需重训 head</td></tr>
+<tr><td>DA3 + 2DGS + QuerySplat</td><td>pose-free、可商用、表面准确的 feed-forward 场景重建</td><td>中(两项子替换各自成立,组合未验证)</td><td>训练成本(390K 步工业级)+ 三重改动叠加的调试面</td></tr>
+</table>
+<p><b>建议落地顺序:</b>① 先换 VGM 插槽(DA3),冻结其余一切,复现 Table 4 级别的对比 —— 成本最低、证据最硬;② 再改几何 head 到 2DGS surfel,渲染损失与 TTO 直接复用(gsplat 原生支持 2DGS 光栅化);③ 合体后再谈大场景(query 预算固定是共同瓶颈,论文 Limitations 自己指向"分块重建+对齐合并")。</p>
+<p><b>对 vggt_human pipeline 的适配性:</b>pose-free 前馈 scene_gs 初始化可替代 COLMAP 的稀疏点云环节(24 视角内 11.5 GiB,单卡 3090 可行【推测】);T2V-生成视角重建(图 13)与 3D Scene Repair(图 12)两个应用演示与"生成辅助重建"主线直接相关。但 52 万 query-Gaussian 的表示与 3DMM/人体 Gaussian 拆分架构的耦合方式需要单独设计,不是即插即用。</p>
+
+<div class="grid-2">
+  <div class="figure">
+    <img src="images/2608.01186/fix.png" loading="lazy" alt="3D scene repair">
+    <div class="caption"><b>图12</b>(论文 Figure 9)<b>3D 场景修复。</b>人工挖掉 Gaussian 区域 → 渲染成视频 → Artifixer 视频修复 → QuerySplat 把修复帧重建回可渲染 Gaussian 场景。视频修复与 3D 显式表示的闭环接口示例。</div>
+  </div>
+  <div class="figure">
+    <img src="images/2608.01186/ai_generated.png" loading="lazy" alt="T2V-generated views">
+    <div class="caption"><b>图13</b>(论文 Figure 10)<b>从 T2V 生成视角重建。</b>文本生成视频的多帧直接作为未标定观测,无任何任务适配即重建为可渲染 3DGS——生成式视频输出 → 显式 3D 场景的直接通路(背景为可视化已移除)。</div>
+  </div>
+</div>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+<div class="grid-3">
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h4>[高] 训练数据单一,跨域无定量证据</h4>
+    <p>仅 DL3DV 训练(§4.1),所有 SOTA 宣称限定在 DL3DV;in-the-wild 只有定性图。<b>佐证:</b>Table 1 全部数字来自 DL3DV-Evaluation。改进:多数据集混训或域随机化;补 ETH3D/RE10K 定量。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h4>[高] 查询预算固定,大场景欠表示</h4>
+    <p>论文 Limitations 自认:fixed query budget 限制大/复杂场景。改进方向论文已指:分块重叠重建 + Sim(3) 对齐合并 + 全局精修——与 LingBot-Map/Scal3R 的流式/TTT 思路可互补。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h4>[高] VGM 许可卡死商用</h4>
+    <p>vendored VGGT-Ω/DINOv3 为 FAIR 非商用研究许可(NOTICE 直读)。<b>改进:</b>换 Apache 2.0 的 DA3(§15),一举解决许可 + 位姿 + metric 深度三问题。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--orange)">
+    <h4>[中] 解耦不彻底:外观梯度仍回流几何</h4>
+    <p>代码 <code>post_detach_query: false</code>(<code>querysplat.py:243-244</code>),外观分支以几何 token 为基且不 detach——属性解耦发生在特征/查询空间,梯度路径上仍纠缠。改 true 做对照实验可能进一步涨点【推测】。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--orange)">
+    <h4>[中] 推理-only 发布,研究不可复训</h4>
+    <p>README 明说 inference-only;CD/α 地板/loss-rank 权重只能信 Appendix E 文字,无法源码复核。改进:放出训练代码(作者有放推理代码的先例,可能性存在【推测】)。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--orange)">
+    <h4>[中] 4→12 视角 interp 反而下降</h4>
+    <p>24.58(4v)→23.70(12v),论文未解释;视角变密后监督视角分布与固定查询预算的匹配可能恶化【推测】。值得消融:固定查询预算 vs 视角数的 scaling 曲线。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--yellow)">
+    <h4>[低] 论文/代码口径不一致</h4>
+    <p>Appendix E 写 "first-order SH",paper ckpt 实为 SH0(README 承认);z_offset=1.0、α 偏置 -2.0 论文未提。不影响结论,但复现者易踩坑。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--yellow)">
+    <h4>[低] TTO 超参未写进论文</h4>
+    <p>lr 5e-3 / 默认 20 步只存在于 <code>infer.py</code> 参数默认值;论文只说 "20 and 50 steps"。引用 TTO 数字时需注明口径。</p>
+  </div>
+  <div class="card" style="border-left:4px solid var(--yellow)">
+    <h4>[低] 不透明度存盘阈值静默过滤</h4>
+    <p>α<0.005 的 Gaussian 不写入 PLY(yaml <code>gaussian_save_opacity_threshold</code>),导出后点数 ≠ 52.4 万,对比论文数字时注意口径。</p>
+  </div>
+</div>
+<div class="callout key"><b>个人认为最关键的三点:</b>① DA3 换 VGM(许可+位姿+metric 三合一,Table 4 给了直接通行证);② 固定查询预算的分块扩展(论文自认的最大瓶颈,也是大场景落地的先决条件);③ 训练数据单一(所有 SOTA 都是 DL3DV 内循环,选型时不能外推)。</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+<p>QuerySplat 把 query-based 前馈 3DGS 的两个结构性缺陷(属性纠缠、无 3D 先验)用「双分支双查询 + 冻结 VGM 先验 + 瞬态早期正则」一并解决,在 DL3DV 上同时超过最强 pose-required(+1.04 dB)与 pose-free(+2.30 dB)baseline,并首次让 query-based 渲染锐度追平像素对齐方法。其对领域的真正贡献不在于 SOTA 数字,而在于三点方法论:① <b>属性应按梯度性质解耦建模</b>(消融 -1.98/-4.25 dB 的硬证据);② <b>VGM 是 Gaussian 头的通用几何插槽</b>(VGGT↔VGGT-Ω 打平);③ <b>早期正则必须是瞬态的</b>(全程施加反而失稳)。在演进脉络上,它与 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a>(冻结几何 + GT 位姿)从两端收敛到同一结论——<b>几何先验要冻结、属性要靠渲染反馈学、位姿要么外包给 VGM 要么用 GT 对齐</b>;query-based 与非像素对齐是前馈 3DGS 摆脱像素网格束缚的下一步。</p>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+<p><b>团队:</b>Yinglong Li、Donghui Shen、Xiaoyu Zhang、Zhichao Ye、Hongyu Wu(通讯)、Aimin Hao、Guofeng Zhang(通讯)、Haomin Liu——北航虚拟现实技术与系统国家重点实验室 + InSpatio Research(该团队此前工作含 <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> 合作脉络)+ 浙大 CAD&CG 国家重点实验室。</p>
+<p class="refs">
+<b>论文:</b><a href="https://arxiv.org/abs/2608.01186" target="_blank">arXiv:2608.01186</a>(v1,2026-08-02,无会议标注)· <a href="https://arxiv.org/html/2608.01186v1" target="_blank">HTML 全文</a><br>
+<b>资源:</b><a href="https://inspatio.github.io/querysplat" target="_blank">项目主页(在线画廊)</a> · <a href="https://github.com/inspatio/QuerySplat" target="_blank">GitHub(推理代码,Apache 2.0)</a> · <a href="https://huggingface.co/inspatio/querysplat" target="_blank">HF 权重(双 checkpoint)</a><br>
+<b>库内兄弟笔记:</b><a href="3D-20260514-VGGT-Omega.html">VGGT-Ω(VGM)</a> · <a href="3D-20251113-Depth-Anything-3.html">DA3(替换候选)</a> · <a href="3D-20240326-2DGS.html">2DGS(渲染器替换候选)</a> · <a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20250717-Pi3.html">π³</a> · <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2(DA3-GS 对照)</a> · <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建综述</a> · <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">Pareto 全谱调研</a>
+</p>
+</section>
+
+</div>
+
+<div class="footer">QuerySplat 调研笔记 · 生成于 2026-11-05 · 遵循 media_paper AGENTS.md 规范 · 数字均可回论文 Table 1-14 / Appendix E / GitHub inspatio/QuerySplat 核对</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
