@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SplatAnything(InfiniSplat v3):GSNorm 高斯间距归一化,一个前馈 3DGS 模型通吃任意场景</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2611.08264 · 2026-11-05 · 📊 deep</span>
+    <h1>SplatAnything(InfiniSplat v3):GSNorm 高斯间距归一化,一个前馈 3DGS 模型通吃任意场景</h1>
+    <div class="subtitle">SplatAnything: Gaussian Spacing Normalization for Feed-forward 3DGS across Arbitrary Scenes</div>
+    <div class="authors">Hao Yu · Zhenwei Wang · Yongzhen Hu · Yuning Gong · Junta Wu · Xiaowei Zhou · Hujun Bao · Tengfei Wang(通讯)· Chunchao Guo(通讯)· Sida Peng</div>
+    <div class="org">浙江大学 · 腾讯混元 · Causa Robotics</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2611.08264" target="_blank">📄 arXiv</a>
+      <a href="https://zju3dv.github.io/SplatAnything/" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/zju3dv/SplatAnything" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/ritianyu/SplatAnything" target="_blank">🤗 权重</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 comments 字段为空,<b>未标注会议</b>,按库规范不加会议 badge。仓库已放出推理代码 + 权重(<b>仅推理,无训练代码</b>,文件头自述 "inference-only release");许可证为 <b>PRL v1.0</b>(非 OSI 标准许可:研究/教育/个人免费,组织性"项目使用"需在线登记)。本笔记是库内 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 与 <a href="3D-20251113-Depth-Anything-3.html">DA3</a> 笔记的系列续篇。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文摘要</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架</a></li>
+    <li><a href="#s4">模块一:高斯间距与 RDNorm 的失败模式</a></li>
+    <li><a href="#s5">模块二:GSNorm 归一化空间</a></li>
+    <li><a href="#s6">模块三:总体架构(冻结几何 + 高斯骨干 + GSHead)</a></li>
+    <li><a href="#s7">模块四:Voxel Merging 与推理过滤</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">训练 / 推理逻辑流程图</a></li>
+    <li><a href="#s10">⚙️ 工程实现细节(源码级)</a></li>
+    <li><a href="#s11">实验结果</a></li>
+    <li><a href="#s12">消融实验</a></li>
+    <li><a href="#s13">🔄 同类方法对比分析</a></li>
+    <li><a href="#s14">🎯 应用场景与落地适配性</a></li>
+    <li><a href="#s15">可改进方向分析</a></li>
+    <li><a href="#s16">总结与演进定位</a></li>
+    <li><a href="#s17">👥 研究团队 + 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文摘要</h2>
+<p>前馈式 3DGS 方法通常继承几何基础模型的 <b>RDNorm(径向距离归一化)</b>空间:它把"重建点到参考相机原点的平均径向距离"归一,却<b>不直接约束相邻高斯中心之间的间距</b>。高斯表面覆盖要求高斯尺度与局部间距相当,而 RDNorm 下跨场景类别的高斯间距中位数实测变化高达 <b>4.5×</b>(原文 Figure 4 图注),导致高斯尺度目标系统性漂移、监督歧义。SplatAnything(InfiniSplat 系列 v3)提出 <b>GSNorm(Gaussian Spacing Normalization)</b>:用逐像素深度与焦距算出高斯间距,取场景级<b>中位数</b>作为归一化因子,在高斯预测<b>之前</b>把几何/深度/相机平移重缩放到间距归一空间;配合冻结的 WorldMirror 2.0 几何模型、可微调的高斯骨干、从头训练的轻量 GSHead 与 AnySplat 式 voxel merging,一个模型覆盖物体/人体/室内/街景/航拍/车载环视(Rig-Recon)/360° 全景(Pano-Recon)七类场景。在 7 个 benchmark、4–64 输入视角、含外推视角的系统评测中取得 SOTA(Table 1 的 14 列中 13 列进入前二)。</p>
+<div class="callout key"><b>一句话核心贡献</b>:把前馈 3DGS 的归一化参考系从"径向距离"换成"高斯间距"——一个闭式、零成本、可复现的几何统计量替换,消除了跨场景/跨相机配置的高斯尺度监督歧义。</div>
+<div class="stat-row">
+  <div class="stat"><div class="v">4.5×</div><div class="l">RDNorm 下跨场景类别中位高斯间距残留变化(Fig.4)</div></div>
+  <div class="stat"><div class="v">13/14</div><div class="l">Table 1 各列中本文进入 top-2 的列数</div></div>
+  <div class="stat"><div class="v">0.05</div><div class="l">导出 PLY 的 opacity 阈值(configs/inference.yaml:7)</div></div>
+  <div class="stat"><div class="v">20k</div><div class="l">训练迭代数(64×H20,§3.5)</div></div>
+</div>
+<div class="figure"><img src="images/2611.08264/teaser.png" alt="teaser" loading="lazy"><div class="caption"><b>图1</b> SplatAnything 官方 teaser(Fig.1):任意数量输入图像 + 可选相机位姿,数秒内重建 3DGS,覆盖物体/室内/街景/航拍,并支持外推视角。(arXiv HTML v2,2611.08264v2/teaser.png)</div></div>
+</section>
+
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<h3>2.1 现有方法的具体失败模式</h3>
+<div class="grid-3">
+  <div class="card"><h4>几何基础模型 + RDNorm</h4><p>DA3-GS、AnySplat、Mirror2-GS 等直接复用几何骨干的归一化空间。RDNorm 归一的是<b>径向统计量</b>,不约束高斯间距;相似局部观测在不同场景/焦距下对应不同的高斯尺度目标 → <b>尺度监督歧义</b>。实证:RDNorm 在小物体场景出空洞(holes)、在大室外场景过平滑(over-smoothed)(§4.5 原文)。</p></div>
+  <div class="card"><h4>无几何先验的前馈 3DGS</h4><p>QuerySplat 等插值视角渲染强,但大视角外推下学到的高斯几何可靠性下降(§2 原文定位)。</p></div>
+  <div class="card"><h4>早期匹配/优化式</h4><p>pixelSplat、DepthSplat、ReSplat:几何精度有限,大视角外推成为瓶颈(§2 原文)。</p></div>
+</div>
+<h3>2.2 本文核心洞察(Insight)</h3>
+<div class="callout key"><b>关键假设</b>:逐像素高斯预测的"正确尺度参考"不是场景到相机的距离,而是<b>相邻高斯中心的间距</b>——因为表面覆盖要求尺度与间距相当。间距 $d_i(\mathbf{u})\approx D_i(\mathbf{u})/\sqrt{f_{x,i}f_{y,i}}$ 只依赖深度与焦距,是一个可以闭式计算、对正缩放等变的鲁棒统计量。<b>假设失效条件</b>:① 局部等深近似 $D_i(\mathbf{u}+\mathbf{e}_x)\approx D_i(\mathbf{u})$ 在深度边缘不成立;② 依赖几何模型给出的深度/焦距足够准确——几何先验崩溃时(极稀疏/困难输入,论文 §5 自认)GSNorm 随之失效。</div>
+<div class="figure"><img src="images/2611.08264/pipeline_1.png" alt="normalization space" loading="lazy"><div class="caption"><b>图2</b> 归一化空间对比(Fig.2):(a) RDNorm 只归一全局径向统计量,高斯间距与监督目标仍随场景/相机配置变化;(b) GSNorm 归一高斯间距的代表性统计量,为高斯预测提供一致的空间参考。(原文该图为对比示意图)</div></div>
+<div class="callout warn"><b>宣称 vs 证据的边界</b>:"RDNorm 下中位间距变化 4.5×"出自 Figure 4 图注,该图为矢量图、无文本层数据点,本库无法逐点复核,按原文引用。"7 数据集 SOTA"可由 Table 1 逐格复核(§11),成立但需注意 ETH3D LPIPS 一列本文不在前二(0.049/0.037,输 ReSplat 0.027),PSNR(Table 10)也非最优——ReSplat 在多个设定下 PSNR 更高,论文以外推伪影解释(A.5 原文)。</div>
+</section>
+
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架</h2>
+<h3>3.1 输入 / 输出定义</h3>
+<ul>
+<li><b>输入</b>:$N$ 张图像 $\mathcal{I}=\{I_i\}_{i=1}^N$,可选相机内参 $\mathcal{K}=\{K_i\}$ 与外参 $\mathcal{T}=\{(R_i,t_i)\}$(§3.1)。推理默认分辨率 756×756(须为 14 的倍数,<code>inference.py:33</code>)。</li>
+<li><b>输出</b>:3D 高斯场景 $\mathcal{G}=\{(\mu_j,\alpha_j,\Sigma_j,\mathrm{sh}_j)\}_{j=1}^M$(式 1),导出为标准 3DGS PLY(仅 SH DC 项,<code>docs/inference.md</code> 输出表)。</li>
+</ul>
+<h3>3.2 符号表</h3>
+<table>
+<tr><th>符号</th><th>含义</th><th>形状/单位</th></tr>
+<tr><td>$I_i, K_i, (R_i, t_i)$</td><td>第 $i$ 视角图像 / 内参 / 外参</td><td>$K_i\in\mathbb{R}^{3\times3}$,像素单位</td></tr>
+<tr><td>$D_i(\mathbf{u})$</td><td>像素 $\mathbf{u}=(u,v)$ 处深度</td><td>标量,几何模型预测</td></tr>
+<tr><td>$f_{x,i}, f_{y,i}$</td><td>焦距(像素单位)</td><td>标量</td></tr>
+<tr><td>$\mathbf{P}_i^c(\mathbf{u})$</td><td>像素反投影的相机系 3D 点</td><td>$[3]$</td></tr>
+<tr><td>$d_{x,i}, d_{y,i}, d_i$</td><td>水平/垂直/几何平均高斯间距</td><td>标量(式 3/4)</td></tr>
+<tr><td>$s_r,\ s_g$</td><td>RDNorm / GSNorm 场景级归一化因子</td><td>标量(式 5/10)</td></tr>
+<tr><td>$\Omega_i,\ N_p$</td><td>视角 $i$ 有效像素集合 / 全场景有效像素总数</td><td>集合 / 标量</td></tr>
+<tr><td>$\mu_j,\alpha_j,\Sigma_j,\mathrm{sh}_j$</td><td>高斯中心 / 不透明度 / 协方差 / SH 系数</td><td>式 (1)</td></tr>
+<tr><td>$w_i^p$</td><td>voxel merging 的逐像素权重图</td><td>$[H,W]$,sigmoid(源码 rasterization.py:69)</td></tr>
+</table>
+<h3>3.3 阶段划分与总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: N 张 RGB(可选 K,T)<br/>[B,S,3,H,W]"] --> GEO["冻结 WorldMirror 2.0<br/>深度+内参+位姿"]
+    GEO --> ALIGN["位姿尺度对齐<br/>median pairwise baseline 之比<br/>(rasterization.py:8-41)"]
+    ALIGN --> GSN["GSNorm: s_g = median(D/√(fx·fy))<br/>重缩放深度+相机平移(式10/11)"]
+    GSN --> UNPROJ["反投影深度图 → 逐像素高斯中心<br/>(中心固定,不可导偏移)"]
+    UNPROJ --> BACKBONE["高斯骨干(可微调)<br/>ViT-L/14 DINOv2"]
+    BACKBONE --> GSHEAD["GSHead(从头训练)<br/>逐像素预测 opacity/rotation/scale/SH + 权重 w"]
+    GSHEAD --> FILTER["推理过滤: 大尺度百分位 / 飞点 / 天空"]
+    FILTER --> VOXEL["Voxel merging(沿用 AnySplat)<br/>体素内加权合并 → 统一 G"]
+    VOXEL --> OUT["输出 gaussians.ply / points.ply / cameras.json"]
+    style GEO fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+    style GSN fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style BACKBONE fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style GSHEAD fill:#e9d5ff,stroke:#a78bfa,color:#3b0764
+    style VOXEL fill:#dcfce7,stroke:#34d399,color:#14532d
+</div>
+<p>训练时(§3.5):预测高斯在 GT 目标位姿下渲染,用 MSE + LPIPS 监督;几何骨干冻结,高斯骨干微调,GSHead 从头训练。</p>
+</section>
+
+
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块一:高斯间距的定义与 RDNorm 的失败模式(§3.2/§3.3)</h2>
+<h3>4.1 网络结构表(本模块为几何推导,无网络层)</h3>
+<table>
+<tr><th>输入</th><th>运算</th><th>输出</th></tr>
+<tr><td>深度图 $D_i$,内参 $K_i$</td><td>针孔反投影(式 2)+ 局部等深近似</td><td>间距标量场 $d_i(\mathbf{u})$</td></tr>
+</table>
+<h3>4.2 数学形式化</h3>
+<p>针孔模型下像素 $\mathbf{u}$ 的反投影点(式 2):</p>
+<div class="equation">$$\mathbf{P}_{i}^{c}(\mathbf{u})=D_{i}(\mathbf{u})\begin{bmatrix}(u-c_{x,i})/f_{x,i}\\(v-c_{y,i})/f_{y,i}\\1\end{bmatrix}$$<span class="tag">式(2)</span></div>
+<p>水平相邻像素在局部等深近似下的间距(式 3),垂直方向类似 $d_{y,i}\approx D_i/f_{y,i}$;取几何平均得一阶标量刻画(式 4):</p>
+<div class="equation">$$d_{x,i}(\mathbf{u})\approx\frac{D_{i}(\mathbf{u})}{f_{x,i}},\qquad d_{i}(\mathbf{u})=\sqrt{d_{x,i}d_{y,i}}\approx\frac{D_{i}(\mathbf{u})}{\sqrt{f_{x,i}f_{y,i}}}$$<span class="tag">式(3)(4)</span></div>
+<p><b>RDNorm 的定义与局限</b>(式 5–7):$s_r$ 是有效像素到参考相机原点的平均径向距离;重缩放后 $d_i^r\approx D_i/(\sqrt{f_xf_y}\,s_r)$——间距仍随 $D_i$ 与焦距变化。<b>机制解释</b>:径向距离是"场景到相机"的全局量,间距是"表面采样密度"的局部量;两者只差一个与观测几何相关的因子,RDNorm 把这个因子留在归一化空间里了。</p>
+<h3>4.3 前向流程</h3>
+<ol>
+<li>对每个视角、每个有效像素计算 $d_i(\mathbf{u})$;</li>
+<li>RDNorm 空间下跨场景统计中位间距 → 实测残留 4.5× 变化(Fig.4 图注,矢量图无数据点);</li>
+<li>该漂移直接传导到高斯尺度目标 → 监督歧义。</li>
+</ol>
+<h3>4.4 模块内部图</h3>
+<div class="mermaid">
+flowchart LR
+    A["RDNorm 空间<br/>径向距离=常数"] --> B["高斯间距仍漂移<br/>∝ D/(√fxfy·s_r)"]
+    B --> C["尺度目标系统性偏移<br/>监督歧义"]
+    C --> D1["小物体场景: 空洞"]
+    C --> D2["大室外场景: 过平滑"]
+    style A fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+    style B fill:#fef3c7,stroke:#fbbf24,color:#78350f
+    style D1 fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+    style D2 fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+</div>
+<h3>4.5 监督信号</h3>
+<p>该模块无直接监督——它是训练前/推理前的坐标空间变换,不产生损失项;其效果通过下游渲染损失间接体现(§12 消融)。</p>
+<div class="callout warn"><b>失败模式原文证据</b>(§4.5):"RDNorm tends to produce holes in small object-centric scenes and over-smoothed results in large outdoor scenes";RDNorm+事后尺度校正"alleviates the holes on object-centric scenes, but often turns them into over-smoothed reconstructions, while outdoor scenes remain blurry"。</div>
+</section>
+
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块二:GSNorm 归一化空间(§3.3,核心创新)</h2>
+<h3>5.1 网络结构表</h3>
+<table>
+<tr><th>输入</th><th>运算</th><th>输出</th></tr>
+<tr><td>深度 $D_i$、内参 $K_i$(全部视角)</td><td>间距场 → 全场景中位数 → 归一化因子 $s_g$</td><td>重缩放后的 $D_i^g$、$t_i^g$、$\mathbf{P}_i^g$(式 11)</td></tr>
+</table>
+<h3>5.2 数学形式化</h3>
+<p>对任意场景级尺度 $s>0$,间距变为 $d_i^s(\mathbf{u})\approx D_i(\mathbf{u})/(\sqrt{f_xf_y}\,s)$(式 8)。GSNorm 要求归一化后场景级中位间距为 1(式 9):</p>
+<div class="equation">$$\operatorname*{median}_{i,\mathbf{u}\in\Omega_i}\left(\frac{D_{i}(\mathbf{u})}{\sqrt{f_{x,i}f_{y,i}}\,s}\right)=1\ \Longrightarrow\ s_{g}=\operatorname*{median}_{i,\mathbf{u}\in\Omega_i}\left(\frac{D_{i}(\mathbf{u})}{\sqrt{f_{x,i}f_{y,i}}}\right)$$<span class="tag">式(9)(10)</span></div>
+<div class="equation">$$\mathbf{P}_{i}^{g}=\frac{\mathbf{P}_{i}}{s_{g}},\qquad D_{i}^{g}=\frac{D_{i}}{s_{g}},\qquad\mathbf{t}_{i}^{g}=\frac{\mathbf{t}_{i}}{s_{g}}$$<span class="tag">式(11)</span></div>
+<p><b>为什么用中位数</b>:中位数对正缩放等变(式 9→10 闭式成立),且对深度图中的离群点(天空、错误几何)鲁棒。<b>性质</b>:只归一场景级代表间距,保留局部间距的相对变化——不抹平有意义的局部几何差异。</p>
+<h3>5.3 前向流程(与源码逐步对应)</h3>
+<ol>
+<li>深度先与相机平移尺度对齐:<code>da3_pose_align_factor</code> 取预测/参考相机中心两两距离之比的<b>中位数</b>(<code>src/models/models/rasterization.py:8-41</code>,移植 DA3 的 Umeyama fallback),深度乘该因子(<code>rasterization.py:113-114</code>);</li>
+<li>焦距几何平均:<code>focal = sqrt(fx·fy)</code>(<code>rasterization.py:115</code>);</li>
+<li>逐像素间距 <code>spacing = depth / focal</code>,在有效掩码内取中位数,<code>factor = spacing_target / median</code>(<code>rasterization.py:117-123</code>);</li>
+<li>深度与相机平移同乘 factor,旋转与内参不变(<code>rasterization.py:124-126</code>)。</li>
+</ol>
+<div class="callout warn"><b>论文宣称 vs 代码实现差异</b>:论文式(9)写"中位间距归一到 <b>1</b>";代码里归一到 <code>spacing_target=0.0013227513</code>(<code>gaussian_worldmirror.py:9</code> 默认值)。即代码用了一个固定常数目标而非 1——归一化空间本身差一个常数因子,与 voxel size(<code>gs_voxel_size=0.002</code>,configs/inference.yaml:14)等超参配套,数学上等价,但复现时不能照抄"归一到 1"。</div>
+<h3>5.4 模块内部图</h3>
+<div class="mermaid">
+flowchart TD
+    D["预测深度 D [B,S,H,W]"] --> A1["× 位姿尺度对齐因子<br/>median baseline 比"]
+    F["内参 K [B,S,3,3]"] --> A2["focal=√(fx·fy)"]
+    A1 --> A3["spacing = D/focal"]
+    A2 --> A3
+    A3 --> A4["valid 掩码内取 median"]
+    A4 --> A5["factor = spacing_target/median"]
+    A5 --> A6["D×=factor, t×=factor<br/>R、K 不变"]
+    style A4 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style A5 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<h3>5.5 监督信号</h3><p>无直接监督(坐标变换);效果由 §12 Table 3/12 消融验证:GSNorm 在所有视角数上一致优于 RDNorm 及其事后校正变体。</p>
+</section>
+
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块三:总体架构(§3.4,冻结几何 + 高斯骨干 + GSHead)</h2>
+<div class="figure"><img src="images/2611.08264/pipeline_2.jpg" alt="architecture" loading="lazy"><div class="caption"><b>图3</b> SplatAnything 架构(Fig.3):冻结几何基础模型估计多视图几何 → 几何从 RDNorm 空间转换到 GSNorm 空间 → 高斯骨干 + 轻量 GSHead 预测逐像素高斯属性。</div></div>
+<h3>6.1 网络结构表(源码级)</h3>
+<table>
+<tr><th>组件</th><th>结构</th><th>出处</th></tr>
+<tr><td>共享 encoder 骨干</td><td>VisualGeometryTransformer:ViT-L/14,<code>embed_dim=1024, depth=24, num_heads=16</code>,patch_embed=<code>dinov2_vitl14_reg</code>,img_size=518,patch=14</td><td><code>worldmirror_base.py:16-21</code></td></tr>
+<tr><td>几何分支(冻结)</td><td>CameraHead(dim_in=2048)+ DPTHead(output_dim=3,激活 <code>exp+expp1+linear</code>)→ depth/confidence/mask_logits</td><td><code>geometry_worldmirror.py:12-14</code></td></tr>
+<tr><td>GS 特征头</td><td>GSFeatHead:dim_in=2048,features=256,out_channels=[256,512,1024,1024],DPT 式 4 层 scratch 融合 + 位置嵌入(ratio=0.1)</td><td><code>gs_head.py:17,86-93</code></td></tr>
+<tr><td>高斯解码头</td><td>DPTDecoder:<code>Conv2d(128→256,3×3)+ReLU+Conv2d(256→12,1×1)</code>,输出 12 通道 = 4 quat + 3 scale + 1 opacity + 3 residual SH + 1 weight</td><td><code>rasterization.py:48-60</code></td></tr>
+<tr><td>激活函数</td><td>scale:<code>exp().clamp_max(0.3)</code>;quat:归一化;opacity:sigmoid;SH:<code>(rgb-0.5)/0.282+residual</code>(仅 DC);weight:sigmoid</td><td><code>rasterization.py:66-69</code>(对应论文式 17/18)</td></tr>
+</table>
+<h3>6.2 数学形式化</h3>
+<div class="equation">$$\{\mathcal{G}_{i}^{g}\}_{i=1}^{N}=\mathrm{GSHead}\left(\mathrm{GaussianBackbone}(\mathcal{I},\mathrm{Optional}(\mathcal{K},\mathcal{T}))\right)$$<span class="tag">式(12)</span></div>
+<div class="equation">$$\mathbf{s}=\min(\exp(\hat{\mathbf{s}}),0.3),\qquad \mathbf{q}=\frac{\hat{\mathbf{q}}}{\|\hat{\mathbf{q}}\|_{2}+\epsilon}$$<span class="tag">式(17)(18)</span></div>
+<h3>6.3 前向流程</h3>
+<ol>
+<li>几何教师(冻结)前向:得深度/内参/位姿(<code>inference.py:155</code>);</li>
+<li>GSNorm 重缩放(§5);</li>
+<li>高斯学生前向:同一 ViT 编码器(独立权重实例)提 token → GSFeatHead 融合 → DPTDecoder 逐像素解码 12 通道;<b>高斯中心固定</b>为反投影几何点,不由网络预测(A.8:固定中心带来最大且最一致的收益);</li>
+<li>推理时 <code>decode_chunk_size=8</code> 分块解码(<code>gaussian_worldmirror.py:10</code>);dense decoder 与激活用 FP32(关 autocast,<code>gaussian_worldmirror.py:31</code>)。</li>
+</ol>
+<h3>6.4 模块内部图</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph TEACHER["几何教师(冻结)"]
+        T1["ViT-L tokens"] --> T2["CameraHead → 位姿/内参"]
+        T1 --> T3["DPTHead → 深度/conf/mask"]
+    end
+    subgraph STUDENT["高斯学生"]
+        S1["ViT-L tokens(微调)"] --> S2["GSFeatHead DPT 融合<br/>+ img_feat 残差"]
+        S2 --> S3["DPTDecoder → 12ch"]
+        S3 --> S4["激活: exp/clamp/sigmoid"]
+    end
+    T3 --> GSN["GSNorm"]
+    T2 --> GSN
+    GSN --> UNP["反投影 → 固定中心"]
+    UNP --> MERGE["voxel merging"]
+    S4 --> MERGE
+    style TEACHER fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+    style STUDENT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<h3>6.5 监督信号</h3>
+<p>GSHead 的输出由渲染损失间接监督(MSE+LPIPS,§8);几何教师无梯度流动(冻结,<code>inference.py:150</code> <code>requires_grad_(False)</code>)。</p>
+</section>
+
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块四:Voxel Merging 与推理过滤(附录 A.4 + 源码)</h2>
+<h3>7.1 结构表</h3>
+<table>
+<tr><th>输入</th><th>运算</th><th>输出</th></tr>
+<tr><td>逐视角高斯(means/quats/scales/opacities/sh/weights)</td><td>体素栅格化 + 权重加权合并</td><td>统一场景 $\mathcal{G}$</td></tr>
+</table>
+<h3>7.2 数学形式化(源码规则)</h3>
+<p>体素索引 <code>floor(means / voxel_size)</code>,同体素高斯按权重 $w$ 合并:means/quats/scales/sh 为加权平均 $\Sigma wx/\Sigma w$(四元数合并后重新归一化);<b>不透明度是特例</b>——源码注释明确 <code>opacity = sum(w*w)/sum(w)</code>(<code>rasterization.py:183</code>),即合并时不使用逐像素预测的 opacity,而是由合并权重自身算出(<code>rasterization.py:184</code> <code>values = weights if name == 'opacities'</code>)。注释称这是 "the trained configuration's merge rule",即训练时网络已学会让 $w$ 承担不透明度角色。voxel size 归一化空间内 <code>0.002</code>(configs/inference.yaml:14,类默认 0.0018,<code>gaussian_worldmirror.py:10</code>)。</p>
+<h3>7.3 前向流程</h3>
+<ol>
+<li>推理过滤(导出前):大尺度百分位过滤 <code>max_scale_pct=99.8</code>(configs/inference.yaml:13;注意 docs/inference.md 表格写 99.5,与 yaml 不一致,<span class="uncertain">⚠️【待核实】以 yaml/代码为准</span>);飞点过滤默认关;天空过滤需 <code>--sky_seg</code>(U²-Net ONNX,320×320);</li>
+<li>体素合并(始终启用);</li>
+<li>导出:gaussians.ply 再经 <code>opacity_thresh=0.05</code> 过滤(inference.yaml:7)。</li>
+</ol>
+<h3>7.4 模块内部图</h3>
+<div class="mermaid">
+flowchart TD
+    P["逐视角高斯(N×H×W 个)"] --> F1{"过滤开关"}
+    F1 -->|大尺度 top 0.2% 丢弃| V["体素栅格 floor(means/0.002)"]
+    F1 -->|飞点(默认关)| V
+    F1 -->|天空(--sky_seg)| V
+    V --> M["同体素加权合并<br/>属性=Σw·x/Σw;opacity=Σw²/Σw(不用逐像素 α)"]
+    M --> O["gaussians.ply(opacity≥0.05)"]
+    style V fill:#dcfce7,stroke:#34d399,color:#14532d
+</div>
+<h3>7.5 监督信号</h3><p>无直接监督。论文定位:"GSNorm and voxel merging address two complementary sources of scale variation"(A.4)——GSNorm 管跨场景代表尺度,voxel merging 管多视角累积的密度冗余;merging 机制沿用 AnySplat,非本文创新。</p>
+</section>
+
+
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<p>全文仅两项损失(§3.5,式 13/14),无深度/法线/位姿辅助损失:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{MSE}}=\frac{1}{3HW}\|\hat{I}_{t}-I_{t}\|_{2}^{2},\qquad \mathcal{L}_{\mathrm{LPIPS}}=\operatorname{LPIPS}(\hat{I}_{t},I_{t}),\qquad \mathcal{L}=\lambda_{\mathrm{MSE}}\mathcal{L}_{\mathrm{MSE}}+\lambda_{\mathrm{LPIPS}}\mathcal{L}_{\mathrm{LPIPS}}$$<span class="tag">式(13)(14)</span></div>
+<table>
+<tr><th>损失项</th><th>公式</th><th>权重(真值)</th><th>作用</th></tr>
+<tr><td>MSE</td><td>渲染目标视角 vs GT 的像素 MSE</td><td>$\lambda=1$(§3.5 原文)</td><td>重建保真</td></tr>
+<tr><td>LPIPS</td><td>感知损失</td><td>$\lambda=1$</td><td>感知质量</td></tr>
+</table>
+<p>渲染目标:训练时用 GT 目标位姿渲染预测高斯(A.4 coordinate alignment:预测轨迹与 GT 轨迹的 pairwise baseline 之比取中位数做全局尺度对齐,pose-free 与 pose-conditioned 两种变体都应用)。</p>
+</section>
+
+<section class="section" id="s9">
+<h2><span class="num">9</span>训练 / 推理逻辑流程图</h2>
+<h3>9.1 训练流程(论文 §3.5 + A.1/A.2)</h3>
+<div class="mermaid">
+flowchart TD
+    A["采样 source 视角<br/>4 种轨迹模式 × 变步长"] --> B["几何教师前向(冻结)"]
+    B --> C["GSNorm 重缩放"]
+    C --> D["高斯学生前向<br/>骨干微调 + GSHead 从头"]
+    D --> E["坐标对齐: median baseline 比"]
+    E --> F["GT 目标位姿渲染<br/>(插值 + 外推目标视角)"]
+    F --> G["L = MSE + LPIPS"]
+    G --> H["反向传播(仅学生)"]
+    H -->|"20k 迭代, 分辨率 504–1024 动态, 4–32 视角"| A
+    style B fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+    style G fill:#e9d5ff,stroke:#a78bfa,color:#3b0764
+</div>
+<h3>9.2 推理流程(源码 inference.py)</h3>
+<div class="mermaid">
+flowchart TD
+    A["images/ (+ prior_camera.json)"] --> B["build_views: resize/crop 到 756×756(14 倍数)"]
+    B --> C["GeometryWorldMirror(冻结)"]
+    C --> D["GaussianWorldMirror"]
+    D --> D1["GSNorm + 对齐"]
+    D1 --> D2["DPTDecoder 逐像素解码"]
+    D2 --> D3["过滤 + voxel merging"]
+    D3 --> E["gaussians.ply / points.ply / cameras.json / depth / rgb"]
+    style C fill:#fee2e2,stroke:#f87171,color:#7f1d1d
+    style D1 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+</div>
+<ul>
+<li>RGB 模式(<code>--mode rgb</code>):相机由几何模型预测;pose 模式(<code>--mode pose</code>):读 <code>prior_camera.json</code>,cond_flags=[1,0,1](位姿+光线条件,<code>inference.py:141</code>)。</li>
+<li>默认锚定到第 0 视角相机系(<code>--no_cam_align</code> 可关,docs/inference.md:28)。</li>
+</ul>
+<h3>9.3 训练数据构造策略(A.2,图4/图5)</h3>
+<div class="figure"><img src="images/2611.08264/source_view.png" alt="source view" loading="lazy"><div class="caption"><b>图4</b> 源视角轨迹模式(Fig.8,每 panel 16 视角俯视投影):forward-traversal / lateral-sweep / outward-looking / inward-orbit 四种模式 × 变采样步长(密集重叠~宽基线),× 标记 inward-orbit 的观察中心。</div></div>
+<div class="figure"><img src="images/2611.08264/target_view.jpg" alt="target view" loading="lazy"><div class="caption"><b>图5</b> 目标视角采样模式(Fig.9):蓝 = source,红 = target;插值(held-out)+ 外推(沿轨迹推进或远离轨迹)两种。</div></div>
+</section>
+
+<section class="section" id="s10">
+<h2><span class="num">10</span>⚙️ 工程实现细节(源码级,zju3dv/SplatAnything @ main)</h2>
+<h3>10.1 发布形态</h3>
+<table>
+<tr><th>项</th><th>值</th><th>出处</th></tr>
+<tr><td>发布内容</td><td>仅推理(inference-only release,各模型文件头注释);<b>无训练代码</b></td><td><code>gs_head.py:1</code> 等</td></tr>
+<tr><td>权重</td><td>SplatAnything.ckpt(stage-1 高斯学生)+ worldmirror2.safetensors(HF: ritianyu/SplatAnything)+ skyseg.onnx(可选)</td><td>README / checkpoints/README.md</td></tr>
+<tr><td>依赖</td><td>Python 3.10+,PyTorch ≥2.4,&lt;3;numpy &lt;2;opencv &lt;4.12;onnxruntime(仅天空分割)</td><td>requirements.txt / README</td></tr>
+<tr><td>许可证</td><td><b>PRL v1.0</b>(非 OSI 标准):研究/教育/个人免费;组织性"项目使用"无论商用与否均需 Google 表单登记(自动批准)</td><td>License.txt</td></tr>
+</table>
+<h3>10.2 训练超参(论文 §3.5,代码无法验证——无训练代码)</h3>
+<table>
+<tr><th>超参</th><th>值</th></tr>
+<tr><td>迭代数 / 硬件</td><td>20,000 步 / 64×NVIDIA H20</td></tr>
+<tr><td>输入视角数</td><td>4–32(训练中动态)</td></tr>
+<tr><td>输入分辨率</td><td>动态 504–1024(推理默认 756×756,14 的倍数)</td></tr>
+<tr><td>学习率</td><td>Gaussian Backbone 5×10⁻⁶,GSHead 2×10⁻⁵,500 步 warm-up;优化器原文未提及<span class="uncertain">⚠️【待核实】</span></td></tr>
+<tr><td>训练数据</td><td>14 数据集(8 合成 20,769 场景 + 6 真实 5,026 场景,合计 25,795——合计为笔记计算,Table 4 只给分项):HyperSim/UnrealStereo4K/OmniObject3D/Rawmantic3D/OmniWorld/GTA-SfM/MatrixCity/TartanGround + ScanNet++/Matterport3D/ARKitScenes/Taskonomy/MapFree/BlendedMVS</td></tr>
+</table>
+<h3>10.3 源码级关键实现(论文没写或写法不同的)</h3>
+<ul>
+<li><b>GSNorm 目标常数</b>:<code>spacing_target=0.0013227513</code>(<code>gaussian_worldmirror.py:9</code>)——不是论文式(9)的 1;配套 voxel size 0.002 也在同一归一化空间。复现时整套常数必须一起搬。</li>
+<li><b>双 encoder 实例</b>:几何教师与高斯学生<b>各自持有独立 ViT-L</b>(<code>inference.py:146-150</code> 分别加载两个权重),推理跑两遍大 backbone——这是 Table 11 里它比 Mirror2-GS 慢(~411ms vs 246ms @4 视角)的直接原因【推测:单遍共享 encoder 可省一半 backbone 耗时】。</li>
+<li><b>位姿尺度对齐</b>:<code>da3_pose_align_factor</code>(<code>rasterization.py:8-41</code>)移植 DA3 的 Umeyama fallback,取相机中心两两距离比的<b>中位数</b>;零基线(全景/立方图)场景自动退化为不缩放——这是 Pano-Recon 能 work 的关键细节。</li>
+<li><b>天空分割参与尺度统计</b>:<code>--sky_seg</code> 时天空像素不仅被过滤,还被排除在 GSNorm 中位数统计之外(<code>rasterization.py:135-140</code> 注释 "sky masks also exclude sky pixels from scale estimation",docs/inference.md:34)。</li>
+<li><b>导出的 depth/*.npy 是 GSNorm 之前的原始预测尺度</b>,与 PLY 的归一化坐标系不同(docs/inference.md:70)——落地时对齐深度与点云会踩坑。</li>
+<li><b>文档不一致</b>:docs/inference.md 表格写 <code>max_scale_pct</code> 默认 99.5,configs/inference.yaml:13 实为 99.8。</li>
+</ul>
+<h3>10.4 资源账</h3>
+<ul>
+<li>推理(A.7):单张 H20、BF16、batch 1、输入统一 resize 448×896;中位前向耗时 N=4: <b>411ms</b>,N=64: 11,037ms(Table 11)。</li>
+<li>论文未报告显存与参数量;<span class="uncertain">⚠️【待核实】RTX 3090(24GB)可跑性——ViT-L×2 + 756² 输入,【推测】单卡可推理但未实测</span>。</li>
+<li>训练成本:64×H20 × 20k 步,论文未给墙钟时间。</li>
+</ul>
+</section>
+
+
+<section class="section" id="s11">
+<h2><span class="num">11</span>实验结果</h2>
+<h3>11.1 评测设定(§4.1 + A.3)</h3>
+<ul>
+<li>7 个 benchmark:ScanNet / NRGBD / DL3DV / Tanks & Temples / Mip-NeRF 360 / ETH3D / DTU;输入视角 4/8/16/32/64;指标以 <b>DISTS + LPIPS</b> 为主(沿用 SHARP 的口径),PSNR 在附录 Table 10。</li>
+<li>Source 视角用 fixed-span 构造(最宽弧段,相邻视角对称共视率第 20 百分位 ≥ 0.35),保证各视角数共享空间覆盖;target 视角从 source 弧段<b>之外</b>采样(共视率 0.2–0.6 区间)——即评测刻意偏<b>外推</b>。</li>
+<li>主指标口径下本文 14 列中 13 列进 top-2;唯一例外 ETH3D LPIPS(0.049 / 0.037,输 ReSplat 0.027、QuerySplat 0.031、YoNoSplat 0.033)。</li>
+</ul>
+<h3>11.2 Table 1 精选(4–64 视角平均,越低越好)</h3>
+<table>
+<tr><th>设定</th><th>方法</th><th>ScanNet<br>D/L</th><th>NRGBD<br>D/L</th><th>DL3DV<br>D/L</th><th>T&amp;T<br>D/L</th><th>Mip360<br>D/L</th><th>ETH3D<br>D/L</th><th>DTU<br>D/L</th></tr>
+<tr><td rowspan="6">w/o Pose</td><td>AnySplat</td><td>0.278/0.414</td><td>0.236/0.352</td><td>0.371/0.327</td><td>0.593/0.737</td><td>0.538/0.787</td><td>0.278/0.154</td><td>0.520/0.810</td></tr>
+<tr><td>DA3-GS</td><td>0.286/0.305</td><td>0.233/0.217</td><td>0.337/0.228</td><td>0.414/0.380</td><td>0.371/0.565</td><td>0.228/0.087</td><td>0.365/0.582</td></tr>
+<tr><td>Mirror2-GS</td><td>0.193/0.222</td><td>0.235/0.237</td><td>0.246/0.188</td><td>0.306/0.351</td><td>0.283/0.528</td><td>0.205/0.070</td><td>0.347/0.617</td></tr>
+<tr><td>QuerySplat</td><td>0.236/0.242</td><td>0.261/0.216</td><td>0.343/0.291</td><td>0.425/0.393</td><td>0.412/0.652</td><td>0.290/0.031</td><td>0.424/0.676</td></tr>
+<tr class="best"><td><b>Ours</b></td><td><b>0.184</b>/0.207</td><td>0.195/0.183</td><td>0.221/0.156</td><td>0.252/0.299</td><td>0.233/0.463</td><td>0.147/0.049</td><td>0.229/0.483</td></tr>
+<tr><td>Ours (Pose Cond.)</td><td>0.185/<b>0.206</b></td><td><b>0.186</b>/<b>0.162</b></td><td><b>0.215</b>/<b>0.148</b></td><td><b>0.251</b>/<b>0.290</b></td><td><b>0.219</b>/<b>0.440</b></td><td><b>0.133</b>/0.037</td><td><b>0.184</b>/<b>0.364</b></td></tr>
+</table>
+<p class="note">完整表含 w/ Pose 组(DepthSplat/TokenGS/tttLRM/ReSplat/DA3-GS/Mirror2-GS 的 pose-conditioned 变体),全部数字已核对原文 Table 1。加粗为该列最优;Ours 与 Ours (Pose Cond.) 占据 13/14 列前二。</p>
+<h3>11.3 效率(Table 11,单 H20,BF16,448×896,中位前向 ms)</h3>
+<table>
+<tr><th>方法</th><th>N=4</th><th>N=8</th><th>N=16</th><th>N=32</th><th>N=64</th></tr>
+<tr><td>Mirror2-GS(w/o pose 最快)</td><td>246</td><td>448</td><td>959</td><td>2,268</td><td>6,060</td></tr>
+<tr class="best"><td><b>Ours</b></td><td>411</td><td>761</td><td>1,649</td><td>3,991</td><td>11,037</td></tr>
+<tr><td>DA3-GS</td><td>709</td><td>1,513</td><td>3,783</td><td>10,950</td><td>35,904</td></tr>
+<tr><td>QuerySplat</td><td>2,324</td><td>3,398</td><td>6,092</td><td>14,009</td><td>39,583</td></tr>
+<tr><td>DepthSplat(w/ pose 最快)</td><td>158</td><td>287</td><td>541</td><td>1,045</td><td>2,087</td></tr>
+</table>
+<div class="callout warn"><b>效率边界(手算复核)</b>:本文<b>不是最快</b>——N=4 时比 Mirror2-GS 慢 1.67×(411/246),N=64 慢 1.82×;但比 DA3-GS 快 1.7×(N=4)~3.3×(N=64)、比 QuerySplat 快 5.7×(N=4)~3.6×(N=64)。原文 "substantially faster than computationally heavier baselines such as DA3-GS, QuerySplat, and TokenGS" 成立,但避谈 Mirror2-GS 更快这一事实。慢的原因见 §10.3 双 encoder 分析。</div>
+<h3>11.4 单目设定(Table 2,供参考)</h3>
+<table>
+<tr><th>方法</th><th>ScanNet D/L</th><th>DL3DV D/L</th><th>Mip360 D/L</th><th>DTU D/L</th></tr>
+<tr><td>SHARP</td><td>0.223/0.244</td><td>0.335/0.280</td><td>0.328/0.505</td><td>0.433/0.724</td></tr>
+<tr><td>InfiniSplat(v1/v2 系)</td><td>0.266/0.280</td><td>0.527/0.596</td><td>0.505/0.654</td><td>0.562/0.754</td></tr>
+<tr class="best"><td><b>Ours</b></td><td>0.238/0.274</td><td><b>0.279</b>/<b>0.220</b></td><td>0.410/0.599</td><td><b>0.327</b>/<b>0.657</b></td></tr>
+</table>
+<p class="note">单目下与 SHARP 互有胜负(本文 DL3DV/DTU 明显更强,ScanNet/Mip360 输);大幅优于 InfiniSplat。单目不是本文主战场。</p>
+<div class="figure"><img src="images/2611.08264/main_compare_mono.jpg" alt="monocular compare" loading="lazy"><div class="caption"><b>图6</b> 单目输入的定量/定性对比(原文 Table 2 配图):单目设定下与 SHARP、InfiniSplat 的逐数据集对比。</div></div>
+<div class="figure"><img src="images/2611.08264/main_compare.jpg" alt="qualitative" loading="lazy"><div class="caption"><b>图7</b> 多视角输入的定性对比(Fig.5):跨场景与视角,与 AnySplat/DA3-GS/Mirror2-GS/QuerySplat 等对比。</div></div>
+<div class="figure"><img src="images/2611.08264/more_results.png" alt="more results" loading="lazy"><div class="caption"><b>图8</b> 更多定性结果(Fig.14):物体/室内/街景/航拍的前馈重建。</div></div>
+</section>
+
+<section class="section" id="s12">
+<h2><span class="num">12</span>消融实验</h2>
+<h3>12.1 归一化空间消融(Table 3 / Table 12,核心消融)</h3>
+<table>
+<tr><th>归一化空间</th><th>V=1 D/L</th><th>V=4 D/L</th><th>V=16 D/L</th><th>V=64 D/L</th></tr>
+<tr><td>RDNorm</td><td>0.308/0.394</td><td>0.223/0.278</td><td>0.218/0.268</td><td>0.224/0.250</td></tr>
+<tr><td>RDNorm + 事后尺度校正</td><td>0.323/0.400</td><td>0.249/0.309</td><td>0.245/0.300</td><td>0.234/0.265</td></tr>
+<tr><td>Camera Distance Norm.(A.8)</td><td class="fail">0.793/1.027</td><td>0.217/0.284</td><td>0.214/0.280</td><td>0.224/0.260</td></tr>
+<tr><td>Depth Norm.(A.8)</td><td>0.307/0.413</td><td>0.224/0.284</td><td>0.218/0.273</td><td>0.224/0.254</td></tr>
+<tr class="best"><td><b>GSNorm(Ours)</b></td><td><b>0.294</b>/<b>0.367</b></td><td><b>0.198</b>/<b>0.245</b></td><td><b>0.190</b>/<b>0.232</b></td><td><b>0.217</b>/<b>0.229</b></td></tr>
+</table>
+<ul>
+<li><b>事后校正反而更差</b>:RDNorm+calib 逐格差于纯 RDNorm(如 V=4 LPIPS 0.309 vs 0.278)——原文结论 "post-prediction scale correction cannot resolve the ambiguity in scale supervision introduced by RDNorm"。这是本文最有力的论据:<b>问题在预测空间,不在预测结果</b>。</li>
+<li><b>CDNorm 在 V=1 崩坏</b>(0.793/1.027):小基线 → 归一化因子过小 → 归一化空间中间距过大(A.8 机制分析);DNorm 忽略焦距/采样,宽 FoV 时间距分布漂移。GSNorm 在所有视角数稳定最优。</li>
+</ul>
+<div class="figure"><img src="images/2611.08264/norm_space.jpg" alt="norm space ablation" loading="lazy"><div class="caption"><b>图9</b> 归一化空间消融配图(原文 Table 12 配图):RDNorm/CDNorm/DNorm/GSNorm 在不同输入视角数下的失败模式对比——CDNorm 在 V=1 崩坏(小基线→归一化因子过小),DNorm 在宽 FoV 下间距漂移。</div></div>
+<div class="figure"><img src="images/2611.08264/ablation.jpg" alt="ablation" loading="lazy"><div class="caption"><b>图10</b> GSNorm 消融的定性效果(Fig.7):RDNorm 在小物体场景出空洞、大室外场景过平滑;事后校正把空洞变成过平滑;GSNorm 更完整锐利。</div></div>
+<h3>12.2 训练设计消融(Table 13,A.8,4 位小数)</h3>
+<table>
+<tr><th>变体</th><th>V=4 D/L</th><th>V=16 D/L</th><th>V=64 D/L</th></tr>
+<tr><td>w/o 微调高斯骨干</td><td>0.2026/0.2503</td><td>0.1948/0.2379</td><td>0.2239/0.2387</td></tr>
+<tr><td>w/o 固定高斯中心</td><td>0.2063/0.2591</td><td>0.1981/0.2463</td><td>0.2259/0.2507</td></tr>
+<tr><td>w/o 数据扩展(仅 HyperSim)</td><td>0.2045/0.2499</td><td>0.1960/0.2389</td><td>0.2229/0.2385</td></tr>
+<tr><td>w/o 混合视角采样</td><td>0.2026/0.2536</td><td>0.1928/0.2392</td><td>0.2231/0.2448</td></tr>
+<tr class="best"><td><b>完整模型</b></td><td><b>0.1981</b>/<b>0.2450</b></td><td><b>0.1895</b>/<b>0.2315</b></td><td><b>0.2170</b>/<b>0.2285</b></td></tr>
+</table>
+<p>原文结论:固定高斯中心收益最大且最一致——若中心可经渲染损失优化,模型会把基元移离几何先验以降低图像误差,导致<b>几何漂移</b>与外推泛化变差。这与 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 发现的"位置补偿属性旁路"是同一族问题:v2 靠冻结几何分支 + GT 位姿反投影解决,v3 靠固定中心解决。</p>
+</section>
+
+
+<section class="section" id="s13">
+<h2><span class="num">13</span>🔄 同类方法对比分析</h2>
+<h3>13.1 横向对比表(固定维度)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时(N=4)</th><th>显存</th><th>关键指标(7 数据集均值 D/L,w/o pose)</th><th>开源</th></tr>
+<tr class="best"><td><b>SplatAnything</b></td><td>2026</td><td>N 视角 RGB(可选 pose)</td><td>逐像素 3DGS</td><td>渲染 MSE+LPIPS</td><td>14 数据集 25,795 场景</td><td>20k 步 / 64×H20</td><td>411ms(H20)</td><td>—(未报告)</td><td>0.209/0.263(笔记按 Table 1 七数据集手算均值)</td><td>推理+权重(PRL 许可)</td></tr>
+<tr><td>AnySplat</td><td>2025</td><td>N 视角 RGB</td><td>逐像素 3DGS</td><td>—</td><td>—</td><td>—</td><td>250ms</td><td>—</td><td>0.402/0.512(手算均值)</td><td>—</td></tr>
+<tr><td><a href="3D-20251113-Depth-Anything-3.html">DA3-GS</a>(基于 <a href="3D-20251113-Depth-Anything-3.html">DA3</a>)</td><td>2025</td><td>N 视角 RGB</td><td>逐像素 3DGS</td><td>—</td><td>—</td><td>—</td><td>709ms</td><td>—</td><td>0.319/0.338(手算均值)</td><td>开源</td></tr>
+<tr><td>Mirror2-GS(WorldMirror 2.0)</td><td>2026</td><td>N 视角 RGB</td><td>逐像素 3DGS</td><td>—</td><td>—</td><td>—</td><td>246ms(最快)</td><td>—</td><td>0.259/0.316(手算均值)</td><td>—</td></tr>
+<tr><td><a href="3D-20261105-QuerySplat.html">QuerySplat</a></td><td>2026</td><td>2–300 未标定视角</td><td>查询 slot 3DGS</td><td>—</td><td>—</td><td>—</td><td>2,324ms</td><td>—</td><td>0.342/0.357(手算均值)</td><td>推理开源</td></tr>
+<tr><td>ReSplat</td><td>2025</td><td>N 视角 + pose</td><td>逐像素 3DGS+渲染优化</td><td>—</td><td>—</td><td>—</td><td>199ms</td><td>—</td><td>w/ pose 组;PSNR 最高但外推伪影(A.5)</td><td>—</td></tr>
+<tr><td><a href="3D-20251211-SHARP.html">SHARP</a></td><td>2025</td><td>单目</td><td>单目 NVS</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>单目设定互有胜负(§11.4)</td><td>开源</td></tr>
+<tr><td><a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a></td><td>2026</td><td>单目/稀疏视角</td><td>逐像素 3DGS</td><td>渲染(冻结 DA3 几何)</td><td>Hypersim/Raw3D/ScanNet++</td><td>—</td><td>—</td><td>—</td><td>单目设定输本文(Table 2)</td><td>推理+权重</td></tr>
+</table>
+<p class="note">均值列为本笔记按原文 Table 1 逐格手算(7 数据集 DISTS/LPIPS 算术平均),非原文给出;"—"为论文/库内笔记未提供。</p>
+<h3>13.2 对比结论(机制层面)</h3>
+<ul>
+<li><b>vs Mirror2-GS(最强 baseline)</b>:同用 WorldMirror 2.0 几何,唯一差异是 GSNorm 替换 RDNorm——Table 1 七数据集均值 DISTS 0.209 vs 0.259(<b>-19.5%</b>,手算),说明收益主要来自归一化空间而非架构。但它也更快(246ms vs 411ms),因为它不需要跑第二遍高斯学生 encoder【推测,依据 §10.3 双 encoder 结构】。</li>
+<li><b>vs DA3-GS</b>:DA3-GS 继承 DA3 的 RDNorm 空间,是本文批判的典型;指标与耗时全面落后(709ms vs 411ms)。</li>
+<li><b>vs QuerySplat(无几何先验路线)</b>:QuerySplat 插值强但外推几何不可靠;本文在刻意外推的 benchmark 上全面领先,代价是必须信任几何先验。</li>
+<li><b>vs ReSplat</b>:ReSplat PSNR 更高但外推出严重伪影(A.5 原文),说明"外推鲁棒性"与"PSNR"在该任务上解耦——评估外推场景不能只看 PSNR。</li>
+</ul>
+<h3>13.3 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>逐场景优化 3DGS</td><td>原版 3DGS</td><td>每场景拟合</td><td>慢,需密集视角</td></tr>
+<tr><td>前馈重建(无几何先验)</td><td>pixelSplat / tttLRM / TokenGS / <a href="3D-20261105-QuerySplat.html">QuerySplat</a></td><td>学习到的多视图先验</td><td>大视角外推几何不可靠</td></tr>
+<tr><td>几何基础模型 + RDNorm</td><td>AnySplat / DA3-GS / Mirror2-GS</td><td>径向尺度归一</td><td>高斯间距漂移 → 尺度监督歧义</td></tr>
+<tr><td>几何基础模型 + GSNorm(本文)</td><td>SplatAnything</td><td>间距尺度归一 + 固定中心</td><td>依赖几何先验质量;未观测区域空洞;非最快</td></tr>
+</table>
+<p>系列脉络:InfiniSplat(v1,单目 NVS)→ <a href="3D-20261014-InfiniSplat-v2.html">v2</a>(冻结 DA3 几何 + GT 位姿反投影,解决属性学习退化)→ <b>v3(SplatAnything)</b>(换 WorldMirror 2.0 几何 + GSNorm,解决跨场景尺度一致性)。三篇是同一团队对"前馈 3DGS 属性学习"问题的递进拆解,库内 <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a> 可同步补 v3 一行。</p>
+</section>
+
+<section class="section" id="s14">
+<h2><span class="num">14</span>🎯 应用场景与落地适配性</h2>
+<h3>14.1 官方应用形态</h3>
+<ul>
+<li><b>Rig-Recon</b>:车载环视多相机 rig(示例 150 视角 @504×504),pose 模式;</li>
+<li><b>Pano-Recon</b>:360° 全景 → 24 个透视视角(<code>scripts/convert_panorama.py</code>)→ 同一推理入口;A.9 用 WorldPano 生成全景,95°×100° FoV 立方图视角直接喂入。零基线场景下 <code>da3_pose_align_factor</code> 自动跳过重缩放(rasterization.py:30-34),这是全景能 work 的关键。</li>
+</ul>
+<h3>14.2 能否进我们的 pipeline(vggt_human)</h3>
+<table>
+<tr><th>环节</th><th>适配性</th><th>说明</th></tr>
+<tr><td>scene_gs(背景/场景重建)</td><td>✅ 高度相关</td><td>COLMAP → 前馈 3DGS 的替代/初始化方案;pose 模式可直接吃 COLMAP 位姿(prior_camera.json)。GSNorm 对"场景尺度差异大"的序列尤其对症。</td></tr>
+<tr><td>head_gs / body_gs(3DMM 拟合)</td><td>❌ 不适用</td><td>冻结几何 + 固定高斯中心,无法"改几何";与 InfiniSplat v2 笔记 §15 同一结论:这类方法适合场景,不适合人头/身体的 3DMM 对齐环节。</td></tr>
+<tr><td>尺度归一化方法论</td><td>✅ 可借鉴</td><td>GSNorm 思想(间距而非径向距离做尺度参考)可直接用于我们自研 3DGS 的尺度处理;head/body/scene 三分后尺度差异大,间距归一比径向归一更合理。</td></tr>
+<tr><td>人体场景</td><td>⚠️ 弱相关</td><td>训练数据 OmniObject3D 含物体、Rawmantic3D 等含少量人体,但<b>无人体专项数据集</b>; teaser 有人体案例但非 benchmark 项。</td></tr>
+</table>
+<h3>14.3 成本门槛</h3>
+<ul>
+<li>数据成本:零(推理只需 RGB,可选 pose);</li>
+<li>硬件门槛:论文未报显存;<span class="uncertain">⚠️【待核实】3090 24GB 可跑性未实测</span>;训练不可复现(64×H20 + 无训练代码);</li>
+<li>许可成本:PRL v1.0 组织使用需登记(自动批准、免费),商用无额外费用但需保留版权声明——比 DA3 的 CC BY-NC 权重宽松。</li>
+</ul>
+</section>
+
+<section class="section" id="s15">
+<h2><span class="num">15</span>可改进方向分析</h2>
+<div class="card"><h4>[高优先级] 双 encoder 推理浪费 ~50% backbone 算力</h4><p>几何教师与高斯学生各持独立 ViT-L(inference.py:146-150),同一场景 backbone 跑两遍。这是它比 Mirror2-GS 慢 1.7× 的直接原因。<b>建议</b>:共享 encoder 一次前向、双头输出;或蒸馏学生 encoder。预期 N=4 耗时可从 411ms 降到 ~250ms 量级【推测,按 backbone 占比估算】。</p></div>
+<div class="card"><h4>[高优先级] 推理包无训练代码 + 关键常数硬编码</h4><p>发布为 inference-only(gs_head.py:1 文件头),GSNorm 的 <code>spacing_target=0.0013227513</code>、voxel size 0.002 等常数与论文"归一到 1"的表述脱节,且 docs 与 yaml 的 <code>max_scale_pct</code>(99.5 vs 99.8)不一致。<b>建议</b>:社区复现需以代码常数为准;作者应发布训练代码或至少把归一化常数的推导写进论文。</p></div>
+<div class="card"><h4>[中优先级] 单目/极稀疏输入的几何依赖</h4><p>论文自认(§5):"may degrade when reliable geometry cannot be recovered from extremely sparse or challenging inputs"。Table 2 单目输 SHARP 于 ScanNet/Mip360。<b>建议</b>:几何置信度(confidence 头已有,geometry_worldmirror.py:22)可用于自适应降权低置信区域,或接入生成式补全(作者 future work 同向)。</p></div>
+<div class="card"><h4>[中优先级] 局部等深近似在深度边缘失效</h4><p>式(3)假设 $D_i(\mathbf{u}+\mathbf{e}_x)\approx D_i(\mathbf{u})$,深度边缘的间距估计偏大;<code>filter_flying_points_infer</code> 选项(默认关)正是为此准备但默认不启用。<b>建议</b>:边缘感知的中位数统计(按深度分位数加权)或默认开启飞点过滤。</p></div>
+<div class="card"><h4>[低优先级] 评估口径偏向自家强项</h4><p>主指标 DISTS/LPIPS 沿用 SHARP 口径,PSNR 放附录且非最优(ReSplat 更高);效率对比避谈 Mirror2-GS 更快。<b>建议</b>:读论文时把 Table 10(PSNR)与 Table 11(延迟)一起当作主表看。</p></div>
+<div class="card"><h4>[低优先级] 文档/论文编号笔误多处</h4><p>A.5 表号引用("Table 7, Table 7, Table 7, Table 10, Table 10")、4.2 节单目表号(Table 6 应为 Table 2)、A.8/A.9 共用 Fig.13——均已核对原文,属笔误非内容错误。</p></div>
+<h3>优先级总览</h3>
+<table>
+<tr><th>优先级</th><th>改进点</th><th>性质</th></tr>
+<tr><td>[高]</td><td>双 encoder 合并</td><td>性能(推理耗时)</td></tr>
+<tr><td>[高]</td><td>训练代码/归一化常数公开</td><td>可复现性</td></tr>
+<tr><td>[中]</td><td>几何置信度自适应</td><td>鲁棒性</td></tr>
+<tr><td>[中]</td><td>深度边缘的间距统计</td><td>方法层面</td></tr>
+<tr><td>[低]</td><td>评估口径</td><td>社区阅读防偏</td></tr>
+<tr><td>[低]</td><td>编号笔误</td><td>编辑质量</td></tr>
+</table>
+<p><b>个人认为最关键的三点</b>:① 双 encoder 是纯工程浪费,合并后性价比极高;② "归一到 1 vs 0.00132"这类常数脱节是复现的头号坑;③ 几何置信度头已经存在但没被用起来——低置信区域降权是最低垂的鲁棒性果实。</p>
+</section>
+
+<section class="section" id="s16">
+<h2><span class="num">16</span>总结与演进定位</h2>
+<p>SplatAnything 是 InfiniSplat 系列从"单目 NVS"走向"通用前馈 3DGS"的第三步,核心贡献单一而扎实:<b>把归一化参考系从径向距离换成高斯间距</b>。消融证据链完整(事后校正更差 → 问题在预测空间;CDNorm/DNorm 各有失效模式 → 间距统计量选得对),7 数据集 + 外推 benchmark 全面 SOTA(除 ETH3D LPIPS 与 PSNR 口径)。它不是最快的(Mirror2-GS/DepthSplat 更快),也不解决几何先验本身的失败,但作为"几何基础模型 + 前馈 3DGS"范式的<b>空间标准化</b>一环,方法论价值高于指标价值——后续工作(包括我们自己的 pipeline)在设计跨场景尺度处理时,GSNorm 是比 RDNorm 更合理的默认选择。</p>
+<div class="figure"><img src="images/2611.08264/pano.jpg" alt="pano" loading="lazy"><div class="caption"><b>图11</b> 全景重建定性结果(Fig.13):360° 全景转 24 透视视角后的前馈重建,宽 FoV 鲁棒性的展示。</div></div>
+</section>
+
+<section class="section" id="s17">
+<h2><span class="num">17</span>👥 研究团队 + 🔗 资源链接</h2>
+<h3>团队</h3>
+<p>Hao Yu(浙大/腾讯混元)· Zhenwei Wang(腾讯混元)· Yongzhen Hu(浙大)· Yuning Gong / Junta Wu / Tengfei Wang(通讯)/ Chunchao Guo(通讯)(腾讯混元)· Xiaowei Zhou / Hujun Bao(浙大)· Sida Peng(浙大/Causa Robotics)。InfiniSplat 系列原班人马(v1/v2 作者 Hu/Yu/Peng 均在)。</p>
+<h3>资源</h3>
+<div class="refs">
+<ul>
+<li>📄 arXiv: <a href="https://arxiv.org/abs/2611.08264">arxiv.org/abs/2611.08264</a>(v1 2026-11-05,v2 2026-11-08;abs comments 为空,未标注会议)</li>
+<li>💻 GitHub: <a href="https://github.com/zju3dv/SplatAnything">github.com/zju3dv/SplatAnything</a>(推理代码;PRL v1.0 许可)</li>
+<li>🌐 项目主页: <a href="https://zju3dv.github.io/SplatAnything/">zju3dv.github.io/SplatAnything</a></li>
+<li>🤗 权重: <a href="https://huggingface.co/ritianyu/SplatAnything">huggingface.co/ritianyu/SplatAnything</a></li>
+<li>🔗 系列: <a href="https://github.com/zju3dv/InfiniSplat">InfiniSplat v1/v2 仓库</a>;库内笔记 <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a>、<a href="3D-20251113-Depth-Anything-3.html">DA3</a>、<a href="3D-20261105-QuerySplat.html">QuerySplat</a>、<a href="3D-20251211-SHARP.html">SHARP</a>、<a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a></li>
+</ul>
+</div>
+</section>
+
+
+<div class="footer">本笔记由调研工作流生成 · 成稿日期 2026-11-12 · 数据以 arXiv 2611.08264v2 与 zju3dv/SplatAnything 仓库 main 分支为准</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

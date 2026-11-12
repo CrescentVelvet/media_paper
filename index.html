@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 90</span><span class="chip" data-k="kind" data-v="survey">调研综述 14</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 57</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 91</span><span class="chip" data-k="kind" data-v="survey">调研综述 14</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 58</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -2922,9 +2922,37 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://github.com/inspatio/QuerySplat" target="_blank">💻 GitHub</a>
         </div>
 
+        <div class="note-card" data-file="3D-20261112-SplatAnything.html" data-kind="note" data-depth="deep"
+              data-topics="前馈式大重建模型|稀疏与少视角重建" data-search="SplatAnything(InfiniSplat v3):GSNorm 高斯间距归一化,一个前馈 3DGS 模型通吃任意场景 3DGS 前馈重建 GSNorm 归一化空间 WorldMirror 2.0 pose-free voxel merging InfiniSplat 系列 v3:指出前馈 3DGS 继承几何基础模型的 RDNorm 空间只归一径向距离、不约束高斯间距(跨场景类别中位间距残留 4.5× 变化),导致高斯尺度监督歧义;提出 GSNorm——以逐像素深度/焦距算高斯间距、取场景中位数做归一化因子,在高斯预测前重缩放几何/深度/相机平移。冻结 WorldMirror 2.0 几何 + 可微调高斯骨干 + 从头训练 GSHead + AnySplat 式 voxel merging,单模型覆盖物体/室内/街景/航拍/车载环视/360°全景。7 数据集 4–64 视角外推 benchmark 上 14 列中 13 列进 top-2(均值 DISTS 较最强 baseline Mirror2-GS 降 19.5%,手算复核);消融证明事后尺度校正反而更差——问题在预测空间而非预测结果。笔记含推理源码级验证(spacing_target 常数与论文&#x27;归一到 1&#x27;的脱节、双 encoder 推理开销、天空掩码参与尺度统计),并标注其非最快(Mirror2-GS 246ms vs 411ms @N=4)与 PSNR 非最优的边界。">
+            <h3>101. SplatAnything(InfiniSplat v3):GSNorm 高斯间距归一化,一个前馈 3DGS 模型通吃任意场景</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2611.08264</span>
+                <span>📅 2026-11-05</span>
+                <span>🏢 浙江大学 / 腾讯混元 / Causa Robotics</span>
+                <span>✅ 开源(推理代码+权重,PRL v1.0 许可;训练未开源)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">前馈重建</span>
+                <span class="tag">GSNorm</span>
+                <span class="tag">归一化空间</span>
+                <span class="tag">WorldMirror 2.0</span>
+                <span class="tag">pose-free</span>
+                <span class="tag">voxel merging</span>
+            </div>
+            <p>InfiniSplat 系列 v3:指出前馈 3DGS 继承几何基础模型的 RDNorm 空间只归一径向距离、不约束高斯间距(跨场景类别中位间距残留 4.5× 变化),导致高斯尺度监督歧义;提出 GSNorm——以逐像素深度/焦距算高斯间距、取场景中位数做归一化因子,在高斯预测前重缩放几何/深度/相机平移。冻结 WorldMirror 2.0 几何 + 可微调高斯骨干 + 从头训练 GSHead + AnySplat 式 voxel merging,单模型覆盖物体/室内/街景/航拍/车载环视/360°全景。7 数据集 4–64 视角外推 benchmark 上 14 列中 13 列进 top-2(均值 DISTS 较最强 baseline Mirror2-GS 降 <strong>19.5%</strong>,手算复核);消融证明事后尺度校正反而更差——问题在预测空间而非预测结果。笔记含推理源码级验证(spacing_target 常数与论文'归一到 1'的脱节、双 encoder 推理开销、天空掩码参与尺度统计),并标注其非最快(Mirror2-GS 246ms vs 411ms @N=4)与 PSNR 非最优的边界。</p>
+            <a href="3D-20261112-SplatAnything.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2611.08264" target="_blank">📄 arXiv</a>
+            <a href="https://github.com/zju3dv/SplatAnything" target="_blank">💻 GitHub</a>
+            <a href="https://zju3dv.github.io/SplatAnything/" target="_blank">🌐 项目主页</a>
+            <a href="https://huggingface.co/ritianyu/SplatAnything" target="_blank">🤗 权重</a>
+        </div>
+
         <div class="note-card" data-file="3D-20251204-Splannequin.html" data-kind="note" data-depth="deep"
               data-topics="微动与非刚性人体重建|几何与时序一致性" data-search="Splannequin: 双检测时间锚定正则,把 Mannequin-Challenge 视频冻成高保真静态时刻 动态高斯 冻结时刻 Mannequin Challenge 时间锚定 正则化 微动抑制 WACV 2026 首个把「单目 Mannequin-Challenge 视频→用户可选冻结时刻视频」形式化的工作(WACV 2026)。不改架构,在 D-3DGS / 4DGaussians / SC-GS 上加双检测正则:视锥外的 hidden 高斯锚向过去被监督状态、视锥内零梯度的 defective 高斯锚向未来,配时间距离置信度加权。真实 benchmark 上 COVER Technical 最高 +339.85%、CQA 平均最高 +243.8%(D-3DGS 载体),96% 用户偏好;RTX 4090 推理 &amp;gt;280 FPS、零推理开销。笔记含官方源码逐文件核对,发现 4 处宣称-实现差异(论文 τ=5 vs 代码 steepness=3、opacity 实际未锚定、未文档化的 equality 约束、±5 帧近邻采样),并给出与库内微动重建调研 / D-3DGS / Shape-of-Motion 的谱系定位。">
-            <h3>101. Splannequin: 双检测时间锚定正则,把 Mannequin-Challenge 视频冻成高保真静态时刻</h3>
+            <h3>102. Splannequin: 双检测时间锚定正则,把 Mannequin-Challenge 视频冻成高保真静态时刻</h3>
             <div class="meta">
                 <span>📄 arXiv: 2512.05113</span>
                 <span>📅 2025-12-04</span>
@@ -2953,7 +2981,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20261026-光度校正方法矩阵对比.html" data-kind="survey" data-depth="deep"
               data-topics="鲁棒性与干扰过滤" data-search="光度一致性校正矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++ Photometric Consistency Bilateral Grid ISP 3DGS NeRF Novel View Synthesis 自动驾驶 对比调研 多视角光度/色度不一致会破坏 photometric consistency、产生 floaters 并污染几何。本报告对同一问题线上的四篇方法做矩阵式对比:BiLaRF(per-view 3D 双边网格,TOG 2024)、bilateral-driving(三级多尺度网格统一 AC 与 BG,NeurIPS 2025,Waymo CD −28.2%)、PPISP(NVIDIA 物理 ISP 四模块 + controller,Tanks&amp;Temples NV 24.62 vs BilaRF 19.78,容量-泛化甜区)、Luminance-GS++(视角自适应曲线+残差蒸馏进 per-Gaussian 属性,LOM 低光 20.74,未开源)。核心结论:校正表示的容量与新视角泛化几乎负相关,物理归纳偏置是当前最优;并对 vggt_human pipeline 给出选型建议(默认 PPISP、快速验证用 nerfstudio BiLaRF 开关、修图用 4D finishing、采集端锁 AE/AWB 并保留 EXIF)。">
-            <h3>102. 光度一致性校正矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++</h3>
+            <h3>103. 光度一致性校正矩阵对比:BiLaRF / bilateral-driving / PPISP / Luminance-GS++</h3>
             <div class="meta">
                 <span>📄 arXiv: 2406.00448 / 2506.05280 / 2601.18336 / 2602.18322</span>
                 <span>📅 2024-06 ~ 2026-02</span>
@@ -2983,7 +3011,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20261008-GATOR.html" data-kind="note" data-depth="deep"
               data-topics="3D 生成|稀疏与少视角重建|质量速度权衡与实时" data-search="GATOR: 生成式初始化 + 智能体闭环精炼的随手拍 3D 物体重建 3D 物体重建 Generative+Agentic TRELLIS.2 Rectified Flow 模态混合 PBR 材质 场景相对位姿 仿真就绪 NVIDIA LPR 的 GATOR 把「生成式重建」与「多模态智能体」接成双引擎:生成侧在 TRELLIS.2 结构-几何-外观级联上引入局部模态混合器(patch 对齐的 RGB/掩码/点图 token 就地融合后再跨视角推理)与分阶段文本条件(SigLIP2 调制结构、T5Gemma2 引导几何外观),输出带场景相对位姿的完整 PBR 资产;再以该资产初始化 GPT-6-Astra 智能体做编辑-渲染-审查闭环的局部修复。Toys4K 四视角 CD 0.009(vs Pixal3D-MV 0.011),真实桌面 CD 较 Pixal3D 减半,ScanNet++ ADD-SB@0.1 95.63%;生成-only 约 0.5 分钟即优于从零智能体 20 分钟预算。无代码,超参仅附录自述。">
-            <h3>103. GATOR: 生成式初始化 + 智能体闭环精炼的随手拍 3D 物体重建</h3>
+            <h3>104. GATOR: 生成式初始化 + 智能体闭环精炼的随手拍 3D 物体重建</h3>
             <div class="meta">
                 <span>📄 arXiv: 2610.11215</span>
                 <span>📅 2026-10-08</span>
@@ -3009,7 +3037,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260929-TaoFlowForge.html" data-kind="note" data-depth="deep"
               data-topics="3D 生成|表面与几何重建|质量速度权衡与实时" data-search="TaoFlowForge: 顶点流+拓扑流三级级联的渐进式原生网格生成 原生网格生成 Flow Matching Level-MoE 拓扑生成 TRELLIS.2 电商3D资产 开源代码+权重 淘天 Taobao3D 的图生原生网格基础模型(已开源推理代码+权重):把网格生成解耦为顶点生成与拓扑预测——Stage 1 借 TRELLIS.2 先验生成 64³ 粗占据(30层 DiT,≈1.3B);Stage 2 用 Bernoulli 白化 + 三个参数独立的 Level-MoE 专家把顶点渐进细化到 512³,配 soft-OR 边/面共占据损失保护高连接度结构;Stage 3 逐顶点挂 latent,用 source/destination 双子空间双线性打分消传递性误连接、法向头直接定面朝向。Toys4K CD 0.0655(较 LATO.2 降 57.8%),训练数据约 80 万清洗网格。本笔记源码核实发现:论文 Stage 编号与代码错一位、论文称 Stage 3 为 32 层而发布权重实为 28 层、补洞/法向后处理对拓扑质量有实质贡献。">
-            <h3>104. TaoFlowForge: 顶点流+拓扑流三级级联的渐进式原生网格生成</h3>
+            <h3>105. TaoFlowForge: 顶点流+拓扑流三级级联的渐进式原生网格生成</h3>
             <div class="meta">
                 <span>📄 arXiv: 2609.37139</span>
                 <span>📅 2026-09-29</span>
@@ -3034,7 +3062,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="3D-20260928-TaoTex.html" data-kind="note" data-depth="deep"
               data-topics="3D 生成" data-search="TaoTex: 高频纹理保真的原生 3D 材质生成(数据 agent + MLFF + 像素空间损失) 原生3D材质 PBR 纹理生成 高频文字纹理 MLFF 数据合成agent TRELLIS.2 电商3D资产 未开源 淘天 Taobao3D 的原生 3D 材质模型(未开源):在 TRELLIS.2 的 o-voxel + 材质 SC-VAE 上做扩散,专攻「几何平坦但纹理高频」区域(罐身文字、包装 logo)——① MLLM(Qwen-3.8)写 Blender 脚本造简单几何 + IGM 合成高频纹理 + MLLM 质检的数据 agent,产出 50K HFT 资产;② MLFF 融合 DINOv2 第 4/11/17/23 层特征替代单一深层语义条件;③ 训练后期从 latent 空间切换到像素空间 L1/SSIM/LPIPS 监督突破 VAE 精度上界;④ learnable viewpoint embeddings 支持至多四视图。单视图 Albedo PSNR 25.15(TRELLIS.2 21.92),消融四组件全部正贡献。本笔记发现:正文引用的 Table 4/5 在 v1 全文中不存在。">
-            <h3>105. TaoTex: 高频纹理保真的原生 3D 材质生成(数据 agent + MLFF + 像素空间损失)</h3>
+            <h3>106. TaoTex: 高频纹理保真的原生 3D 材质生成(数据 agent + MLFF + 像素空间损失)</h3>
             <div class="meta">
                 <span>📄 arXiv: 2609.34934</span>
                 <span>📅 2026-09-28</span>
@@ -3136,7 +3164,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>106. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>107. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -3159,7 +3187,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>107. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>108. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -3182,7 +3210,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>108. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>109. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -3208,7 +3236,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>109. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>110. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -3251,7 +3279,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-11-05 · 涵盖 109 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-11-12 · 涵盖 110 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){

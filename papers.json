@@ -5250,6 +5250,74 @@
       ]
     },
     {
+      "title": "SplatAnything(InfiniSplat v3):GSNorm 高斯间距归一化,一个前馈 3DGS 模型通吃任意场景",
+      "meta": [
+        "📄 arXiv: 2611.08264",
+        "📅 2026-11-05",
+        "🏢 浙江大学 / 腾讯混元 / Causa Robotics",
+        "✅ 开源(推理代码+权重,PRL v1.0 许可;训练未开源)"
+      ],
+      "tags": [
+        "3DGS",
+        "前馈重建",
+        "GSNorm",
+        "归一化空间",
+        "WorldMirror 2.0",
+        "pose-free",
+        "voxel merging"
+      ],
+      "summary": "InfiniSplat 系列 v3:指出前馈 3DGS 继承几何基础模型的 RDNorm 空间只归一径向距离、不约束高斯间距(跨场景类别中位间距残留 4.5× 变化),导致高斯尺度监督歧义;提出 GSNorm——以逐像素深度/焦距算高斯间距、取场景中位数做归一化因子,在高斯预测前重缩放几何/深度/相机平移。冻结 WorldMirror 2.0 几何 + 可微调高斯骨干 + 从头训练 GSHead + AnySplat 式 voxel merging,单模型覆盖物体/室内/街景/航拍/车载环视/360°全景。7 数据集 4–64 视角外推 benchmark 上 14 列中 13 列进 top-2(均值 DISTS 较最强 baseline Mirror2-GS 降 <strong>19.5%</strong>,手算复核);消融证明事后尺度校正反而更差——问题在预测空间而非预测结果。笔记含推理源码级验证(spacing_target 常数与论文'归一到 1'的脱节、双 encoder 推理开销、天空掩码参与尺度统计),并标注其非最快(Mirror2-GS 246ms vs 411ms @N=4)与 PSNR 非最优的边界。",
+      "links": [
+        {
+          "href": "3D-20261112-SplatAnything.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2611.08264",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/zju3dv/SplatAnything",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://zju3dv.github.io/SplatAnything/",
+          "text": "🌐 项目主页"
+        },
+        {
+          "href": "https://huggingface.co/ritianyu/SplatAnything",
+          "text": "🤗 权重"
+        }
+      ],
+      "file": "3D-20261112-SplatAnything.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "前馈式大重建模型",
+        "稀疏与少视角重建"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17"
+      ]
+    },
+    {
       "title": "Splannequin: 双检测时间锚定正则,把 Mannequin-Challenge 视频冻成高保真静态时刻",
       "meta": [
         "📄 arXiv: 2512.05113",
