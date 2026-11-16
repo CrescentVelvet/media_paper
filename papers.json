@@ -5645,6 +5645,72 @@
           "text": "🌐 项目主页"
         }
       ]
+    },
+    {
+      "title": "DensiTok:在 geometry token 空间补全未观测视角,冻结 backbone 用 3 视角重建超过自己的 16 视角",
+      "meta": [
+        "📄 arXiv: 2610.07958",
+        "📅 2026-10-06",
+        "🏢 延世大学 / NAVER AI Lab / KIST",
+        "⚠️ 未开源(仓库仅 README,无源码无权重)"
+      ],
+      "tags": [
+        "3DGS",
+        "前馈重建",
+        "token 补全",
+        "LAM-VAE",
+        "flow matching",
+        "单步推理",
+        "pose-free",
+        "冻结 backbone"
+      ],
+      "summary": "给预训练前馈 3DGS 装一个「geometry token 稠密化」插件:冻结 encoder,把 L 层 token 栈经层级自适应调制(LAM)压成 4 通道 latent,用相机条件单步 flow matching 补出未观测视角、再解回 L 层 token 交给冻结的重建头。核心论点是「缺的不是像素而是 token」。AnySplat / WorldMirror / DA3 三个 backbone 全部一致提升,AnySplat 在 n=3 即超过自己的 N=16 稠密参考(RE10K <strong>24.28 &gt; 24.04</strong>),WorldMirror 要到 n=7 才超过,n=7 达 RE10K <strong>28.522</strong>,且三者均不需内外参;相对扩散 NVS(GLD)n=2 提速 <strong>133–151×</strong>。诚实的边界:n=2 时输给需要相机的 DepthSplat 1.56 dB;单步仍比原 AnySplat 慢 2.58 倍;只做插值不外推;d_z 固定 4 而 Table 11 显示 16 更好(论文未解释);深度指标用 MoGe-2 伪标签。笔记含 9 张配图、14 个 baseline + 4 个谱系外方法共 19 行的 11 维对比表、19× 提速的三组分母拆解,并厘清了原始论文 Table 1/6 与 Table 7/8 因重抽测试视角导致的两套数字不可混用,以及无源码条件下全部可核验项的出处标注。",
+      "links": [
+        {
+          "href": "3D-20261006-DensiTok.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2610.07958",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://hydragon.co.kr/DensiTok",
+          "text": "🌐 项目主页"
+        },
+        {
+          "href": "https://github.com/Hydragon516/DensiTok",
+          "text": "💻 GitHub"
+        }
+      ],
+      "file": "3D-20261006-DensiTok.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "前馈式大重建模型",
+        "稀疏与少视角重建"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18"
+      ]
     }
   ]
 }

@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DensiTok:在几何 token 空间补全未观测视角,冻结 backbone 用 3 视角 beat 16 视角</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+.hdiag{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin:16px 0}
+.hbox{flex:1;min-width:150px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center}
+.hbox b{color:var(--accent);display:block;margin-bottom:4px;font-size:14px}
+.hbox small{color:var(--text-dim);font-size:12px}
+.harrow{align-self:center;color:var(--accent2);font-size:20px;font-weight:700}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="inner">
+    <span class="badge">arXiv 2610.07958 · 2026-10-06 · 📊 deep · plug-in · token-space · one-step</span>
+    <h1>DensiTok:在几何 token 空间补全未观测视角,冻结 backbone 用 3 视角重建超过自己的 16 视角</h1>
+    <div class="subtitle">DensiTok: Making Feed-Forward 3D Gaussian Splatting See More Views Than It Is Given</div>
+    <div class="authors">Minhyeok Lee<sup>†</sup> · Jungho Lee<sup>†</sup>(共同一作)· Minseok Kang · Heeseung Choi · Ig-Jae Kim · Sangyoun Lee(通讯)</div>
+    <div class="org">延世大学(Yonsei University)· NAVER AI Lab · 韩国科学技术研究院(KIST)</div>
+    <div class="links">
+      <a href="https://arxiv.org/abs/2610.07958" target="_blank">📄 arXiv</a>
+      <a href="https://arxiv.org/html/2610.07958v1" target="_blank">🌐 HTML 全文</a>
+      <a href="https://hydragon.co.kr/DensiTok" target="_blank">🌐 项目主页</a>
+      <a href="https://github.com/Hydragon516/DensiTok" target="_blank">💻 GitHub</a>
+      <a href="https://huggingface.co/hydrgon516/DensiTok" target="_blank">🤗 HuggingFace</a>
+    </div>
+    <div class="note" style="margin-top:16px">⚠️ abs 页 <b>无 comments 字段、仅 v1</b>(2026-10-06 08:29 UTC 提交),按库规范<b>不加会议 badge</b>。GitHub 仓库目前<b>只有 README.md 与 assets/ 目录,无任何源码、无权重</b>(徽章原文 <code>Code Coming Soon</code>,<code>## 💻 Code</code> 段正文仅 "Coming soon.");HuggingFace 链接指向上游 backbone 权重页的镜像名,<b>本笔记未能验证其内容</b>(抓取时 TLS 层断流)。因此 §11「工程实现细节」的所有超参<b>只能来自论文附录 B/A.3,无法用源码交叉验证</b>。</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h3>目录</h3>
+  <ol>
+    <li><a href="#s1">论文概要与核心贡献</a></li>
+    <li><a href="#s2">研究背景与动机</a></li>
+    <li><a href="#s3">算法总体框架与符号表</a></li>
+    <li><a href="#s4">模块①:LAM-VAE 编码器</a></li>
+    <li><a href="#s5">模块②:相机条件 DiT 潜空间补全</a></li>
+    <li><a href="#s6">模块③:相机条件双轨(训练/推理)</a></li>
+    <li><a href="#s7">模块④:外观特征融合</a></li>
+    <li><a href="#s8">损失函数总表</a></li>
+    <li><a href="#s9">训练流程(三阶段)</a></li>
+    <li><a href="#s10">推理流程</a></li>
+    <li><a href="#s11">⚙️ 工程实现细节</a></li>
+    <li><a href="#s12">实验结果</a></li>
+    <li><a href="#s13">消融实验</a></li>
+    <li><a href="#s14">🔄 同类方法对比分析</a></li>
+    <li><a href="#s15">🎯 落地适配</a></li>
+    <li><a href="#s16">可改进方向分析</a></li>
+    <li><a href="#s17">总结与演进定位</a></li>
+    <li><a href="#s18">👥 研究团队与 🔗 资源链接</a></li>
+  </ol>
+</nav>
+
+<!-- =================== 1 =================== -->
+<section class="section" id="s1">
+<h2><span class="num">1</span>论文概要与核心贡献</h2>
+<p><b>一句话概括:</b>前馈 3DGS 在少视角时崩溃的根因不在重建头,而在重建头读到的那几层 <b>geometry token</b> 里根本没有未观测区域的证据;既然重建只缺「缺失视角的 token」而不缺「缺失视角的像素」,就不必用图像扩散模型去合成整张 RGB 再让 encoder 重新压一遍。DensiTok 把 encoder 输出的 $L$ 层 token 栈<b>压成一个 4 通道的紧凑 latent</b>,在这个 latent 序列里用<b>单步 flow matching</b> 补出未观测视角、再解回 $L$ 层 token 交给冻结的原始重建头。encoder 全程冻结,重建头冻结或只微调图像嵌入层。</p>
+
+<div class="callout key">
+<b>核心贡献一句话:</b>把「补证据」的位置从<b>像素空间</b>搬到<b>token 空间</b>并压到 4 维 latent,使得补全代价从「跑一次大图像生成模型 + 全分辨率重编码」降为「一个小 DiT 走一个 Euler 步」——在 AnySplat 上 $n=3$ 输入时 RE10K PSNR <b>24.28 &gt; 24.04</b>(该 backbone 自己的 $N=16$ 稠密参考)、DL3DV <b>24.28 &gt; 22.30</b>,而耗时 <b>0.267 s &lt; 0.434 s</b>(Table 1)。$n=2$ 时相对 GLD 提速 <b>133–151×</b>(Table 8)。三个 backbone(AnySplat / WorldMirror / DA3)全部一致提升,且<b>三者都不需要外部相机内参/外参</b>(Table 7)。
+</div>
+
+<div class="stat-row">
+  <div class="stat"><div class="v">+1.83 dB</div><div class="l">AnySplat RE10K $n=2$:20.73 → 22.56(Table 1,本笔记逐格复核)</div></div>
+  <div class="stat"><div class="v">0.258 s</div><div class="l">$n=2$ 输入补到 $N=16$ 视角的总推理耗时,稠密真跑要 0.434 s</div></div>
+  <div class="stat"><div class="v">4 通道</div><div class="l">latent 宽度 $d_z$,压掉 4 层 × 2048 通道的 token 栈(DA3 为 3072)</div></div>
+  <div class="stat"><div class="v">133–151×</div><div class="l">$n=2$ 相对 GLD(76.824 s)的提速,三个 backbone 分别 0.510/0.515/0.579 s</div></div>
+</div>
+
+<div class="figure">
+  <img src="images/2610.07958/fig1_jhlee.png" loading="lazy" alt="DensiTok teaser: 三视角输入使 AnySplat 超过其 16 视角 PSNR,右侧为质量-视角数曲线">
+  <div class="caption"><b>图1</b>(论文 Figure 1)<b>动机与主张。</b>左侧:给定 3 个未标定视角,DensiTok 为未观测视角补出 geometry token,冻结的 encoder 与重建头照常解码,使 AnySplat 在 RealEstate10K 的 PSNR 超过它自己 16 视角的结果。右侧:多个近期 backbone 的重建质量随输入视角数下降的曲线——这正是前馈重建最初要解决的问题域,却恰好是其性能塌陷区。</div>
+</div>
+
+<h3>论文自述的三条贡献(§1 / Abstract)</h3>
+<ol>
+  <li><b>问题重述</b>:指出少视角瓶颈位于重建头<b>上游</b>——encoder 从少量未标定图像得不到跨视角证据,token 只描述被真正看到的表面,遮挡与未覆盖区域<b>完全没有 token</b>,重建头只能把这些空缺渲染成空洞、浮尘与模糊。</li>
+  <li><b>LAM-VAE</b>:用层级自适应调制(level-adaptive modulation)把重建头实际读取的 $L$ 层 token 融合并压到 $d_z=4$ 的 latent,使<b>一个 VAE 与一个生成器</b>就能同时服务所有层,且不必预先固定「哪几层重要」。</li>
+  <li><b>相机条件 DiT + 单步化</b>:在 latent 序列上做 rectified flow matching,以全 $N$ 视角相机(Plücker 射线)为条件补全未观测视角;再用 20k 步单步微调把采样压到 1 个 Euler 步。补全结果经 VAE 解码器展开回每层 token,交给原始头。</li>
+</ol>
+
+<div class="callout warn">
+<b>⚠️ 宣称边界(本笔记复核):</b>① 全部定量结论建立在 <b>RE10K + DL3DV 两个室内/物体级数据集</b> 上,跨数据集泛化只有 Appendix D.1 的 ETH3D / ScanNet / Mip-NeRF 360 三组(仍是同一 backbone、同一 $N=16$ 协议),<b>没有室外大场景或动态场景</b>;② 「$n=3$ 超过 $N=16$」的对比里,稠密参考与 DensiTok 的<b>评测视角采样是同一套</b>(4 个新视角都在首末观测相机之间),而 DensiTok 生成的 13 个虚拟视角也全部落在这个区间内——生成分布与评测分布天然重合,<b>这个「超过稠密」不宜直接外推为「少拍几张反而更好」</b>(详见 §16);③ 「冻结 backbone」是真的,但<b>每个 backbone 要各自训一套 LAM-VAE + DiT</b>(Table 1/6 三套独立结果),不是一份权重通吃;④ 仓库无源码,所有超参不可验证。
+</div>
+</section>
+
+<!-- =================== 2 =================== -->
+<section class="section" id="s2">
+<h2><span class="num">2</span>研究背景与动机</h2>
+<p>论文的动机不是「刷点」,而是对现有四条补救路线的<b>可指认缺陷</b>逐条反驳。它的核心洞察只有一句,但非常锋利:</p>
+
+<div class="callout key">
+<b>「What the model lacks, then, is not pixels but tokens.」</b>(§1 原文)——模型缺的不是像素,而是 token。这句话推出一个关键推论:<b>像素是绕路</b>(pixels are a detour)。重建只需要「缺失视角的 token」,而图像生成方法产出的是整帧 RGB,encoder 随后要把它重新压成 token,「生成器产出的大部分内容被立刻丢弃」。更糟的是像素不是共享的 3D 表示,跨生成视角的一致性只能被「鼓励」而无法被「强制」,重建被迫去拟合彼此矛盾的视角。
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>路线 ①:图像空间合成额外视角</h4>
+    <p>用多视角/视频扩散模型生成新视角,或对渲染结果做修复后再拟合场景。失败模式是<b>双重开销</b>:全分辨率跑一次大生成模型,再把扩大后的视角集合重新过一遍 geometry encoder;且像素不是共享 3D 表示,跨生成视角一致性只被"鼓励"、无法"强制",重建被迫拟合互相矛盾的视角。论文的直接措辞:<b>"pixels are a detour"</b>(像素是绕路)。</p>
+  </div>
+  <div class="card">
+    <h4>路线 ②:专门训稀疏视角架构</h4>
+    <p>不补任何新证据,而是把「从少量视角能榨的对应关系」榨到极限(pixelSplat / MVSplat / DepthSplat / NoPoSplat 一系)。失败模式:<b>上限被输入视角的覆盖范围锁死</b>,且是绑死少量固定视角数的独立架构,不能随视角数伸缩。Table 7 里这类方法在 $n$ 增大时普遍不单调(如 VolSplat RE10K 从 $n{=}2$ 的 21.73 到 $n{=}7$ 的 28.33 是涨的,但 MVSplat 从 26.32 掉到 21.24),说明它们各自的适用视角数是写死的。</p>
+  </div>
+  <div class="card">
+    <h4>路线 ③:直接在 token 空间生成(最接近本文)</h4>
+    <p>Jang et al. 2026 直接在 token 空间生成,方向对了,但<b>没有压缩 latent</b>——必须在<b>上千通道</b>的特征上跑级联多步生成器,代价仍然高昂。这正是 DensiTok 的两处针对性改动:① 先把 $L$ 层 × 2048 通道压到 4 通道;② 把多步采样压到单步。</p>
+  </div>
+  <div class="card">
+    <h4>路线 ④:本文——稠密化证据本身</h4>
+    <p>不生成像素,也不改架构,而是<b>在 encoder 与重建头之间插一个插件</b>:把 $n$ 个观测视角的 token 编码成 latent 序列,为 $N-n$ 个未观测视角生成 latent,解回每层 token。encoder 与重建头都冻结(后者可选最小适配),因此<b>一份设计可以套到不同预训练 backbone 上</b>。</p>
+  </div>
+</div>
+
+<h3>作者的关键假设,以及它在什么条件下失效</h3>
+<table>
+  <thead><tr><th style="width:30%">关键假设</th><th style="width:36%">论文依据</th><th style="width:34%">失效条件(本笔记分析)</th></tr></thead>
+  <tbody>
+    <tr><td><b>A1</b>:重建头读取的 $L$ 层 token 可以被<b>压到 4 维 latent</b> 而不损失重建能力</td><td>Table 2:压到 $d_z{=}4$ 后 PSNR 22.56,接近……;Table 11:$d_z{=}16$ 再涨 0.08–0.56 dB,说明 4 维<b>已有信息损失</b></td><td>当场景纹理极高频、或 backbone 的层通道数远超 2048(DA3 3072)时,4 维更吃紧。Table 11 显示 $n$ 越大、$d_z{=}16$ 的增益越大(0.08→0.56 dB),说明<b>信息瓶颈随视角数变紧</b>。</td></tr>
+    <tr><td><b>A2</b>:未观测视角的相机可<b>由观测视角的预测相机插值得到</b></td><td>§3.4:中心用自然三次样条、旋转用 slerp;且明确「所有虚拟视角都放在首末观测相机之间」</td><td>相机轨迹<b>非单调/有剧烈转向/存在折返</b>时,样条会切角;slerp 在大角度旋转下也会偏离真实运动。论文 §5 自己承认<b>不做外插</b>。</td></tr>
+    <tr><td><b>A3</b>:未观测视角的<b>外观</b>可由已观测图像 warp 得到</td><td>Appendix A.2:用预测深度/相机把观测图 warp 成颜色先验 + 有效性掩码,遮挡样本按双向深度一致性剔除</td><td>新视角暴露的<b>从未被观测过的区域</b>(背后、视差盲区)warp 必然无效,只能用可学习占位符 $\mathbf{e}^{\text{miss}}$ 填——这些像素的颜色是"猜"的,不是"推"的。Table 12 显示 $n{=}2$ 时冻结头 22.14 vs 全微调 22.88,差距 0.74 dB 正是这部分代价。</td></tr>
+    <tr><td><b>A4</b>:单步 Euler 足以完成 latent 补全</td><td>Table 10:50 NFE 22.86 vs 单步微调 22.56,只差 0.30 dB 但快 18.8×</td><td>当 $N-n$ 很大(如 $n{=}2, N{=}16$,要补 14 个视角)且场景复杂时,单步的误差累积可能更明显。Table 3 显示 $N$ 从 8 增到 16 时 RE10K PSNR 只从 22.49 到 22.56,说明<b>补得越多单个视角质量未必越好</b>。</td></tr>
+  </tbody>
+</table>
+</section>
+
+<!-- =================== 3 =================== -->
+<section class="section" id="s3">
+<h2><span class="num">3</span>算法总体框架与符号表</h2>
+
+<p><b>输入/输出定义。</b>输入是 $n$ 张<b>未标定</b>图像 $\{I_i \mid m_i=1\}$;输出与原始 backbone 完全一致:相机、深度图、Gaussian 场景。唯一的区别是:重建头看到的是<b>$N$ 个视角的 token</b>($n$ 个真实 + $N-n$ 个生成),而不是 $n$ 个。</p>
+
+<div class="hdiag">
+  <div class="hbox"><b>观测图像</b><small>$n$ 张,未标定</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>冻结 encoder</b><small>$\mathcal{E}_{\text{geo}}$,输出 $L$ 层 token</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>LAM-VAE</b><small>$L$ 层 → $d_z{=}4$ latent</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>相机条件 DiT</b><small>补 $N{-}n$ 个视角,单步</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>VAE 解码器</b><small>latent → $L$ 层 token</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>冻结重建头</b><small>camera / depth / Gaussian</small></div>
+</div>
+
+<h3>符号表</h3>
+<table>
+  <thead><tr><th style="width:16%">符号</th><th style="width:34%">含义</th><th style="width:26%">形状 / 取值</th><th style="width:24%">出处</th></tr></thead>
+  <tbody>
+    <tr><td>$N$</td><td>总视角数(观测 + 生成)</td><td>主实验 $16$</td><td>§4.1</td></tr>
+    <tr><td>$n$</td><td>观测视角数</td><td>$n \in \{2,3,5,7\}$;训练时 $n\sim U\{2..8\}$ 无放回抽取</td><td>§4.1</td></tr>
+    <tr><td>$K$</td><td>每张图的 patch token 数</td><td>随分辨率变化(294×518 评测)</td><td>§3.1</td></tr>
+    <tr><td>$d_f$</td><td>geometry token 通道数</td><td>AnySplat / WorldMirror $2048$;DA3 $3072$</td><td>A.3</td></tr>
+    <tr><td>$L$</td><td>重建头实际读取的中间层数</td><td>$4$(层级零基索引:AnySplat/WM 为 4,11,17,23;DA3 为 19,27,33,39)</td><td>A.3</td></tr>
+    <tr><td>$\mathbf{F}_\ell$</td><td>第 $\ell$ 层、全部 $N$ 视角的 token</td><td>$\mathbb{R}^{N\times K\times d_f}$</td><td>式(1)</td></tr>
+    <tr><td>$\mathbf{F}^{\text{obs}}_\ell$</td><td>仅观测视角的 token</td><td>$\mathbb{R}^{n\times K\times d_f}$</td><td>式(2)</td></tr>
+    <tr><td>$\tilde{\mathbf{F}}_\ell$</td><td>补全后的完整 token(与 $\mathbf{F}_\ell$ 同形状)</td><td>$\mathbb{R}^{N\times K\times d_f}$</td><td>§3.1</td></tr>
+    <tr><td>$d_z$</td><td>latent 宽度</td><td>$4$(消融用 $16$)</td><td>A.3 / Table 11</td></tr>
+    <tr><td>$\mathbf{Z}$, $\mathbf{Z}^{\text{obs}}$</td><td>全部 / 观测视角的 latent</td><td>$\mathbb{R}^{N\times K\times d_z}$ / $\mathbb{R}^{n\times K\times d_z}$</td><td>§3.2</td></tr>
+    <tr><td>$\mathbf{m}$</td><td>观测掩码</td><td>$m_i{=}1$ 观测、$0$ 未观测</td><td>§3.1</td></tr>
+    <tr><td>$\alpha_\ell$, $g_\ell$</td><td>层级融合权重 / 增益</td><td>$\sum_\ell \alpha_\ell{=}1$,$g_\ell = L\alpha_\ell$(均值为 1)</td><td>§3.2</td></tr>
+    <tr><td>$\bm{\mu}$, $\log\bm\sigma^2$</td><td>latent 后验均值与对数方差</td><td>$\mathbb{R}^{K\times d_z}$</td><td>式(4)</td></tr>
+    <tr><td>$t$, $\tau_i$</td><td>全局流时间 / 每视角时间</td><td>$t{=}\mathrm{sigmoid}(u),u\sim\mathcal N(0,1)$;$\tau_i = t(1-m_i)$</td><td>§3.3 / App.B</td></tr>
+    <tr><td>$\mathbf{g}_i$</td><td>第 $i$ 视角相机(Plücker 射线编码)</td><td>与 latent 同 $K$-token 布局</td><td>§3.3</td></tr>
+    <tr><td>$\mathbf{v}^\star_i$, $\hat{\mathbf{v}}_{\theta,i}$</td><td>真实 / 预测的流速度</td><td>$\mathbf{v}^\star_i = \bm\epsilon_i - \mathbf{z}_i$</td><td>式(11)</td></tr>
+    <tr><td>$\mathbf{C}^{\text{prior}}_i$, $M^{\text{prior}}_i$</td><td>warp 得到的颜色先验与有效性掩码</td><td>逐像素</td><td>式(6)</td></tr>
+  </tbody>
+</table>
+
+<div class="figure">
+  <img src="images/2610.07958/fig2_jhlee.png" loading="lazy" alt="DensiTok 两阶段总览:Stage1 用 LAM-VAE 压缩与还原 geometry token,Stage2 冻结 VAE 训练相机条件 DiT">
+  <div class="caption"><b>图2</b>(论文 Figure 2)<b>两阶段设计与冻结边界。</b>Stage 1 训练带层级自适应调制的 VAE 压缩并还原 geometry token——层级自适应融合与 VAE encoder 共同构成 LAM-VAE encoder,另有一条层级残差注入后验均值。Stage 2 冻结 VAE,训练相机条件 DiT 为未观测视角补全 latent。<b>geometry encoder 全程冻结,重建头冻结或只做最小外观适配。</b>注意图中箭头只穿过「LAM-VAE ⟷ DiT」这段,backbone 两端是灰的,这就是本文的全部改动面。</div>
+</div>
+
+<h3>与前作的架构差异(Table 对比关系)</h3>
+<p>三条轴可以把 DensiTok 完全定位:① <b>补证据的位置</b>(像素 / token / latent);② <b>是否压缩</b>(上千通道直接生成 / 压到 4 维);③ <b>采样步数</b>(多步级联 / 单步 Euler)。论文 §2.3 明确说最接近的 Jang et al. 2026 在 token 空间生成但<b>没有压缩 latent</b>,所以必须在上千通道特征上跑级联多步生成器;DensiTok 在三个轴上各推一格。</p>
+
+<div class="mermaid">
+flowchart TD
+    A["n 张未标定图像<br/>I_i, m_i=1"] --> B["冻结 geometry encoder<br/>E_geo (深 transformer)"]
+    B --> C["L 层 geometry token<br/>F_l ∈ R^(n×K×d_f)<br/>每层 2048 或 3072 通道"]
+    C --> D["LAM-VAE encoder<br/>层级 LayerNorm → 门控融合 → transformer<br/>→ μ0, logσ² (d_z=4) → 残差注入 μ"]
+    D --> E["观测 latent<br/>Z^obs ∈ R^(n×K×4)"]
+    E --> F["相机条件 DiT<br/>拼接 N 视角序列,未观测位放纯噪声<br/>Plücker 相机 + τ_i 经 AdaLN 注入"]
+    F --> G["单步 Euler: z̃_i = ε_i − v̂_θ,i<br/>每步把观测视角重置回 Z^obs"]
+    G --> H["补全 latent<br/>Z̃ ∈ R^(N×K×4)"]
+    H --> I["LAM-VAE decoder<br/>展开到全部 L 层"]
+    I --> J["冻结重建头<br/>camera / depth / Gaussian"]
+    J --> K["相机 · 深度图 · Gaussian 场景"]
+    L["n 张观测图像"] --> M["warp 成颜色先验<br/>C^prior + 有效性掩码"]
+    M --> J
+    style D fill:#dbeafe,stroke:#60a5fa
+    style F fill:#ede9fe,stroke:#a78bfa
+    style G fill:#ede9fe,stroke:#a78bfa
+    style B fill:#e5e7eb,stroke:#9ca3af
+    style J fill:#e5e7eb,stroke:#9ca3af
+</div>
+<p class="note">灰底 = 冻结模块(encoder 与重建头),蓝底 = Stage 1 训练的 LAM-VAE,紫底 = Stage 2/3 训练的 DiT。注意右下角那条 warp 支路:它不属于 token 通路,而是给 Gaussian 头补外观输入(Appendix A.2),是 AnySplat 这类需要 RGB 输入的 backbone 的<b>必要条件</b>,否则生成视角的 Gaussian 颜色会崩。</p>
+</section>
+
+<!-- =================== 4 =================== -->
+<section class="section" id="s4">
+<h2><span class="num">4</span>模块①:LAM-VAE 编码器</h2>
+<p>这一节解决的是<b>「往哪个空间里补」</b>的问题。重建头要的不是最后一层,而是 $L$ 个固定中间层的<b>整个栈</b>;如果直接在这些层上做生成,等于把问题维度乘 $L$($L=4$、每层 $d_f=2048$ 或 $3072$)。LAM-VAE(Level-Adaptive Modulation VAE)的做法是:先把 $L$ 层<b>按 token 融合</b>成一个向量,再压到 $d_z=4$,于是「一个 VAE + 一个生成器」就能管住全部 $L$ 层。</p>
+
+<h3>为什么需要「层级自适应」而不是固定选层</h3>
+<p>前作 <b>GLD</b>(Jang et al., 2026)在特征空间做 NVS 时,是先固定挑几层做 flow matching、再用冻结 encoder 把其余层推导出来。本文的反驳很直接:<b>哪几层承载最有用的信息,随 backbone 而变、甚至随场景而变</b>,预先钉死一个子集并不稳。于是改为让<b>每个 token 自己决定</b>每层贡献多少——这就是 LAM 的动机。</p>
+
+<div class="callout key">
+<b>三个容易被忽略的设计细节,恰好是这套融合能work的原因:</b>
+<ol style="margin-bottom:0">
+<li><b>层级独立 LayerNorm</b>:每层先用自己的 $\operatorname{LN}_\ell$ 归一化。不做这步,层间量级差异会让某一层凭幅值压倒其他层,gate 还没开始学就已经失效。</li>
+<li><b>gate 是「比较」而不是「打分」</b>:$L$ 个摘要<b>同时</b>送进一个 MLP,所以第 $\ell$ 层的 logit 依赖其他层——它在做相对排序;若每层独立过一个打分器,就成了各打各的绝对分,softmax 之后的语义会变。</li>
+<li><b>用增益 $g_\ell=L\alpha_\ell$ 而不是权重 $\alpha_\ell$ 本身</b>:$\sum_\ell g_\ell=L$,$\mathbb{E}[g_\ell]=1$,于是「均匀权重」正好退化回<b>朴素拼接</b>。gate 学到的只是在拼接基线附近的<b>重加权</b>,而不是把输入整体缩小 $L$ 倍——后者会让后续 transformer 的输入尺度随 $L$ 漂移。</li>
+</ol>
+</div>
+
+<h3>网络结构表</h3>
+<table>
+<tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr>
+<tr><td>$(\mathbf{F}_1,\dots,\mathbf{F}_L)=\mathcal{E}_{\mathrm{geo}}(\cdot)$,<code>[N,K,2048]×4</code>(DA3 为 <code>[N,K,3072]×4</code>)</td><td>逐层 LayerNorm $\operatorname{LN}_\ell$(层间独立参数)</td><td>$\mathbf{f}_\ell\in\mathbb{R}^{d_f}$,逐 token</td></tr>
+<tr><td>$\mathbf{f}_\ell$,共 $L=4$ 个</td><td>共享线性投影(所有层同一组权重)→ 每层 64 通道</td><td>$L\times64=256$ 维摘要</td></tr>
+<tr><td>256 维拼接</td><td>gating MLP(hidden <b>128</b>)→ $L$ 个 logit → softmax</td><td>$\alpha_1,\dots,\alpha_L$,$\sum\alpha=1$</td></tr>
+<tr><td>$\mathbf{f}_\ell$ + $\alpha_\ell$</td><td>逐层线性 $\mathbf{W}_\ell$(映到 transformer 宽度),增益加权求和</td><td>$\mathbf{h}\in\mathbb{R}^{512}$</td></tr>
+<tr><td>$n$ 个观测视角的全部 token,$nK\times512$</td><td>VAE encoder transformer:<b>6 对</b> frame/global block(共 <b>12</b> block),512 通道,<b>8</b> head,frame/global 交替 + 2D RoPE</td><td>每 token 出 $\bm{\mu}_0\in\mathbb{R}^{4}$、$\log\bm{\sigma}^2\in\mathbb{R}^{4}$</td></tr>
+<tr><td>$\bm{\mu}_0$ + 层级残差</td><td>$\mathbf{P}_\ell\in\mathbb{R}^{4\times d_f}$ 逐层投影,用同一组 $\alpha_\ell$ 加权后加回均值</td><td>$\bm{\mu}\in\mathbb{R}^{4}$(仅均值被修正)</td></tr>
+<tr><td>$\mathbf{Z}\in\mathbb{R}^{N\times K\times4}$</td><td>VAE decoder:6 对 block / 12 block / 512 通道 / 8 head,解回 <b>全部 $L$ 层</b> token</td><td>$\hat{\mathbf{F}}_\ell\in\mathbb{R}^{N\times K\times d_f}$,$\ell=1..L$</td></tr>
+</table>
+<p class="note">通道数、层数、head 数出自 Table 4(A.3),逐格核对:VAE encoder 与 decoder 都是 hidden 512 / 6 对 / 12 block / 8 head;DiT 是 768 / 12 对 / 24 block / 12 head。层级索引为零基:<b>AnySplat 与 WorldMirror 取第 4、11、17、23 层(各 2048 通道),DA3 取第 19、27、33、39 层(各 3072 通道)</b>,见 A.3 原文。$K$ 的具体数值论文未给出(只说「每图 $K$ 个 token」),评测分辨率 $294\times518$。<span class="uncertain">【待核实】$K$ 的精确取值(取决于 backbone 的 patch size 与 patch-aligned 输入分辨率)</span></p>
+
+<h3>数学形式化</h3>
+<p>融合(式 3):gate 输出的权重被放大成增益后,对层级投影做加权和。等价的实现方式是「把增益加权后的各层<b>拼接</b>再走<b>一个</b>线性层」,论文明确指出这一点——它说明 LAM 相比朴素拼接只多了一条极窄的 gate 通路,参数量几乎不变。</p>
+<div class="equation">$$\mathbf{h}=\sum_{\ell=1}^{L}g_\ell\,\mathbf{W}_\ell\mathbf{f}_\ell,\qquad g_\ell=L\,\alpha_\ell,\quad \boldsymbol{\alpha}=\mathrm{softmax}\big(\mathrm{MLP}([\,\mathbf{S}\mathbf{f}_1;\dots;\mathbf{S}\mathbf{f}_L\,])\big)$$<span class="tag">(式 3)</span></div>
+<p>残差(式 4):$d_z=4$ 是极窄的瓶颈,而层级信息在进入 transformer 前已经在 $\mathbf{h}$ 里被混掉了,单层特有的细节容易被抹平。于是让<b>归一化后的原始层特征</b>绕过 transformer,用<b>同一组</b> $\alpha_\ell$ 加权后直接加到后验均值上——「谁主导了融合,谁就来修正均值」。</p>
+<div class="equation">$$\bm{\mu}=\bm{\mu}_0+\sum_{\ell=1}^{L}\alpha_\ell\,\mathbf{P}_\ell\mathbf{f}_\ell,\qquad \log\bm{\sigma}^2\ \text{保持 VAE encoder 的输出不变}$$<span class="tag">(式 4)</span></div>
+<p>采样与推理:</p>
+<div class="equation">$$\mathbf{z}=\bm{\mu}+\bm{\sigma}\odot\bm{\epsilon}_{\mathrm{vae}},\ \ \bm{\epsilon}_{\mathrm{vae}}\sim\mathcal{N}(\mathbf{0},\mathbf{I})\quad(\text{训练})\qquad\Longleftrightarrow\qquad \mathbf{z}=\bm{\mu}\in\mathbb{R}^{d_z}\quad(\text{推理})$$<span class="tag">(式 4 附)</span></div>
+<p>把所有 $N$ 个视角 × $K$ 个 token 的 latent 叠起来得 $\mathbf{Z}\in\mathbb{R}^{N\times K\times d_z}$;补全场景下只编码 $n$ 个观测视角,得 $\mathbf{Z}^{\mathrm{obs}}\in\mathbb{R}^{n\times K\times d_z}$,即下一节生成器的输入。</p>
+
+<div class="callout warn">
+<b>压缩比算一下就知道这个瓶颈多极端:</b>AnySplat / WorldMirror 是 $4\times2048=8192$ 个通道值 → $4$ 个,约 <b>2048×</b>;DA3 是 $4\times3072=12288$ → $4$,约 <b>3072×</b>。作为对照,图像 VAE(如 SD 的 $8\times8\times4$)在空间上还留着 64 个位置。DensiTok 敢这么压,前提是<b>重建头的下游监督</b>(式 9 里的 rgb / pose / depth 项)保证了「压掉的东西头本来也不用」——单靠 token 层 L2 重建是压不出这个比例的(见下节「监督信号」)。代价是 $d_z$ 成为全链路唯一的信息闸口,Table 11 的 $d_z$ 消融也印证了这一点(见 §13)。
+</div>
+
+<h3>前向流程</h3>
+<ol>
+  <li><b>取层</b>:冻结的 $\mathcal{E}_{\mathrm{geo}}$ 跑 $n$ 张观测图,按 backbone 配置抽取 $L=4$ 个中间层的 token,得 $\mathbf{F}^{\mathrm{obs}}_\ell\in\mathbb{R}^{n\times K\times d_f}$(式 2)。</li>
+  <li><b>逐层归一</b>:每层过一个独立的 $\operatorname{LN}_\ell$,消掉层间幅值差。</li>
+  <li><b>算 gate</b>:共享线性把每层压到 64 维 → 拼成 256 维 → gating MLP(hidden 128)出 $L$ 个 logit → softmax 得 $\alpha$。这一步<b>逐 token</b> 独立做,drop 掉视角与 token 下标。</li>
+  <li><b>融合</b>:增益 $g_\ell=L\alpha_\ell$ 加权各层 $\mathbf{W}_\ell\mathbf{f}_\ell$,得 $\mathbf{h}\in\mathbb{R}^{512}$。</li>
+  <li><b>进 transformer</b>:$n$ 个视角的 $\mathbf{h}$ 拼成一个长序列,走 6 对 frame/global block;frame block 只在单视角内注意,global block 跨视角注意,位置由 2D RoPE 编码。</li>
+  <li><b>出后验</b>:每 token 出 $\bm{\mu}_0$ 与 $\log\bm{\sigma}^2$(各 4 维)。</li>
+  <li><b>加残差</b>:用第 3 步的 $\alpha$ 把 $\mathbf{P}_\ell\mathbf{f}_\ell$ 加权加到 $\bm{\mu}_0$ 上,得最终均值 $\bm{\mu}$。</li>
+  <li><b>采样 / 取均值</b>:训练时 $\mathbf{z}=\bm{\mu}+\bm{\sigma}\odot\bm{\epsilon}$,推理时直接取 $\mathbf{z}=\bm{\mu}$。</li>
+</ol>
+
+<h3>模块内部数据流</h3>
+<div class="mermaid">
+flowchart TD
+    IN["F_1..F_4<br/>4 层 × N×K×d_f<br/>(2048 或 3072)"] --> LN["逐层 LN_ℓ<br/>(层间独立)"]
+    LN --> SUM["共享线性 → 64 通道<br/>×4 层 = 256"]
+    SUM --> GATE["gating MLP(hidden 128)<br/>4 logits → softmax"]
+    GATE --> ALPHA["α_1..α_4<br/>每 token 一组"]
+    LN --> PROJ["W_ℓ f_ℓ<br/>→ 512 通道"]
+    ALPHA --> PROJ
+    PROJ --> FUSE["加权和 h ∈ R^512<br/>g_ℓ = 4·α_ℓ"]
+    FUSE --> ENC["VAE encoder<br/>6× (frame + global)<br/>512ch / 8head / 2D RoPE"]
+    ENC --> POST["μ_0 ∈ R^4<br/>log σ² ∈ R^4"]
+    LN --> RES["P_ℓ f_ℓ<br/>P_ℓ ∈ R^(4×d_f)"]
+    ALPHA --> RES
+    POST --> ADD["μ = μ_0 + Σ α_ℓ P_ℓ f_ℓ"]
+    RES --> ADD
+    ADD --> Z["Z_obs ∈ R^(n×K×4)"]
+    style IN fill:#e5e7eb,stroke:#6b7280,color:#111827
+    style Z fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    style ADD fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+<p class="note">灰底 = 冻结 encoder 的产物(只读、无梯度),紫底 = 层级残差这个「旁路」——它绕过了 4 维瓶颈,是 LAM 能压到 $d_z=4$ 的关键补偿;蓝底 = 交给 Stage 2 的 latent。注意<b>残差只动均值不动方差</b>,所以 KL 项约束的仍是 transformer 自己预测的后验,旁路不参与正则,这是一个刻意的分工。</p>
+
+<h3>该模块的监督信号</h3>
+<p>Stage 1 的损失不是「把 token 重建回去」这么朴素,而是<b>双层</b>的:</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{feat}}=\frac{1}{L}\sum_{\ell=1}^{L}\Bigl\|\operatorname{LN}_\ell\bigl(\hat{\mathbf{F}}_\ell\bigr)-\operatorname{LN}_\ell\bigl(\mathbf{F}_\ell\bigr)\Bigr\|_2^2$$<span class="tag">(式 8)</span></div>
+<div class="equation">$$\mathcal{L}_{\mathrm{VAE}}=\lambda_{\mathrm{feat}}\mathcal{L}_{\mathrm{feat}}+\lambda_{\mathrm{KL}}\mathcal{L}_{\mathrm{KL}}+\lambda_{\mathrm{rgb}}\mathcal{L}_{\mathrm{rgb}}+\lambda_{\mathrm{perc}}\mathcal{L}_{\mathrm{LPIPS}}+\lambda_{\mathrm{pose}}\mathcal{L}_{\mathrm{pose}}+\lambda_{\mathrm{depth}}\mathcal{L}_{\mathrm{depth}}$$<span class="tag">(式 9)</span></div>
+<p>权重 $(\lambda_{\mathrm{feat}},\lambda_{\mathrm{KL}},\lambda_{\mathrm{rgb}},\lambda_{\mathrm{perc}},\lambda_{\mathrm{pose}},\lambda_{\mathrm{depth}})=(0.1,\,10^{-3},\,1,\,0.05,\,10,\,1)$。三个工程细节:</p>
+<ul>
+  <li><b>式 8 里也带 $\operatorname{LN}_\ell$</b>:不只是输入侧归一化,<b>误差度量</b>也归一化——否则深层通道幅值大,PCA 式的 $L_2$ 会被深层独占,L 层的权重形同虚设。</li>
+  <li><b>下游一致性项才是主力</b>:$\lambda_{\mathrm{rgb}}=1$、$\lambda_{\mathrm{pose}}=10$,都远大于 $\lambda_{\mathrm{feat}}=0.1$。论文把 $\hat{\mathbf{F}}_\ell$ <b>再喂进冻结的相机/深度/Gaussian 头</b>,与原 token 的输出比对。理由写得很清楚:「token 重建好 ≠ 冻结的头能用」——头是在完整 token 上训出来的,它可能对某种 $L_2$ 意义下很近的扰动完全不鲁棒。<b>把冻结头当下游 decoder 一起算 loss,是这套压缩能成立的根本</b>。</li>
+  <li><b>KL 有 warmup + free-bits</b>:权重在前 $10{,}000$ 步从 $0$ 线性升到 $10^{-3}$,并用 <b>0.5 nats / 维度</b>的 free-bits 阈值。$d_z=4$ 时若不设 free-bits,KL 很容易把 4 维压成 1–2 维有效维度,DiT 就没得生成了。$\lambda_{\mathrm{KL}}=10^{-3}$ 之小也印证:这个 VAE <b>几乎不追求先验匹配</b>,只求「可解码 + 平滑到能被 flow matching 拟合」。</li>
+</ul>
+<div class="callout tip"><b>和后文的接口:</b>这里产出的 $\mathbf{Z}^{\mathrm{obs}}$ 是 Stage 2 的唯一条件输入;而 $\mathbf{Z}$(全 $N$ 视角编码)只在训练时可得,作为 flow matching 的目标。也就是说 <b>VAE 一旦冻结,整个人工标注空间就定死了</b>——后面 DiT 的上限被 Stage 1 的压缩质量锁住,这是三阶段训练最容易踩的耦合风险。</div>
+</section>
+
+<!-- =================== 5 =================== -->
+<section class="section" id="s5">
+<h2><span class="num">5</span>模块②:相机条件 DiT 潜空间补全</h2>
+<p>拿到了 $n$ 个视角的 $\mathbf{Z}^{\mathrm{obs}}$ 之后,要在同一个 $N\times K\times d_z$ 的张量里把 $(N-n)$ 个未观测视角「想出来」。这里有两个硬约束决定了架构:① <b>未观测视角没有任何图像</b>,唯一的线索就是「它该在哪个位置看」——即相机;② 观测视角<b>必须逐位精确保持</b>,不能被生成过程的噪声污染,否则冻结的重建头会看到「被轻微改过的真实 token」,反而比不补还差。</p>
+
+<h3>问题设定</h3>
+<p>DiT 吃三样东西:<b>观测 latent</b> $\mathbf{Z}^{\mathrm{obs}}$、<b>掩码</b> $\mathbf{m}\in\{0,1\}^N$、以及<b>全部 $N$ 个视角的相机</b> $\mathbf{g}_1,\dots,\mathbf{g}_N$。输出 $\tilde{\mathbf{Z}}\in\mathbb{R}^{N\times K\times d_z}$,其中观测位置严格等于 $\mathbf{Z}^{\mathrm{obs}}$。训练目标是那个「如果当初把 $16$ 张图全喂给 encoder 会得到什么」的 $\mathbf{Z}$——它只在训练时存在。</p>
+
+<div class="callout key"><b>为什么是「补 token」而不是「补像素」,这里的架构给出了理由:</b>相机是唯一能指定「要生成哪个视角」的量,而相机在 token 空间里可以<b>逐 token 精确注入</b>(Plücker 射线嵌入与 latent 共享 $K$-token 布局);在像素空间里相机只能作为全局条件(如 camera ray 的 per-pixel 编码),与图像内容的空间对应关系要靠网络自己学。token 空间的相机条件是<b>同构的、无歧义的</b>。</div>
+
+<h3>网络结构表</h3>
+<table>
+<tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr>
+<tr><td>$\mathbf{Z}^{\mathrm{obs}}$ 放到对应视角位置,未观测位置填噪</td><td>按相机路径排成 $N$ 视角序列,$NK\times d_z$</td><td>$\mathbf{x}_{t}\in\mathbb{R}^{N\times K\times d_z}$</td></tr>
+<tr><td>$\mathbf{g}_i$,patch 中心</td><td>Plücker 射线嵌入(与 latent 同 $K$-token 布局);无 patch 位置的 token(如 camera token)用<b>可学习嵌入</b>顶替</td><td>$\mathbf{e}^{\mathrm{cam}}_{i,k}\in\mathbb{R}^{d_h}$</td></tr>
+<tr><td>每视角时间 $\tau_i=t(1-m_i)$</td><td>时间嵌入</td><td>$\mathbf{e}^{\mathrm{time}}(\tau_i)\in\mathbb{R}^{d_h}$</td></tr>
+<tr><td>$\mathbf{c}_{i,k}=\mathbf{e}^{\mathrm{time}}(\tau_i)+\mathbf{e}^{\mathrm{cam}}_{i,k}$</td><td>AdaLN:每 block 各自映射出 attention / MLP 两支的 shift、scale、gate</td><td>调制参数(逐 token)</td></tr>
+<tr><td>$NK\times768$</td><td><b>12 对</b> frame/global block(共 <b>24</b> block),768 通道,<b>12</b> head</td><td>隐状态 $\mathbf{h}^{\mathrm{out}}_{i,k}$</td></tr>
+<tr><td>末层隐状态</td><td>被同一 $\mathbf{c}_{i,k}$ 调制的 LayerNorm + 线性回 $d_z$</td><td>$\widehat{\mathbf{v}}_{\theta,i}\in\mathbb{R}^{K\times d_z}$</td></tr>
+</table>
+
+<h3>数学形式化:训练时的插值状态</h3>
+<p>rectified flow matching 的约定:<b>$t=0$ 是干净 latent,$t=1$ 是纯噪声</b>。观测视角的 $m_i=1$,整项被 $m_i$ 钉在 $\mathbf{z}^{\mathrm{obs}}_i$ 上,任何时候都不进噪——这直接实现了「观测视角必须精确保持」的约束,不需要额外的 mask 后处理。</p>
+<div class="equation">$$\mathbf{x}_{t,i}=m_i\,\mathbf{z}^{\mathrm{obs}}_i+(1-m_i)\bigl[(1-t)\,\mathbf{z}_i+t\,\bm{\epsilon}_i\bigr],\qquad\bm{\epsilon}_i\sim\mathcal{N}(\mathbf{0},\mathbf{I})$$<span class="tag">(式 5)</span></div>
+<p>每个视角带自己的时间 $\tau_i=t(1-m_i)$:观测视角恒为 $0$(干净),未观测视角跟随全局 $t$。这一个标量让<b>同一套网络在同一序列里同时处理两类视角</b>,不必分两路 forward 或加视角类型嵌入。</p>
+
+<h3>数学形式化:速度场与一步采样</h3>
+<p>速度的定义是「<b>从干净指向噪声</b>」,所以目标速度就是 $\bm{\epsilon}_i-\mathbf{z}_i$。这与常见「从噪声指向数据」的约定符号相反,理解采样方向时必须注意:<b>采样是从 $t=1$ 往 $t=0$ 反向积分</b>。</p>
+<div class="equation">$$\mathcal{L}_{\mathrm{FM}}=\frac{1}{(N-n)\,K\,d_z}\sum_{i:m_i=0}\bigl\|\widehat{\mathbf{v}}_{\theta,i}-\mathbf{v}^{\star}_{i}\bigr\|_2^2,\qquad\mathbf{v}^{\star}_i=\bm{\epsilon}_i-\mathbf{z}_i$$<span class="tag">(式 11)</span></div>
+<p>分母是 $(N-n)K d_z$,即<b>只对未观测视角的每个 latent 元素平均</b>,观测视角被完全排除在损失之外(它们恒为干净状态,不进噪,自然也不该被监督)。</p>
+<p>Stage 3 把时间钉死在 $t=1$,单步 Euler 就从噪声直接到干净:</p>
+<div class="equation">$$\tilde{\mathbf{z}}_i=\bm{\epsilon}_i-\widehat{\mathbf{v}}_{\theta,i}\quad\Longrightarrow\quad \mathcal{L}_{\mathrm{FM}}\big|_{t=1}=\frac{1}{(N-n)K d_z}\sum_{i:m_i=0}\bigl\|\tilde{\mathbf{z}}_i-\mathbf{z}_i\bigr\|_2^2$$<span class="tag">(式 13)</span></div>
+<div class="callout warn"><b>这个「等价」是有代价的,论文自己也点明了:</b>固定 $t=1$ 后,flow matching 损失退化成对全视角 latent 的<b>直接回归</b>。但 Stage 3 的最优点<b>不是</b> Stage 2 多步 ODE 解的蒸馏——论文明确说「不施加与 Stage 2 多步解的 ODE 一致性约束」。也就是 Stage 3 做的是<b>重新训练一个一步映射</b>,而非蒸馏。后果:$N$ 步采样的质量优势会被部分放弃(Table 10 里 50 NFE 的 22.86 就高于一步的 22.56),一步版是<b>精度换延迟</b>的显式取舍。</div>
+
+<h3>AdaLN 的具体形式(A.1)</h3>
+<p>两种 block 共用同一套结构、<b>参数各自独立</b>。条件向量的构造是<b>相加</b>而非拼接:</p>
+<div class="equation">$$\mathbf{c}_{i,k}=\mathbf{e}^{\mathrm{time}}(\tau_i)+\mathbf{e}^{\mathrm{cam}}_{i,k}\in\mathbb{R}^{d_h},\qquad \bigl(\boldsymbol{\beta},\boldsymbol{\gamma},\boldsymbol{\alpha}\bigr)=\mathrm{MLP}_{\mathrm{block}}(\mathbf{c}_{i,k})$$<span class="tag">(A.1,原文无编号)</span></div>
+<p>每个 block 把 $\mathbf{c}_{i,k}$ 映射成自己的一组 shift/scale/gate,分别供给 attention 分支与 MLP 分支。相加而非拼接的含义是:时间与相机被当作<b>两个可叠加的调制偏移</b>,它们在同一 $d_h$ 空间里共存;好处是 $\mathbf{c}$ 的维度与 $d_h$ 一致,不需要为两路条件各配一套投影。</p>
+<div class="figure">
+  <img src="images/2610.07958/app_fig1.png" loading="lazy" alt="DiT block 结构">
+  <div class="caption"><b>图3</b>(原文 Figure 4)<b>DiT block 结构。</b>时间嵌入与相机嵌入相加成 $\mathbf{c}_{i,k}$,再分别生成 attention 与 MLP 两支的 AdaLN shift/scale/gate。frame block 与 global block <b>只有 attention 的作用域不同</b>,其余结构一致——这一点从图上完全看不出来,必须读 A.1 正文。</div>
+</div>
+
+<h3>frame / global 交替与跨视角证据流</h3>
+<p>block 成对堆叠,每对是「frame → global」:</p>
+<table>
+<tr><th>block 类型</th><th>attention 作用域</th><th>矩阵形状</th><th>作用</th></tr>
+<tr><td>frame block</td><td>单视角内,$K$ 个 token 互相注意</td><td>$K\times d_h$</td><td>视角内的空间推理(与观测视角无关)</td></tr>
+<tr><td>global block</td><td>全部 $N$ 视角,$NK$ 个 token 拉平后联合注意</td><td>$NK\times d_h$</td><td><b>唯一的跨视角证据通路</b>:噪声视角在此从干净观测视角取信息</td></tr>
+</table>
+<p class="note">这个交替模式与 VAE encoder 完全一致(都沿用 VGGT 的 frame/global 设计),好处是可以直接复用同一套位置编码与实现;坏处是 global block 的 attention 复杂度是 $O((NK)^2)$,$N=16$ 时序列长度是单视角的 16 倍。这也解释了为什么 $N$ 不能随便加大(Table 3 的 $N{>}12$ 递减)。</p>
+
+<h3>采样时的「重置」机制(容易被漏掉的一步)</h3>
+<p>多步采样时,每个 Euler 步之后都要<b>把观测视角的 latent 强行写回 $\mathbf{Z}^{\mathrm{obs}}$</b>。原因:Euler 积分是逐元素更新,即使观测视角在训练时永远处于干净状态,多步累积的数值误差与网络泛化误差也会让它们<b>缓慢漂移</b>;一旦漂移,下游重建头看到的不再是「真实的观测 token」,而是被污染的版本,render 结果会在本应完美的观测视角上出现瑕疵。重置保证「条件永不退化」。</p>
+
+<h3>前向流程(Stage 2 训练一步)</h3>
+<ol>
+  <li>采 $n\sim U\{2,\dots,8\}$,不放回选 $n$ 个观测视角,其余 $N-n$ 为未观测;</li>
+  <li>全 $N$ 视角过冻结 encoder + 冻结 LAM-VAE,得 $\mathbf{Z}$(目标)与其中的 $\mathbf{Z}^{\mathrm{obs}}$(条件);</li>
+  <li>采全局时间 $t=\mathrm{sigmoid}(u),\ u\sim\mathcal{N}(0,1)$——<b>不是均匀分布</b>,向两端加权;</li>
+  <li>按式 5 构造 $\mathbf{x}_{t}$:观测视角取 $\mathbf{z}^{\mathrm{obs}}$,未观测视角插值到噪声;</li>
+  <li>构造 $\mathbf{c}_{i,k}$:时间 $\tau_i=t(1-m_i)$ + 该视角对齐后的 GT 相机 Plücker 嵌入(§6);</li>
+  <li>DiT 前向,出 $\widehat{\mathbf{v}}_{\theta,i}$;按式 11 算 $\mathcal{L}_{\mathrm{FM}}$;</li>
+  <li><b>额外一路</b>:用 $\hat{\mathbf{z}}^{(t)}_{0,i}=\mathbf{x}_{t,i}-\tau_i\widehat{\mathbf{v}}_{\theta,i}$ 反推干净 latent,送冻结 VAE decoder → token → 冻结重建头,算 rgb / LPIPS / pose / depth(式 12,见 §8);</li>
+  <li>反向传播,只更新 DiT 与相机嵌入(以及 A.2 的 $h_{\mathrm{img}}$、$\mathbf{e}^{\mathrm{miss}}$)。</li>
+</ol>
+
+<h3>该模块的监督信号</h3>
+<p>DiT 的监督是<b>三层嵌套</b>的,一层比一层「更靠下游」:</p>
+<ul>
+  <li><b>latent 层</b>(式 11):$\mathcal{L}_{\mathrm{FM}}$,权重 $1$。只描述「速度对不对」,不保证解出来的 token 有用。</li>
+  <li><b>token → 图像层</b>:把 $\hat{\mathbf{z}}_0$ 解码回 token 再渲染,与 GT 图像比 rgb($\lambda{=}1$)与 LPIPS($\lambda{=}0.05$)。这一步<b>必须回传穿过冻结的 VAE decoder 与冻结重建头</b>,所以求导链路很长。</li>
+  <li><b>token → 相机/深度层</b>:pose($\lambda{=}10$)与 depth($\lambda{=}1$)。其中 pose 项是<b>对「原全视角 token 过冻结相机头」的 teacher 做 Huber</b>,并且作用在相机头<b>每一个 refine 迭代</b>上、早期迭代权重更小;depth 项只在 teacher 的<b>深度置信度</b>选中的像素上算平方误差。用 teacher 而不是 GT 位姿,是为了让 DiT 学「和 backbone 自己一致的位姿」而非「绝对正确的位姿」——这与 §6 的相机对齐是同一套思路。</li>
+</ul>
+<div class="callout tip"><b>为什么 latent 损失不能单独用:</b>$d_z=4$ 的 latent 上没有定义任何「有用性」度量。两个 latent 在 $L_2$ 下接近,解码出的 token 可能让 Gaussian 头给出完全不同的颜色(尤其 AnySplat 那种需要 RGB 外观输入的)。论文的做法是把「有没有用」的判断完全交给冻结的下游头——<b>冻结模块在这里同时充当了正则器与评估器</b>,这是全文最省事也最讨巧的一步。</div>
+</section>
+
+<!-- =================== 6 =================== -->
+<section class="section" id="s6">
+<h2><span class="num">6</span>模块③:相机条件双轨(训练 / 推理)</h2>
+<p>这是全文最容易做错、也最容易被读者跳过的一节。DiT 需要 $N$ 个视角的相机,但<b>训练时有 GT 却不能用,推理时没有 GT 只能猜</b>——两条路径必须产出「同一个世界坐标系下、同一尺度」的相机,否则 DiT 在训练与推理看到的是两种分布,一步采样必然崩。</p>
+
+<h3>问题的精确形状:只差一个尺度</h3>
+<p>关键观察是:backbone(AnySplat / WorldMirror / DA3)的相机头<b>已经在第一观测视角下归一化</b>输出相机,而数据集提供的 GT 相机也按同样约定表达。所以两者的<b>全局旋转与平移已经共享</b>,只差一个<b>全局尺度</b>——因为 backbone 重建出的场景尺度是任意的(单目/少视角几何本身就只恢复到相似变换)。</p>
+<div class="callout key"><b>如果直接拿原始 GT 相机训练会怎样:</b>DiT 学到的相机条件落在「数据集尺度」的世界里;推理时喂进去的是「backbone 预测尺度」的相机,中心坐标可能差一个数量级。Plücker 射线嵌入对中心偏移极敏感(它编码的是相对于相机的方向与力矩),尺度错位会让条件向量完全失真。论文用<b>单因子缩放</b>这一个动作就把这个 gap 消掉了——因为两者本来就只差这一维。</div>
+
+<h3>训练轨:用预测相机的中心散布去标定 GT</h3>
+<div class="equation">$$s=\frac{\operatorname{spread}\bigl(\{\hat{\mathbf{g}}^{\mathrm{obs}}_i\}_{i=1}^{n}\bigr)}{\operatorname{spread}\bigl(\{\mathbf{g}^{\mathrm{gt}}_i\}_{i=1}^{n}\bigr)},\qquad \mathbf{g}^{\mathrm{aligned}}_i=\bigl(\mathbf{R}^{\mathrm{gt}}_i,\ s\cdot\mathbf{t}^{\mathrm{gt}}_i\bigr),\ i=1,\dots,N$$<span class="tag">(§3.4 正文,原文无编号)</span></div>
+<p>要点:<b>缩放因子只算一次、作用到全部 $N$ 个视角</b>(不是逐视角),且只在<b>观测子集</b>上估分子分母。用单因子而非逐视角缩放,才不会破坏相机之间的相对几何(逐视角缩放会让轨迹变形,DiT 学到的就是错的运动先验)。旋转不动,只动中心。</p>
+<p class="note">论文原文表述是「rescaling all ground-truth camera centers by a single factor, the ratio of the spread of the predicted centers to that of the ground-truth centers over the observed views」。<span class="uncertain">【待核实】</span>「spread」的具体度量未在正文定义——按上下文应为某种离散度(标准差或包围盒对角线)。这是复现时的<b>真实空白</b>:不同选择会给出不同的 $s$,在长基线序列上差异可能不小。</p>
+
+<h3>推理轨:样条 + slerp,且只插不外推</h3>
+
+<div class="hdiag">
+  <div class="hbox"><b>① 预测观测相机</b><small>冻结相机头从 $\mathbf{F}^{\mathrm{obs}}$ 出 $\{\hat{\mathbf{g}}^{\mathrm{obs}}_i\}_{i=1}^{n}$</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>② 中心插值</b><small>自然三次样条(natural cubic spline)</small></div>
+  <div class="harrow">+</div>
+  <div class="hbox"><b>③ 旋转插值</b><small>球面线性插值 slerp</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>④ 落位</b><small>全部虚拟视角放在首末观测相机<b>之间</b></small></div>
+</div>
+
+<p>两个细节值得单独说:</p>
+<ul>
+  <li><b>中心用自然三次样条而不是分段线性</b>:相机的运动在实际拍摄中近似平滑,样条的二阶连续性能避免在观测视角处出现「折角」,而折角恰好落在有 GT 对照的位置上会立刻暴露。旋转用 slerp 是因为旋转在 $SO(3)$ 上,线性插值会离开流形、产生非正交的「伪旋转」。</li>
+  <li><b>只插值、不外推</b>:所有 $(N-n)$ 个虚拟视角都被放在<b>第一与最后一个观测相机之间</b>。这不是偷懒,而是本文最硬的限制——见 §16。外推意味着要预测「从未被任何观测约束过的空间」,而在 token 空间里没有任何机制能保证外推出的 token 与真实几何一致。</li>
+</ul>
+
+<h3>两条轨的对照</h3>
+<table>
+<tr><th>阶段</th><th>观测视角相机</th><th>未观测视角相机</th><th>是否对齐</th><th>来源</th></tr>
+<tr><td>训练</td><td>$\mathbf{g}^{\mathrm{aligned}}_i$(GT,缩放后)</td><td>$\mathbf{g}^{\mathrm{aligned}}_i$(GT,缩放后)</td><td><b>需要</b>:单因子 $s$ 缩放到预测尺度</td><td>§3.4 Training</td></tr>
+<tr><td>推理</td><td>$\hat{\mathbf{g}}^{\mathrm{obs}}_i$(预测)</td><td>$\hat{\mathbf{g}}^{\mathrm{interp}}_i$(样条 + slerp)</td><td><b>不需要</b>:预测值本身就是参照</td><td>§3.4 Inference</td></tr>
+</table>
+<div class="callout warn"><b>这里藏着一个训练/推理不对称,论文没有展开:</b>训练时 $N$ 个相机<b>全部来自 GT</b>(经过统一缩放),所以观测视角的相机与「真实 token 对应的相机」在几何上是自洽的;推理时观测视角的相机是<b>预测的</b>,带着 backbone 自己的位姿误差。这意味着推理时的相机条件分布比训练时「更脏」,而 DiT 从未在训练中见过带噪相机。<span class="uncertain">【推测】</span>这可能是 Table 1 中相机指标(AUC@3°)提升幅度(+6.7 / +1.7)远小于外观指标提升的原因之一——但论文未做「给训练相机加噪」的消融,无法确认。</div>
+
+<h3>为什么不让 DiT 自己生成相机</h3>
+<p>一个自然的疑问:既然 token 都生成了,为什么不顺手生成未观测视角的相机?论文的选择是<b>把相机完全外部化</b>,理由在 §3.3 已给:「an unobserved view has no image and its camera is the only information that specifies which view to generate」——相机是<b>输入</b>而非<b>输出</b>,它定义了「要生成什么」。若让网络同时生成相机,任务就变成欠定的:任意相机 + 匹配的 token 都是自洽解,模型可以退化成「生成一个平凡视图」。把相机钉死,等于给生成任务加了一个<b>明确的查询条件</b>。这也与 backbone 的接口一致:相机头解码的是 token,而这里 token 依赖相机——形成一个<b>只有先验相机才能打破的循环</b>,故用「观测视角预测 + 中间插值」的几何先验来打破。</p>
+</section>
+
+<!-- =================== 7 =================== -->
+<section class="section" id="s7">
+<h2><span class="num">7</span>模块④:外观特征融合</h2>
+<p>这是一个<b>只有部分 backbone 需要</b>的模块,但缺了它 AnySplat 的结果会直接崩。AnySplat 的 Gaussian 头 $\mathcal{H}_{\mathrm{G}}$ 除了几何 token,还要把每个视角的 RGB 用卷积层 $h_{\mathrm{img}}$ 编码后<b>加</b>到中间特征上,给 Gaussian 颜色提供高频外观。问题很直白:<b>未观测视角没有 RGB</b>。而 LAM-VAE 只补几何 token,补不出颜色。</p>
+
+<div class="callout key"><b>破局点:</b>未观测视角虽然没有图,但它的<b>相机与深度已经被解出来了</b>(从补全后的 token 解出)。有了相机 + 深度,就可以把观测图 warp 到该视角,得到一个「粗糙但有效」的颜色先验。整个模块是纯几何的、无需任何生成模型,代价几乎为零——<b>这是全文最漂亮的一次「用已有几何换缺失外观」</b>。</div>
+
+<h3>网络结构 / 数据流</h3>
+<table>
+<tr><th>输入</th><th>层 / 算子</th><th>输出</th></tr>
+<tr><td>$(\tilde{\mathbf{F}}_1,\dots,\tilde{\mathbf{F}}_L)$</td><td>冻结的 camera head / depth head</td><td>$\hat{\mathbf{g}}^{\mathrm{dec}}_i$(解码相机)、$\hat{\mathbf{D}}_i$(深度图)</td></tr>
+<tr><td>未观测视角像素 $\mathbf{u}$ + $\hat{\mathbf{D}}_i$ + $\hat{\mathbf{g}}^{\mathrm{dec}}_i$</td><td>反投影到 3D:$\mathbf{y}_i(\mathbf{u})$</td><td>点云(逐像素)</td></tr>
+<tr><td>$\mathbf{y}_i(\mathbf{u})$ → 观测视角 $c$</td><td>重投影 $\pi_c$,取 $I_c$ 采样;三重有效性判据得 $\nu_{c\to i}(\mathbf{u})$</td><td>候选颜色 $\mathcal{W}_{c\to i}(\mathbf{u})$ + 0/1 指示</td></tr>
+<tr><td>所有 $c$ 的候选</td><td>有效样本<b>取平均</b>(式 6),同时得有效性掩码</td><td>$\mathbf{C}^{\mathrm{prior}}_i(\mathbf{u})$、$M^{\mathrm{prior}}_i(\mathbf{u})$</td></tr>
+<tr><td>$J_i$(观测=真图 / 未观测=先验)</td><td>$h_{\mathrm{img}}$ 卷积编码;<b>无效像素用可学习 $\mathbf{e}^{\mathrm{miss}}$ 顶替</b>(式 7)</td><td>$\mathbf{F}^{\mathrm{app}}_i$</td></tr>
+<tr><td>$\mathbf{F}^{\mathrm{app}}_i$ + $\mathcal{H}_{\mathrm{G}}$ 中间特征</td><td>在「原本加 RGB 嵌入」的位置相加</td><td>Gaussian 颜色</td></tr>
+</table>
+
+<h3>数学形式化</h3>
+<div class="equation">$$\mathbf{C}^{\mathrm{prior}}_i(\mathbf{u})=\frac{\sum_{c:m_c=1}\nu_{c\to i}(\mathbf{u})\,\mathcal{W}_{c\to i}(\mathbf{u})}{\max\bigl(1,\sum_{c:m_c=1}\nu_{c\to i}(\mathbf{u})\bigr)},\qquad M^{\mathrm{prior}}_i(\mathbf{u})=\mathbb{1}\Bigl[\textstyle\sum_{c:m_c=1}\nu_{c\to i}(\mathbf{u})>0\Bigr]$$<span class="tag">(式 6)</span></div>
+<p>分母那个 $\max(1,\cdot)$ 值得注意:它让「零个有效样本」时输出 $0$ 而不是除零,且此时 $M^{\mathrm{prior}}=0$,后续会用 $\mathbf{e}^{\mathrm{miss}}$ 顶掉,所以这个 $0$ 不会被误当作黑色。</p>
+<div class="equation">$$\mathbf{F}^{\mathrm{app}}_i(\mathbf{u})=M^{\mathrm{app}}_i(\mathbf{u})\,h_{\mathrm{img}}(J_i)(\mathbf{u})+\bigl(1-M^{\mathrm{app}}_i(\mathbf{u})\bigr)\,\mathbf{e}^{\mathrm{miss}}$$<span class="tag">(式 7)</span></div>
+<p>其中观测视角 $m_i=1$ 时 $J_i=I_i$、$M^{\mathrm{app}}\equiv1$(满图有效);未观测视角 $m_i=0$ 时 $J_i=\mathbf{C}^{\mathrm{prior}}_i$、$M^{\mathrm{app}}=M^{\mathrm{prior}}_i$。$\mathbf{e}^{\mathrm{miss}}$ 是<b>全图共用的同一个向量</b>(不是逐像素可学习)。</p>
+
+<h3>三重有效性判据:为什么必须有</h3>
+<p>$\nu_{c\to i}(\mathbf{u})$ 只在同时满足三条时取 1,任一条不过就丢弃:</p>
+<ol>
+  <li><b>重投影落在 $c$ 图内</b>——否则采样越界;</li>
+  <li><b>深度为正</b>——否则点落在相机背后,投影无意义;</li>
+  <li><b>与 $\hat{\mathbf{D}}_c$ 在相对容差内一致</b>——这是<b>遮挡判据</b>,也是最关键的一条。若某像素在该视角反投影出的 3D 点,重投影到 $c$ 后落在另一物体<b>前面</b>,说明它在视角 $i$ 可见但在视角 $c$ 被遮挡,颜色不可信。与 $c$ 的深度图比对能直接剔除这种情况。</li>
+</ol>
+<p>没有第 3 条,遮挡区域的错误颜色会被平均进先验,worst case 比直接用 $\mathbf{e}^{\mathrm{miss}}$ 更糟——因为它带着「看起来合理但完全错误」的高频纹理,conv 会把它当真。</p>
+
+<div class="callout warn"><b>这个模块的隐含依赖链很长,值得警惕:</b>warp 用的相机与深度<b>来自补全后的 token</b>,而补全后的 token 来自 DiT;DiT 又依赖相机条件,相机条件里的未观测相机来自插值。<b>所以外观先验的质量是「DiT 补全质量」的函数</b>——补全差 → 深度差 → warp 差 → 颜色先验差。这是一个正反馈式的耦合,论文没有做「用 GT 深度 warp」的对照实验来隔离这一项。Table 12 显示 $n$ 从 2 增到 7 时「冻结 vs 全量微调 Gaussian 头」的差距从 0.74 dB 缩到 0.10 dB,论文归因为「观测视角间距变小、warp 覆盖率提升」——这恰好是上述依赖链的间接证据:覆盖率越高,先验越可靠,头部越不需要适配。</div>
+
+<h3>为什么要微调 $h_{\mathrm{img}}$ + 学 $\mathbf{e}^{\mathrm{miss}}$</h3>
+<p>论文给了理由,而且是这段最有价值的一句:这些空洞<b>对预训练头来说是 out-of-distribution</b>——它训练时见的都是完整图像,突然输入一片 $\mathbf{e}^{\mathrm{miss}}$ 常量,颜色会崩。所以 Stage 2 在渲染损失下<b>一并微调 $h_{\mathrm{img}}$、并学习 $\mathbf{e}^{\mathrm{miss}}$</b>,让空洞处的 Gaussian 颜色能<b>从周围的观测外观推断</b>,而不是只依赖那个占位符。</p>
+<p class="note">注意这句话的言外之意:$\mathbf{e}^{\mathrm{miss}}$ 本身<b>不携带任何颜色信息</b>,它只是一个「此处无数据」的标记。设计上把「推断颜色」的责任交给了卷积的感受野(邻域传播),这是一个很轻量的选择——相比用扩散模型 inpaint 未观测视角的 RGB,它只多了一个可学习标量向量。</p>
+
+<h3>哪些 backbone 需要它</h3>
+<table>
+<tr><th>backbone</th><th>Gaussian 头是否吃 RGB</th><th>是否需要 §7</th><th>依据</th></tr>
+<tr><td>AnySplat</td><td>是,需 $h_{\mathrm{img}}$ 的 RGB 嵌入</td><td><b>需要</b></td><td>A.2 原文点名 "including AnySplat"</td></tr>
+<tr><td>WorldMirror</td><td>论文未明说</td><td><span class="uncertain">【待核实】</span></td><td>A.2 只说 "Some feed-forward backbones, including AnySplat"</td></tr>
+<tr><td>DA3</td><td>论文未明说</td><td><span class="uncertain">【待核实】</span></td><td>同上</td></tr>
+</table>
+</section>
+
+<!-- =================== 8 =================== -->
+<section class="section" id="s8">
+<h2><span class="num">8</span>损失函数总表</h2>
+<p>全文只有两组训练损失(Stage 1 的 VAE、Stage 2/3 的 DiT),但它们的关键不在形式而在<b>权重分配</b>——几乎每一项的权重都在告诉你「论文认为哪里最容易坏」。</p>
+
+<h3>全部损失项</h3>
+<table>
+<tr><th>损失</th><th>式号</th><th>作用对象</th><th>形式</th><th>权重</th><th>备注</th></tr>
+<tr><td>$\mathcal{L}_{\mathrm{feat}}$</td><td>(8)</td><td>LAM-VAE</td><td><b>归一化后</b>的逐层 $L_2$</td><td>$0.1$</td><td>误差度量也带 $\operatorname{LN}_\ell$</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{KL}}$</td><td>(9) 项</td><td>LAM-VAE</td><td>后验 vs $\mathcal{N}(0,I)$</td><td>$10^{-3}$</td><td>前 10k 步 $0\to10^{-3}$ 线性升温;free-bits 0.5 nats/dim</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{rgb}}$</td><td>(9)</td><td>LAM-VAE</td><td>渲染图 vs 原 token 渲染图 <b>MSE</b></td><td>$1$</td><td>「下游一致性」——不是和 GT 图比,是和<b>原始 token 的渲染结果</b>比</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{LPIPS}}$</td><td>(9)</td><td>LAM-VAE</td><td>同上两图 LPIPS</td><td>$0.05$</td><td>补感知层面的高频</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{pose}}$</td><td>(9)</td><td>LAM-VAE</td><td>相机输出比对</td><td><b>$10$</b></td><td>全表最高权重</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{depth}}$</td><td>(9)</td><td>LAM-VAE</td><td>深度比对</td><td>$1$</td><td></td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{FM}}$</td><td>(11)</td><td>DiT</td><td>速度场 $L_2$(未观测视角)</td><td>$1$</td><td>Stage 3 退化为一阶回归(式 13)</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{rgb}}$</td><td>(12)</td><td>DiT</td><td>渲染高斯 vs <b>GT 图</b></td><td>$1$</td><td>监督视角 $\mathcal{U}$ 随机采</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{LPIPS}}$</td><td>(12)</td><td>DiT</td><td>同上 LPIPS</td><td>$0.05$</td><td>Stage 2 前 2k 步关闭</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{pose}}$</td><td>(12)</td><td>DiT</td><td>vs <b>teacher</b> 的 Huber</td><td><b>$10$</b></td><td>teacher = 原全视角 token 过冻结相机头;作用在<b>每个 refine 迭代</b>,早期迭代几何权重更小</td></tr>
+<tr><td>$\mathcal{L}_{\mathrm{depth}}$</td><td>(12)</td><td>DiT</td><td>平方误差</td><td>$1$</td><td>只在 teacher 深度置信度选中的像素上</td></tr>
+</table>
+
+<div class="callout warn"><b>三处最容易被误读的细节:</b>
+<ol style="margin-bottom:0">
+<li><b>VAE 的 $\mathcal{L}_{\mathrm{rgb}}$ 是与「原始 token 的渲染结果」比,不是与 GT 图比。</b>这是「保真于 backbone」而非「保真于现实」——VAE 的任务是不改变 backbone 已有的行为,包括它的错误。这也是为什么 pose 权重高达 10:相机输出对 token 扰动最敏感,必须盯死。</li>
+<li><b>DiT 的 pose 项用 teacher 而非 GT 位姿。</b>teacher 是「把 $N$ 张图全喂给冻结 encoder 后相机头的输出」,即 backbone 自己的最优估计。跟 teacher 学 = 学「backbone 会怎么想」,而不是「世界真值是怎么」。这与 §6 的相机对齐逻辑一致。</li>
+<li><b>两个 $\lambda_{\mathrm{pose}}=10$ 都不解释理由。</b>论文只是列出数值。<span class="uncertain">【推测】</span>相机输出的尺度与其他项(SH 颜色、深度)差异很大,不放大权重会在总损失里被淹没,但这是推断,论文未给依据。</li>
+</ol>
+</div>
+
+<h3>采样时间分布:不是均匀的</h3>
+<p>Stage 2/3 的全局时间按 <b>$t=\mathrm{sigmoid}(u),\; u\sim\mathcal{N}(0,1)$</b> 采,而不是 $t\sim U(0,1)$。把标准正态过 sigmoid 后的实际密度:$u=0$ 对应 $t=0.5$(密度峰),90% 的质量落在 $u\in[-1.645,1.645]$ 即 <b>$t\in(0.162,\,0.838)$</b>——两端 $t\to0$ 与 $t\to1$ 只是长尾。也就是说训练<b>主要在中段噪声水平上花力气</b>,而不是像均匀分布那样把 20% 的算力分给几乎干净的 $t<0.2$。合理:最难的区间就是「噪得差不多、需要真正补几何」的中段;两端各自的极端情形($t=1$ 纯噪、$t=0$ 干净)在 Stage 3 会被单独钉住训练。<span class="uncertain">【推测】</span>这一动机论文未写,只给了采样公式。真正确定的是:<b>Stage 3 直接把 $\tau_i$ 钉在 $1$</b>,不再采样,所以这个分布在 Stage 3 完全失效。</p>
+
+<h3>三项配置的权重联动</h3>
+<table>
+<tr><th>设置</th><th>VAE</th><th>DiT</th><th>One-step 微调</th></tr>
+<tr><td>最大学习率</td><td>$2\times10^{-4}$</td><td>$2\times10^{-4}$</td><td>$4\times10^{-5}$</td></tr>
+<tr><td>最小学习率</td><td>$10^{-6}$</td><td>$2\times10^{-6}$</td><td>$2\times10^{-6}$</td></tr>
+<tr><td>调度</td><td>cosine</td><td>cosine</td><td>cosine</td></tr>
+<tr><td>优化器 betas</td><td>$(0.9,0.95)$</td><td>$(0.9,0.95)$</td><td>$(0.9,0.95)$</td></tr>
+<tr><td>weight decay</td><td>$0.01$</td><td>$0.01$</td><td>$0.01$</td></tr>
+<tr><td>迭代数</td><td>$200{,}000$</td><td>$200{,}000$</td><td>$20{,}000$</td></tr>
+<tr><td>每卡 batch(序列)</td><td>$\lfloor16/N_{\mathrm{vae}}\rfloor$</td><td>$1$</td><td>$1$</td></tr>
+<tr><td>混合精度</td><td>BF16</td><td>BF16</td><td>BF16</td></tr>
+<tr><td>LPIPS 起始迭代</td><td>$0$</td><td>$2{,}000$</td><td>$0$</td></tr>
+</table>
+<p class="note">出自 Table 5(仅 AnySplat 主实验)。三点值得注意:①<b>学习率是 4 卡的有效值,已包含按全局 batch 的平方根缩放</b>(B 节明确);② Stage 3 的学习率比 Stage 2 小 <b>5×</b>($4\times10^{-5}$ vs $2\times10^{-4}$),因为是在已收敛的 checkpoint 上做窄幅调整;③ Stage 2 的 LPIPS <b>前 2k 步关闭</b>——先把结构/latent 拉对,再上感知损失,这是渲染类训练的常规操作。Stage 1 每卡 $\lfloor16/N_{\mathrm{vae}}\rfloor$ 条序列是为了「每卡最多 16 张图」,序列长度变化时显存稳定。</p>
+</section>
+
+<!-- =================== 9 =================== -->
+<section class="section" id="s9">
+<h2><span class="num">9</span>训练流程(三阶段)</h2>
+<p>三个阶段是<b>严格串行、逐级冻结</b>的:Stage 1 训完 VAE 就冻住,Stage 2 训 DiT 时 VAE 不动,Stage 3 只动 DiT。这个串行结构带来一个明确的性质——<b>每一阶段的目标函数都是固定不变的,不存在联合训练的相互拉扯</b>,代价是误差会逐级累积(Stage 1 的压缩损失无法由 Stage 2 补偿)。</p>
+
+<div class="mermaid">
+flowchart TD
+    subgraph S1["Stage 1:训 LAM-VAE(200k iters)"]
+      A1["全 N 视角图 → 冻结 E_geo → F_1..F_4"] --> A2["LAM 融合 + 压缩 → Z<br/>(训练时采样 μ+σε)"]
+      A2 --> A3["VAE decoder → F̂_1..F̂_4"]
+      A3 --> A4["冻结 camera/depth/Gaussian 头<br/>→ 相机 / 深度 / 渲染图"]
+      A1 --> A5["原 token 直接过同一组冻结头<br/>→ 参照输出"]
+      A4 --> A6["L_VAE = 0.1·feat + 1e-3·KL<br/>+ 1·rgb + 0.05·LPIPS + 10·pose + 1·depth"]
+      A5 --> A6
+      A6 --> A7["只更新 VAE(含 LAM 的 gate、P_ℓ)"]
+    end
+    A7 --> FREEZE1["冻结 VAE"]
+    FREEZE1 --> S2
+    subgraph S2["Stage 2:训 DiT(200k iters)"]
+      B1["采 n~U{2..8},不放回选观测视角"] --> B2["全 N 视角过冻结 encoder+VAE<br/>得 Z(目标)与 Z_obs(条件)"]
+      B2 --> B3["采 t=sigmoid(u)<br/>构造 x_t(观测视角恒干净)"]
+      B3 --> B4["相机条件:GT 相机按单因子 s 缩放对齐<br/>→ Plücker 嵌入"]
+      B4 --> B5["DiT(12 对 frame/global)→ v̂"]
+      B5 --> B6["L_FM(仅未观测视角)"]
+      B5 --> B7["ẑ_0 = x_t − τ·v̂ → 冻结 VAE dec<br/>→ 冻结头 → 渲染/相机/深度"]
+      B7 --> B8["rgb + LPIPS + 10·pose(teacher) + depth"]
+      B6 --> B9["更新 DiT + 相机嵌入<br/>+ h_img + e_miss(若需外观融合)"]
+      B8 --> B9
+    end
+    B9 --> S3
+    subgraph S3["Stage 3:一步微调(20k iters)"]
+      C1["固定 τ_i = 1(未观测视角纯噪)"] --> C2["单步 Euler:z̃ = ε − v̂"]
+      C2 --> C3["L_FM|_{t=1} 退化为直接回归 ‖z̃ − z‖²"]
+      C3 --> C4["同 Stage 2 的渲染损失一起端到端监督"]
+      C4 --> C5["lr 降到 4e-5, 只更新 DiT"]
+    end
+    C5 --> DONE["产出: 单步补全模型"]
+    style A7 fill:#e5e7eb,stroke:#6b7280,color:#111827
+    style B9 fill:#e5e7eb,stroke:#6b7280,color:#111827
+    style C5 fill:#e5e7eb,stroke:#6b7280,color:#111827
+    style DONE fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+</div>
+
+<h3>每阶段到底在解锁什么能力</h3>
+<table>
+<tr><th>阶段</th><th>学什么</th><th>被冻结的是什么</th><th>如果跳过会怎样</th></tr>
+<tr><td>Stage 1</td><td>「$L$ 层 token ↔ 4 维 latent」的可逆映射,且可逆到<b>冻结头能继续用的程度</b></td><td>encoder + 全部重建头</td><td>没有 latent 空间,DiT 无从下手;若改成直接在 token 上生成,$L\times d_f$ 维度无法用单步生成</td></tr>
+<tr><td>Stage 2</td><td>「在给定相机与观测视角的条件下的 latent 补全」</td><td>encoder + VAE + 大部分重建头</td><td>只能靠 Stage 3 直接一步回归,缺少多步去噪先验,Table 10 的 21.67(from-scratch one-step)就是这条路</td></tr>
+<tr><td>Stage 3</td><td>「把多步映射压成一步」</td><td>同上</td><td>推理要 50 步 / 4.848 s,比稠密真跑还慢(Table 1 稠密 0.434 s),方法失去意义</td></tr>
+</table>
+
+<div class="callout tip"><b>三阶段设计的本质是「把一个大问题拆成三个各自可监督的小问题」:</b>① 空间选择(在哪补)② 条件补全(按什么补)③ 速度压缩(多快补)。三者互相独立、各有明确的失败信号——这比端到端训一个「从 $n$ 图直接出 $N$ 视角 Gaussian」的模型要好调试得多。<b>代价是每级的上限都被前一级锁死</b>,且三级之间没有任何梯度回传,Stage 1 的压缩误差不会被 Stage 2 优化掉(见 §16)。</div>
+
+<h3>训练成本账</h3>
+<table>
+<tr><th>项</th><th>数值</th><th>说明</th></tr>
+<tr><td>硬件</td><td>4 × NVIDIA RTX 6000 Ada</td><td>§4.1 原文</td></tr>
+<tr><td>迭代数</td><td>200k + 200k + 20k = 420k</td><td>Table 5,仅 AnySplat 主实验</td></tr>
+<tr><td>全局 batch</td><td>Stage 2/3 为 4(每卡 1 序列)</td><td>Table 5</td></tr>
+<tr><td>每个 backbone 单独训</td><td>AnySplat / WorldMirror / DA3 <b>各一套</b></td><td>§4.1:「We train DensiTok separately for three pretrained backbones」</td></tr>
+<tr><td>总迭代量级</td><td>≈ 3 × 420k = 1.26M</td><td>三个 backbone 累加,<b>不是</b>共享权重</td></tr>
+<tr><td>实际墙钟</td><td><span class="uncertain">【待核实】</span></td><td>论文未给训练时长;Table 1 的 Runtime 列是<b>推理</b>时间</td></tr>
+</table>
+<p class="note">「每个 backbone 一套权重」是理解本文成本的关键:它不是「训练一个通用插件」,而是「为每个 backbone 训练一个专用插件」。好处是可以完全贴合该 backbone 的层级特性(层索引、通道数都不同);坏处是换 backbone 就要重训 420k 步,扩展性受限于「必须能拿到预训练权重 + 能跑通冻结前向」。</p>
+</section>
+
+<!-- =================== 10 =================== -->
+<section class="section" id="s10">
+<h2><span class="num">10</span>推理流程</h2>
+
+<div class="hdiag">
+  <div class="hbox"><b>① 输入</b><small>$n$ 张未标定图</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>② 冻结 encoder</b><small>出 $L$ 层 token</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>③ 相机头</b><small>预测 $n$ 个观测相机</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>④ 相机插值</b><small>样条中心 + slerp 旋转</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>⑤ LAM-VAE</b><small>取 $\mathbf{z}=\bm{\mu}$(无噪)</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>⑥ DiT 单步</b><small>$t{=}1$ 一步 Euler</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>⑦ 外观 warp</b><small>补 $N{-}n$ 视角 RGB 先验</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>⑧ 解码头</b><small>相机/深度/Gaussian</small></div>
+</div>
+
+<div class="mermaid">
+flowchart LR
+    I["I_1..I_n<br/>未标定"] --> E["冻结 E_geo<br/>(n 视角)"]
+    E --> T["F_obs: 4 层 token"]
+    T --> CAM["冻结 camera head<br/>→ ĝ_obs(n 个)"]
+    CAM --> INTERP["样条 + slerp<br/>→ ĝ_interp(N−n 个)"]
+    T --> VAE["LAM-VAE 编码<br/>z = μ(丢弃噪声)"]
+    VAE --> ZO["Z_obs ∈ R^(n×K×4)"]
+    INTERP --> PLK["Plücker 嵌入"]
+    ZO --> DIT["DiT 单步<br/>t=1, 一 Euler 步"]
+    PLK --> DIT
+    ZO --> RESET["观测视角硬写回"]
+    RESET --> DIT
+    DIT --> ZT["Z̃ ∈ R^(N×K×4)"]
+    ZT --> DEC["VAE decoder<br/>→ F̃_1..F̃_4(N 视角)"]
+    DEC --> HEAD["冻结 camera / depth / Gaussian 头"]
+    I --> WARP["warp: 观测图 → 未观测视角<br/>(用解码相机+深度)"]
+    HEAD --> WARP
+    WARP --> APP["C_prior + M_prior<br/>→ h_img(无效像素用 e_miss)"]
+    APP --> HEAD
+    HEAD --> OUT["相机 / 深度 / Gaussian 场景"]
+    style I fill:#e5e7eb,stroke:#6b7280,color:#111827
+    style OUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    style DIT fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+</div>
+<p class="note">图中有一个<b>循环箭头</b>:外观 warp 需要解码出的相机与深度,而相机/深度是「重建头读 token」的产物;warp 出的颜色又反过来作为重建头的输入(给 Gaussian 颜色)。这不是训练时的循环依赖(训练时观测视角有真图,未观测视角的 warp 用的就是当前前向的中间输出),而是<b>推理时的一次「两段式」前向</b>:先解出几何,再 warp,再解颜色。论文没有强调这个顺序,但从 A.2 的描述看是必然的。</p>
+
+<h3>推理与训练的不对称清单</h3>
+<table>
+<tr><th>项</th><th>训练</th><th>推理</th><th>影响</th></tr>
+<tr><td>latent 采样</td><td>$\mathbf{z}=\bm{\mu}+\bm{\sigma}\odot\bm{\epsilon}$</td><td>$\mathbf{z}=\bm{\mu}$(确定性)</td><td>推理无随机性,结果可复现</td></tr>
+<tr><td>相机来源</td><td>GT × 单因子缩放</td><td>预测 + 样条/slerp 插值</td><td><b>分布差异主要来源</b>(见 §6)</td></tr>
+<tr><td>视角布局</td><td>随机 $n$,未观测视角在轨迹上随机分布</td><td>全部虚拟视角<b>落在首末观测之间</b></td><td>推理只做插值,不做外推</td></tr>
+<tr><td>采样步数</td><td>Stage 2 多步 / Stage 3 单步</td><td><b>固定单步</b></td><td>单步模型只用于推理,多步版不部署</td></tr>
+<tr><td>未观测视角 RGB</td><td>有 GT 图(可用于算 loss)</td><td>只有 warp 先验</td><td>依赖 §7</td></tr>
+</table>
+
+<h3>耗时构成</h3>
+<p>Table 1 的 Runtime 列只报总时间,不给分解。可确定的对照:</p>
+<ul>
+  <li><b>稠密真跑</b>(AnySplat,$N=16$):$0.434$ s</li>
+  <li><b>DensiTok</b>($n=2$ 补到 $16$):$0.258$ s;$n=3$:$0.267$ s;$n=5$:$0.299$ s;$n=7$:$0.333$ s</li>
+  <li>WorldMirror 同理:$0.495$ → $0.263$ / $0.277$ / $0.320$ / $0.361$ s</li>
+</ul>
+<p class="note">注意<b>$n$ 越大、DensiTok 反而越慢</b>(0.258 → 0.333 s):因为 encoder 要处理更多真实图像,而 DiT 只生更少的视角。这说明<b>推理开销的大头在 encoder,不在 DiT</b>——DiT 单步几乎免费。也正因如此,$n$ 小的时候相对稠密真跑的加速比最显著($n=2$ 时 $0.434/0.258\approx1.68\times$)。<span class="uncertain">【推测】</span>论文未给 encoder / VAE / DiT 的分项耗时,以上是从 $n$ 的单调关系反推的。</p>
+</section>
+
+<!-- =================== 11 =================== -->
+<section class="section" id="s11">
+<h2><span class="num">11</span>⚙️ 工程实现细节</h2>
+
+<div class="callout red">
+<b>仓库无源码,以下超参无法验证。</b>截至核查时,GitHub 仓库 <code>Hydragon516/DensiTok</code> 只有 <code>README.md</code> 与 <code>assets/</code> 目录,<b>没有训练/推理代码,也没有权重</b>。README 里 <code>## 💻 Code</code> 段的全部内容是 "Coming soon.",仓库徽章为 <code>Code Coming Soon</code>。因此本节所有数值<b>只能来自论文正文与附录</b>,无法做「论文 vs 源码」的差异核对,也无法给出 <code>file:line</code> 级引用。<b>任何标注为【待核实】的条目,都需要等代码放出后才能确认。</b>
+</div>
+
+<h3>资源账(论文给出,无源码核对)</h3>
+<table>
+<tr><th>项</th><th>数值</th><th>出处</th><th>可核验性</th></tr>
+<tr><td>训练硬件</td><td>4 × NVIDIA RTX 6000 Ada</td><td>§4 Implementation Details</td><td>论文明确</td></tr>
+<tr><td>训练迭代</td><td>200k(VAE)+ 200k(DiT)+ 20k(一步微调)</td><td>Table 5 / §4</td><td>论文明确</td></tr>
+<tr><td>全局 batch(Stage 2/3)</td><td>4(每卡 1 序列)</td><td>Table 5 + Appendix B</td><td>论文明确</td></tr>
+<tr><td>全局 batch(Stage 1)</td><td>每卡 $\lfloor16/N_{\mathrm{vae}}\rfloor$ 序列,即每卡 ≤16 图</td><td>Table 5 + Appendix B</td><td>论文明确</td></tr>
+<tr><td>峰值显存</td><td>$N{=}2/4/8/12/16$ 时 <b>5.527 / 6.196 / 7.175 / 8.407 / 9.471 GB</b></td><td>Table 3 最后一列</td><td>论文明确;<span class="uncertain">【待核实】</span>未说明是训练还是推理、单卡还是单序列</td></tr>
+<tr><td>训练墙钟时长</td><td><b>论文未给</b></td><td>—</td><td>缺失</td></tr>
+<tr><td>参数量</td><td><b>论文未给</b>;可按 Table 4 粗估</td><td>—</td><td>缺失,见下</td></tr>
+</table>
+
+<h3>架构超参(Table 4 / A.3,逐格核对)</h3>
+<table>
+<tr><th>设置</th><th>VAE encoder</th><th>VAE decoder</th><th>DiT</th></tr>
+<tr><td>hidden channels</td><td>512</td><td>512</td><td>768</td></tr>
+<tr><td>frame/global block 对数</td><td>6</td><td>6</td><td>12</td></tr>
+<tr><td>transformer block 总数</td><td>12</td><td>12</td><td>24</td></tr>
+<tr><td>attention heads</td><td>8</td><td>8</td><td>12</td></tr>
+</table>
+<p>其余 A.3 给出的数值:</p>
+<ul>
+  <li><b>latent 宽度</b>:$d_z=4$(默认),消融用 $d_z=16$;消融时 <b>hidden width 与 block 数均不变</b>。</li>
+  <li><b>LAM 内部</b>:层级融合用<b>共享投影</b>到 <b>64</b> 通道;gating MLP 的 hidden width 为 <b>128</b>。</li>
+  <li><b>取层索引</b>(零基):AnySplat 与 WorldMirror 取 <b>4, 11, 17, 23</b>;DA3 取 <b>19, 27, 33, 39</b>。</li>
+  <li><b>每层通道</b>:AnySplat / WorldMirror <b>2048</b>;DA3 <b>3072</b>。</li>
+  <li><b>位置编码</b>:2D rotary position embedding(RoPE),编码 token 在 patch 网格上的位置。</li>
+</ul>
+
+<h3>训练细节(Appendix B,逐项)</h3>
+<ul>
+  <li><b>时间采样</b>:$t=\mathrm{sigmoid}(u)$,$u\sim\mathcal{N}(0,1)$,逐场景采<b>一个全局 $t$</b>(不是逐视角)。</li>
+  <li><b>KL 调度</b>:权重前 <b>10,000</b> 步从 $0$ 线性升到 $10^{-3}$;<b>free-bits 0.5 nats / latent 维度</b>。</li>
+  <li><b>LPIPS 启用</b>:Stage 1 从 0 开始;Stage 2 <b>第 2,000 步</b>起;Stage 3 从 0 开始。</li>
+  <li><b>学习率</b>:$2\times10^{-4}$ / $2\times10^{-4}$ / $4\times10^{-5}$(VAE / DiT / 一步),cosine 衰减,最小 $10^{-6}$ / $2\times10^{-6}$ / $2\times10^{-6}$,$\beta=(0.9,0.95)$,wd $0.01$,BF16。<b>「These are effective values for four GPUs, including the square-root scaling with global batch size used in Stages 2 and 3.」</b>——所以要单卡复现必须按 $\sqrt{\text{batch}}$ 反算。</li>
+  <li><b>训练视角采样</b>:$n$ 从 $\{2,\dots,8\}$ <b>均匀</b>抽取(注意:训练时最大 $n=8$,而评测用到 $n=7$;评测的 $n$ 是嵌套子集),观测视角不放回均匀选。</li>
+  <li><b>训练输入分辨率</b>:每个 batch <b>随机采一个 patch-aligned 分辨率</b>(沿用 WorldMirror 做法),非固定。</li>
+  <li><b>评测分辨率</b>:固定 $294\times518$。</li>
+</ul>
+
+<h3>被 14 整除的约束(C.4 / C.5)</h3>
+<p>由于 patch size 为 14,输入尺寸必须被 14 整除。<b>两段评测都做过缩放,都不是原生尺寸推理</b>:</p>
+<ul>
+  <li><b>Table 7($256\times256$)</b>:在 $252\times252$ 推理,再 resize 到 256(C.4)。</li>
+  <li><b>Table 8($512\times512$)</b>:GLD 与 DensiTok 都在 $504\times504$ 推理,再 resize 到 512(C.5)。</li>
+  <li><b>Table 1 / Table 6($294\times518$)</b>:这是本文自有协议的主表,尺寸本身<i>不</i>满足被 14 整除(294 = 21×14 ✓,518 = 37×14 ✓),<b>恰好两边都能整除</b>,所以主表不需要 resize。</li>
+</ul>
+<p class="note">这一点值得单独记一笔:<b>$294\times518$ 这个"奇怪"的分辨率并非随意选</b>——它同时是 patch-aligned(高宽皆为 14 的倍数)。而跨方法横比必须迁就别人的 $256/512$,反而需要先 resize 到 252/504。所以本文<b>主表是自己协议下最干净的评测,两张对比表才是"打折"的</b>,这与直觉相反。<span class="uncertain">【推测】</span>$294/518$ 的具体来源原文未说明,可能是 RE10K 常见竖屏比例的 patch 对齐版本。</p>
+
+<h3>我按 Table 4 做的参数量粗估(仅供量级参考)</h3>
+<p>论文未给参数量。按 hidden 512 / 12 block / 8 head 粗估 VAE 单侧约 $12\times(4\times512^2+2\times512\times2048)\approx 12\times(1.05\text{M}+2.10\text{M})\approx 38$M;DiT 按 768 / 24 block / 12 head 约 $24\times(4\times768^2+2\times768\times3072)\approx24\times(2.36\text{M}+4.72\text{M})\approx 170$M。<span class="uncertain">【推测】</span>这只是按标准 transformer block 结构的<b>量级估计</b>,未计入 LAM 的 gate/投影、decoder 的输出头、以及 Plücker 嵌入等模块;且 attention 的 $QK^\top$ 是否与 MLP 同宽未知。<b>真实值必须在代码放出后核对</b>,本段仅用于回答「这个插件有多重」的直觉问题——量级上比 backbone(十亿级)小一到两个数量级,符合「插件」定位。</p>
+
+<h3>落地时的真实坑(按风险排序)</h3>
+<table>
+<tr><th>风险</th><th>说明</th><th>来源</th></tr>
+<tr><td><b>必须能拿到 backbone 的中间层</b></td><td>要取第 4/11/17/23 或 19/27/33/39 层,且要能<b>同时</b>拿到 camera / depth / Gaussian 三个头并冻结前向。若某 backbone 的官方实现不暴露中间层,这个方法<b>直接不可用</b>——没有 hook 就取不到 $L$ 层 token。</td><td>§3.1 前提 + A.3</td></tr>
+<tr><td><b>VAE 必须和 backbone 绑定训练</b></td><td>层级索引与通道数都是 backbone 特定的,换 backbone 要重训 420k 步。不存在「通用 VAE」。</td><td>§4.1 + A.3</td></tr>
+<tr><td><b>求导链穿过冻结大模块</b></td><td>Stage 1 的 rgb/pose/depth 项要回传穿过冻结的 decoder + 三个头;Stage 2 还要穿过冻结 VAE decoder + 三个头。显存开销主要在<b>激活值</b>而非参数。Table 3 的 9.471 GB($N{=}16$)可作参考。</td><td>式 9 / 12 的结构</td></tr>
+<tr><td><b>$N$ 决定显存与时间</b></td><td>$N$ 从 2 到 16,显存 5.527 → 9.471 GB(约 <b>1.71×</b>),耗时 0.109 → 0.258 s(约 <b>2.37×</b>)。时间增长快于显存,因为 global block 是 $O((NK)^2)$。</td><td>Table 3</td></tr>
+<tr><td><b>单因子 $s$ 的 spread 定义缺失</b></td><td>复现时若用错离散度度量,训练/推理相机尺度会对不上,一步采样直接崩。</td><td>§3.4,<span class="uncertain">【待核实】</span></td></tr>
+<tr><td><b>MoGe-2 伪深度依赖</b></td><td>Mip-NeRF360 无 GT 深度,用 MoGe-2 伪标签评测(§4 / C 节)。跨数据集的深度结论就带上了 MoGe-2 的偏差。</td><td>Table 9 相关</td></tr>
+</table>
+
+<div class="callout warn"><b>复现难度的诚实评估:</b>形式上看这套方法很「干净」——没有对抗训练、没有 EMA、没有多阶段 curriculum,损失都是标准项。但<b>它的正确性完全依赖三个外部组件的接口</b>:① backbone 中间层可访问;② 三个头可冻结前向且输出语义明确;③ Patches 的 patch size 与分辨率对齐规则。三者任一不满足,方法就退化成「论文里的一个想法」。这也是为什么在没有代码的情况下,<b>本文的可复现性应当被评为「中低」</b>:所有超参都能从论文抄到,但接口细节(层的选取是否含 embedding 层、head 的 refine 迭代怎么取、warp 的容差取多少)全部缺失。</div>
+</section>
+
+<!-- =================== 12 =================== -->
+<section class="section" id="s12">
+<h2><span class="num">12</span>实验结果</h2>
+<p>评测协议先交代清楚,否则表格读不出意义:<b>RealEstate10K + DL3DV</b>,每数据集 80 个序列 × 4 个新视角 = <b>320 张评测图</b>;沿相机轨迹放 $N=16$ 个重建视角,$n\in\{2,3,5,7\}$ 是<b>嵌套子集</b>且必含首末视角(所以 $n$ 增大是「加观测」而非「换一组」);难度按首末视角的重叠度用 RoMa 双向匹配分三档 $(0.55,0.80]$ / $(0.30,0.55]$ / $[0.05,0.30]$,概率 25/50/25。指标沿用 VGGT / VGGT-$\Omega$ 的 AUC@3°、AUC@30°、$\delta_{1.25}$、AbsRel;评测分辨率 $294\times518$。</p>
+
+<div class="callout key"><b>这个评测协议里有一个必须点出的「不对等」:</b>稠密参考($N=16$ 全真图)与稀疏输入用的是<b>同一批评测视角</b>,但两者看到的<b>重建视角数不同</b>——稠密给 16 个真实视角,稀疏给 $n$ 个真实 + $(16-n)$ 个生成。也就是说 DensiTok 的「赢」是<b>用生成 token 补出了一部分稠密视角的信息</b>,在重叠度高的场景里这部分信息本来可以被几何插值近似,真正难的是重叠度低的那 25%。论文按重叠度分了档但<b>只报总数,没报分档结果</b>——这是结果展示上的一个缺口。</div>
+
+<h3>Table 1:AnySplat 主结果(RE10K / DL3DV)</h3>
+<table>
+<tr><th>$n$</th><th colspan="3">RE10K 外观</th><th>RE10K 相机 AUC@3°</th><th colspan="2">RE10K 深度</th><th colspan="3">DL3DV 外观</th><th>DL3DV 相机 AUC@3°</th><th>耗时 (s)</th></tr>
+<tr><th></th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AUC↑</th><th>$\delta_{1.25}$↑</th><th>AbsRel↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AUC↑</th><th>↓</th></tr>
+<tr><td colspan="12" style="color:#fcd34d"><b>稠密参考(16 张真实图,不用 DensiTok)</b></td></tr>
+<tr><td>16(AnySplat)</td><td>24.04</td><td>0.792</td><td>0.189</td><td>20.4</td><td>0.835</td><td>0.151</td><td>22.30</td><td>0.683</td><td>0.246</td><td>24.1</td><td><b>0.434</b></td></tr>
+<tr><td colspan="12" style="color:#fcd34d"><b>$n=2$</b></td></tr>
+<tr class="fail"><td>AnySplat</td><td>20.73</td><td>0.706</td><td>0.250</td><td>20.0</td><td>0.828</td><td>0.168</td><td>19.85</td><td>0.626</td><td>0.287</td><td>22.5</td><td>0.100</td></tr>
+<tr class="best"><td>+ DensiTok</td><td>22.56</td><td>0.766</td><td>0.223</td><td>26.7</td><td>0.846</td><td>0.153</td><td>22.40</td><td>0.699</td><td>0.255</td><td>30.4</td><td>0.258</td></tr>
+<tr><td colspan="12" style="color:#fcd34d"><b>$n=3$</b></td></tr>
+<tr class="fail"><td>AnySplat</td><td>22.47</td><td>0.748</td><td>0.215</td><td>21.1</td><td>0.830</td><td>0.159</td><td>21.66</td><td>0.677</td><td>0.245</td><td>24.2</td><td>0.117</td></tr>
+<tr class="best"><td>+ DensiTok</td><td><b>24.28</b></td><td>0.813</td><td>0.184</td><td>25.8</td><td>0.853</td><td>0.146</td><td><b>24.28</b></td><td>0.755</td><td>0.205</td><td>34.4</td><td>0.267</td></tr>
+<tr><td colspan="12" style="color:#fcd34d"><b>$n=5$</b></td></tr>
+<tr class="fail"><td>AnySplat</td><td>23.39</td><td>0.768</td><td>0.203</td><td>20.6</td><td>0.832</td><td>0.155</td><td>22.58</td><td>0.690</td><td>0.234</td><td>24.3</td><td>0.160</td></tr>
+<tr class="best"><td>+ DensiTok</td><td>25.35</td><td>0.838</td><td>0.162</td><td>25.2</td><td>0.852</td><td>0.141</td><td>25.33</td><td>0.782</td><td>0.182</td><td>33.5</td><td>0.299</td></tr>
+<tr><td colspan="12" style="color:#fcd34d"><b>$n=7$</b></td></tr>
+<tr class="fail"><td>AnySplat</td><td>23.79</td><td>0.780</td><td>0.195</td><td>20.9</td><td>0.831</td><td>0.153</td><td>23.01</td><td>0.709</td><td>0.225</td><td>23.1</td><td>0.207</td></tr>
+<tr class="best"><td>+ DensiTok</td><td>25.89</td><td>0.851</td><td>0.150</td><td>24.5</td><td>0.853</td><td>0.137</td><td>25.71</td><td>0.796</td><td>0.169</td><td>34.0</td><td>0.333</td></tr>
+</table>
+<p class="note">数字逐格核对过原文。绿行 = DensiTok,红行 = 被增强的 baseline。<b>核心读法</b>:$n=3$ 时 RE10K 24.28 <b>超过</b>了稠密参考 24.04,DL3DV 24.28 <b>大幅超过</b>稠密参考 22.30(差 1.98 dB)——即「3 张真图 + 13 个生成的 token 栈」比「16 张真图」还好。这在逻辑上是可能的:稠密参考的 16 张图会一起进 encoder,encoder 对每张图的 token 分配是<b>均等</b>的;而 DensiTok 让 3 个真实视角的 token 成为条件,gen 出的 token 去<b>拟合「16 图一起编码时会得到什么」</b>,理论上限就是稠密参考本身。超过它说明<b>生成路径起到了某种正则/集成作用</b>——这是本文最反直觉的一处结果,论文没有给解释。<span class="uncertain">【推测】</span><br><b>⚠️ 这张表不能与 Table 7 / Table 8 的数字混用。</b>论文为跨方法横比另做了一套评测(C 节:重新抽测试视角,索引与 Table 1/6 不同),所以同一个 AnySplat $n{=}3$ 在这里是 24.28、在 Table 7 是 26.919。详见 §14.1 第 ⑥ 条口径说明。</p>
+
+<h3>跨 backbone 一致性:WorldMirror</h3>
+<table>
+<tr><th>$n$</th><th>RE10K PSNR</th><th>Δ</th><th>RE10K AUC@3°</th><th>Δ</th><th>DL3DV PSNR</th><th>Δ</th><th>耗时 (s)</th></tr>
+<tr><td>16(稠密)</td><td>25.11</td><td>—</td><td>41.8</td><td>—</td><td>24.47</td><td>—</td><td>0.495</td></tr>
+<tr><td>2</td><td>21.56 → <b>22.06</b></td><td>+0.50</td><td>48.3 → <b>50.0</b></td><td>+1.7</td><td>20.60 → <b>21.40</b></td><td>+0.80</td><td>0.109 → 0.263</td></tr>
+<tr><td>3</td><td>23.29 → <b>23.81</b></td><td>+0.52</td><td>48.3 → <b>49.6</b></td><td>+1.3</td><td>22.54 → <b>23.35</b></td><td>+0.81</td><td>0.133 → 0.277</td></tr>
+<tr><td>5</td><td>24.29 → <b>24.91</b></td><td>+0.62</td><td>46.0 → <b>47.3</b></td><td>+1.3</td><td>23.67 → <b>24.38</b></td><td>+0.71</td><td>0.182 → 0.320</td></tr>
+<tr><td>7</td><td>24.75 → <b>25.31</b></td><td>+0.56</td><td>44.5 → <b>45.8</b></td><td>+1.3</td><td>24.28 → <b>25.17</b></td><td>+0.89</td><td>0.235 → 0.361</td></tr>
+</table>
+<p class="note">WorldMirror 的增益(<b>+0.50 ~ +0.89 dB</b>)明显小于 AnySplat(<b>+1.83 ~ +3.15 dB</b>)。原因很可能是 WorldMirror 本身在稀疏下就<b>强得多</b>($n=2$ 时 21.56 vs 20.73,$n=3$ 时 23.29 vs 22.47),离稠密参考更近,可改进空间自然更小。但注意它 $n=3$ 时 23.81 <b>仍低于</b>稠密 25.11——WorldMirror 没有实现「稀疏超过稠密」。</p>
+
+<h3>第三个 backbone:DA3(Table 6)</h3>
+<table>
+<tr><th>$n$</th><th>RE10K PSNR</th><th>Δ</th><th>RE10K AUC@3°</th><th>DL3DV PSNR</th><th>Δ</th><th>耗时 (s)</th></tr>
+<tr><td>16(稠密)</td><td>21.28</td><td>—</td><td>43.8</td><td>22.73</td><td>—</td><td>0.514</td></tr>
+<tr><td>2</td><td>19.69 → <b>22.95</b></td><td><b>+3.26</b></td><td>55.8 → <b>61.7</b></td><td>20.86 → <b>22.16</b></td><td>+1.30</td><td>0.112 → 0.255</td></tr>
+<tr><td>3</td><td>20.50 → <b>25.01</b></td><td><b>+4.51</b></td><td>52.2 → <b>64.9</b></td><td>21.65 → <b>24.23</b></td><td>+2.58</td><td>0.135 → 0.308</td></tr>
+<tr><td>5</td><td>20.81 → <b>26.58</b></td><td><b>+5.77</b></td><td>49.5 → <b>61.6</b></td><td>22.12 → <b>25.62</b></td><td>+3.50</td><td>0.187 → 0.333</td></tr>
+<tr><td>7</td><td>21.08 → <b>27.19</b></td><td><b>+6.11</b></td><td>47.9 → <b>51.1</b></td><td>22.40 → <b>26.26</b></td><td>+3.86</td><td>0.244 → 0.367</td></tr>
+</table>
+<div class="callout key"><b>DA3 是全文增幅最大的 backbone,且增益随 $n$ <b>单调增长</b>(+3.26 → +6.11 dB)</b>,这与另两个 backbone 的行为<b>相反</b>(AnySplat 的增益随 $n$ 大致持平)。为什么?DA3 的稀疏输入表现最差($n=2$ 仅 19.69,稠密也只有 21.28),它的 token 空间里「空间信息的冗余度」最低,补进新 token 带来的边际信息量最大。而 $n$ 增大后增幅还继续涨,说明 <b>DA3 的瓶颈一直是「视角数不够」而不是「token 不好用」</b>——补 token 正好打在它的短板上。反过来说,这也是一个隐含警告:<b>本方法在「baseline 本来就弱」的 backbone 上收益最大</b>,在强 backbone(WorldMirror)上收益有限。</div>
+<p class="note">注意 DA3 的相机 AUC 有个反常:$n=2$ 时 55.8 → 61.7(+5.9),但 $n=5$ 时从 49.5 只到 61.6(绝对值更高),$n=7$ 时 47.9 → 51.1 只涨 3.2。DA3 的相机头本身在稠密(43.8)下就比稀疏时<b>更低</b>,这与 AnySplat / WorldMirror 相反——说明 DA3 的相机预测在这个协议下并不随视角数单调变好,<span class="uncertain">【待核实】</span>论文未解释这一现象。</p>
+
+<h3>跨数据集泛化(Table 9,AnySplat)</h3>
+<table>
+<tr><th>数据集(序列数)</th><th>$n{=}2$</th><th>$n{=}3$</th><th>$n{=}5$</th><th>$n{=}7$</th><th>每序列评测视角</th><th>深度 GT</th></tr>
+<tr><td>ETH3D(11)</td><td>15.99 → <b>17.01</b></td><td>16.79 → <b>17.92</b></td><td>16.53 → <b>17.99</b></td><td>16.90 → <b>18.09</b></td><td>1</td><td>官方 GT</td></tr>
+<tr class="best"><td>ScanNet(75)</td><td>19.60 → <b>22.51</b></td><td>21.63 → <b>24.18</b></td><td>22.68 → <b>24.76</b></td><td>23.25 → <b>25.20</b></td><td>4</td><td>官方 GT</td></tr>
+<tr><td>Mip-NeRF 360(9)</td><td>17.58 → <b>19.27</b></td><td>18.05 → <b>19.24</b></td><td>18.73 → <b>20.02</b></td><td>19.76 → <b>20.48</b></td><td>1</td><td><b>MoGe-2 伪标签</b></td></tr>
+</table>
+<p class="note">三个数据集<b>全都不参与训练</b>。ScanNet 增益最大(+2.9 dB),ETH3D 最小(+1.1 dB)。ScanNet 是室内小场景、相机轨迹密集,最利于「沿轨迹插值」这一先验;ETH3D 是宽基线室外,首末视角间距大,插值本身就更难。这与 §16 的「只插不外推」限制直接呼应。<b>Mip-NeRF 360 的深度指标用的是 MoGe-2 伪标签</b>,所以那一列的「提升」部分反映的是「预测更像 MoGe-2」,不能当作真值精度读。</p>
+
+<h3>与稀疏前馈 3DGS 对比(Table 7,$256\times256$)</h3>
+<p>这一张表是<b>方法定位的关键</b>:它对比的是同类「稀疏输入 → 3DGS」方法,而不是扩散 NVS。挑 $n=2$ 与 $n=7$ 两个端点看:</p>
+<table>
+<tr><th>方法</th><th>内参</th><th>外参</th><th>$n{=}2$ RE10K PSNR</th><th>$n{=}2$ 耗时</th><th>$n{=}7$ RE10K PSNR</th><th>$n{=}7$ 耗时</th></tr>
+<tr><td>pixelSplat</td><td>需要</td><td>需要</td><td>26.125</td><td>0.088</td><td>—</td><td>—</td></tr>
+<tr><td>MVSplat</td><td>需要</td><td>需要</td><td>26.319</td><td>0.039</td><td>21.244</td><td>0.147</td></tr>
+<tr class="best"><td>DepthSplat</td><td>需要</td><td>需要</td><td><b>26.636</b></td><td>0.067</td><td>22.742</td><td>0.177</td></tr>
+<tr><td>VolSplat</td><td>需要</td><td>需要</td><td>21.730</td><td>0.093</td><td>28.328</td><td>0.256</td></tr>
+<tr><td>NoPoSplat</td><td>需要</td><td>不需要</td><td>22.470</td><td>0.052</td><td>—(未评)</td><td>—</td></tr>
+<tr><td>Splatt3R</td><td>不需要</td><td>不需要</td><td>20.731</td><td>0.811</td><td>—</td><td>—</td></tr>
+<tr><td>FreeSplatter</td><td>不需要</td><td>不需要</td><td>22.973</td><td>0.201</td><td>19.203</td><td>0.760</td></tr>
+<tr><td>DensiTok (AnySplat)</td><td><b>不需要</b></td><td><b>不需要</b></td><td>24.628</td><td>0.071</td><td><b>28.522</b></td><td>0.172</td></tr>
+<tr><td>DensiTok (WorldMirror)</td><td><b>不需要</b></td><td><b>不需要</b></td><td>25.079</td><td>0.071</td><td>28.087</td><td>0.186</td></tr>
+<tr><td>DensiTok (DA3)</td><td><b>不需要</b></td><td><b>不需要</b></td><td>24.233</td><td>0.081</td><td>28.225</td><td>0.193</td></tr>
+</table>
+<p>论文自己给的结论(逐条核对过 C.4 原文):</p>
+<ul>
+  <li>三个 DensiTok 变体在<b>两个数据集、所有 $n$</b> 上,PSNR / SSIM / LPIPS <b>全面超过 FreeSplatter</b>,唯一例外是 DA3 变体在 DL3DV $n=2$ 的 PSNR。</li>
+  <li>$n=3$ 时三个变体<b>在所有外观与深度指标上全部超过 NoPoSplat</b>。</li>
+  <li><b>DepthSplat 在 $n=2$ 拿最高 PSNR 与最低 LPIPS</b>(两个数据集都是)。</li>
+ <li>DensiTok (AnySplat) 在 RE10K $n\in\{5,7\}$ 拿最高 PSNR 与最低 LPIPS;<b>$n=5$ 时 28.034 反超 VolSplat 的 27.404</b>,$n=7$ 时 28.522 略高于 VolSplat 的 28.328(但 SSIM 0.903 < 0.909,<b>并非全指标胜出</b>)。</li>
+  <li>DensiTok (WorldMirror) 在 DL3DV $n\in\{3,5,7\}$ 拿最高 PSNR 与 SSIM。</li>
+  <li>深度:DensiTok (WorldMirror) 在 RE10K <b>所有 $n$</b> 上与 DL3DV $n\in\{3,5,7\}$ 都是两项深度指标最好;DL3DV $n=2$ 的最优仍是 Splatt3R。</li>
+  <li><b>相机输入要求</b>:pixelSplat / MVSplat / DepthSplat 内外参都要;SelfSplat / PF3plat / 所评的 SPFSplat 要内参、位姿自估;NoPoSplat 要内参不要外参;<b>Splatt3R、FreeSplatter 与三个 DensiTok 变体内外参都不要</b>。</li>
+</ul>
+<div class="callout warn"><b>诚实地读这张表,别被「最好」误导:</b>DensiTok 在 $n=2$ 时<b>没有赢得任何一项</b>——DepthSplat(需内外参)26.636 明显高于 DensiTok 最好的 25.079,而且 DepthSplat 还快(0.067 s vs 0.071 s)。DensiTok 的优势只在两个条件同时成立时出现:①<b>不允许给相机的场景</b>($n=2$ 时它胜过同为 pose-free 的 FreeSplatter / Splatt3R,但赢的是「不需要相机的前提下」);②<b>$n$ 较大时</b>(5、7)它才追上并超过需要相机的 VolSplat。也就是说,本文真正的卖点是<b>「在完全 pose-free 的约束下,把稀疏前馈 3DGS 拉到接近甚至部分超过『需要 GT 相机』的方法」</b>——这个表述比「全面 SOTA」准确得多。</div>
+
+<h3>与扩散 NVS 对比(Table 8,$512\times512$)</h3>
+<table>
+<tr><th>$n$</th><th>NVComposer</th><th>Matrix3D</th><th>GLD</th><th>GLD 耗时</th><th>DensiTok(AnySplat)</th><th>耗时</th><th>提速</th></tr>
+<tr><td>2</td><td>14.897</td><td>20.934</td><td>23.608</td><td>76.824 s</td><td><b>24.435</b></td><td>0.510</td><td><b>≈151×</b></td></tr>
+<tr><td>3</td><td>15.518</td><td>21.996</td><td>25.130</td><td>90.549 s</td><td><b>26.826</b></td><td>0.531</td><td>≈171×</td></tr>
+<tr><td>5</td><td>—(未评)</td><td>22.684</td><td>26.100</td><td>118.995 s</td><td><b>27.995</b></td><td>0.593</td><td>≈201×</td></tr>
+<tr><td>7</td><td>—(未评)</td><td>22.993</td><td>26.918</td><td>150.433 s</td><td><b>28.527</b></td><td>0.656</td><td>≈229×</td></tr>
+</table>
+<p class="note">「提速」列是本笔记按表内数字算的($t_{\mathrm{GLD}}/t_{\mathrm{DensiTok}}$),$n=2$ 的 133–151× 是论文原文给出的区间(三个 backbone 分别 151× / 149× / 133×,对应 0.510 / 0.515 / 0.579 s)。$n\ge3$ 的倍数是本笔记自己算的,论文只说「tens to hundreds of times」。<b>注意 DensiTok 在 512 分辨率下明显变慢</b>(0.510 s vs 256 下的 0.071 s,约 7×),而 GLD 在 512 下已经要 76.8 s。</p>
+
+<p>论文对定性结果的描述(Figure 9)值得原样转述,因为它揭示了两类方法的差别:<b>NVComposer 会改变书架构成与床的外观</b>——生成「看起来合理但离开目标场景」的内容;<b>GLD 与 Matrix3D 能保住整体布局</b>,但放大后货架摆件、床架区域的<b>局部形状有畸变</b>。DensiTok 更接近 GT 的场景内容、物体排布与几何结构。这与方法设计一致:扩散 NVS 的目标是「生成得好看」,允许改内容;DensiTok 的目标是「复现 backbone 在稠密输入下会产出的结果」,内容是被条件锁死的。</p>
+
+<h3>定性结果</h3>
+<div class="figure">
+  <img src="images/2610.07958/fig4.png" loading="lazy" alt="AnySplat 在 n=2 与 n=3 下的 RGB 与深度定性对比">
+  <div class="caption"><b>图4</b>(原文 Figure 3)主实验 AnySplat 的定性对比。$n=2$(左)与 $n=3$(右)输入下的新视角 RGB 与<b>深度</b>,RE10K 与 DL3DV 各给若干场景,每个场景都是「无 / 有 DensiTok」两版。红框为放大区域。原文对应描述:DensiTok 减轻 RGB 模糊、深度区域更连贯。注意这张图<b>只有 AnySplat</b> 一个 backbone。</div>
+</div>
+<p class="note">下面两张是附录 C.1 / C.2 的定性图,覆盖三个 backbone(AnySplat / WorldMirror / DA3),分别对应 $n\in\{2,3\}$ 与 $n\in\{5,7\}$。两张图的图注在原文中几乎完全相同,只差视角数一项——阅读时容易混淆。</p>
+<div class="figure">
+  <img src="images/2610.07958/app_fig2.png" loading="lazy" alt="三个 backbone 在 n=2 与 n=3 下的 RGB 与深度定性对比">
+  <div class="caption"><b>图5</b>(原文 Figure 5,C.1/C.2)三个 backbone 在 $n=2$(左)/ $n=3$(右)下的 RGB 与深度定性对比,无 / 有 DensiTok 各一版。这是判断「插件是否真的与 backbone 无关」的直接证据——三组的改善形态应该一致,而不是只有主实验那一组变好。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.07958/app_fig3.png" loading="lazy" alt="n=5 与 n=7 下的 RGB 与深度定性对比">
+  <div class="caption"><b>图6</b>(原文 Figure 6,C.2)同上,但 $n=5$(左)/ $n=7$(右)。与图5 对照可以看出一个很实用的趋势:随观测视角增多,基础方法本身就越好,两者的差距在目视上逐渐收窄——但 Table 1 的 PSNR 差反而在增大(见下表),这是定性与定量表述不完全同向的一处。</div>
+</div>
+<div class="figure">
+  <img src="images/2610.07958/app_fig6.png" loading="lazy" alt="高斯重建与相机位姿可视化">
+  <div class="caption"><b>图7</b>(原文 Figure 7)高斯重建与相机位姿可视化。上排原 AnySplat,下排 DensiTok;<b>红色为 GT 相机、蓝色为预测</b>。原文结论:DensiTok 的场景结构更清晰,预测相机与 GT 位置/朝向更贴合。这是本文<b>唯一直接展示相机精度</b>的定性证据——Table 1 的 AUC 数字在这里有视觉对应。</div>
+</div>
+</section>
+
+<!-- =================== 13 =================== -->
+<section class="section" id="s13">
+<h2><span class="num">13</span>消融实验</h2>
+
+<p>官方消融共 <b>5 张表</b>,分散在正文 §4.3(Table 2、Table 3)与附录 D.2–D.4(Table 10、Table 11、Table 12)。除 Table 3 变化总视角数 $N$ 之外,其余四张<b>全部固定用 AnySplat 作 backbone</b>——目的是排除 backbone 差异,单独考察插件内部设计。这一点很关键:这些消融结论不能直接外推到 WorldMirror / DA3。</p>
+
+<div class="callout warn">
+<b>⚠️ 原文有一处编号自相矛盾,先记下来。</b>正文 §4.3 写「<code>Tab. 3</code> compares LAM-VAE encoder designs」,但 Table 3 的 caption 实际是「Effect of the total number of views <i>N</i>」;LAM 消融的 caption 是 <b>Table 2</b>。紧接着讨论视角数时又写「we vary the total number of views <i>N</i> ( <code>Tab. 3</code> )」,这一处是对的。<b>也就是说,只有第一次引用把 Table 2 叫成了 Table 3</b>——典型的 LaTeX <code>\ref</code> 标错或表格重排遗留。本笔记一律按 <b>caption 的实际编号</b>引用,并在每张表的小标题旁标注这处矛盾。<span class="uncertain">【存疑】</span>
+</div>
+
+<h3>① LAM-VAE 编码器设计(Table 2)</h3>
+<p class="note">原文 caption:<b>Table 2</b>: Ablations of Level-Adaptive Modulation with AnySplat and $n=2$ observed views.(正文 §4.3 首次引用时误写为 Tab. 3)</p>
+
+<p>这张表做的是<b>严格的组件加法</b>,不是各维度随意组合。基线有三种层级融合方式,然后在其上逐项叠加两个设计:</p>
+
+<table>
+<tr><th>变体</th><th>层级融合方式</th><th>层级残差</th><th>相对上一行的增量</th></tr>
+<tr><td>Uniform fusion</td><td>权重固定 $\alpha_\ell=0.25$($L=4$ 均匀)</td><td>✗</td><td>—(最朴素基线:四层等权拼接)</td></tr>
+<tr><td>MLP fusion</td><td>拼接后过 MLP 出权重</td><td>✗</td><td>把等权换成<b>数据驱动</b>的权重</td></tr>
+<tr><td>+ level-adaptive fusion</td><td><b>LAM</b>:逐层 LN → 共享线性压到 64 → 拼接 → gating MLP 出 $L$ 个 logit → softmax</td><td>✗</td><td>把「打分」换成<b>互相比</b>(softmax 归一化)</td></tr>
+<tr><td>+ level-wise residual</td><td>Uniform 融合(注意:退回去了)</td><td>✓</td><td>单独隔离残差支路的作用</td></tr>
+<tr><td>+ both</td><td><b>LAM</b></td><td>✓</td><td><b>最终方案</b></td></tr>
+</table>
+
+<div class="callout key">
+<b>这张表的读法容易被误读。</b>第 4 行「+ level-wise residual」并<b>不是</b>「LAM + 残差」,它的融合方式退回了 Uniform——整张表是<b>单因素隔离</b>设计:第 3 行单独看 LAM 融合,第 4 行单独看残差,第 5 行才是两者合并。如果按「第 4 行 = 第 3 行 + 残差」去读,会得出「加残差反而掉点」的错误结论。
+</div>
+
+<table>
+<tr><th rowspan="2">LAM-VAE encoder</th><th colspan="4">RealEstate10K</th><th colspan="4">DL3DV</th></tr>
+<tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AUC@3°↑</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AUC@3°↑</th></tr>
+<tr><td>Uniform fusion</td><td>19.76</td><td>0.673</td><td>0.266</td><td>18.3</td><td>19.53</td><td>0.611</td><td>0.314</td><td>21.7</td></tr>
+<tr><td>MLP fusion</td><td>21.19</td><td>0.725</td><td>0.243</td><td>20.8</td><td>20.53</td><td>0.644</td><td>0.291</td><td>23.8</td></tr>
+<tr><td>+ level-adaptive fusion</td><td>22.11</td><td>0.756</td><td>0.228</td><td>25.0</td><td>21.89</td><td>0.684</td><td>0.267</td><td>28.8</td></tr>
+<tr><td>+ level-wise residual</td><td>21.86</td><td>0.747</td><td>0.234</td><td>24.2</td><td>21.56</td><td>0.675</td><td>0.274</td><td>27.5</td></tr>
+<tr><td><b>+ both</b></td><td><b>22.56</b></td><td><b>0.766</b></td><td><b>0.223</b></td><td><b>26.7</b></td><td><b>22.40</b></td><td><b>0.699</b></td><td><b>0.255</b></td><td><b>30.4</b></td></tr>
+</table>
+<p class="note">上表只列了 8 个指标中的 4 个(省去 SSIM/LPIPS 之外的 AUX@30°、$\delta_{1.25}$、AbsRel 以控制宽度)。完整 14 列数据见原文 Table 2, 其余指标的趋势与表中一致: <b>没有任何一列出现「加了模块反而变差」</b>。</p>
+
+<h4>逐级增量拆解</h4>
+<table>
+<tr><th>对比</th><th>RE10K PSNR</th><th>Δ</th><th>RE10K AUC@3°</th><th>Δ</th><th>说明</th></tr>
+<tr><td>Uniform → MLP</td><td>19.76 → 21.19</td><td class="best">+1.43</td><td>18.3 → 20.8</td><td class="best">+2.5</td><td>「学权重」本身贡献最大的一跳</td></tr>
+<tr><td>MLP → LAM</td><td>21.19 → 22.11</td><td class="best">+0.92</td><td>20.8 → 25.0</td><td class="best">+4.2</td><td><b>PSNR 涨 0.92 但 AUC 涨 4.2</b>——LAM 对几何的贡献远大于对表观的贡献</td></tr>
+<tr><td>Uniform → Uniform+残差</td><td>19.76 → 21.86</td><td class="best">+2.10</td><td>18.3 → 24.2</td><td class="best">+5.9</td><td>单独加残差也很有效,且 AUC 增益比 LAM 单独还大</td></tr>
+<tr><td>LAM → LAM+残差(both)</td><td>22.11 → 22.56</td><td class="best">+0.45</td><td>25.0 → 26.7</td><td class="best">+1.7</td><td>两者叠加<b>不是简单相加</b>,存在明显重叠</td></tr>
+</table>
+
+<div class="callout key">
+<b>最值得记的一条:两项设计高度重叠,不是可叠加的两个正交增益。</b>单独加残差能带来 AUC +5.9,单独换 LAM 能带来 AUC +4.2,但两者合起来只比 LAM 单独多 +1.7——远小于 4.2 + 5.9。这说明它们<b>在解决同一个问题</b>:都把「层级信息怎么进 latent」这件事做得更充分,所以边际收益互相挤占。工程上的含义是:<b>只想要几何精度、又怕改太多</b>的话,单加残差(+5.9 AUC)比单换 LAM(+4.2)更划算且改动更小;但从 PSNR 看则是 LAM 更好(+0.92 vs +2.10 复利到 22.11 的高起点)。两者都要才有 22.56 / 26.7 的最好结果。
+</div>
+
+<h4>与「原 AnySplat」的对照:<b>Uniform fusion 比不改还差</b></h4>
+<p>Table 2 的所有变体都已经跑完整的 DensiTok 生成流程,所以它<b>不能直接减出「LAM 相比原 AnySplat 的净增益」</b>——里面还混着 DiT 补全的贡献。但把它和 Table 1 的 $n=2$ 单纯 AnySplat 一比,会看到一个<b>很反直觉的事实</b>:</p>
+<table>
+<tr><th>配置</th><th>RE10K PSNR</th><th>RE10K AUC@3°</th><th>DL3DV PSNR</th><th>DL3DV AUC@3°</th></tr>
+<tr><td>原 AnySplat,$n=2$(Table 1)</td><td>20.73</td><td>20.0</td><td>19.85</td><td>22.5</td></tr>
+<tr><td>Uniform fusion(Table 2 最低行)</td><td>19.76</td><td>18.3</td><td>19.53</td><td>21.7</td></tr>
+<tr><td>MLP fusion</td><td>21.19</td><td>20.8</td><td>20.53</td><td>23.8</td></tr>
+<tr><td>LAM + 残差(最终)</td><td><b>22.56</b></td><td><b>26.7</b></td><td><b>22.40</b></td><td><b>30.4</b></td></tr>
+</table>
+<p>Uniform fusion 的 19.76 比<b>完全不改的 20.73 还低 0.97 dB</b>,AUC 也低 1.7。这说明「四层等权拼接后再过 VAE」这个瓶颈<b>本身是负收益</b>:先压到 $d_z=4$ 再把四层与层级残差一起塞回去,信息损失大过补全带来的收益。<b>所以 LAM 不是「锦上添花的调参」,而是这条路线能否成立的前提</b>——没有它,整个 token 压缩-补全范式在 $n=2$ 上直接退化成负收益。这也解释了为什么论文把 LAM 单独拎出来做第一张消融表:它是<b>可行性条件</b>,不是<b>增量创新</b>。</p>
+<p class="note">再补一句量级对照:最终配置相对原 AnySplat 的净增益是 $+1.83$ dB(20.73→22.56)、AUC $+6.7$(20.0→26.7)。而 LAM 相对 Uniform 的增益是 $+2.80$ dB、$+8.4$ AUC——<b>两项都大于最终净增益</b>。换句话说,补全机制真正的价值被 Uniform 融合那个坏瓶颈消耗掉了一大半。</p>
+<h3>② 总视角数 N(Table 3):增益到底来自「补全」还是「精修」</h3>
+<p class="note">原文 caption:<b>Table 3</b>: Effect of the total number of views $N$ with AnySplat and $n=2$ observed views.(这一处的正文引用是正确的)</p>
+
+<p>这是全篇<b>设计得最聪明的一张消融</b>。做法:固定观测视角数 $n=2$ 不变,只改<b>总重建视角数</b> $N$(也就是让 DiT 为多少个未观测视角补 token)。当 $N=n=2$ 时,<b>没有任何未观测视角</b>,DiT 无事可做,整个 DensiTok 退化成「只用 LAM-VAE 过一编再还原」——这恰好是一个天然的对照组。</p>
+
+<table>
+<tr><th rowspan="2">总视角数 $N$</th><th colspan="5">RealEstate10K</th><th colspan="3">DL3DV</th><th colspan="2">效率</th></tr>
+<tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>AUC@3°↑</th><th>AUC@30°↑</th><th>PSNR↑</th><th>AUC@3°↑</th><th>AUC@30°↑</th><th>耗时(s)↓</th><th>峰值显存(GB)↓</th></tr>
+<tr><td>2(= $n$,无生成)</td><td>20.94</td><td>0.714</td><td>0.245</td><td>20.8</td><td>77.5</td><td>20.03</td><td>22.9</td><td>86.3</td><td>0.109</td><td>5.527</td></tr>
+<tr><td>4</td><td>22.08</td><td>0.757</td><td>0.239</td><td>22.9</td><td>78.1</td><td>21.28</td><td>23.3</td><td>87.6</td><td>0.116</td><td>6.196</td></tr>
+<tr><td>8</td><td>22.49</td><td>0.762</td><td>0.231</td><td>25.4</td><td>78.6</td><td>22.18</td><td>28.8</td><td>89.1</td><td>0.158</td><td>7.175</td></tr>
+<tr><td>12</td><td>22.31</td><td>0.768</td><td>0.226</td><td>25.0</td><td>78.8</td><td>22.37</td><td>30.4</td><td>89.3</td><td>0.209</td><td>8.407</td></tr>
+<tr><td><b>16</b></td><td><b>22.56</b></td><td><b>0.766</b></td><td><b>0.223</b></td><td><b>26.7</b></td><td><b>78.9</b></td><td><b>22.40</b></td><td><b>30.4</b></td><td><b>88.9</b></td><td>0.258</td><td>9.471</td></tr>
+</table>
+
+<h4>关键读数一:$N=n=2$ 的增益极小——补全才是主力</h4>
+<p>$N=2$ 时 DiT 完全不起作用,只有 LAM-VAE 的「压-解」往返。此时 RE10K 是 20.94,而原 AnySplat 是 <b>20.73</b>——<b>只涨了 0.21 dB</b>。AUC 从 20.0 到 20.8,涨 0.8。</p>
+<div class="callout key">
+<b>论文自己把这条结论讲得很直白:</b>「The limited gains over the original AnySplat baseline indicate that <b>most of DensiTok's improvement comes from generating additional geometry tokens</b>.」 这是全篇少见的、主动缩小自己贡献范围的表述——LAM-VAE 在这里被明确降格为「必要的瓶颈修补」,而不是增益来源。这与第 ① 节「没有 LAM 整个方案变负收益」并不矛盾:它<b>必要但不增益</b>。
+</div>
+
+<h4>关键读数二:质量随 $N$ 单调涨,但 $N>12$ 后收益递减</h4>
+<table>
+<tr><th>区间</th><th>RE10K PSNR 增量</th><th>RE10K AUC@3° 增量</th><th>DL3DV AUC@3° 增量</th><th>耗时增量</th><th>显存增量</th></tr>
+<tr><td>$N$:2→4</td><td class="best">+1.14</td><td class="best">+2.1</td><td>+0.4</td><td>+0.007 s</td><td>+0.669 GB</td></tr>
+<tr><td>$N$:4→8</td><td>+0.41</td><td class="best">+2.5</td><td class="best">+5.5</td><td>+0.042 s</td><td>+0.979 GB</td></tr>
+<tr><td>$N$:8→12</td><td class="fail">−0.18</td><td class="fail">−0.4</td><td>+1.6</td><td>+0.051 s</td><td>+1.232 GB</td></tr>
+<tr><td>$N$:12→16</td><td>+0.25</td><td>+1.7</td><td class="fail">0.0</td><td>+0.049 s</td><td>+1.064 GB</td></tr>
+</table>
+<p>论文原文:「gains diminish beyond $N=12$, making the tradeoff between quality and computational cost less favorable.」 但<b>看表会发现比「递减」更麻烦的事</b>:</p>
+<ul>
+  <li><b>RE10K 在 $N$:8→12 是负增长</b>(PSNR −0.18、AUC −0.4)。论文没提这一处。</li>
+  <li><b>DL3DV 的 AUC@3° 在 $N$:12→16 完全不动</b>(30.4 → 30.4),像是<b>饱和</b>而非递减。</li>
+  <li><b>RE10K 的 PSNR 整体呈锯齿</b>:22.49 → 22.31 → 22.56,不是单调。这说明 $N$ 的影响存在<b>视角采样噪声</b>,单次实验的 ±0.2 dB 差异不宜过度解读。</li>
+</ul>
+
+<h4>关键读数三:显存是主要成本,耗时不是</h4>
+<p>$N$ 从 2 翻到 16(8 倍视角),耗时只从 0.109 s 涨到 0.258 s(<b>2.4 倍</b>),但峰值显存从 5.527 GB 涨到 9.471 GB(<b>1.7 倍</b>,绝对增量近 4 GB)。因为开销主要在 encoder 与重建头对 $NK$ 个 token 的处理上,而 DiT 的迭代次数是固定的。</p>
+<div class="callout warn">
+<b>落地时要注意的口径问题。</b>这张表的耗时(0.109–0.258 s)与 Table 1 里 DensiTok 的 runtime(0.258–0.361 s)看起来重叠但不一致——因为 Table 3 全部是 AnySplat + $n=2$,而 Table 1 覆盖三个 backbone 与四个 $n$。引用数字时必须连 $n$、$N$、backbone 一起说,否则会得到互相矛盾的结论。<span class="uncertain">【存疑】</span>Table 3 的 $N=16$ / 0.258 s 与 Table 1 的 AnySplat $n=2$ / 0.258 s 完全相等,可作为交叉验证；但 $n=5$ 的 0.299 s 与 $n=7$ 的 0.333 s 无从在 Table 3 中对应(Table 3 固定 $n=2$)。
+</div>
+
+<h4>与 $n$ 的混淆:别把 $N$ 和 $n$ 搞混</h4>
+<table>
+<tr><th>符号</th><th>含义</th><th>在 Table 3 中</th><th>在 Table 1/6/7 中</th></tr>
+<tr><td>$n$</td><td><b>观测</b>视角数(喂给 encoder 的真实图像数)</td><td>固定 = 2</td><td>变化 2/3/5/7</td></tr>
+<tr><td>$N$</td><td><b>总</b>视角数(= 观测 + 要补全的未观测)</td><td>变化 2/4/8/12/16</td><td>固定 = 16</td></tr>
+</table>
+<p>两张表是<b>正交的两个方向</b>:Table 3 问「补多少视角划算」,Table 1 问「给多少视角能到什么水平」。读论文时如果把 $N=16$ 当成「输入 16 视角」,就会完全误解主实验——<b>主实验始终是 2/3/5/7 个输入,只是重建 16 个视角</b>。</p>
+<h3>③ 单步推断 vs 多步采样(Table 10):19x 提速的代价</h3>
+<p class="note">原文 caption:<b>Table 10</b>: Effect of one-step finetuning with AnySplat, $d_z=4$, $n=2$, and $N=16$. FM denotes flow matching and NFE denotes the number of DiT forward evaluations.(附录 D.2)</p>
+
+<p>这张表回答一个工程上极关键的问题:<b>Stage 3 的单步微调到底损失了多少质量,又换回了多少速度?</b>它同时放了两个「反例」作对照——不使用 flow matching 预训练的两种训练方式,用来证明「FM 预训练 + 单步微调」这个组合不是随便选的。</p>
+
+<table>
+<tr><th rowspan="2">方法</th><th rowspan="2">NFE</th><th colspan="3">RealEstate10K</th><th colspan="3">DL3DV</th><th rowspan="2">耗时(s)↓</th></tr>
+<tr><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th></tr>
+<tr><td>Deterministic regression</td><td>1</td><td>20.86</td><td>0.712</td><td>0.246</td><td>19.97</td><td>0.631</td><td>0.288</td><td>0.258</td></tr>
+<tr><td>One-step training from scratch</td><td>1</td><td>21.67</td><td>0.746</td><td>0.240</td><td>21.28</td><td>0.670</td><td>0.285</td><td>0.258</td></tr>
+<tr><td>FM pretraining only</td><td>1</td><td>21.56</td><td>0.743</td><td>0.243</td><td>21.09</td><td>0.665</td><td>0.289</td><td>0.258</td></tr>
+<tr><td>FM pretraining only</td><td>8</td><td>21.84</td><td>0.755</td><td>0.236</td><td>21.59</td><td>0.676</td><td>0.279</td><td>0.990</td></tr>
+<tr><td>FM pretraining only</td><td>50</td><td><b>22.86</b></td><td><b>0.773</b></td><td><b>0.217</b></td><td><b>22.81</b></td><td><b>0.709</b></td><td><b>0.246</b></td><td>4.848</td></tr>
+<tr><td><b>FM + one-step finetuning</b></td><td><b>1</b></td><td><b>22.56</b></td><td><b>0.766</b></td><td><b>0.223</b></td><td><b>22.40</b></td><td><b>0.699</b></td><td><b>0.255</b></td><td><b>0.258</b></td></tr>
+</table>
+
+<h4>19x 的算法</h4>
+<table>
+<tr><th>对比</th><th>RE10K PSNR</th><th>RE10K LPIPS</th><th>耗时</th><th>倍数</th></tr>
+<tr><td>FM 50 NFE(质量上界)</td><td>22.86</td><td>0.217</td><td>4.848 s</td><td>1x</td></tr>
+<tr><td>FM + 单步微调(实际用)</td><td>22.56</td><td>0.223</td><td>0.258 s</td><td><b>18.8x</b></td></tr>
+<tr><td>绝对损失</td><td class="fail">−0.30 dB</td><td class="fail">+0.006</td><td>−4.59 s</td><td>—</td></tr>
+</table>
+<p>用 <b>0.30 dB 与 0.006 的 LPIPS</b> 换 <b>18.8 倍加速</b>,论文写「approximately 19x」。这个交换比在工程上几乎无争议。</p>
+
+<div class="callout key">
+<b>但 19x 不是对原方法的加速。</b>必须看清楚分母:19 倍是相对<b>自己的 50 步迭代采样</b>(4.848 s)算的,而不是相对原 AnySplat(0.100 s)。<b>单步的 DensiTok 仍然是原 AnySplat 的 2.58 倍慢</b>(0.258 vs 0.100 s)。真正的加速比要分清三组数字:
+<ul>
+<li><b>vs 自己的迭代采样</b>: 18.8x(0.258 ← 4.848)</li>
+<li><b>vs 原 AnySplat</b>: 0.39x,即 <b>慢 2.58 倍</b>(0.258 ← 0.100)</li>
+<li><b>vs 扩散类方法 GLD</b>: 约 133–151x(0.510–0.579 ← 76.824,见 Table 8)</li>
+</ul>
+论文正文同时用了第一组与第三组的表述,但<b>从未与第二组直接对比</b>。这是这类「插件加速」论文的常见口径问题——加速比的说服力完全取决于选谁当基线。
+</div>
+
+<h4>两个反例:为什么必须是「FM 预训练 + 单步微调」</h4>
+<p>论文在设计上保证了公平性:两个基线(deterministic regression、one-step from scratch)都<b>保留同样的相机条件 DiT 架构、同样冻结的 backbone、同样的 Stage 1 LAM-VAE</b>,只是 DiT 从随机初始化开始训练、不做 flow matching 预训练。所以差异纯粹来自训练目标。</p>
+<table>
+<tr><th>对比对象</th><th>RE10K PSNR</th><th>Δ vs 最终方案</th><th>结论</th></tr>
+<tr><td>Deterministic regression(直接回归均值)</td><td>20.86</td><td class="fail">−1.70</td><td>完全学不会——<b>均值回归把多模态的补全压成了模糊解</b></td></tr>
+<tr><td>One-step from scratch(不预训练直接学单步)</td><td>21.67</td><td class="fail">−0.89</td><td>比回归好, 但仍明显差于两阶段</td></tr>
+<tr><td>FM 预训练,1 NFE(不微调直接单步采样)</td><td>21.56</td><td class="fail">−1.00</td><td><b>甚至连 scratch 都不如</b>——未微调的单步采样等同于在 $t=1$ 附近盲猜</td></tr>
+<tr><td><b>FM 预训练,1 NFE + 微调</b></td><td><b>22.56</b></td><td>—</td><td>微调带来 +1.00, 恰好补回并超过</td></tr>
+</table>
+<div class="callout warn">
+<b>最容易忽略的一行是「FM pretraining only, 1 NFE = 21.56」。</b>它比「from scratch, 1 NFE = 21.67」<b>还低 0.11</b>。也就是说:<b>光有 flow matching 预训练、不做单步微调,单步推断是没用的</b>。这否定了「FM 可以天然单步采样」的常见误解——标准 FM 是从 $t=1$ 到 $t=0$ 的 ODE,单步只在 $t=1$ 处估一次速度,误差极大。Stage 3 的 20k 次微调(占总量 420k 的 4.8%)才是单步可用的真正原因。
+</div>
+
+<h4>NFE 的边际收益</h4>
+<table>
+<tr><th>NFE</th><th>RE10K PSNR</th><th>相对 1 NFE 增量</th><th>耗时</th><th>每步耗时</th></tr>
+<tr><td>1</td><td>21.56</td><td>—</td><td>0.258 s</td><td>0.258 s</td></tr>
+<tr><td>8</td><td>21.84</td><td class="best">+0.28</td><td>0.990 s</td><td>0.124 s</td></tr>
+<tr><td>50</td><td>22.86</td><td class="best">+1.30</td><td>4.848 s</td><td>0.097 s</td></tr>
+</table>
+<p>从 1 步到 8 步(7 倍算力)只换 0.28 dB;从 8 步到 50 步(6.25 倍算力)换 1.02 dB。<b>前 8 步几乎白费</b>——这条曲线在低 NFE 区间极平,说明 flow matching 的轨迹在 $t$ 靠近 1 的一端变化剧烈、在 $t$ 靠近 0 的一端才收敛。这也解释了 Stage 3 微调为什么有效:它专门把 $t=1$ 附近的单点估计校准到最终解上。</p>
+
+<h4>这张表的隐藏信息:与 Table 1 的对照</h4>
+<p>Table 10 的最终方案(22.56 / 22.40)与 Table 1 的 AnySplat+DensiTok $n=2$ 完全一致(22.56 / 22.40)。说明<b>主实验用的就是单步版本</b>,没有偷偷用 50 步。这一点值得肯定——不少论文在消融里用便宜配置、在主表里用贵配置。</p>
+<h3>④ 潜变量通道数 d_z(Table 11):4 → 16 的收益高度不均</h3>
+<p class="note">原文 caption:<b>Table 11</b>: Effect of latent channel count with AnySplat, $N=16$, and one-step inference.(附录 D.3, 主实验固定 $d_z=4$)</p>
+
+<p>整个 DensiTok 的压缩瓶颈就在 $d_z$:每图 $K$ 个 token、$L$ 层、$d_f$ 通道, 全被压进 <b>$K$ 个 4 维向量</b>。把 $d_z$ 提到 16 是最直接的「放宽瓶颈」手段。这张表只测了两个值(4 与 16), 跨度不大但信息量很足。</p>
+
+<table>
+<tr><th rowspan="2">$n$</th><th rowspan="2">$d_z$</th><th colspan="4">RealEstate10K</th><th colspan="3">DL3DV</th></tr>
+<tr><th>PSNR↑</th><th>AUC@3°↑</th><th>$\delta_{1.25}$↑</th><th>AbsRel↓</th><th>PSNR↑</th><th>AUC@3°↑</th><th>AbsRel↓</th></tr>
+<tr><td rowspan="2">2</td><td>4</td><td>22.56</td><td>26.7</td><td>0.846</td><td>0.153</td><td>22.40</td><td>30.4</td><td>0.170</td></tr>
+<tr><td>16</td><td class="best">22.64</td><td class="best">27.5</td><td class="best">0.854</td><td class="best">0.151</td><td class="fail">22.24</td><td class="best">39.6</td><td class="best">0.164</td></tr>
+<tr><td rowspan="2">3</td><td>4</td><td>24.28</td><td>25.8</td><td>0.853</td><td>0.146</td><td>24.28</td><td>34.4</td><td>0.158</td></tr>
+<tr><td>16</td><td class="best">24.57</td><td class="best">27.1</td><td class="best">0.862</td><td class="best">0.145</td><td>24.29</td><td class="best">38.5</td><td class="best">0.155</td></tr>
+<tr><td rowspan="2">5</td><td>4</td><td>25.35</td><td class="fail">25.2</td><td>0.852</td><td>0.141</td><td>25.33</td><td>33.5</td><td>0.153</td></tr>
+<tr><td>16</td><td class="best">25.88</td><td class="best">25.9</td><td class="best">0.860</td><td class="best">0.132</td><td class="best">25.56</td><td class="best">40.0</td><td class="best">0.151</td></tr>
+<tr><td rowspan="2">7</td><td>4</td><td>25.89</td><td class="fail">24.5</td><td>0.853</td><td>0.137</td><td>25.71</td><td>34.0</td><td>0.151</td></tr>
+<tr><td>16</td><td class="best">26.45</td><td class="best">25.6</td><td class="best">0.857</td><td class="best">0.130</td><td class="best">26.04</td><td class="best">39.0</td><td>0.150</td></tr>
+</table>
+
+<h4>$d_z$ 真正买到的是相机精度,不是表观</h4>
+<table>
+<tr><th>指标</th><th>$n=2$</th><th>$n=3$</th><th>$n=5$</th><th>$n=7$</th><th>模式</th></tr>
+<tr><td>RE10K PSNR</td><td>+0.08</td><td>+0.29</td><td>+0.53</td><td>+0.56</td><td>随 $n$ 增大而<b>增大</b></td></tr>
+<tr><td>RE10K AUC@3°</td><td>+0.8</td><td>+1.3</td><td>+0.7</td><td>+1.1</td><td>小幅、无明显趋势</td></tr>
+<tr><td>DL3DV PSNR</td><td class="fail">−0.16</td><td>+0.01</td><td>+0.23</td><td>+0.33</td><td>由负转正</td></tr>
+<tr><td><b>DL3DV AUC@3°</b></td><td class="best">+9.2</td><td class="best">+4.1</td><td class="best">+6.5</td><td class="best">+5.0</td><td><b>唯一大幅、且稳定的增益</b></td></tr>
+<tr><td>DL3DV AbsRel</td><td class="best">−0.006</td><td class="best">−0.003</td><td class="best">−0.002</td><td class="best">−0.001</td><td>持续改善但幅度递减</td></tr>
+</table>
+<div class="callout key">
+<b>论文的表述过于笼统,容易造成误读。</b>原文说「The 16-channel variant improves most appearance, camera, and depth metrics across both datasets and input counts」,但按表逐格数:
+<ul>
+<li><b>DL3DV 的 AUC@3° 涨了 4–9 个百分点</b>,是全部指标里唯一的大幅增益($n=2$ 时 30.4 → 39.6,<b>+9.2</b>)</li>
+<li><b>PSNR 的增益全部在 0.6 dB 以内</b>,而且 <b>DL3DV $n=2$ 是反向的</b>(22.40 → 22.24,−0.16)——这是全表唯一的负值</li>
+<li>RE10K 的 AUC@3° 在 $n=5$ 只涨 0.7,而 DL3DV 同条件是 +6.5,<b>两个数据集的敏感度差一个量级</b></li>
+</ul>
+换句话说:<b>加宽 latent 通道主要救的是「相机能不能定位准」,而不是「画面好不好看」</b>。这与 DensiTok 的机制解释一致——相机头读的是 geometry token 的位置信息,而 $d_z$ 直接决定位置信息能保留多细的分辨率;颜色则可以从外观先验补。
+</div>
+
+<div class="callout warn">
+<b>为什么主实验仍用 $d_z=4$ 而不用 16？</b>论文<b>没有解释</b>。<span class="uncertain">【待核实】</span>从 Table 11 看,16 通道在几乎所有格子都更好(唯一例外是 DL3DV $n=2$ 的 PSNR,−0.16),那主实验固定 4 就是一个可疑的选择。两种可能:① 追求与 VAE 压缩率的叙事一致($L\times d_f\to d_z$ 的压缩比是卖点,$d_z=16$ 会让「2048x 压缩」变成「512x 压缩」);② 参数量/显存考虑。但论文既没给 16 通道的显存开销,也没做这个 trade-off 讨论——<b>这是本节最实质的一处缺失</b>。
+</div>
+
+<p class="note">顺带一个可复用的读表经验:DensiTok 的压缩比是按 $L\times d_f / d_z$ 算的。DA3 是 4 层 × 3072 通道 = 12288,$d_z=4$ 时约 <b>3072x</b>;改到 $d_z=16$ 就只有 768x。论文正文只提了 $d_z=4$ 的压缩比,没提加宽后的变化——讨论「压缩率」这个卖点时,分母的选取需要自己算清楚。</p>
+
+<h3>⑤ Gaussian 头微调(Table 12):n 越大,微调越没用</h3>
+<p class="note">原文 caption:<b>Table 12</b>: Effect of Gaussian head finetuning with AnySplat, $d_z=4$, $N=16$, and one-step inference. <i>Image embedding only</i> denotes finetuning $h_{\mathrm{img}}$ while keeping the remaining pretrained Gaussian head weights frozen.(附录 D.4)</p>
+
+<p>这是<b>回答「插件能不能做到零改动」的关键消融</b>。DensiTok 的卖点之一是 backbone 冻结,但 Gaussian 头要不要一起微调？三种配置:Fully frozen(全冻)、Image embedding only(只微调 $h_{\mathrm{img}}$ 这个图像输入层)、Full finetuning(整个头放开)。</p>
+
+<table>
+<tr><th rowspan="2">$n$</th><th rowspan="2">Gaussian head</th><th colspan="2">RE10K</th><th colspan="2">DL3DV</th><th rowspan="2">相对全冻的 PSNR 增量(RE10K / DL3DV)</th></tr>
+<tr><th>PSNR↑</th><th>AUC@3°↑</th><th>PSNR↑</th><th>AUC@3°↑</th></tr>
+<tr><td rowspan="3">2</td><td>Fully frozen</td><td>22.14</td><td>26.4</td><td>22.01</td><td>30.6</td><td>—</td></tr>
+<tr><td>Image embedding only</td><td>22.56</td><td>26.7</td><td>22.40</td><td>30.4</td><td class="best">+0.42 / +0.39</td></tr>
+<tr><td>Full finetuning</td><td class="best">22.88</td><td class="best">26.8</td><td class="best">22.69</td><td class="fail">30.2</td><td class="best">+0.74 / +0.68</td></tr>
+<tr><td rowspan="3">3</td><td>Fully frozen</td><td>24.07</td><td>25.6</td><td>24.05</td><td>34.1</td><td>—</td></tr>
+<tr><td>Image embedding only</td><td>24.28</td><td>25.8</td><td>24.28</td><td>34.4</td><td class="best">+0.21 / +0.23</td></tr>
+<tr><td>Full finetuning</td><td class="best">24.47</td><td class="best">26.0</td><td class="best">24.50</td><td class="best">34.6</td><td class="best">+0.40 / +0.45</td></tr>
+<tr><td rowspan="3">5</td><td>Fully frozen</td><td>25.24</td><td>25.0</td><td>25.21</td><td>33.6</td><td>—</td></tr>
+<tr><td>Image embedding only</td><td>25.35</td><td>25.2</td><td>25.33</td><td class="fail">33.5</td><td class="best">+0.11 / +0.12</td></tr>
+<tr><td>Full finetuning</td><td class="best">25.47</td><td class="best">25.3</td><td class="best">25.44</td><td class="fail">33.4</td><td class="best">+0.23 / +0.23</td></tr>
+<tr><td rowspan="3">7</td><td>Fully frozen</td><td>25.86</td><td>24.7</td><td>25.68</td><td>33.9</td><td>—</td></tr>
+<tr><td>Image embedding only</td><td>25.89</td><td class="fail">24.5</td><td>25.71</td><td>34.0</td><td class="best">+0.03 / +0.03</td></tr>
+<tr><td>Full finetuning</td><td class="best">25.96</td><td class="fail">24.5</td><td class="best">25.76</td><td class="best">34.1</td><td class="best">+0.10 / +0.08</td></tr>
+</table>
+
+<h4>差距随 $n$ 单调趋零</h4>
+<table>
+<tr><th>$n$</th><th>Image-emb 增量(RE10K)</th><th>Full FT 增量(RE10K)</th><th>论文归因</th></tr>
+<tr><td>2</td><td>+0.42</td><td>+0.74</td><td rowspan="4">原文:「the smaller spacing between input views along the same camera trajectory. Closer input views provide better coverage in the <b>warped color prior</b>, reducing the impact of holes and the need for appearance adaptation.」</td></tr>
+<tr><td>3</td><td>+0.21</td><td>+0.40</td></tr>
+<tr><td>5</td><td>+0.11</td><td>+0.23</td></tr>
+<tr><td>7</td><td class="best">+0.03</td><td class="best">+0.10</td></tr>
+</table>
+<div class="callout key">
+<b>这个趋势给出了一个非常干净的工程结论:$n\ge 5$ 时可以把 Gaussian 头完全冻死。</b>增量在 $n=7$ 只有 0.03 dB——完全在噪声范围内。而 $n=2$ 时全冻要付 0.42 dB 的代价。所以「要不要微调」不是一个二元问题,而是<b>取决于你的目标视角密度</b>:
+<ul>
+<li><b>极稀疏($n=2$–3),追求极限质量</b>: 值得微调(+0.4 dB 量级)</li>
+<li><b>中等稀疏($n\ge 5$),追求零侵入部署</b>: <b>完全不微调,0.1 dB 以内的损失可以忽略</b></li>
+</ul>
+</div>
+<p>论文的归因很值得记下来:它把这一现象归到<b>外观特征融合模块(A.2)的 warp 颜色先验</b>上——$n$ 越大,观测视角沿轨迹排得越密,warp 出来的颜色先验覆盖越完整、空洞越少,于是「外观适配」的负担越轻,微调 $h_{\mathrm{img}}$ 或整个头能补的东西就越少。<b>这是一个可验证的因果链,不只是事后解释</b>:如果归因成立, 那么在不启用外观融合的 backbone(论文说 WorldMirror / DA3 不需要该模块)上,这个趋势就未必成立——但论文<b>没有做这个交叉验证</b>。<span class="uncertain">【待核实】</span></p>
+
+<h4>相机精度与微调基本无关</h4>
+<p>从 AUC@3° 列看,三种配置几乎完全一样,甚至有几处微调后反而略降(DL3DV $n=2$:30.6 → 30.4 → 30.2;$n=5$:33.6 → 33.5 → 33.4;RE10K $n=7$:24.7 → 24.5 → 24.5)。<b>这是机制决定的</b>:相机头读的是 geometry token,而 Gaussian 头微调改的是高斯参数头,两者在 backbone 里是<b>并列的两个解码头</b>,互不影响。这个「无关性」本身就是一个有说服力的证据——说明 Table 1 里相机 AUC 的提升确实是 token 补全带来的,而不是头部微调的副作用。</p>
+
+<div class="callout tip">
+<b>三张附录消融(Table 11 / 12)的共同模式:DensiTok 的增益对「头要不要动」极不敏感,对「latent 要多宽」相当敏感。</b>工程上的优先级因此很清楚——如果你的目标是保住 camera / depth 精度,该花的力气在 $d_z$ 与 $N$ 上;Gaussian 头的微调属于最后 0.1–0.4 dB 的打磨,可以放到最后再决定。
+</div>
+
+</section>
+
+<!-- =================== 14 =================== -->
+<section class="section" id="s14">
+<h2><span class="num">14</span>🔄 同类方法对比分析</h2>
+
+<p>这一节要把 DensiTok 放回方法谱系里看清楚。它同时面对两类竞品——<b>稀疏前馈 3DGS</b>(补几何)与<b>扩散 NVS</b>(补像素),而本文的赌注是「这两者之间还有第三条路:补 token」。</p>
+
+<div class="callout warn">
+<b>先声明本表的可信度分层,否则容易被误导。</b>「推理耗时」与「关键指标」两列中,除<b>末四行(论文未评)</b>外<b>全部出自本文 Table 7 / Table 8,可逐格回原文核对</b>;其余各列(输入假设 / 场景表示 / 监督信号 / 训练数据 / 训练时长 / 显存 / 开源)是本文<b>没有提供的</b>,本笔记据各方法原文与仓库公开信息填写——其中「开源」一列经 GitHub API 逐个查证(仓库名 + stars + license);「监督信号」「训练数据」两列<b>未逐篇回原文复核</b>,凡无把握处一律写 — 而不是据记忆填。
+</div>
+
+<h3>14.1 横向对比表(固定 11 维;缺失写 —,不省列)</h3>
+<table>
+<tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标<br>RE10K PSNR<br>($n{=}2$ / $n{=}7$)<br><small>分辨率见每行标注</small></th><th>开源</th></tr>
+<tr><td>pixelSplat</td><td>2023</td><td>2 视角 + <b>内参 + 外参</b></td><td>像素对齐 3DGS</td><td>光度 + 深度</td><td>RE10K</td><td>—</td><td>0.088 s(256)</td><td>—</td><td>26.125 / —(未评)<br><small>256</small></td><td>✅ dcharatan/pixelsplat · MIT</td></tr>
+<tr><td>MVSplat</td><td>2024</td><td>多视角 + <b>内参 + 外参</b></td><td>像素对齐 3DGS(代价体)</td><td>光度 + 深度</td><td>RE10K</td><td>—</td><td>0.039 s(256)</td><td>—</td><td>26.319 / 21.244<br><small>256</small></td><td>✅ donydchen/mvsplat · MIT</td></tr>
+<tr class="best"><td>DepthSplat</td><td>2024</td><td>多视角 + <b>内参 + 外参</b></td><td>像素对齐 3DGS(深度预训练)</td><td>光度 + 深度</td><td>RE10K</td><td>—</td><td>0.067 s(256)</td><td>—</td><td><b>26.636</b> / 22.742<br><small>256</small></td><td>✅ cvg/depthsplat · MIT</td></tr>
+<tr><td>VolSplat</td><td>2025</td><td>多视角 + <b>内参 + 外参</b></td><td>体素对齐 → 3DGS</td><td>光度</td><td>RE10K</td><td>—</td><td>0.093 s → 0.256 s</td><td>—</td><td>21.730 / 28.328<br><small>256</small></td><td>✅ ziplab/VolSplat · MIT</td></tr>
+<tr><td>NoPoSplat</td><td>2024</td><td>$n$ 视角 + <b>仅内参</b></td><td>像素对齐 3DGS(规范空间)</td><td>光度</td><td>RE10K</td><td>—</td><td>0.052 s(256)</td><td>—</td><td>22.470 / —(未评)<br><small>256</small></td><td>✅ cvg/NoPoSplat · MIT</td></tr>
+<tr><td>SPFSplat</td><td>2025</td><td>$n$ 视角 + <b>仅内参</b></td><td>像素对齐 3DGS</td><td>光度</td><td>—</td><td>—</td><td>0.053 s → 0.096 s</td><td>—</td><td>21.850 / 24.478<br><small>256</small></td><td><span class="uncertain">【待核实】</span>未定位到官方仓库</td></tr>
+<tr><td>Splatt3R</td><td>2024</td><td>$n$ 视角 · <b>无相机</b></td><td>像素对齐 3DGS(MASt3R 匹配)</td><td>光度</td><td>—</td><td>—</td><td>0.811 s(256)</td><td>—</td><td>20.731 / —(未评)<br><small>256</small></td><td>✅ btsmart/splatt3r</td></tr>
+<tr><td>FreeSplatter</td><td>2024</td><td>$n$ 视角 · <b>无相机</b></td><td>像素对齐 3DGS(位姿自估)</td><td>光度</td><td>—</td><td>—</td><td>0.201 s → 0.760 s</td><td>—</td><td>22.973 / 19.203<br><small>256</small></td><td>✅ TencentARC/FreeSplatter</td></tr>
+<tr><td>NVComposer</td><td>2024</td><td>2 视角 + 相机</td><td>扩散生成 RGB → 再重建</td><td>多视角扩散</td><td>—</td><td>—</td><td>48.502 s(512)</td><td>—</td><td>14.897 / —(未评)<br><small>512</small></td><td><span class="uncertain">【待核实】</span></td></tr>
+<tr><td>Matrix3D</td><td>2025</td><td>$n$ 视角 + 相机</td><td>统一几何-外观扩散</td><td>扩散 + 相机条件</td><td>—</td><td>—</td><td>25.592 s → 110.844 s(512)</td><td>—</td><td>20.934 / 22.993<br><small>512</small></td><td>✅ apple/ml-matrix3d(含权重)</td></tr>
+<tr><td>GLD</td><td>2026</td><td>$n$ 视角 + 相机</td><td><b>几何特征空间</b>扩散</td><td>特征空间扩散</td><td>—</td><td>—</td><td>76.824 s → 150.433 s(512)</td><td>—</td><td>23.608 / 26.918<br><small>512</small></td><td><span class="uncertain">【待核实】</span></td></tr>
+<tr class="best"><td><b>DensiTok (AnySplat)</b></td><td>2026</td><td>$n$ 视角 · <b>无相机</b></td><td>冻结 backbone 3DGS<br>+ token 空间补全</td><td>光度 + 相机 + 深度<br>+ flow matching</td><td>RE10K / DL3DV<br>(各训一套)</td><td>未公布<br>(420k 步 · 4×RTX 6000 Ada)</td><td><b>0.071 s → 0.172 s</b>(256)<br>0.510 s → 0.656 s(512)</td><td><b>5.527 – 9.471 GB</b><br>($N{=}2\to16$)</td><td>24.628 / <b>28.522</b><br><small>256(512 下 24.435 / 28.527)</small></td><td>⚠️ 仅 README<br>无源码无权重</td></tr>
+<tr><td>DensiTok (WorldMirror)</td><td>2026</td><td>$n$ 视角 · 无相机</td><td>同上</td><td>同上</td><td>同上</td><td>同上</td><td>0.071 s → 0.186 s(256)</td><td>同上</td><td><b>25.079</b> / 28.087<br><small>256(512 下 <b>24.882</b> / 28.087)</small></td><td>同上</td></tr>
+<tr><td>DensiTok (DA3)</td><td>2026</td><td>$n$ 视角 · 无相机</td><td>同上</td><td>同上</td><td>同上</td><td>同上</td><td>0.081 s → 0.193 s(256)</td><td>同上</td><td>24.233 / 28.225<br><small>256(512 下 24.598 / <b>28.762</b>)</small></td><td>同上</td></tr>
+<tr><td colspan="11" style="color:#fcd34d"><b>以下为论文<b>未评估</b>、但同处这条谱系上的方法(无共同协议,指标一律写 —)</b></td></tr>
+<tr><td>原版 3DGS</td><td>2023</td><td>密集视角 + <b>精确位姿 + COLMAP 初值</b></td><td>显式各向异性 Gaussian</td><td>光度(逐场景)</td><td>单场景本身</td><td>分钟级 / 场景</td><td>—</td><td>—</td><td>—(协议不同)</td><td>✅ graphdeco-inria/gaussian-splatting<br><small>非商用许可</small></td></tr>
+<tr><td><a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a></td><td>2025 / 2026</td><td>$n$ 视角 · 无相机</td><td><b>不产 3DGS</b>(点图 / 深度 / 相机)</td><td>几何监督(相机+深度+点图)</td><td>大规模混合</td><td>—</td><td>—</td><td>—</td><td>—(指标体系不同)</td><td>✅ facebookresearch/vggt</td></tr>
+<tr><td><a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a></td><td>2026</td><td>多视角 · <b>需位姿</b>(pose 模式)</td><td>冻结 DA3 几何 + 轻量高斯头</td><td>光度(尺度对齐 GT 位姿反投影)</td><td>ETH3D / ScanNet++ 等</td><td>8×H20 · 100K 步</td><td>—</td><td>—</td><td>—(多数据集协议)</td><td>⚠️ 仅推理代码<br>需登记 HF 权重</td></tr>
+<tr><td><a href="3D-20261112-SplatAnything.html">SplatAnything</a><br>(InfiniSplat v3)</td><td>2026</td><td>任意场景 · 可选位姿</td><td>几何基础模型 + GSNorm 高斯头</td><td>光度</td><td>OmniObject3D 等</td><td>不可复现<br>(64×H20)</td><td>—</td><td>—</td><td>—(跨场景尺度协议)</td><td>⚠️ 仅推理 + 权重<br>PRL v1.0</td></tr>
+</table>
+<p class="note">几处口径必须先说清:① 括号内 256 / 512 是评测分辨率——Table 7 在 $256\times256$、Table 8 在 $512\times512$,<b>两组数字不可横向比较</b>(同一 DensiTok 在 512 下 PSNR 反而更高,但耗时约 7 倍);② Table 8 中 GLD 与 DensiTok 因要求边长被 14 整除,实际推理在 $504\times504$ 再 resize 到 512,不是原生 512;③ 显存列只有 DensiTok 有数据,来自 Table 3 峰值显存,<b>论文未说明是训练还是推理、单卡还是单序列</b> <span class="uncertain">【待核实】</span>;④ 训练时长四家全未公开,本文也只给迭代数不给墙钟;⑤ SPFSplat / NVComposer / GLD 三个仓库未能定位,开源列不做猜测。</p>
+
+<div class="callout warn">
+<b>⑥ 更需警惕的是:同一方法、同一个名义 $n$,在论文自己的两张表里数值就对不上——而原文其实交代了原因。</b>逐格比对发现两处明显落差:<b>AnySplat $n{=}3$</b> 在 Table 1(稠密/稀疏主表)是 <b>24.28</b>,在 Table 7 是 <b>26.919</b>;<b>WorldMirror $n{=}2$</b> 在 Table 1 是 <b>22.06</b>,在 Table 7 是 <b>25.079</b>,差近 3 dB。原文 C 节自己写道:因为 Table 7 改在 $256\times256$ 评测,<b>「we perform test-view sampling again. The resulting sampling indices differ from those used in Tables 1 and 6」</b>——即<b>两张表的测试视角是重新抽的,索引不同</b>。所以这不是笔误,也不是简单缩放,而是<b>换了评测样本</b>。两个连带结论:① 两表差值不能当「分辨率带来的增益」解读;② <b>引用必须以「哪张表 + 哪个分辨率」为单位整体取用</b>,混取会凭空造出不存在的对比。本笔记因此把「论文自评(Table 1/6)」与「跨方法横比(Table 7/8)」两套数严格分置在 §12 与 §14.1。</div>
+
+<p class="note">顺带补一个只在正文出现、表注里看不到的细节:<b>DensiTok 在跨方法对比的两张表里都不是原生尺寸推理</b>。Table 7 的 $256\times256$ 是先在 $252\times252$ 推理再 resize,Table 8 的 $512\times512$ 同理在 $504\times504$ 推理再 resize(都是为了让边长被 patch size 14 整除)。<b>所以这两张表的「耗时」实际对应的是更小尺寸的前向</b>,做速度对比时要把这层缩放算进去,否则会低估它的真实 512 成本。相对地,本文自有协议的主表(Table 1 / Table 6)用 $294\times518$——高宽恰好都是 14 的整数倍,<b>不需要 resize,是最干净的评测</b>。有趣的是,为了和别人可比,补全方法反而要在两张对比表里"降级"评测。</p>
+
+
+
+<h3>14.2 对比结论(机制级,不是罗列数字)</h3>
+<ol>
+  <li><b>vs 标定稀疏前馈(DepthSplat / VolSplat):赢在「少一个约束」,输在「起步就落后」。</b>$n=2$ 时 DepthSplat 26.636 比最好的 DensiTok 变体(WorldMirror 25.079)<b>高 1.56 dB</b>,而且更快(0.067 s vs 0.071 s)。这不是调参差距,是<b>输入信息量的差距</b>:DepthSplat 把 GT 内外参直接喂进代价体,射线几何是给定的;DensiTok 要先从图像估相机,再拿估出来的相机去插值、再拿插值相机去条件化 DiT——<b>误差在链条上累积了两次</b>。反过来,$n\ge5$ 时 DensiTok(AnySplat)反超 VolSplat($n{=}5$:28.034 vs 27.404;$n{=}7$:28.522 vs 28.328),机制是<b>观测越多、DiT 的条件越紧</b>:观测 latent 与观测相机都是硬条件,补出来的 token 被钉得越死。所以「DensiTok 适合什么场景」的准确答案是<b>「$\ge$4–5 视角且完全拿不到相机」</b>,而不是笼统的「稀疏」。</li>
+  <li><b>vs NoPoSplat(仅需内参):4.62 dB 的差距主要来自「补全」,不是「免相机」。</b>$n=3$ 时 DensiTok(AnySplat)26.919 vs NoPoSplat 22.298。这一条最容易被读反——手机视频的 EXIF 里通常就有内参,<b>省掉内参本身值不了 4.6 dB</b>。真正的来源是<b>作用位置不同</b>:NoPoSplat 把观测图在规范空间里对齐,它做的是「把已有证据摆正」;DensiTok 是在 token 层<b>无中生有地补出未观测区域的证据</b>。前者受物理上限约束(没拍的像素永远不会自己出现),后者在 4 维 latent 里补的是「这个区域该长什么样」的压缩先验。这也是本文标题那句 "not pixels but tokens" 的实证含义。</li>
+  <li><b>vs FreeSplatter / Splatt3R(同为无相机):赢在「表示层级」,快在「少一次全分辨率编码」。</b>DensiTok 在 $n\in\{2,3,5,7\}$ 上 PSNR / SSIM / LPIPS 全面超过 FreeSplatter,唯一例外是 DA3 变体在 DL3DV $n=2$ 的 PSNR。耗时上 0.071 s(Splatt3R 的 1/11)也说明差距来源:FreeSplatter / Splatt3R 走的是<b>匹配 → 三角化 → 逐视角 Gaussian 回归</b>的像素级路线,图像分辨率直接决定代价;DensiTok 走的是<b>整条 token 栈 → 4 通道 latent → DiT</b>,其中 <b>DiT 那一段是与分辨率脱钩的</b>(它只在 $L\times d_z$ 上跑),<b>但前面的 backbone encoder 仍需全分辨率前向</b>——这正是它从 256 的 0.071 s 涨到 512 的 0.510 s(约 7×)的来源。<b>加速收益落在「补全」环节,不落在「编码」环节</b>,这一点对工程预算的分配很关键。</li>
+  <li><b>vs 扩散 NVS(GLD / Matrix3D / NVComposer):同为「补」,差在「补在哪一层」。</b>GLD 已经是这三家里最接近本文思路的——它<b>把扩散搬到几何特征空间</b>,而不是像素空间,所以 $n=2$ 拿 23.608,远高于 NVComposer 的 14.897。DensiTok 比 GLD 再高一档(24.435 vs 23.608,<b>同为 $n=2$ / $512\times512$ / Table 8 同一批视角</b>)且在 $n$ 增大时差距持续拉开($n=7$:28.527 vs 26.918,<b>+1.61 dB</b>),但真正的分水岭是<b>成本量级</b>:GLD $n=7$ 要 150.433 s,DensiTok 0.656 s,<b>约 229×</b>。机制上这来自采样步数——GLD 是多步迭代去噪,DensiTok 的 Stage 3 把它压成一步(Table 10 自己给了 19× 的实测:多步与单步在 $n=2$ 下 PSNR 只差 0.02 dB 量级,却换来 19 倍速度)。</li>
+  <li><b>「打过自己的稠密参考」的临界 $n$ 因 backbone 而异,这条最能说明插件的能力边界。</b>回 Table 1 同一口径看:AnySplat 的稠密参考($N{=}16$)是 <b>24.04</b>,+DensiTok 在 $n=2$ 时 22.56(还差 1.48)、<b>$n=3$ 时 24.28 首次超过</b>;WorldMirror 的稠密参考是 <b>25.11</b>,+DensiTok 在 $n=2$ 时 22.06、$n=3$ 时 23.81、$n=5$ 时 24.91 都还没到,<b>要到 $n=7$ 的 25.31 才超过</b>。同一套插件、同样的训练步数,临界面却从 3 滑到 7——差别只在被冻结的 backbone。这条对比是本文最硬的证据(<b>bottleneck 确实在 token 不在头</b>:补上 token 就能用 3 张图打过 16 张图),<b>同时也是最大的局限:插件不能突破 backbone 自己的上界</b>,backbone 越强,需要补的视角越多才能体现收益。<span class="uncertain">【推测】</span>WorldMirror 临界点更晚,可能因其稠密参考本身已接近该 backbone 的表达上限。</li>
+</ol>
+
+<div class="callout tip">
+<b>一句话的谱系定位:</b>DensiTok 不是「更好的 3DGS 重建器」,而是<b>「给已有重建器装上缺失视角的先验」</b>。它把「补像素」类方法(扩散 NVS)的<b>内容自由度</b>砍掉(因为条件锁死在 token 上),同时也把「补几何」类方法(VolSplat 等)的<b>输入依赖</b>砍掉(不要内外参)。代价是两头都不极致:<b>$n=2$ 打不过要相机的 DepthSplat,画质细腻度也打不过真正的大扩散模型</b>(本文没做 512 以上的分辨率,也没比 SDXL 级生成)。它选的是一个很具体的生态位——<b>手机随手拍的少量无标定视频,要一步出可用的 3DGS</b>。
+</div>
+
+<h3>14.3 两组定性对比(原文 Figure 8 / Figure 9)</h3>
+
+<p>这两张附录图不是可有可无的补充:<b>Figure 8 按「需要哪些相机信息」分组排布</b>,把 Table 7 的语义直接画了出来;Figure 9 则是唯一一处把 DensiTok 与扩散 NVS 放在同一屏里逐像素比的地方。</p>
+
+<div class="figure">
+  <img src="images/2610.07958/app_fig4.png" loading="lazy" alt="DensiTok 与稀疏前馈 3DGS 的定性对比,按所需相机输入分组">
+  <div class="caption"><b>图8</b>(原文 Figure 8,C.4)<b>DensiTok 与稀疏前馈 3DGS 的定性对比,按「方法所需的输入相机信息」分组排列</b>。最左列是两路输入视角。原文结论(AnySplat backbone,无需内参外参):在<b>同为「不需要内外参」的方法中</b>,DensiTok 比 FreeSplatter 与 Splatt3R 物体边界更清晰、结构性伪影更少;相对<b>需要内参(有或无外参)的方法</b>,视觉质量也达到「更好或相当」。<b>这张图的排列方式本身就是论据</b>——它让读者一眼看到「每下降一格约束,画质掉多少」,而 DensiTok 的位置落在「零约束」这一档里最好的地方。</div>
+</div>
+
+<div class="figure">
+  <img src="images/2610.07958/app_fig5.png" loading="lazy" alt="DensiTok 与 GLD / Matrix3D / NVComposer 在 n=2 下的定性对比">
+  <div class="caption"><b>图9</b>(原文 Figure 9,C.5)DensiTok 与 <b>GLD / Matrix3D / NVComposer</b> 在 $n=2$、$512\times512$ 下的定性对比;最左列为输入视角,GT 为真值目标图,红框区域在每行渲染图下方放大。原文结论:NVComposer <b>改变了书架构成与床的外观</b>(生成「看起来合理但离开目标场景」的内容);GLD 与 Matrix3D 保住了整体布局,但放大后的<b>货架摆件、床架区域出现局部形状畸变</b>;DensiTok 更接近 GT 的场景内容、物体排布与几何结构。这与 Table 8 的 PSNR 排序一致,也是「任务目标不同」的直接视觉证据——扩散 NVS 允许改内容,DensiTok 的内容被条件锁死。</div>
+</div>
+
+<div class="callout warn">
+<b>这两张图有一个共同的读图陷阱。</b>两张都是<b>「无 / 有 DensiTok」同 backbone 对比</b>,而不是跨方法同预算对比(Figure 8 虽是跨方法,但每个基线用的是它论文默认的视角数)。因此它们能证明「插件有效」,但<b>不能</b>用来论证「DensiTok 比 GLD 更适合某类场景」——后者只能靠 Table 8 的同 $n$ 同分辨率数字。<span class="uncertain">【推测】</span>原文选择这种排布,是因为跨方法的默认视角数根本不可对齐。
+</div>
+
+<h3>14.4 演进定位表</h3>
+<table>
+<tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>逐场景优化 3DGS</td><td>3DGS / <a href="3D-20240326-2DGS.html">2DGS</a> / GOF</td><td>逐场景光度监督,无跨场景先验</td><td>分钟级/场景,必须密集视角 + 精确位姿</td></tr>
+<tr><td>像素对齐前馈(标定)</td><td>pixelSplat → MVSplat → DepthSplat → VolSplat</td><td>相机射线绑定 + 深度/代价体先验</td><td>必须给内外参;视角少则崩溃;空间不灵活</td></tr>
+<tr><td>像素对齐前馈(免外参)</td><td>NoPoSplat / PF3plat / SPFSplat / SelfSplat</td><td>规范空间对齐 + 位姿自估</td><td>只「摆正」已有证据,不「补」缺失证据</td></tr>
+<tr><td>像素对齐前馈(全免)</td><td>Splatt3R / FreeSplatter</td><td>匹配 → 三角化 → 回归,MASt3R 类特征</td><td>依赖匹配质量;分辨率直接决定代价;少视角模糊</td></tr>
+<tr><td>几何基础模型 + 尺度归一</td><td><a href="3D-20261112-SplatAnything.html">SplatAnything</a>(InfiniSplat v3)</td><td>GSNorm 高斯间距归一,固定高斯中心</td><td>做「任意场景尺度一致性」而非少视角补全;未观测区域仍是空洞</td></tr>
+<tr><td>扩散 NVS(像素空间)</td><td>NVComposer / Matrix3D</td><td>大规模图像先验 + 相机条件</td><td>会改内容(生成「合理但错」的物体);秒级;不能直接出 3DGS</td></tr>
+<tr><td>扩散 NVS(几何特征空间)</td><td>GLD</td><td>把扩散搬到几何特征上,内容受几何约束</td><td>仍是多步去噪,150 s 量级;仍需相机</td></tr>
+<tr><td>几何基础模型 + 查询解码</td><td><a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> / <a href="3D-20251113-Depth-Anything-3.html">DA3</a></td><td>大规模几何预训练,统一出相机/深度/点图</td><td>输出受限于训练时的视角密度;不主动补未观测区</td></tr>
+<tr><td>冻结几何模型 + 轻量解码头</td><td><a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> / <a href="3D-20261105-QuerySplat.html">QuerySplat</a></td><td>冻结骨干不训(几何先验固化),只训轻量属性/查询头</td><td>InfiniSplat 依赖 GT 位姿反投影;QuerySplat 需靠 VGM 定坐标系,且不做视角补全</td></tr>
+<tr class="best"><td><b>冻结 backbone + token 空间补全</b></td><td><b>DensiTok(本文)</b></td><td>把「缺的证据」压成 4 维 latent,用单步 flow matching 补</td><td>不能突破 backbone 上界;$d_z{=}4$ 是硬瓶颈;$N&gt;12$ 收益递减;只插值不外推;无源码</td></tr>
+</table>
+
+<h3>14.5 库内交叉链接</h3>
+<p class="refs">DensiTok 的三个 backbone 里,<a href="3D-20251113-Depth-Anything-3.html">Depth Anything 3(DA3)</a> 与 <a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> 属同一谱系(大规模几何预训练),本文直接拿 DA3 当第三个 backbone 并报告了 Table 6;<a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a> 与 <a href="3D-20261105-QuerySplat.html">QuerySplat</a> 走的是<b>「冻结几何模型 + 只训轻量头」</b>的同一条工程哲学,但解决的是不同问题——前者做长序列外推、后者做查询解耦,而 DensiTok 做的是<b>在 token 层补视角</b>;<a href="3D-20261112-SplatAnything.html">SplatAnything</a>(InfiniSplat v3)属同一团队的「几何基础模型 + 轻量属性头」家族,但它的 GSNorm 解决的是<b>跨场景尺度一致性</b>而非少视角补全,与本文不共享 benchmark,是<b>可叠加关系而非竞品</b>;库内暂无 AnySplat / NoPoSplat / DepthSplat / GLD / VolSplat / FreeSplatter 的独立笔记,只能给 arXiv 外链。<a href="3D-20240326-2DGS.html">2DGS</a> 是本文所依赖的 3DGS 表示的基础变体之一。路线层面见综述 <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建 2026 下半年调研</a>(本文在该文中被归入「插件式增强」)与 <a href="3D-20260814-三维重建质量速度Pareto全谱调研.html">质量-速度 Pareto 全谱调研</a>——本文 0.071 s / 24.6 dB 的点位在此之前是空档。</p>
+</section>
+
+<!-- =================== 15 =================== -->
+<section class="section" id="s15">
+<h2><span class="num">15</span>🎯 落地适配</h2>
+
+<p>这一节回答「我的场景能不能用、怎么用、用之前要知道什么」。所有判断都基于前面已核对的机制与数字,并明确区分<b>论文支撑的</b>与<b>本笔记推断的</b>。</p>
+
+<h3>15.1 什么场景值得上这个插件</h3>
+<table>
+<tr><th>你的场景特征</th><th>是否适合</th><th>依据</th></tr>
+<tr><td>手机随手拍,<b>完全拿不到内外参</b>(或 EXIF 不可信)</td><td class="best"><b>✅ 最适合</b></td><td>三个 backbone 全部免内外参(Table 7 的 Intr./Extr. 列全为 ×),且在同类「零约束」方法里最好</td></tr>
+<tr><td>视角数 <b>3–8</b>(不是 2,也不到 16)</td><td class="best"><b>✅ 最适合</b></td><td>AnySplat 变体 $n=3$ 即超过自己的 $N{=}16$ 稠密参考;增益在 $n\in\{3,5,7\}$ 全部为全表最优或次优</td></tr>
+<tr><td>视角数 <b>恰好 2</b></td><td><b>⚠️ 能用但无优势</b></td><td>$n=2$ 时输给需要相机的 DepthSplat 1.56 dB,且耗时还略长</td></tr>
+<tr><td>需要<b>实时/边缘部署</b>(&lt;0.1 s)</td><td class="fail"><b>❌ 不适合</b></td><td>DensiTok 单步仍是原 AnySplat 的 2.58 倍慢($n{=}2$ 时 0.258 vs 0.100 s,Table 1 口径);它的加速对象是扩散类,不是前馈 3DGS</td></tr>
+<tr><td>已经跑通某个 backbone,<b>只是想提升少视角表现</b></td><td class="best"><b>✅ 最适合</b></td><td>插件式设计,encoder/头冻结;但需<b>为该 backbone 重训 420k 步</b>,不能直接套用别的 backbone 的权重</td></tr>
+<tr><td>需要<b>外推到观测区间之外</b>的新视角</td><td class="fail"><b>❌ 不适用</b></td><td>论文明确只做插值,虚拟相机全部落在首末观测之间(§5 Limitations)</td></tr>
+<tr><td>需要<b>高分辨率</b>(1080p+)输出</td><td><b>⚠️ 需自行验证</b></td><td>论文只测 256 与 512;512 下耗时已从 0.071 涨到 0.510 s(约 7×,主要在 encoder)</td></tr>
+<tr><td>拍摄<b>大范围场景</b>($N{=}16$ 视角覆盖很远)</td><td><b>⚠️ 谨慎</b></td><td>$N&gt;12$ 收益递减且显存到 9.471 GB;视角间距大时论文用的是「重叠度分档」采样,实际间距更远可能超出训练分布</td></tr>
+</table>
+
+<h3>15.2 接入时的最小改动面</h3>
+<p>从论文的模块边界看,需要改的地方只有<b>三处</b>,而且都在 backbone 的「层间」而非内部:</p>
+<div class="hdiag">
+  <div class="hbox"><b>① 读出多层级 token</b><small>需知道该 backbone 的层索引与通道数</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>② 插入 LAM-VAE</b><small>编码 + 解码,$d_z{=}4$</small></div>
+  <div class="harrow">→</div>
+  <div class="hbox"><b>③ 插入 DiT</b><small>条件 = latent + mask + 相机</small></div>
+</div>
+<ul>
+  <li><b>前置条件</b>:必须能拿到该 backbone 的预训练权重,并能在冻结状态下跑通「$n$ 张图 → $L$ 层 token」的前向。<b>这是硬门槛</b>——论文三个 backbone 都是这种结构(几何 encoder + 多个解码头)。</li>
+  <li><b>必须自己解决的两件事</b>:① 该 backbone 的<b>层选择</b>(论文对 AnySplat 用 4 层、DA3 是 3072 通道,说明不同 backbone 的层级特征不同,论文用 LAM 的「层级自适应」来吸收这个差异,但<b>并未给出层索引的选取规则</b>);② <b>相机条件的接入点</b>(需要该 backbone 的 camera head 能吐出每视角相机)。</li>
+  <li><b>不必改的</b>:backbone 的 encoder、camera / depth / Gaussian 三个解码头(可选微调 $h_{\mathrm{img}}$)。</li>
+</ul>
+
+<h3>15.3 相机条件的落地细节(最容易踩的地方)</h3>
+<div class="callout warn">
+<b>训练与推理用的相机来自两个完全不同的分布,这是全篇最脆的一环。</b>训练时用 <b>GT 相机乘一个单因子缩放</b>(按「预测中心散布 / GT 中心散布」定标),推理时用 <b>backbone 自己预测的观测相机</b>再插值。也就是说:<b>DiT 从没见过真实预测误差的形态,只见过「GT 被统一缩放」这一种扰动。</b>
+<ul>
+<li><b>后果</b>:如果目标 backbone 的相机预测误差是<b>非均匀</b>的(比如近处准、远处飘,或有系统性尺度漂移),这个单因子对齐无法覆盖,补全质量会明显低于论文数字。论文对此没有任何量化分析。</li>
+<li><b>可操作的对策</b>:接入前先用你的数据统计「预测相机 vs GT 相机」的中心偏差分布。若呈现明显的<b>逐视角方向性偏差</b>(而非统一尺度),应考虑把 §6 的训练轨改成「用模型自己的预测相机 + 加噪」,而不是「GT × 单因子」。</li>
+<li><b>另一个坑</b>:论文<b>未定义「spread」的具体度量</b>(只写 center spread)。复现时必须自己选(中心点两两距离的均值/中位数/最大?)。<span class="uncertain">【待核实】</span></li>
+</ul>
+</div>
+
+<h3>15.4 与现有 pipeline 的拼接建议</h3>
+<p>结合本库已沉淀的前馈 3DGS 路线,三种典型接法:</p>
+<table>
+<tr><th>接法</th><th>怎么做</th><th>适用</th><th>风险</th></tr>
+<tr><td><b>A. 当「预处理插件」</b></td><td>在原有 pipeline 前面加一层:DensiTok 把 $n$ 视角补到 $N{=}16$,再喂给下游(如 3DGS 精修、SfM)</td><td>下游需要一个「视角足够多」的输入</td><td>补出来的视角是<b>生成的</b>,不是真拍的;若下游做优化,可能把生成内容固化成几何错误</td></tr>
+<tr><td><b>B. 当「端到端头」</b></td><td>直接用 DensiTok 的输出(相机/深度/Gaussian)当最终结果</td><td>快速出可用的 3DGS 预览</td><td>质量受限于 backbone 上界;不能超过 §14 表里的数</td></tr>
+<tr><td><b>C. 当「相机初始化器」</b></td><td>只取 DensiTok 的相机 AUC 增益($n=3$ 时 20.0→26.7),把预测相机喂给需要位姿的下游</td><td>下游是 COLMAP 类需要初值的方法</td><td>增益是真的(Table 1),但绝对精度仍远低于 COLMAP;$n$ 小的时候别当唯一来源</td></tr>
+</table>
+<p class="note">对<b>多人/人体重建</b>这类任务(本库 vggt_human 一系的场景),建议走 <b>C + A 组合</b>:先用 DensiTok 的相机头替代/初始化位姿估计,再把补全后的多视角 token 接到人体专用的重建头。但要注意:本文<b>完全没有评估动态场景或人体</b>,RE10K/DL3DV/ETH3D/ScanNet/Mip-NeRF 360 全是静态场景。<span class="uncertain">【推测】</span>token 补全对「同一时刻的静态几何」成立,对运动物体不成立——补出来的视角会与真实时间不一致。</p>
+</section>
+
+<!-- =================== 16 =================== -->
+<section class="section" id="s16">
+<h2><span class="num">16</span>可改进方向分析</h2>
+
+<p>按「论文自己承认的」与「本笔记读出来的」两类分开列,每条给出可验证的判据。</p>
+
+<h3>16.1 论文自己承认的(§5 Limitations)</h3>
+<ol>
+  <li><b>只做插值,不做外推。</b>虚拟相机严格落在首末观测相机之间,评测也只在区间内取样。原文用词很直白:"our results therefore do not establish reconstruction quality for extrapolated viewpoints"。<b>这是一个比它看上去更大的限制</b>——真实拍摄里「想看的视角」经常在轨迹两端之外(比如绕物体转一圈,只看了一半)。作者把「扩展到轨迹之外」列为未来工作,并指出核心难点是<b>新可见几何与外观的一致性</b>。</li>
+</ol>
+
+<h3>16.2 本笔记读出来的(按严重程度排序)</h3>
+<table>
+<tr><th>#</th><th>问题</th><th>为什么是问题</th><th>可验证判据</th></tr>
+<tr><td>1</td><td><b>$d_z=4$ 是硬瓶颈,但主实验没用更好的配置</b></td><td>Table 11 显示 $d_z=16$ 在 RE10K 全部 $n$、DL3DV 除 $n{=}2$ PSNR 外全部指标都更好,DL3DV 相机 AUC@3° 涨 <b>4–9 个点</b>。主实验仍固定 4,论文<b>未给理由</b>,也未报 16 通道的显存/耗时代价</td><td>问作者要 $d_z{=}16$ 的耗时与显存;或自己测</td></tr>
+<tr><td>2</td><td><b>三阶段无梯度回传,Stage 1 的压缩误差不可修复</b></td><td>LAM-VAE 与 DiT 分开训,Stage 2 的输入永远是 Stage 1 输出的 latent。若 Stage 1 在某类区域压缩失真,DiT 只能学着「绕开」,不能修正。这也是 $d_z$ 加宽能换来相机精度提升的机制解释——瓶颈在编码侧</td><td>对比「端到端联合训」与「三阶段」在同一 $d_z$ 下的差距(论文未做)</td></tr>
+<tr><td>3</td><td><b>训练相机轨与推理相机轨不对称</b></td><td>见 §15.3。训练只见「GT × 单因子缩放」,推理用真实预测。这是「论文数字 vs 你的数字」最容易掉的地方</td><td>在推理时把预测相机换成 GT 相机,看 PSNR 掉多少——掉得少说明不敏感,掉得多说明整个体系被相机误差绑架</td></tr>
+<tr><td>4</td><td><b>$N&gt;12$ 收益递减 + 显存 9.471 GB</b></td><td>Table 3 明确写「gains diminish beyond $N=12$」;$N{=}16$ 峰值显存 9.471 GB。这意味着<b>靠堆 $N$ 换质量的路走到头了</b>,继续提升只能靠表示或训练目标</td><td>Table 3 已给;若要 $N&gt;16$ 需自行测</td></tr>
+<tr><td>5</td><td><b>深度指标用 MoGe-2 伪标签</b></td><td>RE10K/DL3DV <b>没有官方 GT 深度</b>,全部深度指标($\delta_{1.25}$ / AbsRel)都是对 MoGe-2 预测的拟合度。<b>这等于用另一个模型的输出当真理</b>——若 MoGe-2 在某个场景系统性偏差,DensiTok 学到的「改善」可能是向 MoGe-2 的偏差对齐</td><td>在 ETH3D/ScanNet(有真 GT 深度)上对照:Table 9 里这两组也确实提升了,是同向的,但幅度不同(ScanNet 增益最大)</td></tr>
+<tr><td>6</td><td><b>无源码、无权重</b></td><td>所有超参只能从附录读,无法核对;「层索引怎么选」「spread 怎么定义」「warp 的三重判据具体阈值」三处论文都没给死</td><td>等 GitHub 放出</td></tr>
+<tr><td>7</td><td><b>Table 2 / Table 3 引用编号错位</b></td><td>正文 §4.3 把 LAM 消融称为 Table 3,但 caption 是 Table 2(详见 §13 开头的 callout)。不影响结论,但说明论文校对不严</td><td>已核对 caption</td></tr>
+<tr><td>8</td><td><b>只评静态场景,未测动态/人体</b></td><td>五个数据集全是静态。token 补全的时间一致性在动态场景下没有任何证据</td><td>需自测</td></tr>
+<tr><td>9</td><td><b>外观 warp 的依赖链</b></td><td>warp 需要解码出的相机与深度,而这两者又依赖补全后的 token——<b>误差二次放大</b>。AnySplat 明确需要这一支(A.2),其他 backbone 不需要或不明确,论文对「哪些 backbone 需要」的说明偏模糊</td><td>关掉 A.2 看 PSNR 掉多少(附录里对 AnySplat 有测,对其他没有)</td></tr>
+</table>
+
+<h3>16.3 可以往下做的三个方向(本笔记的建议)</h3>
+<div class="callout tip">
+<ol>
+  <li><b>把 $d_z$ 做成自适应</b>:既然 $d_z{=}16$ 的收益集中在相机精度、且随 $n$ 增大而增大(§13 表),那就没有理由全局固定 4。可以做「$n$ 小用宽 latent、$n$ 大用窄 latent」,或按区域重要性分配通道。这条最省力、收益最直接。</li>
+  <li><b>把插值扩成外推</b>:作者自己点出的方向。技术上难在「外推区域没有观测约束」,但 DensiTok 的架构天然适合加约束——可以给外推视角一个<b>随距离衰减的条件强度</b>(而非现在的硬条件/无条件二分)。</li>
+  <li><b>把三阶段改成两阶段(或加一个轻量联合头)</b>:Stage 1 的压缩误差目前完全无法回传。最小改动是在 Stage 2 里<b>放开 VAE decoder 的最后几层</b>,让 DiT 的梯度能微调解码侧。风险是破坏「冻结」的叙事,但那是叙事问题,不是技术问题。</li>
+</ol>
+</div>
+</section>
+
+<!-- =================== 17 =================== -->
+<section class="section" id="s17">
+<h2><span class="num">17</span>总结与演进定位</h2>
+
+<h3>17.1 三句话总结</h3>
+<ol>
+  <li><b>问题诊断准确。</b>本文最有价值的不是某个模块,而是那个判断:<b>前馈 3DGS 少视角崩溃的瓶颈在重建头读到的 token,而不在头本身。</b>证据是硬的——补上 token 后,$n{=}3$ 就能超过同 backbone 的 $N{=}16$ 稠密结果(AnySplat 24.28 &gt; 24.04),这在「瓶颈在头」的假设下不可能发生。</li>
+  <li><b>解法选得克制。</b>没有去训练更大的 3DGS 模型,而是插一个轻量插件:encoder 与头全冻,只补中间那 4 维 latent。代价是必须为每个 backbone 单独训 420k 步,换来的是「不动原模型也能提升」的工程可用性。</li>
+  <li><b>边界说得比多数论文清楚,但仍有两处含糊。</b>论文主动承认只做插值不外推、$N&gt;12$ 收益递减;但对「为什么主实验不用更好的 $d_z{=}16$」「训练相机与推理相机分布不对称如何保证」这两个更实质的问题没有交代。</li>
+</ol>
+
+<h3>17.2 它在演进线上的位置</h3>
+<div class="mermaid">
+flowchart LR
+    A["逐场景优化<br/>3DGS / 2DGS<br/>分钟级"] --> B["像素对齐前馈<br/>pixelSplat → MVSplat<br/>需内外参"]
+    B --> C["深度增强<br/>DepthSplat<br/>需内外参"]
+    B --> D["免外参<br/>NoPoSplat<br/>仅内参"]
+    B --> E["全免<br/>Splatt3R / FreeSplatter<br/>少视角糊"]
+    E --> F["插件式补 token<br/>DensiTok<br/>无相机 · 单步"]
+    C --> F
+    D --> F
+    G["扩散 NVS<br/>NVComposer / Matrix3D<br/>秒级 · 改内容"] --> H["几何特征空间扩散<br/>GLD<br/>分钟级"]
+    H --> F
+    style F fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    style A fill:#f3f4f6,stroke:#9ca3af,color:#111827
+    style G fill:#fef3c7,stroke:#f59e0b,color:#78350f
+</div>
+<p>这张图的读法:<b>F 同时从 E(全免路线)、C(深度路线)、D(免外参路线)、H(几何扩散路线)汇入</b>。它不是某一条线的延续,而是把三条线各自的「缺什么」用一个统一机制补上:<b>E 缺视角、C/D 缺相机自由度、H 缺速度</b>。代价是它自己哪一项都不是最强。</p>
+
+<h3>17.3 一句话给读者</h3>
+<div class="callout key">
+如果你手上的任务是<b>「少量、无标定、静态、手机随手拍的多视角图 → 要一个能用的 3DGS」</b>,DensiTok 的定位刚刚好,尤其 $n\in\{3,\dots,8\}$ 这个区间。如果你的任务<b>要求极致画质、或要求实时、或场景是动态的、或需要外推视角</b>,它都不是合适的选择——前三个是它的上界,第四个是它明确没做。
+</div>
+
+<h3>17.4 与库内相邻工作的关系</h3>
+<table>
+<tr><th>笔记</th><th>关系</th><th>一句话区别</th></tr>
+<tr><td><a href="3D-20250314-VGGT.html">VGGT</a> / <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a></td><td>同谱系(几何基础模型)</td><td>它们是「更好的 encoder」,DensiTok 是「给现成 encoder 补缺失视角」——可以叠用,不冲突</td></tr>
+<tr><td><a href="3D-20251113-Depth-Anything-3.html">Depth Anything 3</a></td><td><b>本文的第三个 backbone</b></td><td>DA3 变体在 Table 6 自评表与 Table 7 横比表中被完整评测,$n{=}7$ 的 28.225(Table 7,$256\times256$)在三个变体里排第二,仅次于 AnySplat 的 28.522</td></tr>
+<tr><td><a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a></td><td>同样「冻结几何 + 轻量头」</td><td>它解决长序列外推(视角过多),DensiTok 解决视角过少——<b>同一哲学的两个相反方向</b></td></tr>
+<tr><td><a href="3D-20261105-QuerySplat.html">QuerySplat</a></td><td>同样「冻结 VGM + 轻量解码」</td><td>QuerySplat 解耦「放哪」与「长什么样」,DensiTok 补「缺的证据」——都靠几何先验,但补的对象不同</td></tr>
+<tr><td><a href="3D-20261112-SplatAnything.html">SplatAnything</a></td><td>同一个「几何基础模型 + 轻量属性头」家族</td><td>但它解决的是<b>跨场景尺度一致性</b>(GSNorm),不是少视角补全;两者不共享 benchmark,<b>无法直接比数</b>,属「可叠加而非竞品」</td></tr>
+</table>
+</section>
+
+<!-- =================== 18 =================== -->
+<section class="section" id="s18">
+<h2><span class="num">18</span>👥 研究团队与 🔗 资源链接</h2>
+
+<h3>18.1 作者与机构</h3>
+<table>
+<tr><th>作者</th><th>机构</th><th>角色</th></tr>
+<tr><td>Minhyeok Lee</td><td>Yonsei University</td><td><b>共同一作</b>(† equal contribution)</td></tr>
+<tr><td>Jungho Lee</td><td>NAVER AI Lab</td><td><b>共同一作</b></td></tr>
+<tr><td>Minseok Kang</td><td>Yonsei University</td><td>—</td></tr>
+<tr><td>Heeseung Choi</td><td>KIST</td><td>—</td></tr>
+<tr><td>Ig-Jae Kim</td><td>KIST</td><td>—</td></tr>
+<tr><td>Sangyoun Lee</td><td>Yonsei University</td><td><b>通讯作者</b></td></tr>
+</table>
+<p class="note">三机构合作(延世大学 / NAVER AI Lab / 韩国科学技术研究院 KIST)。第一作者 Minhyeok Lee 的 GitHub 账号 <code>Hydragon516</code> 与本仓库同名,即代码作者本人。<b>abs 页无 comments 字段、仅 v1(2026-10-06)</b>,按库规范不加会议 badge。</p>
+
+<h3>18.2 资源链接</h3>
+<table>
+<tr><th>资源</th><th>链接</th><th>状态</th></tr>
+<tr><td>arXiv abs</td><td><a href="https://arxiv.org/abs/2610.07958" target="_blank">arxiv.org/abs/2610.07958</a></td><td>✅ v1,2026-10-06</td></tr>
+<tr><td>HTML 全文</td><td><a href="https://arxiv.org/html/2610.07958v1" target="_blank">arxiv.org/html/2610.07958v1</a></td><td>✅ 本笔记的 LaTeX 与配图来源</td></tr>
+<tr><td>GitHub</td><td><a href="https://github.com/Hydragon516/DensiTok" target="_blank">Hydragon516/DensiTok</a></td><td>⚠️ <b>仅 README.md + assets/,无源码无权重</b>("Code Coming Soon")</td></tr>
+<tr><td>项目主页</td><td><a href="https://hydragon.co.kr/DensiTok" target="_blank">hydragon.co.kr/DensiTok</a></td><td>论文给出的项目页</td></tr>
+<tr><td>HuggingFace</td><td><a href="https://huggingface.co/hydrgon516/DensiTok" target="_blank">hydrgon516/DensiTok</a></td><td><span class="uncertain">【待核实】</span>链接由论文给出,抓取时未成功验证内容</td></tr>
+</table>
+
+<h3>18.3 本笔记的数字溯源</h3>
+<table>
+<tr><th>数据</th><th>来源</th><th>核对方式</th></tr>
+<tr><td>主结果 PSNR/SSIM/LPIPS/AUC/深度</td><td>Table 1(RE10K+DL3DV,AnySplat+WorldMirror)</td><td>逐格 dump 原文表格比对</td></tr>
+<tr><td>DA3 变体结果</td><td>Table 6(附录 C.1)</td><td>同上</td></tr>
+<tr><td>稀疏前馈对比(10 个 baseline + 3 个 DensiTok 变体)</td><td>Table 7(附录 C.4)</td><td>逐格 dump,含 Intr./Extr. 两列;<b>各方法只在自己官方实现支持的 $n$ 上出现</b>(Splatt3R 仅 $n{=}2$、SelfSplat 仅 $n{=}3$)</td></tr>
+<tr><td>扩散 NVS 对比</td><td>Table 8(附录 C.5)</td><td>逐格 dump</td></tr>
+<tr><td>跨数据集泛化</td><td>Table 9(附录 D.1)</td><td>逐格 dump(ETH3D / ScanNet / Mip-NeRF 360)</td></tr>
+<tr><td>消融(5 张表)</td><td>Table 2 / 3 / 10 / 11 / 12</td><td>逐格 dump</td></tr>
+<tr><td>训练超参</td><td>Table 5 + Appendix B</td><td>逐项核对;<b>无源码可交叉验证</b></td></tr>
+<tr><td>架构超参</td><td>Table 4 + A.3</td><td>同上</td></tr>
+<tr><td>评测协议</td><td>Appendix B / C.4 / C.5</td><td>正文核对(320 张评测图、RoMa 重叠分档、$n$ 嵌套子集);<b>三套分辨率分别确认</b>:主表 $294\times518$、Table 7 为 $252\to256$、Table 8 为 $504\to512$</td></tr>
+<tr><td>两套评测不可混用的判据</td><td>Appendix C.4 正文原句</td><td>「we perform test-view sampling again. The resulting sampling indices differ from those used in Tables 1 and 6」——原文自述,非本笔记推断</td></tr>
+<tr><td>对比方法 arXiv ID / 开源状态</td><td>arXiv API + GitHub API</td><td>逐个查询;查不到的标【待核实】</td></tr>
+</table>
+
+<div class="callout warn">
+<b>本笔记自行计算、论文未直接给出的量:</b>① §14 表中 $n\ge3$ 的提速倍数(论文只说 "tens to hundreds of times");② §13 中 19× 的三组分母拆解(vs 自有 50 步 / vs 原 AnySplat / vs GLD);③ 各表中「相对增量」列的差值。这三类均已在小节内注明是本笔记所算。
+</div>
+</section>
+
+</div>
+
+<div class="footer">DensiTok 调研笔记 · arXiv 2610.07958v1 · 生成于 2026-11-16 · 遵循 media_paper AGENTS.md 规范 · 数字均可回论文 Table 1-12 / Appendix A-D 核对;无源码,超参未经代码交叉验证</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>

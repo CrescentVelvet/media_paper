@@ -257,8 +257,8 @@ tr:nth-child(even) { background: var(--code-bg); }
 <div class="container">
 <div class="filter-bar" id="filterBar">
     <input type="search" id="q" placeholder="搜索标题 / 标签 / 摘要…">
-    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 92</span><span class="chip" data-k="kind" data-v="survey">调研综述 14</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
-    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 59</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
+    <div class="chips"><span class="chip active" data-k="kind" data-v="all">全部类型 </span><span class="chip" data-k="kind" data-v="note">论文笔记 93</span><span class="chip" data-k="kind" data-v="survey">调研综述 14</span><span class="chip" data-k="kind" data-v="pipeline">工程方案 4</span><span class="chip" data-k="kind" data-v="methodology">方法论 1</span></div>
+    <div class="chips"><span class="chip active" data-k="depth" data-v="all">全部深度 </span><span class="chip" data-k="depth" data-v="deep">深度 60</span><span class="chip" data-k="depth" data-v="standard">标准 40</span><span class="chip" data-k="depth" data-v="brief">速览 12</span></div>
     <select id="topic"><option value="all">全部主题</option><option value="微动与非刚性人体重建">微动与非刚性人体重建</option><option value="人体先验与参数化模型">人体先验与参数化模型</option><option value="数字人 Pipeline 工程">数字人 Pipeline 工程</option><option value="人脸手部细节与增强">人脸手部细节与增强</option><option value="稀疏与少视角重建">稀疏与少视角重建</option><option value="前馈式大重建模型">前馈式大重建模型</option><option value="表面与几何重建">表面与几何重建</option><option value="3D 生成">3D 生成</option><option value="视频扩散先验用于 3D">视频扩散先验用于 3D</option><option value="质量速度权衡与实时">质量速度权衡与实时</option><option value="鲁棒性与干扰过滤">鲁棒性与干扰过滤</option><option value="相机控制与位姿条件">相机控制与位姿条件</option><option value="几何与时序一致性">几何与时序一致性</option><option value="视频生成模型谱系">视频生成模型谱系</option></select>
     <button type="button" class="chip chip-clear" id="clear">✕ 清除筛选</button>
     <span class="result-count" id="cnt"></span>
@@ -3114,6 +3114,34 @@ tr:nth-child(even) { background: var(--code-bg); }
             <a href="https://xchaowu.github.io/papers/taotex/index.html" target="_blank">🌐 项目主页</a>
         </div>
 
+        <div class="note-card" data-file="3D-20261006-DensiTok.html" data-kind="note" data-depth="deep"
+              data-topics="前馈式大重建模型|稀疏与少视角重建" data-search="DensiTok:在 geometry token 空间补全未观测视角,冻结 backbone 用 3 视角重建超过自己的 16 视角 3DGS 前馈重建 token 补全 LAM-VAE flow matching 单步推理 pose-free 冻结 backbone 给预训练前馈 3DGS 装一个「geometry token 稠密化」插件:冻结 encoder,把 L 层 token 栈经层级自适应调制(LAM)压成 4 通道 latent,用相机条件单步 flow matching 补出未观测视角、再解回 L 层 token 交给冻结的重建头。核心论点是「缺的不是像素而是 token」。AnySplat / WorldMirror / DA3 三个 backbone 全部一致提升,AnySplat 在 n=3 即超过自己的 N=16 稠密参考(RE10K 24.28 &amp;gt; 24.04),WorldMirror 要到 n=7 才超过,n=7 达 RE10K 28.522,且三者均不需内外参;相对扩散 NVS(GLD)n=2 提速 133–151×。诚实的边界:n=2 时输给需要相机的 DepthSplat 1.56 dB;单步仍比原 AnySplat 慢 2.58 倍;只做插值不外推;d_z 固定 4 而 Table 11 显示 16 更好(论文未解释);深度指标用 MoGe-2 伪标签。笔记含 9 张配图、14 个 baseline + 4 个谱系外方法共 19 行的 11 维对比表、19× 提速的三组分母拆解,并厘清了原始论文 Table 1/6 与 Table 7/8 因重抽测试视角导致的两套数字不可混用,以及无源码条件下全部可核验项的出处标注。">
+            <h3>108. DensiTok:在 geometry token 空间补全未观测视角,冻结 backbone 用 3 视角重建超过自己的 16 视角</h3>
+            <div class="meta">
+                <span>📄 arXiv: 2610.07958</span>
+                <span>📅 2026-10-06</span>
+                <span>🏢 延世大学 / NAVER AI Lab / KIST</span>
+                <span>⚠️ 未开源(仓库仅 README,无源码无权重)</span>
+            </div>
+            <div class="tags">
+                <span class="tag tag-kind">论文笔记</span>
+                <span class="tag tag-depth">深度</span>
+                <span class="tag">3DGS</span>
+                <span class="tag">前馈重建</span>
+                <span class="tag">token 补全</span>
+                <span class="tag">LAM-VAE</span>
+                <span class="tag">flow matching</span>
+                <span class="tag">单步推理</span>
+                <span class="tag">pose-free</span>
+                <span class="tag">冻结 backbone</span>
+            </div>
+            <p>给预训练前馈 3DGS 装一个「geometry token 稠密化」插件:冻结 encoder,把 L 层 token 栈经层级自适应调制(LAM)压成 4 通道 latent,用相机条件单步 flow matching 补出未观测视角、再解回 L 层 token 交给冻结的重建头。核心论点是「缺的不是像素而是 token」。AnySplat / WorldMirror / DA3 三个 backbone 全部一致提升,AnySplat 在 n=3 即超过自己的 N=16 稠密参考(RE10K <strong>24.28 &gt; 24.04</strong>),WorldMirror 要到 n=7 才超过,n=7 达 RE10K <strong>28.522</strong>,且三者均不需内外参;相对扩散 NVS(GLD)n=2 提速 <strong>133–151×</strong>。诚实的边界:n=2 时输给需要相机的 DepthSplat 1.56 dB;单步仍比原 AnySplat 慢 2.58 倍;只做插值不外推;d_z 固定 4 而 Table 11 显示 16 更好(论文未解释);深度指标用 MoGe-2 伪标签。笔记含 9 张配图、14 个 baseline + 4 个谱系外方法共 19 行的 11 维对比表、19× 提速的三组分母拆解,并厘清了原始论文 Table 1/6 与 Table 7/8 因重抽测试视角导致的两套数字不可混用,以及无源码条件下全部可核验项的出处标注。</p>
+            <a href="3D-20261006-DensiTok.html">📖 阅读笔记</a>
+            <a href="https://arxiv.org/abs/2610.07958" target="_blank">📄 arXiv</a>
+            <a href="https://hydragon.co.kr/DensiTok" target="_blank">🌐 项目主页</a>
+            <a href="https://github.com/Hydragon516/DensiTok" target="_blank">💻 GitHub</a>
+        </div>
+
     </div>
 
 <div class="section" data-sid="3d-compare" data-static="1">
@@ -3192,7 +3220,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20260629-RealISR-Evolution.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向 Super-Resolution GAN → Diffusion → One-Step Blind SR DiT 从 ESRGAN (2018) 到 OSEDiff (2024) 及最新方法 (TEASR/SANA-SR/FRAMER/ODTSR, 2025-2026) 的完整技术演进路线。三大范式转变：GAN→Diffusion、多步→单步、U-Net→DiT。涵盖退化建模、扩散先验利用、语义感知、频率对齐等核心方向。">
-            <h3>108. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
+            <h3>109. Real-ISR 技术演进调研：从 ESRGAN 到 OSEDiff 及未来方向</h3>
             <div class="meta">
                 <span>📄 综述: ESRGAN → BSRGAN → Real-ESRGAN → StableSR → DiffBIR → SeeSR → OSEDiff → TEASR</span>
                 <span>📅 2018-2026</span>
@@ -3215,7 +3243,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20250728-HYPIR.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration Image Restoration Diffusion Prior Score Distillation One-Step GAN Discriminator 利用预训练扩散模型 yielded 的 score priors 进行通用图像复原（去模糊/去噪/超分等）。一步推理即可达到多步扩散方法的质量，并引入判别器提升感知质量。支持用户控制复原强度，理论分析给出 score distillation 的误差界。覆盖三类方法定位与消融实验。">
-            <h3>109. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
+            <h3>110. HYPIR: Harnessing Diffusion-Yielded Score Priors for Image Restoration</h3>
             <div class="meta">
                 <span>📄 arXiv: 2507.20590</span>
                 <span>📅 2025-07-28</span>
@@ -3238,7 +3266,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="SR-20240220-RetouchFormer.html" data-kind="note" data-depth="standard"
               data-topics="人脸手部细节与增强" data-search="RetouchFormer: 半监督高质量人脸修图 Transformer Face Retouching Semi-Supervised Prior-Based Selective Self-Attention Inpainting Semi-Supervised High-Quality Face Retouching Transformer with Prior-Based Selective Self-Attention。人脸修图是在保留图像内容的前提下美化人脸——去除痘印、斑点、皱纹等瑕疵并用正常皮肤填充。RetouchFormer 将其视为图像修复（inpainting）的广义「软」版本，在单一网络中联合完成瑕疵定位与内容合成，不同于先检测后修复的两阶段硬修复方案。">
-            <h3>110. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
+            <h3>111. RetouchFormer: 半监督高质量人脸修图 Transformer</h3>
             <div class="meta">
                 <span>📅 2024-02-20</span>
                 <span>🏆 AAAI 2024</span>
@@ -3264,7 +3292,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
         <div class="note-card" data-file="Meta-20260813-用AI做论文调研经验分享.html" data-kind="methodology" data-depth="deep"
               data-topics="" data-search="用 AI 做论文调研：从链接到深度分析笔记的工作流 5 步调研工作流 AGENTS.md 规范 统一高端格式 子代理协作 框图演进 知识资产 基于本知识库真实协作沉淀的方法论文档，讲清楚怎么把「读论文」从一次性消耗战变成可累积、可检索、可复用的知识资产。核心定位：AI 是知识资产的「生产线」，人是「产品经理 + 质检员」——你不必逐字读论文，但必须决定调研什么、产出什么形态、什么质量算合格。涵盖 5 步调研工作流、AGENTS.md 规范编写、子代理协作、框图演进与真实案例剖析。">
-            <h3>111. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
+            <h3>112. 用 AI 做论文调研：从链接到深度分析笔记的工作流</h3>
             <div class="meta">
                 <span>📅 2026-08-13</span>
                 <span>📂 方法论 / 元文档</span>
@@ -3307,7 +3335,7 @@ tr:nth-child(even) { background: var(--code-bg); }
 
 </div>
 <div class="footer">
-    📝 调研索引 · 更新于 2026-11-16 · 涵盖 111 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
+    📝 调研索引 · 更新于 2026-11-16 · 涵盖 112 篇笔记 · 由 build_index.py 从 papers.json 生成(勿手改本文件)
 </div>
 <script>
 (function(){
