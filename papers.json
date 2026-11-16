@@ -1351,6 +1351,73 @@
       ]
     },
     {
+      "title": "LGTM: Less Gaussians, Texture More — 4K 前馈纹理化高斯泼溅",
+      "meta": [
+        "📄 arXiv 2603.25745",
+        "📅 2026-03-26",
+        "🏢 HKU / Apple",
+        "📌 abs comments 为空(项目页自述 ICLR 2026,未加徽章)"
+      ],
+      "tags": [
+        "前馈纹理化 2DGS",
+        "几何外观双网络解耦",
+        "每基元纹理贴图",
+        "4K 新视角合成",
+        "高分辨率重训练",
+        "学习型投影纹理映射",
+        "无界双线性采样",
+        "NoPoSplat/DepthSplat/Flash3D/VGGT 底座"
+      ],
+      "summary": "双网络解耦几何与外观:低分辨率 2DGS 基元(512x288)撑骨架,每基元小纹理贴图承载高频外观,首次实现免逐场景优化的 4K 前馈 NVS。64x 像素仅 1.80x 显存/1.47x 耗时(4K 推理 5.51GB/175ms);两视稀疏 context 下前馈先验完胜逐场景 3DGS 优化(27.99 vs 21.75 PSNR)。三大可迁移范式:低分网络+高分监督、投影 base+残差 delta、每基元纹理替代堆基元。注意三处论文/代码不一致:发布配置未用 alpha 纹理、stage2 几何实为全冻结、LPIPS 降幅 23%-75% 无法复现。",
+      "links": [
+        {
+          "href": "3D-20260326-LGTM.html",
+          "text": "📖 阅读笔记"
+        },
+        {
+          "href": "https://arxiv.org/abs/2603.25745",
+          "text": "📄 arXiv"
+        },
+        {
+          "href": "https://github.com/apple/ml-lgtm",
+          "text": "💻 GitHub"
+        },
+        {
+          "href": "https://yxlao.github.io/lgtm/",
+          "text": "🌐 项目主页"
+        }
+      ],
+      "file": "3D-20260326-LGTM.html",
+      "section": "3d",
+      "kind": "note",
+      "depth": "deep",
+      "topics": [
+        "前馈式大重建模型",
+        "质量速度权衡与实时"
+      ],
+      "anchors": [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6",
+        "s7",
+        "s8",
+        "s9",
+        "s10",
+        "s11",
+        "s12",
+        "s13",
+        "s14",
+        "s15",
+        "s16",
+        "s17",
+        "s18",
+        "s19"
+      ]
+    },
+    {
       "title": "ArtiFixer: 用自回归扩散模型增强和扩展 3D 重建",
       "meta": [
         "📄 NVIDIA Research PDF",

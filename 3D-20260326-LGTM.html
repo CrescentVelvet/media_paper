@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGTM (Less Gaussians, Texture More): 4K 前馈纹理化高斯泼溅</title>
+<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},svg:{fontCache:'global'}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root{
+  --bg:#0f1419; --panel:#1a2029; --panel2:#222a36; --accent:#60a5fa; --accent2:#a78bfa;
+  --green:#34d399; --orange:#fb923c; --red:#f87171; --yellow:#fbbf24; --code-bg:#0d1117;
+  --text:#e6edf3; --text-dim:#9aa4b2; --border:#2d3748; --tag-bg:#252f3d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;line-height:1.7;font-size:16px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.hero{background:linear-gradient(135deg,#0c1828 0%,#16243a 45%,#1e2d4a 100%);border-bottom:3px solid var(--accent);padding:56px 0 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(96,165,250,.18),transparent 55%),radial-gradient(circle at 10% 90%,rgba(167,139,250,.14),transparent 50%)}
+.hero .inner{max-width:1080px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(96,165,250,.15);color:var(--accent);border:1px solid rgba(96,165,250,.4);padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:18px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+.subtitle{color:var(--text-dim);font-size:17px;margin-bottom:20px}
+.authors{color:#c2cad6;font-size:14px;margin-bottom:8px}
+.org{color:var(--accent);font-size:14px;margin-bottom:22px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;background:var(--panel);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-size:14px;text-decoration:none;transition:.2s}
+.links a:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:28px 0}
+.toc h3{font-size:14px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ol{columns:2;column-gap:40px;padding-left:20px}
+.toc li{margin-bottom:5px;break-inside:avoid}
+.toc a{color:#a9b4c0;text-decoration:none;font-size:14.5px}
+.toc a:hover{color:var(--accent)}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:30px 32px;margin:24px 0}
+.section h2{font-size:22px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0f1419;border-radius:8px;font-size:15px;font-weight:800;flex-shrink:0}
+.section h3{font-size:17px;font-weight:600;color:#d4dbe6;margin:22px 0 12px;padding-left:12px;border-left:3px solid var(--accent)}
+.section h4{font-size:15px;font-weight:600;color:var(--accent2);margin:16px 0 8px}
+p{margin-bottom:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:18px 0}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card h4{margin-top:0}
+.callout{background:var(--panel2);border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;margin:16px 0}
+.callout.key{border-left-color:var(--accent)}
+.callout.warn{border-left-color:var(--orange)}
+.callout.tip{border-left-color:var(--green)}
+.callout.red{border-left-color:var(--red)}
+.callout b{color:var(--accent)}
+.callout.warn b{color:var(--orange)}
+.callout.tip b{color:var(--green)}
+.callout.red b{color:var(--red)}
+.equation{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:14px 0;overflow-x:auto;position:relative}
+.equation .tag{float:right;color:var(--text-dim);font-size:13px;margin-top:4px}
+.stat-row{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .v{font-size:26px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:12.5px;color:var(--text-dim);margin-top:3px}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tag{background:var(--tag-bg);border:1px solid var(--border);color:#b8c2d0;padding:3px 10px;border-radius:14px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);color:#cfd6e0;text-align:left;padding:9px 11px;border-bottom:2px solid var(--border);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:#c2cad6}
+tr.best{background:rgba(52,211,153,.10);font-weight:600}
+tr.best td{color:#a7f3d0}
+tr.fail{background:rgba(248,113,113,.08)}
+tr.fail td{color:#fca5a5}
+.mermaid{background:#f8fafc;border-radius:10px;padding:20px;margin:16px 0;text-align:center}
+.figure{margin:18px 0;text-align:center}
+.figure img{max-width:100%;border-radius:10px;border:1px solid var(--border)}
+.figure .caption{font-size:13px;color:var(--text-dim);margin-top:8px;text-align:left;background:var(--panel2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent)}
+code{background:var(--code-bg);color:#c9d1d9;padding:1.5px 6px;border-radius:4px;font-family:'SF Mono',Consolas,monospace;font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.5}
+pre code{background:none;padding:0}
+ul,ol{padding-left:22px;margin-bottom:12px}
+li{margin-bottom:6px}
+.refs{font-size:13px;color:var(--text-dim)}
+.refs a{color:var(--accent);text-decoration:none}
+.refs a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--text-dim);font-size:13px;padding:40px 0 0;border-top:1px solid var(--border);margin-top:40px}
+.note{font-size:13.5px;color:var(--text-dim);background:var(--code-bg);border-radius:8px;padding:12px 16px;margin:12px 0;border-left:3px solid var(--accent2)}
+.uncertain{display:inline-block;background:rgba(251,191,36,.12);border-left:3px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:4px;font-size:13.5px}
+.img-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.img-row img{flex:1;min-width:150px;max-width:24%;border-radius:8px;border:1px solid var(--border)}
+@media(max-width:760px){.grid-2,.grid-3{grid-template-columns:1fr}.toc ol{columns:1}.hero{padding:36px 0 28px}h1{font-size:24px}.img-row img{max-width:48%}}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+<span class="badge">3D 重建 · 前馈 3DGS · 4K 新视角合成</span>
+<h1>LGTM: Less Gaussians, Texture More — 4K 前馈纹理化高斯泼溅</h1>
+<div class="subtitle">双网络解耦几何与外观:紧凑 2DGS 基元 + 每基元纹理贴图,首次实现免逐场景优化的 4K 前馈新视角合成(64× 像素仅 1.8× 显存)</div>
+<div class="authors">Yixing Lao<sup>1,2&dagger;</sup> · Xuyang Bai<sup>2</sup> · Xiaoyang Wu<sup>1</sup> · Nuoyuan Yan<sup>2</sup> · Zixin Luo<sup>2</sup> · Tian Fang<sup>2</sup> · Jean-Daniel Nahmias<sup>2</sup> · Yanghai Tsin<sup>2</sup> · Shiwei Li<sup>2&ddagger;</sup> · Hengshuang Zhao<sup>1</sup></div>
+<div class="org">1 香港大学 (HKU) &nbsp;·&nbsp; 2 Apple &nbsp;·&nbsp; <span style="color:var(--text-dim)">&dagger; Apple 实习期间完成 · &ddagger; Project lead · abs comments 为空,ICLR 2026 为项目页/README 自述(未加徽章)</span></div>
+<div class="links">
+<a href="https://arxiv.org/abs/2603.25745">📄 arXiv 2603.25745</a>
+<a href="https://github.com/apple/ml-lgtm">💻 GitHub apple/ml-lgtm</a>
+<a href="https://yxlao.github.io/lgtm/">🌐 项目主页</a>
+<a href="3D-20231110-前馈3D重建模型综述.html">📖 库内: 前馈3D重建综述</a>
+<a href="3D-20261015-前馈式高斯重建2026下半年调研.html">📖 库内: 前馈式高斯重建2026下半年调研</a>
+</div>
+</div></div>
+
+<div class="wrap">
+<div class="toc"><h3>目录</h3><ol>
+<li><a href="#s1">论文摘要</a></li>
+<li><a href="#s2">研究背景与动机</a></li>
+<li><a href="#s3">算法总体框架</a></li>
+<li><a href="#s4">预备知识: 2DGS 与纹理化泼溅</a></li>
+<li><a href="#s5">几何网络 f_prim(骨架)</a></li>
+<li><a href="#s6">纹理网络 f_texture(灵魂)</a></li>
+<li><a href="#s7">训练策略与高分辨率监督</a></li>
+<li><a href="#s8">无界双线性纹理采样</a></li>
+<li><a href="#s9">损失函数总表</a></li>
+<li><a href="#s10">训练 / 推理逻辑流程图</a></li>
+<li><a href="#s11">⚙️ 工程实现细节(源码级)</a></li>
+<li><a href="#s12">实验结果</a></li>
+<li><a href="#s13">消融实验</a></li>
+<li><a href="#s14">附录实验: 视角间隔与单场景优化对比</a></li>
+<li><a href="#s15">🔄 同类方法对比分析</a></li>
+<li><a href="#s16">🎯 应用场景与落地适配性</a></li>
+<li><a href="#s17">可改进方向分析</a></li>
+<li><a href="#s18">总结与演进定位</a></li>
+<li><a href="#s19">👥 研究团队 + 🔗 资源链接</a></li>
+</ol></div>
+
+<section class="section" id="s1"><h2><span class="num">1</span>论文摘要</h2>
+<p><strong>一句话:</strong>把"几何"与"外观"在前馈 3DGS 中彻底解耦——用极低分辨率的 2D 高斯基元撑几何骨架,给每个基元挂一张可学习的小纹理贴图承载高频外观,从而绕开"高斯数量随分辨率平方增长"的显存墙,首次实现<b>免逐场景优化的 4K 前馈新视角合成</b>。</p>
+<p>前馈 3DGS(NoPoSplat / DepthSplat / VGGT 一系)把高斯基元与像素对齐:输出 1024×576 就要预测 59 万像素级高斯,训练显存 61.85 GB;上到 2K/4K 直接 OOM。LGTM 的观察是:场景信息有天然的<b>频率分离</b>——几何是低频的,纹理是高频的。于是基元网格固定在 512×288(4K 下仅 14.7 万像素级基元),渲染分辨率靠每基元纹理放大(8×8 纹理 ⇒ 4096×2304 有效输出)。4K 训练显存 28.23 GB(较 1024×576 的 NoPoSplat 还低一半以上),推理峰值显存仅 5.51 GB、单帧 175 ms(A100)。</p>
+<div class="callout key"><b>核心贡献(论文宣称,3 条):</b>① 首个前馈预测纹理化高斯的网络;② 双网络架构解耦几何/外观,以显著更少的基元达到 4K 渲染;③ 框架通用——单目(Flash3D)、带位姿双视(DepthSplat)、无位姿双视(NoPoSplat)、多视(VGGT)四种基线即插即用,带/不带相机位姿均可。</div>
+<div class="figure"><img src="images/2603.25745/lgtm_teaser.jpg" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+<div class="caption"><b>图1</b>(论文 teaser,项目页下载;arXiv HTML 中 Figure 1 为视频拼版未导出任一位图):LGTM 在 4K 分辨率下的前馈重建效果,对比 Flash3D / DepthSplat 基线的细节锐度。注意论文此处把"2K/4K"定义为水平分辨率约 2000/4000 像素,RE10K 子集实为 1920×1080,DL3DV 为 3840×2160(论文 §5.1 脚注 1)。</div></div>
+<div class="stat-row">
+<div class="stat"><div class="v">4K</div><div class="l">前馈 NVS 免逐场景优化</div></div>
+<div class="stat"><div class="v">5.51GB</div><div class="l">4K 推理峰值显存</div></div>
+<div class="stat"><div class="v">1.80×</div><div class="l">显存增幅(64× 像素)</div></div>
+<div class="stat"><div class="v">175ms</div><div class="l">4K 单帧总耗时(A100)</div></div>
+<div class="stat"><div class="v">28.23GB</div><div class="l">4K 训练显存(bs=1)</div></div>
+</div></section>
+<section class="section" id="s2"><h2><span class="num">2</span>研究背景与动机</h2>
+<h3>现有方法的两条死路</h3>
+<div class="grid-3">
+<div class="card"><h4>前馈 3DGS:分辨率墙</h4><p>pixel-aligned 前馈方法(Charatan 2024 / Chen 2024 / Fan 2024 / Smart 2024 / NoPoSplat 2025)在数百像素分辨率工作。高斯数随边长平方增长:512→4K 像素量增 64×,网络预测与高斯渲染双双爆显存。§3 Pilot Study:NoPoSplat 扩到 1024×576 训练显存已达 <b>61.85 GB</b>,2K/4K 直接 OOM。</p></div>
+<div class="card"><h4>纹理化高斯:优化墙</h4><p>纹理化 2DGS(BBSplat / Gaussian Billboards / Taming 3DGS 等一系)把外观从几何解耦,确实大幅省基元,但全部是<b>逐场景优化</b>方法——每个新场景都要重新跑一遍优化,无法跨场景泛化,更不能前馈。</p></div>
+<div class="card"><h4>3DGS 本质耦合</h4><p>每个高斯只编码单一(视角相关)颜色,连"平坦但纹理丰富的表面"都需要海量微小高斯才能表达高频外观——外观与几何死死绑在一起,是两条路线共同的根本限制。</p></div>
+</div>
+<h3>核心洞察(insight)</h3>
+<div class="callout tip"><b>场景信息是频率可分离的:几何低频、外观高频。</b>与其用更多基元硬扛分辨率,不如把"基元数量"与"渲染分辨率"解耦:基元网格固定在小分辨率管几何,渲染分辨率由每基元纹理的 Texel 密度决定。这同时打掉了前馈方法的分辨率墙(几何分支计算量与输出分辨率无关)和纹理化方法的优化墙(纹理由网络前馈预测,而非逐场景优化)。</div>
+<h3>Pilot Study(论文 §3,表 1)</h3>
+<p>把 NoPoSplat 与 LGTM 在"等效输出分辨率"下对比(表 1 全文见 §12)。关键数字:NoPoSplat 原生 1024×576 → 61.85 GB 训练显存;LGTM 以 512×288 基元 + 2×2 纹理达到同一输出,显存 20.16 GB,且 <b>LPIPS 0.213 反而优于 NoPoSplat 的 0.239</b>——更少的基元+纹理,质量还更高,直接验证了解耦思路。4K 档 LGTM 训练显存 28.23 GB(NoPoSplat 已 OOM 无数据)。</p>
+<div class="callout warn"><b>关键假设与其失效条件【推测+论文自证】:</b>该频率分离假设成立的前提是"场景几何确实低频"——§6 结论段作者自己承认:重建质量高度依赖几何预测,基线几何越差(多视 VGGT &lt; 无位姿 NoPoSplat &lt; 带位姿 DepthSplat &lt; 单目 Flash3D),LGTM 增益越小。若几何基元位置/朝向偏差大,纹理贴图再精也救不回来——纹理只是"贴在骨架上的皮",骨架歪了皮也跟着歪。</div></section>
+<section class="section" id="s3"><h2><span class="num">3</span>算法总体框架</h2>
+<h3>输入 / 输出定义</h3>
+<p>输入为一组 $N$ 个视角的图像 $\{{\bm{I}}^{v}\}_{v=1}^{N}$ 及其低分辨率版本 $\{{\bm{I}}^{v}_{\text{low}}\}_{v=1}^{N}$;输出为一组带纹理的 2D 高斯基元 $\{{\bm{\mu}}_i, {\bm{s}}_i, {\bm{r}}_i, {\bm{c}}_i, {\bm{T}}_i^{c}, {\bm{T}}_i^{\alpha}\}$。整体映射(论文式 (0),HTML 中渲染为表格式公式):</p>
+<div class="equation">$$f: ({\bm{I}}^{v}, {\bm{I}}^{v}_{\text{low}}) \to \{{\bm{\mu}}_i, {\bm{s}}_i, {\bm{r}}_i, {\bm{c}}_i, {\bm{T}}_i^{c}, {\bm{T}}_i^{\alpha}\}_{i=1}^{hw}$$<span class="tag">式(0)</span></div>
+<p>其中 $hw$ 为基元网格分辨率(如 512×288=147,456 基元/视角),$i$ 遍历网格上每个位置。整个网络由两个子模块组成:几何网络 $f_{\text{prim}}$ 与纹理网络 $f_{\text{texture}}$(式(3)(4))。</p>
+<h3>符号表</h3>
+<table><tr><th>符号</th><th>含义</th><th>形状/取值</th></tr>
+<tr><td>${\bm{I}}^v$, ${\bm{I}}^v_{\text{low}}$</td><td>视角 $v$ 的原图 / 低分辨率图</td><td>$[H{\times}W{\times}3]$, $[h{\times}w{\times}3]$, $h=H/T$ 量级</td></tr>
+<tr><td>${\bm{\mu}}_i$</td><td>第 $i$ 个基元的 3D 中心(由 pts3d 点图给出)</td><td>$[3]$</td></tr>
+<tr><td>${\bm{s}}_i$, ${\bm{r}}_i$, $o_i$</td><td>基元缩放、旋转(四元数)、不透明度</td><td>$[3]$, $[4]$, 标量</td></tr>
+<tr><td>${\bm{c}}_i$</td><td>SH 基色(低频外观)</td><td>$3(d_{\text{sh}}{=}4)$ 系数,sh_degree=1</td></tr>
+<tr><td>${\bm{T}}_i^{c}$, ${\bm{T}}_i^{\alpha}$</td><td>每基元颜色纹理 / alpha 纹理</td><td>$\mathbb{R}^{T\times T\times 3}$, $\mathbb{R}^{T\times T}$;$T\in\{2,4,8\}$</td></tr>
+<tr><td>${\bm{M}}_{i,v}$</td><td>像素 $\to$ 基元局部坐标的 2D 单应(ray-splat 交点)</td><td>$3{\times}3$;$u = {\bm{M}}_{i,v}(x)$</td></tr>
+<tr><td>$\sigma$</td><td>纹理在基元平面内的跨度(共享超参)</td><td>代码默认 1.0</td></tr>
+<tr><td>${\bm{F}}^{v}_{\text{prim}}$</td><td>几何网络 ViT decoder 特征(共享给纹理网络)</td><td>token 序列</td></tr>
+</table>
+<h3>总体数据流</h3>
+<div class="mermaid">
+flowchart TD
+    INPUT["输入: N 张原图 I^v(如 4096x2304)+ 低分辨率版"] --> PRIM["几何网络 f_prim<br/>低分辨率输入 ViT encoder-decoder<br/>(基线: NoPoSplat/DepthSplat/Flash3D/VGGT backbone)"]
+    PRIM --> P1["紧凑 2DGS 基元网格 h x w<br/>mu, s, r, o, c(SH 基色)"]
+    PRIM --> F1["decoder 特征 F_prim(共享)"]
+    INPUT --> TEX["纹理网络 f_texture<br/>高分辨率输入"]
+    TEX --> PATCH["图像 patchify 卷积特征 F_patch"]
+    P1 --> PROJ["学习型投影纹理映射<br/>逆单应 M^-1: 原图反投到基元纹理<br/>得投影先验纹理 T_c,proj 与特征 F_proj"]
+    F1 --> FUSE["三路特征融合<br/>F_prim + F_patch + F_proj"]
+    PATCH --> FUSE
+    PROJ --> FUSE
+    FUSE --> T1["每基元纹理 T^c, T^a"]
+    P1 --> RAST["纹理化 2DGS 光栅化<br/>逐像素 ray-splat 交点 u<br/>双线性采样 T[u](无界,边界锚定)"]
+    T1 --> RAST
+    RAST --> OUT["4K 新视角渲染<br/>alpha 混合"]
+    style INPUT fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style OUT fill:#dcfce7,stroke:#22c55e,color:#14532d
+    style PRIM fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style TEX fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+    style PROJ fill:#fef3c7,stroke:#d97706,color:#78350f
+</div>
+<div class="figure"><img src="images/2603.25745/architecture.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+<div class="caption"><b>图2</b>(论文 Figure 2,arXiv HTML 位图):上为几何网络 $f_{\text{prim}}$——低分辨率输入预测紧凑几何参数 $\mu,s,r,c$;下为纹理网络 $f_{\text{texture}}$——高分辨率输入经 patchify 与投影映射网络预测每基元纹理 ${\bm{T}}^{\alpha},{\bm{T}}^{c}$。几何/外观解耦是全文核心。</div></div></section>
+<section class="section" id="s4"><h2><span class="num">4</span>预备知识: 2DGS 与纹理化泼溅</h2>
+<h3>4.1 2D Gaussian Splatting</h3>
+<p>2DGS 用 3D 空间中的 2D 高斯基元表示场景(库内笔记 <a href="3D-20240326-2DGS.html">2DGS</a>)。渲染视角 $v$ 时,对每个像素 ${\bm{x}}=(x,y)$ 计算相机射线与高斯平面 $i$ 的交点,即 2D 单应变换 ${\bm{u}} = {\bm{M}}_{i,v}({\bm{x}})$,再在局部坐标上求 2D 高斯函数 $\mathcal{G}({\bm{u}})=\exp(-\frac{1}{2}(u^2+v^2))$。采样 alpha 与颜色、以及按深度排序的 alpha 混合:</p>
+<div class="equation">$$a_i({\bm{u}}) = o_i \cdot \mathcal{G}({\bm{u}}), \qquad \hat{\bm{c}}_i({\bm{d}}_i) = \text{SH}({\bm{c}}_i, {\bm{d}}_i)$$<span class="tag">式(1)</span></div>
+<div class="equation">$${\bm{C}} = \sum_{i} a_i({\bm{u}}_i)\,\hat{\bm{c}}_i({\bm{d}}_i) \prod_{j=1}^{i-1}\big(1 - a_j({\bm{u}}_j)\big)$$<span class="tag">alpha 混合</span></div>
+<p>其中 ${\bm{d}}_i$ 为观察方向,SH 为球谐。</p>
+<h3>4.2 纹理化 2DGS(LGTM 的表示)</h3>
+<p>沿用经典 billboard 技术与 BBSplat(Svitov 2025)思路,给每个 2DGS 基元挂两张可学习贴图:颜色纹理 ${\bm{T}}_i^{c}\in\mathbb{R}^{T\times T\times 3}$ 与 alpha 纹理 ${\bm{T}}_i^{\alpha}\in\mathbb{R}^{T\times T}$,$T$ 为纹理分辨率。射线-基元交点 ${\bm{u}}$ 处用双线性采样(记 ${\bm{T}}[{\bm{u}}]$,§8)取值;<b>alpha 纹理替代高斯衰减,颜色纹理叠加在 SH 基色之上</b>:</p>
+<div class="equation">$$a_i({\bm{u}}) = o_i \cdot {\bm{T}}_i^{\alpha}[{\bm{u}}], \qquad \hat{\bm{c}}_i({\bm{u}}, {\bm{d}}_i) = {\bm{T}}_i^{c}[{\bm{u}}] + \text{SH}({\bm{c}}_i, {\bm{d}}_i)$$<span class="tag">式(2)</span></div>
+<div class="callout key"><b>机制解释:</b>SH 基色 $\text{SH}({\bm{c}}_i,{\bm{d}}_i)$ 只承载视角相关的低频分量(漫反射/简单高光趋势),每张基元 $T{\times}T$ 的纹理承载高频空间细节。$T$ 把"一个基元一种颜色"升级为"一个基元一张图",于是表达一面砖墙不再需要上万个微小高斯,一个基元+8×8 纹理即可——这是"少高斯、多纹理"的数学本质。</div></section>
+<section class="section" id="s5"><h2><span class="num">5</span>几何网络 f_prim:低分辨率骨架预测</h2>
+<h3>5.1 网络结构表(以 NoPoSplat 基线为例,源码核实)</h3>
+<table><tr><th>输入</th><th>层/算子</th><th>输出</th></tr>
+<tr><td>原图 $[B,V,3,H,W]$(4K 档 $2304{\times}4096$)</td><td>双线性 antialias 下采样 ÷ $T$(纹理尺寸,NoPoSplat 取 8)</td><td>低分辨率输入 $[B,V,3,288,512]$</td></tr>
+<tr><td>低分辨率图 + 内参 token</td><td>CroCo backbone:ViT-Large encoder + Base decoder(<code>ViTLarge_BaseDecoder</code>),patch 16,内参以 token 嵌入(degree 4)</td><td>每视角 decoder token 序列 → 重排为空间特征图</td></tr>
+<tr><td>decoder 特征(4 层 hook)</td><td>DPT 融合:act_postprocess(1×1 conv + 反卷积)+ scratch + 4× refinenet(残差卷积单元级联,逐层 2× 上采样)</td><td>$F_{\text{prim}}$ 融合特征 $[\cdot,256,\cdot,\cdot]$ → feat_up 2×</td></tr>
+<tr><td>融合特征 + 低分辨率图(input_merger:Conv3×256)</td><td>逐元素相加</td><td>几何特征 $[B,256,h,w]$</td></tr>
+<tr><td>几何特征</td><td>GS head:Conv3(256→256)+ReLU+Dropout0.1+Conv1×1;每视角一个 head(head1/head2)</td><td>pts3d 中心(独立 DPT head,exp 深度模式)+ 原始高斯参数</td></tr>
+<tr><td>原始参数</td><td>split → scales softplus 后 clamp $[min,0.3]$;xyzw 归一化;SH 乘 sh_mask($d_{\text{sh}}{=}4$)</td><td>$\{\mu,s,r,o,c\}$,基元网格 $h{\times}w$</td></tr>
+</table>
+<p class="note">出处:<code>encoder_noposplat.py:256-274</code>(纹理开启时输入按 texture_size 下采样)、<code>head_noposplat.py:388-390</code>(FEATURE_DIM=256、PATCH_SIZE=16)、<code>configs/encoder/noposplat.yaml</code>(CroCo ViTLarge_BaseDecoder、gaussian_scale_max=0.3、sh_degree=1)。DepthSplat/Flash3D/VGGT 基线替换 backbone 为 UniMatch / UniDepth-ViTL14 / VGGT,头部结构同构。</p>
+<h3>5.2 数学形式化</h3>
+<div class="equation">$$f_{\text{prim}}: {\bm{I}}^{v}_{\text{low}} \to \{{\bm{F}}^{v}_{\text{prim}},\ {\bm{\mu}}_i, {\bm{s}}_i, {\bm{r}}_i, o_i, {\bm{c}}_i\}_{i=1}^{hw}$$<span class="tag">式(3)</span></div>
+<h3>5.3 前向流程(逐步)</h3>
+<ol>
+<li>原图归一化 $[0,1]\to[-1,1]$,按 $T$ 下采样得到 ${\bm{I}}_{\text{low}}$——<b>基元数量因此与输出分辨率解耦</b>(4K 图也只过 288×512 的网络)。</li>
+<li>backbone 前向:低分辨率图 → ViT encoder → 非对称 decoder,输出每视角 token;两个 context 视角分别走 head1/head2。</li>
+<li>pts3d head 预测每个网格位置的 3D 点(基元中心 $\mu$),exp 距离模式激活。</li>
+<li>GS head 输出 opacity(经 pdf→opacity 映射;发布配置为恒等映射)+ scales + 旋转四元数 + SH 系数。</li>
+<li>基元展平为 $[B, V{\cdot}hw, \cdot]$,交给纹理网络与光栅化器。</li>
+</ol>
+<h3>5.4 模块内部图</h3>
+<div class="mermaid">
+flowchart LR
+    A["低分辨率图<br/>288x512"] --> B["CroCo ViT-L enc<br/>+ Base dec (patch16)"]
+    B --> C["DPT fuse: 4层hook<br/>act_post + scratch + refinenets"]
+    C --> D["F_prim 融合特征"]
+    C --> E["pts3d head<br/>基元中心 mu"]
+    D --> F["+ 低分辨率图特征<br/>(input_merger)"]
+    F --> G["GS head<br/>o, s(clamp<=0.3), r, SH基色"]
+    style A fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style E fill:#fef3c7,stroke:#d97706,color:#78350f
+    style G fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<h3>5.5 监督信号</h3>
+<p>该模块无直接几何监督(不预测深度 GT 损失);监督全部来自<b>高分辨率渲染图的光度损失</b>(MSE + LPIPS,§9)——输入低分辨率、渲染与监督在高分辨率,这就是"高分辨率重训练/监督"的核心(§7)。基元中心 $\mu$ 的梯度经光栅化反传,尺度 $s$ 被显式 clamp 到 0.3 以内防爆炸。</p></section>
+<section class="section" id="s6"><h2><span class="num">6</span>纹理网络 f_texture:高分辨率外观预测</h2>
+<h3>6.1 三路互补特征(核心设计)</h3>
+<div class="equation">$$f_{\text{texture}}: ({\bm{I}}^{v}, {\bm{F}}^{v}_{\text{prim}}) \to \{{\bm{T}}_i^{c}, {\bm{T}}_i^{\alpha}\}_{i=1}^{hw}$$<span class="tag">式(4)</span></div>
+<table><tr><th>特征</th><th>来源</th><th>承载信息</th></tr>
+<tr><td>${\bm{F}}^{v}_{\text{patch}}$</td><td>高分辨率图像 patchify + 卷积层</td><td>局部外观特征(高频细节的主要载体)</td></tr>
+<tr><td>${\bm{F}}^{v}_{\text{proj}}$</td><td><b>学习型投影纹理映射</b>得到的投影先验纹理,再提特征</td><td>与原图像素级对齐的强高频细节</td></tr>
+<tr><td>${\bm{F}}^{v}_{\text{prim}}$</td><td>复用几何网络 decoder 特征</td><td>几何/语义上下文,保证纹理与骨架一致</td></tr>
+</table>
+<h3>6.2 学习型投影纹理映射(论文最巧的一环)</h3>
+<p>对基元 $i$,用逆单应 ${\bm{M}}_{i,v}^{-1}: {\bm{u}} \to {\bm{x}}$ 把基元局部坐标映回源图像素坐标,在<b>高分辨率</b>源图上采样 RGB,得到"投影先验纹理":</p>
+<div class="equation">$${\bm{T}}_{i}^{c,\text{proj}}[{\bm{u}}] = {\bm{I}}^{v}[{\bm{x}}] = {\bm{I}}^{v}\big[{\bm{M}}_{i,v}^{-1}({\bm{u}})\big]$$<span class="tag">式(5)</span></div>
+<p>直观上这是光栅化的逆过程:不是把高斯画到图上,而是把图源"反画"回高斯纹理。作者称 4K 图此步仅需数毫秒。投影先验与原图像素级对齐,携带最强高频信号;但基元位姿不准处会有拉伸/错位,因此只作<b>先验</b>——网络再学残差修正(代码中 <code>texture_project_as_base=true</code>:投影纹理作 base,网络预测 delta 叠加,<code>head_noposplat.py:342-350</code>)。</p>
+<h3>6.3 网络结构表(源码核实)</h3>
+<table><tr><th>输入</th><th>层/算子</th><th>输出</th></tr>
+<tr><td>几何 head 输出 + 高分辨率原图 $[\cdot,3,2304,4096]$</td><td>激活 scales(softplus+clamp≤0.3)/xyzw 归一化;像素级 K(c2w 求逆得 w2c)</td><td>投影所需位参</td></tr>
+<tr><td>位参 + 高分辨率图</td><td><code>project_texture_colors</code>:逆单应反投影采样,得投影纹理 $[B, 3T^2, h, w]$</td><td>${\bm{T}}^{c,\text{proj}}$ 摊平为通道</td></tr>
+<tr><td>投影纹理 + 高分辨率图</td><td><code>direct_2dgs_baked_texture_processor</code>(在高分图上处理投影纹理)</td><td>纹理特征(高分率)</td></tr>
+<tr><td>高分辨率图</td><td><code>direct_2dgs_imgs_patchify</code>(patchify 卷积)</td><td>$[\cdot,256,h,w]$ 图像特征</td></tr>
+<tr><td>三路特征</td><td>concat(768 通道)→ <code>direct_2dgs_conv_block</code> 卷积融合</td><td>融合特征 $[\cdot,256,h,w]$</td></tr>
+<tr><td>融合特征</td><td><code>direct_2dgs_texture_head</code>:1×1 conv → $d_{\text{texture}}$ 通道</td><td>纹理 delta $[\cdot, 3T^2, h, w]$(GAUSSIAN 模式只有颜色)</td></tr>
+<tr><td>投影纹理(base)+ delta</td><td>逐元素相加</td><td>最终 ${\bm{T}}^{c}$(${\bm{T}}^{\alpha}$ 视模式)</td></tr>
+</table>
+<p class="note">出处:<code>head_noposplat.py:271-371</code>(投影→处理→patchify→768 通道 concat→conv→texture head→base+delta 全流程)。</p>
+<h3>6.4 前向流程与可导性</h3>
+<ol>
+<li>由几何网络拿到 pts3d/scales/xyzws(激活后),结合内参/位姿逐基元构造逆单应;</li>
+<li>式(5) 反投影采样——采样坐标由网络预测量导出,<b>对位姿/尺度可导</b>;</li>
+<li>投影纹理与 patchify 图像特征、backbone 特征三路 concat 卷积融合;</li>
+<li>1×1 卷积头输出纹理 delta,叠加到投影 base 上(零初始化保证初期等价于纯投影);</li>
+<li>纹理随 2DGS 光栅化进入渲染,梯度经双线性采样回传至纹理头与几何分支。</li>
+</ol>
+<h3>6.5 监督信号</h3>
+<p>无纹理直接监督(没有"纹理 GT");监督同样来自渲染图 MSE + LPIPS。这等价于把"高频外观该怎么贴"完全交给渲染损失端到端学习。</p>
+<div class="callout tip"><b>消融佐证(表 5,§13):</b>只加 patchify 特征 LPIPS 0.256→0.199;再加纹理颜色 0.189;再加纹理 alpha 0.176——三步每一步都有效,纹理网络是质量增益的最大单一来源。</div></section>
+<section class="section" id="s7"><h2><span class="num">7</span>训练策略与高分辨率监督</h2>
+<h3>两阶段渐进训练(论文表述)</h3>
+<div class="grid-2">
+<div class="card"><h4>Stage 1: 高分辨率监督预训练几何网络</h4><p>仅用 $f_{\text{prim}}$ 训练 2DGS 参数:输入低分辨率 ${\bm{I}}_{\text{low}}$,预测 $h{\times}w$ 基元网格,但<b>渲染与监督在全分辨率 $H{\times}W$</b>。高分辨率监督迫使网络学到适合高分渲染的预测尺度 $s$ 等参数,建立强几何先验——直接渲染低分辨率模型的基元到高分辨率会因 3DGS 无抗锯齿而产生空洞(holes,附录 A.1 图 6 实证)。</p></div>
+<div class="card"><h4>Stage 2: 几何+纹理联合训练</h4><p>联合训练 $f_{\text{prim}}$ 与 $f_{\text{texture}}$;为保持几何稳定,预训练的几何网络参数用 <b>0.1× 学习率</b>(论文表述);颜色纹理 ${\bm{T}}^{c}$ 零初始化,作为 SH 基色的高频增量(式(2))。两阶段均用 MSE + LPIPS 光度损失。</p></div>
+</div>
+<h3>高分辨率重训练的三种替代方案(附录 A.1)</h3>
+<table><tr><th>方案</th><th>做法</th><th>结果</th></tr>
+<tr><td>Direct Render</td><td>低分辨率模型的基元直接在目标分辨率渲染</td><td class="fail">产生空洞(3DGS 无抗锯齿)</td></tr>
+<tr><td>Render and Upsample</td><td>训练分辨率渲染后再上采样图像</td><td>无空洞但模糊(有效分辨率仍低)</td></tr>
+<tr><td>High-Resolution Re-train</td><td>在目标分辨率渲染+监督重训</td><td class="best">最优;论文表 2 的基线即此方案</td></tr>
+</table>
+<div class="figure"><div class="img-row">
+<img src="images/2603.25745/supp_evaluation_0.jpg" loading="lazy">
+<img src="images/2603.25745/supp_evaluation_1.jpg" loading="lazy">
+<img src="images/2603.25745/supp_evaluation_2.jpg" loading="lazy">
+</div>
+<div class="caption"><b>图3</b>(附录图 6):高分辨率重训练效果对比——Direct Render 有空洞、Render+Upsample 模糊、4K Re-trained 保持几何完整(原文此处三张子图依序对应三种方案,具体场景以原图为准)。</div></div>
+<div class="callout warn"><b>论文表述 vs 代码实现(重要差异,§17 详述):</b>① 论文称 stage 2 几何网络"0.1× 学习率",而发布配置 <code>dl3dv_*_lgtm_*.yaml</code> 中 <code>non_2dgs_lr_mult: 0.0</code> ——按 <code>engine.py:846-860</code> 的逻辑是<b>除纹理层(direct_2dgs_*)外全部冻结</b>,并非降速训练;② NoPoSplat 系的 README 训练流程是 <b>2DGS → BBSplat(无投影纹理)→ LGTM 三段式</b>(<code>README.md:160-169</code>),比论文的"两阶段"多一个中间段。</div></section>
+<section class="section" id="s8"><h2><span class="num">8</span>无界双线性纹理采样(Algorithm 1)</h2>
+<p>给定纹理图 ${\bm{T}}$($T{\times}T$)与基元平面局部坐标 $(u,v)$,按下式取纹理值——关键是<b>边界锚定(border clamping)</b>与共享跨度超参 $\sigma$(发布配置 $\sigma=1.0$):</p>
+<div class="equation">$$u \leftarrow \tfrac{u+\sigma}{2\sigma}\cdot T - 0.5,\qquad v \leftarrow \tfrac{v+\sigma}{2\sigma}\cdot T - 0.5$$<span class="tag">坐标变换</span></div>
+<pre><code>function bilinear-sample(T, T_res, u, v, σ):
+  u ← ((u+σ)/(2σ))·T − 0.5        # 变换到纹理像素坐标
+  v ← ((v+σ)/(2σ))·T − 0.5
+  u ← clamp(u, 0, T−1);  v ← clamp(v, 0, T−1)   # 边界锚定
+  i_u ← ⌊u⌋, f_u ← u − i_u;  i_v ← ⌊v⌋, f_v ← v − i_v
+  i_u+1 ← min(i_u+1, T−1);  i_v+1 ← min(i_v+1, T−1)
+  return (1−f_u)(1−f_v)·T[i_u,i_v] + f_u(1−f_v)·T[i_u+1,i_v]
+       + (1−f_u)f_v·T[i_u,i_v+1] + f_u f_v·T[i_u+1,i_v+1]</code></pre>
+<div class="figure"><img src="images/2603.25745/unbounded_sampling.png" loading="lazy" style="max-width:100%;border-radius:8px;border:1px solid #333;">
+<div class="caption"><b>图4</b>(附录图 7):无界双线性采样示意——纹理信息经边界锚定延伸到基元边界之外,提供平滑覆盖;$\sigma$ 控制纹理区域在基元平面内的相对跨度(类似 Gaussian Billboards)。</div></div>
+<div class="callout key"><b>与 BBSplat 的关键区别(机制解释):</b>BBSplat 的颜色采样是<b>有界</b>的,颜色从基元中心向外衰减;传统无纹理 2DGS 则颜色恒定、只有不透明度衰减。LGTM 采用<b>无界采样</b>(四角双线性权重相等),配合 2DGS 自身的不透明度衰减提供 alpha fall-off——更接近原 2DGS 公式,且避免了"有界采样 + 常规 2DGS 不透明度"组合产生的<b>暗边伪影</b>。发布代码中 ${\bm{T}}^{\alpha}$ 因此可省(GAUSSIAN 模式,alpha 直接退回高斯衰减),这是附录 A.2 思想在工程上的自然推论。</div></section>
+<section class="section" id="s9"><h2><span class="num">9</span>损失函数总表</h2>
+<p>监督信号极简:仅渲染图与 GT 的光度损失,无任何几何/深度/位姿辅助损失(源码 <code>configs/main.yaml:10-16</code> + <code>src/lgtm/loss/</code> 核实)。</p>
+<table><tr><th>损失项</th><th>公式</th><th>权重(源码真值)</th><th>作用</th></tr>
+<tr><td>MSE</td><td>$\|\hat{\bm{C}} - {\bm{C}}_{gt}\|_2^2$</td><td><b>1.0</b>(<code>main.yaml:12</code>)</td><td>像素级重建,PSNR/SSIM 主来源</td></tr>
+<tr><td>LPIPS</td><td>感知距离(网络特征)</td><td><b>0.05</b>(<code>main.yaml:14</code>)</td><td>高频细节/感知质量;max_dim=512 下计算(<code>main.yaml:16</code>)</td></tr>
+</table>
+<p class="note">细节:测试时支持 test-time pose refinement(<code>main.yaml:66-72</code>:100 步、lr 0.005、MSE+LPIPS),NoPoSplat 无位姿设定的评测用其修正预测位姿。</p></section>
+<section class="section" id="s10"><h2><span class="num">10</span>训练 / 推理逻辑流程图</h2>
+<h3>训练流程(以 NoPoSplat 系三段式为例,README + 配置核实)</h3>
+<div class="mermaid">
+flowchart TD
+    S0["Stage 0: 2DGS 高分辨率重训练<br/>f_prim 单独训<br/>低分辨率输入 + 全分辨率渲染监督<br/>lr 1.5e-4, MSE 1.0 + LPIPS 0.05"] --> S1["Stage 1: BBSplat(中间段,仅 NoPoSplat 系)<br/>冻结 backbone/pts3d head<br/>仅训 direct_2dgs 纹理层(无投影)"]
+    S1 --> S2["Stage 2: LGTM<br/>加载 BBSplat ckpt(忽略 direct_2dgs 前缀重初始化)<br/>加入投影纹理分支 + patchify 分支<br/>非纹理参数全部冻结 lr_mult=0<br/>纹理层 lr 2e-5, batch 2, 10k steps"]
+    S2 --> E["评测<br/>DL3DV benchmark, pose_opt 100 步修正"]
+    style S0 fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    style S2 fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<h3>推理流程(前馈,无逐场景优化)</h3>
+<div class="mermaid">
+flowchart TD
+    A["输入: 1/2/N 张图"] --> B["按 texture_size 下采样<br/>得到低分辨率输入"]
+    B --> C["f_prim 前馈<br/>288x512 基元网格"]
+    A --> D["f_texture 前馈<br/>投影纹理 + patchify + 特征融合"]
+    C --> D
+    D --> E["带纹理 2DGS<br/>无界双线性采样"]
+    E --> F["gsplat 2DGS 光栅化<br/>4K 渲染 32.8ms"]
+    style F fill:#dcfce7,stroke:#22c55e,color:#14532d
+</div>
+<p class="note">训练视角采样:DL3DV 训练时 context 视角间隔 8–16 帧、view sampler warm-up 5000 步(<code>dl3dv_noposplat_lgtm_*.yaml:38-41</code>);优化器 AdamW(weight_decay 0.05,betas 0.9/0.95),125 步线性 warm-up + cosine 退火至 0.1×lr(<code>engine.py:873-896</code>)。</p></section>
+<section class="section" id="s11"><h2><span class="num">11</span>⚙️ 工程实现细节(源码级)</h2>
+<p>仓库 <a href="https://github.com/apple/ml-lgtm">apple/ml-lgtm</a>(Apple 官方,Apple 许可证;本笔记核实至 commit <code>587c121</code>,2026-09-11)。可信度等级:<b>高</b>(开源、配置/代码/权重齐全)。</p>
+<h3>环境与依赖</h3>
+<ul>
+<li>uv 管理(<code>pyproject.toml</code>);Python 包结构 <code>src/lgtm/</code>(dataset / engine / loss / model{backbone,encoder,head,gaussian} / utils)。</li>
+<li>关键依赖:<b>定制补丁版 gsplat</b>——<code>scripts/clone_patch_gsplat.sh</code> 固定 clone nerfstudio-project/gsplat 的 commit <code>32f2a54</code> 并打 <code>extern/gsplat.patch</code>,提供 <code>rasterization_2dgs</code> 的 <code>texture_colors / texture_alphas / texture_color_sigma / texture_alpha_mode</code> 扩展参数(<code>gaussian_rasterizer.py:233-274</code> 调用)。<b>升级 gsplat 会破坏纹理渲染,这是硬 pin。</b></li>
+<li>backbone 预训练权重:NoPoSplat→MASt3R ViT-Large_BaseDecoder_512;DepthSplat→depthsplat-gs-base(448×768);Flash3D→UniDepth v1 ViT-L14(<code>README.md:144-151</code>,各 backbone 许可证需自行遵守)。</li>
+</ul>
+<h3>真实超参(发布配置,逐条带出处)</h3>
+<table><tr><th>项</th><th>NoPoSplat / Flash3D 系</th><th>DepthSplat 系</th><th>出处</th></tr>
+<tr><td>基元网格 / 输出</td><td>288×512 → 2304×4096</td><td>512×960 → 2048×3840</td><td>配置文件名</td></tr>
+<tr><td>texture_size</td><td>8</td><td>4</td><td><code>*_lgtm_*.yaml</code> texture_size 行</td></tr>
+<tr><td>texture_alpha_mode</td><td colspan="2"><b>GAUSSIAN(只用高斯衰减 alpha,不学习 alpha 纹理!)</b></td><td>三个 lgtm 配置一致</td></tr>
+<tr><td>texture_color_sigma</td><td colspan="2">1.0</td><td>同上</td></tr>
+<tr><td>sh_degree</td><td colspan="2">1</td><td><code>*_lgtm_*.yaml</code></td></tr>
+<tr><td>stage2 学习率</td><td colspan="2">2e-5(AdamW)</td><td><code>*_lgtm_*.yaml: optimizer.lr</code></td></tr>
+<tr><td>stage2 冻结策略</td><td colspan="2">non_2dgs_lr_mult=0.0 → 仅 direct_2dgs_* 纹理层可训练</td><td><code>engine.py:830-860</code></td></tr>
+<tr><td>batch / steps</td><td colspan="2">2 / 10000(val 每 500,ckpt 每 5000)</td><td><code>*_lgtm_*.yaml</code></td></tr>
+<tr><td>损失</td><td colspan="2">MSE 1.0 + LPIPS 0.05(LPIPS max_dim 512)</td><td><code>main.yaml:10-16</code></td></tr>
+<tr><td>optimizer</td><td colspan="2">AdamW,wd=0.05,betas(0.9,0.95);125 步 warm-up + cosine→0.1×lr</td><td><code>engine.py:873-896</code></td></tr>
+<tr><td>训练视角间隔</td><td colspan="2">8–16 帧,sampler warm-up 5000 步</td><td><code>*_lgtm_*.yaml:38-41</code></td></tr>
+<tr><td>gaussian_scale_max</td><td colspan="2">0.3(head 内再次 clamp_max 0.3)</td><td><code>noposplat.yaml</code>;<code>head_noposplat.py:287</code></td></tr>
+<tr><td>test-time pose opt</td><td colspan="2">100 步,lr 0.005,MSE+LPIPS</td><td><code>main.yaml:66-72</code></td></tr>
+</table>
+<h3>资源账(论文表 1 / 表 4,A100)</h3>
+<ul>
+<li>训练显存:1K 档 20.16 GB(2×2 纹理)/ 16.26 GB(4×4);2K 档 21.39/17.46 GB;4K 档 28.23 GB(8×8 纹理)。基线 NoPoSplat 1024×576 即 61.85 GB,2K/4K OOM。</li>
+<li>推理(双视→单目标视,bs=1):NoPoSplat 512×288 3DGS 114.18 ms / 峰值 3.06 GB;LGTM 4K(8×8 纹理)175.10 ms(网络前向 142.28 + 渲染 32.82)/ 峰值 5.51 GB。<b>64× 像素只换来 1.80× 显存、1.47× 耗时。</b></li>
+<li>对比单场景优化 3DGS:每场景 ~30 min(COLMAP + 30k 迭代),LGTM 前馈瞬时(附录 A.4)。</li>
+<li>参数量:论文未报【待核实】。</li>
+</ul>
+<h3>落地坑(实测/代码层面)</h3>
+<ul>
+<li><b>gsplat 硬 pin + 补丁</b>:纹理渲染不在上游 gsplat,自行升级即失效;Windows 下补丁脚本为 bash,需 WSL。</li>
+<li><b>评测数据门槛</b>:DL3DV-Benchmark 是 HuggingFace gated dataset,需先接受许可 + <code>hf auth login</code>(<code>README.md:79-86</code>);训练需先把原始数据转成 torch chunk 文件(<code>docs/DATASETS.md</code>)。</li>
+<li><b>多视未支持到 4K</b>:VGGT 系冻结 backbone 仍因显存上不了 4K,论文自己列为 future work。</li>
+<li><b>纹理分辨率手动调</b>:$T$ 只能在 {1,2,4,8,16,32} 中选(<code>gaussians.py:45-52</code> 硬校验),质量-计算权衡需人工选档。</li>
+</ul></section>
+<section class="section" id="s12"><h2><span class="num">12</span>实验结果</h2>
+<h3>12.1 Pilot Study(论文表 1,DL3DV,NoPoSplat 基)</h3>
+<table><tr><th>渲染分辨率</th><th>方法</th><th>基元分辨率</th><th>纹理</th><th>LPIPS↓</th><th>SSIM↑</th><th>PSNR↑</th><th>训练显存</th></tr>
+<tr><td>1024×576</td><td>NoPoSplat</td><td>1024×576</td><td>—</td><td>0.239</td><td>0.716</td><td>23.169</td><td>61.85 GB</td></tr>
+<tr class="best"><td>1024×576</td><td>LGTM</td><td>512×288</td><td>2×2</td><td>0.213</td><td>0.816</td><td>25.606</td><td>20.16 GB</td></tr>
+<tr><td>1024×576</td><td>LGTM</td><td>256×144</td><td>4×4</td><td>0.283</td><td>0.762</td><td>24.135</td><td>16.26 GB</td></tr>
+<tr class="fail"><td>2048×1152</td><td>NoPoSplat</td><td>2048×1152</td><td>—</td><td colspan="3">OOM 无法训练</td><td>OOM</td></tr>
+<tr class="best"><td>2048×1152</td><td>LGTM</td><td>512×288</td><td>4×4</td><td>0.176</td><td>0.810</td><td>25.328</td><td>21.39 GB</td></tr>
+<tr class="fail"><td>4096×2304</td><td>NoPoSplat</td><td>4096×2304</td><td>—</td><td colspan="3">OOM 无法训练</td><td>OOM</td></tr>
+<tr class="best"><td>4096×2304</td><td>LGTM</td><td>512×288</td><td>8×8</td><td>0.200</td><td>0.803</td><td>24.489</td><td>28.23 GB</td></tr>
+</table>
+<h3>12.2 双视角新视角合成(论文表 2)</h3>
+<table><tr><th>数据集</th><th>基线</th><th>渲染分辨率</th><th>方法</th><th>LPIPS↓</th><th>SSIM↑</th><th>PSNR↑</th></tr>
+<tr><td rowspan="3">RE10K</td><td rowspan="2">NoPoSplat</td><td>1024×576</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.250 / 0.225 / <b>0.195</b></td><td>0.823 / 0.829 / <b>0.847</b></td><td>24.666 / 24.674 / <b>25.419</b></td></tr>
+<tr><td>2048×1152</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.257 / 0.227 / <b>0.182</b></td><td>0.819 / 0.823 / <b>0.856</b></td><td>24.235 / 24.282 / <b>25.233</b></td></tr>
+<tr><td colspan="6" style="color:var(--text-dim)">(RE10K 仅到 2K:其 2K 子集实为 1080p,见论文脚注 1)</td></tr>
+<tr><td rowspan="6">DL3DV</td><td rowspan="4">NoPoSplat</td><td>1024×576</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.297 / 0.260 / <b>0.213</b></td><td>0.747 / 0.736 / <b>0.816</b></td><td>24.131 / 23.569 / <b>25.606</b></td></tr>
+<tr><td>2048×1152</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.292 / 0.262 / <b>0.176</b></td><td>0.737 / 0.731 / <b>0.810</b></td><td>23.814 / 23.427 / <b>25.328</b></td></tr>
+<tr><td rowspan="2">4096×2304</td><td>3DGS / 2DGS</td><td>0.351 / 0.322</td><td>0.753 / 0.737</td><td>23.022 / 22.198</td></tr>
+<tr><td class="best"><b>LGTM(8×8)</b></td><td class="best"><b>0.200</b></td><td class="best"><b>0.803</b></td><td class="best"><b>24.489</b></td></tr>
+<tr><td rowspan="2">DepthSplat</td><td>1920×1024</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.161 / 0.164 / <b>0.159</b></td><td>0.826 / 0.823 / <b>0.832</b></td><td>25.705 / 25.967 / <b>26.218</b></td></tr>
+<tr><td>3840×2048</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.210 / 0.198 / <b>0.170</b></td><td>0.801 / 0.794 / <b>0.827</b></td><td>24.740 / 24.715 / <b>25.508</b></td></tr>
+</table>
+<div class="figure"><div class="img-row">
+<img src="https://arxiv.org/html/2603.25745v1/fig/two_view/two_view_0_noposplat.jpg" loading="lazy">
+<img src="https://arxiv.org/html/2603.25745v1/fig/two_view/two_view_0_noposplat_lgtm.jpg" loading="lazy">
+<img src="https://arxiv.org/html/2603.25745v1/fig/two_view/two_view_0_depthsplat_lgtm.jpg" loading="lazy">
+<img src="https://arxiv.org/html/2603.25745v1/fig/two_view/two_view_0_gt.jpg" loading="lazy">
+</div>
+<div class="caption"><b>图5</b>(论文图 3 子集,arXiv 热链):DL3DV 4K 双视角定性对比,依序为 NoPoSplat 基线 / NoPoSplat+LGTM / DepthSplat+LGTM / GT。LGTM 的墙纹、植被细节明显更锐(原图为 6 场景 × 5 方法拼版,此处取首场景 4 列)。</div></div>
+<h3>12.3 单目与多视(论文表 3)</h3>
+<table><tr><th>输入</th><th>基线</th><th>渲染分辨率</th><th>方法</th><th>LPIPS↓</th><th>SSIM↑</th><th>PSNR↑</th></tr>
+<tr><td rowspan="3">单目</td><td rowspan="3">Flash3D</td><td>1024×576</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.274 / 0.267 / <b>0.215</b></td><td>0.672 / 0.676 / <b>0.708</b></td><td>21.353 / 21.447 / <b>21.910</b></td></tr>
+<tr><td>2048×1152</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.368 / 0.358 / <b>0.224</b></td><td>0.643 / 0.653 / <b>0.712</b></td><td>19.911 / 20.276 / <b>21.552</b></td></tr>
+<tr><td>4096×2304</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.399 / 0.371 / <b>0.219</b></td><td>0.724 / 0.725 / <b>0.766</b></td><td>20.068 / 20.322 / <b>21.778</b></td></tr>
+<tr><td rowspan="2">多视(4 视)</td><td rowspan="2">VGGT(AnySplat 式 GS head)</td><td>1036×560</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.336 / 0.341 / <b>0.325</b></td><td>0.649 / 0.646 / <b>0.676</b></td><td>20.278 / 20.177 / <b>20.645</b></td></tr>
+<tr><td>2072×1120</td><td>3DGS / 2DGS / <b>LGTM</b></td><td>0.380 / 0.392 / <b>0.361</b></td><td>0.644 / 0.641 / <b>0.661</b></td><td>19.461 / 19.273 / <b>19.990</b></td></tr>
+</table>
+<p class="note">多视训练时将预测位姿与 GT 位姿对齐以消除渲染-监督错位;VGGT 系<b>未上 4K</b>(即使冻结 backbone 显存仍不足,论文列为 future work)。单目设置下 LGTM 仅 512×288 基元即达 4K 高质量——纹理表示的力量最直接体现。</p>
+<h3>12.4 推理效率基准(论文表 4,A100,bs=1)</h3>
+<table><tr><th>方法</th><th>基元</th><th>纹理</th><th>渲染</th><th>峰值显存 GB</th><th>网络 ms</th><th>渲染 ms</th><th>总耗时 ms</th></tr>
+<tr><td>NoPoSplat 3DGS ①</td><td>512×288</td><td>—</td><td>512×288</td><td>3.06</td><td>110.37</td><td>3.81</td><td>114.18</td></tr>
+<tr><td>NoPoSplat 2DGS ②</td><td>512×288</td><td>—</td><td>512×288</td><td>3.06</td><td>112.70</td><td>6.43</td><td>119.13</td></tr>
+<tr><td>LGTM ③</td><td>512×288</td><td>2×2</td><td>1024×576</td><td>4.33</td><td>132.06</td><td>7.70</td><td>139.76</td></tr>
+<tr><td>LGTM ④</td><td>512×288</td><td>4×4</td><td>2048×1152</td><td>4.60</td><td>136.14</td><td>14.26</td><td>150.40</td></tr>
+<tr class="best"><td>LGTM ⑤</td><td>512×288</td><td>8×8</td><td>4096×2304</td><td>5.51</td><td>142.28</td><td>32.82</td><td>175.10</td></tr>
+</table>
+<h3>12.5 论文表述 vs 表格复核(本库原创核对)</h3>
+<div class="callout warn"><b>LPIPS "降低 23%–75%" 无法复现【待核实】:</b>论文 §5.2 称 DL3DV 上 "LPIPS 23%–75% reduction"。将表 2/表 3 全部行按原始值手算:对较强 baseline(2DGS)降低 <b>3.0%–37.9%</b>,对较弱 baseline(3DGS)降低 <b>1.2%–45.1%</b>——<b>没有任何一行能算出 75%</b>,23% 的上限来源也不明(最接近的是 RE10K 1K 对 3DGS 的 22.0%)。结论句数字与自家表格对不上,引用该范围时需注明。另注:§5.2 的 1.80× 显存对的是 ①(3DGS),1.47× 耗时对的是 ②(2DGS),两个倍数分母不同但文中连写,阅读时易误以为同一基线。</div></section>
+<section class="section" id="s13"><h2><span class="num">13</span>消融实验</h2>
+<p>以 NoPoSplat(3DGS)为底座,在 DL3DV 2K 上逐个加组件(论文表 5):</p>
+<table><tr><th>配置</th><th>组件</th><th>LPIPS↓</th><th>SSIM↑</th><th>PSNR↑</th><th>Δ LPIPS</th></tr>
+<tr><td>①</td><td>NoPoSplat(3DGS)低分辨率训练</td><td>0.371</td><td>0.583</td><td>16.964</td><td>—</td></tr>
+<tr><td>②</td><td>+ 高分辨率重训练(2DGS)</td><td>0.256</td><td>0.731</td><td>23.502</td><td>−0.115</td></tr>
+<tr><td>③</td><td>+ 图像 patchify 特征</td><td>0.199</td><td>0.782</td><td>24.673</td><td>−0.057</td></tr>
+<tr><td>④</td><td>+ 纹理颜色贴图</td><td>0.189</td><td>0.806</td><td>25.314</td><td>−0.010</td></tr>
+<tr class="best"><td>⑤</td><td>+ 纹理 alpha 贴图(full model)</td><td><b>0.176</b></td><td><b>0.810</b></td><td><b>25.328</b></td><td>−0.013</td></tr>
+</table>
+<ul>
+<li><b>高分辨率重训练是最大单项</b>(①→②):无它一切免谈——直接拿低分辨率模型渲高分辨率会出现空洞。</li>
+<li><b>patchify 特征次之</b>(②→③):提供高频细节入口, LPIPS −0.057。</li>
+<li>纹理颜色/alpha 属于锦上添花,但每步都稳定正向;alpha 纹理对 LPIPS 贡献大于对 PSNR 的贡献(感知一致性)。</li>
+</ul>
+<div class="figure"><div class="img-row">
+<img src="https://arxiv.org/html/2603.25745v1/fig/ablation/ablation_0_baseline.jpg" loading="lazy">
+<img src="https://arxiv.org/html/2603.25745v1/fig/ablation/ablation_0_retrain.jpg" loading="lazy">
+<img src="https://arxiv.org/html/2603.25745v1/fig/ablation/ablation_0_patchify.jpg" loading="lazy">
+<img src="https://arxiv.org/html/2603.25745v1/fig/ablation/ablation_0_full.jpg" loading="lazy">
+</div>
+<div class="caption"><b>图6</b>(论文图 5 首行,arXiv 热链):同一场景下 ①baseline → ②retrain → ③patchify → ⑤full 的渐进改善,细节锐度逐级提升。</div></div>
+<div class="callout warn"><b>消融结论与发布配置的张力:</b>表 5 宣称 alpha 纹理必不可少(④→⑤),但<b>三个官方发布权重的训练配置全部用 <code>texture_alpha_mode: GAUSSIAN</code></b>(不学习 alpha 纹理,alpha 退回 2DGS 高斯衰减,<code>gaussians.py:63-67</code>)。也就是说对外发布的模型实际对应消融表中的"④+投影"而非"⑤"。合理解释是附录 A.2 的无界采样设计让高斯衰减 alpha 已足够(避免暗边),但论文叙事与发布物之间存在口径差异【推测,待官方说明】。</div></section>
+<section class="section" id="s14"><h2><span class="num">14</span>附录实验: 视角间隔鲁棒性 + 对比单场景优化</h2>
+<h3>14.1 大视角间隔(DL3DV 4K,论文表 6 / 图 8)</h3>
+<table><tr><th>context 帧间隔</th><th>方法</th><th>LPIPS↓</th><th>SSIM↑</th><th>PSNR↑</th></tr>
+<tr><td rowspan="2">10</td><td>NoPoSplat</td><td>0.322</td><td>0.737</td><td>22.198</td></tr>
+<tr class="best"><td>+ LGTM</td><td><b>0.200</b></td><td><b>0.803</b></td><td><b>24.489</b></td></tr>
+<tr><td rowspan="2">20</td><td>NoPoSplat</td><td>0.366</td><td>0.722</td><td>20.732</td></tr>
+<tr class="best"><td>+ LGTM</td><td><b>0.258</b></td><td><b>0.765</b></td><td><b>22.159</b></td></tr>
+<tr><td rowspan="2">30</td><td>NoPoSplat</td><td>0.413</td><td>0.709</td><td>19.430</td></tr>
+<tr class="best"><td>+ LGTM</td><td><b>0.323</b></td><td><b>0.730</b></td><td><b>20.123</b></td></tr>
+<tr><td rowspan="2">40</td><td>NoPoSplat</td><td>0.458</td><td>0.696</td><td>18.264</td></tr>
+<tr class="best"><td>+ LGTM</td><td><b>0.376</b></td><td><b>0.707</b></td><td><b>18.862</b></td></tr>
+</table>
+<p>两者性能都随视角间隔增大而退化,但 LGTM 在每个间隔档都保持明显优势——回应"纹理贴图只适用于小视角差"的质疑。注意间隔 40 帧时 PSNR 已跌破 19 dB,<b>该表示的上限仍由几何决定</b>。</p>
+<h3>14.2 对比逐场景优化 3DGS(DL3DV 4K,论文表 7 / 图 9)</h3>
+<p>对比设置:2 context 视(帧 0/20)+ 19 个目标视;单场景优化侧需先对全部 21 帧跑 COLMAP、用 context 可见点云初始化、4K 下按默认 3DGS 协议优化 30,000 步(15,000 步停 densify)。</p>
+<table><tr><th>方法</th><th>PSNR↑</th><th>SSIM↑</th><th>LPIPS↓</th><th>耗时</th></tr>
+<tr class="best"><td>DepthSplat + LGTM(前馈)</td><td><b>27.99</b></td><td><b>0.88</b></td><td><b>0.15</b></td><td>瞬时</td></tr>
+<tr><td>逐场景优化 3DGS(21 帧 COLMAP + 30k 迭代)</td><td>21.75</td><td>0.78</td><td>0.21</td><td>~30 min / A100</td></tr>
+</table>
+<div class="figure"><div class="img-row">
+<img src="images/2603.25745/bbox_opt_000010.jpg" loading="lazy">
+<img src="images/2603.25745/bbox_lgtm_000010.jpg" loading="lazy">
+</div>
+<div class="caption"><b>图7</b>(附录图 9):中间目标帧对比——逐场景优化(左)在远离 context 的中间帧明显退化(PSNR 掉到 ~20–22 dB,过拟合 context),DepthSplat+LGTM(右)全程稳定。<b>前馈方法 + 跨场景先验 &gt; 单场景暴力优化</b>,这是本文对工程选型最有冲击力的一组数字。</div></div></section>
+<section class="section" id="s15"><h2><span class="num">15</span>🔄 同类方法对比分析</h2>
+<h3>固定维度横向对比表</h3>
+<table><tr><th>方法</th><th>年份</th><th>输入假设</th><th>场景表示</th><th>监督信号</th><th>训练数据</th><th>训练时长</th><th>推理耗时</th><th>显存</th><th>关键指标</th><th>开源</th></tr>
+<tr><td>3DGS(逐场景基线)</td><td>2023</td><td>多视 + COLMAP 位姿</td><td>逐场景优化 3D 高斯</td><td>光度</td><td>—(逐场景)</td><td>~30min/场景(A100,4K)</td><td>1080p 实时</td><td>—</td><td>表 7:4K 两视 21.75 PSNR</td><td>是</td></tr>
+<tr><td>BBSplat(纹理化 2DGS)</td><td>2025</td><td>多视 + 位姿</td><td>逐场景优化纹理 2DGS</td><td>光度</td><td>—(逐场景)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>是</td></tr>
+<tr><td>NoPoSplat(LGTM 基线)</td><td>2025</td><td>无位姿双视</td><td>pixel-aligned 前馈 3DGS</td><td>光度</td><td>RE10K+DL3DV</td><td>—</td><td>512×288:114ms</td><td>训练 61.85GB@1024×576</td><td>DL3DV 4K:0.351/0.753/23.02</td><td>是(LGTM 仓库内置)</td></tr>
+<tr><td>DepthSplat(LGTM 基线)</td><td>2024</td><td>带位姿双视</td><td>pixel-aligned 前馈 3DGS</td><td>光度+单目深度先验</td><td>RE10K+DL3DV</td><td>—</td><td>—</td><td>—</td><td>DL3DV 4K:0.210/0.801/24.74</td><td>是(LGTM 仓库内置)</td></tr>
+<tr><td>Flash3D(LGTM 基线)</td><td>2025</td><td>单目</td><td>pixel-aligned 前馈 3DGS</td><td>光度</td><td>RE10K 系</td><td>—</td><td>—</td><td>—</td><td>DL3DV 4K:0.399/0.724/20.07</td><td>是(LGTM 仓库内置)</td></tr>
+<tr><td>VGGT 系(LGTM 多视基线)</td><td>2025</td><td>多视(位姿前馈)</td><td>pointmap + GS head(AnySplat 式)</td><td>光度+点图</td><td>多源混合</td><td>—</td><td>—</td><td>—</td><td>DL3DV 2K:0.380/0.644/19.46</td><td>是(库内笔记<a href="3D-20250314-VGGT.html">VGGT</a>)</td></tr>
+<tr class="best"><td><b>LGTM</b></td><td>2026</td><td>1/2/N 视,带/无位姿皆可</td><td><b>前馈纹理化 2DGS(几何/外观双网络)</b></td><td>光度(MSE+LPIPS)</td><td>RE10K+DL3DV</td><td>stage2 10k 步(冻结大部)</td><td>4K:175ms(A100)</td><td>训练 28.23GB@4K;推理 5.51GB@4K</td><td>DL3DV 4K:0.200/0.803/24.49</td><td>是(权重+代码)</td></tr>
+</table>
+<p class="note">"—" = 论文未给出,禁止编造。四个基线的指标均引自本文表 2/表 3(LGTM 论文内的评测值,非原论文值)。</p>
+<h3>对比结论(机制层面)</h3>
+<ul>
+<li><b>vs 前馈 pixel-aligned 系(NoPoSplat/DepthSplat/Flash3D/VGGT):</b>同样前馈,但表示从"每像素一个高斯"换成"每 64 像素一个基元+一张小纹理"。根本差异不在网络而在<b>表示的伸缩性</b>——基元数与分辨率脱钩,4K 推理显存只比 512 档多 1.8×。LGTM 不做几何竞争,而是寄生在基线几何之上做外观增强:基线几何越好(DepthSplat&gt;NoPoSplat),增益越稳。</li>
+<li><b>vs 逐场景优化系(3DGS/BBSplat):</b>BBSplat 证明纹理化 2DGS 的表达效率,LGTM 把它搬进前馈。表 7 显示在两视+4K 这种"优化方法最难受"的设定下,前馈先验完胜逐场景优化——context 少时优化方法过拟合训练视,前馈方法反而靠跨场景先验泛化。</li>
+<li><b>为什么 LPIPS 提升远大于 PSNR:</b>纹理贴图补的恰是感知指标最敏感的高频;像素级 MSE 对轻微几何错位更敏感,而 LGTM 不改变几何。</li>
+<li><b>短板:</b>几何上限完全继承基线;多视设定增益最小(VGGT 行 ΔLPIPS 仅 0.011–0.019),且 4K 上不去——纹理网络救不了几何本身不准的场景。</li>
+</ul>
+<h3>演进定位</h3>
+<table><tr><th>范式</th><th>代表方法</th><th>核心先验</th><th>局限</th></tr>
+<tr><td>逐场景优化 NeRF/3DGS</td><td>NeRF 2020 / 3DGS 2023 / 2DGS 2024(库内<a href="3D-20230808-3DGS基础与改进综述.html">3DGS 综述</a>、<a href="3D-20240326-2DGS.html">2DGS</a>)</td><td>单场景过拟合即充分</td><td>每场景分钟~小时级优化;稀疏视角脆</td></tr>
+<tr><td>纹理化高斯(逐场景)</td><td>BBSplat / Gaussian Billboards / Taming 3DGS</td><td>外观与几何频率可分离</td><td>仍是逐场景优化,不能泛化</td></tr>
+<tr><td>pixel-aligned 前馈 3DGS</td><td>GS-LRM / NoPoSplat / DepthSplat / Flash3D / VGGT 系(库内<a href="3D-20231110-前馈3D重建模型综述.html">前馈综述</a>、<a href="3D-20261015-前馈式高斯重建2026下半年调研.html">2026 下半年调研</a>、<a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a>)</td><td>跨场景先验 + 像素对齐几何</td><td>基元数随分辨率平方爆炸,锁死在数百像素</td></tr>
+<tr><td class="best"><b>纹理化前馈 3DGS(本文)</b></td><td><b>LGTM</b></td><td>频率分离 + 跨场景先验 + 前馈</td><td>几何上限继承基线;纹理分辨率需手调;多视 4K 未实现</td></tr>
+</table></section>
+<section class="section" id="s16"><h2><span class="num">16</span>🎯 应用场景与落地适配性(vggt_human 视角)</h2>
+<table><tr><th>维度</th><th>评估</th></tr>
+<tr><td>能否进我们的 pipeline</td><td><b>思想可直接借鉴,模型不能即插即用。</b>LGTM 面向静态场景 NVS;我们的 head_gs(3DMM 人脸)天然有 UV 参数化,本质上已是一种"每基元纹理"——LGTM 的价值在于<b>前馈化</b>与<b>频率分离训练范式</b>,而非表示本身。3DGS 人脸 finetune 阶段的高频细节(皮肤纹理)可用"低频 SH + 每高斯小纹理"替代继续堆高斯数。</td></tr>
+<tr><td>显存/耗时(单卡 3090 24GB)</td><td>推理 4K 峰值仅 5.51 GB / 175ms(A100),3090 上推理完全可行;但<b>训练 4K 需 28.23 GB(bs=1)已超 3090</b>,2K 档 21.39 GB 贴线,需 gradient checkpointing 或降纹理档。WSL2 56GB 内存+swap 无助于显存瓶颈。</td></tr>
+<tr><td>数据成本</td><td>训练需 RE10K/DL3DV 级场景数据 + 自己的 4K 数据管线(torch chunk 预处理);评测数据是 gated 的。复现训练成本高,建议直接下载官方 ckpt 做推理级联。</td></tr>
+<tr><td>与现有组件的重叠</td><td>几何分支可挂 <a href="3D-20250314-VGGT.html">VGGT</a>/VGGT-Ω/<a href="3D-20261112-SplatAnything.html">SplatAnything</a> 一系前馈几何;LGTM 仓库已内置 NoPoSplat/DepthSplat/Flash3D 三个 backbone 适配,唯独没有 VGGT 的发布配置(论文有实验,代码未放)。</td></tr>
+<tr><td>风险</td><td>gsplat 硬 pin 补丁;人脸级几何精度远低于场景级需求,纹理贴图会放大几何误差处的拉伸伪影(投影纹理对位姿误差敏感)。</td></tr>
+</table>
+<div class="callout tip"><b>最值得带走的三点:</b>①"低分辨率网络 + 高分辨率监督"的训练范式,可直接用于我们任何前馈几何头的分辨率扩展;②投影纹理作 base + 网络学 delta 的残差设计,与我们"3DMM 基座 + 网络修正"的思路同构;③表 7 的结论——context 稀疏时,跨场景前馈先验优于逐场景优化,支持我们把 pipeline 往前馈化推进。</div></section>
+<section class="section" id="s17"><h2><span class="num">17</span>可改进方向分析</h2>
+<h3>方法层面</h3>
+<div class="card" style="border-left:4px solid var(--red)"><h4>[高优先级] 论文叙事与发布配置不一致:alpha 纹理</h4><p>问题:表 5 消融宣称纹理 alpha 贴图必不可少(④→⑤ LPIPS −0.013),但三个官方发布权重的配置全部 <code>texture_alpha_mode: GAUSSIAN</code>(<code>configs/experiment/dl3dv_*_lgtm_*.yaml</code>),不学习 alpha 纹理;代码中 GAUSSIAN 模式直接置 <code>texture_alphas=None</code>(<code>encoder_noposplat.py:83-92</code>)。改进:论文补充说明发布口径,或放出 TEXTURE 模式权重对比,否则消融结论的适用性存疑。</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><h4>[高优先级] "联合训练"名不副实:几何网络实为全冻结</h4><p>问题:论文 §4.2 称 stage 2 预训练几何网络以 0.1× 学习率参与训练;发布配置却是 <code>non_2dgs_lr_mult: 0.0</code>,<code>engine.py:846-860</code> 将除 <code>direct_2dgs_*</code> 外的参数 <code>requires_grad=False</code>——backbone、pts3d head、GS 主 head 全冻,只有纹理四个模块在动。改进:若 0.1× 真比 0.0 好,发布该配置;若实测无差,修正论文表述。</p></div>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 训练阶段数口径混乱</h4><p>问题:论文写 two-stage;README 的 NoPoSplat 流程是 2DGS→BBSplat→LGTM 三段(<code>README.md:160-169</code>),且 stage2→stage3 之间忽略 <code>gaussian_param_head*.dpt.direct_2dgs</code> 前缀重新初始化纹理层(<code>dl3dv_noposplat_lgtm_*.yaml:16-18</code>)——说明 BBSplat 段学的纹理对 LGTM 段并无 warm start 价值,该中间段的存在必要性值得消融。</p></div>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 几何上限完全继承基线</h4><p>问题:间隔 40 帧时 PSNR 跌破 19 dB(表 6),多视 VGGT 档增益边际(ΔLPIPS≈0.01)。纹理只在"几何基本正确"时有效。改进:把纹理置信度/几何不确定性显式建模(如对投影纹理按位姿误差加权),或在纹理网络中引入跨视角一致性约束。</p></div>
+<h3>数据与评估</h3>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 结论句数字与表格不符</h4><p>§5.2 的 "LPIPS 23%–75% reduction" 无法从表 2/表 3 任何一行复现(手算上限 45.1%,§12.5);1.80×/1.47× 两个倍数分母不同却连写。改进:投稿前对每个相对改进百分比按表格原始值反解核对——这是本库两次教训(LiON-LoRA、OctWorld)的同型问题。</p></div>
+<div class="card" style="border-left:4px solid var(--yellow)"><h4>[低优先级] 评估仅室内/街景场景</h4><p>RE10K+DL3DV 均为静态场景;动态、反光、透明表面未覆盖。纹理贴图对反光表面的视角相关反射建模能力(只有 SH 基色一个视角相关出口)未验证。</p></div>
+<h3>工程实用性</h3>
+<div class="card" style="border-left:4px solid var(--orange)"><h4>[中优先级] 纹理分辨率需手调且档位硬编码</h4><p>$T$ 仅限 {1,2,4,8,16,32}(<code>gaussians.py:45-52</code> assert),论文 limitation 也承认需手动平衡质量与开销。改进:按基元局部纹理复杂度自适应分配 $T$(可变纹理密度的 2DGS)。</p></div>
+<div class="card" style="border-left:4px solid var(--yellow)"><h4>[低优先级] gsplat 硬 pin + 补丁维护成本</h4><p>纹理渲染依赖固定 commit <code>32f2a54</code> 的补丁 gsplat(<code>scripts/clone_patch_gsplat.sh:21-22</code>),上游任何新特性/bugfix 都无法跟进;补丁合入上游或改用 JIT 扩展是长期解。</p></div>
+<h3>优先级总览</h3>
+<table><tr><th>优先级</th><th>问题</th><th>类型</th></tr>
+<tr><td>高</td><td>发布配置未用 alpha 纹理 vs 消融宣称其必不可少</td><td>论文/代码一致性</td></tr>
+<tr><td>高</td><td>stage2 几何全冻结 vs 论文"0.1× lr"</td><td>论文/代码一致性</td></tr>
+<tr><td>中</td><td>三阶段 vs 两阶段口径;BBSplat 中间段必要性</td><td>论文/代码一致性</td></tr>
+<tr><td>中</td><td>几何上限继承基线,大间隔/多视失效</td><td>方法</td></tr>
+<tr><td>中</td><td>"23%–75%" 数字无法复现</td><td>评估严谨性</td></tr>
+<tr><td>中</td><td>纹理分辨率手调 + 档位硬编码</td><td>工程</td></tr>
+<tr><td>低</td><td>动态/反光场景未验证;gsplat 硬 pin</td><td>评估/工程</td></tr>
+</table>
+<div class="callout key"><b>个人认为最关键的三点:</b>① 发布物与论文叙事的三处不一致(alpha 纹理 / 冻结策略 / 阶段数)——不影响方法本身成立,但提醒"消融表最优配置≠发布配置";② 纹理增益的天花板是几何精度,与我们 pipeline 中"3DMM 几何先行"的路线互为印证;③ "低分辨率网络+高分辨率监督"是可迁移性最强的训练范式,成本极低、收益直接。</div></section>
+<section class="section" id="s18"><h2><span class="num">18</span>总结与演进定位</h2>
+<p>LGTM 的贡献不在某个新模块,而在<b>把"频率分离"这一图形学常识系统性地搬进前馈 3DGS</b>:几何网络在低分辨率跑(贵的是它),纹理网络在高分辨率补细节(便宜的 1×1 conv 与双线性采样),渲染分辨率由纹理 Texel 密度决定。这把前馈 NVS 从"数百像素"推到 4K,且以表 7 的方式证明了"前馈先验 &gt; 逐场景优化"在稀疏 context 下成立。</p>
+<p>在领域脉络中,它位于"pixel-aligned 前馈 3DGS"与"纹理化高斯"两条线的交点:前者给泛化能力,后者给表达效率。它的局限也同样清晰——几何完全继承基线,纹理只是皮;多视/大间隔场景的边际收益说明"表示升级"无法替代"几何升级"。对我们而言,最有价值的不是模型本身,而是三个可直接迁移的范式:<b>低分辨率网络+高分辨率监督、投影 base+残差 delta、每基元小纹理替代堆基元</b>。</p></section>
+<section class="section" id="s19"><h2><span class="num">19</span>👥 研究团队 + 🔗 资源链接</h2>
+<h3>团队</h3>
+<p>HKU(赵恒爽组):Yixing Lao(Apple 实习期间完成)、Xiaoyang Wu、Hengshuang Zhao;Apple:Shiwei Li(project lead)、Xuyang Bai、Nuoyuan Yan、Zixin Luo、Tian Fang、Jean-Daniel Nahmias、Yanghai Tsin。基金:HK RGC GRF 17213925 + NSFC 62422606。</p>
+<h3>资源</h3>
+<div class="refs"><ul>
+<li>📄 arXiv: <a href="https://arxiv.org/abs/2603.25745">arxiv.org/abs/2603.25745</a>(v1 2026-03-26,仅一版;abs comments 为空,<b>未加会议徽章</b>;ICLR 2026 为项目页与 README 自述)</li>
+<li>💻 GitHub: <a href="https://github.com/apple/ml-lgtm">github.com/apple/ml-lgtm</a>(核实至 commit 587c121,2026-09-11;代码+三档 DL3DV 权重,Apple LICENSE / LICENSE_MODEL)</li>
+<li>🌐 项目主页: <a href="https://yxlao.github.io/lgtm/">yxlao.github.io/lgtm</a></li>
+<li>🧠 官方权重: <code>ml-site.cdn-apple.com/models/lgtm/*.ckpt</code>(depthsplat 512×960 / flash3d 288×512 / noposplat 288×512 三档)</li>
+<li>🔗 库内兄弟笔记: <a href="3D-20231110-前馈3D重建模型综述.html">前馈3D重建模型综述</a> · <a href="3D-20261015-前馈式高斯重建2026下半年调研.html">前馈式高斯重建2026下半年调研</a> · <a href="3D-20250314-VGGT.html">VGGT</a> · <a href="3D-20260514-VGGT-Omega.html">VGGT-Ω</a> · <a href="3D-20240326-2DGS.html">2DGS</a> · <a href="3D-20230808-3DGS基础与改进综述.html">3DGS 综述</a> · <a href="3D-20261112-SplatAnything.html">SplatAnything</a> · <a href="3D-20261014-InfiniSplat-v2.html">InfiniSplat v2</a></li>
+</ul></div></section>
+
+<div class="footer">本笔记由调研工作流生成 · 成稿日期 2026-11-16 · 数据以 arXiv 2603.25745v1 与 apple/ml-lgtm 仓库 commit 587c121(2026-09-11)为准</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true, theme:'default', flowchart:{curve:'basis', useMaxWidth:true}});</script>
+</body>
+</html>
